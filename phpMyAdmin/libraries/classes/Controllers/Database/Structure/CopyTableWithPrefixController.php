@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database\Structure;
 
+use function count;
+use function mb_strlen;
+use function mb_substr;
 use PhpMyAdmin\Controllers\Database\AbstractController;
 use PhpMyAdmin\Controllers\Database\StructureController;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Table;
 use PhpMyAdmin\Template;
-
-use function count;
-use function mb_strlen;
-use function mb_substr;
 
 final class CopyTableWithPrefixController extends AbstractController
 {
@@ -42,7 +41,7 @@ final class CopyTableWithPrefixController extends AbstractController
 
         for ($i = 0; $i < $selectedCount; $i++) {
             $current = $selected[$i];
-            $newTableName = $toPrefix . mb_substr($current, mb_strlen((string) $fromPrefix));
+            $newTableName = $toPrefix.mb_substr($current, mb_strlen((string) $fromPrefix));
 
             Table::moveCopy(
                 $db,

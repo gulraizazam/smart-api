@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Query;
 
-use PhpMyAdmin\Util;
-
 use function array_shift;
 use function count;
 use function is_array;
+use PhpMyAdmin\Util;
 
 /**
  * Handles caching results
@@ -22,8 +21,8 @@ class Cache
      * Caches table data so Table does not require to issue
      * SHOW TABLE STATUS again
      *
-     * @param array       $tables information for tables of some databases
-     * @param string|bool $table  table name
+     * @param  array  $tables information for tables of some databases
+     * @param  string|bool  $table  table name
      */
     public function cacheTableData(array $tables, $table): void
     {
@@ -52,8 +51,8 @@ class Cache
     /**
      * Set an item in table cache using dot notation.
      *
-     * @param array|null $contentPath Array with the target path
-     * @param mixed      $value       Target value
+     * @param  array|null  $contentPath Array with the target path
+     * @param  mixed  $value       Target value
      */
     public function cacheTableContent(?array $contentPath, $value): void
     {
@@ -85,9 +84,8 @@ class Cache
     /**
      * Get a cached value from table cache.
      *
-     * @param array $contentPath Array of the name of the target value
-     * @param mixed $default     Return value on cache miss
-     *
+     * @param  array  $contentPath Array of the name of the target value
+     * @param  mixed  $default     Return value on cache miss
      * @return mixed cached value or default
      */
     public function getCachedTableContent(array $contentPath, $default = null)

@@ -3,56 +3,49 @@
 namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
+use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Helpers\Financelog;
+use App\Helpers\GeneralFunctions;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\JazzSMSAPI;
 use App\Helpers\TelenorSMSAPI;
-use App\Helpers\Widgets\LocationsWidget;
+use App\Helpers\Widgets\DiscountWidget;
+use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Helpers\Widgets\ServiceWidget;
+use App\Http\Controllers\Controller;
 use App\Models\Accounts;
+use App\Models\Activity;
 use App\Models\Appointments;
-use App\Models\AppointmentStatuses;
-use App\Models\AppointmentTypes;
 use App\Models\AuditTrailChanges;
 use App\Models\AuditTrails;
 use App\Models\BundleHasServices;
 use App\Models\Bundles;
-use App\Models\Leads;
+use App\Models\Discounts;
+use App\Models\Locations;
+use App\Models\PackageAdvances;
+use App\Models\PackageBundles;
+use App\Models\Packages;
 use App\Models\PackageService;
+use App\Models\PaymentModes;
 use App\Models\ServiceHasLocations;
+use App\Models\Services;
 use App\Models\Settings;
 use App\Models\SMSLogs;
+use App\Models\User;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
+use Carbon\Carbon;
 use Composer\Package\Package;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use Illuminate\Support\Facades\Validator;
-use App\Models\Packages;
-use App\Models\PackageBundles;
-use App\Models\PackageAdvances;
-use App\Models\Discounts;
-use App\Models\Services;
-use App\Models\User;
-use Illuminate\Support\Facades\Config;
-use Carbon\Carbon;
-use App\Models\PaymentModes;
-use App\Models\Locations;
-use App\Helpers\Widgets\DiscountWidget;
-use App\Helpers\ACL;
-use PDF;
-use Illuminate\Support\Collection;
-use App\Helpers\Financelog;
-use App\Helpers\Widgets\PlanAppointmentCalculation;
-use App\Helpers\GeneralFunctions;
-use App\Models\Activity;
-use PHPUnit\Framework\MockObject\Api;
 
 class PackagesController extends Controller
 {
@@ -71,11 +64,12 @@ class PackagesController extends Controller
 
     /**
      * Display a listing of the package.
+     *
      * @return \Illuminate\Http\Response
      */
     public function index()
     {
-        if (!Gate::allows('plans_manage')) {
+        if (! Gate::allows('plans_manage')) {
             return abort(401);
         }
 
@@ -89,13 +83,13 @@ class PackagesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('plans_create')) {
+        if (! Gate::allows('plans_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
 
-        $random_id = md5(time() . rand(0001, 9999) . rand(78599, 99999));
+        $random_id = md5(time().rand(0001, 9999).rand(78599, 99999));
 
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
 
@@ -177,7 +171,7 @@ class PackagesController extends Controller
                     'discount_type' => $discount_type,
                     'discount_price' => $discount_price,
                     'net_amount' => $net_amount,
-                    'custom_checked' => 0
+                    'custom_checked' => 0,
                 ]);
 
             }
@@ -193,31 +187,30 @@ class PackagesController extends Controller
      */
     public function savepackages_service(Request $request)
     {
-        
+
         $status = true;
 
         $service_data = Bundles::find($request->bundle_id);
-       
-        
+
         /*Total belongs to total Amount that increase when we enter new bundle*/
-        $total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
-        if($total == ""){
+        $total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+        if ($total == '') {
             $total = 0;
         }
-        if($request->is_exclusive == ""){
-            $request->merge([ 'is_exclusive' => 1]);
+        if ($request->is_exclusive == '') {
+            $request->merge(['is_exclusive' => 1]);
         }
         if ($request->get('package_bundles')) {
             $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
             if ($package_bundles) {
                 foreach ($package_bundles as $bundle) {
                     if ($service_data->tax_treatment_type_id == 1) {
-                        
-                        if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int)$request->is_exclusive)) {
-                            
+
+                        if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int) $request->is_exclusive)) {
+
                             $status = false;
                         }
-                    }else { /*this is commented because we want to add services with different prices*/
+                    } else { /*this is commented because we want to add services with different prices*/
                         if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
                             //$status = false;
                             $status = true;
@@ -258,7 +251,7 @@ class PackagesController extends Controller
 
                     $data['is_exclusive'] = 0;
                 }
-            } else if ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+            } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                 $data['tax_exclusive_net_amount'] = $request->net_amount;
                 $data['tax_percenatage'] = $location_information->tax_percentage;
                 $data['tax_price'] = ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
@@ -274,7 +267,7 @@ class PackagesController extends Controller
                 $data['is_exclusive'] = 0;
             }
             /*In case If you not select any discount*/
-            if ($request->discount_id == '0' || $request->discount_id == "") {
+            if ($request->discount_id == '0' || $request->discount_id == '') {
                 $data['discount_id'] = null;
             }
             $data['created_at'] = Filters::getCurrentTimeStamp();
@@ -287,14 +280,14 @@ class PackagesController extends Controller
             /*Get the package service information*/
             $bundle_details = BundleHasServices::where('bundle_id', '=', $packagesbundly->bundle_id)->get();
 
-            $calculable_servcies = array();
+            $calculable_servcies = [];
 
             foreach ($bundle_details as $detail) {
-                $calculable_servcies[] = array(
+                $calculable_servcies[] = [
                     'service_price' => $detail->calculated_price,
                     'calculated_price' => $detail->calculated_price,
                     'service_id' => $detail->service_id,
-                );
+                ];
             }
             /*calculate price of services according to their prices*/
             $calculated_services = Bundles::calculatePrices($calculable_servcies, $data['service_price'], $data['net_amount']);
@@ -325,7 +318,7 @@ class PackagesController extends Controller
 
                         $data_service['is_exclusive'] = 0;
                     }
-                } else if ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                     $data_service['tax_exclusive_price'] = $detail['calculated_price'];
                     $data_service['tax_percenatage'] = $location_information->tax_percentage;
                     $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
@@ -378,7 +371,7 @@ class PackagesController extends Controller
                 'discount_type' => $discount_type,
                 'discount_price' => $discount_price,
                 'net_amount' => $net_amount,
-                'total' => $total
+                'total' => $total,
             ];
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -388,7 +381,6 @@ class PackagesController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'No Record found', false);
     }
-
 
     /**
      * get discount information for custom package.
@@ -402,14 +394,14 @@ class PackagesController extends Controller
         $service_data = Bundles::find($service_id);
         $discount_id = $request->discount_id;
         $discount_data = Discounts::find($discount_id);
-        if($discount_data->slug == 'custom'){
+        if ($discount_data->slug == 'custom') {
             $discount_id = $request->discount_id;
-        }else{
+        } else {
             $request->discount_value = $discount_data->amount;
         }
-        if($discount_data->type=='Fixed'){
+        if ($discount_data->type == 'Fixed') {
             if ($request->discount_type == Config::get('constants.Fixed')) {
-                if($request->discount_value > $discount_data->amount || $request->discount_value > $service_data->price){
+                if ($request->discount_value > $discount_data->amount || $request->discount_value > $service_data->price) {
                     return false;
                 }
                 $discount_type = Config::get('constants.Fixed');
@@ -419,35 +411,36 @@ class PackagesController extends Controller
             } else {
                 $discount_type = Config::get('constants.Percentage');
                 $discount_price = $request->discount_value;
-                $discount_price_cal =  ($discount_data->amount /$service_data->price) * 100;
+                $discount_price_cal = ($discount_data->amount / $service_data->price) * 100;
                 if ($request->discount_value > $discount_price_cal) {
                     $status = false;
                 }
-                $amount_after_per = ($request->discount_value/100)*$service_data->price;
-                $net_amount = $service_data->price-$amount_after_per;
+                $amount_after_per = ($request->discount_value / 100) * $service_data->price;
+                $net_amount = $service_data->price - $amount_after_per;
             }
-        }else{
+        } else {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
-                $discount_price_in_percentage = ($discount_price/$service_data->price)*100;
-                if($discount_price_in_percentage > $discount_data->amount){
+                $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
+                if ($discount_price_in_percentage > $discount_data->amount) {
                     return false;
                 }
                 $net_amount = ($service_data->price) - ($request->discount_value);
             } else {
-                if($request->discount_value > $discount_data->amount){
+                if ($request->discount_value > $discount_data->amount) {
                     return false;
                 }
                 $discount_price = $request->discount_value;
-                $discount_price_in_percentage = ($request->discount_value/100)*$service_data->price;
+                $discount_price_in_percentage = ($request->discount_value / 100) * $service_data->price;
                 $net_amount = ($service_data->price) - ($discount_price_in_percentage);
             }
         }
         if ($status == true) {
             return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
-                'net_amount' => $net_amount
+                'net_amount' => $net_amount,
             ]);
         }
+
         return ApiHelper::apiResponse($this->success, 'Net Amount', false);
     }
 
@@ -460,7 +453,7 @@ class PackagesController extends Controller
     {
         $status = PackageService::where([
             ['package_bundle_id', '=', $request->id],
-            ['is_consumed', '=', '1']
+            ['is_consumed', '=', '1'],
         ])->first();
         if ($status) {
 
@@ -469,10 +462,10 @@ class PackagesController extends Controller
         } else {
 
             $packageService = PackageBundles::find($request->id);
-            if($request->package_total == ''){
-                $request->merge([ 'package_total' => 0]);
+            if ($request->package_total == '') {
+                $request->merge(['package_total' => 0]);
             }
-            $package_total = str_replace( ',', '', $request->package_total);//filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+            $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
 
             $total = $package_total - $packageService->tax_including_price;
 
@@ -483,13 +476,13 @@ class PackagesController extends Controller
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
                     $record = Packages::find($packageService->package_id);
-                    $record->update(['total_price' => $total,'updated_at'=>Filters::getCurrentTimeStamp()]);
+                    $record->update(['total_price' => $total, 'updated_at' => Filters::getCurrentTimeStamp()]);
                 }
             }
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'total' => $total,
-                'id' => $request->id
+                'id' => $request->id,
             ]);
         }
     }
@@ -506,16 +499,15 @@ class PackagesController extends Controller
             PackageService::where('random_id', '=', $request->random_id)->forcedelete();
             PackageBundles::where('random_id', '=', $request->random_id)->forcedelete();
 
-            return response()->json(array(
-                'status' => true
-            ));
+            return response()->json([
+                'status' => true,
+            ]);
         }
 
-        return response()->json(array(
-            'status' => false
-        ));
+        return response()->json([
+            'status' => false,
+        ]);
     }
-
 
     /**
      * save package
@@ -526,19 +518,19 @@ class PackagesController extends Controller
     {
         DB::beginTransaction();
         try {
-            if(isset($request->appointment_id)){
+            if (isset($request->appointment_id)) {
                 $tag_appoint = explode('.', $request->appointment_id);
                 if ($tag_appoint[1] == 'A') {
                     $appointment_id = $tag_appoint[0];
                 } else {
                     $PlanAppointmentCalculation = new PlanAppointmentCalculation();
-                    $appointment_id = $PlanAppointmentCalculation->storeAppointment($request->patient_id, $request->location_id, $request, $tag_appoint[0],false);
+                    $appointment_id = $PlanAppointmentCalculation->storeAppointment($request->patient_id, $request->location_id, $request, $tag_appoint[0], false);
                     $PlanAppointmentCalculation->saveinvoice($appointment_id);
                 }
             } else {
-                return response()->json(array(
+                return response()->json([
                     'status' => false,
-                ));
+                ]);
             }
             /*save Package information and also update random id in package service table*/
             $data_package = $request->all();
@@ -547,17 +539,17 @@ class PackagesController extends Controller
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['is_exclusive'] = $request->is_exclusive;
             $data_package['appointment_id'] = $appointment_id;
-            $data_package['created_at'] =Filters::getCurrentTimeStamp();
-            $data_package['updated_at'] =Filters::getCurrentTimeStamp();
+            $data_package['created_at'] = Filters::getCurrentTimeStamp();
+            $data_package['updated_at'] = Filters::getCurrentTimeStamp();
             $package = Packages::createRecord($data_package, $request);
             /*End*/
             if ($request->cash_amount == '0') {
                 // Commit Transaction
                 DB::commit();
 
-                return response()->json(array(
+                return response()->json([
                     'status' => true,
-                ));
+                ]);
             } else {
                 /*Save data in package advances*/
                 $data_packageAdvances['cash_flow'] = 'in';
@@ -574,7 +566,7 @@ class PackagesController extends Controller
                 /*End*/
                 $packageAdavances = PackageAdvances::createRecord($data_packageAdvances, $package);
                 /////Save activity////
-                $patient = User::whereId( $request->patient_id)->first();
+                $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
                 $activity = new Activity();
                 $activity->action = 'received';
@@ -592,18 +584,18 @@ class PackagesController extends Controller
                 // Commit Transaction
                 DB::commit();
 
-                return response()->json(array(
+                return response()->json([
                     'status' => true,
-                ));
+                ]);
             }
         } catch (\Exception $e) {
             dd($e);
             // Rollback Transaction
             DB::rollback();
 
-            return response()->json(array(
+            return response()->json([
                 'status' => false,
-            ));
+            ]);
         }
     }
 
@@ -611,7 +603,6 @@ class PackagesController extends Controller
      * Get service info
      *
      * @param request
-     *
      * @return mixed
      */
     public function getserviceinfo(Request $request)
@@ -625,9 +616,9 @@ class PackagesController extends Controller
 
         if ($bundle && $bundle->type == 'single') {
 
-            $bundleService = BundleHasServices::where(array(
-                'bundle_id' => $bundle->id
-            ))->first();
+            $bundleService = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+            ])->first();
 
             $service_id = $bundleService->service_id;
 
@@ -637,14 +628,14 @@ class PackagesController extends Controller
 
             $discounts = Discounts::whereIn('id', $discountIds)->where([
                 ['discount_type', '=', 'Treatment'],
-                ['active', '=', '1']
+                ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
 
         } else {
             if ($bundle && $bundle->apply_discount == '1') {
-                $bundleServices = BundleHasServices::where(array(
-                    'bundle_id' => $bundle->id
-                ))->get();
+                $bundleServices = BundleHasServices::where([
+                    'bundle_id' => $bundle->id,
+                ])->get();
                 foreach ($bundleServices as $bundleService) {
                     $service_id = $bundleService->service_id;
                     $location_id = $request->location_id;
@@ -653,14 +644,14 @@ class PackagesController extends Controller
                 $uniq_array = [];
                 foreach ($discountIds as $discountId) {
                     foreach ($discountId as $singledata) {
-                        if (!in_array($singledata, $uniq_array)) {
+                        if (! in_array($singledata, $uniq_array)) {
                             $uniq_array[] = $singledata;
                         }
                     }
                 }
                 $discounts = Discounts::whereIn('id', $uniq_array)->where([
                     ['discount_type', '=', 'Treatment'],
-                    ['active', '=', '1']
+                    ['active', '=', '1'],
                 ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
             }
         }
@@ -689,7 +680,7 @@ class PackagesController extends Controller
                 /*Now checked birthday valid or not*/
                 if ($patient_info->dob) {
 
-                    $patientbirthday = Carbon::parse($patient_info->dob)->format($today_3->year . '-' . 'm-d');
+                    $patientbirthday = Carbon::parse($patient_info->dob)->format($today_3->year.'-'.'m-d');
 
                     if (($patientbirthday >= $predate) && ($patientbirthday <= $postdate)) {
                     } else {
@@ -701,7 +692,7 @@ class PackagesController extends Controller
             }
         }
         /*end*/
-        $Discount_array = array();
+        $Discount_array = [];
         if (count($discounts) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
@@ -711,23 +702,23 @@ class PackagesController extends Controller
                             $discount_type = $discount->type;
                             $discount_price = $discount->amount;
                             $net_amount = ($service_data->price) - ($discount_price);
-                            $Discount_array[$discount->id] = array(
+                            $Discount_array[$discount->id] = [
                                 'id' => $discount->id,
                                 'discount_type' => $discount_type,
                                 'discount_price' => $discount_price,
-                                'net_amount' => $net_amount
-                            );
+                                'net_amount' => $net_amount,
+                            ];
                         } else {
                             $discount_type = $discount->type;
                             $discount_price = $discount->amount;
                             $discount_price_cal = $service_data->price * (($discount_price) / 100);
                             $net_amount = ($service_data->price) - ($discount_price_cal);
-                            $Discount_array[$discount->id] = array(
+                            $Discount_array[$discount->id] = [
                                 'id' => $discount->id,
                                 'discount_type' => $discount_type,
                                 'discount_price' => $discount_price,
-                                'net_amount' => $net_amount
-                            );
+                                'net_amount' => $net_amount,
+                            ];
                         }
                     }
                 }
@@ -750,11 +741,12 @@ class PackagesController extends Controller
                     //     'dis_price_info' => $select_discount,
                     // ));
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
+
                     return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '0',
                         'dis_price_info' => $select_discount,
-                        'net_amount' => $service_data->price
+                        'net_amount' => $service_data->price,
                     ]);
                 } else {
                     $discounts = $discounts->toArray();
@@ -763,14 +755,14 @@ class PackagesController extends Controller
                     return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '1',
-                        'net_amount' => $service_data->price
+                        'net_amount' => $service_data->price,
                     ]);
                 }
             }
         }
 
         return ApiHelper::apiResponse($this->success, 'Records found.', false, [
-            'net_amount' => isset($bundle) ? $bundle->price : 0
+            'net_amount' => isset($bundle) ? $bundle->price : 0,
         ]);
     }
 
@@ -778,7 +770,6 @@ class PackagesController extends Controller
      * Get service info whan discount not selected
      *
      * @param request
-     *
      * @return mixed
      */
     public function getservices_for_zero(Request $request)
@@ -788,7 +779,7 @@ class PackagesController extends Controller
         if ($service_data) {
 
             return ApiHelper::apiResponse($this->success, 'Records found', true, [
-                'net_amount' => $service_data->price
+                'net_amount' => $service_data->price,
             ]);
 
         }
@@ -800,16 +791,15 @@ class PackagesController extends Controller
      * calculate the grand total
      *
      * @param request
-     *
      * @return mixed
      */
     public function getgrandtotal(Request $request)
     {
-        $package_total = str_replace( ',', '', $request->total);//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+        $package_total = str_replace(',', '', $request->total); //filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
         $grand_total = number_format($package_total - $request->cash_amount);
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
-            'grand_total' => $grand_total
+            'grand_total' => $grand_total,
         ]);
     }
 
@@ -821,15 +811,15 @@ class PackagesController extends Controller
      */
     public function datatable(Request $request, $id = false)
     {
-        
+
         $filename = 'packages';
 
         $filters = getFilters($request->all());
 
         $apply_filter = checkFilters($filters, $filename);
 
-        $records = array();
-        $records["data"] = array();
+        $records = [];
+        $records['data'] = [];
 
         if (hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
@@ -838,27 +828,27 @@ class PackagesController extends Controller
             if ($packages) {
                 foreach ($packages as $package) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!Packages::isChildExists($package->id, Auth::User()->account_id)) {
+                    if (! Packages::isChildExists($package->id, Auth::User()->account_id)) {
                         $any_deleted = true;
                         $package->delete();
                     }
                 }
             }
             if ($any_deleted) {
-                $records["status"] = true; // pass custom message(useful for getting status of group actions)
-                $records["message"] = "One or more record has been deleted successfully!"; // pass custom message(useful for getting status of group actions)
+                $records['status'] = true; // pass custom message(useful for getting status of group actions)
+                $records['message'] = 'One or more record has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
             } else {
-                $records["status"] = false; // pass custom message(useful for getting status of group actions)
-                $records["message"] = "Child records exist, unable to delete plan!"; // pass custom message(useful for getting status of group actions)
+                $records['status'] = false; // pass custom message(useful for getting status of group actions)
+                $records['message'] = 'Child records exist, unable to delete plan!'; // pass custom message(useful for getting status of group actions)
             }
         }
 
         // Get Total Records
         $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
-        list($orderBy, $order) = getSortBy($request, 'id', 'DESC');
+        [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
 
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
 
@@ -871,7 +861,7 @@ class PackagesController extends Controller
                 $cash_receive = PackageAdvances::where([
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'in'],
-                    ['is_cancel', '=', '0']
+                    ['is_cancel', '=', '0'],
                 ])->sum('cash_amount');
                 $settle_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
@@ -879,7 +869,7 @@ class PackagesController extends Controller
                     ['is_cancel', '=', '0'],
                     ['is_tax', '=', '0'],
                     ['is_adjustment', '=', '0'],
-                    ['is_refund', '=', '0']
+                    ['is_refund', '=', '0'],
                 ])->sum('cash_amount');
                 $settle_tax_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
@@ -887,31 +877,31 @@ class PackagesController extends Controller
                     ['is_cancel', '=', '0'],
                     ['is_tax', '=', '1'],
                     ['is_adjustment', '=', '0'],
-                    ['is_refund', '=', '0']
+                    ['is_refund', '=', '0'],
                 ])->sum('cash_amount');
-                $settle_amount_with_tax=$settle_amount+$settle_tax_amount;
+                $settle_amount_with_tax = $settle_amount + $settle_tax_amount;
                 if ($package->is_refund == '0') {
                     $refund_status = 'No';
                 } else {
                     $refund_status = 'Yes';
                 }
-                $records["data"][] = array(
+                $records['data'][] = [
                     'id' => $package->id,
                     'patient_id' => GeneralFunctions::patientSearchStringAdd($package->user?->id),
                     'name' => $package->user?->name ?? '',
                     'package_id' => $package?->name ?? '',
-                    'location_id' => $package->location->city->name . "-" . $package->location->name,
+                    'location_id' => $package->location->city->name.'-'.$package->location->name,
                     'session_count' => $session_count,
                     'total' => number_format($packageservices_price),
                     'cash_receive' => number_format($cash_receive),
                     'settle_amount' => number_format($settle_amount_with_tax),
                     'refund' => $refund_status,
                     'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
-                    'active' => $package->active
-                );
+                    'active' => $package->active,
+                ];
             }
 
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -921,7 +911,7 @@ class PackagesController extends Controller
             ];
         }
 
-        $records["permissions"] = [
+        $records['permissions'] = [
             'edit' => Gate::allows('plans_edit'),
             'delete' => Gate::allows('plans_destroy'),
             'active' => Gate::allows('plans_active'),
@@ -939,7 +929,7 @@ class PackagesController extends Controller
         ];
 
         if ($id) {
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('patients_plan_edit'),
                 'manage' => Gate::allows('patients_plan_manage'),
                 'delete' => Gate::allows('patients_plan_destroy'),
@@ -961,23 +951,23 @@ class PackagesController extends Controller
         return ApiHelper::apiDataTable($records);
     }
 
-    private function getFiltersData($records) {
+    private function getFiltersData($records)
+    {
 
         $filters = Filters::all(Auth::User()->id, 'packages');
 
         if ($user_id = Filters::get(Auth::User()->id, 'packages', 'patient_id')) {
-            $patient = User::where(array(
-                'id' => $user_id
-            ))->first();
+            $patient = User::where([
+                'id' => $user_id,
+            ])->first();
             if ($patient) {
                 $patient = $patient->toArray();
-            }else{
+            } else {
                 $patient = [];
             }
         } else {
             $patient = [];
         }
-
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
 
@@ -985,7 +975,7 @@ class PackagesController extends Controller
             'package' => [],
             'locations' => $locations,
             'patient' => $patient,
-            'status' => config('constants.status')
+            'status' => config('constants.status'),
         ];
 
         if (isset($filters['created_from'])) {
@@ -1004,12 +994,12 @@ class PackagesController extends Controller
     /**
      * Inactive Record from storage.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function status( Request $request)
+    public function status(Request $request)
     {
-        if (!Gate::allows('plans_inactive')) {
+        if (! Gate::allows('plans_inactive')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -1025,7 +1015,6 @@ class PackagesController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
@@ -1036,7 +1025,7 @@ class PackagesController extends Controller
     /**
      * Display the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function show($id)
@@ -1047,12 +1036,12 @@ class PackagesController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
-        if (!Gate::allows('plans_edit')) {
+        if (! Gate::allows('plans_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -1069,18 +1058,18 @@ class PackagesController extends Controller
             $packageadvances = PackageAdvances::with('paymentmode')->where([
                 ['package_id', '=', $package->id],
                 ['is_cancel', '=', '0'],
-            // ['is_tax', '=', '0'],
-                ['is_adjustment', '=', '0']
-            //['is_refund', '=', '0']
+                // ['is_tax', '=', '0'],
+                ['is_adjustment', '=', '0'],
+                //['is_refund', '=', '0']
             ])->get();
             $user_has_location = UserHasLocations::where('user_id', '=', Auth::User()->id)->get()->toArray();
             if ($user_has_location) {
                 foreach ($user_has_location as $userhaslocation) {
                     $location = Locations::where([
                         ['id', '=', $userhaslocation['location_id']],
-                        ['account_id', '=', Auth::User()->account_id]
+                        ['account_id', '=', Auth::User()->account_id],
                     ])->first();
-                    if($location){
+                    if ($location) {
                         if ($location->slug == 'custom') {
                             $locations[] = $location;
                         }
@@ -1093,12 +1082,12 @@ class PackagesController extends Controller
             $cash_amount_in = PackageAdvances::where([
                 ['package_id', '=', $package->id],
                 ['cash_flow', '=', 'in'],
-                ['is_cancel', '=', '0']
+                ['is_cancel', '=', '0'],
             ])->sum('cash_amount');
 
             $cash_amount_out = PackageAdvances::where([
                 ['package_id', '=', $package->id],
-                ['cash_flow', '=', 'out']
+                ['cash_flow', '=', 'out'],
             ])->sum('cash_amount');
 
             $cash_amount = $cash_amount_in - $cash_amount_out;
@@ -1130,7 +1119,6 @@ class PackagesController extends Controller
 
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
 
-
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
@@ -1148,16 +1136,15 @@ class PackagesController extends Controller
                 'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
             ]);
 
-    } catch(\Exception $e) {
-        return ApiHelper::apiException($e);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
-}
 
     /**
      * calculate the grand total
      *
      * @param request
-     *
      * @return mixed
      */
     public function getgrandtotal_update(Request $request)
@@ -1166,15 +1153,16 @@ class PackagesController extends Controller
         $packageadvances_cash_amount = PackageAdvances::where([
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
-            ['is_cancel', '=', '0']
+            ['is_cancel', '=', '0'],
         ])->sum('cash_amount');
         $package_advances_cash_amount = $packageadvances_cash_amount;
-        $package_total = str_replace( ',', '', $request->total );
+        $package_total = str_replace(',', '', $request->total);
         $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
-        $package_id =Packages::whereId($package->id)->first();
-        $package_id->update(['total_price'=>$request->total,'updated_at'=>Filters::getCurrentTimeStamp()]);
+        $package_id = Packages::whereId($package->id)->first();
+        $package_id->update(['total_price' => $request->total, 'updated_at' => Filters::getCurrentTimeStamp()]);
+
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
-            'grand_total' => $grand_total
+            'grand_total' => $grand_total,
         ]);
     }
 
@@ -1187,16 +1175,16 @@ class PackagesController extends Controller
     {
         DB::beginTransaction();
         try {
-            if(isset($request->appointment_id)){
+            if (isset($request->appointment_id)) {
                 $tag_appoint = explode('.', $request->appointment_id);
                 if ($tag_appoint[1] == 'A') {
                     $appointment_id = $tag_appoint[0];
                 } else {
                     $PlanAppointmentCalculation = new PlanAppointmentCalculation();
-                    $package_info_tag = Packages::where('random_id','=',$request->random_id)->first();
+                    $package_info_tag = Packages::where('random_id', '=', $request->random_id)->first();
                     $appointment_decision = Appointments::find($package_info_tag->appointment_id);
-                    if(isset($appointment_decision)){
-                        $appointment_id = $PlanAppointmentCalculation->updateAppointment($request->patient_id, $request->location_id, $request, $tag_appoint[0],$package_info_tag);
+                    if (isset($appointment_decision)) {
+                        $appointment_id = $PlanAppointmentCalculation->updateAppointment($request->patient_id, $request->location_id, $request, $tag_appoint[0], $package_info_tag);
                     } else {
                         $appointment_id = $PlanAppointmentCalculation->storeAppointment($request->patient_id, $request->location_id, $request, $tag_appoint[0], false);
                         $PlanAppointmentCalculation->saveinvoice($appointment_id);
@@ -1208,7 +1196,7 @@ class PackagesController extends Controller
             /*save Package information and also update random id in package service table*/
 
             $data_package = $request->all();
-            $data_package['total_price'] = str_replace( ',', '', $request->total );//filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+            $data_package['total_price'] = str_replace(',', '', $request->total); //filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
             $data_package['sessioncount'] = '1';
             $data_package['account_id'] = Auth::User()->account_id;
             $data_package['appointment_id'] = $appointment_id;
@@ -1239,7 +1227,7 @@ class PackagesController extends Controller
                 /*End*/
 
                 $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
-                $patient = User::whereId( $request->patient_id)->first();
+                $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
                 $activity = new Activity();
                 $activity->action = 'received';
@@ -1264,19 +1252,19 @@ class PackagesController extends Controller
             // Rollback Transaction
             DB::rollback();
 
-            return ApiHelper::apiResponse($this->success, $e->getMessage(). ' - '.$e->getFile(). ' - ' .$e->getLine(), false);
+            return ApiHelper::apiResponse($this->success, $e->getMessage().' - '.$e->getFile().' - '.$e->getLine(), false);
         }
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
-        if (!Gate::allows('plans_destroy')) {
+        if (! Gate::allows('plans_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -1289,12 +1277,12 @@ class PackagesController extends Controller
     /**
      * display the package.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function display($id)
     {
-        if (!Gate::allows('plans_manage')) {
+        if (! Gate::allows('plans_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -1308,21 +1296,20 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['is_cancel', '=', '0'],
             //['is_tax', '=', '0'],
-            ['is_adjustment', '=', '0']
-           //['is_refund', '=', '0']
+            ['is_adjustment', '=', '0'],
+            //['is_refund', '=', '0']
         ])->get();
-
 
         $packageadvances = $this->appointmentPackage($packageadvances);
 
         $cash_amount_in = PackageAdvances::where([
             ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'in']
+            ['cash_flow', '=', 'in'],
         ])->sum('cash_amount');
 
         $cash_amount_out = PackageAdvances::where([
             ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'out']
+            ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
 
         $cash_amount = $cash_amount_in - $cash_amount_out;
@@ -1330,7 +1317,7 @@ class PackagesController extends Controller
         /*We discuss it in future what happen next*/
 
         //$grand_total = number_format($package->total_price - $cash_amount_in);
-        $grand_total = round($packageservices_price,2);
+        $grand_total = round($packageservices_price, 2);
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
@@ -1343,24 +1330,25 @@ class PackagesController extends Controller
             'services' => $services,
             'discount' => $discount,
             'paymentmodes' => $paymentmodes,
-            'grand_total' => $grand_total
+            'grand_total' => $grand_total,
         ]);
 
     }
 
-    private function appointmentPackage($packageadvances) {
+    private function appointmentPackage($packageadvances)
+    {
 
         if ($packageadvances->count() > 0) {
 
             $packageAdvancesCollection = [];
             foreach ($packageadvances as $packageadvance) {
                 if ($packageadvance->cash_flow == 'out' && $packageadvance->is_tax == 0) {
-                    if (!is_null($packageadvance->refund_note)) {
+                    if (! is_null($packageadvance->refund_note)) {
                         $packageadvance->package_refund_price = number_format(PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id, $packageadvance->id));
                     } else {
                         $packageadvance->package_refund_price = number_format(PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id));
                     }
-                } else if($packageadvance->is_tax == 0) {
+                } elseif ($packageadvance->is_tax == 0) {
                     $packageadvance->package_refund_price = number_format($packageadvance->cash_amount);
                 } else {
                     $packageadvance->package_refund_price = '00.00';
@@ -1368,25 +1356,25 @@ class PackagesController extends Controller
                 $packageadvance->created_at_formated = Carbon::parse($packageadvance->created_at)->format('F j,Y H:i A');
 
                 $packageAdvancesCollection[] = $packageadvance;
-                
+
             }
-            
+
             return $packageAdvancesCollection;
         }
-        
+
         return $packageadvances;
     }
 
     /**
      * Print the package.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function package_pdf($id)
     {
 
-        if (!Gate::allows('plans_manage')) {
+        if (! Gate::allows('plans_manage')) {
             return abort(401);
         }
         $package = Packages::find($id);
@@ -1402,17 +1390,17 @@ class PackagesController extends Controller
         $packageadvances = PackageAdvances::where([
             ['package_id', '=', $package->id],
             ['is_cancel', '=', '0'],
-            ['is_adjustment', '=', '0']
+            ['is_adjustment', '=', '0'],
         ])->get();
 
         $cash_amount_in = PackageAdvances::where([
             ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'in']
+            ['cash_flow', '=', 'in'],
         ])->sum('cash_amount');
 
         $cash_amount_out = PackageAdvances::where([
             ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'out']
+            ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
         $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
         $cash_amount = $cash_amount_in - $cash_amount_out;
@@ -1430,6 +1418,7 @@ class PackagesController extends Controller
         $content = view('admin.packages.packagepdf', compact('package', 'packagebundles', 'packageservices', 'packageadvances', 'services', 'discount', 'paymentmodes', 'grand_total', 'location_info', 'account_info', 'company_phone_number'));
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content);
+
         return $pdf->stream('treatment-plans-invoice-C-'.$package->patient_id.'.pdf');
 
     }
@@ -1446,9 +1435,9 @@ class PackagesController extends Controller
         return ApiHelper::apiResponse($this->success, 'data found', true, [
             'pack_adv_info' => $pack_adv_info,
             'package_id' => $package_id,
-            'paymentmodes' => $paymentmodes
+            'paymentmodes' => $paymentmodes,
         ]);
-      //  return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
+        //  return view('admin.packages.finance_edit.create', compact('pack_adv_info', 'package_id', 'paymentmodes'));
     }
 
     /*
@@ -1460,21 +1449,21 @@ class PackagesController extends Controller
         $package_total_price = PackageBundles::where('package_id', '=', $request->package_id)->sum('tax_including_price');
         $get_package_use_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'out']
+            ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
         $get_package_unused_amount_except_edit = PackageAdvances::where([
             ['id', '!=', $request->package_advances_id],
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'in'],
-            ['is_cancel', '=', '0']
+            ['is_cancel', '=', '0'],
         ])->sum('cash_amount');
         $get_package_unused_amount_with_edit = $request->cash_amount;
         $get_package_unuse_amount = $get_package_unused_amount_except_edit + $get_package_unused_amount_with_edit;
         $amount_status = true;
         $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
         if ($record) {
-            return ApiHelper::apiResponse($this->success, 'Data Updated successfully.',  true, [
-                'amount_status' => $amount_status
+            return ApiHelper::apiResponse($this->success, 'Data Updated successfully.', true, [
+                'amount_status' => $amount_status,
             ]);
         }
     }
@@ -1488,12 +1477,12 @@ class PackagesController extends Controller
 
         $get_package_use_amount = PackageAdvances::where([
             ['package_id', '=', $packageadvanceinfo->package_id],
-            ['cash_flow', '=', 'out']
+            ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
         $get_package_unused_amount_except_edit = PackageAdvances::where([
             ['id', '!=', $request->package_advance_id],
             ['package_id', '=', $packageadvanceinfo->package_id],
-            ['cash_flow', '=', 'in']
+            ['cash_flow', '=', 'in'],
         ])->sum('cash_amount');
         if ($get_package_use_amount <= $get_package_unused_amount_except_edit) {
 
@@ -1502,9 +1491,8 @@ class PackagesController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Record deleted successfully.', true, [
                 'id' => $request->package_advance_id,
-                'cash_receveive_remain' => $cash_receveive_remain
+                'cash_receveive_remain' => $cash_receveive_remain,
             ]);
-
 
         }
 
@@ -1528,22 +1516,22 @@ class PackagesController extends Controller
      */
     public function packagelog($id, $type)
     {
-        if (!Gate::allows('plans_log')) {
+        if (! Gate::allows('plans_log')) {
             return abort(401);
         }
 
-        $action_array = array(
+        $action_array = [
             1 => 'Create',
             2 => 'Edit',
             3 => 'Delete',
             4 => 'Inactive',
             5 => 'Active',
             6 => 'Cancel',
-        );
-        $table_array = array(
-            25 => 'Finance'
-        );
-        $finance_log = array();
+        ];
+        $table_array = [
+            25 => 'Finance',
+        ];
+        $finance_log = [];
 
         $find_ids = PackageAdvances::withTrashed()->where('package_id', '=', $id)->pluck('id')->toArray();
 
@@ -1553,7 +1541,7 @@ class PackagesController extends Controller
 
         $count = 1;
         foreach ($audittrails as $audittrail) {
-            $finance_log[$audittrail->id] = array(
+            $finance_log[$audittrail->id] = [
                 'sr no' => $count++,
                 'id' => $audittrail->id,
                 'action' => $action_array[$audittrail->audit_trail_action_name],
@@ -1561,9 +1549,9 @@ class PackagesController extends Controller
                 'user_id' => $audittrail->user->name,
                 'created_at_orignal' => $audittrail->created_at,
                 'updated_at_orignal' => $audittrail->updated_at,
-                'detail_log' => array(),
+                'detail_log' => [],
 
-            );
+            ];
 
             $audittrail_changes = AuditTrailChanges::where('audit_trail_id', '=', $audittrail->id)->get();
 
@@ -1578,17 +1566,17 @@ class PackagesController extends Controller
                     $finance_log[$audittrail->id][$changes->field_name] = $result;
                 }
             }
-            if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
+            if (! isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
                 $type_2_detail = AuditTrailChanges::where('audit_trail_id', '=', $finance_log[$audittrail->id]['id'])->get();
 
                 foreach ($type_2_detail as $detail) {
                     $result = Financelog::Calculate_Val($detail);
-                    $finance_log[$audittrail->id]['detail_log'][$detail->id] = array(
+                    $finance_log[$audittrail->id]['detail_log'][$detail->id] = [
                         'field_name' => $detail->field_name,
                         'field_before' => $result['before'],
-                        'field_after' => $result['after']
-                    );
+                        'field_after' => $result['after'],
+                    ];
                 }
             }
         }
@@ -1607,35 +1595,36 @@ class PackagesController extends Controller
 
     }
 
-    public function planDatatable(Request $request, $id) {
+    public function planDatatable(Request $request, $id)
+    {
 
         $records = [];
 
-        $action_array = array(
+        $action_array = [
             1 => 'Create',
             2 => 'Edit',
             3 => 'Delete',
             4 => 'Inactive',
             5 => 'Active',
             6 => 'Cancel',
-        );
-        $table_array = array(
-            25 => 'Finance'
-        );
-        $finance_log = array();
+        ];
+        $table_array = [
+            25 => 'Finance',
+        ];
+        $finance_log = [];
 
         $find_ids = PackageAdvances::withTrashed()->where('package_id', '=', $id)->pluck('id')->toArray();
 
         array_push($find_ids, $id);
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         $iTotalRecords = AuditTrails::whereIn('table_record_id', $find_ids)
             ->where('audit_trail_table_name',
                 Config::get('constants.package_advance_table_name_log')
             )->count();
 
-        list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $audittrails = AuditTrails::whereIn('table_record_id', $find_ids)
             ->where('audit_trail_table_name',
@@ -1644,7 +1633,7 @@ class PackagesController extends Controller
 
         $count = 1;
         foreach ($audittrails as $audittrail) {
-            $finance_log[$audittrail->id] = array(
+            $finance_log[$audittrail->id] = [
                 'sr no' => $count++,
                 'id' => $audittrail->id,
                 'action' => $action_array[$audittrail->audit_trail_action_name],
@@ -1652,9 +1641,9 @@ class PackagesController extends Controller
                 'user_id' => $audittrail->user->name,
                 'created_at_orignal' => $audittrail->created_at,
                 'updated_at_orignal' => $audittrail->updated_at,
-                'detail_log' => array(),
+                'detail_log' => [],
 
-            );
+            ];
 
             $audittrail_changes = AuditTrailChanges::where('audit_trail_id', '=', $audittrail->id)->get();
 
@@ -1669,17 +1658,17 @@ class PackagesController extends Controller
                     $finance_log[$audittrail->id][$changes->field_name] = $result;
                 }
             }
-            if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
+            if (! isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
                 $type_2_detail = AuditTrailChanges::where('audit_trail_id', '=', $finance_log[$audittrail->id]['id'])->get();
 
                 foreach ($type_2_detail as $detail) {
                     $result = Financelog::Calculate_Val($detail);
-                    $finance_log[$audittrail->id]['detail_log'][$detail->id] = array(
+                    $finance_log[$audittrail->id]['detail_log'][$detail->id] = [
                         'field_name' => $detail->field_name,
                         'field_before' => $result['before'],
-                        'field_after' => $result['after']
-                    );
+                        'field_after' => $result['after'],
+                    ];
                 }
             }
         }
@@ -1692,9 +1681,9 @@ class PackagesController extends Controller
 
         if (! empty($finance_log)) {
 
-            $records["data"] = $finance_log;
+            $records['data'] = $finance_log;
 
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -1713,7 +1702,7 @@ class PackagesController extends Controller
 
     public function packagelogexcel($id, $finance_log)
     {
-        if (!Gate::allows('plans_log')) {
+        if (! Gate::allows('plans_log')) {
             return abort(401);
         }
 
@@ -1725,7 +1714,6 @@ class PackagesController extends Controller
 
         $activeSheet->setCellValue('A1', 'PACKAGE ID')->getStyle('A1')->getFont()->setBold(true);
         $activeSheet->setCellValue('B1', $id);
-
 
         $activeSheet->setCellValue('A2', '#')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', 'Cash Flow')->getStyle('B2')->getFont()->setBold(true);
@@ -1749,64 +1737,61 @@ class PackagesController extends Controller
         $activeSheet->setCellValue('T2', 'Updated At')->getStyle('T2')->getFont()->setBold(true);
         $activeSheet->setCellValue('U2', 'Deleted At')->getStyle('U2')->getFont()->setBold(true);
 
-
         $count = 1;
         $counter = 4;
 
         foreach ($finance_log as $log) {
-            if ((isset($log['package_id']) && $log['package_id'] == $id) || !isset($log['package_id'])) {
-                $activeSheet->setCellValue('A' . $counter, $count++);
-                $activeSheet->setCellValue('B' . $counter, isset($log['cash_flow']) ? $log['cash_flow'] : '-');
-                $activeSheet->setCellValue('C' . $counter, isset($log['cash_amount']) ? $log['cash_amount'] : '-');
-                $activeSheet->setCellValue('D' . $counter, isset($log['is_refund']) ? $log['is_refund'] : '-');
-                $activeSheet->setCellValue('E' . $counter, isset($log['is_adjustment']) ? $log['is_adjustment'] : '-');
-                $activeSheet->setCellValue('F' . $counter, isset($log['is_tax']) ? $log['is_tax'] : '-');
-                $activeSheet->setCellValue('G' . $counter, isset($log['is_cancel']) ? $log['is_cancel'] : '-');
-                $activeSheet->setCellValue('H' . $counter, ($log['action'] == 'Delete') ? 'Yes' : '-');
-                $activeSheet->setCellValue('I' . $counter, isset($log['refund_note']) ? $log['refund_note'] : '-');
-                $activeSheet->setCellValue('J' . $counter, isset($log['payment_mode_id']) ? $log['payment_mode_id'] : '-');
-                $activeSheet->setCellValue('K' . $counter, isset($log['appointment_type_id']) ? $log['appointment_type_id'] : '-');
-                $activeSheet->setCellValue('L' . $counter, isset($log['location_id']) ? $log['location_id'] : '-');
-                $activeSheet->setCellValue('M' . $counter, isset($log['created_by']) ? $log['created_by'] : '-');
-                $activeSheet->setCellValue('N' . $counter, isset($log['cash_flow']) ? isset($log['updated_by']) ? $log['updated_by'] : '-' : $log['user_id']);
-                $activeSheet->setCellValue('O' . $counter, isset($log['package_id']) ? $log['package_id'] : '-');
-                $activeSheet->setCellValue('P' . $counter, isset($log['invoice_id']) ? $log['invoice_id'] : '-');
-                $activeSheet->setCellValue('Q' . $counter, isset($log['created_at']) ? $log['created_at'] == $log['created_at_orignal'] ? '-' : $log['created_at'] : '-');
-                $activeSheet->setCellValue('R' . $counter, isset($log['updated_at']) ? $log['updated_at'] == $log['updated_at_orignal'] ? '-' : $log['updated_at'] : '-');
+            if ((isset($log['package_id']) && $log['package_id'] == $id) || ! isset($log['package_id'])) {
+                $activeSheet->setCellValue('A'.$counter, $count++);
+                $activeSheet->setCellValue('B'.$counter, isset($log['cash_flow']) ? $log['cash_flow'] : '-');
+                $activeSheet->setCellValue('C'.$counter, isset($log['cash_amount']) ? $log['cash_amount'] : '-');
+                $activeSheet->setCellValue('D'.$counter, isset($log['is_refund']) ? $log['is_refund'] : '-');
+                $activeSheet->setCellValue('E'.$counter, isset($log['is_adjustment']) ? $log['is_adjustment'] : '-');
+                $activeSheet->setCellValue('F'.$counter, isset($log['is_tax']) ? $log['is_tax'] : '-');
+                $activeSheet->setCellValue('G'.$counter, isset($log['is_cancel']) ? $log['is_cancel'] : '-');
+                $activeSheet->setCellValue('H'.$counter, ($log['action'] == 'Delete') ? 'Yes' : '-');
+                $activeSheet->setCellValue('I'.$counter, isset($log['refund_note']) ? $log['refund_note'] : '-');
+                $activeSheet->setCellValue('J'.$counter, isset($log['payment_mode_id']) ? $log['payment_mode_id'] : '-');
+                $activeSheet->setCellValue('K'.$counter, isset($log['appointment_type_id']) ? $log['appointment_type_id'] : '-');
+                $activeSheet->setCellValue('L'.$counter, isset($log['location_id']) ? $log['location_id'] : '-');
+                $activeSheet->setCellValue('M'.$counter, isset($log['created_by']) ? $log['created_by'] : '-');
+                $activeSheet->setCellValue('N'.$counter, isset($log['cash_flow']) ? isset($log['updated_by']) ? $log['updated_by'] : '-' : $log['user_id']);
+                $activeSheet->setCellValue('O'.$counter, isset($log['package_id']) ? $log['package_id'] : '-');
+                $activeSheet->setCellValue('P'.$counter, isset($log['invoice_id']) ? $log['invoice_id'] : '-');
+                $activeSheet->setCellValue('Q'.$counter, isset($log['created_at']) ? $log['created_at'] == $log['created_at_orignal'] ? '-' : $log['created_at'] : '-');
+                $activeSheet->setCellValue('R'.$counter, isset($log['updated_at']) ? $log['updated_at'] == $log['updated_at_orignal'] ? '-' : $log['updated_at'] : '-');
 
                 if ($log['action'] == 'Delete') {
-                    $activeSheet->setCellValue('S' . $counter, '-');
-                    $activeSheet->setCellValue('T' . $counter, '-');
+                    $activeSheet->setCellValue('S'.$counter, '-');
+                    $activeSheet->setCellValue('T'.$counter, '-');
                 } else {
-                    $activeSheet->setCellValue('S' . $counter, isset($log['created_at_orignal']) ? \Carbon\Carbon::parse($log['created_at_orignal'])->format('F j,Y h:i A') : '-');
-                    $activeSheet->setCellValue('T' . $counter, isset($log['updated_at_orignal']) ? \Carbon\Carbon::parse($log['updated_at_orignal'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('S'.$counter, isset($log['created_at_orignal']) ? \Carbon\Carbon::parse($log['created_at_orignal'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('T'.$counter, isset($log['updated_at_orignal']) ? \Carbon\Carbon::parse($log['updated_at_orignal'])->format('F j,Y h:i A') : '-');
                 }
 
-                $activeSheet->setCellValue('U' . $counter, isset($log['deleted_at']) ? \Carbon\Carbon::parse($log['deleted_at'])->format('F j, Y h:i A') : '-');
+                $activeSheet->setCellValue('U'.$counter, isset($log['deleted_at']) ? \Carbon\Carbon::parse($log['deleted_at'])->format('F j, Y h:i A') : '-');
 
                 $counter++;
-
 
                 if (isset($log['detail_log']) && count($log['detail_log'])) {
 
                     $countt = 1;
 
-                    $activeSheet->setCellValue('H' . $counter, '#')->getStyle('H' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('I' . $counter, 'Field Name')->getStyle('I' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('J' . $counter, 'Before')->getStyle('J' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('K' . $counter, 'After')->getStyle('K' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('H'.$counter, '#')->getStyle('H'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('I'.$counter, 'Field Name')->getStyle('I'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('J'.$counter, 'Before')->getStyle('J'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('K'.$counter, 'After')->getStyle('K'.$counter)->getFont()->setBold(true);
 
                     $counter++;
 
                     foreach ($log['detail_log'] as $detail) {
-                        $activeSheet->setCellValue('H' . $counter, $countt++);
-                        $activeSheet->setCellValue('I' . $counter, isset($detail['field_name']) ? $detail['field_name'] : '-');
-                        $activeSheet->setCellValue('J' . $counter, isset($detail['field_before']) ? $detail['field_before'] : '-');
-                        $activeSheet->setCellValue('K' . $counter, isset($detail['field_after']) ? $detail['field_after'] : '-');
+                        $activeSheet->setCellValue('H'.$counter, $countt++);
+                        $activeSheet->setCellValue('I'.$counter, isset($detail['field_name']) ? $detail['field_name'] : '-');
+                        $activeSheet->setCellValue('J'.$counter, isset($detail['field_before']) ? $detail['field_before'] : '-');
+                        $activeSheet->setCellValue('K'.$counter, isset($detail['field_after']) ? $detail['field_after'] : '-');
 
                         $counter++;
                     }
-
 
                 }
 
@@ -1814,7 +1799,7 @@ class PackagesController extends Controller
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'PackageLog' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'PackageLog'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1823,7 +1808,7 @@ class PackagesController extends Controller
     /**
      * Load plan Sms History.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function showSMSLogs($id)
@@ -1831,14 +1816,14 @@ class PackagesController extends Controller
         $SMSLogs = SMSLogs::where('package_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
-            'SMSLogs' => $SMSLogs
+            'SMSLogs' => $SMSLogs,
         ]);
     }
 
     /**
      * Re-send Plan SMS
      *
-     * @param \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest $request
+     * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function sendLogSMS(Request $request)
@@ -1860,7 +1845,7 @@ class PackagesController extends Controller
     /**
      * Calling sms log
      *
-     * @param \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest $request
+     * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\Response
      */
     private function resendSMS($smsId, $patient_phone, $preparedText, $package_id)
@@ -1872,24 +1857,24 @@ class PackagesController extends Controller
         $UserOperatorSettings = UserOperatorSettings::getRecord($package_info->account_id, $setting->data);
 
         if ($setting->data == 1) {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'to' => $patient_phone,
                 'text' => $preparedText,
                 'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = TelenorSMSAPI::SendSMS($SMSObj);
         } else {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'from' => $UserOperatorSettings->mask,
                 'to' => $patient_phone,
                 'text' => $preparedText,
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
         if ($response['status']) {
@@ -1906,6 +1891,7 @@ class PackagesController extends Controller
     public function getpackage(Request $request)
     {
         $package = Packages::where('name', 'LIKE', "%{$request->q}%")->select('name', 'id')->get();
+
         return response()->json($package);
     }
 }

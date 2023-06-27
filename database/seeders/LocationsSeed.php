@@ -1,11 +1,11 @@
 <?php
 
-use Illuminate\Database\Seeder;
-use Spatie\Permission\Models\Permission;
-use Spatie\Permission\Models\Role;
 use App\Models\Locations;
 use App\Models\ServiceHasLocations;
 use App\Models\Services;
+use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class LocationsSeed extends Seeder
 {
@@ -79,7 +79,7 @@ class LocationsSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -93,7 +93,7 @@ class LocationsSeed extends Seeder
         $role->givePermissionTo('locations_destroy');
         $role->givePermissionTo('locations_sort');
 
-        $services = Services::where('parent_id','!=','0')->first();
+        $services = Services::where('parent_id', '!=', '0')->first();
 
         $locations = [
             [
@@ -104,23 +104,23 @@ class LocationsSeed extends Seeder
                 'address' => '49, E Block, Maulana Shaukat Ali Road Johar Town,Lahore',
                 'google_map' => 'https://goo.gl/maps/UNQKTGDzdNo',
                 'city_id' => 1,
-                'region_id'=> 5,
-                'sort_no'=>1,
+                'region_id' => 5,
+                'sort_no' => 1,
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
+                'account_id' => '1',
             ],
-            
+
         ];
 
         foreach ($locations as $location) {
             $userObj = $location;
             if ($loc = Locations::create($userObj)) {
-                ServiceHasLocations::create(array(
+                ServiceHasLocations::create([
                     'location_id' => $loc->id,
                     'service_id' => $services->id,
                     'account_id' => $loc->account_id,
-                ));
+                ]);
             }
         }
     }

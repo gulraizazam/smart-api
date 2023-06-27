@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Import\Upload;
 
-use PhpMyAdmin\Plugins\UploadInterface;
-
 use function array_key_exists;
+use PhpMyAdmin\Plugins\UploadInterface;
 use function trim;
 
 /**
@@ -33,8 +32,7 @@ class UploadNoplugin implements UploadInterface
      * This is implementation when no webserver support exists,
      * so it returns just zeroes.
      *
-     * @param string $id upload id
-     *
+     * @param  string  $id upload id
      * @return array|null
      */
     public static function getUploadStatus($id)

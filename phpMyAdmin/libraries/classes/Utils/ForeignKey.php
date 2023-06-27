@@ -14,7 +14,7 @@ final class ForeignKey
     /**
      * Verifies if this table's engine supports foreign keys
      *
-     * @param string $engine engine
+     * @param  string  $engine engine
      */
     public static function isSupported($engine): bool
     {
@@ -81,7 +81,7 @@ final class ForeignKey
     /**
      * Cleanup changes done for foreign key check
      *
-     * @param bool $defaultCheckValue original value for 'FOREIGN_KEY_CHECKS'
+     * @param  bool  $defaultCheckValue original value for 'FOREIGN_KEY_CHECKS'
      */
     public static function handleDisableCheckCleanup(bool $defaultCheckValue): void
     {

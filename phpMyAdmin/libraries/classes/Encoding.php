@@ -143,7 +143,7 @@ class Encoding
     /**
      * Setter for engine. Use with caution, mostly useful for testing.
      *
-     * @param int $engine Engine encoding
+     * @param  int  $engine Engine encoding
      */
     public static function setEngine(int $engine): void
     {
@@ -166,10 +166,9 @@ class Encoding
      * Converts encoding of text according to parameters with detected
      * conversion function.
      *
-     * @param string $src_charset  source charset
-     * @param string $dest_charset target charset
-     * @param string $what         what to convert
-     *
+     * @param  string  $src_charset  source charset
+     * @param  string  $dest_charset target charset
+     * @param  string  $what         what to convert
      * @return string   converted text
      */
     public static function convertString(
@@ -187,10 +186,10 @@ class Encoding
 
         switch (self::$engine) {
             case self::ENGINE_RECODE:
-                return recode_string($src_charset . '..' . $dest_charset, $what);
+                return recode_string($src_charset.'..'.$dest_charset, $what);
 
             case self::ENGINE_ICONV:
-                return iconv($src_charset, $dest_charset . ($GLOBALS['cfg']['IconvExtraParams'] ?? ''), $what);
+                return iconv($src_charset, $dest_charset.($GLOBALS['cfg']['IconvExtraParams'] ?? ''), $what);
 
             case self::ENGINE_MB:
                 return mb_convert_encoding($what, $dest_charset, $src_charset);
@@ -219,7 +218,7 @@ class Encoding
     /**
      * Setter for Kanji encodings. Use with caution, mostly useful for testing.
      *
-     * @param string $value Kanji encodings list
+     * @param  string  $value Kanji encodings list
      */
     public static function setKanjiEncodings(string $value): void
     {
@@ -244,10 +243,9 @@ class Encoding
     /**
      * Kanji string encoding convert
      *
-     * @param string $str  the string to convert
-     * @param string $enc  the destination encoding code
-     * @param string $kana set 'kana' convert to JIS-X208-kana
-     *
+     * @param  string  $str  the string to convert
+     * @param  string  $enc  the destination encoding code
+     * @param  string  $kana set 'kana' convert to JIS-X208-kana
      * @return string   the converted string
      */
     public static function kanjiStrConv(string $str, string $enc, string $kana): string
@@ -276,10 +274,9 @@ class Encoding
     /**
      * Kanji file encoding convert
      *
-     * @param string $file the name of the file to convert
-     * @param string $enc  the destination encoding code
-     * @param string $kana set 'kana' convert to JIS-X208-kana
-     *
+     * @param  string  $file the name of the file to convert
+     * @param  string  $enc  the destination encoding code
+     * @param  string  $kana set 'kana' convert to JIS-X208-kana
      * @return string   the name of the converted file
      */
     public static function kanjiFileConv(string $file, string $enc, string $kana): string
@@ -332,8 +329,6 @@ class Encoding
 
     /**
      * Lists available encodings.
-     *
-     * @return array
      */
     public static function listEncodings(): array
     {

@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\LeadSources;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\LeadSources;
 
 class LeadSourcesSeed extends Seeder
 {
@@ -76,7 +76,7 @@ class LeadSourcesSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -91,46 +91,46 @@ class LeadSourcesSeed extends Seeder
         $role->givePermissionTo('lead_sources_sort');
 
         LeadSources::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'sort_no' => 1,
                 'name' => 'Website',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            2 => array(
+                'account_id' => '1',
+            ],
+            2 => [
                 'id' => 2,
                 'sort_no' => 2,
                 'name' => 'Social Media',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            3 => array(
+                'account_id' => '1',
+            ],
+            3 => [
                 'id' => 3,
                 'sort_no' => 3,
                 'name' => 'Referral',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            4 => array(
+                'account_id' => '1',
+            ],
+            4 => [
                 'id' => 4,
                 'sort_no' => 4,
                 'name' => 'Newspaper/Magazine',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
-            4 => array(
+                'account_id' => '1',
+            ],
+            4 => [
                 'id' => 5,
                 'sort_no' => 5,
                 'name' => 'Other',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-                'account_id'=>'1',
-            ),
+                'account_id' => '1',
+            ],
         ]);
     }
 }

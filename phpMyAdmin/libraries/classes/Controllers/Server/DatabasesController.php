@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Server;
 
+use function __;
+use function array_keys;
+use function array_search;
+use function count;
+use function in_array;
+use function mb_strtolower;
 use PhpMyAdmin\Charsets;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\ConfigStorage\RelationCleanup;
@@ -16,13 +22,6 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function array_keys;
-use function array_search;
-use function count;
-use function in_array;
-use function mb_strtolower;
 use function str_contains;
 use function strlen;
 
@@ -176,8 +175,8 @@ class DatabasesController extends AbstractController
     /**
      * Extracts parameters sort order and sort by
      *
-     * @param string|null $sortBy    sort by
-     * @param string|null $sortOrder sort order
+     * @param  string|null  $sortBy    sort by
+     * @param  string|null  $sortOrder sort order
      */
     private function setSortDetails(?string $sortBy, ?string $sortOrder): void
     {
@@ -209,10 +208,8 @@ class DatabasesController extends AbstractController
     }
 
     /**
-     * @param array $primaryInfo
-     * @param array $replicaInfo
-     *
-     * @return array
+     * @param  array  $primaryInfo
+     * @param  array  $replicaInfo
      */
     private function getDatabases($primaryInfo, $replicaInfo): array
     {
@@ -297,8 +294,6 @@ class DatabasesController extends AbstractController
 
     /**
      * Prepares the statistics columns
-     *
-     * @return array
      */
     private function getStatisticsColumns(): array
     {

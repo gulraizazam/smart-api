@@ -7,6 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Import;
 
+use function __;
+use function count;
+use function implode;
+use function mb_strlen;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\File;
 use PhpMyAdmin\Plugins\ImportPlugin;
@@ -16,11 +20,6 @@ use PhpMyAdmin\Properties\Options\Items\BoolPropertyItem;
 use PhpMyAdmin\Properties\Options\Items\SelectPropertyItem;
 use PhpMyAdmin\Properties\Plugins\ImportPluginProperties;
 use PhpMyAdmin\SqlParser\Utils\BufferedQuery;
-
-use function __;
-use function count;
-use function implode;
-use function mb_strlen;
 use function preg_replace;
 
 /**
@@ -97,7 +96,7 @@ class ImportSql extends ImportPlugin
     /**
      * Handles the whole import logic
      *
-     * @param array $sql_data 2-element array with sql data
+     * @param  array  $sql_data 2-element array with sql data
      */
     public function doImport(?File $importHandle = null, array &$sql_data = []): void
     {
@@ -168,8 +167,8 @@ class ImportSql extends ImportPlugin
     /**
      * Handle compatibility options
      *
-     * @param DatabaseInterface $dbi     Database interface
-     * @param array             $request Request array
+     * @param  DatabaseInterface  $dbi     Database interface
+     * @param  array  $request Request array
      */
     private function setSQLMode($dbi, array $request): void
     {
@@ -187,7 +186,7 @@ class ImportSql extends ImportPlugin
         }
 
         $dbi->tryQuery(
-            'SET SQL_MODE="' . implode(',', $sql_modes) . '"'
+            'SET SQL_MODE="'.implode(',', $sql_modes).'"'
         );
     }
 }

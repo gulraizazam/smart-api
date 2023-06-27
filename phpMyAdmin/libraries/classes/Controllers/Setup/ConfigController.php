@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Setup;
 
-use PhpMyAdmin\Setup\ConfigGenerator;
-
 use function is_string;
+use PhpMyAdmin\Setup\ConfigGenerator;
 
 class ConfigController extends AbstractController
 {
     /**
-     * @param array $params Request parameters
-     *
+     * @param  array  $params Request parameters
      * @return string HTML
      */
     public function __invoke(array $params): string

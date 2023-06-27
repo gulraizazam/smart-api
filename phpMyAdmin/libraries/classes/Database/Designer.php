@@ -4,6 +4,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Database;
 
+use function __;
+use function count;
+use function intval;
+use function is_array;
+use function json_decode;
+use function json_encode;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Database\Designer\DesignerTable;
 use PhpMyAdmin\DatabaseInterface;
@@ -12,13 +18,6 @@ use PhpMyAdmin\Plugins;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Util;
 use stdClass;
-
-use function __;
-use function count;
-use function intval;
-use function is_array;
-use function json_decode;
-use function json_encode;
 use function str_contains;
 
 /**
@@ -36,9 +35,9 @@ class Designer
     public $template;
 
     /**
-     * @param DatabaseInterface $dbi      DatabaseInterface object
-     * @param Relation          $relation Relation instance
-     * @param Template          $template Template instance
+     * @param  DatabaseInterface  $dbi      DatabaseInterface object
+     * @param  Relation  $relation Relation instance
+     * @param  Template  $template Template instance
      */
     public function __construct(DatabaseInterface $dbi, Relation $relation, Template $template)
     {
@@ -50,9 +49,8 @@ class Designer
     /**
      * Function to get html for displaying the page edit/delete form
      *
-     * @param string $db        database name
-     * @param string $operation 'edit' or 'delete' depending on the operation
-     *
+     * @param  string  $db        database name
+     * @param  string  $operation 'edit' or 'delete' depending on the operation
      * @return string html content
      */
     public function getHtmlForEditOrDeletePages($db, $operation)
@@ -70,8 +68,7 @@ class Designer
     /**
      * Function to get html for displaying the page save as form
      *
-     * @param string $db database name
-     *
+     * @param  string  $db database name
      * @return string html content
      */
     public function getHtmlForPageSaveAs($db)
@@ -88,8 +85,7 @@ class Designer
     /**
      * Retrieve IDs and names of schema pages
      *
-     * @param string $db database name
-     *
+     * @param  string  $db database name
      * @return array array of schema page id and names
      */
     private function getPageIdsAndNames($db)
@@ -100,10 +96,10 @@ class Designer
         }
 
         $page_query = 'SELECT `page_nr`, `page_descr` FROM '
-            . Util::backquote($pdfFeature->database) . '.'
-            . Util::backquote($pdfFeature->pdfPages)
-            . " WHERE db_name = '" . $this->dbi->escapeString($db) . "'"
-            . ' ORDER BY `page_descr`';
+            .Util::backquote($pdfFeature->database).'.'
+            .Util::backquote($pdfFeature->pdfPages)
+            ." WHERE db_name = '".$this->dbi->escapeString($db)."'"
+            .' ORDER BY `page_descr`';
         $page_rs = $this->dbi->tryQueryAsControlUser($page_query);
 
         if (! $page_rs) {
@@ -121,9 +117,8 @@ class Designer
     /**
      * Function to get html for displaying the schema export
      *
-     * @param string $db   database name
-     * @param int    $page the page to be exported
-     *
+     * @param  string  $db   database name
+     * @param  int  $page the page to be exported
      * @return string
      */
     public function getHtmlForSchemaExport($db, $page)
@@ -165,11 +160,11 @@ class Designer
         $databaseDesignerSettingsFeature = $this->relation->getRelationParameters()->databaseDesignerSettingsFeature;
         if ($databaseDesignerSettingsFeature !== null) {
             $query = 'SELECT `settings_data` FROM '
-                . Util::backquote($databaseDesignerSettingsFeature->database) . '.'
-                . Util::backquote($databaseDesignerSettingsFeature->designerSettings)
-                . ' WHERE ' . Util::backquote('username') . ' = "'
-                . $dbi->escapeString($GLOBALS['cfg']['Server']['user'])
-                . '";';
+                .Util::backquote($databaseDesignerSettingsFeature->database).'.'
+                .Util::backquote($databaseDesignerSettingsFeature->designerSettings)
+                .' WHERE '.Util::backquote('username').' = "'
+                .$dbi->escapeString($GLOBALS['cfg']['Server']['user'])
+                .'";';
 
             $result = $this->dbi->fetchSingleRow($query);
             if (is_array($result)) {
@@ -232,14 +227,13 @@ class Designer
     /**
      * Get HTML to display tables on designer page
      *
-     * @param string          $db                       The database name from the request
-     * @param DesignerTable[] $designerTables           The designer tables
-     * @param array           $tab_pos                  tables positions
-     * @param int             $display_page             page number of the selected page
-     * @param array           $tab_column               table column info
-     * @param array           $tables_all_keys          all indices
-     * @param array           $tables_pk_or_unique_keys unique or primary indices
-     *
+     * @param  string  $db                       The database name from the request
+     * @param  DesignerTable[]  $designerTables           The designer tables
+     * @param  array  $tab_pos                  tables positions
+     * @param  int  $display_page             page number of the selected page
+     * @param  array  $tab_column               table column info
+     * @param  array  $tables_all_keys          all indices
+     * @param  array  $tables_pk_or_unique_keys unique or primary indices
      * @return string html
      */
     public function getDatabaseTables(
@@ -258,7 +252,7 @@ class Designer
             $table_name = $designerTable->getDbTableString();
             $limit = count($tab_column[$table_name]['COLUMN_ID']);
             for ($j = 0; $j < $limit; $j++) {
-                $table_column_name = $table_name . '.' . $tab_column[$table_name]['COLUMN_NAME'][$j];
+                $table_column_name = $table_name.'.'.$tab_column[$table_name]['COLUMN_NAME'][$j];
                 if (isset($tables_pk_or_unique_keys[$table_column_name])) {
                     $columns_type[$table_column_name] = 'designer/FieldKey_small';
                 } else {
@@ -304,21 +298,20 @@ class Designer
     /**
      * Returns HTML for Designer page
      *
-     * @param string          $db                   database in use
-     * @param string          $getDb                database in url
-     * @param DesignerTable[] $designerTables       The designer tables
-     * @param array           $scriptTables         array on foreign key support for each table
-     * @param array           $scriptContr          initialization data array
-     * @param DesignerTable[] $scriptDisplayField   displayed tables in designer with their display fields
-     * @param int             $displayPage          page number of the selected page
-     * @param bool            $visualBuilderMode    whether this is visual query builder
-     * @param string          $selectedPage         name of the selected page
-     * @param array           $paramsArray          array with class name for various buttons on side menu
-     * @param array|null      $tabPos               table positions
-     * @param array           $tabColumn            table column info
-     * @param array           $tablesAllKeys        all indices
-     * @param array           $tablesPkOrUniqueKeys unique or primary indices
-     *
+     * @param  string  $db                   database in use
+     * @param  string  $getDb                database in url
+     * @param  DesignerTable[]  $designerTables       The designer tables
+     * @param  array  $scriptTables         array on foreign key support for each table
+     * @param  array  $scriptContr          initialization data array
+     * @param  DesignerTable[]  $scriptDisplayField   displayed tables in designer with their display fields
+     * @param  int  $displayPage          page number of the selected page
+     * @param  bool  $visualBuilderMode    whether this is visual query builder
+     * @param  string  $selectedPage         name of the selected page
+     * @param  array  $paramsArray          array with class name for various buttons on side menu
+     * @param  array|null  $tabPos               table positions
+     * @param  array  $tabColumn            table column info
+     * @param  array  $tablesAllKeys        all indices
+     * @param  array  $tablesPkOrUniqueKeys unique or primary indices
      * @return string html
      */
     public function getHtmlForMain(
@@ -345,7 +338,7 @@ class Designer
             $tableName = $designerTable->getDbTableString();
             $limit = count($tabColumn[$tableName]['COLUMN_ID']);
             for ($j = 0; $j < $limit; $j++) {
-                $tableColumnName = $tableName . '.' . $tabColumn[$tableName]['COLUMN_NAME'][$j];
+                $tableColumnName = $tableName.'.'.$tabColumn[$tableName]['COLUMN_NAME'][$j];
                 if (isset($tablesPkOrUniqueKeys[$tableColumnName])) {
                     $columnsType[$tableColumnName] = 'designer/FieldKey_small';
                 } else {

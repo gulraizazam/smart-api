@@ -3,14 +3,13 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Http\Request;
 use Hash;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Validator;
 
 class ChangePasswordController extends Controller
 {
-
     /**
      * Create a new controller instance.
      */
@@ -22,7 +21,7 @@ class ChangePasswordController extends Controller
     /**
      * Where to redirect users after password is changed.
      *
-     * @var string $redirectTo
+     * @var string
      */
     protected $redirectTo = '/change_password';
 
@@ -34,13 +33,12 @@ class ChangePasswordController extends Controller
     public function showChangePasswordForm()
     {
         $user = Auth::user();
+
         return view('admin.profile.change-password', compact('user'));
     }
 
     /**
      * Change password.
-     *
-     * @param Request $request
      */
     public function changePassword(Request $request)
     {
@@ -49,32 +47,32 @@ class ChangePasswordController extends Controller
         $validator = $this->validator($request);
 
         if ($validator->fails()) {
-            return response()->json(array(
+            return response()->json([
                 'status' => 0,
                 'message' => $validator->messages()->all(),
-            ));
+            ]);
         }
 
         if (Hash::check($request->get('current_password'), $user->password)) {
             $user->password = bcrypt($request->get('new_password'));
             $user->save();
 
-            return response()->json(array(
+            return response()->json([
                 'status' => true,
                 'message' => 'Password has been changed successfully.',
-            ));
+            ]);
         } else {
-            return response()->json(array(
+            return response()->json([
                 'status' => false,
                 'message' => 'Current password is incorrect.',
-            ));
+            ]);
         }
     }
 
     /**
      * Get a validator for an incoming change password request.
      *
-     * @param array $data
+     * @param  array  $data
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function validator(Request $request)
@@ -90,6 +88,7 @@ class ChangePasswordController extends Controller
             'new_password.min' => 'New password must be at least 8 characters',
             'new_password.regex' => 'New Password must be a combination of numbers, upper, lower, and special characters',
         ];
+
         return $validator = Validator::make($request->all(), $rules, $messages);
     }
 }

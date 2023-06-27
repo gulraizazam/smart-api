@@ -15,8 +15,8 @@ class CreatePackageAdvancesTable extends Migration
     {
         Schema::create('package_advances', function (Blueprint $table) {
             $table->id();
-            $table->enum('cash_flow', array('in', 'out'))->default('in');
-            $table->double('cash_amount', 11,2)->default(0.00);
+            $table->enum('cash_flow', ['in', 'out'])->default('in');
+            $table->double('cash_amount', 11, 2)->default(0.00);
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedBigInteger('is_refund')->default(0);
             $table->unsignedBigInteger('is_adjustment')->default(0);
@@ -36,10 +36,9 @@ class CreatePackageAdvancesTable extends Migration
             $table->unsignedTinyInteger('is_tax')->default(0);
             $table->unsignedBigInteger('location_id')->nullable();
 
-
             // Manage Foreign Key Relationships
             $table->foreign('location_id', 'package_location_id')->references('id')->on('locations');
-            $table->foreign('invoice_id','package_advances_invoice_id')
+            $table->foreign('invoice_id', 'package_advances_invoice_id')
                 ->references('id')
                 ->on('invoices');
             $table->foreign('appointment_type_id',

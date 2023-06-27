@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Utils;
 
-use PhpMyAdmin\Util;
-
 use function bin2hex;
 use function hex2bin;
 use function inet_ntop;
 use function inet_pton;
 use function ip2long;
 use function long2ip;
+use PhpMyAdmin\Util;
 use function strpos;
 use function substr;
 
@@ -26,8 +25,7 @@ class FormatConverter
     /**
      * Transforms a binary to an IP
      *
-     * @param mixed $buffer Data to transform
-     *
+     * @param  mixed  $buffer Data to transform
      * @return false|string
      */
     public static function binaryToIp($buffer, bool $isBinary)
@@ -49,15 +47,14 @@ class FormatConverter
     /**
      * Transforms an IP to a binary
      *
-     * @param mixed $buffer Data to transform
-     *
+     * @param  mixed  $buffer Data to transform
      * @return string
      */
     public static function ipToBinary($buffer)
     {
         $val = @inet_pton($buffer);
         if ($val !== false) {
-            return '0x' . bin2hex($val);
+            return '0x'.bin2hex($val);
         }
 
         return $buffer;
@@ -66,8 +63,7 @@ class FormatConverter
     /**
      * Transforms an IP to a long
      *
-     * @param string $buffer Data to transform
-     *
+     * @param  string  $buffer Data to transform
      * @return int|string
      */
     public static function ipToLong(string $buffer)
@@ -83,7 +79,7 @@ class FormatConverter
     /**
      * Transforms a long to an IP
      *
-     * @param mixed $buffer Data to transform
+     * @param  mixed  $buffer Data to transform
      */
     public static function longToIp($buffer): string
     {

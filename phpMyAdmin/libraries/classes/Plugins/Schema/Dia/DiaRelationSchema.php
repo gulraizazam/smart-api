@@ -7,9 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Schema\Dia;
 
-use PhpMyAdmin\Plugins\Schema\ExportRelationSchema;
-
 use function in_array;
+use PhpMyAdmin\Plugins\Schema\ExportRelationSchema;
 
 /**
  * Dia Relation Schema Class
@@ -56,7 +55,7 @@ class DiaRelationSchema extends ExportRelationSchema
      * @see TableStatsDia
      * @see RelationStatsDia
      *
-     * @param string $db database name
+     * @param  string  $db database name
      */
     public function __construct($db)
     {
@@ -161,11 +160,11 @@ class DiaRelationSchema extends ExportRelationSchema
      *
      * @see    TableStatsDia::__construct(),RelationStatsDia::__construct()
      *
-     * @param string $masterTable  The master table name
-     * @param string $masterField  The relation field in the master table
-     * @param string $foreignTable The foreign table name
-     * @param string $foreignField The relation field in the foreign table
-     * @param bool   $showKeys     Whether to display ONLY keys or not
+     * @param  string  $masterTable  The master table name
+     * @param  string  $masterField  The relation field in the master table
+     * @param  string  $foreignTable The foreign table name
+     * @param  string  $foreignField The relation field in the foreign table
+     * @param  bool  $showKeys     Whether to display ONLY keys or not
      */
     private function addRelation(
         $masterTable,

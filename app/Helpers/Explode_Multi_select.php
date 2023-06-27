@@ -6,16 +6,15 @@
  * Time: 4:13 PM
  */
 
-
 namespace App\Helpers;
-
-use Illuminate\Http\Request;
 
 class Explode_Multi_select
 {
-    public static function explode($locationids){
+    public static function explode($locationids)
+    {
 
-        $data = explode(",",$locationids);
+        $data = explode(',', $locationids);
+
         return $data;
     }
 }

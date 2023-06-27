@@ -481,17 +481,11 @@ class InternalRelations
         ],
     ];
 
-    /**
-     * @return array
-     */
     public static function getInformationSchema(): array
     {
         return self::$informationSchema;
     }
 
-    /**
-     * @return array
-     */
     public static function getMySql(): array
     {
         return self::$mysql;

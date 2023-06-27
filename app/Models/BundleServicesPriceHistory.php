@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class BundleServicesPriceHistory extends Model
 {
-
     protected $fillable = [
         'bundle_id',
         'bundle_price',
@@ -18,7 +17,7 @@ class BundleServicesPriceHistory extends Model
         'effective_to',
         'created_by',
         'updated_by',
-        'account_id'
+        'account_id',
     ];
 
     protected $table = 'bundle_services_price_history';
@@ -42,11 +41,10 @@ class BundleServicesPriceHistory extends Model
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($data, $account_id)
+    public static function createRecord($data, $account_id)
     {
         // Set Account ID
         $data['account_id'] = $account_id;
@@ -59,21 +57,20 @@ class BundleServicesPriceHistory extends Model
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $data, $account_id)
+    public static function updateRecord($id, $data, $account_id)
     {
         // Set Account ID
         $data['account_id'] = $account_id;
 
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if(!$record) {
+        if (! $record) {
             return null;
         }
 

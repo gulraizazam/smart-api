@@ -5,8 +5,6 @@ namespace App\Console\Commands;
 use App\Models\Discounts;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
-use Maatwebsite\Excel\Exceptions\ConcernConflictException;
-use function GuzzleHttp\Psr7\try_fopen;
 
 class InactiveDiscounts extends Command
 {
@@ -41,17 +39,17 @@ class InactiveDiscounts extends Command
      */
     public function handle()
     {
-        try{
+        try {
             $today = Carbon::now()->subDay(1)->toDateString();
 
-            if ( Discounts::whereDate('end', '<=', $today)->count()){
-                Discounts::whereDate('end','<=', $today)->update(['active' => 0 ]);
+            if (Discounts::whereDate('end', '<=', $today)->count()) {
+                Discounts::whereDate('end', '<=', $today)->update(['active' => 0]);
             }
 
-            return true ;
+            return true;
 
-        }catch ( \Exception $exception ){
-            return $exception->getMessage() . '------'. $exception->getFile();
+        } catch (\Exception $exception) {
+            return $exception->getMessage().'------'.$exception->getFile();
         }
 
     }
