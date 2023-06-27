@@ -2550,7 +2550,7 @@ class DashboardReportsController extends Controller
             $where[] = [['appointments.doctor_id' => $request->doc_id]];
         }
         if ($request->doc_id && $request->centre_id == "all") {
-            $request->request->remove('centre_id');
+            $request->remove('centre_id');
         }
         if ($request->centre_id != 'all') {
             $where[] = [['appointments.location_id' => $request->centre_id]];
