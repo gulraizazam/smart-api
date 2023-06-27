@@ -964,12 +964,12 @@
                 });
 
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                var center_id = $(".doctorwiseconversion").attr('data-id');
+                var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', 'firsttime');
                     GetDoctors(centre_id , 'firsttime');
                 @else
-                var center_id = $(".doctorwiseconversion").attr('data-id');
+                var centre_id = $(".doctorwiseconversion").attr('data-id');
                     GetDoctors(centre_id , 'firsttime');
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
