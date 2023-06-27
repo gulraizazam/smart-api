@@ -2541,6 +2541,8 @@ class DashboardReportsController extends Controller
         $total = 0;
         $appointments_info = array();
         $period = $request->period;
+        $returnCategoryData = [];
+        $total_arrived_appointments=0;
         $periods = GeneralFunctions::GetPeriods();
         $locations = ACL::getUserCentres();
         if ($request->doc_id) {
@@ -2698,7 +2700,7 @@ class DashboardReportsController extends Controller
             });
             $maxConversion = $maxConversion->groupBy('service_id');
 
-            $returnCategoryData = [];
+            
             $new_array = [];
 
             foreach ($maxConversion as $key => $conversions) {
