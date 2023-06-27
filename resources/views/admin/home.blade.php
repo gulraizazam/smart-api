@@ -781,7 +781,7 @@
                                                     @endphp
                                                     <div class="btn-group">
                                                         @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
-                                                            <a data-id=""
+                                                            <a data-id="all"
                                                                 class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
