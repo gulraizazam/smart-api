@@ -17,11 +17,10 @@ class GlobalOperatorSettings extends BaseModal
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary()
+    public static function getAllRecordsDictionary()
     {
         return self::get()->getDictionary();
     }

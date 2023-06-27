@@ -18,8 +18,7 @@ class ShapeFileImport extends ShapeFile
     /**
      * Reads given number of bytes from SHP file
      *
-     * @param int $bytes number of bytes
-     *
+     * @param  int  $bytes number of bytes
      * @return string|false
      */
     public function readSHP(int $bytes)

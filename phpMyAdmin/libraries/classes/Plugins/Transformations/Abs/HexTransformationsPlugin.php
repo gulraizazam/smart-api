@@ -7,13 +7,12 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Transformations\Abs;
 
-use PhpMyAdmin\FieldMetadata;
-use PhpMyAdmin\Plugins\TransformationsPlugin;
-
 use function __;
 use function bin2hex;
 use function chunk_split;
 use function intval;
+use PhpMyAdmin\FieldMetadata;
+use PhpMyAdmin\Plugins\TransformationsPlugin;
 
 /**
  * Provides common methods for all of the hex transformations plugins.
@@ -29,18 +28,17 @@ abstract class HexTransformationsPlugin extends TransformationsPlugin
     {
         return __(
             'Displays hexadecimal representation of data. Optional first'
-            . ' parameter specifies how often space will be added (defaults'
-            . ' to 2 nibbles).'
+            .' parameter specifies how often space will be added (defaults'
+            .' to 2 nibbles).'
         );
     }
 
     /**
      * Does the actual work of each specific transformations plugin.
      *
-     * @param string             $buffer  text to be transformed
-     * @param array              $options transformation options
-     * @param FieldMetadata|null $meta    meta information
-     *
+     * @param  string  $buffer  text to be transformed
+     * @param  array  $options transformation options
+     * @param  FieldMetadata|null  $meta    meta information
      * @return string
      */
     public function applyTransformation($buffer, array $options = [], ?FieldMetadata $meta = null)

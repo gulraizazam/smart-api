@@ -21,12 +21,13 @@ final class DatabaseName implements Stringable
 
     /**
      * @var string
+     *
      * @psalm-var non-empty-string
      */
     private $name;
 
     /**
-     * @param mixed $name
+     * @param  mixed  $name
      *
      * @throws InvalidArgumentException
      */
@@ -39,7 +40,7 @@ final class DatabaseName implements Stringable
     }
 
     /**
-     * @param mixed $name
+     * @param  mixed  $name
      *
      * @throws InvalidArgumentException
      */

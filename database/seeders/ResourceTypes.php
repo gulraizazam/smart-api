@@ -20,9 +20,9 @@ class ResourceTypes extends Seeder
 
         \App\Models\ResourceTypes::insert([
             [
-              'name' => 'Machine',
-              'slug' => 'Machine',
-              'active' => 1,
+                'name' => 'Machine',
+                'slug' => 'Machine',
+                'active' => 1,
             ],
         ]);
 

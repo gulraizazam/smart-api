@@ -1,9 +1,9 @@
 <?php
 
+use App\Models\Regions;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
-use App\Models\Regions;
 
 class RegionsSeed extends Seeder
 {
@@ -77,7 +77,7 @@ class RegionsSeed extends Seeder
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
                 'parent_id' => $MainPermission->id,
-            ]
+            ],
         ]);
 
         $role = Role::findOrFail(1);
@@ -92,60 +92,60 @@ class RegionsSeed extends Seeder
         $role->givePermissionTo('regions_sort');
 
         Regions::insert([
-            1 => array(
+            1 => [
                 'id' => 1,
                 'name' => 'East Region',
-                'sort_number'=>'2',
-                'slug'=> 'custom',
-                'account_id'=>'1',
+                'sort_number' => '2',
+                'slug' => 'custom',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            2 => array(
+            ],
+            2 => [
                 'id' => 2,
                 'name' => 'West Region',
-                'sort_number'=>'3',
-                'slug'=> 'custom',
-                'account_id'=>'1',
+                'sort_number' => '3',
+                'slug' => 'custom',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            3 => array(
+            ],
+            3 => [
                 'id' => 3,
                 'name' => 'North Region',
-                'sort_number'=>'4',
-                'slug'=> 'custom',
-                'account_id'=>'1',
+                'sort_number' => '4',
+                'slug' => 'custom',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            4 => array(
+            ],
+            4 => [
                 'id' => 4,
                 'name' => 'South Region',
-                'sort_number'=>'5',
-                'slug'=> 'custom',
-                'account_id'=>'1',
+                'sort_number' => '5',
+                'slug' => 'custom',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            5 => array(
+            ],
+            5 => [
                 'id' => 5,
                 'name' => 'Central Region',
-                'sort_number'=>'6',
-                'slug'=> 'custom',
-                'account_id'=>'1',
+                'sort_number' => '6',
+                'slug' => 'custom',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
-            6 => array(
+            ],
+            6 => [
                 'id' => 6,
                 'name' => 'All Regions',
-                'sort_number'=>'1',
-                'slug'=> 'all',
-                'account_id'=>'1',
+                'sort_number' => '1',
+                'slug' => 'all',
+                'account_id' => '1',
                 'created_at' => \Carbon\Carbon::now(),
                 'updated_at' => \Carbon\Carbon::now(),
-            ),
+            ],
         ]);
 
     }

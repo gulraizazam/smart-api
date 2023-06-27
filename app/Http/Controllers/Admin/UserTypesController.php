@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Gate;
-use App\Models\UserTypes;
-use Illuminate\Support\Facades\Auth;
 use App\HelperModule\ApiHelper;
+use App\Http\Controllers\Controller;
+use App\Models\UserTypes;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Validator;
-
 
 class UserTypesController extends Controller
 {
@@ -26,7 +25,6 @@ class UserTypesController extends Controller
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
 
-
     /**
      * Display a listing of the resource.
      *
@@ -34,7 +32,7 @@ class UserTypesController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('user_types_manage')) {
+        if (! Gate::allows('user_types_manage')) {
             return abort(401);
         }
 
@@ -48,7 +46,7 @@ class UserTypesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('user_types_create')) {
+        if (! Gate::allows('user_types_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -62,12 +60,11 @@ class UserTypesController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request $request
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
-        if (!Gate::allows('user_types_create')) {
+        if (! Gate::allows('user_types_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -89,7 +86,6 @@ class UserTypesController extends Controller
     /**
      * Validate form fields
      *
-     * @param  \Illuminate\Http\Request $request
      * @return Validator $validator;
      */
     protected function verifyFields(Request $request)
@@ -105,42 +101,42 @@ class UserTypesController extends Controller
      * */
     public function datatable(Request $request)
     {
-        $records = array();
-        $records["data"] = array();
+        $records = [];
+        $records['data'] = [];
 
         $filters = getFilters($request->all());
 
-        if(count($filters) > 0 && hasFilter($filters, 'delete')  != '') {
+        if (count($filters) > 0 && hasFilter($filters, 'delete') != '') {
             $ids = explode(',', $filters['delete']);
             $usertypes = UserTypes::getBulkData($ids);
             if ($usertypes) {
                 foreach ($usertypes as $usertype) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!UserTypes::isChildExists($usertype->id, Auth::User()->account_id)) {
+                    if (! UserTypes::isChildExists($usertype->id, Auth::User()->account_id)) {
                         $usertype->delete();
                     }
                 }
             }
-            $records["status"] = true;
-            $records["message"] = "Records has been deleted successfully!";
+            $records['status'] = true;
+            $records['message'] = 'Records has been deleted successfully!';
         }
 
-        list($orderBy, $order) = getSortBy($request);
+        [$orderBy, $order] = getSortBy($request);
 
         // Get Total Records
         $iTotalRecords = UserTypes::getTotalRecords($request, Auth::User()->account_id);
 
-        list( $iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $user_types = UserTypes::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id);
 
         if ($user_types) {
-            $records["data"] = $user_types;
+            $records['data'] = $user_types;
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'edit' => Gate::allows('user_types_edit'),
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -156,12 +152,12 @@ class UserTypesController extends Controller
     /**
      * Inactive Record from storage.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function inactive($id)
     {
-        if (!Gate::allows('user_types_inactive')) {
+        if (! Gate::allows('user_types_inactive')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -173,12 +169,12 @@ class UserTypesController extends Controller
     /**
      * Inactive Record from storage.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function active($id)
     {
-        if (!Gate::allows('user_types_active')) {
+        if (! Gate::allows('user_types_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         UserTypes::activeRecord($id);
@@ -189,12 +185,12 @@ class UserTypesController extends Controller
     /**
      * Show the form for editing the specified resource.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function edit($id)
     {
-        if (!Gate::allows('user_types_edit')) {
+        if (! Gate::allows('user_types_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -202,13 +198,13 @@ class UserTypesController extends Controller
 
         $types = config('constants.user_types');
 
-        if (!$usertype) {
+        if (! $usertype) {
             return ApiHelper::apiResponse($this->success, 'Record not found.', false);
         }
 
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'usertype' => $usertype,
-            'types' => $types
+            'types' => $types,
         ]);
 
     }
@@ -216,13 +212,12 @@ class UserTypesController extends Controller
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request $request
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('user_types_edit')) {
+        if (! Gate::allows('user_types_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -244,12 +239,12 @@ class UserTypesController extends Controller
     /**
      * Remove the specified resource from storage.
      *
-     * @param  int $id
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
     public function destroy($id)
     {
-        if (!Gate::allows('user_types_destroy')) {
+        if (! Gate::allows('user_types_destroy')) {
             return abort(401);
         }
 

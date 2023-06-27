@@ -9,12 +9,12 @@
 namespace App\Helpers\Widgets;
 
 use App\Models\DiscountHasLocations;
+use App\Models\Discounts;
 use App\Models\Locations;
 use App\Models\Regions;
 use App\Models\Services;
-use App\Models\Discounts;
-use Carbon\Carbon;
 use App\Models\User;
+use Carbon\Carbon;
 
 class DiscountWidget
 {
@@ -24,67 +24,66 @@ class DiscountWidget
      *
      * @return: (mixed) $result
      */
-    static function findDiscountsByLocationNService($account_id)
+    public static function findDiscountsByLocationNService($account_id)
     {
 
-
-        $regions = Regions::where(array(
+        $regions = Regions::where([
             'account_id' => $account_id,
-        ))->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
+        ])->orderBy('sort_number', 'asc')->select('id', 'name', 'slug')->get();
 
-        $dropdown_array = array();
+        $dropdown_array = [];
 
         foreach ($regions as $region) {
-            $dropdown_array[$region->id] = array(
+            $dropdown_array[$region->id] = [
                 'id' => $region->id,
                 'name' => $region->name,
                 'optgroup' => $region->name,
-                'children' => array(),
-            );
+                'children' => [],
+            ];
 
             if ($region->slug == 'all') {
-                $first_child = Locations::where(array(
+                $first_child = Locations::where([
                     'account_id' => $account_id,
                     'region_id' => $region->id,
                     'slug' => 'all',
-                ))->select('id', 'name', 'slug')->first();
+                ])->select('id', 'name', 'slug')->first();
 
                 if ($first_child) {
-                    $dropdown_array[$region->id]['children'][$first_child->id] = array(
+                    $dropdown_array[$region->id]['children'][$first_child->id] = [
                         'id' => $first_child->id,
                         'name' => $first_child->name,
                         'slug' => $first_child->slug,
-                    );
+                    ];
                 }
             } else {
-                $first_child = Locations::where(array(
+                $first_child = Locations::where([
                     'account_id' => $account_id,
                     'region_id' => $region->id,
                     'slug' => 'region',
-                ))->select('id', 'name', 'slug')->first();
+                ])->select('id', 'name', 'slug')->first();
 
                 if ($first_child) {
-                    $dropdown_array[$region->id]['children'][$first_child->id] = array(
+                    $dropdown_array[$region->id]['children'][$first_child->id] = [
                         'id' => $first_child->id,
                         'name' => $first_child->name,
                         'slug' => $first_child->slug,
-                    );
+                    ];
                 }
             }
 
-            $other_childrens = Locations::where(array(
+            $other_childrens = Locations::where([
                 'account_id' => $account_id,
                 'region_id' => $region->id,
                 'slug' => 'custom',
-            ))->orderBy('name', 'asc')->get();
+            ])->orderBy('name', 'asc')->get();
 
             if ($other_childrens) {
                 foreach ($other_childrens as $other_children) {
-                    $dropdown_array[$region->id]['children'][$other_children->id] = array(
+                    $dropdown_array[$region->id]['children'][$other_children->id] = [
                         'id' => $other_children->id,
-                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' . $other_children->full_address,
+                        'name' => '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.$other_children->full_address,
                         'slug' => $other_children->slug,
-                    );
+                    ];
                 }
             }
         }
@@ -98,11 +97,11 @@ class DiscountWidget
     * @param:  (int) $account_id (array) $service
     * @return: (mixed)
     */
-    static function loadPlanDsicountByLocationService($location_id, $service_id, $account_id)
+    public static function loadPlanDsicountByLocationService($location_id, $service_id, $account_id)
     {
-        $searchServices = Services::where(array(
+        $searchServices = Services::where([
             'account_id' => $account_id,
-        ))->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
         if ($searchServices->count()) {
             $searchServices = $searchServices->toArray();
@@ -111,32 +110,32 @@ class DiscountWidget
         /*
          * Case 1: Find those discounts which are All centre based
          */
-        $discount_array = array();
+        $discount_array = [];
 
         // 1. Find All Centres
         $rootlocation = DiscountHasLocations::where([
-            'location_id' => Locations::where(array(
+            'location_id' => Locations::where([
                 'slug' => 'all',
-                'account_id' => $account_id
-            ))->select('id')->first()->id,
+                'account_id' => $account_id,
+            ])->select('id')->first()->id,
         ])->get();
 
         if ($rootlocation->count()) {
             //      Find All Services
             $rootdiscounts = DiscountHasLocations::where([
-                'service_id' => Services::where(array(
+                'service_id' => Services::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'location_id' => Locations::where(array(
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'location_id' => Locations::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
             ])->get();
 
             if ($rootdiscounts->count()) {
                 foreach ($rootdiscounts as $rootdiscount) {
-                    if (!in_array($rootdiscount->discount_id, $discount_array)) {
+                    if (! in_array($rootdiscount->discount_id, $discount_array)) {
                         $discount_array[] = $rootdiscount->discount_id;
                     }
                 }
@@ -147,17 +146,17 @@ class DiscountWidget
             $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
 
             $servicediscounts = DiscountHasLocations::where([
-                'location_id' => Locations::where(array(
+                'location_id' => Locations::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
             ])
                 ->whereIn('service_id', $serviceWithParents)
                 ->get();
 
             if ($servicediscounts->count()) {
                 foreach ($servicediscounts as $servicediscount) {
-                    if (!in_array($servicediscount->discount_id, $discount_array)) {
+                    if (! in_array($servicediscount->discount_id, $discount_array)) {
                         $discount_array[] = $servicediscount->discount_id;
                     }
                 }
@@ -170,30 +169,30 @@ class DiscountWidget
         // 2. Find All Regions
         $singleLocation = Locations::find($location_id);
         $regionlocation = DiscountHasLocations::where([
-            'location_id' => Locations::where(array(
+            'location_id' => Locations::where([
                 'slug' => 'region',
                 'account_id' => $account_id,
                 'region_id' => $singleLocation->region_id,
-            ))->select('id')->first()->id,
+            ])->select('id')->first()->id,
         ])->get();
 
         if ($regionlocation->count()) {
             //      Find All Services
             $regiondiscounts = DiscountHasLocations::where([
-                'service_id' => Services::where(array(
+                'service_id' => Services::where([
                     'slug' => 'all',
-                    'account_id' => $account_id
-                ))->select('id')->first()->id,
-                'location_id' => Locations::where(array(
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'location_id' => Locations::where([
                     'slug' => 'region',
                     'account_id' => $account_id,
                     'region_id' => $singleLocation->region_id,
-                ))->select('id')->first()->id,
+                ])->select('id')->first()->id,
             ])->get();
 
             if ($regiondiscounts->count()) {
                 foreach ($regiondiscounts as $regiondiscount) {
-                    if (!in_array($regiondiscount->discount_id, $discount_array)) {
+                    if (! in_array($regiondiscount->discount_id, $discount_array)) {
                         $discount_array[] = $regiondiscount->discount_id;
                     }
                 }
@@ -204,18 +203,18 @@ class DiscountWidget
             $serviceWithParents = array_merge($serviceWithParents, [$service_id]);
 
             $servicediscounts = DiscountHasLocations::where([
-                'location_id' => Locations::where(array(
+                'location_id' => Locations::where([
                     'slug' => 'region',
                     'account_id' => $account_id,
                     'region_id' => $singleLocation->region_id,
-                ))->select('id')->first()->id,
+                ])->select('id')->first()->id,
             ])
                 ->whereIn('service_id', $serviceWithParents)
                 ->get();
 
             if ($servicediscounts->count()) {
                 foreach ($servicediscounts as $servicediscount) {
-                    if (!in_array($servicediscount->discount_id, $discount_array)) {
+                    if (! in_array($servicediscount->discount_id, $discount_array)) {
                         $discount_array[] = $servicediscount->discount_id;
                     }
                 }
@@ -228,15 +227,15 @@ class DiscountWidget
 
         // Find All Services
         $centrediscounts = DiscountHasLocations::where([
-            'service_id' => Services::where(array(
+            'service_id' => Services::where([
                 'slug' => 'all',
-                'account_id' => $account_id
-            ))->select('id')->first()->id,
+                'account_id' => $account_id,
+            ])->select('id')->first()->id,
             'location_id' => $location_id,
         ])->get();
         if ($centrediscounts->count()) {
             foreach ($centrediscounts as $centrediscount) {
-                if (!in_array($centrediscount->discount_id, $discount_array)) {
+                if (! in_array($centrediscount->discount_id, $discount_array)) {
                     $discount_array[] = $centrediscount->discount_id;
                 }
             }
@@ -253,7 +252,7 @@ class DiscountWidget
 
         if ($centreservicediscounts->count()) {
             foreach ($centreservicediscounts as $centreservicediscount) {
-                if (!in_array($centreservicediscount->discount_id, $discount_array)) {
+                if (! in_array($centreservicediscount->discount_id, $discount_array)) {
                     $discount_array[] = $centreservicediscount->discount_id;
                 }
             }
@@ -269,14 +268,15 @@ class DiscountWidget
      * @return: (mixed)
      */
 
-    static function Discount_data_consultancy($appointment,$account_id){
+    public static function Discount_data_consultancy($appointment, $account_id)
+    {
 
-        $discountIds = self::loadPlanDsicountByLocationService($appointment->location_id,$appointment->service_id,$account_id);
+        $discountIds = self::loadPlanDsicountByLocationService($appointment->location_id, $appointment->service_id, $account_id);
         $today = Carbon::now()->toDateString();
         $discounts = Discounts::whereIn('id', $discountIds)->where([
             ['discount_type', '=', 'Consultancy'],
-            ['active','=','1']
-        ])->whereDate('start','<=',$today)->whereDate('end','>=',$today)->get();
+            ['active', '=', '1'],
+        ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
         /*Now Checked Brithday promotion valid or not*/
         foreach ($discounts as $key => $discount) {
 
@@ -299,7 +299,7 @@ class DiscountWidget
                 /*Now checked birthday valid or not*/
                 if ($patient_info->dob) {
 
-                    $patientbirthday = Carbon::parse($patient_info->dob)->format($today_3->year . '-' . 'm-d');
+                    $patientbirthday = Carbon::parse($patient_info->dob)->format($today_3->year.'-'.'m-d');
 
                     if (($patientbirthday >= $predate) && ($patientbirthday <= $postdate)) {
                     } else {
@@ -310,6 +310,7 @@ class DiscountWidget
                 }
             }
         }
+
         return $discounts;
     }
 }

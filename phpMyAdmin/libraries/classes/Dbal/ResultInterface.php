@@ -43,8 +43,7 @@ interface ResultInterface extends IteratorAggregate
     /**
      * Returns a single value from the given result; false on error
      *
-     * @param int|string $field
-     *
+     * @param  int|string  $field
      * @return string|false|null
      */
     public function fetchValue($field = 0);
@@ -82,6 +81,7 @@ interface ResultInterface extends IteratorAggregate
      * Returns the number of rows in the result
      *
      * @return string|int
+     *
      * @psalm-return int|numeric-string
      */
     public function numRows();
@@ -89,8 +89,7 @@ interface ResultInterface extends IteratorAggregate
     /**
      * Adjusts the result pointer to an arbitrary row in the result
      *
-     * @param int $offset offset to seek
-     *
+     * @param  int  $offset offset to seek
      * @return bool True if the offset exists, false otherwise
      */
     public function seek(int $offset): bool;

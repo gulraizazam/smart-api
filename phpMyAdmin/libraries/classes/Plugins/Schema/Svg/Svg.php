@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Schema\Svg;
 
-use PhpMyAdmin\Core;
-use PhpMyAdmin\ResponseRenderer;
-use XMLWriter;
-
 use function intval;
 use function is_int;
+use PhpMyAdmin\Core;
+use PhpMyAdmin\ResponseRenderer;
 use function sprintf;
 use function strlen;
+use XMLWriter;
 
 /**
  * This Class inherits the XMLwriter class and
@@ -65,7 +64,7 @@ class Svg extends XMLWriter
     /**
      * Set document title
      *
-     * @param string $value sets the title text
+     * @param  string  $value sets the title text
      */
     public function setTitle($value): void
     {
@@ -75,7 +74,7 @@ class Svg extends XMLWriter
     /**
      * Set document author
      *
-     * @param string $value sets the author
+     * @param  string  $value sets the author
      */
     public function setAuthor($value): void
     {
@@ -85,7 +84,7 @@ class Svg extends XMLWriter
     /**
      * Set document font
      *
-     * @param string $value sets the font e.g Arial, Sans-serif etc
+     * @param  string  $value sets the font e.g Arial, Sans-serif etc
      */
     public function setFont(string $value): void
     {
@@ -105,7 +104,7 @@ class Svg extends XMLWriter
     /**
      * Set document font size
      *
-     * @param int $value sets the font size in pixels
+     * @param  int  $value sets the font size in pixels
      */
     public function setFontSize(int $value): void
     {
@@ -132,10 +131,10 @@ class Svg extends XMLWriter
      * @see XMLWriter::startElement()
      * @see XMLWriter::writeAttribute()
      *
-     * @param int $width  total width of the RelationStatsSvg document
-     * @param int $height total height of the RelationStatsSvg document
-     * @param int $x      min-x of the view box
-     * @param int $y      min-y of the view box
+     * @param  int  $width  total width of the RelationStatsSvg document
+     * @param  int  $height total height of the RelationStatsSvg document
+     * @param  int  $x      min-x of the view box
+     * @param  int  $y      min-y of the view box
      */
     public function startSvgDoc($width, $height, $x = 0, $y = 0): void
     {
@@ -153,8 +152,8 @@ class Svg extends XMLWriter
             $this->writeAttribute('viewBox', sprintf('%d %d %d %d', $x, $y, $width, $height));
         }
 
-        $this->writeAttribute('width', ($width - $x) . 'px');
-        $this->writeAttribute('height', ($height - $y) . 'px');
+        $this->writeAttribute('width', ($width - $x).'px');
+        $this->writeAttribute('height', ($height - $y).'px');
         $this->writeAttribute('xmlns', 'http://www.w3.org/2000/svg');
         $this->writeAttribute('version', '1.1');
     }
@@ -181,7 +180,7 @@ class Svg extends XMLWriter
      * @see XMLWriter::startElement()
      * @see XMLWriter::writeAttribute()
      *
-     * @param string $fileName file name
+     * @param  string  $fileName file name
      */
     public function showOutput($fileName): void
     {
@@ -193,7 +192,7 @@ class Svg extends XMLWriter
             'image/svg+xml',
             strlen($output)
         );
-        print $output;
+        echo $output;
     }
 
     /**
@@ -208,17 +207,17 @@ class Svg extends XMLWriter
      * @see XMLWriter::text()
      * @see XMLWriter::endElement()
      *
-     * @param string      $name   RelationStatsSvg element name
-     * @param int         $x      The x attr defines the left position of the element
+     * @param  string  $name   RelationStatsSvg element name
+     * @param  int  $x      The x attr defines the left position of the element
      *                            (e.g. x="0" places the element 0 pixels from the
      *                            left of the browser window)
-     * @param int         $y      The y attribute defines the top position of the
+     * @param  int  $y      The y attribute defines the top position of the
      *                            element (e.g. y="0" places the element 0 pixels
      *                            from the top of the browser window)
-     * @param int|string  $width  The width attribute defines the width the element
-     * @param int|string  $height The height attribute defines the height the element
-     * @param string|null $text   The text attribute defines the text the element
-     * @param string      $styles The style attribute defines the style the element
+     * @param  int|string  $width  The width attribute defines the width the element
+     * @param  int|string  $height The height attribute defines the height the element
+     * @param  string|null  $text   The text attribute defines the text the element
+     * @param  string  $styles The style attribute defines the style the element
      *                            styles can be defined like CSS styles
      */
     public function printElement(
@@ -238,7 +237,7 @@ class Svg extends XMLWriter
         $this->writeAttribute('style', (string) $styles);
         if (isset($text)) {
             $this->writeAttribute('font-family', (string) $this->font);
-            $this->writeAttribute('font-size', $this->fontSize . 'px');
+            $this->writeAttribute('font-size', $this->fontSize.'px');
             $this->text($text);
         }
 
@@ -256,12 +255,12 @@ class Svg extends XMLWriter
      * @see XMLWriter::writeAttribute()
      * @see XMLWriter::endElement()
      *
-     * @param string $name   RelationStatsSvg element name i.e line
-     * @param int    $x1     Defines the start of the line on the x-axis
-     * @param int    $y1     Defines the start of the line on the y-axis
-     * @param int    $x2     Defines the end of the line on the x-axis
-     * @param int    $y2     Defines the end of the line on the y-axis
-     * @param string $styles The style attribute defines the style the element
+     * @param  string  $name   RelationStatsSvg element name i.e line
+     * @param  int  $x1     Defines the start of the line on the x-axis
+     * @param  int  $y1     Defines the start of the line on the y-axis
+     * @param  int  $x2     Defines the end of the line on the x-axis
+     * @param  int  $y2     Defines the end of the line on the y-axis
+     * @param  string  $styles The style attribute defines the style the element
      *                       styles can be defined like CSS styles
      */
     public function printElementLine($name, $x1, $y1, $x2, $y2, $styles): void

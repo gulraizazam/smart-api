@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Table;
 
+use function __;
 use PhpMyAdmin\Controllers\Table\StructureController;
 use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Html\Generator;
@@ -13,8 +14,6 @@ use PhpMyAdmin\Query\Compatibility;
 use PhpMyAdmin\Query\Generator as QueryGenerator;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
-
-use function __;
 
 final class Indexes
 {
@@ -39,8 +38,8 @@ final class Indexes
      * run the query to build the new index
      * and moves back to /table/sql
      *
-     * @param Index $index      An Index instance.
-     * @param bool  $renameMode Rename the Index mode
+     * @param  Index  $index      An Index instance.
+     * @param  bool  $renameMode Rename the Index mode
      */
     public function doSaveData(Index $index, bool $renameMode, string $db, string $table): void
     {

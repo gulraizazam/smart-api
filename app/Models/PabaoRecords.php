@@ -2,17 +2,7 @@
 
 namespace App\Models;
 
-use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Config;
-use App\Models\AuditTrails;
-use Auth;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\ACL;
-use App\Models\Telecomprovidernumber;
-use App\Helpers\Widgets\AgeCalculatorWidget;
-use Carbon\Carbon;
 
 class PabaoRecords extends BaseModal
 {
@@ -33,12 +23,12 @@ class PabaoRecords extends BaseModal
         'amount_balance', 'first_booking_with', 'first_booking_service', 'membership_number',
         'future_booking', 'future_booking_date', 'next_appointment', 'client_created_by',
         'episode_id', 'client_sys_id', 'location', 'location_id',
-        'created_by', 'updated_by', 'converted_by', 'created_at', 'updated_at', 'account_id'
+        'created_by', 'updated_by', 'converted_by', 'created_at', 'updated_at', 'account_id',
     ];
 
     protected static $_fillable = [
         'patient_id', 'region_id', 'city_id', 'pabao_record_status_id',
-        'pabao_record_source_id', 'msg_count', 'service_id'
+        'pabao_record_source_id', 'msg_count', 'service_id',
     ];
 
     protected $table = 'pabao_records';
@@ -76,5 +66,4 @@ class PabaoRecords extends BaseModal
     {
         return $this->hasMany('App\Models\PabaoRecordPayments', 'pabao_record_id')->OrderBy('created_at', 'desc');
     }
-
 }

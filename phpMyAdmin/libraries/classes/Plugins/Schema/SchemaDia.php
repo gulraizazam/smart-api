@@ -7,14 +7,13 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Schema;
 
+use function __;
 use PhpMyAdmin\Plugins\Schema\Dia\DiaRelationSchema;
 use PhpMyAdmin\Plugins\SchemaPlugin;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyRootGroup;
 use PhpMyAdmin\Properties\Options\Items\SelectPropertyItem;
 use PhpMyAdmin\Properties\Plugins\SchemaPluginProperties;
-
-use function __;
 
 /**
  * Handles the schema export for the Dia format
@@ -80,7 +79,7 @@ class SchemaDia extends SchemaPlugin
     /**
      * Exports the schema into DIA format.
      *
-     * @param string $db database name
+     * @param  string  $db database name
      */
     public function exportSchema($db): bool
     {

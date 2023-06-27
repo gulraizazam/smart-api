@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin\Reports;
 
+use App;
 use App\Helpers\ACL;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
@@ -11,27 +12,25 @@ use App\Models\Cities;
 use App\Models\Doctors;
 use App\Models\Invoices;
 use App\Models\Locations;
-use App\Models\Patients;
 use App\Models\Regions;
 use App\Models\Services;
-use App\Reports\Appointments;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
+use App\Reports\Appointments;
+use Barryvdh\DomPDF\Facade as PDF;
 use Carbon\Carbon;
 use Excel;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade as PDF;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xls;
-use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use App;
 
 class AppointmentsController extends Controller
 {
     public function report()
     {
-        if (!Gate::allows('appointment_reports_manage')) {
+        if (! Gate::allows('appointment_reports_manage')) {
             return abort(401);
         }
 
@@ -73,7 +72,7 @@ class AppointmentsController extends Controller
 
         $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
-        $select_All = array('' => 'All');
+        $select_All = ['' => 'All'];
 
         $users = ($select_All + $employees->toArray() + $operators->toArray());
 
@@ -82,7 +81,7 @@ class AppointmentsController extends Controller
 
     /**
      * Load Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function reportLoad(Request $request)
@@ -126,12 +125,12 @@ class AppointmentsController extends Controller
 
     /**
      * Load Clients by Appointment Status (Date Wise) Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function clientByAppointmentStatusReport(Request $request)
     {
-        if (!Gate::allows('appointment_reports_clients_by_appointment_status')) {
+        if (! Gate::allows('appointment_reports_clients_by_appointment_status')) {
             return abort(401);
         }
 
@@ -144,7 +143,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $filters['regions'] = Regions::getAll(Auth::User()->account_id)->getDictionary();
         $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
@@ -168,6 +167,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
+
                 return $pdf->stream('Employee Appointment Summary Report', 'landscape');
                 break;
             case 'excel':
@@ -181,10 +181,10 @@ class AppointmentsController extends Controller
 
     /**
      * Load Clients by Appointment Status (Date Wise) Report
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function clientByAppointmentStatusReportExcel($reportData, $filters, $start_date, $end_date)
@@ -197,7 +197,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -240,38 +240,38 @@ class AppointmentsController extends Controller
             $grand_total = 0;
             foreach ($reportData as $region) {
                 if (count($region['centres'])) {
-                    $activeSheet->setCellValue('A' . $counter, $region['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('A'.$counter, $region['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
                     $counter++;
                     foreach ($region['centres'] as $centre) {
-                        $activeSheet->setCellValue('A' . $counter, '');
-                        $activeSheet->setCellValue('B' . $counter, $centre['name'])->getStyle('B' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('A'.$counter, '');
+                        $activeSheet->setCellValue('B'.$counter, $centre['name'])->getStyle('B'.$counter)->getFont()->setBold(true);
                         $counter++;
 
                         if (count($centre['dates'])) {
                             foreach ($centre['dates'] as $data) {
                                 if (count($data['appointments'])) {
-                                    $activeSheet->setCellValue('A' . $counter, '');
-                                    $activeSheet->setCellValue('B' . $counter, '');
-                                    $activeSheet->setCellValue('C' . $counter, $data['date'])->getStyle('B' . $counter)->getFont()->setBold(true);
+                                    $activeSheet->setCellValue('A'.$counter, '');
+                                    $activeSheet->setCellValue('B'.$counter, '');
+                                    $activeSheet->setCellValue('C'.$counter, $data['date'])->getStyle('B'.$counter)->getFont()->setBold(true);
                                     $counter++;
 
                                     $sr = 1;
 
                                     foreach ($data['appointments'] as $appointment) {
-                                        $activeSheet->setCellValue('A' . $counter, '');
-                                        $activeSheet->setCellValue('B' . $counter, '');
-                                        $activeSheet->setCellValue('C' . $counter, '');
-                                        $activeSheet->setCellValue('D' . $counter, $sr++);
-                                        $activeSheet->setCellValue('E' . $counter, $appointment['patient_id']);
-                                        $activeSheet->setCellValue('F' . $counter, $appointment['name']);
-                                        $activeSheet->setCellValue('G' . $counter, $appointment['email']);
-                                        $activeSheet->setCellValue('H' . $counter, $appointment['scheduled_date']);
-                                        $activeSheet->setCellValue('I' . $counter, $appointment['doctor_name']);
-                                        $activeSheet->setCellValue('J' . $counter, $appointment['appointment_type_name']);
-                                        $activeSheet->setCellValue('K' . $counter, $appointment['consultancy_type']);
-                                        $activeSheet->setCellValue('L' . $counter, $appointment['appointment_status_name']);
-                                        $activeSheet->setCellValue('M' . $counter, $appointment['created_by_name']);
-                                        $activeSheet->setCellValue('N' . $counter, $appointment['referred_by_name']);
+                                        $activeSheet->setCellValue('A'.$counter, '');
+                                        $activeSheet->setCellValue('B'.$counter, '');
+                                        $activeSheet->setCellValue('C'.$counter, '');
+                                        $activeSheet->setCellValue('D'.$counter, $sr++);
+                                        $activeSheet->setCellValue('E'.$counter, $appointment['patient_id']);
+                                        $activeSheet->setCellValue('F'.$counter, $appointment['name']);
+                                        $activeSheet->setCellValue('G'.$counter, $appointment['email']);
+                                        $activeSheet->setCellValue('H'.$counter, $appointment['scheduled_date']);
+                                        $activeSheet->setCellValue('I'.$counter, $appointment['doctor_name']);
+                                        $activeSheet->setCellValue('J'.$counter, $appointment['appointment_type_name']);
+                                        $activeSheet->setCellValue('K'.$counter, $appointment['consultancy_type']);
+                                        $activeSheet->setCellValue('L'.$counter, $appointment['appointment_status_name']);
+                                        $activeSheet->setCellValue('M'.$counter, $appointment['created_by_name']);
+                                        $activeSheet->setCellValue('N'.$counter, $appointment['referred_by_name']);
                                         $counter++;
                                     }
                                 }
@@ -282,20 +282,20 @@ class AppointmentsController extends Controller
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'PatientByAppointmentStatus-DateWise'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'PatientByAppointmentStatus-DateWise'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
 
     /**
      * Load Appointment Summary by Status Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function appointmentSummaryByStatusReport(Request $request)
     {
 
-        if (!Gate::allows('appointment_reports_summary_by_appointment_status')) {
+        if (! Gate::allows('appointment_reports_summary_by_appointment_status')) {
             return abort(401);
         }
 
@@ -308,7 +308,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $filters['regions'] = Regions::getAll(Auth::User()->account_id)->getDictionary();
         $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
@@ -332,6 +332,7 @@ class AppointmentsController extends Controller
             case 'pdf':
                 $pdf = PDF::loadView('admin.reports.appointments.summary_appointment_status.reportpdf', compact('reportData', 'filters', 'start_date', 'end_date'));
                 $pdf->setPaper('A4', 'landscape');
+
                 return $pdf->stream('Employee Appointment Summary Report', 'landscape');
                 break;
             case 'excel':
@@ -345,10 +346,10 @@ class AppointmentsController extends Controller
 
     /**
      * Load Appointments Summary by Service Report in Excel
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function appointmentSummaryByStatusReportExcel($reportData, $filters, $start_date, $end_date)
@@ -362,7 +363,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -380,48 +381,48 @@ class AppointmentsController extends Controller
             $grand_total = 0;
             foreach ($reportData as $region) {
                 if (count($region['centres'])) {
-                    $activeSheet->setCellValue('A' . $counter, $region['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('A'.$counter, $region['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
                     $region_appointments = 0;
                     $counter++;
                     foreach ($region['centres'] as $centre) {
-                        $activeSheet->setCellValue('A' . $counter, '');
-                        $activeSheet->setCellValue('B' . $counter, $centre['name'])->getStyle('B' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('A'.$counter, '');
+                        $activeSheet->setCellValue('B'.$counter, $centre['name'])->getStyle('B'.$counter)->getFont()->setBold(true);
                         $counter++;
                         $centre_appointments = 0;
                         if (count($centre['appointment_statuses'])) {
                             foreach ($centre['appointment_statuses'] as $appointment_status) {
                                 $centre_appointments = $centre_appointments + $appointment_status['total_appointments'];
-                                $activeSheet->setCellValue('A' . $counter, '');
-                                $activeSheet->setCellValue('C' . $counter, '');
-                                $activeSheet->setCellValue('C' . $counter, $appointment_status['name']);
-                                $activeSheet->setCellValue('D' . $counter, number_format($appointment_status['total_appointments']));
+                                $activeSheet->setCellValue('A'.$counter, '');
+                                $activeSheet->setCellValue('C'.$counter, '');
+                                $activeSheet->setCellValue('C'.$counter, $appointment_status['name']);
+                                $activeSheet->setCellValue('D'.$counter, number_format($appointment_status['total_appointments']));
                                 $counter++;
                             }
                             $region_appointments = $region_appointments + $centre_appointments;
-                            $activeSheet->setCellValue('A' . $counter, '');
-                            $activeSheet->setCellValue('C' . $counter, '');
-                            $activeSheet->setCellValue('C' . $counter, 'Total for ' . $centre['name'])->getStyle('C' . $counter)->getFont()->setBold(true);
-                            $activeSheet->setCellValue('D' . $counter, number_format($centre_appointments))->getStyle('D' . $counter)->getFont()->setBold(true);
+                            $activeSheet->setCellValue('A'.$counter, '');
+                            $activeSheet->setCellValue('C'.$counter, '');
+                            $activeSheet->setCellValue('C'.$counter, 'Total for '.$centre['name'])->getStyle('C'.$counter)->getFont()->setBold(true);
+                            $activeSheet->setCellValue('D'.$counter, number_format($centre_appointments))->getStyle('D'.$counter)->getFont()->setBold(true);
                             $counter++;
                         }
                     }
                     $grand_total = $grand_total + $region_appointments;
-                    $activeSheet->setCellValue('A' . $counter, '');
-                    $activeSheet->setCellValue('C' . $counter, '');
-                    $activeSheet->setCellValue('C' . $counter, 'Total for ' . $region['name'])->getStyle('C' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('D' . $counter, number_format($region_appointments))->getStyle('D' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('A'.$counter, '');
+                    $activeSheet->setCellValue('C'.$counter, '');
+                    $activeSheet->setCellValue('C'.$counter, 'Total for '.$region['name'])->getStyle('C'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('D'.$counter, number_format($region_appointments))->getStyle('D'.$counter)->getFont()->setBold(true);
                     $counter++;
                 }
             }
 
-            $activeSheet->setCellValue('A' . $counter, '');
-            $activeSheet->setCellValue('C' . $counter, '');
-            $activeSheet->setCellValue('C' . $counter, 'Grand Total for All Regions')->getStyle('C' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('D' . $counter, number_format($grand_total))->getStyle('D' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('A'.$counter, '');
+            $activeSheet->setCellValue('C'.$counter, '');
+            $activeSheet->setCellValue('C'.$counter, 'Grand Total for All Regions')->getStyle('C'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('D'.$counter, number_format($grand_total))->getStyle('D'.$counter)->getFont()->setBold(true);
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'AppointmentsSummaryByStatus' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'AppointmentsSummaryByStatus'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -429,12 +430,12 @@ class AppointmentsController extends Controller
 
     /**
      * Load Appointment Summary by Service Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function appointmentSummaryByServiceReport(Request $request)
     {
-        if (!Gate::allows('appointment_reports_summary_by_service')) {
+        if (! Gate::allows('appointment_reports_summary_by_service')) {
             return abort(401);
         }
 
@@ -447,7 +448,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $filters['regions'] = Regions::getAll(Auth::User()->account_id)->getDictionary();
         $filters['doctors'] = Doctors::getAll(Auth::User()->account_id)->getDictionary();
@@ -471,6 +472,7 @@ class AppointmentsController extends Controller
             case 'pdf':
                 $pdf = PDF::loadView('admin.reports.appointments.summary_service.reportpdf', compact('reportData', 'filters', 'start_date', 'end_date'));
                 $pdf->setPaper('A4', 'landscape');
+
                 return $pdf->stream('Employee Appointment Summary Report', 'landscape');
                 break;
             case 'excel':
@@ -484,10 +486,10 @@ class AppointmentsController extends Controller
 
     /**
      * Load Appointments Summary by Service Report in Excel
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function appointmentSummaryByServiceReportExcel($reportData, $filters, $start_date, $end_date)
@@ -501,7 +503,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -519,47 +521,47 @@ class AppointmentsController extends Controller
             $grand_total = 0;
             foreach ($reportData as $region) {
                 if (count($region['centres'])) {
-                    $activeSheet->setCellValue('A' . $counter, $region['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('A'.$counter, $region['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
                     $region_appointments = 0;
                     $counter++;
                     foreach ($region['centres'] as $centre) {
-                        $activeSheet->setCellValue('A' . $counter, '');
-                        $activeSheet->setCellValue('B' . $counter, $centre['name'])->getStyle('B' . $counter)->getFont()->setBold(true);
+                        $activeSheet->setCellValue('A'.$counter, '');
+                        $activeSheet->setCellValue('B'.$counter, $centre['name'])->getStyle('B'.$counter)->getFont()->setBold(true);
                         $counter++;
                         $centre_appointments = 0;
                         if (count($centre['services'])) {
                             foreach ($centre['services'] as $service) {
                                 $centre_appointments = $centre_appointments + $service['total_appointments'];
-                                $activeSheet->setCellValue('A' . $counter, '');
-                                $activeSheet->setCellValue('C' . $counter, '');
-                                $activeSheet->setCellValue('C' . $counter, $service['name']);
-                                $activeSheet->setCellValue('D' . $counter, number_format($service['total_appointments']));
+                                $activeSheet->setCellValue('A'.$counter, '');
+                                $activeSheet->setCellValue('C'.$counter, '');
+                                $activeSheet->setCellValue('C'.$counter, $service['name']);
+                                $activeSheet->setCellValue('D'.$counter, number_format($service['total_appointments']));
                                 $counter++;
                             }
                             $region_appointments = $region_appointments + $centre_appointments;
-                            $activeSheet->setCellValue('A' . $counter, '');
-                            $activeSheet->setCellValue('C' . $counter, '');
-                            $activeSheet->setCellValue('C' . $counter, 'Total for ' . $centre['name'])->getStyle('C' . $counter)->getFont()->setBold(true);
-                            $activeSheet->setCellValue('D' . $counter, number_format($centre_appointments))->getStyle('D' . $counter)->getFont()->setBold(true);
+                            $activeSheet->setCellValue('A'.$counter, '');
+                            $activeSheet->setCellValue('C'.$counter, '');
+                            $activeSheet->setCellValue('C'.$counter, 'Total for '.$centre['name'])->getStyle('C'.$counter)->getFont()->setBold(true);
+                            $activeSheet->setCellValue('D'.$counter, number_format($centre_appointments))->getStyle('D'.$counter)->getFont()->setBold(true);
                             $counter++;
                         }
                     }
                     $grand_total = $grand_total + $region_appointments;
-                    $activeSheet->setCellValue('A' . $counter, '');
-                    $activeSheet->setCellValue('C' . $counter, '');
-                    $activeSheet->setCellValue('C' . $counter, 'Total for ' . $region['name'])->getStyle('C' . $counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('D' . $counter, number_format($region_appointments))->getStyle('D' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('A'.$counter, '');
+                    $activeSheet->setCellValue('C'.$counter, '');
+                    $activeSheet->setCellValue('C'.$counter, 'Total for '.$region['name'])->getStyle('C'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('D'.$counter, number_format($region_appointments))->getStyle('D'.$counter)->getFont()->setBold(true);
                     $counter++;
                 }
             }
 
-            $activeSheet->setCellValue('A' . $counter, '');
-            $activeSheet->setCellValue('C' . $counter, '');
-            $activeSheet->setCellValue('C' . $counter, 'Grand Total for All Regions')->getStyle('C' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('D' . $counter, number_format($grand_total))->getStyle('D' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('A'.$counter, '');
+            $activeSheet->setCellValue('C'.$counter, '');
+            $activeSheet->setCellValue('C'.$counter, 'Grand Total for All Regions')->getStyle('C'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('D'.$counter, number_format($grand_total))->getStyle('D'.$counter)->getFont()->setBold(true);
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'AppointmentsSummaryByService' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'AppointmentsSummaryByService'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -567,12 +569,12 @@ class AppointmentsController extends Controller
 
     /**
      * Load General Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     private static function generalReport(Request $request)
     {
-        if (!Gate::allows('appointment_reports_general_report')) {
+        if (! Gate::allows('appointment_reports_general_report')) {
             return abort(401);
         }
         if ($request->get('date_range')) {
@@ -584,7 +586,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
@@ -612,6 +614,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
+
                 return $pdf->stream('GeneralReport', 'landscape');
                 break;
             case 'excel':
@@ -625,10 +628,10 @@ class AppointmentsController extends Controller
 
     /**
      * Appointment Reports
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function AppointmentReportExcel($reportData, $filters, $start_date, $end_date)
@@ -641,7 +644,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -672,32 +675,32 @@ class AppointmentsController extends Controller
             foreach ($reportData as $reportRow) {
                 if ($reportRow->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
-                } else if ($reportRow->consultancy_type == 'virtual') {
+                } elseif ($reportRow->consultancy_type == 'virtual') {
                     $consultancy_type = 'Virtual';
                 } else {
                     $consultancy_type = '';
                 }
-                $activeSheet->setCellValue('A' . $counter, $reportRow->patient_id);
-                $activeSheet->setCellValue('B' . $counter, $reportRow->patient->name);
-                $activeSheet->setCellValue('C' . $counter, $reportRow->patient->email);
-                $activeSheet->setCellValue('D' . $counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('E' . $counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                $activeSheet->setCellValue('F' . $counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                $activeSheet->setCellValue('G' . $counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                $activeSheet->setCellValue('H' . $counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                $activeSheet->setCellValue('I' . $counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                $activeSheet->setCellValue('J' . $counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
-                $activeSheet->setCellValue('K' . $counter, $consultancy_type);
-                $activeSheet->setCellValue('L' . $counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
-                $activeSheet->setCellValue('M' . $counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
-                $activeSheet->setCellValue('N' . $counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
-                $activeSheet->setCellValue('O' . $counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
-                $activeSheet->setCellValue('P' . $counter, (array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : '');
+                $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
+                $activeSheet->setCellValue('B'.$counter, $reportRow->patient->name);
+                $activeSheet->setCellValue('C'.$counter, $reportRow->patient->email);
+                $activeSheet->setCellValue('D'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('E'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
+                $activeSheet->setCellValue('F'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
+                $activeSheet->setCellValue('G'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
+                $activeSheet->setCellValue('H'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
+                $activeSheet->setCellValue('I'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
+                $activeSheet->setCellValue('J'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                $activeSheet->setCellValue('K'.$counter, $consultancy_type);
+                $activeSheet->setCellValue('L'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
+                $activeSheet->setCellValue('M'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
+                $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
+                $activeSheet->setCellValue('O'.$counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
+                $activeSheet->setCellValue('P'.$counter, (array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : '');
                 $counter++;
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'General Report' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'General Report'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -709,7 +712,7 @@ class AppointmentsController extends Controller
      */
     public function generalReportSummary(Request $request)
     {
-        if (!Gate::allows('appointment_reports_general_summary_report')) {
+        if (! Gate::allows('appointment_reports_general_summary_report')) {
             return abort(401);
         }
         if ($request->get('date_range')) {
@@ -721,7 +724,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
@@ -730,19 +733,19 @@ class AppointmentsController extends Controller
 
         $slugs = AppointmentTypes::get()->pluck('id')->toArray();
 
-        $reportData2 = array();
+        $reportData2 = [];
 
         foreach ($slugs as $sing_slug) {
-            $reportData2[$sing_slug] = array();
+            $reportData2[$sing_slug] = [];
         }
-        $services = array();
+        $services = [];
 
         foreach ($reportData as $reportsingle) {
-            if (!in_array($reportsingle->service_id, $services)) {
-                $reportData2[$reportsingle->appointment_type_id][$reportsingle->service_id] = array(
+            if (! in_array($reportsingle->service_id, $services)) {
+                $reportData2[$reportsingle->appointment_type_id][$reportsingle->service_id] = [
                     'name' => $reportsingle->service->name,
                     'count' => 0,
-                );
+                ];
                 $services[] = $reportsingle->service_id;
             }
             $reportData2[$reportsingle->appointment_type_id][$reportsingle->service_id]['count'] += 1;
@@ -757,7 +760,6 @@ class AppointmentsController extends Controller
         $filters['appointment_types'] = AppointmentTypes::getAllRecords(Auth::User()->account_id)->getDictionary();
         $filters['users'] = User::getAllRecords(Auth::User()->account_id)->getDictionary();
 
-
         switch ($request->get('medium_type')) {
             case 'web':
                 return view('admin.reports.appointments.generalreportsummary.generalReport', compact('reportData', 'filters', 'start_date', 'end_date', 'reportData2'));
@@ -767,6 +769,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A4', 'landscape');
+
                 return $pdf->stream('GeneralReport', 'landscape');
                 break;
             case 'print':
@@ -794,7 +797,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -802,43 +805,42 @@ class AppointmentsController extends Controller
         $activeSheet->setCellValue('A3', '');
         $activeSheet->setCellValue('B3', '');
 
-
         $counter = 4;
         $grand_total = 0;
         foreach ($reportData2 as $key => $reporttype) {
 
             if ($key === config('constants.appointment_type_consultancy')) {
 
-                $activeSheet->setCellValue('A' . $counter, 'Consultancy Name')->getStyle('A' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, 'Consultancy Name')->getStyle('A'.$counter)->getFont()->setBold(true);
 
             } else {
 
-                $activeSheet->setCellValue('A' . $counter, 'Treatment Name')->getStyle('A' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, 'Treatment Name')->getStyle('A'.$counter)->getFont()->setBold(true);
             }
 
-            $activeSheet->setCellValue('B' . $counter, 'Count')->getStyle('B' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('B'.$counter, 'Count')->getStyle('B'.$counter)->getFont()->setBold(true);
 
             $counter++;
 
             $total = 0;
             foreach ($reporttype as $reportcount) {
-                $activeSheet->setCellValue('A' . $counter, $reportcount['name']);
-                $activeSheet->setCellValue('B' . $counter, number_format($reportcount['count']));
+                $activeSheet->setCellValue('A'.$counter, $reportcount['name']);
+                $activeSheet->setCellValue('B'.$counter, number_format($reportcount['count']));
                 $total += $reportcount['count'];
                 $grand_total += $reportcount['count'];
                 $counter++;
             }
-            $activeSheet->setCellValue('A' . $counter, 'Total')->getStyle('A' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('B' . $counter, number_format($total))->getStyle('B' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('A'.$counter, 'Total')->getStyle('A'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('B'.$counter, number_format($total))->getStyle('B'.$counter)->getFont()->setBold(true);
             $counter++;
         }
 
-        $activeSheet->setCellValue('A' . $counter, 'Total')->getStyle('A' . $counter)->getFont()->setBold(true);
-        $activeSheet->setCellValue('B' . $counter, number_format($grand_total))->getStyle('B' . $counter)->getFont()->setBold(true);
+        $activeSheet->setCellValue('A'.$counter, 'Total')->getStyle('A'.$counter)->getFont()->setBold(true);
+        $activeSheet->setCellValue('B'.$counter, number_format($grand_total))->getStyle('B'.$counter)->getFont()->setBold(true);
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'General Report Summary' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'General Report Summary'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -846,13 +848,13 @@ class AppointmentsController extends Controller
 
     /**
      * Load Staff (Referred By) Appointment Schedule Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function staffReferredByAppointmentScheduleReport(Request $request)
     {
 
-        if (!Gate::allows('appointment_reports_referred_by_staff_appointment')) {
+        if (! Gate::allows('appointment_reports_referred_by_staff_appointment')) {
             return abort(401);
         }
 
@@ -865,7 +867,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
@@ -906,6 +908,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A3', 'landscape');
+
                 return $pdf->stream('Staff Referred By Appointment Schedule', 'landscape');
                 break;
             case 'excel':
@@ -919,11 +922,11 @@ class AppointmentsController extends Controller
 
     /**
      * Staff Appointment Schedule Report (Summary) Excel
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function StaffReferredByAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date)
@@ -937,7 +940,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -964,7 +967,7 @@ class AppointmentsController extends Controller
             $servicegrandtotal = 0;
             $grandcount = 0;
             foreach ($reportData as $reportpackagedata) {
-                $activeSheet->setCellValue('A' . $counter, $reportpackagedata['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, $reportpackagedata['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
                 $counter++;
                 $count = 0;
                 $salestotal = 0;
@@ -975,20 +978,20 @@ class AppointmentsController extends Controller
                     $servicetotal += $serviceprice;
                     $salestotal += $reportRow->Salestotal;
 
-                    $activeSheet->setCellValue('A' . $counter, $reportRow->patient_id);
-                    $activeSheet->setCellValue('B' . $counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
-                    $activeSheet->setCellValue('C' . $counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('B' . $counter);
-                    $activeSheet->setCellValue('D' . $counter, $reportRow->patient->name)->getStyle('C' . $counter)->getFont();
-                    $activeSheet->setCellValue('E' . $counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                    $activeSheet->setCellValue('F' . $counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                    $activeSheet->setCellValue('G' . $counter, $reportRow->patient->email);
-                    $activeSheet->setCellValue('H' . $counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
-                    $activeSheet->setCellValue('I' . $counter, number_format($serviceprice, 2));
-                    $activeSheet->setCellValue('J' . $counter, number_format($reportRow->Salestotal, 2));
-                    $activeSheet->setCellValue('K' . $counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                    $activeSheet->setCellValue('L' . $counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                    $activeSheet->setCellValue('M' . $counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                    $activeSheet->setCellValue('N' . $counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                    $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
+                    $activeSheet->setCellValue('B'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
+                    $activeSheet->setCellValue('C'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'))->getStyle('B'.$counter);
+                    $activeSheet->setCellValue('D'.$counter, $reportRow->patient->name)->getStyle('C'.$counter)->getFont();
+                    $activeSheet->setCellValue('E'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
+                    $activeSheet->setCellValue('F'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
+                    $activeSheet->setCellValue('G'.$counter, $reportRow->patient->email);
+                    $activeSheet->setCellValue('H'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                    $activeSheet->setCellValue('I'.$counter, number_format($serviceprice, 2));
+                    $activeSheet->setCellValue('J'.$counter, number_format($reportRow->Salestotal, 2));
+                    $activeSheet->setCellValue('K'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
+                    $activeSheet->setCellValue('L'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
+                    $activeSheet->setCellValue('M'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
+                    $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
                     $counter++;
                     $grandcount++;
                     $count++;
@@ -996,32 +999,31 @@ class AppointmentsController extends Controller
                 $servicegrandtotal += $servicetotal;
                 $salesgrandtotal += $salestotal;
 
-                $activeSheet->setCellValue('A' . $counter, '');
+                $activeSheet->setCellValue('A'.$counter, '');
                 $counter++;
 
-                $activeSheet->setCellValue('A' . $counter, $reportpackagedata['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, 'Total');
-                $activeSheet->setCellValue('C' . $counter, $count)->getStyle('B' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('I' . $counter, number_format($servicetotal, 2))->getStyle('I' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('J' . $counter, number_format($salestotal, 2))->getStyle('J' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, $reportpackagedata['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('B'.$counter, 'Total');
+                $activeSheet->setCellValue('C'.$counter, $count)->getStyle('B'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('I'.$counter, number_format($servicetotal, 2))->getStyle('I'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('J'.$counter, number_format($salestotal, 2))->getStyle('J'.$counter)->getFont()->setBold(true);
                 $counter++;
             }
-            $activeSheet->setCellValue('A' . $counter, '');
+            $activeSheet->setCellValue('A'.$counter, '');
             $counter++;
 
-            $activeSheet->setCellValue('B' . $counter, 'Grand Total');
-            $activeSheet->setCellValue('C' . $counter, $grandcount)->getStyle('B' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('I' . $counter, number_format($servicegrandtotal, 2))->getStyle('I' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('J' . $counter, number_format($salesgrandtotal, 2))->getStyle('J' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('B'.$counter, 'Grand Total');
+            $activeSheet->setCellValue('C'.$counter, $grandcount)->getStyle('B'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('I'.$counter, number_format($servicegrandtotal, 2))->getStyle('I'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('J'.$counter, number_format($salesgrandtotal, 2))->getStyle('J'.$counter)->getFont()->setBold(true);
             $counter++;
-
 
         }
-        $activeSheet->setCellValue('A' . $counter, '');
+        $activeSheet->setCellValue('A'.$counter, '');
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'StaffReferredByEmployeeReport' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'StaffReferredByEmployeeReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1029,13 +1031,13 @@ class AppointmentsController extends Controller
 
     /**
      * Load Staff Appointment Schedule Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function staffAppointmentScheduleReport(Request $request)
     {
 
-        if (!Gate::allows('appointment_reports_staff_appointment')) {
+        if (! Gate::allows('appointment_reports_staff_appointment')) {
             return abort(401);
         }
 
@@ -1048,7 +1050,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
@@ -1088,6 +1090,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
+
                 return $pdf->stream('Staff Appointment Schedule', 'landscape');
                 break;
             case 'excel':
@@ -1101,13 +1104,13 @@ class AppointmentsController extends Controller
 
     /**
      * Load Employee Appointment Summary Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function EmployeeAppointmentSummaryReport(Request $request)
     {
 
-        if (!Gate::allows('appointment_reports_empolyee_summary')) {
+        if (! Gate::allows('appointment_reports_empolyee_summary')) {
             return abort(401);
         }
 
@@ -1120,7 +1123,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
@@ -1158,6 +1161,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A4', 'landscape');
+
                 return $pdf->stream('Employee Appointment Summary Report', 'landscape');
                 break;
             case 'excel':
@@ -1171,11 +1175,11 @@ class AppointmentsController extends Controller
 
     /**
      * Employee Appointment Summary Report
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function employeeAppointmentSummary($reportData, $filters, $start_date, $end_date)
@@ -1189,7 +1193,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -1208,14 +1212,14 @@ class AppointmentsController extends Controller
                     $created_by = (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '';
                     $count++;
                 }
-                $activeSheet->setCellValue('A' . $counter, $created_by);
-                $activeSheet->setCellValue('B' . $counter, $count);
+                $activeSheet->setCellValue('A'.$counter, $created_by);
+                $activeSheet->setCellValue('B'.$counter, $count);
                 $counter++;
                 $count = 0;
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'EmployeeAppointmentSummaryReport' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'EmployeeAppointmentSummaryReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1223,11 +1227,11 @@ class AppointmentsController extends Controller
 
     /**
      * Staff Appointment Schedule Report (Summary) Excel
-     * @param (mixed) $reportData
-     * @param (mixed) $filters
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $filters
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function StaffAppointmentScheduleReportExcel($reportData, $filters, $start_date, $end_date)
@@ -1241,7 +1245,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -1271,7 +1275,7 @@ class AppointmentsController extends Controller
             $servicegrandtotal = 0;
             $grandcount = 0;
             foreach ($reportData as $reportpackagedata) {
-                $activeSheet->setCellValue('A' . $counter, $reportpackagedata['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, $reportpackagedata['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
                 $counter++;
                 $count = 0;
                 $salestotal = 0;
@@ -1280,7 +1284,7 @@ class AppointmentsController extends Controller
 
                     if ($reportRow->consultancy_type == 'in_person') {
                         $consultancy_type = 'In Person';
-                    } else if ($reportRow->consultancy_type == 'virtual') {
+                    } elseif ($reportRow->consultancy_type == 'virtual') {
                         $consultancy_type = 'Virtual';
                     } else {
                         $consultancy_type = '';
@@ -1290,23 +1294,23 @@ class AppointmentsController extends Controller
                     $servicetotal += $serviceprice;
                     $salestotal += $reportRow->Salestotal;
 
-                    $activeSheet->setCellValue('A' . $counter, $reportRow->id);
-                    $activeSheet->setCellValue('B' . $counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
-                    $activeSheet->setCellValue('C' . $counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
-                    $activeSheet->setCellValue('D' . $counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
-                    $activeSheet->setCellValue('E' . $counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
-                    $activeSheet->setCellValue('F' . $counter, $reportRow->patient->name);
-                    $activeSheet->setCellValue('G' . $counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                    $activeSheet->setCellValue('H' . $counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                    $activeSheet->setCellValue('I' . $counter, $reportRow->patient->email);
-                    $activeSheet->setCellValue('J' . $counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
-                    $activeSheet->setCellValue('K' . $counter, number_format($serviceprice, 2));
-                    $activeSheet->setCellValue('L' . $counter, number_format($reportRow->Salestotal, 2));
-                    $activeSheet->setCellValue('M' . $counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                    $activeSheet->setCellValue('N' . $counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                    $activeSheet->setCellValue('O' . $counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                    $activeSheet->setCellValue('P' . $counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
-                    $activeSheet->setCellValue('Q' . $counter, $consultancy_type);
+                    $activeSheet->setCellValue('A'.$counter, $reportRow->id);
+                    $activeSheet->setCellValue('B'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
+                    $activeSheet->setCellValue('C'.$counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
+                    $activeSheet->setCellValue('D'.$counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
+                    $activeSheet->setCellValue('E'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
+                    $activeSheet->setCellValue('F'.$counter, $reportRow->patient->name);
+                    $activeSheet->setCellValue('G'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
+                    $activeSheet->setCellValue('H'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
+                    $activeSheet->setCellValue('I'.$counter, $reportRow->patient->email);
+                    $activeSheet->setCellValue('J'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                    $activeSheet->setCellValue('K'.$counter, number_format($serviceprice, 2));
+                    $activeSheet->setCellValue('L'.$counter, number_format($reportRow->Salestotal, 2));
+                    $activeSheet->setCellValue('M'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
+                    $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
+                    $activeSheet->setCellValue('O'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
+                    $activeSheet->setCellValue('P'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                    $activeSheet->setCellValue('Q'.$counter, $consultancy_type);
                     $counter++;
                     $grandcount++;
                     $count++;
@@ -1314,49 +1318,48 @@ class AppointmentsController extends Controller
                 $servicegrandtotal += $servicetotal;
                 $salesgrandtotal += $salestotal;
 
-                $activeSheet->setCellValue('A' . $counter, '');
-                $activeSheet->setCellValue('B' . $counter, '');
+                $activeSheet->setCellValue('A'.$counter, '');
+                $activeSheet->setCellValue('B'.$counter, '');
                 $counter++;
 
-                $activeSheet->setCellValue('A' . $counter, $reportpackagedata['name'])->getStyle('A' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('B' . $counter, '');
-                $activeSheet->setCellValue('C' . $counter, 'Total');
-                $activeSheet->setCellValue('D' . $counter, $count)->getStyle('D' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('K' . $counter, number_format($servicetotal, 2))->getStyle('K' . $counter)->getFont()->setBold(true);
-                $activeSheet->setCellValue('L' . $counter, number_format($salestotal, 2))->getStyle('L' . $counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('A'.$counter, $reportpackagedata['name'])->getStyle('A'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('B'.$counter, '');
+                $activeSheet->setCellValue('C'.$counter, 'Total');
+                $activeSheet->setCellValue('D'.$counter, $count)->getStyle('D'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('K'.$counter, number_format($servicetotal, 2))->getStyle('K'.$counter)->getFont()->setBold(true);
+                $activeSheet->setCellValue('L'.$counter, number_format($salestotal, 2))->getStyle('L'.$counter)->getFont()->setBold(true);
                 $counter++;
             }
-            $activeSheet->setCellValue('A' . $counter, '');
-            $activeSheet->setCellValue('B' . $counter, '');
+            $activeSheet->setCellValue('A'.$counter, '');
+            $activeSheet->setCellValue('B'.$counter, '');
             $counter++;
 
-            $activeSheet->setCellValue('A' . $counter, '');
-            $activeSheet->setCellValue('B' . $counter, '');
-            $activeSheet->setCellValue('C' . $counter, 'Grand Total');
-            $activeSheet->setCellValue('D' . $counter, $grandcount)->getStyle('D' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('K' . $counter, number_format($servicegrandtotal, 2))->getStyle('K' . $counter)->getFont()->setBold(true);
-            $activeSheet->setCellValue('L' . $counter, number_format($salesgrandtotal, 2))->getStyle('L' . $counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('A'.$counter, '');
+            $activeSheet->setCellValue('B'.$counter, '');
+            $activeSheet->setCellValue('C'.$counter, 'Grand Total');
+            $activeSheet->setCellValue('D'.$counter, $grandcount)->getStyle('D'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('K'.$counter, number_format($servicegrandtotal, 2))->getStyle('K'.$counter)->getFont()->setBold(true);
+            $activeSheet->setCellValue('L'.$counter, number_format($salesgrandtotal, 2))->getStyle('L'.$counter)->getFont()->setBold(true);
             $counter++;
         }
-        $activeSheet->setCellValue('A' . $counter, '');
+        $activeSheet->setCellValue('A'.$counter, '');
         $counter++;
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'DailyEmployeeStatsSummary' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'DailyEmployeeStatsSummary'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
     }
 
     /**
      * Compliance Report
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
-
     public function complianceReport(Request $request)
     {
 
-        if (!Gate::allows('appointment_reports_compliance_reports')) {
+        if (! Gate::allows('appointment_reports_compliance_reports')) {
             abort(404);
         }
 
@@ -1383,6 +1386,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
+
                 return $pdf->stream('ComplianceReport', 'landscape');
                 break;
             case 'excel':
@@ -1397,10 +1401,10 @@ class AppointmentsController extends Controller
 
     /**
      * Compliance Report
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function complianceReportExcel($reportData, $start_date, $end_date)
@@ -1413,7 +1417,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -1449,33 +1453,33 @@ class AppointmentsController extends Controller
         if (count($reportData)) {
             foreach ($reportData as $reportRow) {
 
-                $activeSheet->setCellValue('A' . $counter, $reportRow['id']);
-                $activeSheet->setCellValue('B' . $counter, $reportRow['client']);
-                $activeSheet->setCellValue('C' . $counter, $reportRow['email']);
-                $activeSheet->setCellValue('D' . $counter, ($reportRow['scheduled_date']) ? \Carbon\Carbon::parse($reportRow['scheduled_date'], null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($reportRow['scheduled_time'], null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('E' . $counter, $reportRow['doctor']);
-                $activeSheet->setCellValue('F' . $counter, $reportRow['city']);
-                $activeSheet->setCellValue('G' . $counter, $reportRow['centre']);
-                $activeSheet->setCellValue('H' . $counter, $reportRow['service']);
-                $activeSheet->setCellValue('I' . $counter, $reportRow['status']);
-                $activeSheet->setCellValue('J' . $counter, $reportRow['type']);
-                $activeSheet->setCellValue('K' . $counter, $reportRow['consultancy_type']);
-                $activeSheet->setCellValue('L' . $counter, \Carbon\Carbon::parse($reportRow['created_at'])->format('M j, Y H:i A'));
-                $activeSheet->setCellValue('M' . $counter, $reportRow['created_by']);
-                $activeSheet->setCellValue('N' . $counter, $reportRow['converted_by']);
-                $activeSheet->setCellValue('O' . $counter, $reportRow['updated_by']);
-                $activeSheet->setCellValue('P' . $counter, $reportRow['referred_by']);
-                $activeSheet->setCellValue('Q' . $counter, array_key_exists('medical_form', $reportRow) ? $reportRow['medical_form'] : 'N/A');
-                $activeSheet->setCellValue('R' . $counter, array_key_exists('images_before', $reportRow) ? $reportRow['images_before'] : 'N/A');
-                $activeSheet->setCellValue('S' . $counter, array_key_exists('images_after', $reportRow) ? $reportRow['images_after'] : 'N/A');
-                $activeSheet->setCellValue('T' . $counter, array_key_exists('measurement_before', $reportRow) ? $reportRow['measurement_before'] : 'N/A');
-                $activeSheet->setCellValue('U' . $counter, array_key_exists('measurement_after', $reportRow) ? $reportRow['measurement_after'] : 'N/A');
-                $activeSheet->setCellValue('V' . $counter, $reportRow['invoice']);
+                $activeSheet->setCellValue('A'.$counter, $reportRow['id']);
+                $activeSheet->setCellValue('B'.$counter, $reportRow['client']);
+                $activeSheet->setCellValue('C'.$counter, $reportRow['email']);
+                $activeSheet->setCellValue('D'.$counter, ($reportRow['scheduled_date']) ? \Carbon\Carbon::parse($reportRow['scheduled_date'], null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow['scheduled_time'], null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('E'.$counter, $reportRow['doctor']);
+                $activeSheet->setCellValue('F'.$counter, $reportRow['city']);
+                $activeSheet->setCellValue('G'.$counter, $reportRow['centre']);
+                $activeSheet->setCellValue('H'.$counter, $reportRow['service']);
+                $activeSheet->setCellValue('I'.$counter, $reportRow['status']);
+                $activeSheet->setCellValue('J'.$counter, $reportRow['type']);
+                $activeSheet->setCellValue('K'.$counter, $reportRow['consultancy_type']);
+                $activeSheet->setCellValue('L'.$counter, \Carbon\Carbon::parse($reportRow['created_at'])->format('M j, Y H:i A'));
+                $activeSheet->setCellValue('M'.$counter, $reportRow['created_by']);
+                $activeSheet->setCellValue('N'.$counter, $reportRow['converted_by']);
+                $activeSheet->setCellValue('O'.$counter, $reportRow['updated_by']);
+                $activeSheet->setCellValue('P'.$counter, $reportRow['referred_by']);
+                $activeSheet->setCellValue('Q'.$counter, array_key_exists('medical_form', $reportRow) ? $reportRow['medical_form'] : 'N/A');
+                $activeSheet->setCellValue('R'.$counter, array_key_exists('images_before', $reportRow) ? $reportRow['images_before'] : 'N/A');
+                $activeSheet->setCellValue('S'.$counter, array_key_exists('images_after', $reportRow) ? $reportRow['images_after'] : 'N/A');
+                $activeSheet->setCellValue('T'.$counter, array_key_exists('measurement_before', $reportRow) ? $reportRow['measurement_before'] : 'N/A');
+                $activeSheet->setCellValue('U'.$counter, array_key_exists('measurement_after', $reportRow) ? $reportRow['measurement_after'] : 'N/A');
+                $activeSheet->setCellValue('V'.$counter, $reportRow['invoice']);
                 $counter++;
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'ComplianceReport' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'ComplianceReport'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
@@ -1483,12 +1487,12 @@ class AppointmentsController extends Controller
 
     /**
      * Appointment rescheduled Count
-     * @param Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     private static function rescheduledcountreport(Request $request)
     {
-        if (!Gate::allows('appointment_reports_rescheduled_count_report')) {
+        if (! Gate::allows('appointment_reports_rescheduled_count_report')) {
             return abort(401);
         }
         if ($request->get('date_range')) {
@@ -1500,7 +1504,7 @@ class AppointmentsController extends Controller
             $end_date = null;
         }
 
-        $filters = array();
+        $filters = [];
 
         $users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
         $users->prepend('All', '');
@@ -1528,6 +1532,7 @@ class AppointmentsController extends Controller
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A2', 'landscape');
+
                 return $pdf->stream('GeneralReport', 'landscape');
                 break;
             case 'excel':
@@ -1541,10 +1546,10 @@ class AppointmentsController extends Controller
 
     /**
      * Appointment Rescheduled count report excel
-     * @param (mixed) $reportData
-     * @param (mixed) $start_date
-     * @param (mixed) $end_date
      *
+     * @param  (mixed)  $reportData
+     * @param  (mixed)  $start_date
+     * @param  (mixed)  $end_date
      * @return \Illuminate\Http\Response
      */
     private static function RescheduledcountreportExcel($reportData, $filters, $start_date, $end_date)
@@ -1557,7 +1562,7 @@ class AppointmentsController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'Duration')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', 'From ' . $start_date . ' to ' . $end_date);
+        $activeSheet->setCellValue('B1', 'From '.$start_date.' to '.$end_date);
 
         $activeSheet->setCellValue('A2', 'Date')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', Carbon::now()->format('Y-m-d'));
@@ -1590,37 +1595,36 @@ class AppointmentsController extends Controller
 
                 if ($reportRow->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
-                } else if ($reportRow->consultancy_type == 'virtual') {
+                } elseif ($reportRow->consultancy_type == 'virtual') {
                     $consultancy_type = 'Virtual';
                 } else {
                     $consultancy_type = '';
                 }
 
-                $activeSheet->setCellValue('A' . $counter, $reportRow->patient_id);
-                $activeSheet->setCellValue('B' . $counter, $reportRow->patient->name);
-                $activeSheet->setCellValue('C' . $counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('D' . $counter, ($reportRow->first_scheduled_date) ? \Carbon\Carbon::parse($reportRow->first_scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($reportRow->first_scheduled_time, null)->format('h:i A') : '-');
-                $activeSheet->setCellValue('E' . $counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
-                $activeSheet->setCellValue('F' . $counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
-                $activeSheet->setCellValue('G' . $counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
-                $activeSheet->setCellValue('H' . $counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
-                $activeSheet->setCellValue('I' . $counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
-                $activeSheet->setCellValue('J' . $counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
-                $activeSheet->setCellValue('K' . $counter, $consultancy_type);
-                $activeSheet->setCellValue('L' . $counter, $reportRow->scheduled_at_count);
-                $activeSheet->setCellValue('M' . $counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
-                $activeSheet->setCellValue('N' . $counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
-                $activeSheet->setCellValue('O' . $counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
-                $activeSheet->setCellValue('P' . $counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
-                $activeSheet->setCellValue('Q' . $counter, (array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : '');
+                $activeSheet->setCellValue('A'.$counter, $reportRow->patient_id);
+                $activeSheet->setCellValue('B'.$counter, $reportRow->patient->name);
+                $activeSheet->setCellValue('C'.$counter, ($reportRow->scheduled_date) ? \Carbon\Carbon::parse($reportRow->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->scheduled_time, null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('D'.$counter, ($reportRow->first_scheduled_date) ? \Carbon\Carbon::parse($reportRow->first_scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($reportRow->first_scheduled_time, null)->format('h:i A') : '-');
+                $activeSheet->setCellValue('E'.$counter, (array_key_exists($reportRow->doctor_id, $filters['doctors'])) ? $filters['doctors'][$reportRow->doctor_id]->name : '');
+                $activeSheet->setCellValue('F'.$counter, (array_key_exists($reportRow->city_id, $filters['cities'])) ? $filters['cities'][$reportRow->city_id]->name : '');
+                $activeSheet->setCellValue('G'.$counter, (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '');
+                $activeSheet->setCellValue('H'.$counter, (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '');
+                $activeSheet->setCellValue('I'.$counter, (array_key_exists($reportRow->base_appointment_status_id, $filters['appointment_statuses'])) ? $filters['appointment_statuses'][$reportRow->base_appointment_status_id]->name : '');
+                $activeSheet->setCellValue('J'.$counter, (array_key_exists($reportRow->appointment_type_id, $filters['appointment_types'])) ? $filters['appointment_types'][$reportRow->appointment_type_id]->name : '');
+                $activeSheet->setCellValue('K'.$counter, $consultancy_type);
+                $activeSheet->setCellValue('L'.$counter, $reportRow->scheduled_at_count);
+                $activeSheet->setCellValue('M'.$counter, \Carbon\Carbon::parse($reportRow->created_at)->format('M j, Y H:i A'));
+                $activeSheet->setCellValue('N'.$counter, (array_key_exists($reportRow->created_by, $filters['users'])) ? $filters['users'][$reportRow->created_by]->name : '');
+                $activeSheet->setCellValue('O'.$counter, (array_key_exists($reportRow->converted_by, $filters['users'])) ? $filters['users'][$reportRow->converted_by]->name : '');
+                $activeSheet->setCellValue('P'.$counter, (array_key_exists($reportRow->updated_by, $filters['users'])) ? $filters['users'][$reportRow->updated_by]->name : '');
+                $activeSheet->setCellValue('Q'.$counter, (array_key_exists($reportRow->referred_by, $filters['users'])) ? $filters['users'][$reportRow->referred_by]->name : '');
                 $counter++;
             }
         }
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'Appointment Rescheduled Count Report' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Appointment Rescheduled Count Report'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
     }
-
 }

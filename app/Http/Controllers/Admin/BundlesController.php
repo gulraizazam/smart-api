@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
+use App\Http\Controllers\Controller;
 use App\Models\BundleHasServices;
 use App\Models\Bundles;
 use App\Models\Services;
@@ -12,14 +13,14 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Validator;
 
 class BundlesController extends Controller
 {
-
     public $success;
+
     public $error;
+
     public $unauthorized;
 
     public function __construct()
@@ -36,31 +37,30 @@ class BundlesController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('packages_manage')) {
+        if (! Gate::allows('packages_manage')) {
             return abort(401);
         }
+
         return view('admin.bundles.index');
     }
-
 
     /**
      * Display a listing of Packages.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request)
     {
         try {
-            if (!Gate::allows('packages_manage')) {
+            if (! Gate::allows('packages_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, 'bundles');
 
-            $records = array();
-            $records["data"] = array();
-            list($orderBy, $order) = getSortBy($request);
+            $records = [];
+            $records['data'] = [];
+            [$orderBy, $order] = getSortBy($request);
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
@@ -68,7 +68,7 @@ class BundlesController extends Controller
                 if ($Bundles) {
                     foreach ($Bundles as $city) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!Bundles::isChildExists($city->id, Auth::User()->account_id)) {
+                        if (! Bundles::isChildExists($city->id, Auth::User()->account_id)) {
                             $city->delete();
                         }
                     }
@@ -80,7 +80,7 @@ class BundlesController extends Controller
             // Get Total Records
             $iTotalRecords = Bundles::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $Bundles = Bundles::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
 
@@ -91,8 +91,8 @@ class BundlesController extends Controller
                 $bundle->end = $bundle->end ? Carbon::parse($bundle->end)->format('D M, j Y') : null;
             }
 
-            $records["data"] = $Bundles;
-            $records["permissions"] = [
+            $records['data'] = $Bundles;
+            $records['permissions'] = [
                 'edit' => Gate::allows('packages_edit'),
                 'delete' => Gate::allows('packages_destroy'),
                 'active' => Gate::allows('packages_active'),
@@ -111,7 +111,7 @@ class BundlesController extends Controller
                 'tax_treatment_types' => $tax_treatment_types,
                 'services' => $services,
             ];
-            $records["meta"] = [
+            $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
                 'pages' => $pages,
@@ -133,7 +133,7 @@ class BundlesController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('packages_create')) {
+        if (! Gate::allows('packages_create')) {
             return abort(401);
         }
 
@@ -144,17 +144,15 @@ class BundlesController extends Controller
         return view('admin.bundles.create', compact('services', 'tax_treatment_types'));
     }
 
-
     /**
      * Store a newly created Package in storage.
      *
-     * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('packages_create')) {
+            if (! Gate::allows('packages_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -165,19 +163,19 @@ class BundlesController extends Controller
                 if (Bundles::createRecord($request, Auth::User()->account_id)) {
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
+
                 return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
             }
+
             return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Validate form fields
      *
-     * @param Request $request
      * @return \Illuminate\Contracts\Validation\Validator
      */
     protected function verifyFields(Request $request)
@@ -191,50 +189,46 @@ class BundlesController extends Controller
         ]);
     }
 
-
     /**
      * Show the form for editing Package.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function edit($id)
     {
         try {
-            if (!Gate::allows('packages_edit')) {
+            if (! Gate::allows('packages_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $bundle = Bundles::getData($id);
-            if (!$bundle) {
+            if (! $bundle) {
                 return ApiHelper::apiResponse($this->success, 'No record found!', false);
             }
             $services = Services::getServices();
-            $relationships = BundleHasServices::where(array(
-                'bundle_id' => $bundle->id
-            ))->select('service_id')->get();
+            $relationships = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+            ])->select('service_id')->get();
             $bundle_services = collect(new Services());
             if ($relationships->count()) {
                 $bundle_services = Services::whereIn('id', $relationships)->where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
             }
             $tax_treatment_types = TaxTreatmentType::get();
+
             return ApiHelper::apiResponse($this->success, 'Success', true, ['bundle' => $bundle, 'services' => $services, 'bundle_services' => $bundle_services, 'relationships' => $relationships, 'tax_treatment_types' => $tax_treatment_types]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Update Package in storage.
      *
-     * @param Request $request
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('packages_edit')) {
+            if (! Gate::allows('packages_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -245,62 +239,62 @@ class BundlesController extends Controller
                 if (Bundles::updateRecord($id, $request, Auth::User()->account_id)) {
                     return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
                 }
+
                 return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
             }
+
             return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Show Lead detail.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function detail($id)
     {
         try {
-            if (!Gate::allows('packages_manage')) {
+            if (! Gate::allows('packages_manage')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $bundle = Bundles::findOrFail($id);
 
-            if (!$bundle) {
+            if (! $bundle) {
                 return ApiHelper::apiResponse($this->success, 'No record found!', false);
             }
 
-            $relationships = BundleHasServices::where(array(
-                'bundle_id' => $bundle->id
-            ))->select('service_id')->get();
+            $relationships = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+            ])->select('service_id')->get();
 
             $bundle_services = collect(new Services());
 
             if ($relationships->count()) {
                 $bundle_services = Services::whereIn('id', $relationships)->where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
             }
+
             return ApiHelper::apiResponse($this->success, 'Success', true, ['bundle' => $bundle, 'bundle_services' => $bundle_services, 'relationships' => $relationships]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
     }
 
-
     /**
      * Remove Package from storage.
      *
-     * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('packages_destroy')) {
+            if (! Gate::allows('packages_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = Bundles::DeleteRecord($id);
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -309,24 +303,22 @@ class BundlesController extends Controller
 
     /**
      * Change status of Package
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
      */
     public function status(Request $request): \Illuminate\Http\JsonResponse
     {
         try {
             if ($request->status == 0) {
-                if (!Gate::allows('regions_inactive')) {
+                if (! Gate::allows('regions_inactive')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = Bundles::inactiveRecord($request->id);
             } else {
-                if (!Gate::allows('regions_active')) {
+                if (! Gate::allows('regions_active')) {
                     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
                 }
                 $response = Bundles::activeRecord($request->id);
             }
+
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

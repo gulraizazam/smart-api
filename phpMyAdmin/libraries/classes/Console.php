@@ -7,11 +7,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin;
 
-use PhpMyAdmin\ConfigStorage\Relation;
-
 use function __;
 use function _ngettext;
 use function count;
+use PhpMyAdmin\ConfigStorage\Relation;
 use function sprintf;
 
 /**
@@ -55,7 +54,7 @@ class Console
      * Set the ajax flag to indicate whether
      * we are servicing an ajax request
      *
-     * @param bool $isAjax Whether we are servicing an ajax request
+     * @param  bool  $isAjax Whether we are servicing an ajax request
      */
     public function setAjax(bool $isAjax): void
     {

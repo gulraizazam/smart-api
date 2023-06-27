@@ -10,12 +10,12 @@ use App\Models\Settings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
 use App\Models\UserOperatorSettings;
+use Config;
 use Illuminate\Bus\Queueable;
-use Illuminate\Queue\SerializesModels;
-use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
-use Config;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
 
 class SecondSmsJob implements ShouldQueue
 {
@@ -56,13 +56,13 @@ class SecondSmsJob implements ShouldQueue
                 // SEND SMS for Appointment Booked
                 $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms', $this->payload['account_id']); // 'second-sms' for Appointment SMS
             }
-            if (!$SMSTemplate) {
+            if (! $SMSTemplate) {
                 // SMS Promotion is disabled
-                return array(
+                return [
                     'status' => true,
                     'sms_data' => 'SMS Promotion is disabled',
                     'error_msg' => '',
-                );
+                ];
             }
             $preparedText = Appointments::prepareSMSContent($this->payload['appointment_id'], $SMSTemplate->content);
 
@@ -71,24 +71,24 @@ class SecondSmsJob implements ShouldQueue
             $UserOperatorSettings = UserOperatorSettings::getRecord($this->payload['account_id'], $setting->data);
 
             if ($setting->data == 1) {
-                $SMSObj = array(
+                $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($this->payload['phone'])),
                     'text' => $preparedText,
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-                );
+                ];
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
             } else {
-                $SMSObj = array(
+                $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                     'from' => $UserOperatorSettings->mask,
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($this->payload['phone'])),
                     'text' => $preparedText,
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-                );
+                ];
                 $response = JazzSMSAPI::SendSMS($SMSObj);
             }
             $SMSLog = array_merge($SMSObj, $response);
@@ -103,7 +103,7 @@ class SecondSmsJob implements ShouldQueue
             return true;
 
         } catch (\Exception $exception) {
-            $exception->getLine() . '---' . $exception->getMessage() . '----' . $exception->getFile();
+            $exception->getLine().'---'.$exception->getMessage().'----'.$exception->getFile();
         }
     }
 }

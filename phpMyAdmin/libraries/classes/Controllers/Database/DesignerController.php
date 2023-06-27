@@ -4,16 +4,15 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database;
 
+use function __;
+use function htmlspecialchars;
+use function in_array;
 use PhpMyAdmin\Database\Designer;
 use PhpMyAdmin\Database\Designer\Common as DesignerCommon;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function htmlspecialchars;
-use function in_array;
 use function sprintf;
 
 class DesignerController extends AbstractController
@@ -178,7 +177,7 @@ class DesignerController extends AbstractController
         }
 
         foreach ($tab_pos as $position) {
-            if (in_array($position['dbName'] . '.' . $position['tableName'], $fullTableNames)) {
+            if (in_array($position['dbName'].'.'.$position['tableName'], $fullTableNames)) {
                 continue;
             }
 

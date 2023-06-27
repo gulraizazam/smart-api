@@ -4,16 +4,14 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Sql;
 
+use function __;
+use const ENT_COMPAT;
+use function htmlentities;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\Controllers\AbstractController;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Sql;
 use PhpMyAdmin\Template;
-
-use function __;
-use function htmlentities;
-
-use const ENT_COMPAT;
 
 final class SetValuesController extends AbstractController
 {

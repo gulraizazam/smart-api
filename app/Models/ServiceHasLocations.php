@@ -2,12 +2,8 @@
 
 namespace App\Models;
 
-use App\Models\AuditTrails;
-use Auth;
-
 class ServiceHasLocations extends BaseModal
 {
-
     protected $fillable = ['service_id', 'location_id', 'account_id'];
 
     protected static $_fillable = ['service_id', 'location_id'];
@@ -45,11 +41,10 @@ class ServiceHasLocations extends BaseModal
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function createRecord($data, $parent_data)
+    public static function createRecord($data, $parent_data)
     {
         $record = self::insert($data);
 
@@ -63,11 +58,10 @@ class ServiceHasLocations extends BaseModal
     /**
      * update Record
      *
-     * @param \Illuminate\Http\Request $request ,$parent_data
-     *
+     * @param  \Illuminate\Http\Request  $request ,$parent_data
      * @return (mixed)
      */
-    static public function updateRecord($data, $parent_data)
+    public static function updateRecord($data, $parent_data)
     {
         $record = self::insert($data);
 
