@@ -2790,7 +2790,7 @@ class DashboardReportsController extends Controller
             ->get();
         }
         
-        
+        dd($consultants);
         return response()->json(['status' => 1, 'doctors' => $consultants]);
     }
 }
