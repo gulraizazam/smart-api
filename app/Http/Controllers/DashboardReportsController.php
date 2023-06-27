@@ -2545,13 +2545,11 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments=0;
         $periods = GeneralFunctions::GetPeriods();
-        $locations = ACL::getUserCentres();
+        $locations =$request->centre_id == 'all' ? ACL::getUserCentres() : [$request->centre_id];
         if ($request->doc_id) {
             $where[] = [['appointments.doctor_id' => $request->doc_id]];
         }
-        if ($request->doc_id && $request->centre_id == "all") {
-            $request->remove('centre_id');
-        }
+      
         if ($request->centre_id != 'all') {
             $where[] = [['appointments.location_id' => $request->centre_id]];
         }
@@ -2572,14 +2570,16 @@ class DashboardReportsController extends Controller
             $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
             ->join('users','resources.external_id','users.id')
             ->select('users.name','users.id')
-            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 , 'resource_has_rota.location_id' => $request->centre_id , 'resources.external_id' =>$request->doc_id])
+            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1  , 'resources.external_id' =>$request->doc_id])
+            ->whereIn('resource_has_rota.location_id' , $locations)
             ->distinct('user_id')
             ->get();
         }else{
             $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
             ->join('users','resources.external_id','users.id')
             ->select('users.name','users.id')
-            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 , 'resource_has_rota.location_id' => $request->centre_id])
+            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 ])
+            ->whereIn('resource_has_rota.location_id' , $locations)
             ->distinct('user_id')
             ->get();
         }
