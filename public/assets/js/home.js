@@ -867,7 +867,7 @@ function initDoctorWiseConversion(period, time = '') {
 }
 
 function LoadDocWiseConversion(doc_id) {
-    doc_wise_conversion_chart.destroy();
+    // doc_wise_conversion_chart.destroy();
     $('#doc_time li a').removeClass('active');
     $('#doc_time li.thismonth a').addClass('active');
     $('.arrivalbtn').text();
