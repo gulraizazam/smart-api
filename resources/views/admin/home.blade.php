@@ -941,13 +941,7 @@
                 jQuery('.doc_wise_arrival_ul li a').removeClass('active');
                 jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
             });
-
-
             $(document).ready(function() {
-                
-                
-               
-               
                 period = "today";
                 // activities
                 $.ajax({
