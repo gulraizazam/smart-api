@@ -975,9 +975,9 @@
             function GetDoctors(centre_id, time = '') {
                 $('#doc_time li a').removeClass('active');
                 $('#doc_time li.thismonth a').addClass('active');
-                if (time != 'firsttime') {
-                    doc_wise_conversion_chart.destroy();
-                }
+                // if (time != 'firsttime') {
+                //     doc_wise_conversion_chart.destroy();
+                // }
                 $('#doc_nav').empty();
                 $(".doctorname").text('Select doctor')
                 $("#categories-table-body").html('');
