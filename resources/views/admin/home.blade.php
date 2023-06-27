@@ -966,9 +966,8 @@
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     initUserWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', 'firsttime');
-                    GetDoctors(center_id, 'firsttime');
                 @else
-                    GetDoctors(center_id, 'firsttime');
+
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
 
