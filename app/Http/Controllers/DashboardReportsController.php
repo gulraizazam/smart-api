@@ -2691,6 +2691,7 @@ class DashboardReportsController extends Controller
                     'appointments.appointment_type_id' => 1
                 ])
                 ->where($where)
+                ->whereIn('appointments.location_id' ,$locations)
                 ->selectRaw('count(*) as arrived, service_id,services.name')
                 ->whereBetween('appointments.scheduled_date', [
                     $periods[$period]['start_date'],
@@ -2734,11 +2735,13 @@ class DashboardReportsController extends Controller
                     if ($request->centre_id && !$request->doc_id) {
                         $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                             ->whereIn('doctor_id', $centre_doctors)
+                            ->whereIn('appointments.location_id' ,$locations)
                             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                             ->count();
                     } else {
                         $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                             ->whereIn('doctor_id', $consultant)
+                            ->whereIn('appointments.location_id' ,$locations)
                             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                             ->count();
                     }
@@ -2749,11 +2752,13 @@ class DashboardReportsController extends Controller
                     if ($request->centre_id && !$request->doc_id) {
                         $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                             ->whereIn('doctor_id', $centre_doctors)
+                            ->whereIn('appointments.location_id' ,$locations)
                             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                             ->count();
                     } else {
                         $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                             ->whereIn('doctor_id', $consultant)
+                            ->whereIn('appointments.location_id' ,$locations)
                             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                             ->count();
                     }
