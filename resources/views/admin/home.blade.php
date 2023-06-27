@@ -945,6 +945,7 @@
 
             $(document).ready(function() {
                 var center_id = $(".doctorwiseconversion").attr('data-id');
+                alert(center_id);
                 @if (Auth::user()->hasRole('FDM'))
                     GetDoctors(center_id);
                 @endif
