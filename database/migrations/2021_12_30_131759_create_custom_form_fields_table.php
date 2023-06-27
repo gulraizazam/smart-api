@@ -19,7 +19,7 @@ class CreateCustomFormFieldsTable extends Migration
             $table->text('content')->nullable();
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedBigInteger('sort_number')->nullable();
-            $table->unsignedBigInteger('section_id')->default(1)->comment("this will be used when one want to create form with multiple sections");
+            $table->unsignedBigInteger('section_id')->default(1)->comment('this will be used when one want to create form with multiple sections');
             $table->unsignedBigInteger('user_form_id');
             $table->unsignedBigInteger('account_id');
             $table->unsignedBigInteger('created_by')->nullable();

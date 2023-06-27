@@ -2,45 +2,41 @@
 
 namespace App\Models;
 
-use App\Models\User;
-use Illuminate\Database\Eloquent\Model;
+use App\Helpers\Filters;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Session;
-use App\Helpers\Filters;
 
 class CustomFormFeedbacks extends BaseModal
 {
     use SoftDeletes;
 
     private static $PATIENT_USER_TYPE = 3;
-    protected $fillable = ['account_id', 'form_name', "form_description", 'content', "reference_id", "custom_form_id", 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at','custom_form_type'];
+
+    protected $fillable = ['account_id', 'form_name', 'form_description', 'content', 'reference_id', 'custom_form_id', 'created_by', 'updated_by', 'created_at', 'updated_at', 'deleted_at', 'custom_form_type'];
 
     protected $table = 'custom_form_feedbacks';
 
     /**
      * logable array and table name
+     *
      * @var array
      */
-    protected static $_fillable = ['form_name', "form_description", 'content', "reference_id", "custom_form_id",'custom_form_type'];
+    protected static $_fillable = ['form_name', 'form_description', 'content', 'reference_id', 'custom_form_id', 'custom_form_type'];
 
-    protected static $_table = "custom_form_feedbacks";
+    protected static $_table = 'custom_form_feedbacks';
 
     const sort_field = 'id';
-
 
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param bool $account_id
+     * @param  bool  $account_id
      * @return  (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false, $id = false , $filename )
+    public static function getTotalRecords(Request $request, $account_id, $apply_filter, $id, $filename)
     {
-        $where = self::custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename );
+        $where = self::custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename);
 
         if (count($where)) {
             return self::join('users', 'users.id', '=', 'custom_form_feedbacks.reference_id')->where($where)->count();
@@ -52,26 +48,23 @@ class CustomFormFeedbacks extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $id = false, $filename)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $id, $filename)
     {
         $where = self::custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename);
 
-
         if ($request->has('sort')) {
 
-            list($orderBy, $order) = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
+            [$orderBy, $order] = getSortBy($request, 'created_at', 'desc', 'custom_form_feedbacks');
 
             Filters::put(Auth::User()->id, $filename, 'order_by', $orderBy);
             Filters::put(Auth::User()->id, $filename, 'order', $order);
         } else {
-            if(
+            if (
                 Filters::get(Auth::User()->id, $filename, 'order_by')
                 && Filters::get(Auth::User()->id, $filename, 'order')
             ) {
@@ -94,16 +87,16 @@ class CustomFormFeedbacks extends BaseModal
         }
 
         if (count($where)) {
-            return self::join('users', 'users.id', '=', 'custom_form_feedbacks.reference_id')->select('*', 'custom_form_feedbacks.id as internal_id','custom_form_feedbacks.created_at as created_at_form')
+            return self::join('users', 'users.id', '=', 'custom_form_feedbacks.reference_id')->select('*', 'custom_form_feedbacks.id as internal_id', 'custom_form_feedbacks.created_at as created_at_form')
                 ->where($where)
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
-                ->orderBy($orderBy,$order)->get();
+                ->orderBy($orderBy, $order)->get();
         } else {
-            return self::join('users', 'users.id', '=', 'custom_form_feedbacks.reference_id')->select('*', 'custom_form_feedbacks.id as internal_id','custom_form_feedbacks.created_at as created_at_form')
+            return self::join('users', 'users.id', '=', 'custom_form_feedbacks.reference_id')->select('*', 'custom_form_feedbacks.id as internal_id', 'custom_form_feedbacks.created_at as created_at_form')
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
-                ->orderBy($orderBy,$order)
+                ->orderBy($orderBy, $order)
                 ->get();
         }
     }
@@ -111,174 +104,175 @@ class CustomFormFeedbacks extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     * @param (boolean) $apply_filter
+     * @param  \Illuminate\Http\Request  $request
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (boolean)  $apply_filter
      * @return (mixed)
      */
-    static public function custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename )
+    public static function custom_form_feedbacks_filters($request, $account_id, $apply_filter, $id, $filename)
     {
-        $where = array();
+        $where = [];
 
         $filters = getFilters($request->all());
 
-        if($id != false){
-            $where[] = array(
+        if ($id != false) {
+            $where[] = [
                 'users.id',
                 '=',
-                $id
-            );
-            Filters::put(Auth::user()->id, $filename, 'id', $id );
+                $id,
+            ];
+            Filters::put(Auth::user()->id, $filename, 'id', $id);
         } else {
-            if ($apply_filter){
-                Filters::forget(Auth::user()->id, $filename , 'id');
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, $filename, 'id');
             } else {
-                if (Filters::get(Auth::user()->id, $filename, 'id')){
-                    $where[] = array(
+                if (Filters::get(Auth::user()->id, $filename, 'id')) {
+                    $where[] = [
                         'users.id',
                         '=',
-                        Filters::get(Auth::user(),$filename, 'id')
-                    );
+                        Filters::get(Auth::user(), $filename, 'id'),
+                    ];
                 }
             }
         }
 
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'users.account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, $filename, 'account_id', $account_id);
-        }  else {
+        } else {
 
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'users.account_id',
                         '=',
-                        Filters::get(Auth::User()->id, $filename, 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, $filename, 'account_id'),
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'custom_form_feedbacks.form_name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'name');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'custom_form_feedbacks.form_name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, $filename, 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, $filename, 'name').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'id')) {
-            $where[] = array(
+            $where[] = [
                 'users.id',
                 'like',
-                '%' . \App\Helpers\GeneralFunctions::patientSearch($filters['id']) . '%'
-            );
+                '%'.\App\Helpers\GeneralFunctions::patientSearch($filters['id']).'%',
+            ];
             Filters::put(Auth::User()->id, $filename, 'id', \App\Helpers\GeneralFunctions::patientSearch($filters['id']));
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'id');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'id')) {
-                    $where[] = array(
+                    $where[] = [
                         'users.id',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, $filename, 'id') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, $filename, 'id').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'patient_name')) {
-            $where[] = array(
+            $where[] = [
                 'users.name',
                 'like',
-                '%' . $filters['patient_name'] . '%'
-            );
+                '%'.$filters['patient_name'].'%',
+            ];
             Filters::put(Auth::User()->id, $filename, 'patient_name', $filters['patient_name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'patient_name');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'patient_name')) {
-                    $where[] = array(
+                    $where[] = [
                         'users.name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, $filename, 'patient_name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, $filename, 'patient_name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'created_from')) {
-            $where[] = array(
+            $where[] = [
                 'custom_form_feedbacks.created_at',
                 '>=',
-                $filters['created_from'] . ' 00:00:00'
-            );
+                $filters['created_from'].' 00:00:00',
+            ];
             Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_from');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'created_from')) {
-                    $where[] = array(
+                    $where[] = [
                         'custom_form_feedbacks.created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, $filename, 'created_from') . ' 00:00:00'
-                    );
+                        Filters::get(Auth::User()->id, $filename, 'created_from').' 00:00:00',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'created_to')) {
-            $where[] = array(
+            $where[] = [
                 'custom_form_feedbacks.created_at',
                 '<=',
-                $filters['created_to'] . ' 23:59:59'
-            );
+                $filters['created_to'].' 23:59:59',
+            ];
             Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_to');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'created_to')) {
-                    $where[] = array(
+                    $where[] = [
                         'custom_form_feedbacks.created_at',
                         '<=',
-                        Filters::get(Auth::User()->id, $filename, 'created_to') . ' 23:59:59'
-                    );
+                        Filters::get(Auth::User()->id, $filename, 'created_to').' 23:59:59',
+                    ];
                 }
             }
         }
-        $where[] = array(
+        $where[] = [
             'custom_form_feedbacks.custom_form_type',
             '=',
-            '0'
-        );
+            '0',
+        ];
 
         return $where;
     }
 
-    public static function records(){
-        return self::where(["account_id"=>Auth::User()->account_id])->with(["user"])->get();
+    public static function records()
+    {
+        return self::where(['account_id' => Auth::User()->account_id])->with(['user'])->get();
     }
 
     public static function deleteRecord($id)
@@ -302,45 +296,44 @@ class CustomFormFeedbacks extends BaseModal
         AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
     }
 
-    public function user(){
-       return $this->belongsTo(User::class,"reference_id");
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'reference_id');
     }
 
     /**
      * Get All Records
      *
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id)
     {
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
 
-
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
      *
      * @return (mixed)
      */
-    static public function createRecord(Request $request, $id, $account_id, $user_id, $data = false)
+    public static function createRecord(Request $request, $id, $account_id, $user_id, $data = false)
     {
         $custom_form = CustomForms::get_all_fields_data($id);
         // Set Account ID
         $data['account_id'] = $account_id;
-        $data["form_name"] = $custom_form->name;
-        $data["form_description"] = $custom_form->description;
-        $data["content"] = $custom_form->content;
-        $data["custom_form_id"] = $custom_form->id;
-        if ($request->has("reference_id"))
-            $data["reference_id"] = $request->get("reference_id");
-        else
-            $data["reference_id"] = 0;
+        $data['form_name'] = $custom_form->name;
+        $data['form_description'] = $custom_form->description;
+        $data['content'] = $custom_form->content;
+        $data['custom_form_id'] = $custom_form->id;
+        if ($request->has('reference_id')) {
+            $data['reference_id'] = $request->get('reference_id');
+        } else {
+            $data['reference_id'] = 0;
+        }
 
-        $data["created_by"] = $user_id;
+        $data['created_by'] = $user_id;
         $record = self::create($data);
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
@@ -354,49 +347,45 @@ class CustomFormFeedbacks extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id, $user_id)
+    public static function updateRecord($id, $request, $account_id, $user_id)
     {
 
         $old_data = (self::find($id))->toArray();
 
-
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if ($request->has("reference_id")) {
-            $data["reference_id"] = $request->get("reference_id");
+        if ($request->has('reference_id')) {
+            $data['reference_id'] = $request->get('reference_id');
         }
 
-
-        $data["updated_by"] = $user_id;
+        $data['updated_by'] = $user_id;
         $record->update($data);
 
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable,$old_data,$record);
+        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $record);
+
         return $record;
     }
 
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
 
         return false;
@@ -410,11 +399,10 @@ class CustomFormFeedbacks extends BaseModal
     public static function getAllFields($id)
     {
 
-
         return self::where([
             ['id', '=', $id],
-            ['account_id', '=', Auth::User()->account_id]
-        ])->with(['form_fields','patient'])->first();
+            ['account_id', '=', Auth::User()->account_id],
+        ])->with(['form_fields', 'patient'])->first();
     }
 
     public function form_fields()
@@ -422,8 +410,8 @@ class CustomFormFeedbacks extends BaseModal
         return $this->hasMany('App\Models\CustomFormFeedbackDetails', 'custom_form_feedback_id');
     }
 
-    public function patient(){
-        return $this->hasOne(User::class,'id','reference_id');
+    public function patient()
+    {
+        return $this->hasOne(User::class, 'id', 'reference_id');
     }
-
 }

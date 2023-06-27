@@ -7,18 +7,19 @@ use App\Helpers\TelenorSMSAPI;
 use App\Jobs\SecondSmsJob;
 use App\Models\Accounts;
 use App\Models\Appointments;
-use App\Models\UserOperatorSettings;
 use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
+use App\Models\UserOperatorSettings;
 use Carbon\Carbon;
-use Illuminate\Console\Command;
 use Config;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Console\Command;
 use Illuminate\Foundation\Bus\DispatchesJobs;
+use Illuminate\Support\Facades\Log;
 
 class SecondMessageOfAppointment extends Command
 {
     use DispatchesJobs;
+
     /**
      * The name and signature of the console command.
      *
@@ -51,33 +52,33 @@ class SecondMessageOfAppointment extends Command
     public function handle()
     {
         $day = Carbon::now()->setTimezone('Asia/Karachi')->format('Y-m-d');
-        $tomorrow = Carbon::parse(Carbon::now())->addDay()->setTimezone('Asia/Karachi')->format('Y-m-d');;
+        $tomorrow = Carbon::parse(Carbon::now())->addDay()->setTimezone('Asia/Karachi')->format('Y-m-d');
 
-        $where = array();
+        $where = [];
 
-        $where[] = array(
+        $where[] = [
             'scheduled_date',
             '=',
-            $tomorrow
-        );
-        $where[] = array(
+            $tomorrow,
+        ];
+        $where[] = [
             'base_appointment_status_id',
             '=',
-            1
-        );
+            1,
+        ];
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
-           
+
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
             ->get();
         $log_type = '2nd_sms';
         if ($appointments) {
             foreach ($appointments as $appointment) {
-                $smsLog = SMSLogs::where(array(
+                $smsLog = SMSLogs::where([
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'log_type' => $log_type,
-                ))
+                ])
                     ->where('appointment_id', '=', $appointment->appointment_id)
                     ->whereDate('created_at', '=', $day)
                     ->select('id')->first();
@@ -93,7 +94,7 @@ class SecondMessageOfAppointment extends Command
                     'account_id' => $account->id,
                     'appointment_id' => $appointment->appointment_id,
                     'phone' => $appointment->phone,
-                    'log_type' => $log_type
+                    'log_type' => $log_type,
                 ]))->delay(Carbon::now()->addSeconds(2));
                 dispatch($job);
             }
@@ -101,10 +102,10 @@ class SecondMessageOfAppointment extends Command
             try {
                 Log::info(json_encode($appointment));
             } catch (\Exception $e) {
-                Log::info(json_encode("lOG-XCEPTION: ". $e));
+                Log::info(json_encode('lOG-XCEPTION: '.$e));
             }
 
-            Log::info("Second sms sent finally ");
+            Log::info('Second sms sent finally ');
         }
     }
 

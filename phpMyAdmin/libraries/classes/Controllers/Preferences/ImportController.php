@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Preferences;
 
+use function define;
+use function ltrim;
 use PhpMyAdmin\Config;
 use PhpMyAdmin\Config\ConfigFile;
 use PhpMyAdmin\Config\Forms\User\ImportForm;
@@ -14,9 +16,6 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\TwoFactor;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\UserPreferences;
-
-use function define;
-use function ltrim;
 
 class ImportController extends AbstractController
 {

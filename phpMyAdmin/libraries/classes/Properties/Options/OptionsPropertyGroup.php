@@ -7,10 +7,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Properties\Options;
 
-use Countable;
-
 use function array_diff;
 use function count;
+use Countable;
 use function in_array;
 
 /**
@@ -31,7 +30,7 @@ abstract class OptionsPropertyGroup extends OptionsPropertyItem implements Count
     /**
      * Adds a property to the group of properties
      *
-     * @param OptionsPropertyItem $property the property instance to be added
+     * @param  OptionsPropertyItem  $property the property instance to be added
      *                                      to the group
      */
     public function addProperty($property): void
@@ -46,7 +45,7 @@ abstract class OptionsPropertyGroup extends OptionsPropertyItem implements Count
     /**
      * Removes a property from the group of properties
      *
-     * @param OptionsPropertyItem $property the property instance to be removed
+     * @param  OptionsPropertyItem  $property the property instance to be removed
      *                                      from the group
      */
     public function removeProperty($property): void

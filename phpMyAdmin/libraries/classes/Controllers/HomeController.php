@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers;
 
+use function __;
+use function count;
+use const E_USER_NOTICE;
+use const E_USER_WARNING;
+use function extension_loaded;
+use function file_exists;
+use function ini_get;
+use function mb_strlen;
+use const PHP_VERSION;
 use PhpMyAdmin\Charsets;
 use PhpMyAdmin\CheckUserPrivileges;
 use PhpMyAdmin\Config;
@@ -21,21 +30,10 @@ use PhpMyAdmin\ThemeManager;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
 use PhpMyAdmin\Version;
-
-use function __;
-use function count;
-use function extension_loaded;
-use function file_exists;
-use function ini_get;
-use function mb_strlen;
 use function preg_match;
+use const SODIUM_CRYPTO_SECRETBOX_KEYBYTES;
 use function sprintf;
 use function trigger_error;
-
-use const E_USER_NOTICE;
-use const E_USER_WARNING;
-use const PHP_VERSION;
-use const SODIUM_CRYPTO_SECRETBOX_KEYBYTES;
 
 class HomeController extends AbstractController
 {
@@ -93,7 +91,7 @@ class HomeController extends AbstractController
         if (isset($_SESSION['partial_logout'])) {
             $partialLogout = Message::success(__(
                 'You were logged out from one server, to logout completely '
-                . 'from phpMyAdmin, you need to logout from all servers.'
+                .'from phpMyAdmin, you need to logout from all servers.'
             ))->getDisplay();
             unset($_SESSION['partial_logout']);
         }
@@ -165,10 +163,10 @@ class HomeController extends AbstractController
                 'host' => $hostInfo,
                 'type' => Util::getServerType(),
                 'connection' => Generator::getServerSSL(),
-                'version' => $this->dbi->getVersionString() . ' - ' . $this->dbi->getVersionComment(),
+                'version' => $this->dbi->getVersionString().' - '.$this->dbi->getVersionComment(),
                 'protocol' => $this->dbi->getProtoInfo(),
                 'user' => $this->dbi->fetchValue('SELECT USER();'),
-                'charset' => $serverCharset->getDescription() . ' (' . $serverCharset->getName() . ')',
+                'charset' => $serverCharset->getDescription().' ('.$serverCharset->getName().')',
             ];
         }
 
@@ -179,7 +177,7 @@ class HomeController extends AbstractController
             if ($server > 0) {
                 $clientVersion = $this->dbi->getClientInfo();
                 if (preg_match('#\d+\.\d+\.\d+#', $clientVersion)) {
-                    $clientVersion = 'libmysql - ' . $clientVersion;
+                    $clientVersion = 'libmysql - '.$clientVersion;
                 }
 
                 $webServer['database'] = $clientVersion;
@@ -194,18 +192,18 @@ class HomeController extends AbstractController
             if (! $relationParameters->hasAllFeatures() && $cfg['PmaNoRelation_DisableWarning'] == false) {
                 $messageText = __(
                     'The phpMyAdmin configuration storage is not completely '
-                    . 'configured, some extended features have been deactivated. '
-                    . '%sFind out why%s. '
+                    .'configured, some extended features have been deactivated. '
+                    .'%sFind out why%s. '
                 );
                 if ($cfg['ZeroConf'] == true) {
-                    $messageText .= '<br>' .
+                    $messageText .= '<br>'.
                         __('Or alternately go to \'Operations\' tab of any database to set it up there.');
                 }
 
                 $messageInstance = Message::notice($messageText);
                 $messageInstance->addParamHtml(
-                    '<a href="' . Url::getFromRoute('/check-relations')
-                    . '" data-post="' . Url::getCommon() . '">'
+                    '<a href="'.Url::getFromRoute('/check-relations')
+                    .'" data-post="'.Url::getCommon().'">'
                 );
                 $messageInstance->addParamHtml('</a>');
                 /* Show error if user has configured something, notice elsewhere */
@@ -262,10 +260,10 @@ class HomeController extends AbstractController
             if ($gc_time < $cfg['LoginCookieValidity']) {
                 trigger_error(
                     __(
-                        'Your PHP parameter [a@https://www.php.net/manual/en/session.' .
-                        'configuration.php#ini.session.gc-maxlifetime@_blank]session.' .
-                        'gc_maxlifetime[/a] is lower than cookie validity configured ' .
-                        'in phpMyAdmin, because of this, your login might expire sooner ' .
+                        'Your PHP parameter [a@https://www.php.net/manual/en/session.'.
+                        'configuration.php#ini.session.gc-maxlifetime@_blank]session.'.
+                        'gc_maxlifetime[/a] is lower than cookie validity configured '.
+                        'in phpMyAdmin, because of this, your login might expire sooner '.
                         'than configured in phpMyAdmin.'
                     ),
                     E_USER_WARNING
@@ -279,8 +277,8 @@ class HomeController extends AbstractController
         if ($cfg['LoginCookieStore'] != 0 && $cfg['LoginCookieStore'] < $cfg['LoginCookieValidity']) {
             trigger_error(
                 __(
-                    'Login cookie store is lower than cookie validity configured in ' .
-                    'phpMyAdmin, because of this, your login will expire sooner than ' .
+                    'Login cookie store is lower than cookie validity configured in '.
+                    'phpMyAdmin, because of this, your login will expire sooner than '.
                     'configured in phpMyAdmin.'
                 ),
                 E_USER_WARNING
@@ -298,9 +296,9 @@ class HomeController extends AbstractController
         ) {
             trigger_error(
                 __(
-                    'Your server is running with default values for the ' .
-                    'controluser and password (controlpass) and is open to ' .
-                    'intrusion; you really should fix this security weakness' .
+                    'Your server is running with default values for the '.
+                    'controluser and password (controlpass) and is open to '.
+                    'intrusion; you really should fix this security weakness'.
                     ' by changing the password for controluser \'pma\'.'
                 ),
                 E_USER_WARNING
@@ -323,7 +321,7 @@ class HomeController extends AbstractController
                     sprintf(
                         __(
                             'The secret passphrase in configuration (blowfish_secret) is not the correct length.'
-                            . ' It should be %d bytes long.'
+                            .' It should be %d bytes long.'
                         ),
                         SODIUM_CRYPTO_SECRETBOX_KEYBYTES
                     ),
@@ -336,13 +334,13 @@ class HomeController extends AbstractController
          * Check for existence of config directory which should not exist in
          * production environment.
          */
-        if (@file_exists(ROOT_PATH . 'config')) {
+        if (@file_exists(ROOT_PATH.'config')) {
             trigger_error(
                 __(
-                    'Directory [code]config[/code], which is used by the setup script, ' .
-                    'still exists in your phpMyAdmin directory. It is strongly ' .
-                    'recommended to remove it once phpMyAdmin has been configured. ' .
-                    'Otherwise the security of your server may be compromised by ' .
+                    'Directory [code]config[/code], which is used by the setup script, '.
+                    'still exists in your phpMyAdmin directory. It is strongly '.
+                    'recommended to remove it once phpMyAdmin has been configured. '.
+                    'Otherwise the security of your server may be compromised by '.
                     'unauthorized people downloading your configuration.'
                 ),
                 E_USER_WARNING
@@ -374,8 +372,8 @@ class HomeController extends AbstractController
             trigger_error(
                 sprintf(
                     __(
-                        'The $cfg[\'TempDir\'] (%s) is not accessible. ' .
-                        'phpMyAdmin is not able to cache templates and will ' .
+                        'The $cfg[\'TempDir\'] (%s) is not accessible. '.
+                        'phpMyAdmin is not able to cache templates and will '.
                         'be slow because of this.'
                     ),
                     $this->config->get('TempDir')
@@ -396,12 +394,12 @@ class HomeController extends AbstractController
          *
          * The data file is created while creating release by ./scripts/remove-incomplete-mo
          */
-        if (! @file_exists(ROOT_PATH . 'libraries/language_stats.inc.php')) {
+        if (! @file_exists(ROOT_PATH.'libraries/language_stats.inc.php')) {
             return;
         }
 
         /** @psalm-suppress MissingFile */
-        include ROOT_PATH . 'libraries/language_stats.inc.php';
+        include ROOT_PATH.'libraries/language_stats.inc.php';
         /*
          * This message is intentionally not translated, because we're
          * handling incomplete translations here and focus on english
@@ -416,8 +414,8 @@ class HomeController extends AbstractController
 
         trigger_error(
             'You are using an incomplete translation, please help to make it '
-            . 'better by [a@https://www.phpmyadmin.net/translate/'
-            . '@_blank]contributing[/a].',
+            .'better by [a@https://www.phpmyadmin.net/translate/'
+            .'@_blank]contributing[/a].',
             E_USER_NOTICE
         );
     }
@@ -432,9 +430,9 @@ class HomeController extends AbstractController
             trigger_error(
                 __(
                     'The mbstring PHP extension was not found and you seem to be using'
-                    . ' a multibyte charset. Without the mbstring extension phpMyAdmin'
-                    . ' is unable to split strings correctly and it may result in'
-                    . ' unexpected results.'
+                    .' a multibyte charset. Without the mbstring extension phpMyAdmin'
+                    .' is unable to split strings correctly and it may result in'
+                    .' unexpected results.'
                 ),
                 E_USER_WARNING
             );
@@ -450,8 +448,8 @@ class HomeController extends AbstractController
         trigger_error(
             __(
                 'The curl extension was not found and allow_url_fopen is '
-                . 'disabled. Due to this some features such as error reporting '
-                . 'or version check are disabled.'
+                .'disabled. Due to this some features such as error reporting '
+                .'or version check are disabled.'
             )
         );
     }

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Table;
 
+use function __;
+use function intval;
+use function is_array;
+use function min;
 use PhpMyAdmin\Config;
 use PhpMyAdmin\ConfigStorage\Relation;
 use PhpMyAdmin\Core;
@@ -18,11 +22,6 @@ use PhpMyAdmin\Template;
 use PhpMyAdmin\Transformations;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function intval;
-use function is_array;
-use function min;
 use function strlen;
 
 /**

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database;
 
+use function __;
+use function array_merge;
+use function is_array;
 use PhpMyAdmin\Config\PageSettings;
 use PhpMyAdmin\Export;
 use PhpMyAdmin\Export\Options;
@@ -13,10 +16,6 @@ use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
 use PhpMyAdmin\Url;
 use PhpMyAdmin\Util;
-
-use function __;
-use function array_merge;
-use function is_array;
 
 final class ExportController extends AbstractController
 {

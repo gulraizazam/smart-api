@@ -9,9 +9,9 @@ class TaxTreatmentType extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['name','created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['name', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['name','created_at', 'updated_at', 'deleted_at'];
+    protected static $_fillable = ['name', 'created_at', 'updated_at', 'deleted_at'];
 
     protected $table = 'tax_treatment_type';
 

@@ -16,7 +16,7 @@ class AuditTrailTableSeeder extends Seeder
     {
         $table_data = $this->tableData();
         foreach ($table_data as $table) {
-            if (!AuditTrailTables::where($table)->exists()) {
+            if (! AuditTrailTables::where($table)->exists()) {
                 AuditTrailTables::create($table);
             }
         }

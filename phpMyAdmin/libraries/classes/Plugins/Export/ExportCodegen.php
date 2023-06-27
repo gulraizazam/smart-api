@@ -7,6 +7,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Plugins\Export;
 
+use function __;
+use function implode;
 use PhpMyAdmin\Plugins\Export\Helpers\TableProperty;
 use PhpMyAdmin\Plugins\ExportPlugin;
 use PhpMyAdmin\Properties\Options\Groups\OptionsPropertyMainGroup;
@@ -15,9 +17,6 @@ use PhpMyAdmin\Properties\Options\Items\HiddenPropertyItem;
 use PhpMyAdmin\Properties\Options\Items\SelectPropertyItem;
 use PhpMyAdmin\Properties\Plugins\ExportPluginProperties;
 use PhpMyAdmin\Util;
-
-use function __;
-use function implode;
 use function preg_match;
 use function preg_replace;
 use function sprintf;
@@ -36,6 +35,7 @@ class ExportCodegen extends ExportPlugin
     private $cgFormats;
 
     private const HANDLER_NHIBERNATE_CS = 0;
+
     private const HANDLER_NHIBERNATE_XML = 1;
 
     /**
@@ -109,8 +109,8 @@ class ExportCodegen extends ExportPlugin
     /**
      * Outputs database header
      *
-     * @param string $db      Database name
-     * @param string $dbAlias Aliases of db
+     * @param  string  $db      Database name
+     * @param  string  $dbAlias Aliases of db
      */
     public function exportDBHeader($db, $dbAlias = ''): bool
     {
@@ -120,7 +120,7 @@ class ExportCodegen extends ExportPlugin
     /**
      * Outputs database footer
      *
-     * @param string $db Database name
+     * @param  string  $db Database name
      */
     public function exportDBFooter($db): bool
     {
@@ -130,9 +130,9 @@ class ExportCodegen extends ExportPlugin
     /**
      * Outputs CREATE DATABASE statement
      *
-     * @param string $db         Database name
-     * @param string $exportType 'server', 'database', 'table'
-     * @param string $dbAlias    Aliases of db
+     * @param  string  $db         Database name
+     * @param  string  $exportType 'server', 'database', 'table'
+     * @param  string  $dbAlias    Aliases of db
      */
     public function exportDBCreate($db, $exportType, $dbAlias = ''): bool
     {
@@ -142,12 +142,12 @@ class ExportCodegen extends ExportPlugin
     /**
      * Outputs the content of a table in NHibernate format
      *
-     * @param string $db       database name
-     * @param string $table    table name
-     * @param string $crlf     the end of line sequence
-     * @param string $errorUrl the url to go back in case of error
-     * @param string $sqlQuery SQL query for obtaining data
-     * @param array  $aliases  Aliases of db/table/columns
+     * @param  string  $db       database name
+     * @param  string  $table    table name
+     * @param  string  $crlf     the end of line sequence
+     * @param  string  $errorUrl the url to go back in case of error
+     * @param  string  $sqlQuery SQL query for obtaining data
+     * @param  array  $aliases  Aliases of db/table/columns
      */
     public function exportData(
         $db,
@@ -173,9 +173,8 @@ class ExportCodegen extends ExportPlugin
     /**
      * Used to make identifiers (from table or database names)
      *
-     * @param string $str     name to be converted
-     * @param bool   $ucfirst whether to make the first character uppercase
-     *
+     * @param  string  $str     name to be converted
+     * @param  bool  $ucfirst whether to make the first character uppercase
      * @return string identifier
      */
     public static function cgMakeIdentifier($str, $ucfirst = true)
@@ -184,7 +183,7 @@ class ExportCodegen extends ExportPlugin
         $str = (string) preg_replace('/[^\p{L}\p{Nl}_]/u', '', $str);
         // make sure first character is a letter or _
         if (! preg_match('/^\pL/u', $str)) {
-            $str = '_' . $str;
+            $str = '_'.$str;
         }
 
         if ($ucfirst) {
@@ -197,11 +196,10 @@ class ExportCodegen extends ExportPlugin
     /**
      * C# Handler
      *
-     * @param string $db      database name
-     * @param string $table   table name
-     * @param string $crlf    line separator
-     * @param array  $aliases Aliases of db/table/columns
-     *
+     * @param  string  $db      database name
+     * @param  string  $table   table name
+     * @param  string  $crlf    line separator
+     * @param  array  $aliases Aliases of db/table/columns
      * @return string containing C# code lines, separated by "\n"
      */
     private function handleNHibernateCSBody($db, $table, $crlf, array $aliases = [])
@@ -238,12 +236,12 @@ class ExportCodegen extends ExportPlugin
         $lines[] = 'using System.Collections;';
         $lines[] = 'using System.Collections.Generic;';
         $lines[] = 'using System.Text;';
-        $lines[] = 'namespace ' . self::cgMakeIdentifier($db_alias);
+        $lines[] = 'namespace '.self::cgMakeIdentifier($db_alias);
         $lines[] = '{';
         $lines[] = '    #region '
-            . self::cgMakeIdentifier($table_alias);
+            .self::cgMakeIdentifier($table_alias);
         $lines[] = '    public class '
-            . self::cgMakeIdentifier($table_alias);
+            .self::cgMakeIdentifier($table_alias);
         $lines[] = '    {';
         $lines[] = '        #region Member Variables';
         foreach ($tableProperties as $tableProperty) {
@@ -253,7 +251,7 @@ class ExportCodegen extends ExportPlugin
         $lines[] = '        #endregion';
         $lines[] = '        #region Constructors';
         $lines[] = '        public '
-            . self::cgMakeIdentifier($table_alias) . '() { }';
+            .self::cgMakeIdentifier($table_alias).'() { }';
         $temp = [];
         foreach ($tableProperties as $tableProperty) {
             if ($tableProperty->isPK()) {
@@ -264,10 +262,10 @@ class ExportCodegen extends ExportPlugin
         }
 
         $lines[] = '        public '
-            . self::cgMakeIdentifier($table_alias)
-            . '('
-            . implode(', ', $temp)
-            . ')';
+            .self::cgMakeIdentifier($table_alias)
+            .'('
+            .implode(', ', $temp)
+            .')';
         $lines[] = '        {';
         foreach ($tableProperties as $tableProperty) {
             if ($tableProperty->isPK()) {
@@ -283,11 +281,11 @@ class ExportCodegen extends ExportPlugin
         foreach ($tableProperties as $tableProperty) {
             $lines[] = $tableProperty->formatCs(
                 '        public virtual #dotNetPrimitiveType# #ucfirstName#'
-                . "\n"
-                . '        {' . "\n"
-                . '            get {return _#name#;}' . "\n"
-                . '            set {_#name#=value;}' . "\n"
-                . '        }'
+                ."\n"
+                .'        {'."\n"
+                .'            get {return _#name#;}'."\n"
+                .'            set {_#name#=value;}'."\n"
+                .'        }'
             );
         }
 
@@ -302,11 +300,10 @@ class ExportCodegen extends ExportPlugin
     /**
      * XML Handler
      *
-     * @param string $db      database name
-     * @param string $table   table name
-     * @param string $crlf    line separator
-     * @param array  $aliases Aliases of db/table/columns
-     *
+     * @param  string  $db      database name
+     * @param  string  $table   table name
+     * @param  string  $crlf    line separator
+     * @param  array  $aliases Aliases of db/table/columns
      * @return string containing XML code lines, separated by "\n"
      */
     private function handleNHibernateXMLBody(
@@ -323,11 +320,11 @@ class ExportCodegen extends ExportPlugin
         $lines = [];
         $lines[] = '<?xml version="1.0" encoding="utf-8" ?>';
         $lines[] = '<hibernate-mapping xmlns="urn:nhibernate-mapping-2.2" '
-            . 'namespace="' . self::cgMakeIdentifier($db_alias) . '" '
-            . 'assembly="' . self::cgMakeIdentifier($db_alias) . '">';
+            .'namespace="'.self::cgMakeIdentifier($db_alias).'" '
+            .'assembly="'.self::cgMakeIdentifier($db_alias).'">';
         $lines[] = '    <class '
-            . 'name="' . self::cgMakeIdentifier($table_alias) . '" '
-            . 'table="' . self::cgMakeIdentifier($table_alias) . '">';
+            .'name="'.self::cgMakeIdentifier($table_alias).'" '
+            .'table="'.self::cgMakeIdentifier($table_alias).'">';
         $result = $dbi->query(
             sprintf(
                 'DESC %s.%s',
@@ -346,20 +343,20 @@ class ExportCodegen extends ExportPlugin
             if ($tableProperty->isPK()) {
                 $lines[] = $tableProperty->formatXml(
                     '        <id name="#ucfirstName#" type="#dotNetObjectType#"'
-                    . ' unsaved-value="0">' . "\n"
-                    . '            <column name="#name#" sql-type="#type#"'
-                    . ' not-null="#notNull#" unique="#unique#"'
-                    . ' index="PRIMARY"/>' . "\n"
-                    . '            <generator class="native" />' . "\n"
-                    . '        </id>'
+                    .' unsaved-value="0">'."\n"
+                    .'            <column name="#name#" sql-type="#type#"'
+                    .' not-null="#notNull#" unique="#unique#"'
+                    .' index="PRIMARY"/>'."\n"
+                    .'            <generator class="native" />'."\n"
+                    .'        </id>'
                 );
             } else {
                 $lines[] = $tableProperty->formatXml(
                     '        <property name="#ucfirstName#"'
-                    . ' type="#dotNetObjectType#">' . "\n"
-                    . '            <column name="#name#" sql-type="#type#"'
-                    . ' not-null="#notNull#" #indexName#/>' . "\n"
-                    . '        </property>'
+                    .' type="#dotNetObjectType#">'."\n"
+                    .'            <column name="#name#" sql-type="#type#"'
+                    .' not-null="#notNull#" #indexName#/>'."\n"
+                    .'        </property>'
                 );
             }
         }
@@ -383,7 +380,7 @@ class ExportCodegen extends ExportPlugin
     /**
      * Setter for CodeGen formats
      *
-     * @param array $CG_FORMATS contains CodeGen Formats
+     * @param  array  $CG_FORMATS contains CodeGen Formats
      */
     private function setCgFormats(array $CG_FORMATS): void
     {

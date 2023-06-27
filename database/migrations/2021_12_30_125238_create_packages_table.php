@@ -30,7 +30,6 @@ class CreatePackagesTable extends Migration
 
             $table->unsignedTinyInteger('active')->default(1);
 
-
             $table->timestamps();
             $table->softDeletes();
 

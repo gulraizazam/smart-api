@@ -15,7 +15,7 @@ class CreateTelecomprovidernumbersTable extends Migration
     {
         Schema::create('telecomprovidernumbers', function (Blueprint $table) {
             $table->id();
-            $table->string('pre_fix',500);
+            $table->string('pre_fix', 500);
             $table->unsignedTinyInteger('active')->default(1);
             $table->unsignedBigInteger('telecomprovider_id');
             $table->timestamps();

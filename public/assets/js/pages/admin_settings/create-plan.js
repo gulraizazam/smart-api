@@ -521,7 +521,6 @@ function setEditData(response) {
 
 
                     history_options += '<td>';
-//end_previous_date <= packageadvance?.created_at &&
                     if ( packageadvance?.cash_flow == 'in') {
                         if(permissions.plans_cash_edit) {
                             history_options += '<a onclick="planeEdit('+packageadvance.id+', '+package.id+');" class="btn btn-sm btn-info" href="javascript:void(0);">Edit</a>&nbsp;';

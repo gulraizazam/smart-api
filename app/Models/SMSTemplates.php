@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
 use App\Helpers\Filters;
 use Auth;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Http\Request;
 
 class SMSTemplates extends BaseModal
 {
@@ -23,26 +22,24 @@ class SMSTemplates extends BaseModal
     /**
      * Get Total Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-        $where = Self::sms_templates_filters($request, $account_id, $apply_filter);
+        $where = self::sms_templates_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
-            return self::where($where)->count();
-            }else{
-                return self::where($where)->where('active',1)->count();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_smstemplates')) {
+                return self::where($where)->count();
+            } else {
+                return self::where($where)->where('active', 1)->count();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
-            return self::count();
-            }else{
-                return self::where('active',1)->count();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_smstemplates')) {
+                return self::count();
+            } else {
+                return self::where('active', 1)->count();
             }
         }
     }
@@ -50,28 +47,26 @@ class SMSTemplates extends BaseModal
     /**
      * Get Records
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $iDisplayStart Start Index
-     * @param (int) $iDisplayLength Total Records Length
-     * @param (int) $account_id Current Organization's ID
-     *
+     * @param  (int)  $iDisplayStart Start Index
+     * @param  (int)  $iDisplayLength Total Records Length
+     * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    static public function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::sms_templates_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
-            }else{
-                return self::where($where)->where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_smstemplates')) {
+                return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            } else {
+                return self::where($where)->where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->get();
             }
         } else {
-            if(\Illuminate\Support\Facades\Gate::allows("view_inactive_smstemplates")){
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
-            }else{
-                return self::where('active',1)->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_smstemplates')) {
+                return self::limit($iDisplayLength)->offset($iDisplayStart)->get();
+            } else {
+                return self::where('active', 1)->limit($iDisplayLength)->offset($iDisplayStart)->get();
             }
         }
     }
@@ -79,22 +74,22 @@ class SMSTemplates extends BaseModal
     /**
      * Get filters
      *
-     * @param \Illuminate\Http\Request $request
-     * @param (int) $account_id Current Organization's ID
-     * @param (boolean) $apply_filter
+     * @param  \Illuminate\Http\Request  $request
+     * @param  (int)  $account_id Current Organization's ID
+     * @param  (boolean)  $apply_filter
      * @return (mixed)
      */
-    static public function sms_templates_filters($request, $account_id, $apply_filter)
+    public static function sms_templates_filters($request, $account_id, $apply_filter)
     {
 
-        $where = array();
+        $where = [];
         $filters = getFilters($request->all());
         if ($account_id) {
-            $where[] = array(
+            $where[] = [
                 'account_id',
                 '=',
-                $account_id
-            );
+                $account_id,
+            ];
             Filters::put(Auth::User()->id, 'sms_templates', 'account_id', $account_id);
         } else {
 
@@ -102,61 +97,61 @@ class SMSTemplates extends BaseModal
                 Filters::forget(Auth::User()->id, 'sms_templates', 'account_id');
             } else {
                 if (Filters::get(Auth::User()->id, 'sms_templates', 'account_id')) {
-                    $where[] = array(
+                    $where[] = [
                         'account_id',
                         '=',
-                        Filters::get(Auth::User()->id, 'sms_templates', 'account_id')
-                    );
+                        Filters::get(Auth::User()->id, 'sms_templates', 'account_id'),
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'name')) {
-            $where[] = array(
+            $where[] = [
                 'name',
                 'like',
-                '%' . $filters['name'] . '%'
-            );
+                '%'.$filters['name'].'%',
+            ];
             Filters::put(Auth::User()->id, 'sms_templates', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'sms_templates', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'sms_templates', 'name')) {
-                    $where[] = array(
+                    $where[] = [
                         'name',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'sms_templates', 'name') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'sms_templates', 'name').'%',
+                    ];
                 }
             }
         }
         if (hasFilter($filters, 'slug')) {
-            $where[] = array(
+            $where[] = [
                 'slug',
                 'like',
-                '%' . $filters['slug'] . '%'
-            );
+                '%'.$filters['slug'].'%',
+            ];
             Filters::put(Auth::User()->id, 'sms_templates', 'slug', $filters['slug']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'sms_templates', 'slug');
             } else {
                 if (Filters::get(Auth::User()->id, 'sms_templates', 'slug')) {
-                    $where[] = array(
+                    $where[] = [
                         'slug',
                         'like',
-                        '%' . Filters::get(Auth::User()->id, 'sms_templates', 'slug') . '%'
-                    );
+                        '%'.Filters::get(Auth::User()->id, 'sms_templates', 'slug').'%',
+                    ];
                 }
             }
         }
 
         if (hasFilter($filters, 'status')) {
-            $where[] = array(
+            $where[] = [
                 'active',
                 '=',
-                $filters['status']
-            );
+                $filters['status'],
+            ];
             Filters::put(Auth::user()->id, 'sms_templates', 'status', $filters['status']);
         } else {
             if ($apply_filter) {
@@ -164,26 +159,26 @@ class SMSTemplates extends BaseModal
             } else {
                 if (Filters::get(Auth::user()->id, 'sms_templates', 'status') == 0 || Filters::get(Auth::user()->id, 'sms_templates', 'status') == 1) {
                     if (Filters::get(Auth::user()->id, 'sms_templates', 'status') != null) {
-                        $where[] = array(
+                        $where[] = [
                             'active',
                             '=',
-                            Filters::get(Auth::user()->id, 'sms_templates', 'status')
-                        );
+                            Filters::get(Auth::user()->id, 'sms_templates', 'status'),
+                        ];
                     }
                 }
             }
         }
+
         return $where;
     }
 
     /**
      * Create Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id)
     {
 
         $data = $request->all();
@@ -201,11 +196,10 @@ class SMSTemplates extends BaseModal
     /**
      * Update Record
      *
-     * @param \Illuminate\Http\Request $request
-     *
+     * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    static public function updateRecord($id, $request, $account_id)
+    public static function updateRecord($id, $request, $account_id)
     {
         $old_data = (SMSTemplates::find($id))->toArray();
 
@@ -214,19 +208,18 @@ class SMSTemplates extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
 
-        if (!isset($data['is_featured'])) {
+        if (! isset($data['is_featured'])) {
             $data['is_featured'] = 0;
-        } else if ($data['is_featured'] == '') {
+        } elseif ($data['is_featured'] == '') {
             $data['is_featured'] = 0;
         }
 
-
         $record = self::where([
             'id' => $id,
-            'account_id' => $account_id
+            'account_id' => $account_id,
         ])->first();
 
-        if (!$record) {
+        if (! $record) {
             return null;
         }
 
@@ -241,12 +234,10 @@ class SMSTemplates extends BaseModal
     /**
      * Get active and sorted data only.
      *
-     * @param $slug
-     * @param $account_id
      *
      * @return (mixed)
      */
-    static public function getBySlug($slug, $account_id)
+    public static function getBySlug($slug, $account_id)
     {
         return self::where(['slug' => $slug, 'account_id' => $account_id, 'active' => 1])->first();
     }
@@ -254,12 +245,10 @@ class SMSTemplates extends BaseModal
     /**
      * Check if child records exist
      *
-     * @param (int) $id
-     * @param
-     *
+     * @param  (int)  $id
      * @return (boolean)
      */
-    static public function isChildExists($id, $account_id)
+    public static function isChildExists($id, $account_id)
     {
         if (
             Locations::where(['city_id' => $id, 'account_id' => $account_id])->count() ||

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Providers\ServerVariables;
 
-use Williamdes\MariaDBMySQLKBS\Search;
-
 use function class_exists;
+use Williamdes\MariaDBMySQLKBS\Search;
 
 class ServerVariablesProvider
 {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace PhpMyAdmin\Controllers\Database\Structure\CentralColumns;
 
+use function __;
 use PhpMyAdmin\Controllers\Database\AbstractController;
 use PhpMyAdmin\Controllers\Database\StructureController;
 use PhpMyAdmin\Database\CentralColumns;
@@ -11,8 +12,6 @@ use PhpMyAdmin\DatabaseInterface;
 use PhpMyAdmin\Message;
 use PhpMyAdmin\ResponseRenderer;
 use PhpMyAdmin\Template;
-
-use function __;
 
 final class RemoveController extends AbstractController
 {

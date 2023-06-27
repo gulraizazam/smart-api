@@ -2,47 +2,46 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App;
+use App\HelperModule\ApiHelper;
+use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Helpers\Financelog;
 use App\Helpers\JazzSMSAPI;
+use App\Helpers\NodesTree;
 use App\Helpers\TelenorSMSAPI;
+use App\Http\Controllers\Controller;
 use App\Models\Accounts;
 use App\Models\Appointments;
 use App\Models\AppointmentTypes;
+use App\Models\AuditTrailChanges;
+use App\Models\AuditTrails;
 use App\Models\Bundles;
+use App\Models\Cities;
 use App\Models\Discounts;
 use App\Models\InvoiceDetails;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
+use App\Models\Locations;
+use App\Models\PackageAdvances;
 use App\Models\PackageBundles;
+use App\Models\Packages;
 use App\Models\PackageService;
+use App\Models\Regions;
 use App\Models\Services;
 use App\Models\Settings;
 use App\Models\SMSLogs;
-use App\Models\UserOperatorSettings;
 use App\Models\User;
-use Composer\Package\Package;
+use App\Models\UserOperatorSettings;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
-use Carbon\Carbon;
-use App\Helpers\NodesTree;
-use App\Models\PackageAdvances;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use PDF;
-use App\Models\Packages;
-use App\Helpers\ACL;
-use App\Models\Cities;
-use App\Models\Locations;
-use App\Models\Regions;
-use App;
-use App\Models\AuditTrails;
-use App\Models\AuditTrailChanges;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use App\Helpers\Financelog;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use App\HelperModule\ApiHelper;
 
 class InvoicesController extends Controller
 {
@@ -66,7 +65,7 @@ class InvoicesController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('invoices_manage')) {
+        if (! Gate::allows('invoices_manage')) {
             return abort(401);
         }
 
@@ -87,8 +86,8 @@ class InvoicesController extends Controller
 
             $apply_filter = checkFilters($filters, $fileName);
 
-            $records = array();
-            $records["data"] = array();
+            $records = [];
+            $records['data'] = [];
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
@@ -96,23 +95,22 @@ class InvoicesController extends Controller
                 if ($invoices) {
                     foreach ($invoices as $invoices) {
                         // Check if child records exists or not, If exist then disallow to delete it.
-                        if (!Invoices::isChildExists($invoices->id, Auth::User()->account_id)) {
+                        if (! Invoices::isChildExists($invoices->id, Auth::User()->account_id)) {
                             $invoices->delete();
                         }
                     }
                 }
 
-                $records["status"] = true;
-                $records["message"] = "Records has been deleted successfully!";
+                $records['status'] = true;
+                $records['message'] = 'Records has been deleted successfully!';
             }
 
-            list($orderBy, $order) = getSortBy($request);
+            [$orderBy, $order] = getSortBy($request);
 
             // Get Total Records
             $iTotalRecords = Invoices::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, 'invoices');
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
-
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $invoice = Invoices::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, 'invoices');
 
@@ -125,7 +123,7 @@ class InvoicesController extends Controller
                     $service = Services::where('id', '=', $invoice->service_id)->first();
                     $cancel = InvoiceStatuses::where('slug', '=', 'cancelled')->first();
                     $invoicestatus = InvoiceStatuses::where('id', '=', $invoice->invoice_status_id)->first();
-                    $records["data"][] = array(
+                    $records['data'][] = [
                         'id' => $invoice->id,
                         'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($user->id),
                         'name' => $user->name,
@@ -140,10 +138,10 @@ class InvoicesController extends Controller
                         'created_at' => Carbon::parse($invoice->created_at)->format('F j,Y h:i A'),
                         'cancel' => $cancel,
                         'invoice' => $invoice,
-                    );
+                    ];
                 }
 
-                $records["meta"] = [
+                $records['meta'] = [
                     'field' => $orderBy,
                     'page' => $page,
                     'pages' => $pages,
@@ -153,7 +151,7 @@ class InvoicesController extends Controller
                 ];
             }
 
-            $records["permissions"] = [
+            $records['permissions'] = [
                 'manage' => Gate::allows('invoices_manage'),
                 'cancel' => Gate::allows('invoices_cancel'),
                 'log' => Gate::allows('invoices_log'),
@@ -161,7 +159,7 @@ class InvoicesController extends Controller
             ];
 
             if ($id) {
-                $records["permissions"] = [
+                $records['permissions'] = [
                     'manage' => Gate::allows('patients_invoice_manage'),
                     'cancel' => Gate::allows('patients_invoice_cancel'),
                     'log' => Gate::allows('patients_invoice_log'),
@@ -175,7 +173,8 @@ class InvoicesController extends Controller
         }
     }
 
-    private function filtersData($records) {
+    private function filtersData($records)
+    {
 
         $parentGroups = new NodesTree();
         $parentGroups->current_id = -1;
@@ -198,16 +197,15 @@ class InvoicesController extends Controller
         $filters = Filters::all(Auth::User()->id, 'invoices');
 
         if ($user_id = Filters::get(Auth::User()->id, 'invoices', 'patient_id')) {
-            $patient = User::where(array(
-                'id' => $user_id
-            ))->first();
+            $patient = User::where([
+                'id' => $user_id,
+            ])->first();
             if ($patient) {
                 $patient = $patient->toArray();
             }
         } else {
             $patient = [];
         }
-
 
         $records['filter_values'] = [
             'services' => $Services,
@@ -217,7 +215,7 @@ class InvoicesController extends Controller
             'regions' => $regions,
             'locations' => $locations,
             'patient' => $patient,
-            'appointment_types' => $appointment_types
+            'appointment_types' => $appointment_types,
         ];
 
         if (isset($filters['created_from'])) {
@@ -235,7 +233,7 @@ class InvoicesController extends Controller
 
     public function cancel($id)
     {
-        if (!Gate::allows('invoices_cancel')) {
+        if (! Gate::allows('invoices_cancel')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -280,7 +278,6 @@ class InvoicesController extends Controller
             $data_package['invoice_id'] = $id;
             $data_package['is_cancel'] = '1';
 
-
             if ($invoice_detail->package_id != null) {
                 $data_package['package_id'] = $invoice_detail->package_id;
             }
@@ -297,7 +294,7 @@ class InvoicesController extends Controller
      * */
     public function displayInvoice($id)
     {
-        if (!Gate::allows('invoices_manage')) {
+        if (! Gate::allows('invoices_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $Invoiceinfo = DB::table('invoices')
@@ -335,6 +332,7 @@ class InvoicesController extends Controller
         if ($Invoiceinfo) {
             $Invoiceinfo->created_at = Carbon::parse($Invoiceinfo->created_at)->format('F j,Y');
         }
+
         return ApiHelper::apiResponse($this->success, 'Recode found.', true, [
             'Invoiceinfo' => $Invoiceinfo,
             'patient' => $patient,
@@ -343,16 +341,16 @@ class InvoicesController extends Controller
             'discount' => $discount,
             'invoicestatus' => $invoicestatus,
             'company_phone_number' => $company_phone_number,
-            'location_info' => $location_info
+            'location_info' => $location_info,
         ]);
     }
 
     /*
      * Display the pdf file
      * */
-    public function invoice_pdf($id, $download = null,$flag=0)
+    public function invoice_pdf($id, $download = null, $flag = 0)
     {
-        if (!Gate::allows('invoices_manage') && !Gate::allows('appointments_invoice_display')) {
+        if (! Gate::allows('invoices_manage') && ! Gate::allows('appointments_invoice_display')) {
             return abort(401);
         }
         $Invoiceinfo = DB::table('invoices')
@@ -374,16 +372,16 @@ class InvoicesController extends Controller
                 'invoice_details.is_exclusive'
             )->first();
 
-        $appointment_info = Appointments::where('id','=',$Invoiceinfo->appointment_id)->first();
-        $package_service = PackageService::where('package_id','=',$Invoiceinfo->package_id)->where('service_id','=',$Invoiceinfo->service_id)->first();
-        if($package_service){
-            if($package_service->package_bundle_id != null){
+        $appointment_info = Appointments::where('id', '=', $Invoiceinfo->appointment_id)->first();
+        $package_service = PackageService::where('package_id', '=', $Invoiceinfo->package_id)->where('service_id', '=', $Invoiceinfo->service_id)->first();
+        if ($package_service) {
+            if ($package_service->package_bundle_id != null) {
                 $package_bundle = PackageBundles::find($package_service->package_bundle_id);
-            }else{
-                $package_bundle = PackageBundles::where('package_id','=',$Invoiceinfo->package_id)->first();
+            } else {
+                $package_bundle = PackageBundles::where('package_id', '=', $Invoiceinfo->package_id)->first();
             }
-        }else{
-            $package_bundle = PackageBundles::where('package_id','=',$Invoiceinfo->package_id)->first();
+        } else {
+            $package_bundle = PackageBundles::where('package_id', '=', $Invoiceinfo->package_id)->first();
         }
         $bundle = Bundles::find($package_bundle->bundle_id ?? 0);
         $location_info = Locations::find($Invoiceinfo->location_id);
@@ -399,93 +397,95 @@ class InvoicesController extends Controller
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
-        if($appointment_info?->appointment_type_id == 1 && $flag == 0){
+        if ($appointment_info?->appointment_type_id == 1 && $flag == 0) {
 
-            $setting_info = Settings::where('slug','=','sys-consultancy-invoice-medical-operator')->first();
+            $setting_info = Settings::where('slug', '=', 'sys-consultancy-invoice-medical-operator')->first();
 
-            if($setting_info->data = 1){
+            if ($setting_info->data = 1) {
 
                 if ($download) {
 
-                    $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'))->render();
+                    $content = view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'))->render();
                     $pdf = App::make('dompdf.wrapper');
                     $pdf->loadHTML($content);
 
                     return $pdf->download('consultancy-medical-history-form-C-'.$Invoiceinfo->patient_id.'.pdf');
                 }
 
-                return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
+                return view('admin.invoices.InvoiceMedicalHistorypdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'));
 
             } else {
 
                 if ($download) {
 
-                    $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle', 'download'))->render();
+                    $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle', 'download'))->render();
                     $pdf = App::make('dompdf.wrapper');
                     $pdf->loadHTML($content);
+
                     return $pdf->download('admin.invoices.invoice_pdf.pdf');
                 }
 
-                return view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','bundle', 'download'));
+                return view('admin.invoices.invoice_pdf', compact('appointment_info', 'Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'bundle', 'download'));
             }
         } else {
 
-            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'))->render();
+            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);
             if ($download) {
-                if($flag == 1){
+                if ($flag == 1) {
                     return $pdf->download('consultancy-invoice-C-'.$Invoiceinfo->patient_id.'.pdf');
                 }
+
                 return $pdf->download('treatment-invoice-C-'.$Invoiceinfo->patient_id.'.pdf');
             }
 
-            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info','appointment_info','bundle', 'download'));
+            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'));
         }
     }
 
     /*
      *  Function for log for invoice
      */
-    public function invoicelog($id , $type, $patient_id = null)
+    public function invoicelog($id, $type, $patient_id = null)
     {
-        if (!Gate::allows('invoices_log')) {
+        if (! Gate::allows('invoices_log')) {
             return abort(401);
         }
 
-        $action_array = array(
+        $action_array = [
             1 => 'Create',
             2 => 'Edit',
             3 => 'Delete',
             4 => 'Inactive',
             5 => 'Active',
             6 => 'Cancel',
-        );
-        $table_array = array(
+        ];
+        $table_array = [
             26 => 'Invoice',
             27 => 'Invoice Detail',
             25 => 'Finance',
-        );
-        $finance_log = array();
+        ];
+        $finance_log = [];
 
-        $package_advances = PackageAdvances::where('invoice_id', '=', $id)->orderBy('created_at','asc')->get();
+        $package_advances = PackageAdvances::where('invoice_id', '=', $id)->orderBy('created_at', 'asc')->get();
 
         foreach ($package_advances as $advance) {
 
             $audit_info = AuditTrails::where([
                 ['table_record_id', '=', $advance->id],
-                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
-            ])->orderBy('created_at','asc')->get();
+                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')],
+            ])->orderBy('created_at', 'asc')->get();
 
-            foreach ($audit_info as $audit){
-                $finance_log[$audit->id] = array(
+            foreach ($audit_info as $audit) {
+                $finance_log[$audit->id] = [
                     'id' => $audit->id,
                     'action' => $action_array[$audit->audit_trail_action_name],
                     'table' => $table_array[$audit->audit_trail_table_name],
                     'user_id' => $audit->user->name,
                     'created_at' => $audit->created_at,
                     'updated_at' => Filters::getCurrentTimeStamp(),
-                );
+                ];
                 $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
 
                 foreach ($audit_info_detail as $audit_detail) {
@@ -495,72 +495,75 @@ class InvoicesController extends Controller
             }
         }
 
-        if ($type === 'web'){
+        if ($type === 'web') {
             return view('admin.invoices.log', compact('finance_log', 'id'));
         }
-        return $this->invoicelogexcel( $id, $finance_log );
+
+        return $this->invoicelogexcel($id, $finance_log);
     }
 
-    public function invoiceDatatable(Request $request, $id) {
+    public function invoiceDatatable(Request $request, $id)
+    {
 
-        list($orderBy, $order) = getSortBy($request);
-        list( $finance_log, $iDisplayLength, $iTotalRecords, $pages, $page) = $this->getInvoicesData($id, $request, $orderBy, $order);
+        [$orderBy, $order] = getSortBy($request);
+        [$finance_log, $iDisplayLength, $iTotalRecords, $pages, $page] = $this->getInvoicesData($id, $request, $orderBy, $order);
 
-        $records["data"] = $finance_log;
-                $records["meta"] = [
-                    'field' => $orderBy,
-                    'page' => $page,
-                    'pages' => $pages,
-                    'perpage' => $iDisplayLength,
-                    'total' => $iTotalRecords,
-                    'sort' => $order,
-                ];
+        $records['data'] = $finance_log;
+        $records['meta'] = [
+            'field' => $orderBy,
+            'page' => $page,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $order,
+        ];
 
-       return ApiHelper::apiDataTable($records);
+        return ApiHelper::apiDataTable($records);
     }
 
-    private function getInvoicesData($id, $request, $orderBy, $order) {
+    private function getInvoicesData($id, $request, $orderBy, $order)
+    {
 
-        $action_array = array(
+        $action_array = [
             1 => 'Create',
             2 => 'Edit',
             3 => 'Delete',
             4 => 'Inactive',
             5 => 'Active',
             6 => 'Cancel',
-        );
-        $table_array = array(
+        ];
+        $table_array = [
             26 => 'Invoice',
             27 => 'Invoice Detail',
             25 => 'Finance',
-        );
-        $finance_log = array();
+        ];
+        $finance_log = [];
 
-        $package_advances = PackageAdvances::where('invoice_id', '=', $id)->orderBy('created_at','asc')->get();
+        $package_advances = PackageAdvances::where('invoice_id', '=', $id)->orderBy('created_at', 'asc')->get();
 
         foreach ($package_advances as $advance) {
 
             $iTotalRecords = AuditTrails::where([
                 ['table_record_id', '=', $advance->id],
-                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
+                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')],
             ])->count();
 
-            list($iDisplayLength, $iDisplayStart, $pages, $page) = getPaginationElement($request, $iTotalRecords);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $audit_info = AuditTrails::where([
                 ['table_record_id', '=', $advance->id],
-                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')]
-            ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at','asc')->get();
+                ['audit_trail_table_name', '=', Config::get('constants.package_advance_table_name_log')],
+            ])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'asc')->get();
 
-            foreach ($audit_info as $audit){
-                $finance_log[$audit->id] = array(
+            foreach ($audit_info as $audit) {
+                $finance_log[$audit->id] = [
                     'id' => $audit->id,
                     'action' => $action_array[$audit->audit_trail_action_name],
                     'table' => $table_array[$audit->audit_trail_table_name],
                     'user_id' => $audit->user->name,
                     'created_at' => $audit->created_at,
                     'updated_at' => Filters::getCurrentTimeStamp(),
-                );
+                ];
                 $audit_info_detail = AuditTrailChanges::where('audit_trail_id', '=', $audit->id)->get();
 
                 foreach ($audit_info_detail as $audit_detail) {
@@ -575,14 +578,14 @@ class InvoicesController extends Controller
             $iDisplayLength,
             $iTotalRecords,
             $pages,
-            $page
+            $page,
         ];
     }
 
     /*
      *  Function for log for invoice excel
      */
-    public function invoicelogexcel( $id , $finance_log )
+    public function invoicelogexcel($id, $finance_log)
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
         $Excel_writer = new Xlsx($spreadsheet);  /*----- Excel (Xls) Object*/
@@ -592,7 +595,7 @@ class InvoicesController extends Controller
         $activeSheet = $spreadsheet->getActiveSheet();
 
         $activeSheet->setCellValue('A1', 'INVOICE ID')->getStyle('A1')->getFont()->setBold(true);
-        $activeSheet->setCellValue('B1', $id );
+        $activeSheet->setCellValue('B1', $id);
 
         $activeSheet->setCellValue('A2', '#')->getStyle('A2')->getFont()->setBold(true);
         $activeSheet->setCellValue('B2', 'Cash Flow')->getStyle('B2')->getFont()->setBold(true);
@@ -612,29 +615,29 @@ class InvoicesController extends Controller
         $activeSheet->setCellValue('P2', 'Created At')->getStyle('P2')->getFont()->setBold(true);
         $activeSheet->setCellValue('Q2', 'Updated At')->getStyle('Q2')->getFont()->setBold(true);
 
-        $count = 1 ;
-        $counter = 4 ;
+        $count = 1;
+        $counter = 4;
 
-        if ( count( $finance_log ) ){
+        if (count($finance_log)) {
 
-            foreach ( $finance_log as $log ){
-                $activeSheet->setCellValue('A' . $counter, $count++);
-                $activeSheet->setCellValue('B' . $counter, isset($log['cash_flow'])?$log['cash_flow']:'-');
-                $activeSheet->setCellValue('C' . $counter, isset($log['cash_amount'])?$log['cash_amount']:'-');
-                $activeSheet->setCellValue('D' . $counter, isset($log['is_refund'])?$log['is_refund']:'-');
-                $activeSheet->setCellValue('E' . $counter, isset($log['is_adjustment'])?$log['is_adjustment']:'-');
-                $activeSheet->setCellValue('F' . $counter, isset($log['is_tax'])?$log['is_tax']:'-');
-                $activeSheet->setCellValue('G' . $counter, isset($log['is_cancel'])?$log['is_cancel']:'-');
-                $activeSheet->setCellValue('H' . $counter, isset($log['refund_note'])?$log['refund_note']:'-');
-                $activeSheet->setCellValue('I' . $counter, isset($log['payment_mode_id'])?$log['payment_mode_id']:'-');
-                $activeSheet->setCellValue('J' . $counter, isset($log['appointment_type_id'])?$log['appointment_type_id']:'-');
-                $activeSheet->setCellValue('K' . $counter, isset($log['location_id'])?$log['location_id']:'-');
-                $activeSheet->setCellValue('L' . $counter, isset($log['created_by'])?$log['created_by']:'-');
-                $activeSheet->setCellValue('M' . $counter, isset($log['updated_by'])?$log['updated_by']:'-');
-                $activeSheet->setCellValue('N' . $counter, isset($log['package_id'])?$log['package_id']:'-');
-                $activeSheet->setCellValue('O' . $counter, isset($log['invoice_id'])?$log['invoice_id']:'-');
-                $activeSheet->setCellValue('P' . $counter, isset($log['created_at'])?\Carbon\Carbon::parse($log['created_at'])->format('F j,Y h:i A'):'-');
-                $activeSheet->setCellValue('Q' . $counter, isset($log['updated_at'])?\Carbon\Carbon::parse($log['updated_at'])->format('F j,Y h:i A'):'-');
+            foreach ($finance_log as $log) {
+                $activeSheet->setCellValue('A'.$counter, $count++);
+                $activeSheet->setCellValue('B'.$counter, isset($log['cash_flow']) ? $log['cash_flow'] : '-');
+                $activeSheet->setCellValue('C'.$counter, isset($log['cash_amount']) ? $log['cash_amount'] : '-');
+                $activeSheet->setCellValue('D'.$counter, isset($log['is_refund']) ? $log['is_refund'] : '-');
+                $activeSheet->setCellValue('E'.$counter, isset($log['is_adjustment']) ? $log['is_adjustment'] : '-');
+                $activeSheet->setCellValue('F'.$counter, isset($log['is_tax']) ? $log['is_tax'] : '-');
+                $activeSheet->setCellValue('G'.$counter, isset($log['is_cancel']) ? $log['is_cancel'] : '-');
+                $activeSheet->setCellValue('H'.$counter, isset($log['refund_note']) ? $log['refund_note'] : '-');
+                $activeSheet->setCellValue('I'.$counter, isset($log['payment_mode_id']) ? $log['payment_mode_id'] : '-');
+                $activeSheet->setCellValue('J'.$counter, isset($log['appointment_type_id']) ? $log['appointment_type_id'] : '-');
+                $activeSheet->setCellValue('K'.$counter, isset($log['location_id']) ? $log['location_id'] : '-');
+                $activeSheet->setCellValue('L'.$counter, isset($log['created_by']) ? $log['created_by'] : '-');
+                $activeSheet->setCellValue('M'.$counter, isset($log['updated_by']) ? $log['updated_by'] : '-');
+                $activeSheet->setCellValue('N'.$counter, isset($log['package_id']) ? $log['package_id'] : '-');
+                $activeSheet->setCellValue('O'.$counter, isset($log['invoice_id']) ? $log['invoice_id'] : '-');
+                $activeSheet->setCellValue('P'.$counter, isset($log['created_at']) ? \Carbon\Carbon::parse($log['created_at'])->format('F j,Y h:i A') : '-');
+                $activeSheet->setCellValue('Q'.$counter, isset($log['updated_at']) ? \Carbon\Carbon::parse($log['updated_at'])->format('F j,Y h:i A') : '-');
 
                 $counter++;
 
@@ -643,30 +646,31 @@ class InvoicesController extends Controller
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="' . 'Invoicelog' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="'.'Invoicelog'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
 
     }
+
     /**
      * Load invoice Sms History.
      *
-     * @param int $id
+     * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
     public function showSMSLogs($id)
     {
-        $SMSLogs = SMSLogs::where('invoice_id','=',$id)->orderBy('created_at', 'desc')->get();
+        $SMSLogs = SMSLogs::where('invoice_id', '=', $id)->orderBy('created_at', 'desc')->get();
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
-            'SMSLogs' => $SMSLogs
+            'SMSLogs' => $SMSLogs,
         ]);
     }
 
     /**
      * Re-send invoice SMS
      *
-     * @param \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest $request
+     * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\Response
      */
     public function sendLogSMS(Request $request)
@@ -690,7 +694,7 @@ class InvoicesController extends Controller
     /**
      * Calling sms log
      *
-     * @param \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest $request
+     * @param  \App\Http\Requests\Admin\StoreUpdateAppointmentsRequest  $request
      * @return \Illuminate\Http\Response
      */
     private function resendSMS($smsId, $patient_phone, $preparedText, $invoice_id)
@@ -702,24 +706,24 @@ class InvoicesController extends Controller
         $UserOperatorSettings = UserOperatorSettings::getRecord($Invoice_info->account_id, $setting->data);
 
         if ($setting->data == 1) {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'to' => $patient_phone,
                 'text' => $preparedText,
                 'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = TelenorSMSAPI::SendSMS($SMSObj);
         } else {
-            $SMSObj = array(
+            $SMSObj = [
                 'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                 'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                 'from' => $UserOperatorSettings->mask,
                 'to' => $patient_phone,
                 'text' => $preparedText,
                 'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
-            );
+            ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
         if ($response['status']) {
