@@ -2679,6 +2679,7 @@ class DashboardReportsController extends Controller
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                 ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
                 ->whereIn('doctor_id', $consultant)
+                ->whereIn('appointments.location_id' ,$locations)
                 ->count();
 
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
