@@ -170,7 +170,7 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
 
-                                                        <ul class="dropdown-menu dropdown-menu-right"
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="collection_by_centre_menu">
                                                             <li class="centre-item">
                                                                 <a class="active" href="#location_collection_1"
@@ -238,7 +238,7 @@
                                                             aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right"
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="revenue_by_centre_menu">
                                                             <li>
                                                                 <a class="active" href="#location_revenue_4"
@@ -302,7 +302,7 @@
                                                             aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right"
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="revenue_by_service_category_menu">
                                                             <li>
                                                                 <a class="active" href="#service_revenue_4"
@@ -361,7 +361,7 @@
                                                             aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right"
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="revenue_by_service_menu">
                                                             <li>
                                                                 <a class="active" href="#service_revenue_4"
@@ -427,7 +427,7 @@
                                                             aria-expanded="false"> Today
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right"
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="appointment_by_status_menu">
                                                             <li>
                                                                 <a class="active" href="#appointment_by_status_4"
@@ -483,7 +483,7 @@
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                         <span class="dashboard-counter text-uppercase">Treatment by Status</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                        <ul class="nav nav-tabs d-flex align-items-center custom_hover_effect">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
@@ -648,7 +648,7 @@
                                                                 aria-expanded="false"> This Month
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right" id="doc_time">
+                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_time">
                                                                 <li class="yesterday">
                                                                     <a href="#wise_arrival_ul" data-toggle="tab"
                                                                         onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
@@ -689,7 +689,7 @@
                                                                 aria-expanded="false"> This Month
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
                                                                 <li class="yesterday">
                                                                     <a href="#wise_arrival_ul" data-toggle="tab"
                                                                         onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
@@ -827,7 +827,7 @@
                                                             aria-expanded="false"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
+                                                        <ul class="dropdown-menu dropdown-menu-right " id="doc_nav">
                                                             <li class="yesterday">
                                                                 <a href="#appointment_by_status_1" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('today');">Today</a>
@@ -846,7 +846,7 @@
                                                             aria-expanded="false"> This Month
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_time">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_time">
                                                             <li class="today">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('today');">Today</a>
