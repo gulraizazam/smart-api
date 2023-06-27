@@ -2533,6 +2533,7 @@ class DashboardReportsController extends Controller
 
     public function DoctoreWiseConversion(Request $request)
     {
+        dd($request->all());
         $where = [];
         $total_apts = [];
         $converted_apts = [];
