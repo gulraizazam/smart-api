@@ -873,7 +873,7 @@ function GetDoctors(centre_id, time = '') {
     $('#doc_time li a').removeClass('active');
     $('#doc_time li.thismonth a').addClass('active');
     $('#doc_nav').empty();
-    $(".doctorname").text('Select doctor')
+    $(".doctorname").html('Select doctor <i class="fa fa-angle-down"></i>');
     $("#categories-table-body").html('');
     $('.arrivalbtn').text();
     let converted = 0;

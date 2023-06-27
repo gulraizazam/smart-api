@@ -149,3 +149,13 @@ a.btn.form-control.btndropdown.btn_Report {
     border: 1px solid #E4E6EF;
     border-radius: 2px;
 }
+.custom_hover_effect li a{
+    transition: all ease .3s;
+}
+.custom_hover_effect li a.active{
+    border-bottom: 0px;
+    background: #eef0f8;
+}
+.custom_hover_effect li a:hover{
+    background: #eef0f8;
+}
