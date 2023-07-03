@@ -50,6 +50,7 @@ use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\ConversionReportController;
 use App\Http\Controllers\DashboardReportsController;
+use App\Http\Controllers\DashboardPatientFollowUpOutStandingBalanceController;
 use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\PackageAdvances;
@@ -562,6 +563,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
     // Dashboard CSR WISE ARRIVAL
     Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
+    Route::get('dashboard/patient-follow-up-outstanding-balance', [DashboardPatientFollowUpOutStandingBalanceController::class, 'patientFollowUpOutStandingBalance'])->name('dashboard.patient_follow_up_outstanding_balance');
 
     Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
     Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
@@ -571,5 +573,5 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
         Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
-       
+
     });
