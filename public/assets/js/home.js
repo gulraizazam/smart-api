@@ -822,8 +822,29 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, time = '') {
-    $('#doc_time li a').removeClass('active');
-    $('#doc_time li.' + period + ' a').addClass('active');
+    console.log(period)
+    $("#doctor_wise_conversion_list .active").removeClass('active');
+    $("#doctor_wise_conversion_list").addClass('active');
+    $(".doctor_period").text("Today");
+    if (period == "today") {
+        $(".doctor_period").html('Today <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "yesterday") {
+        $(".doctor_period").html('Yesterday <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "last7days") {
+        $(".doctor_period").html('Last 7 Days <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "week") {
+        $(".doctor_period").html('This Week <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "thismonth") {
+        $(".doctor_period").html('This Month <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "lastmonth") {
+        $(".doctor_period").html('Last Month <i class="fa fa-angle-down"></i>');
+    }
+
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
@@ -865,13 +886,13 @@ function initDoctorWiseConversion(period, time = '') {
         }
     });
 }
-            
+
 function GetDoctors(centre_id, time = '') {
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
-    $('#doc_time li a').removeClass('active');
-    $('#doc_time li.thismonth a').addClass('active');
+    $('#doctor_wise_conversion_list .active').removeClass('active');
+    $('#doctor_wise_conversion_list').addClass('active');
     $('#doc_nav').empty();
     $(".doctorname").html('Select doctor <i class="fa fa-angle-down"></i>');
     $("#categories-table-body").html('');
@@ -915,20 +936,19 @@ function GetDoctors(centre_id, time = '') {
         data: { 'centre_id': centre_id },
         cache: false,
         success: function (response) {
-            console.log('reponse' , response);
             jQuery('#doc_nav').html("");
             jQuery.each(response.doctors, function (index, doctor) {
 
-                TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id=" + doctor.id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name + "</a></li>";
+                TABLE_HTML += " <li><a class='dropdown-item centre-item'  data-id=" + doctor.id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name + "</a></li>";
             });
             jQuery('#doc_nav').append(TABLE_HTML);
         },
     });
 }
 function LoadDocWiseConversion(doc_id) {
-     doc_wise_conversion_chart.destroy();
-    $('#doc_time li a').removeClass('active');
-    $('#doc_time li.thismonth a').addClass('active');
+    doc_wise_conversion_chart.destroy();
+    $('#doctor_wise_conversion_list .active').removeClass('active');
+    $('#doctor_wise_conversion_list').addClass('active');
     $('.arrivalbtn').text();
     var DrName = $('#doc_nav').find('li').find('a[data-id=' + doc_id + ']').text();
     jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
