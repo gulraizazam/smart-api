@@ -822,7 +822,7 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, time = '') {
-    console.log(period)
+
     $("#doctor_wise_conversion_list .active").removeClass('active');
     $("#doctor_wise_conversion_list").addClass('active');
     $(".doctor_period").text("Today");

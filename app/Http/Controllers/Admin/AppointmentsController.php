@@ -1730,7 +1730,11 @@ class AppointmentsController extends Controller
                 $lead_obj['updated_at'] = Filters::getCurrentTimeStamp();
                 $lead_obj['location_id'] = $request->location_id;
                 $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
-                $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                if($request->lead_id){
+                    $patient = Patients::where(['id' => $request->lead_id])->first();
+                }else{
+                    $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                }
                 if ($request->new_patient == '1') {
                     $appointment_data['user_type_id'] = 3;
                     if (! $patient) {
@@ -1761,7 +1765,12 @@ class AppointmentsController extends Controller
                  * If appointment is for the first time then
                  * update user information, otherwise not
                  */
-                $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                if($request->lead_id){
+                    $patient = Patients::where(['id' => $request->lead_id])->first();
+                }else{
+                    $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                }
+                
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
