@@ -865,7 +865,7 @@ function initDoctorWiseConversion(period, time = '') {
         }
     });
 }
-            
+
 function GetDoctors(centre_id, time = '') {
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
@@ -915,7 +915,7 @@ function GetDoctors(centre_id, time = '') {
         data: { 'centre_id': centre_id },
         cache: false,
         success: function (response) {
-            console.log('reponse' , response);
+            console.log('reponse', response);
             jQuery('#doc_nav').html("");
             jQuery.each(response.doctors, function (index, doctor) {
 
@@ -926,7 +926,7 @@ function GetDoctors(centre_id, time = '') {
     });
 }
 function LoadDocWiseConversion(doc_id) {
-     doc_wise_conversion_chart.destroy();
+    doc_wise_conversion_chart.destroy();
     $('#doc_time li a').removeClass('active');
     $('#doc_time li.thismonth a').addClass('active');
     $('.arrivalbtn').text();
@@ -1022,4 +1022,43 @@ function DoctorWiseConversion(bar) {
 }
 
 
+function initPatientFollowUpOutStandingBalance(period, centre_id, arrived = null) {
+    if (centre_id == 'centre') {
+        centre_id = $('.btn.arrivalbtn').attr('data-id');
+    }
+    if (centre_id == '' || centre_id == 30 || centre_id == 'All') {
+        centre_id = 'All';
+    }
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.patient_follow_up_outstanding_balance'),
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'centre_id': centre_id,
+            'arrived': arrived
+        },
+        success: function (response) {
+            $('#patient-follow-up').html("");
+            var TABLE_HTML = "";
+            let patientData = response.data.patient_data;
+            if (patientData.length > 0) {
+                for (let i = 0; i < patientData.length; i++) {
+                    let patient = patientData[i];
 
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 1) ? 'Yes' : 'Not') + "</td><td>" + patient.out_standing_balance + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                }
+            } else {
+                TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
+            }
+
+            $('#patient-follow-up').append(TABLE_HTML);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
