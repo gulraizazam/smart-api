@@ -648,7 +648,8 @@
                                                                 aria-expanded="false"> This Month
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_time">
+                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
+                                                                id="doc_time">
                                                                 <li class="yesterday">
                                                                     <a href="#wise_arrival_ul" data-toggle="tab"
                                                                         onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
@@ -689,7 +690,8 @@
                                                                 aria-expanded="false"> This Month
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
+                                                            <ul
+                                                                class="dropdown-menu dropdown-menu-right custom_hover_effect">
                                                                 <li class="yesterday">
                                                                     <a href="#wise_arrival_ul" data-toggle="tab"
                                                                         onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
@@ -848,7 +850,8 @@
                                                             aria-expanded="false"> This Month
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_time">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
+                                                            id="doc_time">
                                                             <li class="today">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('today');">Today</a>
@@ -916,6 +919,107 @@
                             </div>
                         </div>
                     @endif
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Patients Follow Up Out Standing
+                                            Balance</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                        @php
+                                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
+                                                            $locations = \App\Helpers\ACL::getUserCentres();
+                                                            $centres = \App\Models\Locations::whereIn('id', $locations)
+                                                                ->whereNotIn('name', $centres_array)
+                                                                ->where('active', 1)
+                                                                ->get();
+                                                        @endphp
+                                                        <div class="btn-group">
+                                                            <a data-id=""
+                                                                class="btn blue btn-outline btn-circle btn-sm hover-effect btn_Report arrivalbtn"
+                                                                href="javascript:;" data-toggle="dropdown"
+                                                                data-hover="dropdown" data-close-others="true"
+                                                                aria-expanded="false"> All
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                                <li
+                                                                    onclick="initPatientFollowUpOutStandingBalance('thismonth', 'All')">
+                                                                    <a class="dropdown-item" data-period="thismonth"
+                                                                        data-id="">All</a>
+                                                                </li>
+                                                                @foreach ($centres as $centre)
+                                                                    <li
+                                                                        onclick="initPatientFollowUpOutStandingBalance('thismonth', {{ $centre->id }})">
+                                                                        <a class="dropdown-item centre-item"
+                                                                            data-period="thismonth"
+                                                                            data-id="{{ $centre->id }}">{{ $centre->name }}</a>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                            </li>
+                                            <li class="yesterday">
+                                                <a href="#" data-toggle="tab"
+                                                    onclick="initPatientFollowUpOutStandingBalance('yesterday', 'centre');">Yesterday</a>
+                                            </li>
+                                            <li class="last7days">
+                                                <a href="#" data-toggle="tab"
+                                                    onclick="initPatientFollowUpOutStandingBalance('last7days', 'centre');">Last
+                                                    7
+                                                    Days</a>
+                                            </li>
+                                            <li class="week">
+                                                <a href="#" data-toggle="tab"
+                                                    onclick="initPatientFollowUpOutStandingBalance('week', 'centre');">This
+                                                    Week</a>
+                                            </li>
+                                            <li class="thismonth">
+                                                <a href="#" data-toggle="tab"
+                                                    onclick="initPatientFollowUpOutStandingBalance('thismonth', 'centre');">This
+                                                    Month</a>
+                                            </li>
+                                            <li class="lastmonth">
+                                                <a href="#" data-toggle="tab"
+                                                    onclick="initPatientFollowUpOutStandingBalance('lastmonth', 'centre');">Last
+                                                    Month</a>
+                                            </li>
+                                        </ul>
+                                        <div class="d-none flex-column text-right">
+                                            <span
+                                                class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span
+                                                class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                        </div>
+                                    </div>
+                                    <div class="card-spacer2">
+                                        <div class='table-responsive'>
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class='table-cols'>Patient Id</th>
+                                                        <th class='table-cols'>Name</th>
+                                                        <th class='table-cols'>Phone</th>
+                                                        <th class='table-cols'>Treatment exist</th>
+                                                        <th class='table-cols'>Out Standing Balance</th>
+                                                        <th class='table-cols'>Conversion Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="patient-follow-up"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -944,12 +1048,7 @@
                 jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
             });
 
-
             $(document).ready(function() {
-                
-                
-               
-               
                 period = "today";
                 // activities
                 $.ajax({
@@ -966,18 +1065,18 @@
                 });
 
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                var centre_id = $(".doctorwiseconversion").attr('data-id');
+                    var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', 'firsttime');
-                    GetDoctors(centre_id , 'firsttime');
+                    GetDoctors(centre_id, 'firsttime');
                 @else
-                var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    GetDoctors(centre_id , 'firsttime');
+                    var centre_id = $(".doctorwiseconversion").attr('data-id');
+                    GetDoctors(centre_id, 'firsttime');
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
 
             });
-            
+
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
@@ -986,6 +1085,7 @@
             var consultancy_by_status = false;
             var treatment_by_status = false;
             var centre_wise_arrival = false;
+            var patient_follow_up_outstanding_balance = false;
             $(window).scroll(function() {
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     collection_by_center) {
@@ -1215,7 +1315,11 @@
                         }
                     });
                 }
-
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.60) && !
+                    patient_follow_up_outstanding_balance) {
+                    patient_follow_up_outstanding_balance = true;
+                    initPatientFollowUpOutStandingBalance('thismonth', 'All');
+                }
             });
 
             function TreatmentByStatus(pie, colors) {
