@@ -925,6 +925,7 @@ function GetDoctors(centre_id, time = '') {
     $('#doctor_wise_conversion_list .active').removeClass('active');
     $('#doctor_wise_conversion_list').addClass('active');
     $('#doc_nav').empty();
+    $(".doctorname").attr('data-id','');
     $(".doctorname").html('Select doctor <i class="fa fa-angle-down"></i>');
     $("#categories-table-body").html('');
     $('.arrivalbtn').text();
