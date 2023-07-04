@@ -2796,6 +2796,7 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments=0;
         $periods = GeneralFunctions::GetPeriods();
+        
         $locations =$request->centre_id == 'all' ? ACL::getUserCentres() : [$request->centre_id];
         $converted_appointments =  Appointments::with('location:id,name')
                 ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
