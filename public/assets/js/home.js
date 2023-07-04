@@ -856,35 +856,66 @@ function initDoctorWiseConversion(period, time = '') {
     let converted = 0;
     let arrived = 0;
     $('.arrivalbtn').text();
-    $.ajax({
-        url: route('admin.dashboard.doctor_wise_conversion'),
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': SELECTED_MONTH,
-            'centre_id': CENTRE_ID,
-            'doc_id': DOC_ID
-        },
-        success: function (response) {
+    if(centre_id == 'all'){
+        $.ajax({
+            url: route('admin.dashboard.all_doctor_wise_conversion'),
+            type: 'GET',
+            cache: false,
+            data: {
+                'period': 'lastmonth',
+                'centre_id': centre_id
+            },
+            success: function (response) {
+                var categories = response.data.categories
+                jQuery('#categories-table-body').html("");
+                var TABLE_HTML = "";
+                jQuery.each(categories, function (index, category) {
+                    arrived += category.total_arrival;
+                    converted += category.total_conversion;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
-            var categories = response.data.categories;
-            jQuery('#categories-table-body').html("");
-            var TABLE_HTML = "";
-            jQuery.each(categories, function (index, category) {
-                arrived += category.total_arrival;
-                converted += category.total_conversion;
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
+                });
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
 
-            });
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
-
-            jQuery('#categories-table-body').append(TABLE_HTML);
-            DoctorWiseConversion(response);
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-        }
-    });
+                jQuery('#categories-table-body').append(TABLE_HTML);
+                AllDoctorWiseConversion(response);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+            }
+        });
+    }else{
+        $.ajax({
+            url: route('admin.dashboard.doctor_wise_conversion'),
+            type: 'GET',
+            cache: false,
+            data: {
+                'period': SELECTED_MONTH,
+                'centre_id': CENTRE_ID,
+                'doc_id': DOC_ID
+            },
+            success: function (response) {
+    
+                var categories = response.data.categories;
+                jQuery('#categories-table-body').html("");
+                var TABLE_HTML = "";
+                jQuery.each(categories, function (index, category) {
+                    arrived += category.total_arrival;
+                    converted += category.total_conversion;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
+    
+                });
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
+    
+                jQuery('#categories-table-body').append(TABLE_HTML);
+                DoctorWiseConversion(response);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+            }
+        });
+    }
+    
 }
 
 function GetDoctors(centre_id, time = '') {
