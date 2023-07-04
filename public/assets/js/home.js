@@ -856,7 +856,7 @@ function initDoctorWiseConversion(period, time = '') {
     let converted = 0;
     let arrived = 0;
     $('.arrivalbtn').text();
-    if(centre_id == 'all' && doc_id !='all-docs'){
+    if(centre_id == 'all' && doc_id =='all-docs'){
         $.ajax({
             url: route('admin.dashboard.all_doctor_wise_conversion'),
             type: 'GET',
