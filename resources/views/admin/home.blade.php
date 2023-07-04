@@ -966,11 +966,14 @@
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', 'firsttime');
-                    GetAllDoctors(centre_id);
+                   
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    GetAllDoctors(centre_id);
+                   
                     initCentreWiseArrival('thismonth', '', 'firsttime');
+                @endif
+                @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                GetAllDoctors(centre_id);
                 @endif
 
             });
