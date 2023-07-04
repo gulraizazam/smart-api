@@ -2834,8 +2834,10 @@ class DashboardReportsController extends Controller
                         ->get();
                 foreach ($locations as $location) {
                     $location_name = Locations::find($location);
-                   
-                    array_push($lables, $location_name->name);
+                    if($location_name){
+                        array_push($lables, $location_name->name);
+                    }
+                    
                   
                     $converted_appointments =  Appointments::with('location:id,name')
                         ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
