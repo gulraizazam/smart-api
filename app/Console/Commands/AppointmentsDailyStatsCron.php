@@ -44,13 +44,23 @@ class AppointmentsDailyStatsCron extends Command
     {
         $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;
         $locations = Locations::whereActive(1)->get()->pluck('id');
+        $today = Carbon::now()->format('Y-m-d');
+        $tomorrow = Carbon::now()->addDay()->format('Y-m-d');
         foreach ($locations as $location) {
-            $appointments = Appointments::where(['location_id' => $location, 'scheduled_date' => Carbon::now()->format('Y-m-d'), 'appointment_type_id' => $consultancyslug])->select('id', 'location_id', 'base_appointment_status_id', 'created_by')->get();
-            if (! $appointments->isEmpty()) {
+            $appointments = Appointments::where(function ($query) use ($location,$consultancyslug, $today, $tomorrow) {
+                $query->where([
+                        ['location_id',$location],
+                        ['appointment_type_id', $consultancyslug]
+                    ])
+                    ->whereBetween('scheduled_date', [$today, $tomorrow]);
+            })
+            ->select('id', 'location_id', 'base_appointment_status_id', 'created_by')
+            ->get();
+            if(count($appointments) > 0) {
                 foreach ($appointments as $appointment) {
                     AppointmentsDailyStats::updateOrCreate(['appointment_id' => $appointment->id, 'created_at' => Carbon::now()->format('Y-m-d')],
                         [
-                            'centre_id' => $appointment->location_id,
+                            'centre_id' =>$appointment->location_id,
                             'user_id' => $appointment->created_by,
                             'appointment_id' => $appointment->id,
                             'appointment_status_id' => $appointment->base_appointment_status_id,
