@@ -996,7 +996,7 @@
                 });
                 let converted = 0;
                 let arrived = 0;
-
+                let avg_sum = 0;
                 $.ajax({
                     url: route('admin.dashboard.all_doctor_wise_conversion'),
                     type: 'GET',
@@ -1007,15 +1007,17 @@
                     },
                     success: function (response) {
                         var categories = response.data.categories
+                       
                         jQuery('#categories-table-body').html("");
                         var TABLE_HTML = "";
                         jQuery.each(categories, function (index, category) {
                             arrived += category.total_arrival;
                             converted += category.total_conversion;
+                            avg_sum += category.avg;
                             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                         });
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + (( avg_sum / categories.length)).toFixed(2) + "</td></tr>";
 
                         jQuery('#categories-table-body').append(TABLE_HTML);
                         AllDoctorWiseConversion(response);
