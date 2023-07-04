@@ -833,31 +833,31 @@ class AppointmentsController extends Controller
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
         if (Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_services')) {
             $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->where('appointments.appointment_type_id', '=', $treatmentslug->id)
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (! Gate::allows('appointments_services') && ! Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->where([
                 ['appointments.appointment_type_id', '!=', $consultancyslug->id],
                 ['appointments.appointment_type_id', '!=', $treatmentslug->id],
@@ -899,31 +899,31 @@ class AppointmentsController extends Controller
         $records['data'] = [];
         if (Gate::allows('appointments_consultancy')) {
             $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_services')) {
             $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->where('appointments.appointment_type_id', '=', $treatmentslug->id)
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
             $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (! Gate::allows('appointments_consultancy') && ! Gate::allows('appointments_services')) {
             $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+                $join->on('users.id', '=', 'appointments.patient_id');
+                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
             })->where([
                 ['appointments.appointment_type_id', '!=', $consultancyslug->id],
                 ['appointments.appointment_type_id', '!=', $treatmentslug->id],
