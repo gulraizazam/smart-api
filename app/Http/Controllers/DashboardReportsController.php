@@ -2832,7 +2832,7 @@ class DashboardReportsController extends Controller
                          ->groupBy('service_id')
                         ->get();
                 foreach ($locations as $location) {
-                    $location_name = Locations::where(['id' =>$location , 'active' =>1])->first();
+                    $location_name = Locations::find($location);
                    
                     array_push($lables, $location_name->name);
                   
