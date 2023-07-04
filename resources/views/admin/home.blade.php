@@ -1002,7 +1002,7 @@
                     type: 'GET',
                     cache: false,
                     data: {
-                        'period': 'lastmonth',
+                        'period': 'thismonth',
                         'centre_id': centre_id
                     },
                     success: function (response) {
