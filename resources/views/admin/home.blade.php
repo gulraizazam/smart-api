@@ -973,7 +973,9 @@
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
                 @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
-                GetAllDoctors(centre_id);
+                    GetAllDoctors(centre_id);
+                @else
+                    GetDoctors(centre_id , 'firsttime');
                 @endif
 
             });
