@@ -2802,7 +2802,6 @@ class DashboardReportsController extends Controller
         }else{
             $locations=$request->centre_id;
         }
-       
         $converted_appointments =  Appointments::with('location:id,name')
                 ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
                 ->where([
