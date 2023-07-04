@@ -824,11 +824,11 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a data-id=""
+                                                        <a data-id="all-docs"
                                                             class="btn form-control btndropdown btn_Report doctorname"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> All Doctors
+                                                            aria-expanded="false" id="all_docs"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
