@@ -487,7 +487,7 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="form-control btndropdown  btn_Report appointment_by_type_dropdown"
+                                                        <a class="form-control btndropdown btn_Report appointment_by_type_dropdown"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false"> Today
@@ -648,7 +648,8 @@
                                                                 aria-expanded="false"> This Month
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_time">
+                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
+                                                                id="doc_time">
                                                                 <li class="yesterday">
                                                                     <a href="#wise_arrival_ul" data-toggle="tab"
                                                                         onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
@@ -689,7 +690,8 @@
                                                                 aria-expanded="false"> This Month
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
+                                                            <ul
+                                                                class="dropdown-menu dropdown-menu-right custom_hover_effect">
                                                                 <li class="yesterday">
                                                                     <a href="#wise_arrival_ul" data-toggle="tab"
                                                                         onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
@@ -761,6 +763,8 @@
                                 </div>
                             </div>
                         </div>
+                    @endif
+                    @if (\Illuminate\Support\Facades\Gate::allows('dashboard_doctor_wise_conversion'))
                         <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 800px;">
@@ -797,7 +801,7 @@
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @endif
-                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
                                                             @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
                                                                 <li>
                                                                     <a class="dropdown-item" data-period="thismonth"
@@ -820,18 +824,18 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a data-id=""
+                                                        <a data-id="all-docs"
                                                             class="btn form-control btndropdown btn_Report doctorname"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> All Doctors
+                                                            aria-expanded="false" id="all_docs"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right " id="doc_nav">
-                                                            <li class="yesterday">
+                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
+                                                            {{-- <li onclick="initDoctorWiseConversion('today');">
                                                                 <a href="#appointment_by_status_1" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('today');">Today</a>
-                                                            </li>
+                                                                    data-period="today">Today</a>
+                                                            </li> --}}
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -839,38 +843,39 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a data-id=""
-                                                            class="btn form-control btndropdown btn_Report doctor_period arrivalbtn"
+                                                        <a class="btn form-control btndropdown btn_Report doctor_period"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false"> This Month
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_time">
-                                                            <li class="today">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
+                                                            id="doctor_wise_conversion_list">
+                                                            <li>
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('today');">Today</a>
                                                             </li>
-                                                            <li class="yesterday">
+                                                            <li>
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
                                                             </li>
-                                                            <li class="last7days">
+                                                            <li>
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('last7days');">Last 7
                                                                     Days</a>
                                                             </li>
-                                                            <li class="week">
+                                                            <li>
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('week');">This
                                                                     Week</a>
                                                             </li>
-                                                            <li class="thismonth">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab" active
+                                                            <li>
+                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                    class="active" active
                                                                     onclick="initDoctorWiseConversion('thismonth');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li class="lastmonth">
+                                                            <li>
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('lastmonth');">Last
                                                                     Month</a>
@@ -958,18 +963,124 @@
                 });
 
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                var centre_id = $(".doctorwiseconversion").attr('data-id');
+                    var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', 'firsttime');
-                    GetDoctors(centre_id , 'firsttime');
+                    GetAllDoctors(centre_id);
                 @else
-                var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    GetDoctors(centre_id , 'firsttime');
+                    var centre_id = $(".doctorwiseconversion").attr('data-id');
+                    GetAllDoctors(centre_id);
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
 
             });
-            
+            function GetAllDoctors(centre_id)
+            {
+                var all = "all";
+                var TABLE_HTML = "";
+                $.ajax({
+                    url: route('admin.getdoctors'),
+                    type: "GET",
+                    data: { 'centre_id': centre_id  },
+                    cache: false,
+                    success: function (response) {
+                        jQuery('#doc_nav').html("");
+                        jQuery.each(response.doctors, function (index, doctor) {
+
+                            TABLE_HTML += " <li><a class='dropdown-item centre-item'  data-id=" + doctor.id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name + "</a></li>";
+                        });
+                        jQuery('#doc_nav').append(TABLE_HTML);
+                    },
+                });
+                let converted = 0;
+                let arrived = 0;
+                let avg_sum = 0;
+                $.ajax({
+                    url: route('admin.dashboard.all_doctor_wise_conversion'),
+                    type: 'GET',
+                    cache: false,
+                    data: {
+                        'period': 'thismonth',
+                        'centre_id': centre_id
+                    },
+                    success: function (response) {
+                        var categories = response.data.categories
+                       
+                        jQuery('#categories-table-body').html("");
+                        var TABLE_HTML = "";
+                        jQuery.each(categories, function (index, category) {
+                            arrived += category.total_arrival;
+                            converted += category.total_conversion;
+                            avg_sum += category.avg;
+                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
+
+                        });
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + (( avg_sum / categories.length)).toFixed(2) + "</td></tr>";
+
+                        jQuery('#categories-table-body').append(TABLE_HTML);
+                        AllDoctorWiseConversion(response);
+                    },
+                    error: function (xhr, ajaxOptions, thrownError) {
+                        errorMessage(xhr);
+                    }
+                });
+            }
+            function AllDoctorWiseConversion(bar) {
+                const primary = '#6993FF';
+                const success = '#1BC5BD';
+                const info = '#8950FC';
+                const warning = '#FFA800';
+                const danger = '#F64E60';
+                let lables = bar.data.labels;
+                if (lables.some(str => str.includes('All Centres'))) {
+                    modifiedData = lables.map(location => location.replace('All Centres ', ''));
+                } else {
+                    modifiedData = lables;
+                }
+                var options = {
+                    series: [{
+                        name: 'Total Appointments',
+                        data: bar.data.total_appointments
+                    }, {
+                        name: 'Converted',
+                        data: bar.data.converted_appointments
+                    }],
+                    noData: {
+                        text: 'No Data',
+                        align: 'center',
+                        verticalAlign: 'top',
+                        style: {
+                            color: 'red',
+                            fontSize: '14px',
+                            fontFamily: undefined
+                        }
+                    },
+                    chart: {
+                        type: 'bar',
+                        height: 350,
+
+                    },
+                    plotOptions: {
+                        bar: {
+                            horizontal: false,
+                            columnWidth: '55%',
+                            endingShape: 'rounded'
+                        },
+                    },
+                    stroke: {
+                        show: true,
+                        width: 1,
+                        colors: ['transparent']
+                    },
+                    xaxis: {
+                        categories: modifiedData,
+                    },
+                    colors: [primary, success, warning]
+                };
+                $("#doc_wise_conversion").html("");
+                doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
+                doc_wise_conversion_chart.render();
+            }
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
