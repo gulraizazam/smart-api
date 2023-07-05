@@ -58,7 +58,7 @@ class AppointmentsDailyStatsCron extends Command
             ->get();
             if(count($appointments) > 0) {
                 foreach ($appointments as $appointment) {
-                    AppointmentsDailyStats::updateOrCreate(['appointment_id' => $appointment->id, 'created_at' => Carbon::now()->format('Y-m-d')],
+                    AppointmentsDailyStats::Create(
                         [
                             'centre_id' =>$appointment->location_id,
                             'user_id' => $appointment->created_by,
