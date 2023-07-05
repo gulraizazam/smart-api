@@ -52,13 +52,13 @@ class AppointmentsDailyStatsCron extends Command
                         ['location_id',$location],
                         ['appointment_type_id', $consultancyslug]
                     ])
-                    ->where('scheduled_date',$today);
+                    ->where('scheduled_date','2023-07-04');
             })
             ->select('id', 'location_id', 'base_appointment_status_id', 'created_by')
             ->get();
             if(count($appointments) > 0) {
                 foreach ($appointments as $appointment) {
-                    AppointmentsDailyStats::Create(
+                    AppointmentsDailyStats::updateOrCreate(['appointment_id' => $appointment->id, 'created_at' => Carbon::now()->format('Y-m-d')],
                         [
                             'centre_id' =>$appointment->location_id,
                             'user_id' => $appointment->created_by,
