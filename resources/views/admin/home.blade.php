@@ -897,7 +897,7 @@
                                     <div class="row pt-7">
                                     <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs">
                                         <div class="col-7">
-                                            <div id="doc_wise_conversion"></div>
+                                            <div id="doc_wise_conversions"></div>
                                         </div>
                                         <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
 
@@ -911,7 +911,7 @@
                                                             <th class='table-cols'>Avg Value</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody id="categories-table-body"></tbody>
+                                                    <tbody id="categories-table-bodys"></tbody>
                                                 </table>
                                             </div>
                                         </div>
