@@ -898,7 +898,7 @@
                                    
                                         <div class="col-7">
                                         <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs" >
-                                            <div id="doc_wise_conversions"></div>
+                                            <div id="doc_wise_conversion"></div>
                                         </div>
                                         <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
 
