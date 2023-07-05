@@ -911,7 +911,7 @@
                                                             <th class='table-cols'>Avg Value</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody id="categories-table-bodys"></tbody>
+                                                    <tbody id="categories-table-body"></tbody>
                                                 </table>
                                             </div>
                                         </div>
