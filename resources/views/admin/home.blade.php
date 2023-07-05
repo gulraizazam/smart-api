@@ -976,6 +976,7 @@
                 @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
                     GetAllDoctors(centre_id);
                 @else
+                $('.loader-imgs').css('display', "none");
                     GetDoctors(centre_id , 'firsttime');
                 @endif
 
