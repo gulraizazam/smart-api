@@ -897,7 +897,7 @@
                                     <div class="row pt-7">
                                    
                                         <div class="col-7">
-                                        <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs">
+                                        <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs" >
                                             <div id="doc_wise_conversions"></div>
                                         </div>
                                         <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
@@ -1006,6 +1006,7 @@
                         'centre_id': centre_id
                     },
                     success: function (response) {
+                        $('.loader-imgs').css('display', "none");
                         var categories = response.data.categories
                        
                         jQuery('#categories-table-body').html("");
