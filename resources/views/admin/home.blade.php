@@ -1010,6 +1010,7 @@
                         'centre_id': centre_id
                     },
                     success: function (response) {
+                        $('.loader-imgs').css('display', "none");
                         var categories = response.data.categories
                        
                         jQuery('#categories-table-body').html("");
