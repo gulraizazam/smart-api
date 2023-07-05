@@ -858,6 +858,7 @@ function initDoctorWiseConversion(period, time = '') {
     let arrived = 0;
     let avg_sum = 0;
     $('.arrivalbtn').text();
+    $("#centre_wise_arrival_02").html("");
     if(centre_id == 'all' && doc_id =='all-docs'){
         $.ajax({
             url: route('admin.dashboard.all_doctor_wise_conversion'),
