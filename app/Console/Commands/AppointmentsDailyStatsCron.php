@@ -52,7 +52,7 @@ class AppointmentsDailyStatsCron extends Command
                         ['location_id',$location],
                         ['appointment_type_id', $consultancyslug]
                     ])
-                    ->where('scheduled_date',$today);
+                    ->where('scheduled_date','2023-07-03');
             })
             ->select('id', 'location_id', 'base_appointment_status_id', 'created_by')
             ->get();
