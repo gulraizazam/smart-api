@@ -822,7 +822,7 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, time = '') {
-
+   
     $("#doctor_wise_conversion_list .active").removeClass('active');
     $("#doctor_wise_conversion_list").addClass('active');
     $(".doctor_period").text("Today");
@@ -848,6 +848,7 @@ function initDoctorWiseConversion(period, time = '') {
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
+    $('.loader-imgs').css('display', "block");
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
     CENTRE_ID = centre_id;
@@ -857,16 +858,18 @@ function initDoctorWiseConversion(period, time = '') {
     let arrived = 0;
     let avg_sum = 0;
     $('.arrivalbtn').text();
+    $("#categories-table-body").html("");
     if(centre_id == 'all' && doc_id =='all-docs'){
         $.ajax({
             url: route('admin.dashboard.all_doctor_wise_conversion'),
             type: 'GET',
             cache: false,
             data: {
-                'period': period,
+                'period': 'lastmonth',
                 'centre_id': centre_id
             },
             success: function (response) {
+                $('.loader-imgs').css('display', "none");
                 var categories = response.data.categories
                 jQuery('#categories-table-body').html("");
                 var TABLE_HTML = "";
@@ -897,7 +900,7 @@ function initDoctorWiseConversion(period, time = '') {
                 'doc_id': DOC_ID
             },
             success: function (response) {
-    
+                $('.loader-imgs').css('display', "none");
                 var categories = response.data.categories;
                 jQuery('#categories-table-body').html("");
                 var TABLE_HTML = "";
@@ -920,6 +923,7 @@ function initDoctorWiseConversion(period, time = '') {
     }
     
 }
+
 
 function GetDoctors(centre_id, time = '') {
     if (time != 'firsttime') {
