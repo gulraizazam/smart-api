@@ -895,6 +895,7 @@
                                     </div>
 
                                     <div class="row pt-7">
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs">
                                         <div class="col-7">
                                             <div id="doc_wise_conversion"></div>
                                         </div>
