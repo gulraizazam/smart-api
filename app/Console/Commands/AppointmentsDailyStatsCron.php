@@ -45,14 +45,14 @@ class AppointmentsDailyStatsCron extends Command
         $consultancyslug = AppointmentTypes::where(['slug' => 'consultancy'])->first()->id;
         $locations = Locations::whereActive(1)->get()->pluck('id');
         $today = Carbon::now()->format('Y-m-d');
-        $tomorrow = Carbon::now()->addDay()->format('Y-m-d');
+        //$tomorrow = Carbon::now()->addDay()->format('Y-m-d');
         foreach ($locations as $location) {
-            $appointments = Appointments::where(function ($query) use ($location,$consultancyslug, $today, $tomorrow) {
+            $appointments = Appointments::where(function ($query) use ($location,$consultancyslug, $today) {
                 $query->where([
                         ['location_id',$location],
                         ['appointment_type_id', $consultancyslug]
                     ])
-                    ->whereBetween('scheduled_date', [$today, $tomorrow]);
+                    ->where('scheduled_date', $today);
             })
             ->select('id', 'location_id', 'base_appointment_status_id', 'created_by')
             ->get();
