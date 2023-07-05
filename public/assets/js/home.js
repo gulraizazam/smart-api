@@ -865,7 +865,7 @@ function initDoctorWiseConversion(period, time = '') {
             type: 'GET',
             cache: false,
             data: {
-                'period': 'lastmonth',
+                'period': period,
                 'centre_id': centre_id
             },
             success: function (response) {
