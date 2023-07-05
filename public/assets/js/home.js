@@ -822,7 +822,7 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, time = '') {
-
+    $('.loader-imgs').css('display', "block");
     $("#doctor_wise_conversion_list .active").removeClass('active');
     $("#doctor_wise_conversion_list").addClass('active');
     $(".doctor_period").text("Today");
@@ -867,6 +867,7 @@ function initDoctorWiseConversion(period, time = '') {
                 'centre_id': centre_id
             },
             success: function (response) {
+                $('.loader-imgs').css('display', "none");
                 var categories = response.data.categories
                 jQuery('#categories-table-body').html("");
                 var TABLE_HTML = "";
@@ -897,7 +898,7 @@ function initDoctorWiseConversion(period, time = '') {
                 'doc_id': DOC_ID
             },
             success: function (response) {
-    
+                $('.loader-imgs').css('display', "none");
                 var categories = response.data.categories;
                 jQuery('#categories-table-body').html("");
                 var TABLE_HTML = "";
