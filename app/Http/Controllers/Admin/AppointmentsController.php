@@ -4495,6 +4495,9 @@ class AppointmentsController extends Controller
             }
         }
         $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
+        if(!$lead){
+            return ApiHelper::apiResponse($this->success, 'Lead of this patient is not exist. PLease create lead first.', false);
+        }
         $patientData = $appointment_data;
         Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
         $appointment_data['lead_id'] = $lead->id;
