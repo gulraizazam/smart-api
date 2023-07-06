@@ -52,7 +52,7 @@ class AppointmentsDailyStatsCron extends Command
                         ['location_id',$location],
                         ['appointment_type_id', $consultancyslug]
                     ])
-                    ->where('scheduled_date', '2023-07-05');
+                    ->where('scheduled_date', $today);
             })
             ->select('id', 'location_id', 'base_appointment_status_id', 'created_by')
             ->get();
@@ -64,7 +64,7 @@ class AppointmentsDailyStatsCron extends Command
                             'user_id' => $appointment->created_by,
                             'appointment_id' => $appointment->id,
                             'appointment_status_id' => $appointment->base_appointment_status_id,
-                            'cron_current_date' => '2023-07-05',
+                            'cron_current_date' => Carbon::now(),
                         ]);
                 }
             }
