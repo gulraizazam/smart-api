@@ -64,7 +64,7 @@ class AppointmentsDailyStatsCron extends Command
                             'user_id' => $appointment->created_by,
                             'appointment_id' => $appointment->id,
                             'appointment_status_id' => $appointment->base_appointment_status_id,
-                            'cron_current_date' => Carbon::now(),
+                            'cron_current_date' => '2023-07-05',
                         ]);
                 }
             }
