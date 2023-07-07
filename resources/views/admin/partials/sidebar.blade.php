@@ -904,7 +904,7 @@
 
                     <!-- End Inventory menu -->
 
-                    @if(Gate::allows('finance_general_revenue_reports_manage'))
+                   
                         <li class="menu-item menu-item-submenu {{openMenu([
                             'admin.reports.finance_reports',
                             'admin.reports.operations_report'
@@ -1001,7 +1001,7 @@
                                 </div>
                                 @endcan
                         </li>
-                    @endif
+                    
 
                 </ul>
                 <!--end::Menu Nav-->
