@@ -2796,6 +2796,8 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments=0;
         $periods = GeneralFunctions::GetPeriods();
+        // dd( $periods[$period]['start_date'],
+        // $periods[$period]['end_date']);
         $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
         if($request->centre_id == 'all'){
             $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
@@ -2811,13 +2813,16 @@ class DashboardReportsController extends Controller
                 ->whereIn('appointments.location_id' ,$locations)
                 ->where('package_advances.cash_amount', '>', 0)
                 ->select('appointments.*')
-               ->whereBetween('package_advances.created_at', [
+                ->when($period == 'today', function ($query) use ($periods, $period) {
+                    $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+                })
+                ->when($period != 'today', function ($query) use ($periods, $period) {
+                    $query->whereBetween('package_advances.created_at', [
                         $periods[$period]['start_date'],
                         $periods[$period]['end_date']
-                    ])
-              
+                    ]);
+                })
                 ->get();
-                dd($converted_appointments , $periods[$period]['start_date'] ,$periods[$period]['end_date']);
                 $total_arrived_appointments = Appointments::with('location:id,name')
                         ->join('services', 'appointments.service_id', 'services.id')
                         ->where([
