@@ -922,7 +922,7 @@
                         </div>
                     @endif
                     <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 805px;">
                             <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
