@@ -2817,6 +2817,7 @@ class DashboardReportsController extends Controller
                     ])
               
                 ->get();
+                dd($converted_appointments , $periods[$period]['start_date'] ,$periods[$period]['end_date']);
                 $total_arrived_appointments = Appointments::with('location:id,name')
                         ->join('services', 'appointments.service_id', 'services.id')
                         ->where([
