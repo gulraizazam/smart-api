@@ -2602,6 +2602,7 @@ class DashboardReportsController extends Controller
                         $periods[$period]['end_date']
                     ])
                 ->get();
+                dd($converted_appointments);
             if (count($converted_appointments)) {
                 foreach ($converted_appointments as $appointment) {
                     if (!in_array($appointment->id, $appointments)) {
