@@ -2796,8 +2796,8 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments=0;
         $periods = GeneralFunctions::GetPeriods();
-        // dd( $periods[$period]['start_date'],
-        // $periods[$period]['end_date']);
+        dd( $periods[$period]['start_date'],
+        $periods[$period]['end_date']);
         $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
         if($request->centre_id == 'all'){
             $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
