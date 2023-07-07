@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: REDSignal
@@ -54,7 +55,7 @@ class GeneralFunctions
     {
         // Adjust Country Code for Pakistan
         if ($phoneNumber[0] == '3' && (strlen($phoneNumber) >= 9 && strlen($phoneNumber) <= 11)) {
-            return '92'.$phoneNumber;
+            return '92' . $phoneNumber;
         } else {
             return $phoneNumber;
         }
@@ -63,15 +64,15 @@ class GeneralFunctions
     public static function prepareNumber4Call($phoneNumber, $type = 0)
     {
 
-        if (! Gate::allows('contact')) {
+        if (!Gate::allows('contact')) {
             return '***********';
         } else {
 
             if (isset($phoneNumber) && $phoneNumber != '') {
                 if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 0) {
-                    return '+92'.$phoneNumber;
+                    return '+92' . $phoneNumber;
                 } elseif ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10 && $type = 1) {
-                    return '0'.$phoneNumber;
+                    return '0' . $phoneNumber;
                 } else {
                     return $phoneNumber;
                 }
@@ -87,7 +88,7 @@ class GeneralFunctions
     {
         // Adjust Country Code for Pakistan
         if ($phoneNumber[0] == '3' && strlen($phoneNumber) == 10) {
-            return '+92'.$phoneNumber;
+            return '+92' . $phoneNumber;
         } else {
             return $phoneNumber;
         }
@@ -104,7 +105,7 @@ class GeneralFunctions
 
     public static function contactStatus($contact)
     {
-        if (! Gate::allows('contact')) {
+        if (!Gate::allows('contact')) {
             return '***********';
         } else {
             return $contact;
@@ -132,7 +133,7 @@ class GeneralFunctions
     public static function patientSearchStringAdd($id)
     {
         if (is_numeric($id)) {
-            return 'C-'.$id;
+            return 'C-' . $id;
         } else {
             return $id;
         }
@@ -176,7 +177,7 @@ class GeneralFunctions
             }
             $services = Services::where('slug', '!=', 'all')
                 ->where(['parent_id' => 0])
-                ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%'.$filters['name'].'%'))
+                ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                 ->orderBy('id', 'asc')
                 ->get();
             $mergedServices = [];
@@ -203,14 +204,14 @@ class GeneralFunctions
                 $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
                 if (hasFilter($filters, 'name')) {
-                    $where[] = ['name', 'like', '%'.$filters['name'].'%'];
+                    $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
                     if ($apply_filter) {
                         Filters::forget(Auth::User()->id, $filename, 'name');
                     } else {
                         if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                            $where[] = ['name', 'like', '%'.Filters::get(Auth::user()->id, $filename, 'name').'%'];
+                            $where[] = ['name', 'like', '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%'];
                         }
                     }
                 }
@@ -223,7 +224,8 @@ class GeneralFunctions
                     } else {
                         if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
                             if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
-                                $where[] = ['active' => Filters::get(Auth::user()->id, $filename, 'status'),
+                                $where[] = [
+                                    'active' => Filters::get(Auth::user()->id, $filename, 'status'),
                                 ];
                             }
                         }
@@ -258,7 +260,7 @@ class GeneralFunctions
 
                         return $mergedServices;
                     } else {
-                        $children = Services::where('active', $filters['status'])->where('name', 'like', '%'.$filters['name'].'%')->get();
+                        $children = Services::where('active', $filters['status'])->where('name', 'like', '%' . $filters['name'] . '%')->get();
 
                         return $children;
                     }
@@ -267,7 +269,7 @@ class GeneralFunctions
                     $query = Services::with('children')
                         ->where(['parent_id' => 0])
                         ->where('slug', '!=', 'all')
-                        ->where('name', 'like', '%'.$filters['name'].'%');
+                        ->where('name', 'like', '%' . $filters['name'] . '%');
                     $services = $query->get();
                     if (count($services) > 0) {
                         $mergedServices = [];
@@ -292,7 +294,7 @@ class GeneralFunctions
 
                         return $mergedServices;
                     } else {
-                        $children = Services::where(['active' => $filters['status']])->where('name', 'like', '%'.$filters['name'].'%')->get();
+                        $children = Services::where(['active' => $filters['status']])->where('name', 'like', '%' . $filters['name'] . '%')->get();
 
                         return $children;
                     }
@@ -394,7 +396,8 @@ class GeneralFunctions
                 $filters['status'] = 0;
                 $apply_filter = checkFilters($filters, $filename);
                 if (hasFilter($filters, 'name')) {
-                    $where[] = ['name', 'like', '%'.$filters['name'].'%',
+                    $where[] = [
+                        'name', 'like', '%' . $filters['name'] . '%',
                     ];
                     Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
                 } else {
@@ -402,13 +405,15 @@ class GeneralFunctions
                         Filters::forget(Auth::User()->id, $filename, 'name');
                     } else {
                         if (Filters::get(Auth::User()->id, $filename, 'name')) {
-                            $where[] = ['name', 'like', '%'.Filters::get(Auth::user()->id, $filename, 'name').'%',
+                            $where[] = [
+                                'name', 'like', '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',
                             ];
                         }
                     }
                 }
                 if (hasFilter($filters, 'status')) {
-                    $where[] = ['active' => $filters['status'],
+                    $where[] = [
+                        'active' => $filters['status'],
                     ];
                     Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
                 } else {
@@ -417,7 +422,8 @@ class GeneralFunctions
                     } else {
                         if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
                             if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
-                                $where[] = ['active' => Filters::get(Auth::user()->id, $filename, 'status'),
+                                $where[] = [
+                                    'active' => Filters::get(Auth::user()->id, $filename, 'status'),
                                 ];
                             }
                         }
@@ -452,9 +458,11 @@ class GeneralFunctions
 
                         return $mergedServices;
                     } else {
-                        $children = Services::where('active', $filters['status'])->where('name',
+                        $children = Services::where('active', $filters['status'])->where(
+                            'name',
                             'like',
-                            '%'.$filters['name'].'%')->get();
+                            '%' . $filters['name'] . '%'
+                        )->get();
 
                         return $children;
                     }
@@ -463,9 +471,11 @@ class GeneralFunctions
                     $query = Services::with('children')
                         ->where('parent_id', 0)
                         ->where('slug', '!=', 'all')
-                        ->where('name',
+                        ->where(
+                            'name',
                             'like',
-                            '%'.$filters['name'].'%');
+                            '%' . $filters['name'] . '%'
+                        );
                     $services = $query->get();
                     if (count($services) > 0) {
                         $mergedServices = [];
@@ -480,7 +490,6 @@ class GeneralFunctions
                             } else {
                                 $children = collect($service->children)->flatten();
                                 unset($service->children);
-
                             }
                             $mergedServices[] = $service->toArray();
                             $children = $children->toArray();
@@ -491,9 +500,11 @@ class GeneralFunctions
 
                         return $mergedServices;
                     } else {
-                        $children = Services::where('active', $filters['status'])->where('name',
+                        $children = Services::where('active', $filters['status'])->where(
+                            'name',
                             'like',
-                            '%'.$filters['name'].'%')->get();
+                            '%' . $filters['name'] . '%'
+                        )->get();
 
                         return $children;
                     }
@@ -621,7 +632,7 @@ class GeneralFunctions
 
         while ($startTime <= $endTime) {
             $timeArray[] = $startTime->format('H:i');
-            $startTime->add(new \DateInterval('PT'.$timeStep.'M'));
+            $startTime->add(new \DateInterval('PT' . $timeStep . 'M'));
         }
 
         return $timeArray;
@@ -699,7 +710,6 @@ class GeneralFunctions
         } catch (\Exception $e) {
             //
         }
-
     }
 
     public static function getFDM($location_ids = null)
@@ -727,7 +737,6 @@ class GeneralFunctions
             ->pluck('user_id')->toArray();
 
         return $fdm_ids;
-
     }
 
     public static function getCSR()
@@ -737,7 +746,6 @@ class GeneralFunctions
             ->pluck('user_id')->toArray();
 
         return $csr_user_ids;
-
     }
 
     public static function getLocationIds($location_id)
@@ -782,5 +790,148 @@ class GeneralFunctions
                     'account_id' => $accountId,
                 ]);
         })->update(['name' => $name]);
+    }
+    public static function GetPeriods()
+    {
+        $periods = [
+            'today' => [
+                'start_date' => Carbon::now()->format('Y-m-d'),
+                'end_date' => Carbon::now()->format('Y-m-d'),
+            ],
+            'yesterday' => [
+                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+            ],
+            'last7days' => [
+                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
+                'end_date' => Carbon::now()->format('Y-m-d'),
+            ],
+            'week' => [
+                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
+                'end_date' => Carbon::now()->endOfWeek()->format('Y-m-d'),
+            ],
+            'thismonth' => [
+                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+            ],
+            'lastmonth' => [
+                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d')
+            ]
+        ];
+        return $periods;
+    }
+    public static function genericfunctionforstaffwiserevenue($packagesadvance)
+    {
+        $balance = 0;
+        $total_balance = 0;
+        if (
+            ($packagesadvance->cash_flow == 'in' &&
+                $packagesadvance->is_adjustment == '0' &&
+                $packagesadvance->is_tax == '0' &&
+                $packagesadvance->is_cancel == '0'
+            )
+            ||
+            ($packagesadvance->cash_flow == 'out' &&
+                $packagesadvance->is_refund == '1'
+            )
+        ) {
+            switch ($packagesadvance->cash_flow) {
+                case 'in':
+                    $balance = $balance + $packagesadvance->cash_amount;
+                    break;
+                case 'out':
+                    $balance = $balance - $packagesadvance->cash_amount;
+                    break;
+                default:
+                    break;
+            }
+            $total_balance = $balance;
+            if ($packagesadvance->cash_amount != 0) {
+                if ($packagesadvance->package_id) {
+                    $transtype = Config::get('constants.trans_type.advance_in');
+                }
+                if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                    $transtype = Config::get('constants.trans_type.advance_in');
+                }
+                if ($packagesadvance->is_adjustment == '1') {
+                    $transtype = Config::get('constants.trans_type.adjustment');
+                }
+                if ($packagesadvance->is_cancel == '1') {
+                    $transtype = Config::get('constants.trans_type.invoice_cancel');
+                }
+                if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                    $transtype = Config::get('constants.trans_type.invoice_create');
+                }
+                if ($packagesadvance->is_refund == '1') {
+                    $transtype = Config::get('constants.trans_type.refund_in');
+                }
+                if ($packagesadvance->is_tax == '1') {
+                    $transtype = Config::get('constants.trans_type.tax_out');
+                }
+                if ($packagesadvance->cash_flow == 'in') {
+                    $revenue = $packagesadvance->cash_amount;
+                    $refund_out = '';
+                } else {
+                    $revenue = '';
+                    $refund_out = $packagesadvance->cash_amount;
+                }
+                $report_data = array(
+                    'patient' => $packagesadvance->user->name,
+                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
+                    'transtype' => $transtype,
+                    'payment_mode_id' => $packagesadvance->payment_mode_id,
+                    'cash_flow' => $packagesadvance->cash_flow,
+                    'revenue' => $revenue,
+                    'refund_out' => $refund_out,
+                    'Balance' => $balance,
+                    'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A')
+                );
+
+                return $report_data;
+            }
+        }
+    }
+    public static function GetConvertedAppointments($period, $periods, $consultant)
+    {
+        $converted_appointments =  Appointments::with('location:id,name')
+            ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
+            ->where([
+                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
+                'appointments.appointment_type_id' => 1
+            ])
+            ->whereIn('appointments.doctor_id', $consultant)
+            ->where('package_advances.cash_amount', '>', 0)
+            ->select('appointments.service_id', 'appointments.id')
+            ->when($period == 'today', function ($query) use ($periods, $period) {
+                $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+            })
+            ->when($period != 'today', function ($query) use ($periods, $period) {
+                $query->whereBetween('package_advances.created_at', [
+                    $periods[$period]['start_date'],
+                    $periods[$period]['end_date']
+                ]);
+            })
+            ->get();
+
+        $total_appointments =  Appointments::with('location:id,name')
+            ->where([
+                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
+                'appointments.appointment_type_id' => 1
+            ])
+            ->whereIn('appointments.doctor_id', $consultant)
+            ->select('appointments.*')
+            ->when($period == 'today', function ($query) use ($periods, $period) {
+                $query->whereDate('appointments.scheduled_date', $periods[$period]['start_date']);
+            })
+            ->when($period != 'today', function ($query) use ($periods, $period) {
+                $query->whereBetween('appointments.scheduled_date', [
+                    $periods[$period]['start_date'],
+                    $periods[$period]['end_date']
+                ]);
+            })
+            ->get();
+        $total_appointments->merge($converted_appointments);
+        return $total_appointments;
     }
 }
