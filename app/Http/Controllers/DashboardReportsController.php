@@ -4,16 +4,19 @@ namespace App\Http\Controllers;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
+use App;
+use App\Helpers\GeneralFunctions;
+use App\Models\RoleHasUsers;
 use App\Models\Appointments;
 use App\Models\AppointmentsDailyStats;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
+use App\Models\DoctorHasLocations;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\Packages;
-use App\Models\RoleHasUsers;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\dashboardreport;
@@ -23,6 +26,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Symfony\Component\Routing\Generator\Dumper\GeneratorDumper;
 
 class DashboardReportsController extends Controller
 {
@@ -81,7 +85,6 @@ class DashboardReportsController extends Controller
                         $data['last7days'][] = $record;
                     }
                 }
-
             }
             if ($request->get('week') != '') {
                 [$weekRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
@@ -153,9 +156,9 @@ class DashboardReportsController extends Controller
                             foreach ($packagesadvances as $packagesadvance) {
                                 if (
                                     $packagesadvance->cash_flow == 'in' &&
-                                        $packagesadvance->is_adjustment == '0' &&
-                                        $packagesadvance->is_tax == '0' &&
-                                        $packagesadvance->is_cancel == '0'
+                                    $packagesadvance->is_adjustment == '0' &&
+                                    $packagesadvance->is_tax == '0' &&
+                                    $packagesadvance->is_cancel == '0'
                                 ) {
                                     switch ($packagesadvance->cash_flow) {
                                         case 'in':
@@ -227,7 +230,6 @@ class DashboardReportsController extends Controller
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
                                         }
-
                                     }
                                 }
                             }
@@ -590,7 +592,6 @@ class DashboardReportsController extends Controller
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
                                         }
-
                                     }
                                 }
                             }
@@ -638,8 +639,7 @@ class DashboardReportsController extends Controller
                             $total_refund_out = 0;
                             foreach ($packagesadvances as $packagesadvance) {
                                 if (
-                                    (
-                                        $packagesadvance->cash_flow == 'in' &&
+                                    ($packagesadvance->cash_flow == 'in' &&
                                         $packagesadvance->is_adjustment == '0' &&
                                         $packagesadvance->is_tax == '0' &&
                                         $packagesadvance->is_cancel == '0'
@@ -716,7 +716,6 @@ class DashboardReportsController extends Controller
                                         if ($refund_out) {
                                             $total_refund_out += $refund_out;
                                         }
-
                                     }
                                 }
                             }
@@ -844,7 +843,6 @@ class DashboardReportsController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-
             }
             if ($request->last7days) {
                 $last7_days_records = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
@@ -887,7 +885,6 @@ class DashboardReportsController extends Controller
                         $data['week'][] = $record;
                     }
                 }
-
             }
             if ($request->thismonth) {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
@@ -930,7 +927,6 @@ class DashboardReportsController extends Controller
                         $data['month'][] = $record;
                     }
                 }
-
             }
             if ($request->lastmonth) {
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
@@ -973,7 +969,6 @@ class DashboardReportsController extends Controller
                         $data['lastmonth'][] = $record;
                     }
                 }
-
             }
         }
 
@@ -1088,7 +1083,7 @@ class DashboardReportsController extends Controller
                         foreach ($today_records as $todayRecord) {
                             if ($todayRecord->location_id == $location_detail->id) {
                                 $data[] = [
-                                    $location_detail->city->name.' - '.$location_detail->name,
+                                    $location_detail->city->name . ' - ' . $location_detail->name,
                                     $todayRecord->total_price,
                                 ];
                                 $total += $todayRecord->total_price;
@@ -1139,7 +1134,7 @@ class DashboardReportsController extends Controller
                         foreach ($today_records as $todayRecord) {
                             if ($todayRecord->location_id == $location->id) {
                                 $data[] = [
-                                    $location->city->name.' - '.$location->name,
+                                    $location->city->name . ' - ' . $location->name,
                                     $todayRecord->total_price,
                                 ];
                                 $total += $todayRecord->total_price;
@@ -1850,14 +1845,12 @@ class DashboardReportsController extends Controller
                             }
                         }
                     }
-
                 }
                 if (count($yesterday)) {
                     foreach ($yesterday as $record) {
                         $data['yesterday'][] = $record;
                     }
                 }
-
             }
             if ($request->period == 'last7days') {
                 $last7_days_records = Appointments::whereDate('scheduled_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
@@ -1969,7 +1962,6 @@ class DashboardReportsController extends Controller
                             }
                         }
                     }
-
                 }
                 if (count($monthlyRecord)) {
                     foreach ($monthlyRecord as $record) {
@@ -2009,7 +2001,6 @@ class DashboardReportsController extends Controller
                             }
                         }
                     }
-
                 }
                 if (count($monthlyRecord)) {
                     foreach ($monthlyRecord as $record) {
@@ -2065,7 +2056,6 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
-
             }
             if (count($today)) {
                 foreach ($today as $record) {
@@ -2104,7 +2094,6 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
-
             }
             if (count($today)) {
                 foreach ($today as $record) {
@@ -2146,14 +2135,12 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
-
             }
             if (count($yesterday)) {
                 foreach ($yesterday as $record) {
                     $data['yesterday'][] = $record;
                 }
             }
-
         }
         if ($request->period == 'last7days') {
             $weeklyRecords = Appointments::whereDate('created_at', '=', Carbon::now()->subDay(6)->format('Y-m-d'))
@@ -2187,7 +2174,6 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
-
             }
             if (count($last7days)) {
                 foreach ($last7days as $record) {
@@ -2226,14 +2212,12 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
-
             }
             if (count($month)) {
                 foreach ($month as $record) {
                     $data['thismonth'][] = $record;
                 }
             }
-
         }
         if ($request->period == 'lastmonth') {
             $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
@@ -2266,14 +2250,12 @@ class DashboardReportsController extends Controller
                         }
                     }
                 }
-
             }
             if (count($month)) {
                 foreach ($month as $record) {
                     $data['lastmonth'][] = $record;
                 }
             }
-
         }
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
@@ -2335,7 +2317,7 @@ class DashboardReportsController extends Controller
         $stats = AppointmentsDailyStats::select('centre_id')
             ->selectRaw('count(*) as total')
             ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN ('.implode(',', $fdm_users).') THEN 1 ELSE 0 END) as walkin')
+            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
             ->whereBetween('cron_current_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->whereIn('centre_id', $center_id)
             ->groupBy('centre_id')
@@ -2551,19 +2533,7 @@ class DashboardReportsController extends Controller
     }
     public function FollowUpPatients(Request $request)
     {
-        $packages = Packages::join('users','users.id','packages.patient_id')
-        ->select('packages.*')
-        ->get();
-        foreach($packages as $package){
-           
-            $cash_receive = PackageAdvances::where([
-                ['package_id', '=', $package->id],
-                ['cash_flow', '=', 'in'],
-                ['is_cancel', '=', '0'],
-            ])->sum('cash_amount');
-            $remaining  = $package->id
-            dd($cash_receive );
-        }
+        
        
 
     }
