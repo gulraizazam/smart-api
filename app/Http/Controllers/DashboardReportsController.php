@@ -2749,10 +2749,39 @@ class DashboardReportsController extends Controller
         
                 ]);
     }
-    public function FollowUpPatients(Request $request)
+    public function GetCentreDoctors(Request $request)
+    {
+        if($request->centre_id == 'all'){
+            $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
+            ->join('users','resources.external_id','users.id')
+            ->select('users.name','users.id')
+            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 ])
+            ->distinct('user_id')
+            ->get();
+        }else{
+            $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
+            ->join('users','resources.external_id','users.id')
+            ->select('users.name','users.id')
+            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 , 'resource_has_rota.location_id' => $request->centre_id])
+            ->distinct('user_id')
+            ->get();
+        }
+       
+        return response()->json(['status' => 1, 'doctors' => $consultants]);
+    }
+    public function FollowUp(Request $request)
     {
         
-       
+        $patients = User::select('users.id')
+            ->join('appointments', 'users.id', '=', 'appointments.patient_id')
+            ->join('package_advances', 'users.id', '=', 'package_advances.patient_id')
+            ->where('appointments.appointment_type_id', 1) // Consultation
+            ->where('appointments.deleted_at', null)
+            //->where('appointments.appointment_type_id' ,"!=", 2) // No treatment record
+            ->where('package_advances.created_at', '<=', Carbon::now()->subDays(7))
+            ->groupBy('package_advances.patient_id')
+            ->get();
+            dd($patients->toArray());
 
     }
 }
