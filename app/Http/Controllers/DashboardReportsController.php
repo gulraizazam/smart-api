@@ -2826,7 +2826,7 @@ class DashboardReportsController extends Controller
                         array_push($lables, $location_name->name);
                     }
                     
-                  dd($period);
+                 
                     $converted_appointments =  Appointments::with('location:id,name')
                         ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
                         ->where([
