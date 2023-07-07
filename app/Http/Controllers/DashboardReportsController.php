@@ -2826,7 +2826,7 @@ class DashboardReportsController extends Controller
                         array_push($lables, $location_name->name);
                     }
                     
-                  
+                  dd($period);
                     $converted_appointments =  Appointments::with('location:id,name')
                         ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
                         ->where([
@@ -2837,7 +2837,10 @@ class DashboardReportsController extends Controller
                         ->where('appointments.location_id' ,$location)
                         ->where('package_advances.cash_amount', '>', 0)
                         ->select('appointments.*')
-                        ->when($period == 'today' || $period == 'yesterday', function ($query) use ($periods, $period) {
+                        ->when($period == 'today' , function ($query) use ($periods, $period) {
+                            $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+                        })
+                        ->when($period == 'yesterday' , function ($query) use ($periods, $period) {
                             $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
                         })
                         ->when($period != 'today', function ($query) use ($periods, $period) {
