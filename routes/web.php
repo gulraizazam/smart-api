@@ -483,9 +483,11 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('appointmentsmedical/{id}/export_pdf', [AppointmentMedicalController::class, 'exportPdf'])->name('appointmentsmedical.custom_form_feedbacks.export_pdf');
     /*Appointment Route end for medical history form*/
 
-    // Appointment Comments
-    Route::get('appointments/comment-save', [AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
-    //Appointment Route end for images
+        Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'GetCentreDoctors'])->name('getdoctors');
+
+       // Appointment Comments
+        Route::get('appointments/comment-save',[AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
+        //Appointment Route end for images
 
     /*Consultancy Routes*/
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
@@ -553,8 +555,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
     Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
     Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
-    Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
 
-    ///////
-    Route::get('dashboard/followup', [DashboardReportsController::class, 'FollowUpPatients'])->name('dashboard.followup');
-});
+        Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
+        Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
+        Route::get('dashboard/doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
+    });

@@ -20,7 +20,6 @@ use App\Models\PackageService;
 use App\Models\Resources;
 use App\User;
 use Auth;
-use Auth;
 use Carbon\Carbon;
 use Config;
 use DB;
@@ -96,7 +95,7 @@ class Finanaces
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (! in_array($recod->location_id, $created_byArray)) {
+                if (!in_array($recod->location_id, $created_byArray)) {
                     $created_byArray[] = $recod->location_id;
                     $locationinfo = Locations::where('id', '=', $recod->location_id)->first();
                     $data[$recod->location_id] = [
@@ -184,7 +183,7 @@ class Finanaces
 
         if ($recods) {
             foreach ($recods as $recod) {
-                if (! in_array($recod->appointment_type_id, $created_byArray)) {
+                if (!in_array($recod->appointment_type_id, $created_byArray)) {
                     $created_byArray[] = $recod->appointment_type_id;
                     $appointmenttype = AppointmentTypes::find($recod->appointment_type_id);
                     $data[$recod->appointment_type_id] = [
@@ -290,7 +289,6 @@ class Finanaces
                     if ($packagesadvances->cash_flow == 'in') {
                         $cash_in = number_format($packagesadvances->cash_amount);
                         $cash_out = '-';
-
                     } else {
                         $cash_out = number_format($packagesadvances->cash_amount);
                         $cash_in = '-';
@@ -418,7 +416,6 @@ class Finanaces
                         if ($packagesadvances->cash_flow == 'in') {
                             $cash_in = number_format($packagesadvances->cash_amount);
                             $cash_out = '-';
-
                         } else {
                             $cash_out = number_format($packagesadvances->cash_amount);
                             $cash_in = '-';
@@ -552,7 +549,6 @@ class Finanaces
                 $packagetrans[$packagerow->id]['usedbalance'] = $usedbalance;
 
                 $packagetrans[$packagerow->id]['unusedbalance'] = $balance - $refund_balance;
-
             } else {
                 unset($packagetrans[$packagerow->id]);
             }
@@ -622,7 +618,7 @@ class Finanaces
                     'patient_name' => $appointment->name,
                     'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
                     'email' => $appointment->patient->email,
-                    'schedule' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor' => (array_key_exists($appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($appointment->city_id, $filters['cities'])) ? $filters['cities'][$appointment->city_id]->name : '',
                     'location' => (array_key_exists($appointment->location_id, $filters['locations'])) ? $filters['locations'][$appointment->location_id]->name : '',
@@ -744,7 +740,6 @@ class Finanaces
             $packagetrans[$packagerow->id]['discount_price'] = $discountedprice;
 
             $packagetrans[$packagerow->id]['tax_amt'] = $tax_amt_price;
-
         }
 
         return $packagetrans;
@@ -824,7 +819,6 @@ class Finanaces
             $packagetrans[$packagerow->id]['total_price'] = $total_price;
 
             $packagetrans[$packagerow->id]['refund_amount'] = $refund_amount;
-
         }
 
         return $packagetrans;
@@ -864,7 +858,6 @@ class Finanaces
         $package_advances = PackageAdvances::with(['appointment' => function ($query) use ($where) {
             $query->where($where);
             $query->whereIn('location_id', ACL::getUserCentres());
-
         }])->whereDate('created_at', '>=', $start_date)
             ->whereDate('created_at', '<=', $end_date)
             ->where('is_refund', '=', 1)
@@ -875,14 +868,14 @@ class Finanaces
         $count = 0;
         if ($package_advances) {
             foreach ($package_advances as $packageadvance) {
-                if (! in_array($packageadvance->appointment->id, $appointmentids)) {
+                if (!in_array($packageadvance->appointment->id, $appointmentids)) {
                     $appointmentrefund[$packageadvance->appointment->id] = [
                         'id' => $packageadvance->appointment->id,
                         'patient_id' => $packageadvance->appointment->patient_id,
                         'patient_name' => $packageadvance->appointment->name,
                         'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packageadvance->appointment->patient->phone),
                         'email' => $packageadvance->appointment->patient->email,
-                        'schedule' => ($packageadvance->appointment->scheduled_date) ? \Carbon\Carbon::parse($packageadvance->appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($packageadvance->appointment->scheduled_time, null)->format('h:i A') : '-',
+                        'schedule' => ($packageadvance->appointment->scheduled_date) ? \Carbon\Carbon::parse($packageadvance->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($packageadvance->appointment->scheduled_time, null)->format('h:i A') : '-',
                         'service' => (array_key_exists($packageadvance->appointment->service_id, $filters['services'])) ? $filters['services'][$packageadvance->appointment->service_id]->name : '',
                         'doctor' => (array_key_exists($packageadvance->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$packageadvance->appointment->doctor_id]->name : '',
                         'city' => (array_key_exists($packageadvance->appointment->city_id, $filters['cities'])) ? $filters['cities'][$packageadvance->appointment->city_id]->name : '',
@@ -1037,7 +1030,7 @@ class Finanaces
 
         foreach ($package_advances as $refunds) {
 
-            if (! in_array($refunds->appointment->id, $appointmentids)) {
+            if (!in_array($refunds->appointment->id, $appointmentids)) {
 
                 $appointmentrefund[$refunds->appointment->id] = [
                     'id' => $refunds->appointment->id,
@@ -1052,7 +1045,7 @@ class Finanaces
                     'patient_name' => $refunds->appointment->name,
                     'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
                     'email' => $refunds->appointment->patient->email,
-                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
                     'service' => (array_key_exists($refunds->appointment->service_id, $filters['services'])) ? $filters['services'][$refunds->appointment->service_id]->name : '',
                     'doctor' => (array_key_exists($refunds->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$refunds->appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($refunds->appointment->city_id, $filters['cities'])) ? $filters['cities'][$refunds->appointment->city_id]->name : '',
@@ -1064,7 +1057,6 @@ class Finanaces
                 ];
 
                 $appointmentids = [$refunds->appointment->id];
-
             } else {
 
                 $appointmentrefund[$refunds->appointment->id]['refunds'][$refunds->id] = [
@@ -1073,7 +1065,7 @@ class Finanaces
                     'patient_name' => $refunds->appointment->name,
                     'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($refunds->appointment->patient->phone),
                     'email' => $refunds->appointment->patient->email,
-                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y').' at '.\Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'schedule' => ($refunds->appointment->scheduled_date) ? \Carbon\Carbon::parse($refunds->appointment->scheduled_date, null)->format('M j, Y') . ' at ' . \Carbon\Carbon::parse($refunds->appointment->scheduled_time, null)->format('h:i A') : '-',
                     'service' => (array_key_exists($refunds->appointment->service_id, $filters['services'])) ? $filters['services'][$refunds->appointment->service_id]->name : '',
                     'doctor' => (array_key_exists($refunds->appointment->doctor_id, $filters['doctors'])) ? $filters['doctors'][$refunds->appointment->doctor_id]->name : '',
                     'city' => (array_key_exists($refunds->appointment->city_id, $filters['cities'])) ? $filters['cities'][$refunds->appointment->city_id]->name : '',
@@ -1138,15 +1130,13 @@ class Finanaces
 
                 foreach ($packagesadvances as $packagesadvance) {
                     if (
-                        (
-                            $packagesadvance->cash_flow == 'in' &&
+                        ($packagesadvance->cash_flow == 'in' &&
                             $packagesadvance->is_adjustment == '0' &&
                             $packagesadvance->is_tax == '0' &&
                             $packagesadvance->is_cancel == '0'
                         )
                         ||
-                        (
-                            $packagesadvance->cash_flow == 'out' &&
+                        ($packagesadvance->cash_flow == 'out' &&
                             $packagesadvance->is_refund == '1' &&
                             $packagesadvance->is_tax == '0'
                         )
@@ -1226,7 +1216,6 @@ class Finanaces
                                 'Balance' => $balance,
                                 'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A'),
                             ];
-
                         }
                     }
                 }
@@ -1282,15 +1271,13 @@ class Finanaces
 
                 foreach ($packagesadvances as $packagesadvance) {
                     if (
-                        (
-                            $packagesadvance->cash_flow == 'in' &&
+                        ($packagesadvance->cash_flow == 'in' &&
                             $packagesadvance->is_adjustment == '0' &&
                             $packagesadvance->is_tax == '0' &&
                             $packagesadvance->is_cancel == '0'
                         )
                         ||
-                        (
-                            $packagesadvance->cash_flow == 'out' &&
+                        ($packagesadvance->cash_flow == 'out' &&
                             $packagesadvance->is_refund == '1' &&
                             $packagesadvance->is_tax == '0'
                         )
@@ -1467,7 +1454,6 @@ class Finanaces
                         }
                         $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['paid_amount'] = $pabau->paid_amount + $sum_amount;
                         $report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]['outstanding_amount'] = $pabau->outstanding_amount - $sum_amount;
-
                     } else {
                         unset($report_data[$loc_inform->id]['pabau_rocord'][$pabau->id]);
                     }
@@ -1701,16 +1687,14 @@ class Finanaces
                         $net_amount = 0;
 
                         if (
-                            (
-                                $packagesadvance->cash_flow == 'in' &&
+                            ($packagesadvance->cash_flow == 'in' &&
                                 $packagesadvance->cash_amount != '0' &&
                                 $packagesadvance->is_adjustment == '0' &&
                                 $packagesadvance->is_tax == '0' &&
                                 $packagesadvance->is_cancel == '0'
                             )
                             ||
-                            (
-                                $packagesadvance->cash_flow == 'out' &&
+                            ($packagesadvance->cash_flow == 'out' &&
                                 $packagesadvance->is_refund == '1' &&
                                 $packagesadvance->is_tax == '0'
                             )
@@ -1729,7 +1713,7 @@ class Finanaces
 
                                         $resourceinfor = Resources::find($appointinfor->resource_id);
 
-                                        if (! in_array($resourceinfor->machine_type_id, $machines)) {
+                                        if (!in_array($resourceinfor->machine_type_id, $machines)) {
 
                                             $machinetype = MachineType::find($resourceinfor->machine_type_id);
 
@@ -1767,7 +1751,7 @@ class Finanaces
                                     }
                                 } else {
 
-                                    if (! in_array($packagesadvance->package_id, $packageids, true)) {
+                                    if (!in_array($packagesadvance->package_id, $packageids, true)) {
 
                                         $packageids[] = $packagesadvance->package_id;
 
@@ -1839,7 +1823,7 @@ class Finanaces
 
                                                             if ($appointment_for->service_id == $consume_service->service_id) {
 
-                                                                if (! in_array($consume_package->appointment_id, $appointmentids, true)) {
+                                                                if (!in_array($consume_package->appointment_id, $appointmentids, true)) {
 
                                                                     $appointmentids[] = $consume_package->appointment_id;
 
@@ -1855,7 +1839,7 @@ class Finanaces
 
                                                                     $resource_info = Resources::find($appointment_for->resource_id);
 
-                                                                    if (! in_array($resource_info->machine_type_id, $machines)) {
+                                                                    if (!in_array($resource_info->machine_type_id, $machines)) {
 
                                                                         $machinetype = MachineType::find($resource_info->machine_type_id);
 
@@ -1904,7 +1888,7 @@ class Finanaces
                                                 }
                                             }
 
-                                            if (! in_array($machine_type->id, $machines)) {
+                                            if (!in_array($machine_type->id, $machines)) {
 
                                                 $report_data[$location->id]['machine'][$machine_type->id] = [
                                                     'id' => $machine_type->id,
@@ -1961,7 +1945,7 @@ class Finanaces
 
                                     $resourceinfo = Resources::find($appointinfor->resource_id);
 
-                                    if (! in_array($resourceinfo->machine_type_id, $machines)) {
+                                    if (!in_array($resourceinfo->machine_type_id, $machines)) {
 
                                         $machinetype = MachineType::find($resourceinfo->machine_type_id);
 
@@ -1970,7 +1954,6 @@ class Finanaces
                                             'name' => $machinetype->name,
                                             'transaction' => [],
                                         ];
-
                                     }
                                     $services[] = $appointinfor->service_id;
 
@@ -1984,7 +1967,6 @@ class Finanaces
                                         'net_amount' => 0,
                                         'amount_out' => $packagesadvance->cash_amount,
                                     ];
-
                                 } else {
 
                                     $packageinfo = Packages::find($packagesadvance->package_id);
@@ -2010,7 +1992,7 @@ class Finanaces
                                             }
                                         }
 
-                                        if (! in_array($machine_type->id, $machines)) {
+                                        if (!in_array($machine_type->id, $machines)) {
 
                                             $report_data[$location->id]['machine'][$machine_type->id] = [
                                                 'id' => $machine_type->id,
@@ -2082,7 +2064,6 @@ class Finanaces
                 ['slug', '=', 'custom'],
                 ['id', '=', $data['location_id']],
             ])->get()->pluck('id')->toArray();
-
         } else {
             $location_info = Locations::getActiveSortedStaffwisereport(ACL::getUserCentres())->pluck('id')->toArray();
         }
@@ -2118,7 +2099,7 @@ class Finanaces
             $locations = [];
 
             foreach ($revenue_plan_information as $revenueinformation) {
-                if (! in_array($revenueinformation->location_id, $locations)) {
+                if (!in_array($revenueinformation->location_id, $locations)) {
                     $report[$revenueinformation->location_id] = [
                         'centre' => $revenueinformation->location->name,
                         'city' => $revenueinformation->location->city->name,
@@ -2129,7 +2110,7 @@ class Finanaces
                     $locations[] = $revenueinformation->location_id;
                 }
 
-                if (! in_array($revenueinformation->doctor_id, $doctors)) {
+                if (!in_array($revenueinformation->doctor_id, $doctors)) {
                     $report[$revenueinformation->location_id]['doctor_info'][$revenueinformation->doctor_id] = [
                         'doctor' => $revenueinformation->doctor->name,
                         'centre' => $revenueinformation->location->name,
@@ -2171,7 +2152,7 @@ class Finanaces
 
                 $link_doctor_id = Appointments::where('id', '=', $revenueinformation_treat->appointmentlinkid)->first();
 
-                if (! in_array($link_doctor_id->location_id, $locations_2)) {
+                if (!in_array($link_doctor_id->location_id, $locations_2)) {
                     $report[$link_doctor_id->location_id] = [
                         'centre' => $link_doctor_id->location->name,
                         'city' => $link_doctor_id->location->city->name,
@@ -2186,7 +2167,7 @@ class Finanaces
                     $report[$link_doctor_id->location_id]['region'] = $link_doctor_id->location->region->name;
                 }
 
-                if (! in_array($link_doctor_id->doctor_id, $doctors_2)) {
+                if (!in_array($link_doctor_id->doctor_id, $doctors_2)) {
                     $report[$link_doctor_id->location_id]['doctor_info'][$link_doctor_id->doctor_id] = [
                         'doctor' => $link_doctor_id->doctor->name,
                         'centre' => $link_doctor_id->location->name,
@@ -2216,7 +2197,7 @@ class Finanaces
         foreach ($report as $location_id => $data) {
             foreach ($data['doctor_info'] as $doctor_id => $value) {
 
-                if (! isset($value['doctor'])) {
+                if (!isset($value['doctor'])) {
 
                     $doctor_latest = User::find($doctor_id);
 
@@ -2230,7 +2211,7 @@ class Finanaces
                         'doctor_revenue' => $report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue'],
                     ];
                 }
-                if (! array_key_exists('doctor_revenue', $report[$location_id]['doctor_info'][$doctor_id]) || count($report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue']) == 0) {
+                if (!array_key_exists('doctor_revenue', $report[$location_id]['doctor_info'][$doctor_id]) || count($report[$location_id]['doctor_info'][$doctor_id]['doctor_revenue']) == 0) {
                     unset($report[$location_id]['doctor_info'][$doctor_id]);
                 }
             }
@@ -2244,15 +2225,13 @@ class Finanaces
         $balance = 0;
         $total_balance = 0;
         if (
-            (
-                $packagesadvance->cash_flow == 'in' &&
+            ($packagesadvance->cash_flow == 'in' &&
                 $packagesadvance->is_adjustment == '0' &&
                 $packagesadvance->is_tax == '0' &&
                 $packagesadvance->is_cancel == '0'
             )
             ||
-            (
-                $packagesadvance->cash_flow == 'out' &&
+            ($packagesadvance->cash_flow == 'out' &&
                 $packagesadvance->is_refund == '1'
             )
         ) {
@@ -2311,7 +2290,6 @@ class Finanaces
                 return $report_data;
             }
         }
-
     }
 
     public static function conversion_report($data, $account_id)
@@ -2416,7 +2394,7 @@ class Finanaces
         $locationData = [];
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                if (! in_array($appointment->id, $appointmentss)) {
+                if (!in_array($appointment->id, $appointmentss)) {
                     $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -2503,7 +2481,6 @@ class Finanaces
                             $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
 
                             $locationData[$appointment->location->name]['total'] = $total;
-
                         }
                     }
                 }
@@ -2578,7 +2555,7 @@ class Finanaces
                     $status = false;
                 }
 
-                if (! in_array($appointment->id, $appointmentss2)) {
+                if (!in_array($appointment->id, $appointmentss2)) {
                     $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -2609,7 +2586,6 @@ class Finanaces
 
                         $previouse_actual = $appointments_info[$appointment->id]['conversion_spend'];
                         $appointments_info[$appointment->id]['conversion_spend'] = $previouse_actual + $conversion_spend;
-
                     } elseif ($appointments_info[$appointment->id]['converted'] == 'No' && $status) {
 
                         $appointments_info[$appointment->id]['conversion_spend'] = $conversion_spend;
@@ -2676,7 +2652,6 @@ class Finanaces
         $appointment_type = AppointmentTypes::whereSlug('consultancy')->first();
         $where[] = [['appointments.appointment_type_id' => $appointment_type->id]];
         $location_ids = GeneralFunctions::getLocationIds($data['location_id']);
-
         $appointments = Appointments::with('location:id,name')
             ->join('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->when($location_ids, fn ($q) => $q->whereIn('appointments.location_id', $location_ids))
@@ -2687,7 +2662,6 @@ class Finanaces
             ->where($where)
             ->select('appointments.*')
             ->orderBy('appointments.created_at', 'desc')
-            ->limit(50)
             ->get();
         $total = 0;
         $count = [];
@@ -2697,7 +2671,7 @@ class Finanaces
         $locationData = [];
         if (count($appointments)) {
             foreach ($appointments as $appointment) {
-                if (! in_array($appointment->id, $appointmentss)) {
+                if (!in_array($appointment->id, $appointmentss)) {
                     $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -2820,7 +2794,7 @@ class Finanaces
                     $conversion_spend = '0';
                     $status = false;
                 }
-                if (! in_array($appointment->id, $appointmentss2)) {
+                if (!in_array($appointment->id, $appointmentss2)) {
                     $appointments_info[$appointment->id] = [
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
@@ -2864,7 +2838,6 @@ class Finanaces
                 }
                 $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
                 $locationData[$appointment->location->name]['total'] = $total;
-
             }
         }
 
@@ -2874,6 +2847,7 @@ class Finanaces
             }
         });
         $maxConversion1 = $maxConversion1->groupBy('service_id');
+
         $returnCategoryData = [];
         foreach ($maxConversion1 as $key => $app) {
             $sum_conversion_spend = 0;
@@ -2921,7 +2895,7 @@ class Finanaces
         } else {
             $average_client_coversion = 0;
         }
-        $conversionsByPatient = collect($appointments_info)->where('conversion_spend', '!=', '')->groupBy('patient_id')
+        $conversionsByPatient = collect($appointments_info)->where('conversion_spend', "!=", "")->groupBy('patient_id')
             ->map(function ($appointments_info) {
                 return $appointments_info->sum('conversion_spend');
             });
@@ -3048,16 +3022,14 @@ class Finanaces
 
                     foreach ($packagesadvances as $key => $packagesadvance) {
                         if (
-                            (
-                                $packagesadvance->cash_flow == 'in' &&
+                            ($packagesadvance->cash_flow == 'in' &&
                                 $packagesadvance->cash_amount != '0' &&
                                 $packagesadvance->is_adjustment == '0' &&
                                 $packagesadvance->is_tax == '0' &&
                                 $packagesadvance->is_cancel == '0'
                             )
                             ||
-                            (
-                                $packagesadvance->cash_flow == 'out' &&
+                            ($packagesadvance->cash_flow == 'out' &&
                                 $packagesadvance->is_refund == '1' &&
                                 $packagesadvance->is_tax == '0'
                             )
@@ -3075,7 +3047,7 @@ class Finanaces
 
                                         $resourceinfor = Resources::find($appointinfor->resource_id);
 
-                                        if (! in_array($resourceinfor->machine_type_id, $machines)) {
+                                        if (!in_array($resourceinfor->machine_type_id, $machines)) {
 
                                             $machinetype = MachineType::find($resourceinfor->machine_type_id);
 
@@ -3097,7 +3069,7 @@ class Finanaces
                                         ];
                                     }
                                 } else {
-                                    if (! in_array($packagesadvance->package_id, $packageids, true)) {
+                                    if (!in_array($packagesadvance->package_id, $packageids, true)) {
 
                                         $packageids[] = $packagesadvance->package_id;
 
@@ -3165,7 +3137,7 @@ class Finanaces
 
                                                             if ($appointment_for->service_id == $consume_service->service_id) {
 
-                                                                if (! in_array($consume_package->appointment_id, $appointmentids, true)) {
+                                                                if (!in_array($consume_package->appointment_id, $appointmentids, true)) {
                                                                     $coun++;
                                                                     $appointmentids[] = $consume_package->appointment_id;
 
@@ -3180,7 +3152,7 @@ class Finanaces
 
                                                                     $resource_info = Resources::find($appointment_for->resource_id);
 
-                                                                    if (! in_array($resource_info->machine_type_id, $machines)) {
+                                                                    if (!in_array($resource_info->machine_type_id, $machines)) {
 
                                                                         $machinetype = MachineType::find($resource_info->machine_type_id);
 
@@ -3228,7 +3200,7 @@ class Finanaces
                                                 }
                                             }
 
-                                            if (! in_array($machine_type->id, $machines)) {
+                                            if (!in_array($machine_type->id, $machines)) {
 
                                                 $report_data[$location->id]['machine_types'][$machine_type->id] = [
                                                     'id' => $machine_type->id,
@@ -3270,7 +3242,7 @@ class Finanaces
 
                                     $resourceinfo = Resources::find($appointinfor->resource_id);
 
-                                    if (! in_array($resourceinfo->machine_type_id, $machines)) {
+                                    if (!in_array($resourceinfo->machine_type_id, $machines)) {
 
                                         $machinetype = MachineType::find($resourceinfo->machine_type_id);
 
@@ -3291,7 +3263,6 @@ class Finanaces
                                         'amount_in' => 0,
                                         'amount_out' => $packagesadvance->cash_amount,
                                     ];
-
                                 } else {
 
                                     $packageinfo = Packages::find($packagesadvance->package_id);
@@ -3308,7 +3279,7 @@ class Finanaces
                                             }
                                         }
 
-                                        if (! in_array($machine_type->id, $machines)) {
+                                        if (!in_array($machine_type->id, $machines)) {
 
                                             $report_data[$location->id]['machine_types'][$machine_type->id] = [
                                                 'id' => $machine_type->id,
@@ -3547,7 +3518,6 @@ class Finanaces
                 $packagetrans[$packagerow->id]['usedbalance'] = $usedbalance;
 
                 $packagetrans[$packagerow->id]['unusedbalance'] = $balance - $refund_balance;
-
             } else {
                 unset($packagetrans[$packagerow->id]);
             }
