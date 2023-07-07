@@ -2847,7 +2847,7 @@ class DashboardReportsController extends Controller
                             ]);
                         })
                         ->get();
-                       
+                       dd(count($converted_appointments));
                     if (count($converted_appointments)) {
                         foreach ($converted_appointments as $appointment) {
                             if (!in_array($appointment->id, $appointments)) {
