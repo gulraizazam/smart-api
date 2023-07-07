@@ -2841,7 +2841,7 @@ class DashboardReportsController extends Controller
                             $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
                         })
                         ->when($period == 'yesterday' , function ($query) use ($periods, $period) {
-                            $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+                            $query->whereDate('package_advances.created_at', Carbon::now()->subDay(1)->format('Y-m-d'));
                         })
                         ->when($period != 'today', function ($query) use ($periods, $period) {
                             $query->whereBetween('package_advances.created_at', [
