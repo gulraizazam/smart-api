@@ -921,6 +921,39 @@
                             </div>
                         </div>
                     @endif
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Patients Follow Up</span>
+                                        <div class="d-none flex-column text-right">
+                                            <span
+                                                class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                            <span
+                                                class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                        </div>
+                                    </div>
+                                    <div class="card-spacer2">
+                                        <div class='table-responsive'>
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class='table-cols'>Patient Id</th>
+                                                        <th class='table-cols'>Name</th>
+                                                        <th class='table-cols'>Phone</th>
+                                                        <th class='table-cols'>Treatment exist</th>
+                                                        <th class='table-cols'>Conversion Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="patient-follow-up"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1092,6 +1125,7 @@
             var consultancy_by_status = false;
             var treatment_by_status = false;
             var centre_wise_arrival = false;
+            var patient_follow_up = false;
             $(window).scroll(function() {
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     collection_by_center) {
@@ -1321,7 +1355,11 @@
                         }
                     });
                 }
-
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.60) && !
+                        patient_follow_up) {
+                        patient_follow_up = true;
+                        initPatientFollowUp('thismonth', '');
+                    }
             });
 
             function TreatmentByStatus(pie, colors) {
