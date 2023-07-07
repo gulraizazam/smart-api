@@ -2597,10 +2597,13 @@ class DashboardReportsController extends Controller
                 ->whereIn('appointments.location_id' , $locations)
                 ->where('package_advances.cash_amount', '>', 0)
                 ->select('appointments.*')
-                ->when($period == 'today', function ($query) use ($periods, $period) {
+                ->when($period == 'today' , function ($query) use ($periods, $period) {
                     $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
                 })
-                ->when($period != 'today', function ($query) use ($periods, $period) {
+                ->when($period == 'yesterday' , function ($query) use ($periods, $period) {
+                    $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+                })
+                ->when($period != 'today' && $period != 'yesterday', function ($query) use ($periods, $period) {
                     $query->whereBetween('package_advances.created_at', [
                         $periods[$period]['start_date'],
                         $periods[$period]['end_date']
