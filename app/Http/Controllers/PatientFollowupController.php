@@ -141,11 +141,12 @@ class PatientFollowupController extends Controller
                 AND apt.base_appointment_status_id = 2
                 AND apt.location_id IN (' . implode(',', ACL::getUserCentres()) . ')
                 GROUP BY apt.patient_id) AS max_appointments'), function ($join) {
-                $join->on('appointments.patient_id', '=', 'max_appointments.patient_id')
-                    ->on('appointments.created_at', '=', 'max_appointments.created_at');
+                $join->on([
+                    'appointments.patient_id' => 'max_appointments.patient_id',
+                    'appointments.created_at' => 'max_appointments.created_at'
+                ]);
             })
             ->orderBy('appointments.id', 'DESC')
-            ->get()
             ->pluck('id')
             ->toArray();
         $plans_check = DB::table('package_advances')
