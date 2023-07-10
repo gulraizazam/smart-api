@@ -50,7 +50,7 @@ use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\ConversionReportController;
 use App\Http\Controllers\DashboardReportsController;
-use App\Http\Controllers\DashboardPatientFollowUpOutStandingBalanceController;
+use App\Http\Controllers\PatientFollowupController;
 use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\PackageAdvances;
@@ -82,7 +82,6 @@ Route::get('/deliver-on-appointment-book', function () {
 });
 Route::get('/2nd-message-on-appointment-day', function () {
     \Artisan::call('appointment:2nd-message-on-appointment-day');
-
 });
 Route::get('/3rd-message-before-appointment', function () {
     \Artisan::call('appointment:3rd-message-before-appointment');
@@ -99,11 +98,11 @@ Route::get('/update_apt', function () {
         ->where('appointments.base_appointment_status_id', config('constants.appointment_status_arrived'))
         ->where('appointments.appointment_type_id', 1)
         ->whereNull('package_advances.appointment_id')
-    // ->whereNotNull('packages.appointment_id')
-    // ->whereNull('packages.deleted_at')
+        // ->whereNotNull('packages.appointment_id')
+        // ->whereNull('packages.deleted_at')
         ->select('packages.appointment_id', 'packages.id as pkg_id')
         ->orderBy('appointments.created_at', 'asc')
-       // ->paginate(50);
+        // ->paginate(50);
         ->get();
     foreach ($appointments as $apt) {
         PackageAdvances::where('package_id', $apt->pkg_id)->where('appointment_id', null)->update(['appointment_id' => $apt->appointment_id]);
@@ -132,7 +131,6 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
             ->get();
 
         return view('admin.records', compact('rr'));
-
     });
     Route::get('error-logs', [LogViewerController::class, 'index']);
     Route::get('updateleads', [LeadsController::class, 'leadupdate']);
@@ -496,11 +494,11 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('appointmentsmedical/{id}/export_pdf', [AppointmentMedicalController::class, 'exportPdf'])->name('appointmentsmedical.custom_form_feedbacks.export_pdf');
     /*Appointment Route end for medical history form*/
 
-        Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'GetCentreDoctors'])->name('getdoctors');
+    Route::get('dashboard/getdoctors', [DashboardReportsController::class, 'GetCentreDoctors'])->name('getdoctors');
 
-       // Appointment Comments
-        Route::get('appointments/comment-save',[AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
-        //Appointment Route end for images
+    // Appointment Comments
+    Route::get('appointments/comment-save', [AppointmentsController::class, 'AppointmentStoreComment'])->name('appointments.storecomment');
+    //Appointment Route end for images
 
     /*Consultancy Routes*/
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
@@ -564,14 +562,14 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     // Dashboard CSR WISE ARRIVAL
     Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
     Route::get('dashboard/patient-follow-up-outstanding-balance', [DashboardPatientFollowUpOutStandingBalanceController::class, 'patientFollowUpOutStandingBalance'])->name('dashboard.patient_follow_up_outstanding_balance');
-
+    Route::get('dashboard/patient-follow-up', [PatientFollowupController::class, 'patientFollowUp'])->name('dashboard.patient_follow_up');
+    Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
     Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
     Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
     Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
 
     Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
 
-        Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
-        Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
-
-    });
+    Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
+    Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
+});

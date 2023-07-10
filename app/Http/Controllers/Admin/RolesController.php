@@ -433,6 +433,7 @@ class RolesController extends Controller
             'partner_collection_report' => 'Partner Collection Report',
             'staff_wise_revenue' => 'Staff Wise Revenue',
             'conversion_report' => 'Conversion Report',
+            'conversion_report_manage' => 'Manage Conversion Report',
             'consume_plan_revenue_report' => 'Consume Plan Revenue Report',
             'Customer_payment_ledger_all_entries' => 'Customer Payment Ledger',
             'customer_treatment_package_ledger' => 'Customer Treatment Package Ledger',
@@ -516,7 +517,7 @@ class RolesController extends Controller
     protected function getAllPermissionsMapping()
     {
         $notInArray = [
-            'dashboard_manage', 'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage',
+            'dashboard_manage', 'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage','conversion_report_manage','staff_wise_arrival_manage','non_converted_customers_manage'
         ];
         $notInNamesArray = [
             'view_inactive_users', 'view_inactive_appointment_statuses', 'view_inactive_centres', 'view_inactive_cities', 'view_inactive_discounts', 'view_inactive_doctors', 'view_inactive_lead_sources', 'view_inactive_leads', 'view_inactive_lead_statuses', 'view_inactive_machine_types', 'view_inactive_packages', 'view_inactive_patients', 'view_inactive_payment_modes', 'view_inactive_plans',
@@ -604,8 +605,8 @@ class RolesController extends Controller
          * Reports Permissions
          */
         $whereIn = [
-            'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage',
-        ];
+            'leads_reports_manage', 'appointment_reports_manage', 'operations_reports_manage', 'centers_reports_manage', 'Hr_reports_manage', 'finance_general_revenue_reports_manage', 'finance_revenue_breakup_reports_manage', 'finance_ledger_reports_manage', 'staff_listing_reports_manage', 'staff_revenue_reports_manage', 'marketing_reports_manage'
+        ,'conversion_report_manage','staff_wise_arrival_manage','non_converted_customers_manage'];
         $reports_group_permissions = Permission::where(['main_group' => 1, 'status' => 1])->
         whereIn('name', $whereIn)
             ->get();
