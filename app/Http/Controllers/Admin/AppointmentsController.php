@@ -4495,7 +4495,7 @@ class AppointmentsController extends Controller
             }
         }
         $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
-       dd($request->phone);
+      
         $patientData = $appointment_data;
         Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
         $appointment_data['lead_id'] = $lead->id;
