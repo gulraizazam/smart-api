@@ -574,5 +574,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
         Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
         Route::get('dashboard/patient-follow-up', [PatientFollowupController::class, 'patientFollowUp'])->name('dashboard.patient_follow_up');
-    
+        Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up');
+        Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'PatientFollowUpReport'])->name('reports.patient_follow_up_report');
+        
+        
     });
