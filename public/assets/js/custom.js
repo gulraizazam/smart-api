@@ -1197,6 +1197,7 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                 delay: 250,
                 data: {search: $(this).val()},
                 success: function (response) {
+                    console.log('res' , response);
                     let html = '';
                     let leads = response.data.leads;
                     let haveObjleads = Object.keys(leads).length;

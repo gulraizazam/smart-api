@@ -822,11 +822,33 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, time = '') {
-    $('#doc_time li a').removeClass('active');
-    $('#doc_time li.' + period + ' a').addClass('active');
+
+    $("#doctor_wise_conversion_list .active").removeClass('active');
+    $("#doctor_wise_conversion_list").addClass('active');
+    $(".doctor_period").text("Today");
+    if (period == "today") {
+        $(".doctor_period").html('Today <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "yesterday") {
+        $(".doctor_period").html('Yesterday <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "last7days") {
+        $(".doctor_period").html('Last 7 Days <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "week") {
+        $(".doctor_period").html('This Week <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "thismonth") {
+        $(".doctor_period").html('This Month <i class="fa fa-angle-down"></i>');
+    }
+    if (period == "lastmonth") {
+        $(".doctor_period").html('Last Month <i class="fa fa-angle-down"></i>');
+    }
+
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
+    $('.loader-imgs').css('display', "block");
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
     CENTRE_ID = centre_id;
@@ -834,6 +856,7 @@ function initDoctorWiseConversion(period, time = '') {
     DOC_ID = doc_id;
     let converted = 0;
     let arrived = 0;
+    let avg_sum = 0;
     $('.arrivalbtn').text();
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
@@ -870,43 +893,75 @@ function GetDoctors(centre_id, time = '') {
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
-    $('#doc_time li a').removeClass('active');
-    $('#doc_time li.thismonth a').addClass('active');
+    $('#doctor_wise_conversion_list .active').removeClass('active');
+    $('#doctor_wise_conversion_list').addClass('active');
     $('#doc_nav').empty();
+    $(".doctorname").attr('data-id', '');
     $(".doctorname").html('Select doctor <i class="fa fa-angle-down"></i>');
     $("#categories-table-body").html('');
     $('.arrivalbtn').text();
     let converted = 0;
     let arrived = 0;
+    let avg_sum = 0;
+    if (centre_id == 'all') {
+        $.ajax({
+            url: route('admin.dashboard.all_doctor_wise_conversion'),
+            type: 'GET',
+            cache: false,
+            data: {
+                'period': 'lastmonth',
+                'centre_id': centre_id
+            },
+            success: function (response) {
+                var categories = response.data.categories
+                jQuery('#categories-table-body').html("");
+                var TABLE_HTML = "";
+                jQuery.each(categories, function (index, category) {
+                    arrived += category.total_arrival;
+                    converted += category.total_conversion;
+                    avg_sum += category.avg;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
-    $.ajax({
-        url: route('admin.dashboard.doctor_wise_conversion'),
-        type: 'GET',
-        cache: false,
-        data: {
-            'period': 'thismonth',
-            'centre_id': centre_id
-        },
-        success: function (response) {
-            var categories = response.data.categories
-            jQuery('#categories-table-body').html("");
-            var TABLE_HTML = "";
-            jQuery.each(categories, function (index, category) {
-                arrived += category.total_arrival;
-                converted += category.total_conversion;
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
+                });
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
 
-            });
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td></tr>";
+                jQuery('#categories-table-body').append(TABLE_HTML);
+                AllDoctorWiseConversion(response);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+            }
+        });
+    } else {
+        $.ajax({
+            url: route('admin.dashboard.doctor_wise_conversion'),
+            type: 'GET',
+            cache: false,
+            data: {
+                'period': 'thismonth',
+                'centre_id': centre_id
+            },
+            success: function (response) {
+                var categories = response.data.categories
+                jQuery('#categories-table-body').html("");
+                var TABLE_HTML = "";
+                jQuery.each(categories, function (index, category) {
+                    arrived += category.total_arrival;
+                    converted += category.total_conversion;
+                    avg_sum += category.avg;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
-            jQuery('#categories-table-body').append(TABLE_HTML);
-            DoctorWiseConversion(response);
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-        }
-    });
+                });
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
 
+                jQuery('#categories-table-body').append(TABLE_HTML);
+                DoctorWiseConversion(response);
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+            }
+        });
+    }
     var all = "all";
     var TABLE_HTML = "";
     $.ajax({
@@ -915,11 +970,10 @@ function GetDoctors(centre_id, time = '') {
         data: { 'centre_id': centre_id },
         cache: false,
         success: function (response) {
-            console.log('reponse', response);
             jQuery('#doc_nav').html("");
             jQuery.each(response.doctors, function (index, doctor) {
 
-                TABLE_HTML += " <li><a class='dropdown-item centre-item' data-id=" + doctor.id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name + "</a></li>";
+                TABLE_HTML += " <li><a class='dropdown-item centre-item'  data-id=" + doctor.id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name + "</a></li>";
             });
             jQuery('#doc_nav').append(TABLE_HTML);
         },
@@ -927,8 +981,8 @@ function GetDoctors(centre_id, time = '') {
 }
 function LoadDocWiseConversion(doc_id) {
     doc_wise_conversion_chart.destroy();
-    $('#doc_time li a').removeClass('active');
-    $('#doc_time li.thismonth a').addClass('active');
+    $('#doctor_wise_conversion_list .active').removeClass('active');
+    $('#doctor_wise_conversion_list').addClass('active');
     $('.arrivalbtn').text();
     var DrName = $('#doc_nav').find('li').find('a[data-id=' + doc_id + ']').text();
     jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
@@ -1020,20 +1074,74 @@ function DoctorWiseConversion(bar) {
     doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
     doc_wise_conversion_chart.render();
 }
+function AllDoctorWiseConversion(bar) {
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    let lables = bar.data.labels;
+    if (lables.some(str => str.includes('All Centres'))) {
+        modifiedData = lables.map(location => location.replace('All Centres ', ''));
+    } else {
+        modifiedData = lables;
+    }
+    var options = {
+        series: [{
+            name: 'Total Appointments',
+            data: bar.data.total_appointments
+        }, {
+            name: 'Converted',
+            data: bar.data.converted_appointments
+        }],
+        noData: {
+            text: 'No Data',
+            align: 'center',
+            verticalAlign: 'top',
+            style: {
+                color: 'red',
+                fontSize: '14px',
+                fontFamily: undefined
+            }
+        },
+        chart: {
+            type: 'bar',
+            height: 350,
 
-
-function initPatientFollowUpOutStandingBalance(period, centre_id, arrived = null) {
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 1,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: modifiedData,
+        },
+        colors: [primary, success, warning]
+    };
+    $("#doc_wise_conversion").html("");
+    doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
+    doc_wise_conversion_chart.render();
+}
+function initPatientFollowUp(period, centre_id, arrived = null) {
     if (centre_id == 'centre') {
         centre_id = $('.btn.arrivalbtn').attr('data-id');
     }
-    if (centre_id == '' || centre_id == 30 || centre_id == 'All') {
+    if (centre_id == '' || centre_id == 30) {
         centre_id = 'All';
     }
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.dashboard.patient_follow_up_outstanding_balance'),
+        url: route('admin.dashboard.patient_follow_up'),
         type: 'GET',
         cache: false,
         data: {
@@ -1049,7 +1157,7 @@ function initPatientFollowUpOutStandingBalance(period, centre_id, arrived = null
                 for (let i = 0; i < patientData.length; i++) {
                     let patient = patientData[i];
 
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 1) ? 'Yes' : 'Not') + "</td><td>" + patient.out_standing_balance + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'Not' : 'Yes') + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
                 }
             } else {
                 TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
@@ -1062,3 +1170,35 @@ function initPatientFollowUpOutStandingBalance(period, centre_id, arrived = null
         }
     });
 }
+
+function initPatientFollowUpOneMonth() {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.dashboard.patient_follow_up_one_month'),
+        type: 'GET',
+        cache: false,
+        data: {},
+        success: function (response) {
+            $('#patient-follow-up-one-month').html("");
+            var TABLE_HTML = "";
+            let patientData = response.data.patient_data;
+            if (patientData.length > 0) {
+                for (let i = 0; i < patientData.length; i++) {
+                    let patient = patientData[i];
+
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'Not' : 'Yes') + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                }
+            } else {
+                TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
+            }
+
+            $('#patient-follow-up-one-month').append(TABLE_HTML);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+
