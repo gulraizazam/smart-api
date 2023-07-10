@@ -134,23 +134,20 @@ class PatientFollowupController extends Controller
     public function patientFollowUpOneMonth(Request $request)
     {
         $center_id = ACL::getUserCentres();
-        $appointments = DB::select("
-                select appointments.id, appointments.patient_id from appointments,
-                (
-                    select a.patient_id, max(a.created_at) as created_at from appointments a
-                        WHERE a.appointment_type_id = 1
-                        AND a.base_appointment_status_id = 2
-                        AND a.location_id IN (" . implode(',', ACL::getUserCentres()) . ")
-                        group by a.patient_id
-                ) max_appointments
-                where appointments.patient_id = max_appointments.patient_id
-                and appointments.created_at = max_appointments.created_at
-                ORDER by appointments.id DESC
-            ");
-        $appointmentIds = array_map(function ($appointment) {
-            return $appointment->id;
-        }, $appointments);
-
+        $appointments = DB::table('appointments')
+            ->select('appointments.id', 'appointments.patient_id')
+            ->join(DB::raw('(SELECT a.patient_id, MAX(a.created_at) AS created_at FROM appointments a
+                WHERE a.appointment_type_id = 1
+                AND a.base_appointment_status_id = 2
+                AND a.location_id IN (' . implode(',', ACL::getUserCentres()) . ')
+                GROUP BY a.patient_id) AS max_appointments'), function ($join) {
+                $join->on('appointments.patient_id', '=', 'max_appointments.patient_id')
+                    ->on('appointments.created_at', '=', 'max_appointments.created_at');
+            })
+            ->orderBy('appointments.id', 'DESC')
+            ->get()
+            ->pluck('id')
+            ->toArray();
         $plans_check = DB::table('package_advances')
             ->select(
                 'package_advances.id',
@@ -184,11 +181,7 @@ class PatientFollowupController extends Controller
                           AND is_adjustment = 0
                           AND is_refund = 0
                         GROUP BY patient_id) AS settle_tax_amount_query'), 'package_advances.patient_id', '=', 'settle_tax_amount_query.patient_id')
-            ->where([
-                ['package_advances.cash_flow', '=', 'in'],
-                ['package_advances.is_cancel', '=', '0'],
-            ])
-            ->whereIn('package_advances.appointment_id', $appointmentIds)
+            ->whereIn('package_advances.appointment_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
             ->groupBy('package_advances.patient_id')
             ->orderBy('package_advances.patient_id', 'DESC')
@@ -196,7 +189,7 @@ class PatientFollowupController extends Controller
             ->get();
         $plans_check_array = json_decode(json_encode($plans_check), true);
         $patient_data = [];
-        $plan_check_no_treatment = collect($plans_check_array)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+        $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
 
         foreach ($plans_check_array as $data) {
             $treatments = Appointments::where([
