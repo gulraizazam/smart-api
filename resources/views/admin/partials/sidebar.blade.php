@@ -1000,6 +1000,21 @@
                                     </ul>
                                 </div>
                                 @endcan
+                                @can('follow_up_manage')
+                                 <div class="menu-submenu">
+                                    <i class="menu-arrow"></i>
+                                    <ul class="menu-subnav">
+                                        <li class="menu-item {{activeMenu('admin.reports.follow_up')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.reports.follow_up')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Follow Up Report </span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                @endcan
                         </li>
                    
 
