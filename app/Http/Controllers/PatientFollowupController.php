@@ -91,7 +91,7 @@ class PatientFollowupController extends Controller
         $not_treatment = [];
         $is_treatment = [];
         $patient_data = [];
-        $plan_check_no_treatment = collect($plans_check_array)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+        $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
 
         foreach ($plans_check_array as $data) {
             $treatments = Appointments::where([
