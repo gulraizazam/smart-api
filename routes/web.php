@@ -98,11 +98,8 @@ Route::get('/update_apt', function () {
         ->where('appointments.base_appointment_status_id', config('constants.appointment_status_arrived'))
         ->where('appointments.appointment_type_id', 1)
         ->whereNull('package_advances.appointment_id')
-        // ->whereNotNull('packages.appointment_id')
-        // ->whereNull('packages.deleted_at')
         ->select('packages.appointment_id', 'packages.id as pkg_id')
         ->orderBy('appointments.created_at', 'asc')
-        // ->paginate(50);
         ->get();
     foreach ($appointments as $apt) {
         PackageAdvances::where('package_id', $apt->pkg_id)->where('appointment_id', null)->update(['appointment_id' => $apt->appointment_id]);
@@ -561,7 +558,6 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
     // Dashboard CSR WISE ARRIVAL
     Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
-    Route::get('dashboard/patient-follow-up-outstanding-balance', [DashboardPatientFollowUpOutStandingBalanceController::class, 'patientFollowUpOutStandingBalance'])->name('dashboard.patient_follow_up_outstanding_balance');
     Route::get('dashboard/patient-follow-up', [PatientFollowupController::class, 'patientFollowUp'])->name('dashboard.patient_follow_up');
     Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
     Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
