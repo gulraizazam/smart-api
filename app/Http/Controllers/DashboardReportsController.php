@@ -3058,23 +3058,23 @@ class DashboardReportsController extends Controller
             
         }
         $center_id = $request->location_id ?[$request->location_id] : ACL::getUserCentres();
-        $appointments = DB::select("
-                select appointments.id, appointments.patient_id from appointments,
-                (
-                    select appointment.patient_id, max(appointment.created_at) as created_at from appointments appointment
-                        WHERE appointment.appointment_type_id = 1
-                        AND appointment.base_appointment_status_id = 2
-                        AND appointment.location_id IN (" . implode(',', $center_id) . ")
-                        group by appointment.patient_id
-                ) max_appointments
-                where appointments.patient_id = max_appointments.patient_id
-                and appointments.created_at = max_appointments.created_at
-                ORDER by appointments.id DESC
-            ");
-        $appointmentIds = array_map(function ($appointment) {
-            return $appointment->id;
-        }, $appointments);
-
+        $appointments = DB::table('appointments')
+            ->select('appointments.id', 'appointments.patient_id')
+            ->join(DB::raw('(
+                SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
+                FROM appointments appointment
+                WHERE appointment.appointment_type_id = 1
+                    AND appointment.base_appointment_status_id = 2
+                    AND appointment.location_id IN (' . implode(',', $center_id) . ')
+                GROUP BY appointment.patient_id
+            ) max_appointments'), function ($join) {
+                $join->on('appointments.patient_id', '=', 'max_appointments.patient_id')
+                    ->on('appointments.created_at', '=', 'max_appointments.created_at');
+            })
+            ->orderByDesc('appointments.id')
+            ->get();
+    
+        $appointmentIds = $appointments->pluck('id');
         $plans_check = DB::table('package_advances')
             ->select(
                 'package_advances.id',
