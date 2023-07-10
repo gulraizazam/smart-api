@@ -16,6 +16,7 @@ use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
+use App\Models\Packages;
 use App\Models\Services;
 use App\Models\User;
 use App\Reports\dashboardreport;
@@ -3023,4 +3024,5 @@ class DashboardReportsController extends Controller
        
         return response()->json(['status' => 1, 'doctors' => $consultants]);
     }
+    
 }
