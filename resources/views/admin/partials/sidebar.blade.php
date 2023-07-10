@@ -904,7 +904,7 @@
 
                     <!-- End Inventory menu -->
 
-                    @if(Gate::allows('finance_general_revenue_reports_manage'))
+                   
                         <li class="menu-item menu-item-submenu {{openMenu([
                             'admin.reports.finance_reports',
                             'admin.reports.operations_report'
@@ -951,7 +951,10 @@
 
                                     </ul>
                                 </div>
-                                <div class="menu-submenu">
+                                
+                            @endcan
+                            @can('non_converted_customers_manage')
+                            <div class="menu-submenu">
                                      <i class="menu-arrow"></i>
                                      <ul class="menu-subnav">
                                          <li class="menu-item {{activeMenu('admin.reports.arrived_not_converted')}}" aria-haspopup="true">
@@ -965,7 +968,8 @@
 
                                      </ul>
                                  </div>
-                                
+                                @endcan
+                                @can('conversion_report_manage')
                                  <div class="menu-submenu">
                                      <i class="menu-arrow"></i>
                                      <ul class="menu-subnav">
@@ -980,6 +984,8 @@
  
                                      </ul>
                                  </div>
+                                @endcan
+                                @can('staff_wise_arrival_manage')
                                  <div class="menu-submenu">
                                     <i class="menu-arrow"></i>
                                     <ul class="menu-subnav">
@@ -993,9 +999,9 @@
                                         </li>
                                     </ul>
                                 </div>
-                            @endcan
+                                @endcan
                         </li>
-                    @endif
+                   
 
                 </ul>
                 <!--end::Menu Nav-->

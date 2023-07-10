@@ -71,7 +71,7 @@ class AppointmentsDailyStatsCron extends Command
                                 'appointment_id' => $appointment->id,
                                 'appointment_status_id' => $appointment->base_appointment_status_id,
                                 'scheduled_date' => $appointment->scheduled_date,
-                                'cron_current_date' => Carbon::now(),
+                                'cron_current_date' => Carbon::now()->format('Y-m-d'),
                             ]
                         );
                     }
