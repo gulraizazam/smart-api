@@ -54,6 +54,7 @@ use App\Http\Controllers\PatientFollowupController;
 use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\PackageAdvances;
+use Facade\Ignition\Support\Packagist\Package;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 
@@ -105,6 +106,8 @@ Route::get('/update_apt', function () {
         PackageAdvances::where('package_id', $apt->pkg_id)->where('appointment_id', null)->update(['appointment_id' => $apt->appointment_id]);
     }
 });
+Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
+    
 // Check Session
 Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
@@ -563,9 +566,10 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
     Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
     Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
-
     Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
 
     Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
     Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
+    Route::get('dashboard/doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
+        
 });
