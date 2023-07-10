@@ -136,11 +136,11 @@ class PatientFollowupController extends Controller
         $center_id = ACL::getUserCentres();
         $appointments = DB::table('appointments')
             ->select('appointments.id', 'appointments.patient_id')
-            ->join(DB::raw('(SELECT a.patient_id, MAX(a.created_at) AS created_at FROM appointments a
-                WHERE a.appointment_type_id = 1
-                AND a.base_appointment_status_id = 2
-                AND a.location_id IN (' . implode(',', ACL::getUserCentres()) . ')
-                GROUP BY a.patient_id) AS max_appointments'), function ($join) {
+            ->join(DB::raw('(SELECT apt.patient_id, MAX(apt.created_at) AS created_at FROM appointments apt
+                WHERE apt.appointment_type_id = 1
+                AND apt.base_appointment_status_id = 2
+                AND apt.location_id IN (' . implode(',', ACL::getUserCentres()) . ')
+                GROUP BY apt.patient_id) AS max_appointments'), function ($join) {
                 $join->on('appointments.patient_id', '=', 'max_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'max_appointments.created_at');
             })
