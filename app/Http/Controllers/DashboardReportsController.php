@@ -3061,11 +3061,11 @@ class DashboardReportsController extends Controller
         $appointments = DB::select("
                 select appointments.id, appointments.patient_id from appointments,
                 (
-                    select a.patient_id, max(a.created_at) as created_at from appointments a
-                        WHERE a.appointment_type_id = 1
-                        AND a.base_appointment_status_id = 2
-                        AND a.location_id IN (" . implode(',', $center_id) . ")
-                        group by a.patient_id
+                    select appointment.patient_id, max(appointment.created_at) as created_at from appointments appointment
+                        WHERE appointment.appointment_type_id = 1
+                        AND appointment.base_appointment_status_id = 2
+                        AND appointment.location_id IN (" . implode(',', $center_id) . ")
+                        group by appointment.patient_id
                 ) max_appointments
                 where appointments.patient_id = max_appointments.patient_id
                 and appointments.created_at = max_appointments.created_at
