@@ -946,7 +946,7 @@
                                         </div>
                                     </div>
                                     <div class="text-center mt-7">
-                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="#">View Report</a></button>
+                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('reports.follow_up')}}">View Report</a></button>
                                     </div>
                                 </div>
                             </div>
