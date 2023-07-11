@@ -58,25 +58,25 @@
                                             <span id="location_id_handler"></span>
                                         </div>
                                         <div class="col-md-3 form-group  ">
-                                        {!! Form::label('conversion_date', 'Conversion Date:', ['class' => 'control-label']) !!}
+                                        {!! Form::label('scheduled_date', 'Scheduled Date:', ['class' => 'control-label']) !!}
                                             <div class="input-daterange input-group to-from-datepicker" >
-                                                <input type="text" id="followup_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" >
+                                                <input type="text" id="followupmonth_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" >
                                                 <div class="input-group-append" style="width: 0;">
                                                     <span class="input-group-text">
                                                         <i class="la la-ellipsis-h"></i>
                                                     </span>
                                                 </div>
-                                                <input type="text" id="followup_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
+                                                <input type="text" id="followupmonth_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
                                             </div>
                                         </div>
                                        
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
-                                            <a href="javascript:void(0);" onclick="loadPatientFollowUpReport($(this));" id="load_patient_foolow_up_report"
+                                            <a href="javascript:void(0);" onclick="loadPatientFollowUpMonthReport($(this));" id="load_patient_foolow_up_monthly_report"
                                                class="btn btn-success spinner-button">Load Report</a>
                                         </div>
                                         <div class="clear clearfix"></div>
-                                        <div style="overflow: hidden; width: 100%;" id="followup_content"></div>
+                                        <div style="overflow: hidden; width: 100%;" id="followupmonthly_content"></div>
                                         {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.staff_wise_arrival_report'], 'id' => 'report-form']) !!}
                                         {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
                                         {!! Form::hidden('created_by', null, ['id' => 'created_by-report']) !!}
