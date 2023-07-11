@@ -3082,7 +3082,8 @@ class DashboardReportsController extends Controller
                 'package_advances.created_at',
                 'cash_received_amount_query.cash_receive',
                 'settle_amount_query.settle_amount',
-                'settle_tax_amount_query.settle_tax_amount'
+                'settle_tax_amount_query.settle_tax_amount',
+                'package_advances.location_id',
             )
             ->leftJoin(DB::raw('(SELECT patient_id, SUM(cash_amount) AS cash_receive
                         FROM package_advances
@@ -3114,6 +3115,7 @@ class DashboardReportsController extends Controller
             ])
             ->whereIn('package_advances.appointment_id', $appointmentIds)
             ->whereIn('package_advances.location_id', $center_id)
+            ->where($where)
             ->groupBy('package_advances.patient_id')
             ->orderBy('package_advances.patient_id', 'DESC')
 
