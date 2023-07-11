@@ -132,8 +132,8 @@ var loadPatientFollowUpMonthReport = function (that) {
         type: "POST",
         data: {
             location_id: $('#location_id').val(),
-            date_from: $('#followupmonthly_search_created_from').val(),
-            date_to: $('#followupmonthly_search_created_to').val(),
+            date_from: $('#followupmonth_search_created_from').val(),
+            date_to: $('#followupmonth_search_created_to').val(),
             patient_id: $('#patient_id').val(),
         },
         success: function(response){
