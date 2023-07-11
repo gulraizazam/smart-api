@@ -3033,9 +3033,6 @@ class DashboardReportsController extends Controller
     public function PatientFollowUpReport(Request $request)
     {
         $where = [];
-        $not_treatment = [];
-        $is_treatment = [];
-        $patient_data = [];
         if ($request->date_from) {
             $where[] = [
                 'package_advances.created_at',
@@ -3077,8 +3074,7 @@ class DashboardReportsController extends Controller
             ->orderByDesc('appointments.id')
             ->get();
     
-        $appointmentIds = $appointments->pluck('id');
-
+        $patientIds = $appointments->pluck('patient_id');
         $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
                 ['cash_flow', '=', 'in'],
@@ -3087,8 +3083,7 @@ class DashboardReportsController extends Controller
                 ['is_adjustment', '=', '0'],
                 ['is_refund', '=', '0'],
             ])
-            ->whereIn('appointment_id', $appointmentIds)
-            ->whereIn('location_id', $center_id)
+            ->whereIn('patient_id', $patientIds)
             ->groupBy('patient_id')
             ->pluck('cash_receive','patient_id');
            
@@ -3100,8 +3095,7 @@ class DashboardReportsController extends Controller
                 ['is_adjustment', '=', '0'],
                 ['is_refund', '=', '0'],
             ])
-            ->whereIn('appointment_id', $appointmentIds)
-            ->whereIn('location_id', $center_id)
+            ->whereIn('patient_id', $patientIds)
             ->groupBy('patient_id')
             ->pluck('settle_amount','patient_id');
                
@@ -3113,8 +3107,7 @@ class DashboardReportsController extends Controller
                 ['is_adjustment', '=', '0'],
                 ['is_refund', '=', '0'],
             ])
-            ->whereIn('appointment_id', $appointmentIds)
-            ->whereIn('location_id', $center_id)
+            ->whereIn('patient_id', $patientIds)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount','patient_id');
 
@@ -3124,21 +3117,25 @@ class DashboardReportsController extends Controller
                 'package_advances.created_at',
                 'package_advances.location_id'
             )
-            ->whereIn('package_advances.appointment_id', $appointmentIds)
+            ->whereIn('package_advances.patient_id', $patientIds)
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
             ->groupBy('package_advances.patient_id')
             ->orderBy('package_advances.patient_id', 'DESC')
            ->get();
-            $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
-                $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
-                $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
-                $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
-                return $item;
-            });
-       
-        $plan_check_no_treatment = collect($plans_check)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
-        foreach ($plans_check as $data) {
+        $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
+            $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
+            $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
+            $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
+            return $item;
+        });
+                   
+        $plans_check_array = json_decode(json_encode($plans_check), true);
+        $not_treatment = [];
+        $is_treatment = [];
+        $patient_data = [];
+        $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+        foreach ($plans_check_array as $data) {
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
@@ -3155,7 +3152,7 @@ class DashboardReportsController extends Controller
             if (count($treatments) > 0) {
                 $check_treatments = collect($treatments)->Where('scheduled_date', '<', Carbon::now()->subDays(1)->format('Y-m-d'));
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if (count($check_treatments) > 0 && $future_treatments->isEmpty()) {
+                if (count($check_treatments) > 0 && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
                 }
