@@ -56,7 +56,7 @@
                         <td>{{$patient['phone']}}</td>
                         <td>{{$location_name->name}}</td>
                         <td>{{$patient['is_treatment'] == 1 ? 'Yes' : 'No'}}</td>
-                        <td>{{$patient['created_at']}}</td>
+                        <td>{{ Carbon\Carbon::parse($patient['created_at'])->format('Y-m-d') }}</td>
                         <td>PKR: {{$patient['cash_receive']-$patient['settle_amount_with_tax']}}</td>
                     </tr>
                 @endforeach
