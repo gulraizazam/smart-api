@@ -128,7 +128,7 @@ class PatientFollowupController extends Controller
         $patient_data = array_merge(array_slice($is_treatment, 0, 10), array_slice($not_treatment, 0, 10));
 
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => $patient_data
+            'patient_data' => array_slice($patient_data, 0, 15)
         ]);
     }
 
