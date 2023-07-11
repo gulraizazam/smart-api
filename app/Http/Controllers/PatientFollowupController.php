@@ -189,7 +189,7 @@ class PatientFollowupController extends Controller
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
-            
+            ->take(100)
             ->get();
         $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts) {
             $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
