@@ -1370,509 +1370,141 @@ class LeadsController extends Controller
      */
     public function uploadLeads(FileUploadLeadsRequest $request)
     {
-        if (! Gate::allows('leads_import')) {
+        if (!Gate::allows('leads_import')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         try {
-            if ($request->hasfile('leads_file')) {
-                $File = $request->file('leads_file');
-                $File->store('public/files');
-                $fullPath = public_path('storage/files').DIRECTORY_SEPARATOR.$File->hashName();
-                $SpreadSheet = IOFactory::load($fullPath);
-                \File::delete($fullPath);
-                // Read File and dump data
-                $SheetData = $SpreadSheet->getActiveSheet(0)->toArray(null, true, true, true);
-                if (count($SheetData)) {
-                    if (
-                        isset($SheetData[1])
-                        && (
-                            trim(strtolower($SheetData[1]['A'])) == 'full name' &&
-                            trim(strtolower($SheetData[1]['B'])) == 'email' &&
-                            trim(strtolower($SheetData[1]['C'])) == 'phone' &&
-                            trim(strtolower($SheetData[1]['D'])) == 'gender' &&
-                            trim(strtolower($SheetData[1]['E'])) == 'city' &&
-                            trim(strtolower($SheetData[1]['I'])) == 'centre'
-                        )
-                    ) {
-                        $Cities = Cities::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
-                        $RegionCities = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-                        $leadSources = LeadSources::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
-                        $LeadStatuses = LeadStatuses::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
-                        $Treatments = Services::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
-                        $child_Services = Services::where(['account_id' => Auth::User()->account_id])->where('parent_id', '!=', 0)->get()->pluck('id', 'name');
-                        $Locations = Locations::where(['account_id' => Auth::User()->account_id])->get()->pluck('id', 'name');
-                        // Array to hold phone numbers which will be used to find duplicates if any
-                        $dupPhone_list = [];
-                        $dupPhones = [];
-                        $un_validPhone_list = [];
-                        $un_validService_list = [];
-                        $un_validCity_list = [];
-                        $un_validCentre_list = [];
-                        $newPatientPhones = []; /* New Patient Phones Array */
-                        // Iterate over the data
-                        foreach ($SheetData as $SingleRow) {
-                            // Provided Sheet columns should match
-                            if (
-                                (
-                                    trim(strtolower($SingleRow['A'])) == 'full name' ||
-                                    trim(strtolower($SingleRow['A'])) == 'full_name'
-                                )
-                                &&
-                                trim(strtolower($SingleRow['B'])) == 'email' &&
-                                (
-                                    trim(strtolower($SingleRow['C'])) == 'phone_number' ||
-                                    trim(strtolower($SingleRow['C'])) == 'phone'
-                                )
-                            ) {
-                                // Row contains headers so ignore this line
-                                continue;
-                            }
-                            if (
-                                trim(strtolower($SingleRow['A'])) == '' ||
-                                trim(strtolower($SingleRow['A'])) == null ||
-                                trim(strtolower($SingleRow['C'])) == '' ||
-                                trim(strtolower($SingleRow['C'])) == null ||
-                                trim(strtolower($SingleRow['H'])) == '' ||
-                                trim(strtolower($SingleRow['H'])) == null
-                            ) {
-                                /*
-                                 * If Full Name and Phone are empty, Skip these records
-                                 */
-                                continue;
-                            }
-                            $service_id = null;
-                            $service = null;
-                            if (isset($SingleRow['H'])) {
-                                $service = trim(strtolower($SingleRow['H']));
-                            }
-                            if ($Treatments && $service) {
-                                foreach ($Treatments as $Name => $Id) {
-                                    if (trim(strtolower($service)) == trim(strtolower($Name))) {
-                                        $service_id = $Id;
-                                    }
-                                }
-                            }
-                            if ($service_id == null) {
-                                $un_validService_list[] = $service;
+            $dup_phone_list = [];
+            $un_valid_phone_list = [];
+            $un_valid_service_list = [];
+            $new_patient_phones = [];
+            $found_patients = [];
 
-                                continue;
-                            }
+            $file = $request->file('leads_file');
+            $collections = (new FastExcel)->import($file);
 
-                            if (strlen(trim($SingleRow['C'])) >= 10 && strlen(trim($SingleRow['C'])) <= 13) {
-                                // Process Phone Number
-                                $dupPhone_list[] = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
-                            } else {
-                                $un_validPhone_list[] = trim($SingleRow['C']);
-                            }
-                        }
-                        /*
-                         * Step A: Start
-                         * Find patients who are not in system and create them
-                         */
-                        if (count($dupPhone_list)) {
-                            // Find duplicate records in System.
-                            $dupPhones = Leads::whereIn('phone', $dupPhone_list)
-                                ->where('account_id', Auth::User()->account_id)
-                                ->select('phone', 'id')
-                                ->orderBy('id', 'desc')->get()->unique('phone')
-                                ->keyBy('phone');
-                            if ($dupPhones) {
-                                $dupPhones = $dupPhones->toArray();
-                            } else {
-                                // Restore Old state again
-                                $dupPhones = [];
-                            }
-                            $found_patients = Leads::whereIn('phone', $dupPhone_list)
-                                ->where('account_id', Auth::User()
-                                    ->account_id)->select('phone')
-                                ->orderBy('id', 'desc')->get()->unique('phone')
-                                ->pluck('phone');
-                            if ($found_patients) {
-                                $newPatientPhones = array_diff($dupPhone_list, $found_patients->toArray());
-                            }
-                        }
-                        /*
-                         * Step A: End
-                         */
-                        // Var to hold all Leads Data
-                        $LeadData = [];
-                        /*
-                         * Create Leads based on following criteria
-                         *
-                         * Case 1. If 'Update Existign Record' is not checked
-                         * ---------------------------------------------------
-                         * - If lead is found then skip it
-                         * - If Treatment is not provided then this will be skipped
-                         *
-                         * Case 2. If 'Update Existign Record' is checked
-                         * ---------------------------------------------------
-                         * - If Treatment is not provided then this will be skipped
-                         *
-                         * a. 'Skip Leads Statuses' is not checked
-                         * a.i If lead is found update it with Lead Status
-                         *
-                         * b. 'Skip Leads Statuses' is not checked
-                         * b.i If lead is found update it without Lead Status
-                         */
-                        if (! count($un_validPhone_list)) {
-                            $allLeadsMapping = Leads::whereIn('phone', $dupPhone_list)
-                                ->where(['account_id' => Auth::User()->account_id])->select('phone')->orderBy('id', 'desc')->get()->unique('phone')->keyBy('phone');
-                            if (count($allLeadsMapping)) {
-                                $allLeadsMapping = $allLeadsMapping->toArray();
-                            } else {
-                                $allLeadsMapping = [];
-                            }
-                            /*
-                            * This array will contain all those laads
-                            * which are gonna be insert into Leads.
-                            * Why we made this array?
-                            * We want to avoid duplicates.
-                            */
-                            $piplined_leads = [];
-                            /*
-                            * Prepare Default Lead Status ID
-                            */
-                            // Process Lead Status
-                            $DefaultLeadStatus = LeadStatuses::where([
-                                'account_id' => Auth::User()->account_id,
-                                'is_default' => 1,
-                            ])->first();
-                            if ($DefaultLeadStatus) {
-                                $default_lead_status_id = $DefaultLeadStatus->id;
-                            } else {
-                                $default_lead_status_id = Config::get('constants.lead_status_open');
-                            }
-                            // Iterate over the data
-                            foreach ($SheetData as $index => $SingleRow) {
-                                // Provided Sheet columns should match
-                                if (
-                                    (
-                                        trim(strtolower($SingleRow['A'])) == 'full name' ||
-                                        trim(strtolower($SingleRow['A'])) == 'full_name'
-                                    )
-                                    &&
-                                    trim(strtolower($SingleRow['B'])) == 'email' &&
-                                    (
-                                        trim(strtolower($SingleRow['C'])) == 'phone_number' ||
-                                        trim(strtolower($SingleRow['C'])) == 'phone'
-                                    )
-                                ) {
-                                    // Row contains headers so ignore this line
-                                    continue;
-                                }
-                                if (
-                                    trim(strtolower($SingleRow['A'])) == '' ||
-                                    trim(strtolower($SingleRow['A'])) == null ||
-                                    trim(strtolower($SingleRow['C'])) == '' ||
-                                    trim(strtolower($SingleRow['C'])) == null ||
-                                    trim(strtolower($SingleRow['H'])) == '' ||
-                                    trim(strtolower($SingleRow['H'])) == null
-                                ) {
-                                    /*
-                                    * If Full Name and Phone are empty, Skip these records
-                                    */
-                                    continue;
-                                }
-                                if (strlen(trim($SingleRow['C'])) >= 10 && strlen(trim($SingleRow['C'])) <= 12) {
-                                    // Process Phone Number
-                                    $phone = GeneralFunctions::cleanNumber(trim($SingleRow['C']));
-                                } else {
-                                    $un_validPhone_list[] = trim($SingleRow['C']);
-                                }
-                                $gender = 0;
-                                if (trim(strtolower($SingleRow['D'])) == 'male') {
-                                    $gender = 1; // 1 for Male, Check constants.php
-                                } elseif (trim(strtolower($SingleRow['D'])) == 'female') {
-                                    $gender = 2; // 2 for Female, Check constants.php
-                                }
-                                // Process City
-                                $city_id = null;
-                                $region_id = null;
-                                $city = trim(strtolower($SingleRow['E']));
-                                if ($Cities && $city) {
-                                    foreach ($Cities as $CityName => $CityId) {
-                                        if ($city == trim(strtolower($CityName))) {
-                                            $city_id = $CityId;
-                                            $region_id = $RegionCities[$CityId]->region_id;
-                                        }
-                                    }
-                                }
-                                // Process Lead Source
-                                $lead_source_id = Config::get('constants.lead_source_social_media');
-                                if (isset($SingleRow['F'])) {
-                                    $lead_source = trim(strtolower($SingleRow['F']));
-                                } else {
-                                    $lead_source = null;
-                                }
-                                if ($leadSources && $lead_source) {
-                                    foreach ($leadSources as $SrcName => $SrcId) {
-                                        if (trim(strtolower($lead_source)) == trim(strtolower($SrcName))) {
-                                            $lead_source_id = $SrcId;
-                                        }
-                                    }
-                                    if (! $lead_source_id) {
-                                        $lead_source_id = Config::get('constants.lead_source_social_media');
-                                    }
-                                }
-                                // Process Lead Status
-                                $lead_status_id = $default_lead_status_id;
-                                if (isset($SingleRow['G'])) {
-                                    $lead_status = trim(strtolower($SingleRow['G']));
-                                } else {
-                                    $lead_status = null;
-                                }
-                                if ($LeadStatuses && $lead_status) {
-                                    foreach ($LeadStatuses as $StatusName => $StatusId) {
-                                        if (trim(strtolower($lead_status)) == trim(strtolower($StatusName))) {
-                                            $lead_status_id = $StatusId;
-                                        }
-                                    }
-                                    if (! $lead_status_id) {
-                                        $lead_status_id = $default_lead_status_id;
-                                    }
-                                }
-                                /*
-                                * Process Treatment, If Treatment not found skip this record
-                                */
-                                $service_id = null;
-                                $service = null;
-                                if (isset($SingleRow['H'])) {
-                                    $service = trim(strtolower($SingleRow['H']));
-                                }
-                                $childservice = 0;
-                                if ($SingleRow['J']) {
-                                    $childservice = trim(strtolower($SingleRow['J']));
-                                }
-                                if (trim(strtolower($SingleRow['I'])) == null) {
-                                    $SingleRow['I'] = 'Empty';
-                                }
-                                $location_id = null;
-                                if (isset($SingleRow['I'])) {
-                                    $location = trim(strtolower($SingleRow['I']));
-                                } else {
-                                    $location = null;
-                                }
-                                if ($Locations && $location) {
-                                    foreach ($Locations as $LocationName => $LocationId) {
-                                        if ($location == trim(strtolower($LocationName))) {
-                                            $location_id = $LocationId;
-                                        }
-                                    }
-                                }
-                                if ($Treatments && $service) {
-                                    foreach ($Treatments as $Name => $Id) {
-                                        if (trim(strtolower($service)) == trim(strtolower($Name))) {
-                                            $service_id = $Id;
-                                        }
-                                    }
-                                }
-                                if ($service_id == null) {
-                                    //$un_validService_list[] = $service;
-                                    continue;
-                                }
-                                $child_service_id = null;
-                                if ($child_Services && $childservice) {
-                                    foreach ($child_Services as $childName => $childId) {
-                                        if (trim(strtolower($childservice)) == trim(strtolower($childName))) {
-                                            $child_service_id = $childId;
-                                            $find_parent = Services::whereId($child_service_id)->first();
-                                            if ($service_id) {
-                                                $find_parent2 = Services::whereId($service_id)->first();
-                                                if ($find_parent2->id != $find_parent->parent_id) {
-                                                    $service_id = $find_parent->parent_id;
-                                                } else {
-                                                    $service_id = $find_parent->parent_id;
-                                                }
-                                            } else {
-                                                $service_id = $find_parent->parent_id;
-                                            }
+            $rows = [];
+            foreach ($collections as $collection) {
+                $data = [];
+                foreach ($collection as $key => $value) {
+                    $convertedKey = strtolower(str_replace(' ', '_', trim($key)));
+                    $data[$convertedKey] = $value;
+                }
+                $rows[] = $data;
+            }
 
-                                        }
-                                    }
-                                }
-                                /*
-                                * Check cases mentioned above
-                                */
-                                if (array_key_exists($phone, $allLeadsMapping)) {
-                                    if (Leads::where([
-                                        'phone' => $phone,
-                                    ])->count()) {
-                                        if ($request->get('update_records') == '1' && $request->get('update_status') != '1') {
-                                            /*
-                                            * update_records' is not checked
-                                            * update leads services
-                                            */
-                                            $update_lead = [
-                                                'name' => trim($SingleRow['A']),
-                                                'email' => trim($SingleRow['B']),
-                                                'gender' => $gender,
-                                                'phone' => $phone,
-                                                'city_id' => $city_id,
-                                                'region_id' => $region_id,
-                                                'lead_source_id' => $lead_source_id,
-                                                'created_by' => Auth::User()->id,
-                                                'updated_by' => Auth::User()->id,
-                                                'converted_by' => Auth::User()->id,
-                                                'created_at' => Carbon::now(),
-                                                'updated_at' => Carbon::now(),
-                                                'account_id' => Auth::User()->account_id,
-                                                'location_id' => $location_id ?? '',
-                                            ];
-                                            $update_lead_service = [
-                                                'service_id' => $service_id,
-                                                'child_service_id' => $child_service_id ?? null,
-                                                'created_at' => Carbon::now(),
-                                                'updated_at' => Carbon::now(),
-                                            ];
-                                            if ($request->get('skip_lead_statuses') != '1') {
-                                                $update_lead['lead_status_id'] = $lead_status_id;
-                                            }
-
-                                            $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
-                                                'phone' => $phone,
-                                            ], $update_lead);
-
-                                            $update_lead_service['lead_id'] = $lead->id;
-                                            $update_lead_service['status'] = 1;
-                                            $lead_service_data = LeadsServices::updateOrCreate([
-                                                'lead_id' => $lead->id,
-                                                'service_id' => $service_id,
-                                                'child_service_id' => $child_service_id,
-                                            ], $update_lead_service);
-                                            LeadsServices::where([
-                                                'lead_id' => $lead->id,
-                                            ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
-
-                                            GeneralFunctions::patientNameUpdate($phone, $update_lead['name']);
-
-                                            continue;
-                                        } elseif ($request->update_status == '1' && $request->get('update_records') != '1') {
-                                            $update_lead = [];
-                                            $update_lead['lead_status_id'] = $lead_status_id;
-                                            Leads::orderBy('id', 'desc')->where(['phone' => $phone])->update(['lead_status_id' => $lead_status_id]);
-
-                                            continue;
-                                        } else {
-                                            /*
-                                            * update_records' is checked
-                                            * update records nows
-                                            */
-                                            $update_lead = [
-                                                'created_by' => Auth::User()->id,
-                                                'updated_by' => Auth::User()->id,
-                                                'converted_by' => Auth::User()->id,
-                                                'created_at' => Carbon::now(),
-                                                'updated_at' => Carbon::now(),
-                                            ];
-                                            $update_lead_service = [
-                                                'service_id' => $service_id,
-                                                'child_service_id' => $child_service_id ?? null,
-                                                'created_at' => Carbon::now(),
-                                                'updated_at' => Carbon::now(),
-                                            ];
-                                            /*
-                                            * 'skip_lead_statuses' is not checked
-                                            * Update Lead Status as well
-                                            */
-                                            if ($request->get('skip_lead_statuses') != '1') {
-                                                $update_lead['lead_status_id'] = $lead_status_id;
-                                            }
-
-                                            $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
-                                                'phone' => $phone,
-                                            ], $update_lead);
-
-                                            $update_lead_service['lead_id'] = $lead->id;
-                                            $update_lead_service['status'] = 1;
-                                            $lead_service_data = LeadsServices::updateOrCreate([
-                                                'lead_id' => $lead->id,
-                                                'service_id' => $service_id,
-                                                'child_service_id' => $child_service_id,
-                                            ], $update_lead_service);
-                                            LeadsServices::where([
-                                                'lead_id' => $lead->id,
-                                            ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
-
-                                            continue;
-                                        }
-                                    }
-                                }
-                                if (in_array($phone, $newPatientPhones)) {
-                                    /*
-                                    * If lead already exists in Piplined lead
-                                    * then skip this lead to avoid duplicate
-                                    */
-                                    if (in_array($phone, $piplined_leads) && in_array($service_id, $piplined_leads)) {
-                                        continue;
-                                    }
-                                    $LeadData = [
-                                        'name' => trim($SingleRow['A']),
-                                        'email' => trim($SingleRow['B']),
-                                        'phone' => $phone,
-                                        'gender' => $gender,
-                                        'city_id' => $city_id,
-                                        'region_id' => $region_id,
-                                        'lead_source_id' => $lead_source_id,
-                                        'lead_status_id' => 1,
-                                        'created_by' => Auth::User()->id,
-                                        'updated_by' => Auth::User()->id,
-                                        'converted_by' => Auth::User()->id,
-                                        'created_at' => Carbon::now(),
-                                        'updated_at' => Carbon::now(),
-                                        'account_id' => Auth::User()->account_id,
-                                        'location_id' => $location_id ?? '',
-                                    ];
-                                    $lead_service = [
-                                        'service_id' => $service_id,
-                                        'child_service_id' => $child_service_id ?? null,
-                                        'created_at' => Carbon::now(),
-                                        'updated_at' => Carbon::now(),
-                                    ];
-                                    if ($request->get('skip_lead_statuses') != '1') {
-                                        $LeadData['lead_status_id'] = $lead_status_id;
-                                    }
-
-                                    $piplined_leads['phone'] = $phone;
-                                    $piplined_leads['service_id'] = $service_id;
-
-                                    $lead = Leads::updateOrCreate([
-                                        'phone' => $phone,
-                                    ], $LeadData);
-
-                                    $lead_service['lead_id'] = $lead->id;
-                                    $lead_service['status'] = 1;
-                                    $lead_service_data = LeadsServices::updateOrCreate([
-                                        'lead_id' => $lead->id,
-                                        'service_id' => $service_id,
-                                        'child_service_id' => $child_service_id,
-                                    ], $lead_service);
-                                    LeadsServices::where([
-                                        'lead_id' => $lead->id,
-                                    ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
-
-                                    GeneralFunctions::patientNameUpdate($phone, $LeadData['name']);
-
-                                    continue;
-                                }
-                            }
-                            $msg = (count($un_validService_list)) ? '. In_valid service list: '.implode(', ', $un_validService_list) : '';
-                            // Invalid data is provided
-                            return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: '.count($newPatientPhones).', Duplicates: '.count($dupPhones).$msg);
-                        } else {
-                            return ApiHelper::apiResponse($this->success, 'Sheet contains in_valid list. phone: '.implode(', ', $un_validPhone_list).', service: '.implode(', ', $un_validService_list), false);
-                        }
-                    } else {
-                        return ApiHelper::apiResponse($this->success, 'Invalid data provided. Pattern should: Full Name, Email, Phone, Gender, City, Lead Source, Lead Status');
-                    }
+            foreach ($rows as $row) {
+                if (strlen($row['phone']) >= 10 && strlen($row['phone']) <= 13) {
+                    $dup_phone_list[] = GeneralFunctions::cleanNumber($row['phone']);
                 } else {
-                    return ApiHelper::apiResponse($this->success, 'No input file specified..');
+                    $un_valid_phone_list[] = $row['phone'];
+                }
+            }
+            if (count($dup_phone_list)) {
+                $found_patients = Leads::whereIn('phone', $dup_phone_list)
+                    ->where('account_id', Auth::User()
+                        ->account_id)->select('phone')
+                    ->orderBy('id', 'desc')->get()->unique('phone')
+                    ->pluck('phone');
+                if ($found_patients) {
+                    $new_patient_phones = array_diff($dup_phone_list, $found_patients->toArray());
+                    $found_patients = $found_patients->toArray();
+                }
+            }
+
+            foreach ($rows as $row) {
+                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id;
+                $region_id = Cities::where(['account_id' => Auth::User()->account_id, 'id' => $city_id])->first()->region_id ?? null;
+                $lead_source_id = LeadSources::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_source']])->first()->id ?? Config::get('constants.lead_source_social_media');
+                $lead_status_id = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_status']])->first()->id ?? Config::get('constants.lead_status_open');
+                $service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['service']])->first()->id ?? null;
+                $child_service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['treatment'], 'parent_id' => $service_id])->first()->id ?? null;
+                $location_id = Locations::where(['account_id' => Auth::User()->account_id, 'name' => $row['centre']])->first()->id ?? null;
+
+                $gender = 0;
+                if (strcasecmp($row['gender'], 'male') == 0) {
+                    $gender = 1;
+                } elseif (strcasecmp($row['gender'], 'female') == 0) {
+                    $gender = 2;
+                }
+                $phone = null;
+                if (strlen($row['phone']) >= 10 && strlen($row['phone']) <= 12) {
+                    $phone = GeneralFunctions::cleanNumber($row['phone']);
+                } else {
+                    $un_valid_phone_list[] = $row['phone'];
                 }
 
-                return ApiHelper::apiResponse($this->success, 'No input file specified..', false);
-            }
+                $lead_data = [
+                    'name' => $row['full_name'],
+                    'email' => $row['email'],
+                    'phone' => $phone,
+                    'gender' => $gender,
+                    'city_id' => $city_id,
+                    'region_id' => $region_id,
+                    'lead_source_id' => $lead_source_id,
+                    'created_by' => Auth::User()->id,
+                    'updated_by' => Auth::User()->id,
+                    'converted_by' => Auth::User()->id,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                    'account_id' => Auth::User()->account_id,
+                    'location_id' => $location_id,
+                ];
+                if ($phone != null && $service_id != null) {
+                    if ($request->update_records == '1' && !in_array($phone, $new_patient_phones) && in_array($phone, $found_patients)) {
+                        if ($request->skip_lead_statuses != '1') {
+                            $lead_data['lead_status_id'] = $lead_status_id;
+                        }
+
+                        $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
+                            'phone' => $phone,
+                        ], $lead_data);
+
+                        $this->leadService($lead->id, $service_id, $child_service_id);
+                    } else {
+                        if (in_array($phone, $new_patient_phones)) {
+                            $lead_data['lead_status_id'] = $lead_status_id;
+
+                            $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
+                                'phone' => $phone,
+                            ], $lead_data);
+
+                            $this->leadService($lead->id, $service_id, $child_service_id);
+                        }
+                    }
+                } else {
+                    if ($service_id == null) {
+                        $un_valid_service_list[] = $row['service'];
+                    }
+                }
+            };
+            $msg_service = (count($un_valid_service_list)) ? '. In_valid service list in this row: ' . implode(', ', $un_valid_service_list) : '';
+            $msg_phone = (count($un_valid_phone_list)) ? '. In_valid phone list: ' . implode(', ', $un_valid_phone_list) : '';
+            // Invalid data is provided
+            return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($new_patient_phones) . ', Duplicates: ' . count($found_patients) . $msg_phone . $msg_service);
         } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
+            return ApiHelper::apiResponse($this->success, $e->getMessage(), 'false');
         }
+    }
+
+    public static function leadService($lead_id, $service_id, $child_service_id)
+    {
+        $lead_service = [
+            'service_id' => $service_id,
+            'child_service_id' => $child_service_id,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ];
+        $lead_service['lead_id'] = $lead_id;
+        $lead_service['status'] = 1;
+        $lead_service_data = LeadsServices::updateOrCreate([
+            'lead_id' => $lead_id,
+            'service_id' => $service_id,
+            'child_service_id' => $child_service_id,
+        ], $lead_service);
+        LeadsServices::where([
+            'lead_id' => $lead_id,
+        ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
     }
 
     /**
