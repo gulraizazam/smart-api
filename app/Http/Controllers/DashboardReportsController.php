@@ -3065,6 +3065,7 @@ class DashboardReportsController extends Controller
                 WHERE appointment.appointment_type_id = 1
                     AND appointment.base_appointment_status_id = 2
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
+
                 GROUP BY appointment.patient_id
             ) latest_appointments'), function ($join) {
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
@@ -3123,14 +3124,12 @@ class DashboardReportsController extends Controller
             $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
             return $item;
         });
-                   
-        $plans_check_array = json_decode(json_encode($plans_check), true);
        
         $not_treatment = [];
         $is_treatment = [];
         $patient_data = [];
-        $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
-        foreach ($plans_check_array as $data) {
+        $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+        foreach ($plans_check as $data) {
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
