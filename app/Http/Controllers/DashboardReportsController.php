@@ -3057,15 +3057,14 @@ class DashboardReportsController extends Controller
             ];
             
         }
-        $center_id = $request->location_id ?[$request->location_id] : ACL::getUserCentres();
-        $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
+        $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
+        $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
                 WHERE appointment.appointment_type_id = 1
                     AND appointment.base_appointment_status_id = 2
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
-
                 GROUP BY appointment.patient_id
             ) latest_appointments'), function ($join) {
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
@@ -3073,9 +3072,8 @@ class DashboardReportsController extends Controller
             })
             ->orderByDesc('appointments.id')
             ->pluck('patient_id');
-    
-        
-        $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
+
+        $cash_received_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
                 'cash_flow' => 'in',
                 'is_cancel' => '0',
@@ -3083,55 +3081,47 @@ class DashboardReportsController extends Controller
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
-            ->pluck('cash_receive','patient_id');
-           
-        $settleAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
+            ->pluck('cash_receive', 'patient_id');
+
+        $settle_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
             ->where([
                 'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',
-               
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
-            ->pluck('settle_amount','patient_id');
-               
-        $settleTaxAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
+            ->pluck('settle_amount', 'patient_id');
+
+        $settle_tax_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
                 'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '1',
                 'is_adjustment' => '0',
-                
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
-            ->pluck('settle_tax_amount','patient_id');
+            ->pluck('settle_tax_amount', 'patient_id');
 
-        $plans_check = PackageAdvances::select('package_advances.id','package_advances.patient_id','package_advances.created_at','package_advances.location_id')
-            ->whereIn('package_advances.patient_id', $appointments)
-            ->whereIn('package_advances.location_id', $center_id)
-           // ->where($where)
-            ->groupBy('package_advances.patient_id')
-            ->orderBy('package_advances.patient_id', 'DESC')
-           ->get();
-        $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
-            $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
-            $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
-            $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
+        $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
+            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('location_id', $center_id)
+            ->groupBy('patient_id')
+            ->orderBy('patient_id', 'DESC')
+           
+            ->get();
+        $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts) {
+            $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
+            $item->settle_amount = $settle_amounts[$item->patient_id] ?? null;
+            $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
             return $item;
         });
-     
-        $not_treatment = [];
-        $is_treatment = [];
         $patient_data = [];
-        $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
-        ->where('created_at', '<', Carbon::now()->subDays(7))
-        ->pluck('patient_id')->toArray();
-   
+        $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
@@ -3154,7 +3144,7 @@ class DashboardReportsController extends Controller
                     array_push($is_treatment, $data);
                 }
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
