@@ -972,7 +972,7 @@
                                                         <th class='table-cols'>Conversion Date</th>
                                                     </tr>
                                                 </thead>
-                                                <00 id="patient-follow-up-one-month"></tbody>
+                                                <tbody id="patient-follow-up-one-month"></tbody>
                                             </table>
                                         </div>
                                     </div>
