@@ -225,7 +225,7 @@ class PatientFollowupController extends Controller
             }
         }
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => array_slice($patient_data, 0, 20)
+            'patient_data' => array_slice($patient_data, 0, 15)
         ]);
     }
 }
