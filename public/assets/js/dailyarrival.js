@@ -106,7 +106,6 @@ var loadPatientFollowUpReport = function (that) {
                 dom: 'Bfrtip',
                 buttons: [
                     'excelHtml5',
-                    'csvHtml5',
                     'pdfHtml5',
                 ],
                 "ordering": false
@@ -143,7 +142,6 @@ var loadPatientFollowUpMonthReport = function (that) {
                 dom: 'Bfrtip',
                 buttons: [
                     'excelHtml5',
-                    'csvHtml5',
                     'pdfHtml5',
                 ],
                 "ordering": false
