@@ -162,6 +162,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->where($where)
+            ->orderBy('scheduled_date','asc')
             ->get();
 
         return $results;
