@@ -119,3 +119,120 @@ var loadStaffWiseArrivalReport = function (that) {
         }
     });
 };
+var loadPatientFollowUpReport = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.patient_follow_up_report'),
+        type: "POST",
+        data: {
+            location_id: $('#location_id').val(),
+            date_from: $('#followup_search_created_from').val(),
+            date_to: $('#followup_search_created_to').val(),
+            patient_id: $('#patient_id').val(),
+        },
+        success: function(response){
+            $('#followup_content').html('');
+            $('#followup_content').html(response);
+            $("#follow_up_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false
+            });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadPatientFollowUpMonthReport = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.patient_follow_up_report_monthly'),
+        type: "POST",
+        data: {
+            location_id: $('#location_id').val(),
+            date_from: $('#followupmonth_search_created_from').val(),
+            date_to: $('#followupmonth_search_created_to').val(),
+            patient_id: $('#patient_id').val(),
+        },
+        success: function(response){
+            $('#followupmonthly_content').html('');
+            $('#followupmonthly_content').html(response);
+            $("#follow_up_monthly_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false
+            });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+function patientSearch(search_id = 'patient_id',flag=1) {
+    $("." + search_id).on("keyup",function() {
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            setTimeout(function(){
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: {search: that.val()},
+                    success: function (response) {
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                        } else {
+                            $(".suggesstion-box").hide();
+                        }
+                    }
+                });
+            },1000);
+        } else {
+            $(".suggesstion-box").hide();
+        }
+    });
+    return false;
+}
+function selectUser(name, user_id,  search_id) {
+    $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+    $("#patient_id").val(user_id);
+    $("." + search_id).val(name);
+    $(".suggesstion-box").hide();
+    $("." + search_id).focus();
+}
