@@ -137,7 +137,17 @@ var loadPatientFollowUpMonthReport = function (that) {
             patient_id: $('#patient_id').val(),
         },
         success: function(response){
-            console.log('res',response);
+            $('#followupmonthly_content').html('');
+            $('#followupmonthly_content').html(response);
+            $("#follow_up_monthly_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false
+            });
             hideSpinner();
         },
         error: function (xhr, ajaxOptions, thrownError) {
