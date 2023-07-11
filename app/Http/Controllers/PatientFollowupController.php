@@ -171,7 +171,6 @@ class PatientFollowupController extends Controller
                 ['is_cancel', '=', '0'],
                 ['is_tax', '=', '0'],
                 ['is_adjustment', '=', '0'],
-                ['is_refund', '=', '0'],
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
@@ -183,7 +182,6 @@ class PatientFollowupController extends Controller
                 ['is_cancel', '=', '0'],
                 ['is_tax', '=', '1'],
                 ['is_adjustment', '=', '0'],
-                ['is_refund', '=', '0'],
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
