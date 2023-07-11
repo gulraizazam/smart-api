@@ -3117,7 +3117,7 @@ class DashboardReportsController extends Controller
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
             ->groupBy('package_advances.patient_id')
-            ->orderBy('package_advances.patient_id', 'DESC')
+            ->orderBy('package_advances.id', 'DESC')
 
             ->get();
         $plans_check_array = json_decode(json_encode($plans_check), true);
@@ -3126,7 +3126,7 @@ class DashboardReportsController extends Controller
         $is_treatment = [];
         $patient_data = [];
         $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
-       dd(collect($plans_check_array)->toArray());
+      
         foreach ($plans_check_array as $data) {
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
