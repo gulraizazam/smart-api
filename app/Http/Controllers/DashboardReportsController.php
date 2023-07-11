@@ -3124,11 +3124,12 @@ class DashboardReportsController extends Controller
             $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
             return $item;
         });
-       
+     
         $not_treatment = [];
         $is_treatment = [];
         $patient_data = [];
         $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+        dd($plans_check , $plan_check_no_treatment);
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
