@@ -977,7 +977,9 @@
                                             </table>
                                         </div>
                                     </div>
-                                    
+                                    <div class="text-center mt-7">
+                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up_month')}}">View Report</a></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
