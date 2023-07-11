@@ -119,6 +119,33 @@ var loadPatientFollowUpReport = function (that) {
         }
     });
 };
+var loadPatientFollowUpReport = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.patient_follow_up_report_monthly'),
+        type: "POST",
+        data: {
+            location_id: $('#location_id').val(),
+            date_from: $('#followupmonthly_search_created_from').val(),
+            date_to: $('#followupmonthly_search_created_to').val(),
+            patient_id: $('#patient_id').val(),
+        },
+        success: function(response){
+            console.log('res',response);
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
 function patientSearch(search_id = 'patient_id',flag=1) {
     $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
