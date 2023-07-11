@@ -135,8 +135,7 @@ class PatientFollowupController extends Controller
     public function patientFollowUpOneMonth(Request $request)
     {
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
-        $appointments = DB::table('appointments')
-            ->select('appointments.id', 'appointments.patient_id')
+        $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
@@ -144,22 +143,20 @@ class PatientFollowupController extends Controller
                     AND appointment.base_appointment_status_id = 2
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
                 GROUP BY appointment.patient_id
-            ) max_appointments'), function ($join) {
-                $join->on('appointments.patient_id', '=', 'max_appointments.patient_id')
-                    ->on('appointments.created_at', '=', 'max_appointments.created_at');
+            ) latest_appointments'), function ($join) {
+                $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
+                    ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->get();
-
-        $patient_ids = $appointments->pluck('patient_id');
+            ->pluck('patient_id');
 
         $cash_received_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
-                ['cash_flow', '=', 'in'],
-                ['is_cancel', '=', '0'],
-                ['is_tax', '=', '0'],
-                ['is_adjustment', '=', '0'],
-                ['is_refund', '=', '0'],
+                'cash_flow' => 'in',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
@@ -167,10 +164,10 @@ class PatientFollowupController extends Controller
 
         $settle_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
             ->where([
-                ['cash_flow', '=', 'out'],
-                ['is_cancel', '=', '0'],
-                ['is_tax', '=', '0'],
-                ['is_adjustment', '=', '0'],
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
@@ -178,21 +175,16 @@ class PatientFollowupController extends Controller
 
         $settle_tax_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
-                ['cash_flow', '=', 'out'],
-                ['is_cancel', '=', '0'],
-                ['is_tax', '=', '1'],
-                ['is_adjustment', '=', '0'],
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '1',
+                'is_adjustment' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
-        $plans_check = PackageAdvances::select(
-            'id',
-            'patient_id',
-            'created_at',
-            'location_id'
-        )
+        $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
