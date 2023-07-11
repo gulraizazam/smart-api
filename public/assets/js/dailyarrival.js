@@ -119,7 +119,7 @@ var loadPatientFollowUpReport = function (that) {
         }
     });
 };
-var loadPatientFollowUpReport = function (that) {
+var loadPatientFollowUpMonthReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
     }
