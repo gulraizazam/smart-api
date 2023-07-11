@@ -1200,7 +1200,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             }
 
             $('#patient-follow-up').append(TABLE_HTML);
-            $('#followbtn').css('display','block');
+            $('#followbtn').css('display','inline-block');
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -1232,7 +1232,7 @@ function initPatientFollowUpOneMonth() {
             }
 
             $('#patient-follow-up-one-month').append(TABLE_HTML);
-            $('#mfollowbtn').css('display','block');
+            $('#mfollowbtn').css('display','inline-block');
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
