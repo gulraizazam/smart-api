@@ -921,6 +921,7 @@
                             </div>
                         </div>
                     @endif
+                    @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
                     <div class="col-lg-12 col-xxl-12 custom_tabs_style">
                         <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 805px;">
                             <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
@@ -981,6 +982,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
             </div>
         </div>
