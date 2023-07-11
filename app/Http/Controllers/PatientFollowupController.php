@@ -189,7 +189,7 @@ class PatientFollowupController extends Controller
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
-            ->take(100)
+            
             ->get();
         $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts) {
             $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
@@ -215,7 +215,7 @@ class PatientFollowupController extends Controller
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
 
             if (count($treatments) > 0) {
-                $check_treatments = collect($treatments)->sortByDesc('id')->first();
+                $check_treatments = collect($treatments)->orderBy('id','desc')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
                 if ($check_treatments->base_appointment_status_id == 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
