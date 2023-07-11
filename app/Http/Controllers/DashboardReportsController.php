@@ -3129,9 +3129,9 @@ class DashboardReportsController extends Controller
         $is_treatment = [];
         $patient_data = [];
         $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
-        ->where('created_at', '<', Carbon::now()->subDays(7))
+        ->where('created_at', '<', Carbon::now()->subDays(7)->format('Y-m-d'))
         ->pluck('patient_id')->toArray();
-       dd(collect($plans_check) , $plan_check_no_treatment);
+       dd($where , collect($plans_check) , $plan_check_no_treatment);
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
