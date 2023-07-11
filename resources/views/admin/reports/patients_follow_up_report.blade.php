@@ -47,6 +47,7 @@
                     
                 <tbody>
                 @foreach($patient_data as $patient)
+                
                 @php
                    $location_name = \App\Models\Locations::whereId($patient['location_id'])->first();
                 @endphp
