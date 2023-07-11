@@ -3161,4 +3161,10 @@ class DashboardReportsController extends Controller
         $patient_data = array_merge($is_treatment,$not_treatment);
         return view('admin.reports.patients_follow_up_report', get_defined_vars());
     }
+    public function FollowUpReportMonthly()
+    {
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+        return view('admin.reports.followupmonthly', get_defined_vars());
+    }
 }
