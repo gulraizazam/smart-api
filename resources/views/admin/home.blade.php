@@ -947,7 +947,7 @@
                                         </div>
                                     </div>
                                     <div class="text-center mt-7">
-                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up')}}">View Report</a></button>
+                                        <button class="btn btn-primary btn-primary--icon p-0" id="followbtn" style="display: none;"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up')}}">View Report</a></button>
                                     </div>
                                 </div>
                             </div>
@@ -978,7 +978,7 @@
                                         </div>
                                     </div>
                                     <div class="text-center mt-7">
-                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up_month')}}">View Report</a></button>
+                                        <button class="btn btn-primary btn-primary--icon p-0" id="mfollowbtn" style="display: none;"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up_month')}}">View Report</a></button>
                                     </div>
                                 </div>
                             </div>
