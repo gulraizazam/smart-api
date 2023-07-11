@@ -552,7 +552,7 @@
                                         <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
-                                                    @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
+                                                    @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
                                                         @php
                                                             $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
                                                             $locations = \App\Helpers\ACL::getUserCentres();
@@ -784,7 +784,7 @@
                                                             ->get();
                                                     @endphp
                                                     <div class="btn-group">
-                                                        @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
+                                                        @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
                                                             <a data-id="all"
                                                                 class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
@@ -802,7 +802,7 @@
                                                             </a>
                                                         @endif
                                                         <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
-                                                            @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin')|| Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
+                                                            @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
                                                                 <li>
                                                                     <a class="dropdown-item" data-period="thismonth"
                                                                         data-id="all" onclick="GetDoctors('all')">All
@@ -895,8 +895,9 @@
                                     </div>
 
                                     <div class="row pt-7">
+
                                         <div class="col-7">
-                                        <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs" >
+                                            <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs">
                                             <div id="doc_wise_conversion"></div>
                                         </div>
                                         <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
@@ -919,6 +920,70 @@
                                 </div>
                             </div>
                         </div>
+                    @endif
+                    @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 805px;">
+                            <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Patients Follow Up</span>
+                                    </div>
+                                    <div class="card-spacer2">
+                                        <div class='table-responsive'>
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class='table-cols'>Patient Id</th>
+                                                        <th class='table-cols'>Name</th>
+                                                        <th class='table-cols'>Phone</th>
+                                                        <th class='table-cols'>Treatment exist</th>
+                                                        <th class='table-cols'>Conversion Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="patient-follow-up"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mt-7">
+                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up')}}">View Report</a></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 805px;">
+                            <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
+                                <div class="card-body p-0">
+                                    <div
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Patients Follow Up One Month</span>
+                                    </div>
+                                    <div class="card-spacer2">
+                                        <div class='table-responsive'>
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th class='table-cols'>Patient Id</th>
+                                                        <th class='table-cols'>Name</th>
+                                                        <th class='table-cols'>Phone</th>
+                                                        <th class='table-cols'>Treatment exist</th>
+                                                        <th class='table-cols'>Conversion Date</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="patient-follow-up-one-month"></tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <div class="text-center mt-7">
+                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up_month')}}">View Report</a></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     @endif
                 </div>
             </div>
@@ -967,17 +1032,16 @@
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', 'firsttime');
-                   
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
-                   
+
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
-                @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
+                @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
                     GetAllDoctors(centre_id);
                 @else
-                $('.loader-imgs').css('display', "none");
-                    GetDoctors(centre_id , 'firsttime');
+                    $('.loader-imgs').css('display', "none");
+                    GetDoctors(centre_id, 'firsttime');
                 @endif
 
             });
@@ -1033,62 +1097,6 @@
                     }
                 });
             }
-            function AllDoctorWiseConversion(bar) {
-                const primary = '#6993FF';
-                const success = '#1BC5BD';
-                const info = '#8950FC';
-                const warning = '#FFA800';
-                const danger = '#F64E60';
-                let lables = bar.data.labels;
-                if (lables.some(str => str.includes('All Centres'))) {
-                    modifiedData = lables.map(location => location.replace('All Centres ', ''));
-                } else {
-                    modifiedData = lables;
-                }
-                var options = {
-                    series: [{
-                        name: 'Total Appointments',
-                        data: bar.data.total_appointments
-                    }, {
-                        name: 'Converted',
-                        data: bar.data.converted_appointments
-                    }],
-                    noData: {
-                        text: 'No Data',
-                        align: 'center',
-                        verticalAlign: 'top',
-                        style: {
-                            color: 'red',
-                            fontSize: '14px',
-                            fontFamily: undefined
-                        }
-                    },
-                    chart: {
-                        type: 'bar',
-                        height: 350,
-
-                    },
-                    plotOptions: {
-                        bar: {
-                            horizontal: false,
-                            columnWidth: '55%',
-                            endingShape: 'rounded'
-                        },
-                    },
-                    stroke: {
-                        show: true,
-                        width: 1,
-                        colors: ['transparent']
-                    },
-                    xaxis: {
-                        categories: modifiedData,
-                    },
-                    colors: [primary, success, warning]
-                };
-                $("#doc_wise_conversion").html("");
-                doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
-                doc_wise_conversion_chart.render();
-            }
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
@@ -1097,6 +1105,8 @@
             var consultancy_by_status = false;
             var treatment_by_status = false;
             var centre_wise_arrival = false;
+            var patient_follow_up = false;
+            var patient_follow_up_one_month = false;
             $(window).scroll(function() {
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     collection_by_center) {
@@ -1326,7 +1336,16 @@
                         }
                     });
                 }
-
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.60) && !
+                    patient_follow_up) {
+                    patient_follow_up = true;
+                    initPatientFollowUp('thismonth', '');
+                }
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.61) && !
+                    patient_follow_up_one_month) {
+                    patient_follow_up_one_month = true;
+                    initPatientFollowUpOneMonth();
+                }
             });
 
             function TreatmentByStatus(pie, colors) {
