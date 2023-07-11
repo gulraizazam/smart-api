@@ -49,12 +49,13 @@ use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\ConversionReportController;
-use App\Http\Controllers\DashboardReportsController;
+use App\Http\Controllers\PatientFollowupController;
 use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+use App\Http\Controllers\DashboardReportsController;
 
 /*
 |--------------------------------------------------------------------------
