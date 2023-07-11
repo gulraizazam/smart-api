@@ -199,7 +199,7 @@ class PatientFollowupController extends Controller
         });
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
-dd( collect($plans_check));
+dd(collect($plans_check)->toArray());
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
