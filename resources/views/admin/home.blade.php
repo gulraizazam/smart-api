@@ -945,6 +945,9 @@
                                             </table>
                                         </div>
                                     </div>
+                                    <div class="text-center mt-7">
+                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="#">Load More</a></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -969,9 +972,12 @@
                                                         <th class='table-cols'>Conversion Date</th>
                                                     </tr>
                                                 </thead>
-                                                <tbody id="patient-follow-up-one-month"></tbody>
+                                                <00 id="patient-follow-up-one-month"></tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                    <div class="text-center mt-7">
+                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="#">Load More</a></button>
                                     </div>
                                 </div>
                             </div>
