@@ -3093,7 +3093,7 @@ class DashboardReportsController extends Controller
                 ['is_cancel', '=', '0'],
                 ['is_tax', '=', '0'],
                 ['is_adjustment', '=', '0'],
-                ['is_refund', '=', '0'],
+               
             ])
             ->whereIn('patient_id', $patientIds)
             ->groupBy('patient_id')
@@ -3105,7 +3105,7 @@ class DashboardReportsController extends Controller
                 ['is_cancel', '=', '0'],
                 ['is_tax', '=', '1'],
                 ['is_adjustment', '=', '0'],
-                ['is_refund', '=', '0'],
+                
             ])
             ->whereIn('patient_id', $patientIds)
             ->groupBy('patient_id')
