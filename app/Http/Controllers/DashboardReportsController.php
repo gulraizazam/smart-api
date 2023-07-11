@@ -3058,8 +3058,7 @@ class DashboardReportsController extends Controller
             
         }
         $center_id = $request->location_id ?[$request->location_id] : ACL::getUserCentres();
-        $appointments = DB::table('appointments')
-            ->select('appointments.id', 'appointments.patient_id')
+        $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
@@ -3067,57 +3066,52 @@ class DashboardReportsController extends Controller
                     AND appointment.base_appointment_status_id = 2
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
                 GROUP BY appointment.patient_id
-            ) max_appointments'), function ($join) {
-                $join->on('appointments.patient_id', '=', 'max_appointments.patient_id')
-                    ->on('appointments.created_at', '=', 'max_appointments.created_at');
+            ) latest_appointments'), function ($join) {
+                $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
+                    ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->get();
+            ->pluck('patient_id');
     
-        $patientIds = $appointments->pluck('patient_id');
+        
         $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
-                ['cash_flow', '=', 'in'],
-                ['is_cancel', '=', '0'],
-                ['is_tax', '=', '0'],
-                ['is_adjustment', '=', '0'],
-                ['is_refund', '=', '0'],
+                'cash_flow' => 'in',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '0',
             ])
-            ->whereIn('patient_id', $patientIds)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('cash_receive','patient_id');
            
         $settleAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
             ->where([
-                ['cash_flow', '=', 'out'],
-                ['is_cancel', '=', '0'],
-                ['is_tax', '=', '0'],
-                ['is_adjustment', '=', '0'],
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
                
             ])
-            ->whereIn('patient_id', $patientIds)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_amount','patient_id');
                
         $settleTaxAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
-                ['cash_flow', '=', 'out'],
-                ['is_cancel', '=', '0'],
-                ['is_tax', '=', '1'],
-                ['is_adjustment', '=', '0'],
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '1',
+                'is_adjustment' => '0',
                 
             ])
-            ->whereIn('patient_id', $patientIds)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount','patient_id');
 
-        $plans_check = PackageAdvances::select(
-                'package_advances.id',
-                'package_advances.patient_id',
-                'package_advances.created_at',
-                'package_advances.location_id'
-            )
-            ->whereIn('package_advances.patient_id', $patientIds)
+        $plans_check = PackageAdvances::select('package_advances.id','package_advances.patient_id','package_advances.created_at','package_advances.location_id')
+            ->whereIn('package_advances.patient_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
             ->groupBy('package_advances.patient_id')
@@ -3131,6 +3125,7 @@ class DashboardReportsController extends Controller
         });
                    
         $plans_check_array = json_decode(json_encode($plans_check), true);
+       
         $not_treatment = [];
         $is_treatment = [];
         $patient_data = [];
