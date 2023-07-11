@@ -190,15 +190,15 @@ class PatientFollowupController extends Controller
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select(
-            'package_advances.id',
-            'package_advances.patient_id',
-            'package_advances.created_at',
-            'package_advances.location_id'
+            'id',
+            'patient_id',
+            'created_at',
+            'location_id'
         )
-            ->whereIn('package_advances.patient_id', $patientIds)
-            ->whereIn('package_advances.location_id', $center_id)
-            ->groupBy('package_advances.patient_id')
-            ->orderBy('package_advances.patient_id', 'DESC')
+            ->whereIn('patient_id', $patientIds)
+            ->whereIn('location_id', $center_id)
+            ->groupBy('patient_id')
+            ->orderBy('patient_id', 'DESC')
             ->take(100)
             ->get();
         $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
