@@ -1336,12 +1336,12 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.60) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     patient_follow_up) {
                     patient_follow_up = true;
                     initPatientFollowUp('thismonth', '');
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.61) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     patient_follow_up_one_month) {
                     patient_follow_up_one_month = true;
                     initPatientFollowUpOneMonth();
