@@ -987,14 +987,11 @@ function GetDoctors(centre_id, time = '') {
 }
 function LoadDocWiseConversion(doc_id) {
     doc_wise_conversion_chart.destroy();
-    $('#doctor_wise_conversion_list .active').removeClass('active');
-    $('#doctor_wise_conversion_list').addClass('active');
-    $('.arrivalbtn').text();
+    dropDownList('doctor', 'thismonth');
     var DrName = $('#doc_nav').find('li').find('a[data-id=' + doc_id + ']').text();
     jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
     jQuery('.btn.doctorname').attr('data-id', doc_id);
     var centre_id = $(".doctorwiseconversion").attr('data-id');
-    CENTRE_ID = centre_id;
     DOC_ID = doc_id;
     let converted = 0;
     let arrived = 0;
@@ -1005,7 +1002,7 @@ function LoadDocWiseConversion(doc_id) {
         data: {
             'period': 'thismonth',
             'doc_id': DOC_ID,
-            'centre_id': CENTRE_ID
+            'centre_id': centre_id
         },
         success: function (response) {
             $("#doc_wise_conversion").html("");
