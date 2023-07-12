@@ -784,7 +784,7 @@
                                                             ->get();
                                                     @endphp
                                                     <div class="btn-group">
-                                                        @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                        @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
                                                             <a data-id="all"
                                                                 class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
@@ -802,7 +802,7 @@
                                                             </a>
                                                         @endif
                                                         <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
-                                                            @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                            @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
                                                                 <li>
                                                                     <a class="dropdown-item" data-period="thismonth"
                                                                         data-id="all" onclick="GetDoctors('all')">All
@@ -1037,7 +1037,7 @@
 
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
-                @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
                     GetAllDoctors(centre_id);
                 @else
                     $('.loader-imgs').css('display', "none");
