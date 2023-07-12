@@ -1423,9 +1423,9 @@ class LeadsController extends Controller
                 $location_id = Locations::where(['account_id' => Auth::User()->account_id, 'name' => $row['centre']])->first()->id ?? null;
 
                 $gender = 0;
-                if (strcasecmp($row['gender'], 'male') == 0) {
+                if (strcasecmp($row['gender'], 'male') == 1) {
                     $gender = 1;
-                } elseif (strcasecmp($row['gender'], 'female') == 0) {
+                } elseif (strcasecmp($row['gender'], 'female') == 2) {
                     $gender = 2;
                 }
                 $phone = null;
