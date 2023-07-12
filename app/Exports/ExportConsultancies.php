@@ -164,7 +164,6 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             ->where($where)
             ->orderBy('scheduled_time','asc')
             ->get();
-
         return $results;
     }
 

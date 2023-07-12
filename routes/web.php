@@ -49,7 +49,6 @@ use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\ConversionReportController;
-use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\PatientFollowupController;
 use App\Models\Appointments;
 use App\Models\Leads;
@@ -57,6 +56,7 @@ use App\Models\PackageAdvances;
 use Facade\Ignition\Support\Packagist\Package;
 use Illuminate\Support\Facades\Route;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
+use App\Http\Controllers\DashboardReportsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -576,5 +576,5 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('dashboard/follow-up-report-monthly', [DashboardReportsController::class, 'FollowUpReportMonthly'])->name('reports.follow_up_month');
         Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'PatientFollowUpReport'])->name('reports.patient_follow_up_report');
         Route::post('dashboard/patient_follow_up_report_monthly', [DashboardReportsController::class, 'LoadPatientFollowUpReportMonthly'])->name('reports.patient_follow_up_report_monthly');
-        
+        Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
     });
