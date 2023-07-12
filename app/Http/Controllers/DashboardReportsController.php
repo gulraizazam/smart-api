@@ -3289,4 +3289,62 @@ class DashboardReportsController extends Controller
         $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
         return view('admin.reports.followupmonthly', get_defined_vars());
     }
+    public function loadFollowupReport(Request $request)
+    {
+        if($request->report_type=="monthly"){
+            $where = [];
+            if ($request->date_from) {
+                $where[] = [
+                    'appointments.scheduled_date',
+                    '>=',
+                    $request->date_from . ' 00:00:00',
+                ];
+            }
+            if ($request->date_to) {
+                $where[] = [
+                    'appointments.scheduled_date',
+                    '<=',
+                    $request->date_to . ' 23:59:00',
+                ];
+            }
+            if ($request->patient_id) {
+                $where[] = [
+                    'appointments.patient_id',
+                    '=',
+                    $request->patient_id,
+                ];
+            }
+            $data = $request->all();
+            $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data , $where);
+            return view('admin.reports.patients_follow_up_report_monthly', get_defined_vars());
+        }else{
+            $where = [];
+            if ($request->date_from) {
+                $where[] = [
+                    'package_advances.created_at',
+                    '>=',
+                    $request->date_from . ' 00:00:00',
+                ];
+            }
+            if ($request->date_to) {
+                $where[] = [
+                    'package_advances.created_at',
+                    '<=',
+                    $request->date_to . ' 23:59:00',
+                ];
+            }
+            if ($request->patient_id) {
+                $where[] = [
+                    'package_advances.patient_id',
+                    '=',
+                    $request->patient_id,
+                ];
+            }
+            $data = $request->all();
+            $patient_data = GeneralFunctions::PatientFollowUpReport($data , $where);
+            return view('admin.reports.patients_follow_up_report', get_defined_vars());
+        }
+            
+        
+    }
 }
