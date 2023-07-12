@@ -1188,12 +1188,14 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
         success: function (response) {
             $('#patient-follow-up').html("");
             var TABLE_HTML = "";
+            var balance = 0;
             let patientData = response.data.patient_data;
             if (patientData.length > 0) {
                 for (let i = 0; i < patientData.length; i++) {
+                    console.log('patientData[i]' , patientData[i]);
                     let patient = patientData[i];
-
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'Not' : 'Yes') + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                    balance = patient.cash_receive - patient.settle_amount_with_tax;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'No' : 'Yes') + "</td><td>PKR: "+balance+"</td><td>" + formatDate(patient.created_at) + "</td></tr>";
                 }
             } else {
                 TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
@@ -1220,12 +1222,13 @@ function initPatientFollowUpOneMonth() {
         success: function (response) {
             $('#patient-follow-up-one-month').html("");
             var TABLE_HTML = "";
+            var balance = 0;
             let patientData = response.data.patient_data;
             if (patientData.length > 0) {
                 for (let i = 0; i < patientData.length; i++) {
                     let patient = patientData[i];
-
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'No' : 'Yes') + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                    balance = patient.cash_receive - patient.settle_amount_with_tax;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'No' : 'Yes') + "</td><td>PKR: "+balance+"</td><td>" + formatDate(patient.created_at) + "</td></tr>";
                 }
             } else {
                 TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
