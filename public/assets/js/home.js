@@ -992,7 +992,6 @@ function LoadDocWiseConversion(doc_id) {
     jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
     jQuery('.btn.doctorname').attr('data-id', doc_id);
     var centre_id = $(".doctorwiseconversion").attr('data-id');
-    DOC_ID = doc_id;
     let converted = 0;
     let arrived = 0;
     $.ajax({
@@ -1001,7 +1000,7 @@ function LoadDocWiseConversion(doc_id) {
         cache: false,
         data: {
             'period': 'thismonth',
-            'doc_id': DOC_ID,
+            'doc_id': doc_id,
             'centre_id': centre_id
         },
         success: function (response) {
