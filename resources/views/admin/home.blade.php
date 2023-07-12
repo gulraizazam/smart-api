@@ -939,6 +939,7 @@
                                                         <th class='table-cols'>Name</th>
                                                         <th class='table-cols'>Phone</th>
                                                         <th class='table-cols'>Treatment exist</th>
+                                                        <th class='table-cols'>Balance</th>
                                                         <th class='table-cols'>Conversion Date</th>
                                                     </tr>
                                                 </thead>
