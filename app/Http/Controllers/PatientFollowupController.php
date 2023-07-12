@@ -99,22 +99,18 @@ class PatientFollowupController extends Controller
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
             ])
-                ->where('base_appointment_status_id', '!=', 2)
                 ->whereIn('location_id', ACL::getUserCentres())
-                ->orderBy('created_at', 'DESC')
                 ->get();
 
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
             $data['patient_id'] = $patient->id;
             $data['name'] = $patient->name;
             $data['phone'] = $patient->phone;
-
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
-
             if (count($treatments) > 0) {
-                $check_treatments = collect($treatments)->Where('scheduled_date', '<', Carbon::now()->subDays(1)->format('Y-m-d'));
+                $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if (count($check_treatments) > 0 && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
                 }
