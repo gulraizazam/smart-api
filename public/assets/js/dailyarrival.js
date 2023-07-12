@@ -1,3 +1,6 @@
+jQuery(document).ready(function() {
+    patientSearch('appointment_patient_id');
+})
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -192,6 +195,7 @@ var loadPatientFollowUpMonthReport = function (that) {
     });
 };
 function patientSearch(search_id = 'patient_id',flag=1) {
+   
     $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
