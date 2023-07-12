@@ -856,32 +856,32 @@
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
                                                         <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="doctor_wise_conversion_list">
-                                                            <li>
+                                                            id="doctor_wise_list">
+                                                            <li class="today">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('today');">Today</a>
                                                             </li>
-                                                            <li>
+                                                            <li class="yesterday">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
                                                             </li>
-                                                            <li>
+                                                            <li class="last7days">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('last7days');">Last 7
                                                                     Days</a>
                                                             </li>
-                                                            <li>
+                                                            <li class="week">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('week');">This
                                                                     Week</a>
                                                             </li>
-                                                            <li>
+                                                            <li class="thismonth">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     class="active" active
                                                                     onclick="initDoctorWiseConversion('thismonth');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li>
+                                                            <li class="lastmonth">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('lastmonth');">Last
                                                                     Month</a>
