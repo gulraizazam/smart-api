@@ -2,30 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\ACL;
 use App;
-use App\Helpers\GeneralFunctions;
-use App\Models\RoleHasUsers;
-use App\Models\Appointments;
-use App\Models\AppointmentsDailyStats;
-use App\Models\AppointmentStatuses;
-use App\Models\AppointmentTypes;
-use App\Models\DoctorHasLocations;
+use Gate;
+use App\Helpers\ACL;
+use App\Models\User;
 use App\Models\Invoices;
-use App\Models\InvoiceStatuses;
-use App\Models\Locations;
-use App\Models\PackageAdvances;
 use App\Models\Patients;
 use App\Models\Services;
-use App\Models\User;
-use App\Reports\dashboardreport;
-use Gate;
+use App\Models\Locations;
+use App\Models\Appointments;
+use App\Models\RoleHasUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
+use App\HelperModule\ApiHelper;
+use App\Models\InvoiceStatuses;
+use App\Models\PackageAdvances;
+use App\Models\AppointmentTypes;
+use App\Reports\dashboardreport;
+use App\Helpers\GeneralFunctions;
+use App\Models\DoctorHasLocations;
 use Illuminate\Support\Facades\DB;
+use App\Models\AppointmentStatuses;
+use Illuminate\Support\Facades\Auth;
+use App\Models\AppointmentsDailyStats;
+use Illuminate\Support\Facades\Config;
 use Symfony\Component\Routing\Generator\Dumper\GeneratorDumper;
 
 class DashboardReportsController extends Controller

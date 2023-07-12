@@ -552,7 +552,7 @@
                                         <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
-                                                    @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                    @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin')|| Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance') )
                                                         @php
                                                             $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
                                                             $locations = \App\Helpers\ACL::getUserCentres();
@@ -784,7 +784,7 @@
                                                             ->get();
                                                     @endphp
                                                     <div class="btn-group">
-                                                        @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                        @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
                                                             <a data-id="all"
                                                                 class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
@@ -802,7 +802,7 @@
                                                             </a>
                                                         @endif
                                                         <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
-                                                            @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                                                            @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
                                                                 <li>
                                                                     <a class="dropdown-item" data-period="thismonth"
                                                                         data-id="all" onclick="GetDoctors('all')">All
@@ -947,7 +947,7 @@
                                         </div>
                                     </div>
                                     <div class="text-center mt-7">
-                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up')}}">View Report</a></button>
+                                        <button class="btn btn-primary btn-primary--icon p-0" id="followbtn" style="display: none;"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up')}}">View Report</a></button>
                                     </div>
                                 </div>
                             </div>
@@ -978,7 +978,7 @@
                                         </div>
                                     </div>
                                     <div class="text-center mt-7">
-                                        <button class="btn btn-primary btn-primary--icon p-0"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up_month')}}">View Report</a></button>
+                                        <button class="btn btn-primary btn-primary--icon p-0" id="mfollowbtn" style="display: none;"><a class="py-3 d-block px-7" style="color:#fff;" href="{{route('admin.reports.follow_up_month')}}">View Report</a></button>
                                     </div>
                                 </div>
                             </div>
@@ -1037,7 +1037,7 @@
 
                     initCentreWiseArrival('thismonth', '', 'firsttime');
                 @endif
-                @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin'))
+                @if (Auth::user()->hasRole('Administrator') || Auth::user()->hasRole('Super-Admin') || Auth::user()->hasRole('Head of Operations') || Auth::user()->hasRole('Finance'))
                     GetAllDoctors(centre_id);
                 @else
                     $('.loader-imgs').css('display', "none");
@@ -1336,12 +1336,12 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.60) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     patient_follow_up) {
                     patient_follow_up = true;
                     initPatientFollowUp('thismonth', '');
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.61) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     patient_follow_up_one_month) {
                     patient_follow_up_one_month = true;
                     initPatientFollowUpOneMonth();

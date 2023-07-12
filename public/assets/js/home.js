@@ -1199,6 +1199,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             }
 
             $('#patient-follow-up').append(TABLE_HTML);
+            $('#followbtn').css('display','inline-block');
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -1223,17 +1224,19 @@ function initPatientFollowUpOneMonth() {
                 for (let i = 0; i < patientData.length; i++) {
                     let patient = patientData[i];
 
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'Not' : 'Yes') + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + patient.phone + "</td><td>" + ((patient.is_treatment == 0) ? 'No' : 'Yes') + "</td><td>" + formatDate(patient.created_at) + "</td></tr>";
                 }
             } else {
                 TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
             }
 
             $('#patient-follow-up-one-month').append(TABLE_HTML);
+            $('#mfollowbtn').css('display','inline-block');
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
 }
+
 
