@@ -86,7 +86,7 @@ class PatientFollowupController extends Controller
             ->whereIn('package_advances.location_id', $center_id)
             ->groupBy('package_advances.patient_id')
             ->orderBy('package_advances.patient_id', 'DESC')
-            ->limit(20)
+            ->limit(500)
             ->get();
         $plans_check_array = json_decode(json_encode($plans_check), true);
         $not_treatment = [];
@@ -114,7 +114,7 @@ class PatientFollowupController extends Controller
             if (count($treatments) > 0) {
                 $check_treatments = collect($treatments)->Where('scheduled_date', '<', Carbon::now()->subDays(1)->format('Y-m-d'));
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if (count($check_treatments) > 0 && $future_treatments->isEmpty()) {
+                if (count($check_treatments) > 0 && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
                 }
@@ -128,7 +128,7 @@ class PatientFollowupController extends Controller
         $patient_data = array_merge(array_slice($is_treatment, 0, 10), array_slice($not_treatment, 0, 10));
 
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => $patient_data
+            'patient_data' => array_slice($patient_data, 0, 15)
         ]);
     }
 
@@ -189,7 +189,7 @@ class PatientFollowupController extends Controller
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
-            ->take(300)
+            ->take(2000)
             ->get();
         $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts) {
             $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
@@ -225,7 +225,8 @@ class PatientFollowupController extends Controller
             }
         }
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => $patient_data
+            'patient_data' => array_slice($patient_data, 0, 15)
         ]);
     }
 }
+
