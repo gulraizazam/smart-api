@@ -817,36 +817,14 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, time = '') {
-
-    $("#doctor_wise_conversion_list .active").removeClass('active');
-    $("#doctor_wise_conversion_list").addClass('active');
-    $(".doctor_period").text("Today");
-    if (period == "today") {
-        $(".doctor_period").html('Today <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "yesterday") {
-        $(".doctor_period").html('Yesterday <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "last7days") {
-        $(".doctor_period").html('Last 7 Days <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "week") {
-        $(".doctor_period").html('This Week <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "thismonth") {
-        $(".doctor_period").html('This Month <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "lastmonth") {
-        $(".doctor_period").html('Last Month <i class="fa fa-angle-down"></i>');
-    }
-
+    dropDownList('doctor', period);
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
     $('.loader-imgs').css('display', "block");
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
-    CENTRE_ID = centre_id;
+    CENTRE_ID = centre_id;console.log(centre_id)
     var doc_id = $(".doctorname").attr('data-id');
     DOC_ID = doc_id;
     let converted = 0;
@@ -923,13 +901,11 @@ function GetDoctors(centre_id, time = '') {
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
-    $('#doctor_wise_conversion_list .active').removeClass('active');
-    $('#doctor_wise_conversion_list').addClass('active');
+    dropDownList('doctor', 'thismonth');
     $('#doc_nav').empty();
     $(".doctorname").attr('data-id', '');
     $(".doctorname").html('Select doctor <i class="fa fa-angle-down"></i>');
     $("#categories-table-body").html('');
-    $('.arrivalbtn').text();
     let converted = 0;
     let arrived = 0;
     let avg_sum = 0;
@@ -1234,26 +1210,26 @@ function initPatientFollowUpOneMonth() {
     });
 }
 
-function dropDownList(report, period, id) {
+function dropDownList(report, period) {
     $("#" + report + "_wise_list .active").removeClass('active');
-    $("#" + report + "_wise_list li." + period + " a").addClass('active');
+    $("#" + report + "_wise_list li." + period + " a").addClass('active');console.log($("." + report + "_period"));
     if (period == "today") {
-        $("."+ report +"_period").html('Today <i class="fa fa-angle-down"></i>');
+        $("." + report + "_period").html('Today <i class="fa fa-angle-down"></i>');
     }
     if (period == "yesterday") {
-        $("."+ report +"_period").html('Yesterday <i class="fa fa-angle-down"></i>');
+        $("." + report + "_period").html('Yesterday <i class="fa fa-angle-down"></i>');
     }
     if (period == "last7days") {
-        $("."+ report +"_period").html('Last 7 Days <i class="fa fa-angle-down"></i>');
+        $("." + report + "_period").html('Last 7 Days <i class="fa fa-angle-down"></i>');
     }
     if (period == "week") {
-        $("."+ report +"_period").html('This Week <i class="fa fa-angle-down"></i>');
+        $("." + report + "_period").html('This Week <i class="fa fa-angle-down"></i>');
     }
     if (period == "thismonth") {
-        $("."+ report +"_period").html('This Month <i class="fa fa-angle-down"></i>');
+        $("." + report + "_period").html('This Month <i class="fa fa-angle-down"></i>');
     }
     if (period == "lastmonth") {
-        $("."+ report +"_period").html('Last Month <i class="fa fa-angle-down"></i>');
+        $("." + report + "_period").html('Last Month <i class="fa fa-angle-down"></i>');
     }
 }
 
