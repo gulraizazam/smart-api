@@ -134,6 +134,7 @@ var loadPatientFollowUpReport = function (that) {
         url: route('admin.reports.patient_follow_up_report'),
         type: "POST",
         data: {
+            report_type: $('#report_types').val(),
             location_id: $('#location_id').val(),
             date_from: $('#followup_search_created_from').val(),
             date_to: $('#followup_search_created_to').val(),
@@ -142,7 +143,7 @@ var loadPatientFollowUpReport = function (that) {
         success: function(response){
             $('#followup_content').html('');
             $('#followup_content').html(response);
-            $("#follow_up_table").DataTable({
+            $(".follow_up_table").DataTable({
                 dom: 'Bfrtip',
                 buttons: [
                     'excelHtml5',
