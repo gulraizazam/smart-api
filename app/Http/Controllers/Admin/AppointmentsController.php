@@ -2442,22 +2442,28 @@ class AppointmentsController extends Controller
                 }
             }
         }
+        // $machines = Resources::where([
+        //     ['resource_type_id', '=', config('constants.resource_room_type_id')],
+        //     ['location_id', '=', $appointment->location_id],
+        //     ['account_id', '=', Auth::user()->account_id]],
+        //     ['actvie', '=', 1]
+        // )->get();
+        /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
+        // foreach ($machines as $machine) {
+        //     $machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
+        //     $machine_serivce = AppointmentEditWidget::loadmachinetypeservice_edit($machinetypeid->id, Auth::User()->account_id, 'true');
+        //     if (in_array($serviceid->id, $machine_serivce)) {
+        //         $machineids[] = $machine->id;
+        //     }
+        // }
+        //$machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
+        /*End*/
         $machines = Resources::where([
             ['resource_type_id', '=', config('constants.resource_room_type_id')],
             ['location_id', '=', $appointment->location_id],
             ['account_id', '=', Auth::user()->account_id]],
             ['actvie', '=', 1]
-        )->get();
-        /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
-        foreach ($machines as $machine) {
-            $machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
-            $machine_serivce = AppointmentEditWidget::loadmachinetypeservice_edit($machinetypeid->id, Auth::User()->account_id, 'true');
-            if (in_array($serviceid->id, $machine_serivce)) {
-                $machineids[] = $machine->id;
-            }
-        }
-        $machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
-        /*End*/
+        )->get()->pluck('name', 'id');
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
         return ApiHelper::apiResponse($this->success, 'Data found.', true, [
