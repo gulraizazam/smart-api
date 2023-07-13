@@ -4488,9 +4488,45 @@ class AppointmentsController extends Controller
             }
         }
         $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
-        // if(!$lead){
-        //     return ApiHelper::apiResponse($this->success, 'Lead of this patient does not exist. Please create lead first.', false);
-        // }
+        if (!$lead) {
+            $lead_obj = $appointment_data;
+           $patient = Patients::whereId($lead_obj['patient_id'])->first();
+            // Convert Lead status to Converted
+            $DefaultConvertedLeadStatus = LeadStatuses::where([
+                'account_id' => Auth::User()->account_id,
+                'is_converted' => 1,
+            ])->first();
+            if ($DefaultConvertedLeadStatus) {
+                $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
+            } else {
+                $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
+            }
+            $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
+            $lead_obj['created_at'] = Filters::getCurrentTimeStamp();
+            $lead_obj['updated_at'] = Filters::getCurrentTimeStamp();
+            $lead_obj['location_id'] = $request->location_id;
+            $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
+            $lead_obj['gender'] = $patient->gender;
+           
+                $appointment_data['user_type_id'] = 3;
+                $checkLeadExistance = Leads::updateOrCreate([
+                    'phone' => $appointment_data['phone'],
+                    'account_id' => Auth::User()->account_id,
+                ], $lead_obj);
+                $lead = $checkLeadExistance;
+                LeadsServices::updateOrCreate([
+                    'lead_id' => $lead->id,
+                    'service_id' => $appointment_data['service_id'],
+                ], [
+                    'lead_id' => $lead->id,
+                    'service_id' => $appointment_data['service_id'],
+                ]);
+                LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
+                $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
+                $lead_service->update(['status' => 1]);
+            
+        }
+       
         $patientData = $appointment_data;
         Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
         $appointment_data['lead_id'] = $lead->id ?? null;
