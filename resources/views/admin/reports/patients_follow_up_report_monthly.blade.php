@@ -32,7 +32,7 @@
                
             </div>
             <div class="table-wrapper all-sections section-detail" id="topscroll">
-                <table class="table" id="follow_up_monthly_table">
+                <table class="table follow_up_table" >
                     <thead>
                     <tr>
                     <th class='table-cols'>Patient Id</th>

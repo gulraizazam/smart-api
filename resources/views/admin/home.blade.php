@@ -946,6 +946,7 @@
                                                             <th class='table-cols'>Name</th>
                                                             <th class='table-cols'>Phone</th>
                                                             <th class='table-cols'>Treatment exist</th>
+                                                            <th class='table-cols'>Balance</th>
                                                             <th class='table-cols'>Conversion Date</th>
                                                         </tr>
                                                     </thead>
@@ -981,6 +982,7 @@
                                                             <th class='table-cols'>Name</th>
                                                             <th class='table-cols'>Phone</th>
                                                             <th class='table-cols'>Treatment exist</th>
+                                                            <th class='table-cols'>Balance</th>
                                                             <th class='table-cols'>Conversion Date</th>
                                                         </tr>
                                                     </thead>
@@ -991,7 +993,7 @@
                                         <div class="text-center mt-7">
                                             <button class="btn btn-primary btn-primary--icon p-0" id="mfollowbtn"
                                                 style="display: none;"><a class="py-3 d-block px-7" style="color:#fff;"
-                                                    href="{{ route('admin.reports.follow_up_month') }}">View
+                                                    href="{{ route('admin.reports.follow_up') }}">View
                                                     Report</a></button>
                                         </div>
                                     </div>

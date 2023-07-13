@@ -1422,10 +1422,11 @@ class LeadsController extends Controller
                 $child_service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['treatment'], 'parent_id' => $service_id])->first()->id ?? null;
                 $location_id = Locations::where(['account_id' => Auth::User()->account_id, 'name' => $row['centre']])->first()->id ?? null;
 
-                $gender = 0;
-                if (strcasecmp($row['gender'], 'male') == 1) {
+                $gender = 1;
+                $check_gender = trim($row['gender'], " ");
+                if (strcasecmp($check_gender, 'male') == 0) {
                     $gender = 1;
-                } elseif (strcasecmp($row['gender'], 'female') == 2) {
+                } elseif (strcasecmp($check_gender, 'female') == 0) {
                     $gender = 2;
                 }
                 $phone = null;
