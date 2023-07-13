@@ -1135,9 +1135,11 @@ class AppointmentsController extends Controller
         }
         if (hasFilter($filters, 'service_id')) {
             $service_id = GeneralFunctions::getServiceId($filters['service_id']);
-            $service_check = Services::where(['id' => $service_id])->first();
+            $service_check = Services::find($service_id);
             if ($service_check->parent_id == 0) {
-                $service_ids = Services::where(['parent_id' => $service_check->id])->pluck('id')->toArray();
+                $service_ids = ($service_check->id == 13)
+                    ? Services::pluck('id')
+                    : Services::where(['parent_id' => $service_check->id])->pluck('id');
             } else {
                 $service_ids = [$service_check->id];
             }
@@ -1770,7 +1772,7 @@ class AppointmentsController extends Controller
                 }else{
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
                 }
-                
+
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
@@ -4523,7 +4525,7 @@ class AppointmentsController extends Controller
                 ]);
             }
         }
-        
+
 
         Appointments::where(['patient_id' => $appointment_data['patient_id']])->update(['name' => $appointment_data['name'], 'updated_at' => $appointment_data['updated_at']]);
         if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
