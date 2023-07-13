@@ -165,7 +165,7 @@ $(document).ready(function () {
 
         var status = true;
         if ($('#cash').val() == "") {
-            toastr.warning("Amount field con not be empty")
+            toastr.warning("Amount field can not be empty")
             status = false;
             $(this).attr("disabled", false);
             hideSpinner();
