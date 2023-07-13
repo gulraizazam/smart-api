@@ -36,6 +36,16 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
+                                    <div class="form-group col-md-3 "
+                                             id="report_type_div">
+                                            {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
+                                            <select class="form-control " id="report_types" name="report_type">
+                                                <option value="">Select Report</option>
+                                                <option value="weekly">Weekly Follow Up</option>
+                                                <option value="monthly">Monthly Follow Up</option>
+                                            </select>
+                                            
+                                        </div>
                                     <div class="form-group col-md-2">
                                         <label>Patient Search:</label>
                                         <input class="form-control filter-field appointment_patient_id" onchange="SetPatient()">
