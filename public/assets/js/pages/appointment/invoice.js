@@ -164,7 +164,13 @@ $(document).ready(function () {
         $('#customfield').hide();
 
         var status = true;
-
+        if ($('#cash').val() == "") {
+            toastr.warning("Amount field con not be empty")
+            status = false;
+            $(this).attr("disabled", false);
+            hideSpinner();
+            return;
+        }
         var appointment_id = $('#invoice_appointment_id').val();
         var amount_create = $('.amount').val();
         var tax_create = $('.tax').val();
