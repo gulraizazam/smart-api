@@ -54,7 +54,6 @@
                                         <i class="font-icon la la-home"></i>
                                     </span>
                             <span class="menu-text">Dashboard</span>
-                            @if(Route::current()->getName() == 'admin.home') @section('title', 'Dashboard') @endif
                         </a>
                     </li>
 
