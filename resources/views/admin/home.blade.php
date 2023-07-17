@@ -1,4 +1,5 @@
 @extends('admin.layouts.master')
+{{-- @dd() --}}
 @section('content')
     <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
