@@ -3,8 +3,8 @@
 <!--begin::Head-->
 <head>
     <meta charset="utf-8" />
-    <title>Cutera Aesthetics | @isset($title)
-            {{ $title }}
+    <title>Cutera Aesthetics @isset($title)
+            | {{ $title }}
         @endisset
     </title>
     <meta
