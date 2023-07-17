@@ -155,24 +155,6 @@ class ViewTitleServiceProvider extends ServiceProvider
                 case 'follow-up-report':
                     $title = 'Patients Follow Up Report';
                     break;
-                case '':
-                    $title = '';
-                    break;
-                case '':
-                    $title = '';
-                    break;
-                case '':
-                    $title = '';
-                    break;
-                case '':
-                    $title = '';
-                    break;
-                case '':
-                    $title = '';
-                    break;
-                case '':
-                    $title = '';
-                    break;
                 default:
                     $title = null;
                     break;
