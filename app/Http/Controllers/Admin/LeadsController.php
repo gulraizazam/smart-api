@@ -35,7 +35,6 @@ use File;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
-use PhpOffice\PhpSpreadsheet\IOFactory;
 use Rap2hpoutre\FastExcel\FastExcel;
 use Validator;
 
@@ -1415,7 +1414,7 @@ class LeadsController extends Controller
             }
 
             foreach ($rows as $row) {
-                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id;
+                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id ?? null;
                 $region_id = Cities::where(['account_id' => Auth::User()->account_id, 'id' => $city_id])->first()->region_id ?? null;
                 $lead_source_id = LeadSources::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_source']])->first()->id ?? Config::get('constants.lead_source_social_media');
                 $lead_status_id = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_status']])->first()->id ?? Config::get('constants.lead_status_open');
@@ -1434,8 +1433,6 @@ class LeadsController extends Controller
                 $phone = null;
                 if (strlen($row['phone']) >= 10 && strlen($row['phone']) <= 12) {
                     $phone = GeneralFunctions::cleanNumber($row['phone']);
-                } else {
-                    $un_valid_phone_list[] = $row['phone'];
                 }
 
                 $lead_data = [
@@ -1472,6 +1469,23 @@ class LeadsController extends Controller
                             $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
                                 'phone' => $phone,
                             ], $lead_data);
+
+                            $this->leadService($lead->id, $service_id, $child_service_id);
+                        }
+                        if ($request->update_records != '1' && in_array($phone, $found_patients)) {
+                            $update_lead = [
+                                'created_by' => Auth::User()->id,
+                                'updated_by' => Auth::User()->id,
+                                'converted_by' => Auth::User()->id,
+                                'created_at' => Carbon::now(),
+                                'updated_at' => Carbon::now(),
+                            ];
+                            if ($request->get('skip_lead_statuses') != '1') {
+                                $update_lead['lead_status_id'] = $lead_status_id;
+                            }
+                            $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
+                                'phone' => $phone,
+                            ], $update_lead);
 
                             $this->leadService($lead->id, $service_id, $child_service_id);
                         }
