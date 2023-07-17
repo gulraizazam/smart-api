@@ -1414,7 +1414,7 @@ class LeadsController extends Controller
             }
 
             foreach ($rows as $row) {
-                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id;
+                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id ?? null;
                 $region_id = Cities::where(['account_id' => Auth::User()->account_id, 'id' => $city_id])->first()->region_id ?? null;
                 $lead_source_id = LeadSources::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_source']])->first()->id ?? Config::get('constants.lead_source_social_media');
                 $lead_status_id = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_status']])->first()->id ?? Config::get('constants.lead_status_open');
