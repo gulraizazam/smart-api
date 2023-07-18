@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Package List')
 @section('content')
 
     <!--begin::Content-->

@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Plans')
 @section('content')
 <style>
     .form-control:disabled, .form-control[readonly] {

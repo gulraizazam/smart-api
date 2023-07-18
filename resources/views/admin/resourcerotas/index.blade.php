@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Rota Management')
 @section('content')
 
     <!--begin::Content-->
