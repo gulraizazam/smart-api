@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Treatments')
 @section('content')
 
     @push('css')

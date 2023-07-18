@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Rota Calendar')
 @section('content')
 
     @push('css')

@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Non Plan Refunds')
 @section('content')
 
     <!--begin::Content-->
