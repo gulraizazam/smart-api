@@ -1473,6 +1473,23 @@ class LeadsController extends Controller
 
                             $this->leadService($lead->id, $service_id, $child_service_id);
                         }
+                        if ($request->update_records != '1' && in_array($phone, $found_patients)) {
+                            $update_lead = [
+                                'created_by' => Auth::User()->id,
+                                'updated_by' => Auth::User()->id,
+                                'converted_by' => Auth::User()->id,
+                                'created_at' => Carbon::now(),
+                                'updated_at' => Carbon::now(),
+                            ];
+                            if ($request->get('skip_lead_statuses') != '1') {
+                                $update_lead['lead_status_id'] = $lead_status_id;
+                            }
+                            $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
+                                'phone' => $phone,
+                            ], $update_lead);
+
+                            $this->leadService($lead->id, $service_id, $child_service_id);
+                        }
                     }
                 } else {
                     if ($service_id == null) {
