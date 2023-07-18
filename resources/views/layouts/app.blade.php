@@ -2,7 +2,7 @@
 <html lang="en">
 <!--begin::Head-->
 <head>
-    <title>Cutera Aesthetics</title>
+    <title>Cutera Aesthetics | @yield('title')</title>
     <meta charset="utf-8" />
     <meta name="description" content="Smart Aesthetic" />
     <meta name="keywords" content="Smart Aesthetic" />
