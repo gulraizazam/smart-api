@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'SMS Templates')
 @section('content')
 
     <!--begin::Content-->
