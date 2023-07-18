@@ -1,4 +1,5 @@
 @extends('admin.layouts.master')
+@section('title', 'Patient')
 @section('content')
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
