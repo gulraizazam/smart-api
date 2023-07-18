@@ -52,7 +52,6 @@
                                             </g>
                                         </svg>--}}
                                         <i class="font-icon la la-home"></i>
-
                                     </span>
                             <span class="menu-text">Dashboard</span>
                         </a>
@@ -904,7 +903,7 @@
 
                     <!-- End Inventory menu -->
 
-                   
+
                         <li class="menu-item menu-item-submenu {{openMenu([
                             'admin.reports.finance_reports',
                             'admin.reports.operations_report'
@@ -951,7 +950,7 @@
 
                                     </ul>
                                 </div>
-                                
+
                             @endcan
                             @can('non_converted_customers_manage')
                             <div class="menu-submenu">
@@ -981,7 +980,7 @@
                                                  <span class="menu-text">Conversion Report </span>
                                              </a>
                                          </li>
- 
+
                                      </ul>
                                  </div>
                                 @endcan
@@ -1014,10 +1013,10 @@
                                         </li>
                                     </ul>
                                 </div>
-                                
+
                                 @endcan
                         </li>
-                   
+
 
                 </ul>
                 <!--end::Menu Nav-->

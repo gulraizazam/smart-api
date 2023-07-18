@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Orders')
 @section('content')
 
     <!--begin::Content-->
@@ -35,7 +35,7 @@
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            
+
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
