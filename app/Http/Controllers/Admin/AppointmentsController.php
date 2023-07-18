@@ -2285,9 +2285,10 @@ class AppointmentsController extends Controller
         }else{
             $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
         }
-        dd($doctors);
+       
         /*End*/
         if ($doctors_no_final) {
+            dd("here");
             foreach ($doctors_no_final as $key => $doctor) {
                 $resource = Resources::where('external_id', '=', $key)->first();
                 $doctor_rota = ResourceHasRota::where([
