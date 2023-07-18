@@ -2280,7 +2280,7 @@ class AppointmentsController extends Controller
            
             $doctor_ids = DoctorHasLocations::where('location_id' ,$appointment->location_id )->groupBy('user_id')->pluck('user_id');
            
-            $doctors = Doctors::whereIn('id',$doctor_ids)->where('active' , 1)->get()->pluck('name', 'id');
+            $doctors = Doctors::whereIn('id',$doctor_ids)->get()->pluck('name', 'id');
             
         }else{
             $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
