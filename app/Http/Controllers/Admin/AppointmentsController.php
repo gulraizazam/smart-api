@@ -2284,22 +2284,23 @@ class AppointmentsController extends Controller
             
         }else{
             $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
-        }
-       
-        /*End*/
-        if ($doctors_no_final) {
-            dd("here");
-            foreach ($doctors_no_final as $key => $doctor) {
-                $resource = Resources::where('external_id', '=', $key)->first();
-                $doctor_rota = ResourceHasRota::where([
-                    ['resource_id', '=', $resource?->id],
-                    ['is_consultancy', '=', '1'],
-                ])->get();
-                if (count($doctor_rota) == 0) {
-                    unset($doctors[$key]);
+            if ($doctors_no_final) {
+           
+                foreach ($doctors_no_final as $key => $doctor) {
+                    $resource = Resources::where('external_id', '=', $key)->first();
+                    $doctor_rota = ResourceHasRota::where([
+                        ['resource_id', '=', $resource?->id],
+                        ['is_consultancy', '=', '1'],
+                    ])->get();
+                    if (count($doctor_rota) == 0) {
+                        unset($doctors[$key]);
+                    }
                 }
             }
         }
+       
+        /*End*/
+        
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
         $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
