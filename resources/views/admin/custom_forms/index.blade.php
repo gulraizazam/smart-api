@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Custom Forms')
 @section('content')
 
     <!--begin::Content-->

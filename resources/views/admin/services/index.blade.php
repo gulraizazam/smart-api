@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Services')
 @section('content')
     @push('css')
         <style>
@@ -150,7 +150,7 @@
                     $('.servicefield').show();
                 }else{
                     $('.servicefield').hide();
-                }     
+                }
             }
         </script>
     @endpush

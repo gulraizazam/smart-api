@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Centres')
 @section('content')
 
     <!--begin::Content-->

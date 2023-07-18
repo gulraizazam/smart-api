@@ -3,9 +3,7 @@
 <!--begin::Head-->
 <head>
     <meta charset="utf-8" />
-    <title>Cutera Aesthetics @isset($title)
-            | {{ $title }}
-        @endisset
+    <title>Cutera Aesthetics | @yield('title')
     </title>
     <meta
         content="Cutera Aesthetic is a Medical Spa offering more than 60 treatment for skin rejuvenation and body contouring"

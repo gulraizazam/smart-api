@@ -1,4 +1,5 @@
 @extends('admin.layouts.master')
+@section('title', 'Consultations')
 @section('content')
     @push('css')
         <link href="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css')}}" rel="stylesheet" type="text/css" />
