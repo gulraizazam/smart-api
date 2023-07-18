@@ -1479,6 +1479,7 @@ class LeadsController extends Controller
                                 'converted_by' => Auth::User()->id,
                                 'created_at' => Carbon::now(),
                                 'updated_at' => Carbon::now(),
+                                'location_id' => $location_id,
                             ];
                             if ($request->get('skip_lead_statuses') != '1') {
                                 $update_lead['lead_status_id'] = $lead_status_id;
