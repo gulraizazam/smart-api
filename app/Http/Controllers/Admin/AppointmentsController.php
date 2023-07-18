@@ -2277,9 +2277,10 @@ class AppointmentsController extends Controller
             }
         }
         if(Gate::allows('edit_after_arrived')){
-            dd("here");
+           
             $doctor_ids = DoctorHasLocations::whereIn('location_id' ,$locationsids )->pluck('user_id');
             $doctors = Doctors::whereIn('id',$doctor_ids)->where('active' , 1)->get()->pluck('name', 'id');
+            dd($doctors , $locationsids);
         }else{
             $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
         }
