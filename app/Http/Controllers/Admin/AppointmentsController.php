@@ -2265,17 +2265,25 @@ class AppointmentsController extends Controller
                 $doctorids[] = $key;
             }
         }
-        $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
-        /*End*/
-        if ($doctors_no_final) {
-            foreach ($doctors_no_final as $key => $doctor) {
-                $resource = Resources::where('external_id', '=', $key)->first();
-                $doctor_rota = ResourceHasRota::where([
-                    ['resource_id', '=', $resource?->id],
-                    ['is_consultancy', '=', '1'],
-                ])->get();
-                if (count($doctor_rota) == 0) {
-                    unset($doctors[$key]);
+        if(Gate::allows('edit_after_arrived')){
+           
+            $doctor_ids = DoctorHasLocations::where('location_id' ,$appointment->location_id )->groupBy('user_id')->pluck('user_id');
+           
+            $doctors = Doctors::whereIn('id',$doctor_ids)->where('active' , 1)->get()->pluck('name', 'id');
+            
+        }else{
+            $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
+            if ($doctors_no_final) {
+           
+                foreach ($doctors_no_final as $key => $doctor) {
+                    $resource = Resources::where('external_id', '=', $key)->first();
+                    $doctor_rota = ResourceHasRota::where([
+                        ['resource_id', '=', $resource?->id],
+                        ['is_consultancy', '=', '1'],
+                    ])->get();
+                    if (count($doctor_rota) == 0) {
+                        unset($doctors[$key]);
+                    }
                 }
             }
         }
