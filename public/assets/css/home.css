@@ -164,3 +164,6 @@ img.loader-imgs {
     margin-top: 120px;
     height: 100px;
 }
+.dropdown-menu li a:hover{
+    cursor: pointer;
+}

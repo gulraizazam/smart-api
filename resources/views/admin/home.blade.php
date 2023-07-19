@@ -840,7 +840,7 @@
                                                             aria-expanded="false" id="all_docs"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_nav">
 
                                                         </ul>
                                                     </div>
