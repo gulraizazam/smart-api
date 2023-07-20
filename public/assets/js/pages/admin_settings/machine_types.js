@@ -141,9 +141,9 @@ function setEditData(response) {
         else{
             service_value='\t&nbsp; \t&nbsp; \t&nbsp;'+value[1].name;
         }
-        service_options += '<option value="' + (index==0 ? '13': value[1].id) + '">' + service_value + '</option>';
+        
+        service_options += '<option value="' + (value[1].id) + '">' + service_value + '</option>';
     });
-   
     $("#edit_machine_types_services").html(service_options);
     $("#edit_machine_types_services").val(service_machine_type).change();
 
@@ -201,7 +201,7 @@ function setFilters(filter_values, active_filters) {
     let status = filter_values.status;
     let status_options = '<option value="">All</option>';
     let services = filter_values.services;
-    let services_options = '';
+    let services_options = '<option value="">Select</option>';
 
     Object.entries(status).forEach(function (value, index) {
         status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
