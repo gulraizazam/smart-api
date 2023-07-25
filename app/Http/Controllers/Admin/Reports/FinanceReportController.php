@@ -84,7 +84,12 @@ class FinanceReportController extends Controller
         $operators->prepend('All', '');
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
-        $locations->prepend('All', '');
+        if(Auth::user()->hasRole('FDM')){
+            $locations;
+        } else {
+            $locations->prepend('All', '');
+        }
+
 
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
 

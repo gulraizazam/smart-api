@@ -1168,7 +1168,7 @@ function setFilters(filter_values, active_filters) {
         let service_options = '<option value=""></option>';
         Object.values(services).forEach(function (service, index) {
             if (service.name == 'All Services') {
-                service_options += '<option value="' + service.id + '">' + service.name + '</option>';
+                service_options += '<option value="' + service.id + '" selected>' + service.name + '</option>';
             } else {
                 service_options += '<option value="bold-' + service.id + '">' + service.name + '</option>';
                 Object.values(service.children).forEach(function (child, index) {
