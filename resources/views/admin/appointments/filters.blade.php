@@ -59,7 +59,7 @@
 
        <div class="filterouterdiv  mb-0 appoint_search_status">
             <label>Service:</label>
-            <select class="form-control filter-field select2" id="appoint_search_service" onchange="SetService()"></select>
+            <select class="form-control filter-field" id="appoint_search_service" onchange="SetService()"></select>
         </div>
 
         <div class="filterouterdiv  mb-0 doctor-filter">
