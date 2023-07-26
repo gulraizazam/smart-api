@@ -5,12 +5,13 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Models\Patients;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 use App\Models\Appointments;
 use Illuminate\Http\Request;
 use App\Exports\ExportFollowUp;
 use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Config;
@@ -95,7 +96,7 @@ class PatientFollowupController extends Controller
         $not_treatment = [];
         $is_treatment = [];
         $patient_data = [];
-        $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+        $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(3))->pluck('patient_id')->toArray();
 
         foreach ($plans_check_array as $data) {
             $treatments = Appointments::where([
@@ -107,19 +108,21 @@ class PatientFollowupController extends Controller
 
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
             $data['patient_id'] = $patient->id;
-            $data['name'] = $patient->name;
+            $data['name'] = Str::limit($patient->name,16,$end="...");
             $data['phone'] = $patient->phone;
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
+            $data['created_at'] = Carbon::parse($data['created_at'])->format('Y-m-d');
             if (count($treatments) > 0) {
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
                 }
             } else {
                 if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 0;
+                    
                     array_push($not_treatment, $data);
                 }
             }
@@ -218,7 +221,7 @@ class PatientFollowupController extends Controller
         $is_treatment = [];
         $patient_data = [];
         $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
-            ->where('created_at', '<', Carbon::now()->subDays(7))
+            ->where('created_at', '<', Carbon::now()->subDays(3))
             ->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
@@ -236,7 +239,7 @@ class PatientFollowupController extends Controller
             if (count($treatments) > 0) {
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
                 }
@@ -352,13 +355,13 @@ class PatientFollowupController extends Controller
                 if ($check_treatments->base_appointment_status_id == 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                         $data['is_treatment'] = 1;
+                        $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
                     }
                 }
             }
            
         }
-       //return view('admin.reports.monthlyfollowup-pdf' , compact('patient_data'));
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.monthlyfollowup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
@@ -453,7 +456,7 @@ class PatientFollowupController extends Controller
                 ->get();
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
             $data['patient_id'] = $patient->id;
-            $data['name'] = $patient->name;
+            $data['name'] = Str::limit($patient->name,16,$end="...");
             $data['phone'] = $patient->phone;
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
 
@@ -463,6 +466,7 @@ class PatientFollowupController extends Controller
                 if ($check_treatments->base_appointment_status_id == 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                         $data['is_treatment'] = 1;
+                        $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
                     }
                 }
