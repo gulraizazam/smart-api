@@ -204,6 +204,9 @@ var something = (function() {
 })();
 let loadDoctors = function (locationId, appointment = null) {
     if (locationId != '' && locationId != null) {
+        $('#treatment_doctor_filter').removeAttr('disabled');
+        $('#treatment_resource_filter').removeAttr('disabled');
+        $('#consultancy_doctor_filter').removeAttr('disabled');
         $.ajax({
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
