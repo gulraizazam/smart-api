@@ -222,14 +222,14 @@
                         </div>
                         @endif
                         @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;overflow-y: auto;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
                                     <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Unattended Payments Report</span>
+                                        <span class="dashboard-counter text-uppercase">Unattended Payments</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
@@ -339,14 +339,14 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                             style="min-height: 605px;overflow-y: auto;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Overdue Treatments Report</span>
+                                        <span class="dashboard-counter text-uppercase">Overdue Treatments</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
