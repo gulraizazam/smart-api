@@ -56,7 +56,7 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <input  class="form-control treatment_patient_search_id">
+                            <input  class="form-control treatment_patient_search_id" placeholder="Patients Search">
 
                             <input type="hidden" id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))"  name="patient_id" class="filter-field search_field">
                             <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>

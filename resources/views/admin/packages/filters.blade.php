@@ -9,7 +9,7 @@
 
         <div class="col-lg-2 mb-lg-0 mb-6" id="patient_id">
             <label>Patient Search:</label>
-            <input style="width: 110%;" class="form-control filter-field patient_id">
+            <input style="width: 110%;" class="form-control filter-field patient_id"  placeholder="Patients Search">
             <input type="hidden" class="filter-field search_field" id="search_patient_id">
             <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:3px;"><i class="fa fa-times" aria-hidden="true"></i></span>
             <div class="suggesstion-box" style="display: none;">
