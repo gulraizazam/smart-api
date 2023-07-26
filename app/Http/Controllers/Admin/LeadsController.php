@@ -1473,7 +1473,6 @@ class LeadsController extends Controller
                         }
                         if ($request->update_records != '1' && in_array($phone, $found_patients)) {
                             $update_lead = [
-                                'location_id' => $location_id,
                                 'created_by' => Auth::User()->id,
                                 'updated_by' => Auth::User()->id,
                                 'converted_by' => Auth::User()->id,
@@ -1481,8 +1480,9 @@ class LeadsController extends Controller
                                 'updated_at' => Carbon::now(),
                                 'location_id' => $location_id,
                             ];
-                            $update_lead['lead_status_id'] = $lead_status_id;
-
+                            if ($request->get('skip_lead_statuses') != '1') {
+                                $update_lead['lead_status_id'] = $lead_status_id;
+                            }
                             $lead = Leads::orderBy('id', 'desc')->updateOrCreate([
                                 'phone' => $phone,
                             ], $update_lead);
