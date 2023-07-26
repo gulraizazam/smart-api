@@ -229,7 +229,7 @@
                                     <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Follow Up Report</span>
+                                        <span class="dashboard-counter text-uppercase">Unattended Payments Report</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
@@ -260,7 +260,7 @@
                                                             <th class='table-cols'>Name</th>
                                                             <th class='table-cols'>Treatment</th>
                                                             <th class='table-cols'>Balance</th>
-                                                            <th class='table-cols'>Con. Date</th>
+                                                            <th class='table-cols'>Conversion Date</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="patient-follow-up"></tbody>
@@ -346,7 +346,7 @@
                                     <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Follow Up Report One Month</span>
+                                        <span class="dashboard-counter text-uppercase">Overdue Treatments Report</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
@@ -376,7 +376,7 @@
                                                             <th class='table-cols'>ID</th>
                                                             <th class='table-cols'>Name</th>
                                                             <th class='table-cols'>Balance</th>
-                                                            <th class='table-cols'>Con. Date</th>
+                                                            <th class='table-cols'>Last Arrived</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="patient-follow-up-one-month"></tbody>
