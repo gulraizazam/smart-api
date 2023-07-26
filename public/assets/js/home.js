@@ -1164,7 +1164,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
                     console.log('patientData[i]' , patientData[i]);
                     let patient = patientData[i];
                     balance = patient.cash_receive - patient.settle_amount_with_tax;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: "+balance+"</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: "+balance+"</td><td>" + patient.created_at + "</td></tr>";
                 }
             } else {
                 TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
@@ -1198,7 +1198,7 @@ function initPatientFollowUpOneMonth() {
                 for (let i = 0; i < patientData.length; i++) {
                     let patient = patientData[i];
                     balance = patient.cash_receive - patient.settle_amount_with_tax;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>PKR: "+balance+"</td><td>" + formatDate(patient.created_at) + "</td></tr>";
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>PKR: "+balance+"</td><td>" + patient.scheduled_date + "</td></tr>";
                 }
             } else {
                 TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
