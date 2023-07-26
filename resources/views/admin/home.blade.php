@@ -220,7 +220,60 @@
                                 </div>
                             </div>
                         </div>
-                    @endif
+                        @endif
+                        @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b"
+                                style="min-height: 605px;overflow-y: auto;">
+                                <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
+                                    <div class="card-body p-0">
+                                    <div
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Follow Up Report</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                        href="{{ route('admin.reports.follow_up') }}" > View Report
+                                                        <i class="fa fa-angle-right"></i>
+                                                        </a>
+                                                    </div>
+                                                    <div class="btn-group">
+                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                            href="{{ route('admin.follow_up.download') }}" > Download
+                                                            <i class="fa fa-angle-right"></i>
+                                                        </a>
+                                                        
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                        
+                                    </div>
+                                        <div class="card-spacer2">
+                                            <div class='table-responsive'>
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class='table-cols'>ID</th>
+                                                            <th class='table-cols'>Name</th>
+                                                            <th class='table-cols'>Treatment</th>
+                                                            <th class='table-cols'>Balance</th>
+                                                            <th class='table-cols'>Con. Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="patient-follow-up"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        @endif
+                   
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
@@ -281,6 +334,57 @@
                                         </div>
                                     </div>
                                     <div id="revenue-centre"></div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+                    @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                            <div class="card card-custom card-stretch card-stretch-half gutter-b"
+                            style="min-height: 605px;overflow-y: auto;">
+                                <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
+                                    <div class="card-body p-0">
+                                    <div
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        <span class="dashboard-counter text-uppercase">Follow Up Report One Month</span>
+                                        <ul class="nav nav-tabs d-flex align-items-center">
+                                            <li style="border-bottom: none;">
+                                                <div class="actions action-style p-3 mr-3">
+                                                    <div class="btn-group">
+                                                    <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                        href="{{ route('admin.reports.follow_up') }}" > View Report
+                                                        <i class="fa fa-angle-right"></i>
+                                                        </a>
+                                                    </div>
+                                                        <div class="btn-group">
+                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                        href="{{ route('admin.monthly_follow_up.download') }}"  > Download
+                                                            <i class="fa fa-angle-right"></i>
+                                                        </a>
+                                                        
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                        
+                                    </div>
+                                        <div class="card-spacer2">
+                                            <div class='table-responsive'>
+                                                <table class="table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th class='table-cols'>ID</th>
+                                                            <th class='table-cols'>Name</th>
+                                                            <th class='table-cols'>Balance</th>
+                                                            <th class='table-cols'>Con. Date</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody id="patient-follow-up-one-month"></tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                       
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -928,80 +1032,7 @@
                             </div>
                         </div>
                     @endif
-                    @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
-                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                            <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 805px;">
-                                <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
-                                    <div class="card-body p-0">
-                                        <div
-                                            class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                            <span class="dashboard-counter text-uppercase">Patients Follow Up</span>
-                                        </div>
-                                        <div class="card-spacer2">
-                                            <div class='table-responsive'>
-                                                <table class="table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th class='table-cols'>Patient Id</th>
-                                                            <th class='table-cols'>Name</th>
-                                                            <th class='table-cols'>Phone</th>
-                                                            <th class='table-cols'>Treatment exist</th>
-                                                            <th class='table-cols'>Balance</th>
-                                                            <th class='table-cols'>Conversion Date</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="patient-follow-up"></tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="text-center mt-7">
-                                            <button class="btn btn-primary btn-primary--icon p-0" id="followbtn"
-                                                style="display: none;"><a class="py-3 d-block px-7" style="color:#fff;"
-                                                    href="{{ route('admin.reports.follow_up') }}">View Report</a></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
-                            <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 805px;">
-                                <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
-                                    <div class="card-body p-0">
-                                        <div
-                                            class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                            <span class="dashboard-counter text-uppercase">Patients Follow Up One
-                                                Month</span>
-                                        </div>
-                                        <div class="card-spacer2">
-                                            <div class='table-responsive'>
-                                                <table class="table">
-                                                    <thead>
-                                                        <tr>
-                                                            <th class='table-cols'>Patient Id</th>
-                                                            <th class='table-cols'>Name</th>
-                                                            <th class='table-cols'>Phone</th>
-                                                            <th class='table-cols'>Treatment exist</th>
-                                                            <th class='table-cols'>Balance</th>
-                                                            <th class='table-cols'>Conversion Date</th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="patient-follow-up-one-month"></tbody>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <div class="text-center mt-7">
-                                            <button class="btn btn-primary btn-primary--icon p-0" id="mfollowbtn"
-                                                style="display: none;"><a class="py-3 d-block px-7" style="color:#fff;"
-                                                    href="{{ route('admin.reports.follow_up') }}">View
-                                                    Report</a></button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
+                   
                 </div>
             </div>
         </div>
