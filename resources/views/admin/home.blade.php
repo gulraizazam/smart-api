@@ -1170,7 +1170,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.14) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.10) && !
                     revenue_by_center) {
                     revenue_by_center = true;
                     $.ajax({
@@ -1189,7 +1189,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.32) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.15) && !
                     revenue_by_service) {
                     revenue_by_service = true;
                     $.ajax({
@@ -1223,7 +1223,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.32) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.20) && !
                     revenue_by_service_category) {
                     revenue_by_service_category = true;
                     $.ajax({
@@ -1257,7 +1257,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.33) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.24) && !
                     collection_by_service_category) {
                     collection_by_service_category = true;
                     $.ajax({
@@ -1293,7 +1293,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.50) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
                     consultancy_by_status) {
                     consultancy_by_status = true;
                     $.ajax({
@@ -1329,7 +1329,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.50) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
                     treatment_by_status) {
                     treatment_by_status = true;
                     $.ajax({
