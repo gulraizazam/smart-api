@@ -175,7 +175,7 @@ class AppointmentsController extends Controller
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
-        $limit = 1000;
+        $limit = 10000;
         $offset = 0;
         if ($request->appointmenttype == 1) {
             return Excel::download(new ExportConsultancies($limit, $offset, $request), 'consultancies.xlsx');
@@ -2277,15 +2277,15 @@ class AppointmentsController extends Controller
             }
         }
         if(Gate::allows('edit_after_arrived')){
-           
+
             $doctor_ids = DoctorHasLocations::where('location_id' ,$appointment->location_id )->groupBy('user_id')->pluck('user_id');
-           
+
             $doctors = Doctors::whereIn('id',$doctor_ids)->where('active' , 1)->get()->pluck('name', 'id');
-            
+
         }else{
             $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
             if ($doctors_no_final) {
-           
+
                 foreach ($doctors_no_final as $key => $doctor) {
                     $resource = Resources::where('external_id', '=', $key)->first();
                     $doctor_rota = ResourceHasRota::where([
@@ -2298,9 +2298,9 @@ class AppointmentsController extends Controller
                 }
             }
         }
-       
+
         /*End*/
-        
+
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
         $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
@@ -4518,7 +4518,7 @@ class AppointmentsController extends Controller
             $lead_obj['location_id'] = $request->location_id;
             $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
             $lead_obj['gender'] = $patient->gender;
-           
+
                 $appointment_data['user_type_id'] = 3;
                 $checkLeadExistance = Leads::updateOrCreate([
                     'phone' => $appointment_data['phone'],
@@ -4535,9 +4535,9 @@ class AppointmentsController extends Controller
                 LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
                 $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
                 $lead_service->update(['status' => 1]);
-            
+
         }
-       
+
         $patientData = $appointment_data;
         Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
         $appointment_data['lead_id'] = $lead->id ?? null;
