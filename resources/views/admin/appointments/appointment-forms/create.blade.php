@@ -50,7 +50,7 @@
 
                         <div class="fv-row col-md-12 mt-5" id="lead_id">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Lead Search </label>
-                            <input class="form-control lead_search_id">
+                            <input class="form-control lead_search_id"  placeholder="Patients Search">
 
                             <input type="hidden" onchange="getLeadDetail($(this))"  name="lead_id" class="filter-field search_field" id="create_lead_search">
                             <span onclick="addLeads()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>

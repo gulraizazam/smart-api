@@ -35,7 +35,7 @@
 
         <div class="filterouterdiv  mb-6 position-relative">
             <label>Patient Search:</label>
-            <input class="form-control filter-field appointment_patient_id">
+            <input class="form-control filter-field appointment_patient_id"  placeholder="Patients Search">
             <input type="hidden" class="filter-field search_field" id="treatment_patient_id">
             <span onclick="addUsers()" class="croxcli" ><i class="fa fa-times" aria-hidden="true"></i></span>
             <div class="suggesstion-box" style="display: none;">
