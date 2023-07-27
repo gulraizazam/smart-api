@@ -99,7 +99,7 @@ class PatientFollowupController extends Controller
             ])
             ->whereIn('package_advances.appointment_id', $appointmentIds)
             ->whereIn('package_advances.location_id', $center_id)
-           
+           ->where($where)
             ->groupBy('package_advances.patient_id')
            
             ->orderBy('package_advances.patient_id', 'DESC')
