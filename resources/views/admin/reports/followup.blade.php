@@ -68,7 +68,7 @@
                                             <span id="location_id_handler"></span>
                                         </div>
                                         <div class="col-md-3 form-group  ">
-                                        {!! Form::label('conversion_date', 'Conversion Date:', ['class' => 'control-label']) !!}
+                                        {!! Form::label('conversion_date', ' Date:', ['class' => 'control-label']) !!}
                                             <div class="input-daterange input-group to-from-datepicker" >
                                                 <input type="text" id="followup_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" >
                                                 <div class="input-group-append" style="width: 0;">
