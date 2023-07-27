@@ -1137,6 +1137,7 @@
                         'centre_id': centre_id
                     },
                     success: function(response) {
+                        
                         $('.loader-imgs').css('display', "none");
                         var categories = response.data.categories
 
@@ -1155,7 +1156,7 @@
                         });
                         TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" +
                             converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) +
-                            "%</td><td>" + ((avg_sum /converted)).toFixed(2) + "</td></tr>";
+                            "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
 
                         jQuery('#categories-table-body').append(TABLE_HTML);
                         AllDoctorWiseConversion(response);
