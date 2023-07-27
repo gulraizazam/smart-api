@@ -254,6 +254,7 @@
                                         <div class="card-spacer2">
                                             <div class='table-responsive'>
                                                 <table class="table">
+                                                
                                                     <thead>
                                                         <tr>
                                                             <th class='table-cols'>ID</th>
@@ -263,8 +264,13 @@
                                                             <th class='table-cols'>Conversion Date</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody id="patient-follow-up"></tbody>
+                                                    
+                                                    <tbody id="patient-follow-up">
+                                                   
+                                                    </tbody>
+                                                    
                                                 </table>
+                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended" >
                                             </div>
                                         </div>
                                         
@@ -381,6 +387,7 @@
                                                     </thead>
                                                     <tbody id="patient-follow-up-one-month"></tbody>
                                                 </table>
+                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                             </div>
                                         </div>
                                        
@@ -1148,7 +1155,7 @@
                         });
                         TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" +
                             converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) +
-                            "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
+                            "%</td><td>" + ((avg_sum /converted)).toFixed(2) + "</td></tr>";
 
                         jQuery('#categories-table-body').append(TABLE_HTML);
                         AllDoctorWiseConversion(response);
