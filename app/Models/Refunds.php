@@ -62,6 +62,7 @@ class Refunds extends Model
         }
 
         $packageinformation = Packages::find($request->package_id);
+
         $data = $request->all();
 
         $package_is_adjustment = PackageAdvances::where([
@@ -69,7 +70,6 @@ class Refunds extends Model
             ['is_adjustment', '=', '1'],
             ['cash_flow', '=', 'out'],
         ])->sum('cash_amount');
-
         // Set Account ID
         $data['cash_flow'] = 'out';
         $data['cash_amount'] = $request->get('refund_amount');
