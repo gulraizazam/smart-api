@@ -99,7 +99,7 @@ class PatientFollowupController extends Controller
             ])
             ->whereIn('package_advances.appointment_id', $appointmentIds)
             ->whereIn('package_advances.location_id', $center_id)
-            ->where($where)
+           
             ->groupBy('package_advances.patient_id')
            
             ->orderBy('package_advances.patient_id', 'DESC')
@@ -143,7 +143,7 @@ class PatientFollowupController extends Controller
         $patient_data = array_merge($is_treatment, $not_treatment);
 
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => array_slice($patient_data, 0, 15)
+            'patient_data' => $patient_data
         ]);
     }
     public function patientFollowUpDownload(Request $request)
