@@ -142,8 +142,10 @@ class PatientFollowupController extends Controller
                 if (count($check_treatments2) >!0 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data); 
-                    
-                   
+                     
+                }else{
+                    $data['is_treatment'] = 2;
+                    array_push($is_treatment, $data); 
                 }
             } else {
                 if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
