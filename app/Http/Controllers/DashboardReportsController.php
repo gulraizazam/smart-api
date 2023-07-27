@@ -2940,6 +2940,7 @@ class DashboardReportsController extends Controller
                     });
                     $maxConversion = $maxConversion->groupBy('service_id');
                     $new_array = [];
+                    $sum_conversion_spend2=0;
                     foreach ($maxConversion as $key => $conversions) {
                         $sum_conversion_total = 0;
                         $sum_conversion_spend = 0;
@@ -2947,12 +2948,14 @@ class DashboardReportsController extends Controller
                             $name = $conversion['service'];
                             $sum_conversion_spend += $conversion['conversion_spend'];
                             $sum_conversion_total += 1;
+                            $sum_conversion_spend2+=$conversion['conversion_spend'];
                         }
                         $avg_by_category = ($sum_conversion_spend / count($conversions));
                         $new_array[$name] = [
                             'service' => $name,
                             'total_conversion' => $sum_conversion_total,
                             'avg' => $avg_by_category,
+                            
                         ];
                     }
         
@@ -2985,18 +2988,19 @@ class DashboardReportsController extends Controller
                             'service' => $name,
                             'total_arrival' => $category_total_records,
                             'total_conversion' => $sum_conversion_total,
-                            'avg' => $avg_valu
+                            'avg' => $avg_valu,
+                            
                         ];
                     }
                 }
         
-       
                 return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
                     'labels' => $lables,
                     'total_appointments' => $total_apts,
                     'converted_appointments' => $converted_apts,
                     'categories' => $returnCategoryData,
-                    'category_total' => $total_arrived_appointments
+                    'category_total' => $total_arrived_appointments,
+                    'sum_val' =>$sum_conversion_spend2
         
                 ]);
     }
