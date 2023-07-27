@@ -99,8 +99,9 @@ class PatientFollowupController extends Controller
             ])
             ->whereIn('package_advances.appointment_id', $appointmentIds)
             ->whereIn('package_advances.location_id', $center_id)
-            ->groupBy('package_advances.patient_id')
             ->where($where)
+            ->groupBy('package_advances.patient_id')
+           
             ->orderBy('package_advances.patient_id', 'DESC')
             ->limit(500)
             ->get();
