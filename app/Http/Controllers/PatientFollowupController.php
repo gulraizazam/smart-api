@@ -42,6 +42,7 @@ class PatientFollowupController extends Controller
             '<=',
             Carbon::now()->format('Y-m-d'),
         ];
+       
         $center_id = ACL::getUserCentres();
         $appointments = DB::select("
                 select appointments.id, appointments.patient_id from appointments,
@@ -99,7 +100,7 @@ class PatientFollowupController extends Controller
             ])
             ->whereIn('package_advances.appointment_id', $appointmentIds)
             ->whereIn('package_advances.location_id', $center_id)
-           ->where($where)
+            ->where($where)
             ->groupBy('package_advances.patient_id')
            
             ->orderBy('package_advances.patient_id', 'DESC')
