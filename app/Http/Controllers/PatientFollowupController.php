@@ -9,6 +9,7 @@ use App\Models\Appointments;
 use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Config;
