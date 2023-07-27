@@ -853,7 +853,7 @@ function initDoctorWiseConversion(period, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / converted)).toFixed(2) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
@@ -884,7 +884,7 @@ function initDoctorWiseConversion(period, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / converted)).toFixed(2) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 DoctorWiseConversion(response);
@@ -929,7 +929,7 @@ function GetDoctors(centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / converted)).toFixed(2) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
@@ -958,7 +958,7 @@ function GetDoctors(centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((avg_sum / converted)).toFixed(2) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 DoctorWiseConversion(response);
