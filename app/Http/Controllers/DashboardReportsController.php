@@ -2713,7 +2713,7 @@ class DashboardReportsController extends Controller
 
             
             $new_array = [];
-
+            $sum_conversion_spend2=0;
             foreach ($maxConversion as $key => $conversions) {
                 $sum_conversion_total = 0;
                 $sum_conversion_spend = 0;
@@ -2721,6 +2721,7 @@ class DashboardReportsController extends Controller
                     $name = $conversion['service'];
                     $sum_conversion_spend += $conversion['conversion_spend'];
                     $sum_conversion_total += 1;
+                    $sum_conversion_spend2+= $conversion['conversion_spend'];
                 }
                 $avg_by_category = ($sum_conversion_spend / count($conversions));
                 $new_array[$name] = [
@@ -2784,7 +2785,8 @@ class DashboardReportsController extends Controller
             'total_appointments' => $total_apts,
             'converted_appointments' => $converted_apts,
             'categories' => $returnCategoryData,
-            'category_total' => $total_arrived_appointments
+            'category_total' => $total_arrived_appointments,
+            'sum_val'=>$sum_conversion_spend2
 
         ]);
     }
