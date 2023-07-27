@@ -1153,6 +1153,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             'arrived': arrived
         },
         success: function (response) {
+            $('.loader-img-unattended').css('display','none');
             $('#patient-follow-up').html("");
             var TABLE_HTML = "";
             var balance = 0;
@@ -1187,7 +1188,7 @@ function initPatientFollowUpOneMonth() {
         cache: false,
         data: {},
         success: function (response) {
-            console.log('response' , response);
+            $('.loader-img-attended').css('display','none');
             $('#patient-follow-up-one-month').html("");
             var TABLE_HTML = "";
             var balance = 0;
