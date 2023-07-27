@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Config;
 
 class PatientFollowupController extends Controller
