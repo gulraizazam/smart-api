@@ -41,8 +41,8 @@
                                             {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
                                             <select class="form-control " id="report_types" name="report_type">
                                                 <option value="">Select Report</option>
-                                                <option value="weekly">Weekly Follow Up</option>
-                                                <option value="monthly">Monthly Follow Up</option>
+                                                <option value="weekly">Unattended Payments </option>
+                                                <option value="monthly">Overdue Treatments</option>
                                             </select>
                                             
                                         </div>
