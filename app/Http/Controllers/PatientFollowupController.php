@@ -31,6 +31,17 @@ class PatientFollowupController extends Controller
     }
     public function patientFollowUp(Request $request)
     {
+        $where = [];
+        $where[] = [
+            'package_advances.created_at',
+            '>=',
+            Carbon::now()->subDays(30)->format('Y-m-d'),
+        ];
+        $where[] = [
+            'package_advances.created_at',
+            '<=',
+            Carbon::now()->format('Y-m-d'),
+        ];
         $center_id = ACL::getUserCentres();
         $appointments = DB::select("
                 select appointments.id, appointments.patient_id from appointments,
@@ -89,6 +100,7 @@ class PatientFollowupController extends Controller
             ->whereIn('package_advances.appointment_id', $appointmentIds)
             ->whereIn('package_advances.location_id', $center_id)
             ->groupBy('package_advances.patient_id')
+            ->where($where)
             ->orderBy('package_advances.patient_id', 'DESC')
             ->limit(500)
             ->get();
@@ -127,7 +139,7 @@ class PatientFollowupController extends Controller
                 }
             }
         }
-        $patient_data = array_merge(array_slice($is_treatment, 0, 10), array_slice($not_treatment, 0, 10));
+        $patient_data = array_merge($is_treatment, $not_treatment);
 
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
             'patient_data' => array_slice($patient_data, 0, 15)
