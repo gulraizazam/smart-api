@@ -294,11 +294,11 @@ class PatientFollowupController extends Controller
             '>=',
             Carbon::now()->subMonths(3)->toDateString(),
         ];
-        $where[] = [
+        /* $where[] = [
             'appointments.scheduled_date',
             '<=',
             Carbon::now()->toDateString(),
-        ];
+        ]; */
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
