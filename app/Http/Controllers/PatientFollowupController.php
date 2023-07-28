@@ -407,11 +407,11 @@ class PatientFollowupController extends Controller
             '>=',
             Carbon::now()->subMonths(3)->format('Y-m-d'),
         ];
-        $where[] = [
+        /* $where[] = [
             'appointments.scheduled_date',
             '<=',
             Carbon::now()->format('Y-m-d'),
-        ];
+        ]; */
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
