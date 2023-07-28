@@ -667,7 +667,7 @@
                                                     @if (Auth::user()->hasRole('Administrator') ||
                                                             Auth::user()->hasRole('Super-Admin') ||
                                                             Auth::user()->hasRole('Head of Operations') ||
-                                                            Auth::user()->hasRole('Finance'))
+                                                            Auth::user()->hasRole('Finance') ||  Auth::user()->hasRole('HRM'))
                                                         @php
                                                             $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
                                                             $locations = \App\Helpers\ACL::getUserCentres();
