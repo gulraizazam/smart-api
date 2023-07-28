@@ -1129,7 +1129,13 @@ class GeneralFunctions
             if (count($treatments) > 0) {
                 $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
-                $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
+                $future_treatments = Appointments::where([
+                    'appointment_type_id' => Config::get('constants.appointment_type_service'),
+                    'patient_id' => $data['patient_id'],
+                ])
+                    ->whereIn('location_id', $center_id)
+                    ->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'))
+                    ->get();
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                         $data['is_treatment'] = 1;
