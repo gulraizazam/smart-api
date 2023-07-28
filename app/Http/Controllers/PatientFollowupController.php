@@ -135,10 +135,11 @@ class PatientFollowupController extends Controller
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
             $data['created_at'] = Carbon::parse($data['created_at'])->toDateString();
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
                 
-                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                if (!$has_treatment_with_status_2  && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data); 
                     
