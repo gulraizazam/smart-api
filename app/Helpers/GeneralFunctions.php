@@ -1025,9 +1025,10 @@ class GeneralFunctions
             $data['phone'] = $patient->phone;
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
                 }
@@ -1043,7 +1044,7 @@ class GeneralFunctions
     }
     public static function LoadPatientFollowUpReportMonthly($data, $where)
     {
-        
+
         $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
@@ -1126,9 +1127,10 @@ class GeneralFunctions
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
 
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id == 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
+                if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                         $data['is_treatment'] = 1;
                         array_push($patient_data, $data);
@@ -1137,6 +1139,6 @@ class GeneralFunctions
             }
         }
         return $patient_data;
-        
+
     }
 }
