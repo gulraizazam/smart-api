@@ -73,7 +73,7 @@ class Refunds extends Model
         // Set Account ID
         $data['cash_flow'] = 'out';
         $data['cash_amount'] = $request->get('refund_amount');
-        $data['is_refund'] = '1';
+        $data['is_refund'] = /* ($request->balance > $request->refund_amount) ? '0' :  */'1';
         $data['patient_id'] = $request->get('patient_id');
         $data['payment_mode_id'] = '1';
         $data['account_id'] = $id;
