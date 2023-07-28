@@ -2584,7 +2584,7 @@ class DashboardReportsController extends Controller
             ->distinct('user_id')
             ->get();
         }
-			
+        $sum_conversion_spend2=0;
         foreach ($consultants as $consultant) {
             array_push($lables, $consultant->name);
             $consultant = [$consultant->id];
@@ -2713,7 +2713,7 @@ class DashboardReportsController extends Controller
 
             
             $new_array = [];
-            $sum_conversion_spend2=0;
+            
             foreach ($maxConversion as $key => $conversions) {
                 $sum_conversion_total = 0;
                 $sum_conversion_spend = 0;
