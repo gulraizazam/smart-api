@@ -2713,7 +2713,7 @@ class DashboardReportsController extends Controller
 
 
             $new_array = [];
-            $sum_conversion_spend2=0;
+
             foreach ($maxConversion as $key => $conversions) {
                 $sum_conversion_total = 0;
                 $sum_conversion_spend = 0;
@@ -2813,15 +2813,15 @@ class DashboardReportsController extends Controller
         } else {
             $locations = $request->centre_id;
         }
-       
-               
+
+
                 $total_arrived_appointments = Appointments::with('location:id,name')
                         ->join('services', 'appointments.service_id', 'services.id')
                         ->where([
                             'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                             'appointments.appointment_type_id' => 1
                         ])
-                      
+
                         ->whereIn('appointments.location_id', $locations)
                         ->selectRaw('count(*) as arrived, service_id,services.name')
                         ->whereBetween('appointments.scheduled_date', [
@@ -2835,15 +2835,15 @@ class DashboardReportsController extends Controller
                     if($location_name){
                         array_push($lables, $location_name->name);
                     }
-                    
-                 
+
+
                     $converted_appointments =  Appointments::with('location:id,name')
                         ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
                         ->where([
                             'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                             'appointments.appointment_type_id' => 1
                         ])
-                        
+
                         ->where('appointments.location_id' ,$location)
                         ->where('package_advances.cash_amount', '>', 0)
                         ->select('appointments.*')
@@ -2860,7 +2860,7 @@ class DashboardReportsController extends Controller
                             ]);
                         })
                         ->get();
-                     
+
                     if (count($converted_appointments)) {
                         foreach ($converted_appointments as $appointment) {
                             if (!in_array($appointment->id, $appointments)) {
@@ -2928,17 +2928,17 @@ class DashboardReportsController extends Controller
                             }
                         }
                     }
-        
+
                     $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
                         ->where('appointments.location_id' ,$location)
                         ->count();
-        
+
                     array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
                     array_push($total_apts, $total_appointments);
-        
-                    
-                        
+
+
+
                     $maxConversion = collect($appointments_info)->filter(function ($appointment) {
                         if ($appointment['conversion_spend'] > 0) {
                             return $appointment;
@@ -2961,32 +2961,32 @@ class DashboardReportsController extends Controller
                             'avg' => $avg_by_category,
                         ];
                     }
-        
+
                     foreach ($total_arrived_appointments->toArray() as $key => $arrive_category) {
                         if (array_key_exists($arrive_category['name'], $new_array)) {
                             $name = [$arrive_category['name']][0];
-        
+
                             $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
                             $avg_valu = $new_array[$arrive_category['name']]['avg'];
-                            
+
                                 $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                                    
+
                                     ->whereIn('appointments.location_id' ,$locations)
                                     ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                                     ->count();
-                            
+
                         } else {
                             $name = [$arrive_category['name']][0];
                             $sum_conversion_total = 0;
                             $avg_valu = 0;
-                           
+
                                 $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                                 ->whereIn('appointments.location_id' ,$locations)
                                     ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                                     ->count();
-                            
+
                         }
-        
+
                         $returnCategoryData[$key] = [
                             'service' => $name,
                             'total_arrival' => $category_total_records,
@@ -2995,15 +2995,15 @@ class DashboardReportsController extends Controller
                         ];
                     }
                 }
-        
-       
+
+
                 return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
                     'labels' => $lables,
                     'total_appointments' => $total_apts,
                     'converted_appointments' => $converted_apts,
                     'categories' => $returnCategoryData,
                     'category_total' => $total_arrived_appointments
-        
+
                 ]);
     }
     public function GetCentreDoctors(Request $request)
@@ -3032,7 +3032,7 @@ class DashboardReportsController extends Controller
         $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
         return view('admin.reports.followup', get_defined_vars());
     }
-    
+
     public function FollowUpReportMonthly()
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
@@ -3094,7 +3094,7 @@ class DashboardReportsController extends Controller
             $patient_data = GeneralFunctions::PatientFollowUpReport($data , $where);
             return view('admin.reports.patients_follow_up_report', get_defined_vars());
         }
-            
-        
+
+
     }
 }
