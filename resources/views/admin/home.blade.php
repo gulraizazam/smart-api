@@ -251,7 +251,7 @@
                                         </ul>
                                         
                                     </div>
-                                        <div class="card-spacer2">
+                                        <div class="card-spacer2 table_v_scroll" >
                                             <div class='table-responsive'>
                                                 <table class="table">
                                                 
