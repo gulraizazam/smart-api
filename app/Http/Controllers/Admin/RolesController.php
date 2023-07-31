@@ -365,7 +365,7 @@ class RolesController extends Controller
             'my_appointment_by_status' => 'My Appointments by Status',
             'staff_wise_arrival' => 'Staff Wise Arrival',
             'doctor_wise_conversion' =>'Doctor Wise Conversion',
-            'unattendend_report' => 'Unattended Payments',
+            'unattended_report' => 'Unattended Payments',
             'overdue_treatments' => 'Overdue Treatments'
         ];
     }
