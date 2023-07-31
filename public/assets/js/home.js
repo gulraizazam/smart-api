@@ -1165,7 +1165,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             let patientData = response.data.patient_data;
             
             if (patientData.length > 0) {
-                console.log('pt', patientData);
+                
                 for (let i = 0; i < patientData.length; i++) {
                     console.log('patientData[i]' , patientData[i]);
                     let patient = patientData[i];
