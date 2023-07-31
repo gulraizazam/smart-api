@@ -154,7 +154,9 @@ class PatientFollowupController extends Controller
 
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
-        //$sorted_patient_data = collect($patient_data)->sortBy('created_at');
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
             'patient_data' => $patient_data
         ]);
