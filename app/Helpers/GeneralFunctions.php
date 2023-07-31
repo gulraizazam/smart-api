@@ -1040,6 +1040,9 @@ class GeneralFunctions
             }
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         return $patient_data;
     }
     public static function LoadPatientFollowUpReportMonthly($data, $where)
@@ -1139,11 +1142,15 @@ class GeneralFunctions
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                         $data['is_treatment'] = 1;
+                        $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
                     }
                 }
             }
         }
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         return $patient_data;
 
     }
