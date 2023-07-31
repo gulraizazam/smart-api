@@ -989,7 +989,7 @@ function GetDoctors(centre_id, time = '') {
     });
 }
 function LoadDocWiseConversion(doc_id) {
-    doc_wise_conversion_chart.destroy();
+    //doc_wise_conversion_chart.destroy();
     dropDownList('doctor', 'thismonth');
     var DrName = $('#doc_nav').find('li').find('a[data-id=' + doc_id + ']').text();
     jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
