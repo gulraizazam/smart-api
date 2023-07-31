@@ -1082,7 +1082,7 @@
                         $("#activitydiv").html(response);
                     },
                 });
-                var user_id = '{{auth()->id}}';
+                var user_id = '{{auth()->user()->id}}';
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
