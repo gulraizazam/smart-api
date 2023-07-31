@@ -988,7 +988,8 @@ function GetDoctors(centre_id, time = '') {
         },
     });
 }
-function LoadDocWiseConversion(doc_id) {
+function LoadDocWiseConversion(doc_id,time = '') {
+   
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
