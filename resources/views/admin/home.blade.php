@@ -942,9 +942,6 @@
                                                     </div>
                                                 </div>
                                             </li>
-                                            @if(Auth::user()->hasRole('Aesthetic Consultant'))
-
-                                            @else
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
@@ -961,7 +958,6 @@
                                                     </div>
                                                 </div>
                                             </li>
-                                            @endif
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
@@ -1086,7 +1082,7 @@
                         $("#activitydiv").html(response);
                     },
                 });
-                var user_id = '{{auth()->user()->id}}';
+                
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
@@ -1101,9 +1097,7 @@
                         Auth::user()->hasRole('Head of Operations') ||
                         Auth::user()->hasRole('Finance'))
                     GetAllDoctors(centre_id);
-                @elseif(Auth::user()->hasRole('Aesthetic Consultant'))
-                    $('.loader-imgs').css('display', "none");
-                    LoadDocWiseConversion(user_id, 'firsttime');
+               
                 @else
                     $('.loader-imgs').css('display', "none");
                     GetDoctors(centre_id, 'firsttime');
