@@ -118,7 +118,7 @@ class PatientFollowupController extends Controller
         $is_treatment = [];
         $patient_data = [];
         $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
-            ->where('created_at', '<', Carbon::now()->subDays(7))
+            ->where('created_at', '<', Carbon::now()->subDays(3))
             ->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
@@ -267,9 +267,12 @@ class PatientFollowupController extends Controller
                 $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
+
+
                 }
             } else {
                 if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
@@ -294,11 +297,7 @@ class PatientFollowupController extends Controller
             '>=',
             Carbon::now()->subMonths(3)->toDateString(),
         ];
-        /* $where[] = [
-            'appointments.scheduled_date',
-            '<=',
-            Carbon::now()->toDateString(),
-        ]; */
+
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
@@ -407,11 +406,7 @@ class PatientFollowupController extends Controller
             '>=',
             Carbon::now()->subMonths(3)->format('Y-m-d'),
         ];
-        /* $where[] = [
-            'appointments.scheduled_date',
-            '<=',
-            Carbon::now()->format('Y-m-d'),
-        ]; */
+
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
