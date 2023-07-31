@@ -942,6 +942,9 @@
                                                     </div>
                                                 </div>
                                             </li>
+                                            @if(Auth::user()->hasRole('Aesthetic Consultant'))
+
+                                            @else
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
@@ -958,6 +961,7 @@
                                                     </div>
                                                 </div>
                                             </li>
+                                            @endif
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
