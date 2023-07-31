@@ -122,13 +122,12 @@ class PatientFollowupController extends Controller
             ->where('created_at', '<', Carbon::now()->subDays(3))
             ->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
+           
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
             ])
-
                 ->whereIn('location_id', ACL::getUserCentres())
-               
                 ->get();
 
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
@@ -136,7 +135,7 @@ class PatientFollowupController extends Controller
             $data['name'] = $patient->name;
             $data['phone'] = $patient->phone;
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
-            $data['created_at'] = Carbon::parse($data['created_at'])->toDateString();
+            $data['created_at'] = Carbon::parse($data['created_at'])->format('Y-m-d');
             if (count($treatments) > 0) {
                 $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
@@ -148,6 +147,7 @@ class PatientFollowupController extends Controller
 
 
                 }
+                
             } else {
                 if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 0;
@@ -157,9 +157,9 @@ class PatientFollowupController extends Controller
 
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
-        //$sorted_patient_data = collect($patient_data)->sortBy('created_at');
+        $patient_data_sorted  = collect($patient_data)->sortByDesc('created_at');
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => $patient_data
+            'patient_data' =>$patient_data_sorted
         ]);
     }
     public function patientFollowUpDownload(Request $request)
