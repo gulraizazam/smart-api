@@ -2584,7 +2584,7 @@ class DashboardReportsController extends Controller
                 ->distinct('user_id')
                 ->get();
         }
-
+        $sum_conversion_spend2 = 0;
         foreach ($consultants as $consultant) {
             array_push($lables, $consultant->name);
             $consultant = [$consultant->id];
