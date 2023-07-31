@@ -1099,7 +1099,7 @@
                     GetAllDoctors(centre_id);
                 @elseif(Auth::user()->hasRole('Aesthetic Consultant'))
                     $('.loader-imgs').css('display', "none");
-                    LoadDocWiseConversion(user_id);
+                    LoadDocWiseConversion(user_id, 'firsttime');
                 @else
                     $('.loader-imgs').css('display', "none");
                     GetDoctors(centre_id, 'firsttime');
