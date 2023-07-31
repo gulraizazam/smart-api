@@ -40,7 +40,7 @@
                     <th class='table-cols'>Phone</th>
                     <th class='table-cols'>Location</th>
                     <th class='table-cols'>Treatment exist</th>
-                    <th class='table-cols'>Conversion Date</th>
+                    <th class='table-cols'>Last Arrived</th>
                     <th class='table-cols'>Outstanding Balance</th>
                     </tr>
                     </thead>
@@ -57,7 +57,7 @@
                         <td>{{$patient['phone']}}</td>
                         <td>{{$location_name->name}}</td>
                         <td>{{$patient['is_treatment'] == 1 ? 'Yes' : 'No'}}</td>
-                        <td>{{ Carbon\Carbon::parse($patient['created_at'])->format('Y-m-d') }}</td>
+                        <td>{{ $patient['scheduled_date'] }}</td>
                         <td>PKR: {{$patient['cash_receive']-$patient['settle_amount_with_tax']}}</td>
                     </tr>
                 @endforeach
