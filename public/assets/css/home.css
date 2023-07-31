@@ -177,3 +177,21 @@ img.loader-imgs {
 .dropdown-menu li a:hover{
     cursor: pointer;
 }
+#unattended_payments .wrap_unattended_payment{
+    position: sticky;
+    z-index: 1111;
+    background: #fff;
+    top: 0px;
+}
+.table_v_scroll{
+    height: 100%;
+    overflow-y: scroll;
+    padding-top: 70px;
+}
+#attended_payments .wrap_unattended_payment{
+    position: sticky;
+    z-index: 1111;
+    background: #fff;
+    top: 0px;
+}
+
