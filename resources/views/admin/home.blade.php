@@ -222,13 +222,13 @@
                         </div>
                         @endif
                         @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;">
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="unattended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;overflow-y: auto;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
                                     <div class="card-body p-0">
                                     <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
                                         <span class="dashboard-counter text-uppercase">Unattended Payments</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
@@ -345,13 +345,13 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;">
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="attended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                            style="min-height: 605px;overflow-y: auto;">
+                            style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
                                     <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
                                         <span class="dashboard-counter text-uppercase">Overdue Treatments</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
@@ -374,7 +374,7 @@
                                         </ul>
                                         
                                     </div>
-                                        <div class="card-spacer2">
+                                        <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
                                                 <table class="table">
                                                     <thead>
