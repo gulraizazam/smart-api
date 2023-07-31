@@ -1082,7 +1082,7 @@
                         $("#activitydiv").html(response);
                     },
                 });
-
+                var user_id = '{{auth()->id}}';
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
@@ -1099,7 +1099,7 @@
                     GetAllDoctors(centre_id);
                 @elseif(Auth::user()->hasRole('Aesthetic Consultant'))
                     $('.loader-imgs').css('display', "none");
-                    LoadDocWiseConversion(Auth::user()->id);
+                    LoadDocWiseConversion(user_id);
                 @else
                     $('.loader-imgs').css('display', "none");
                     GetDoctors(centre_id, 'firsttime');
