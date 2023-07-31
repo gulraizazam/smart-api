@@ -42,8 +42,8 @@ class PatientFollowupController extends Controller
             '<=',
             Carbon::now()->format('Y-m-d'),
         ];
-       
-        
+
+
         $center_id =  ACL::getUserCentres();
         $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
@@ -104,6 +104,7 @@ class PatientFollowupController extends Controller
             ->where($where)
             ->where('cash_flow','in')
             ->groupBy('package_advances.patient_id')
+
             ->orderBy('package_advances.patient_id', 'DESC')
             ->get();
         $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
@@ -124,7 +125,6 @@ class PatientFollowupController extends Controller
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
             ])
-            
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();
 
@@ -138,12 +138,12 @@ class PatientFollowupController extends Controller
                 $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                
-                if (!$has_treatment_with_status_2  && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 1;
-                    array_push($is_treatment, $data); 
-                    
-                   
+                    array_push($is_treatment, $data);
+
+
                 }
             } else {
                 if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
@@ -397,18 +397,18 @@ class PatientFollowupController extends Controller
     
     public function patientFollowUpOneMonth(Request $request)
     {
-       
+
         $where = [];
         $where[] = [
             'appointments.scheduled_date',
             '>=',
             Carbon::now()->subMonths(3)->format('Y-m-d'),
         ];
-        $where[] = [
+        /* $where[] = [
             'appointments.scheduled_date',
             '<=',
             Carbon::now()->format('Y-m-d'),
-        ];
+        ]; */
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
@@ -462,7 +462,7 @@ class PatientFollowupController extends Controller
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
-           
+
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
             ->get();
@@ -489,9 +489,10 @@ class PatientFollowupController extends Controller
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
 
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id == 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
+                if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                         $data['is_treatment'] = 1;
                         $data['scheduled_date'] = $check_treatments->scheduled_date ;
@@ -499,9 +500,9 @@ class PatientFollowupController extends Controller
                     }
                 }
             }
-           
+
         }
-       
+
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
             'patient_data' => $patient_data
         ]);
