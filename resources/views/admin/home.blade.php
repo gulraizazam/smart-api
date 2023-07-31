@@ -224,7 +224,7 @@
                         @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="unattended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
                                     <div class="card-body p-0">
                                     <div
@@ -347,7 +347,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="attended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                            style="min-height: 605px;">
+                            style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
                                     <div
