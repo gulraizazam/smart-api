@@ -41,7 +41,7 @@
                     <th class='table-cols'>Location</th>
                     
                     <th class='table-cols'>Last Arrived</th>
-                    <th class='table-cols'>Outstanding Balance</th>
+                    <th class='table-cols'> Balance</th>
                     </tr>
                     </thead>
                     
