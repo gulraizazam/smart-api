@@ -106,6 +106,7 @@ class PatientFollowupController extends Controller
             ->groupBy('package_advances.patient_id')
 
             ->orderBy('package_advances.patient_id', 'DESC')
+            ->orderBy('package_advances.created_at', 'desc')
             ->get();
         $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
             $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
@@ -127,6 +128,7 @@ class PatientFollowupController extends Controller
             ])
 
                 ->whereIn('location_id', ACL::getUserCentres())
+               
                 ->get();
 
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
