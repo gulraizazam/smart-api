@@ -1097,6 +1097,9 @@
                         Auth::user()->hasRole('Head of Operations') ||
                         Auth::user()->hasRole('Finance'))
                     GetAllDoctors(centre_id);
+                @elseif(Auth::user()->hasRole('Administrator'))
+                    $('.loader-imgs').css('display', "none");
+                    LoadDocWiseConversion(Auth::user()->id);
                 @else
                     $('.loader-imgs').css('display', "none");
                     GetDoctors(centre_id, 'firsttime');
