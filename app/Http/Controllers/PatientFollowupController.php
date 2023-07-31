@@ -283,6 +283,9 @@ class PatientFollowupController extends Controller
             }
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.followup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
@@ -392,6 +395,9 @@ class PatientFollowupController extends Controller
             }
            
         }
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.monthlyfollowup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
@@ -501,7 +507,9 @@ class PatientFollowupController extends Controller
             }
 
         }
-
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
             'patient_data' => $patient_data
         ]);
