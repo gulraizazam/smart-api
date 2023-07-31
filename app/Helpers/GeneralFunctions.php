@@ -1040,6 +1040,9 @@ class GeneralFunctions
             }
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         return $patient_data;
     }
     public static function LoadPatientFollowUpReportMonthly($data, $where)
@@ -1144,6 +1147,9 @@ class GeneralFunctions
                 }
             }
         }
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         return $patient_data;
 
     }
