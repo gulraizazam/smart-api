@@ -1163,6 +1163,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             var TABLE_HTML = "";
             var balance = 0;
             let patientData = response.data.patient_data;
+            console.log('pt', patientData);
             if (patientData.length > 0) {
                 for (let i = 0; i < patientData.length; i++) {
                     console.log('patientData[i]' , patientData[i]);
