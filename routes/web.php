@@ -165,12 +165,12 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     Route::post('users/status', [UsersController::class, 'status'])->name('users.status');
 
-    Route::resource('users', UsersController::class);
+    Route::resource('users', UsersController::class)->middleware('permission:users_manage');
 
     Route::post('user_types/datatable', [UserTypesController::class, 'datatable'])->name('user_types.datatable');
     Route::patch('user_types/active/{id}', [UserTypesController::class, 'active'])->name('user_types.active');
     Route::patch('user_types/inactive/{id}', [UserTypesController::class, 'inactive'])->name('user_types.inactive');
-    Route::resource('user_types', UserTypesController::class);
+    Route::resource('user_types', UserTypesController::class)->middleware('permission:user_types_manage');
     // User Operator Settings
     Route::get('user_operator_settings', [UserOperatorSettingsController::class, 'index'])->name('user_operator_settings.index');
 
@@ -207,7 +207,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('lead_statuses/sort', [LeadStatusesController::class, 'sortOrder'])->name('lead_statuses.sort');
 
     // Services
-    Route::resource('services', ServicesController::class)->only('index');
+    Route::resource('services', ServicesController::class)->only('index')->middleware('permission:services_manage');
 
     // Appointment Statuses
     Route::get('appointment_statuses', [AppointmentStatusesController::class, 'index'])->name('appointment_statuses.index');
@@ -233,11 +233,11 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     //Refunds route end
 
     //Discount route Start
-    Route::resource('discounts', DiscountsController::class)->only('index');
+    Route::resource('discounts', DiscountsController::class)->only('index')->middleware('permission:discounts_manage');
     //Discount route end
 
     //Packages route Start
-    Route::get('bundles', [BundlesController::class, 'index'])->name('bundles.index');
+    Route::get('bundles', [BundlesController::class, 'index'])->name('bundles.index')->middleware('permission:packages_manage');
     //Packages route end
 
     //Centre Target
@@ -247,18 +247,18 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::resource('packagesadvances', PackageAdvancesController::class)->only('index');
 
     //Resource Rota Management
-    Route::resource('resourcerotas', ResourceRotasController::class)->only('index');
+    Route::resource('resourcerotas', ResourceRotasController::class)->only('index')->middleware('permission:resourcerotas_manage');
     Route::get('resourcerotas/calender/view/{id}', [ResourceRotasController::class, 'viewCalender'])->name('resourcerotas.calender-view');
 
     //Invoice Management route start
     Route::get('invoices/log/{id}/{type}/{patient_id?}', [InvoicesController::class, 'invoicelog'])->name('invoices.invoice_log');
-    Route::resource('invoices', InvoicesController::class)->only('index');
+    Route::resource('invoices', InvoicesController::class)->only('index')->middleware('permission:invoices_manage');
     //Invoice Management route end
     Route::get('invoices/pdf/{id}/{download?}/{flag?}', [InvoicesController::class, 'invoice_pdf'])->name('invoices.invoice_pdf');
 
     // Package route start
     Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
-    Route::resource('packages', PackagesController::class)->only('index');
+    Route::resource('packages', PackagesController::class)->only('index')->middleware('permission:plans_manage');
     // Package Route end
 
     // Non Refunds Route start
@@ -311,7 +311,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
     Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
 
-    Route::resource('leads', LeadsController::class)->only('index');
+    Route::resource('leads', LeadsController::class)->only('index')->middleware('permission:leads_manage');
     Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
     // Load and Save Lead Statuses
     Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
@@ -349,7 +349,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     Route::get('patients/edit/{id}', [PatientsController::class, 'documentedit'])->name('patients.documentedit');
 
-    Route::resource('patients', PatientsController::class);
+    Route::resource('patients', PatientsController::class)->middleware('permission:patients_manage');
 
     /*Route start for patient medical history Forms*/
     Route::get('medicalhistoryform/editcustomform/{id}', [MedicalHistoryController::class, 'edit'])->name('medicalhistoryform.edit');
@@ -411,8 +411,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::post('appointments/status', [AppointmentsController::class, 'status'])->name('appointments.status');
 
     /*Route::resource('appointments', AppointmentsController::class)->only('index');*/
-    Route::resource('consultancy', AppointmentsController::class)->only('index');
-    Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index');
+    Route::resource('consultancy', AppointmentsController::class)->only('index')->middleware('permission:appointments_manage');
+    Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:appointments_services');
 
     /*service routes*/
 
@@ -523,22 +523,22 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('order/refunds', [OrdersController::class, 'refund'])->name('order.refunds.index');
 
     Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
-    Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports');
-    Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted');
+    Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
+    Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
     Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
 
     Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
 
     //Route start for Operations reports
     Route::get('operation_reports/loaddayarray', [OperationsReportController::class, 'loaddayarray'])->name('reports.operations_report_loadday');
-    Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report');
+    Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
     Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
     Route::post('operation_reports/converted-report-load', [OperationsReportController::class, 'reportLoadConverted'])->name('reports.converted_report_load');
     Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
     Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
-    Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion');
+    Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
     Route::post('reports/load_conversion_report', [ConversionReportController::class, 'LoadConversionReport'])->name('reports.load_conversion_report');
-    Route::get('reports/staff_wise_arrival', [FinanceReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival');
+    Route::get('reports/staff_wise_arrival', [FinanceReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival')->middleware('permission:staff_wise_arrival_manage');
     Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
     //Route end for Operations reports
 
