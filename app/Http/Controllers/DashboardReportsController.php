@@ -2767,7 +2767,6 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-        $sum_conversion_spend2 = 0;
         $locations = $request->centre_id == 'all' ? ACL::getUserCentres() : $request->centre_id;
 
         $consultants = ResourceHasRota::join('resources', 'resources.id', 'resource_has_rota.resource_id')
@@ -2908,6 +2907,7 @@ class DashboardReportsController extends Controller
             });
             $maxConversion = $maxConversion->groupBy('service_id');
             $new_array = [];
+            $sum_conversion_spend2 = 0;
             foreach ($maxConversion as $key => $conversions) {
                 $sum_conversion_total = 0;
                 $sum_conversion_spend = 0;
