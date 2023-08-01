@@ -202,11 +202,13 @@ class RefundsController extends Controller
             ['cash_amount', '>', 0],
             ['package_id', '=', $package_information->id],
         ])->orderBy('created_at', 'desc')->first();
+       
         $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
         /*end*/
 
         /*first need to tax percentage*/
         $bundle_information = PackageBundles::where('package_id', '=', $id)->first();
+        
         $tax_percentage = $bundle_information->tax_percenatage ?? '';
         /*ans is :: 16.0*/
 
@@ -220,7 +222,7 @@ class RefundsController extends Controller
             ['is_tax', '=', '0'],
         ])->sum('cash_amount');
         /*ans is :: 0 */
-
+        
         /*Document charges*/
         $documentationcharges = Settings::where('slug', '=', 'sys-documentationcharges')->first();
         /*ans is :: 10*/
@@ -232,7 +234,7 @@ class RefundsController extends Controller
             ['is_cancel', '=', '0'],
         ])->sum('cash_amount');
         /*ans is :: 300*/
-
+        
         if ($package_cash_receive) {
             /*Give amount that patient consume*/
             $package_service_originalPrice_consumed = PackageService::where([
@@ -240,7 +242,7 @@ class RefundsController extends Controller
                 ['is_consumed', '=', '1'],
             ])->sum('orignal_price');
             /*ans is :: 240*/
-
+            
             /*Consume amount tax calculate*/
             $cosume_amount_tax = 0; //$package_service_originalPrice_consumed*($tax_percentage/100);
             /*ans is :: 38.4*/
