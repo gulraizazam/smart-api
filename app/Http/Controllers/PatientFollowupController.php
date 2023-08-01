@@ -106,6 +106,7 @@ class PatientFollowupController extends Controller
             ->groupBy('package_advances.patient_id')
 
             ->orderBy('package_advances.patient_id', 'DESC')
+            ->orderBy('package_advances.created_at', 'desc')
             ->get();
         $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
             $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
@@ -121,11 +122,11 @@ class PatientFollowupController extends Controller
             ->where('created_at', '<', Carbon::now()->subDays(3))
             ->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
+           
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
             ])
-
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();
 
@@ -134,7 +135,7 @@ class PatientFollowupController extends Controller
             $data['name'] = $patient->name;
             $data['phone'] = $patient->phone;
             $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
-            $data['created_at'] = Carbon::parse($data['created_at'])->toDateString();
+            $data['created_at'] = Carbon::parse($data['created_at'])->format('Y-m-d');
             if (count($treatments) > 0) {
                 $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
@@ -146,8 +147,9 @@ class PatientFollowupController extends Controller
 
 
                 }
+                
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
@@ -155,7 +157,9 @@ class PatientFollowupController extends Controller
 
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
-
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
             'patient_data' => $patient_data
         ]);
@@ -275,13 +279,16 @@ class PatientFollowupController extends Controller
 
                 }
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
             }
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.followup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
@@ -382,7 +389,7 @@ class PatientFollowupController extends Controller
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                         $data['is_treatment'] = 1;
                         $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
@@ -391,6 +398,9 @@ class PatientFollowupController extends Controller
             }
 
         }
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.monthlyfollowup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
@@ -491,7 +501,7 @@ class PatientFollowupController extends Controller
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                         $data['is_treatment'] = 1;
                         $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
@@ -500,7 +510,9 @@ class PatientFollowupController extends Controller
             }
 
         }
-
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
             'patient_data' => $patient_data
         ]);
