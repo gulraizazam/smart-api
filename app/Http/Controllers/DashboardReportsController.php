@@ -2585,6 +2585,7 @@ class DashboardReportsController extends Controller
                 ->distinct('user_id')
                 ->get();
         }
+        
         $sum_conversion_spend2 = 0;
         foreach ($consultants as $consultant) {
             array_push($lables, $consultant->name);
@@ -2753,7 +2754,6 @@ class DashboardReportsController extends Controller
                             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                             ->whereIn('appointments.location_id', $locations)
                             ->count();
-                            dd($category_total_records, $consultant, $locations);
                     }
                 } else {
                     $name = [$arrive_category['name']][0];
