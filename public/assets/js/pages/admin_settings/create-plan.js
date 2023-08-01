@@ -296,7 +296,7 @@ var table_columns = [
         field: 'package_id',
         title: 'Plans',
         sortable: false,
-        width: 70,
+        width: 60,
         template: function (data) {
             let display_url = route('admin.packages.display', { id: data.id });
             return '<a href="javascript:void(0);" onclick="viewPlan(`' + display_url + '`)">' + data.package_id + '</a>';
@@ -306,12 +306,7 @@ var table_columns = [
         title: 'Centres',
         sortable: false,
         width: 'auto',
-    }, {
-        field: 'session_count',
-        title: 'Session count',
-        sortable: false,
-        width: 70,
-    }, {
+    },  {
         field: 'total',
         title: 'Total',
         sortable: false,
@@ -327,6 +322,11 @@ var table_columns = [
         sortable: false,
         width: 60,
     }, {
+        field: 'refunded',
+        title: 'Refund Amount',
+        sortable: false,
+        width: 70,
+    }, {
         field: 'created_at',
         title: 'Created at',
         width: 'auto',
@@ -335,6 +335,11 @@ var table_columns = [
         title: 'Refund',
         sortable: false,
         width: 60,
+    },{
+        field: 'session_count',
+        title: 'Session count',
+        sortable: false,
+        width: 70,
     }, {
         field: 'actions',
         title: 'Actions',

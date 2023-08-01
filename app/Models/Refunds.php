@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
-use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use Auth;
 use Carbon\Carbon;
+use App\Helpers\ACL;
+use App\Helpers\Filters;
+use Illuminate\Http\Request;
+use App\HelperModule\ApiHelper;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Http\Request;
+use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 
 class Refunds extends Model
 {
@@ -39,15 +40,29 @@ class Refunds extends Model
      */
     public static function createRecord($request, $id)
     {
+       
         /*Only for back date problem*/
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
             ['cash_amount', '>', 0],
             ['package_id', '=', $request->package_id],
         ])->orderBy('created_at', 'desc')->first();
-        //dd($package_advance_last_in->toArray());
-        /*end*/
-
+        $package_cash_receive = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'in'],
+            ['is_cancel', '=', '0'],
+        ])->sum('cash_amount');
+        $package_is_refunded_amount = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '1'],
+            ['is_tax', '=', '0'],
+        ])->sum('cash_amount');
+        $remaining_amount = $package_cash_receive - $package_is_refunded_amount;
+        if($request->refund_amount  > $remaining_amount){
+            return false;
+        }
+       
         $custom_created_at = '';
         if ($request->created_at > $request->date_backend) {
             $custom_created_at = $request->created_at.' '.Carbon::now()->format('H:i:s');

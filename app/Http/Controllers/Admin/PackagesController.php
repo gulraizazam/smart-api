@@ -863,6 +863,13 @@ class PackagesController extends Controller
                     ['cash_flow', '=', 'in'],
                     ['is_cancel', '=', '0'],
                 ])->sum('cash_amount');
+                $package_is_refunded_amount = PackageAdvances::where([
+                    ['package_id', '=', $package->id],
+                    ['cash_flow', '=', 'out'],
+                    ['is_refund', '=', '1'],
+                    ['is_tax', '=', '0'],
+                ])->sum('cash_amount');
+                //$balance = $cash_receive-$package_is_refunded_amount;
                 $settle_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'out'],
@@ -893,7 +900,8 @@ class PackagesController extends Controller
                     'location_id' => $package->location->city->name.'-'.$package->location->name,
                     'session_count' => $session_count,
                     'total' => number_format($packageservices_price),
-                    'cash_receive' => number_format($cash_receive),
+                    'cash_receive' => number_format($cash_receive ),
+                    'refunded' => number_format($package_is_refunded_amount ),
                     'settle_amount' => number_format($settle_amount_with_tax),
                     'refund' => $refund_status,
                     'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
