@@ -2299,15 +2299,15 @@ class DashboardReportsController extends Controller
             ],
             'last7days' => [
                 'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'week' => [
                 'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfWeek()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'thismonth' => [
                 'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->format('Y-m-d'),
             ],
             'lastmonth' => [
                 'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
@@ -2319,7 +2319,7 @@ class DashboardReportsController extends Controller
             ->selectRaw('count(*) as total')
             ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
             ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
-            ->whereBetween('cron_current_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->whereIn('centre_id', $center_id)
             ->groupBy('centre_id')
             ->get()->toArray();

@@ -988,8 +988,11 @@ function GetDoctors(centre_id, time = '') {
         },
     });
 }
-function LoadDocWiseConversion(doc_id) {
-    doc_wise_conversion_chart.destroy();
+function LoadDocWiseConversion(doc_id,time = '') {
+   
+    if (time != 'firsttime') {
+        doc_wise_conversion_chart.destroy();
+    }
     dropDownList('doctor', 'thismonth');
     var DrName = $('#doc_nav').find('li').find('a[data-id=' + doc_id + ']').text();
     jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
@@ -1163,7 +1166,9 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             var TABLE_HTML = "";
             var balance = 0;
             let patientData = response.data.patient_data;
+            
             if (patientData.length > 0) {
+                
                 for (let i = 0; i < patientData.length; i++) {
                     console.log('patientData[i]' , patientData[i]);
                     let patient = patientData[i];
