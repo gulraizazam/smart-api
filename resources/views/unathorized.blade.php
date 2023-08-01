@@ -3,7 +3,7 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8">
-  <title>CodePen - 403 Forbidden</title>
+  <title>Cutera Aesthetics - 403 Forbidden</title>
   <style>
  @import url("https://fonts.googleapis.com/css?family=Lato");
 * {
