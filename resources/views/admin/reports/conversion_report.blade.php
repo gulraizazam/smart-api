@@ -166,7 +166,7 @@
                         $total = 0;
                         $count = 0;
                     @endphp
-                    {{-- @if(count($report_data))
+                    @if(count($report_data))
                         @foreach($report_data as $appointment)
                             @if($appointment['converted'] != '' && $appointment['conversion_spend'] > 0)
                                 <tr>
@@ -197,7 +197,7 @@
                             <td colspan="12" align="center"></td>
                             <td colspan="12" align="center"></td>
                         </tr>
-                    @endif --}}
+                    @endif
                     </tbody>
                 </table>
                 <div class="col-md-12 mb-3">
