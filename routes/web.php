@@ -72,7 +72,9 @@ use App\Http\Controllers\DashboardReportsController;
 Route::get('/', function () {
     return redirect()->route('login');
 });
-
+Route::get('/unathorized', function () {
+    return view('unathorized');
+})->name('unauthorized');
 Auth::routes();
 // Authentication Routes...
 Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
