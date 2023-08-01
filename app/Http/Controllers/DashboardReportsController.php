@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
 use App\HelperModule\ApiHelper;
 use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
+use App\Models\ResourceHasRota;
 use App\Models\AppointmentTypes;
 use App\Reports\dashboardreport;
 use App\Helpers\GeneralFunctions;
@@ -2562,6 +2563,7 @@ class DashboardReportsController extends Controller
             ->whereIn('resource_has_rota.location_id', $locations)
             ->distinct('user_id')
             ->get();
+
         $consultant = collect($consultants)->pluck('id');
         $sum_conversion_spend2 = 0;
 
@@ -2717,6 +2719,7 @@ class DashboardReportsController extends Controller
 
                 $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
+
                 $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                     ->whereIn('doctor_id', $consultant)
                     ->whereIn('appointments.location_id', $locations)
@@ -2726,6 +2729,7 @@ class DashboardReportsController extends Controller
                 $name = [$arrive_category['name']][0];
                 $sum_conversion_total = 0;
                 $avg_valu = 0;
+
                 $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                     ->whereIn('doctor_id', $consultant)
                     ->whereIn('appointments.location_id', $locations)
@@ -2764,13 +2768,14 @@ class DashboardReportsController extends Controller
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
 
-        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
-        if ($request->centre_id == 'all') {
-            $locations = Locations::whereNotIn('name', $where_not)->where('active', 1)->pluck('id');
-        } else {
-            $locations = $request->centre_id;
-        }
+        $locations = $request->centre_id == 'all' ? ACL::getUserCentres() : $request->centre_id;
 
+        $consultants = ResourceHasRota::join('resources', 'resources.id', 'resource_has_rota.resource_id')
+            ->join('users', 'resources.external_id', 'users.id')
+            ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+            ->whereIn('resource_has_rota.location_id', $locations)
+            ->distinct('user_id')
+            ->pluck('users.id');
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
@@ -2778,7 +2783,7 @@ class DashboardReportsController extends Controller
                 'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                 'appointments.appointment_type_id' => 1
             ])
-
+            ->whereIn('appointments.doctor_id', $consultants)
             ->whereIn('appointments.location_id', $locations)
             ->selectRaw('count(*) as arrived, service_id,services.name')
             ->whereBetween('appointments.scheduled_date', [
@@ -2793,14 +2798,13 @@ class DashboardReportsController extends Controller
                 array_push($lables, $location_name->name);
             }
 
-
             $converted_appointments =  Appointments::with('location:id,name')
                 ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
                 ->where([
                     'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                     'appointments.appointment_type_id' => 1
                 ])
-
+                ->whereIn('appointments.doctor_id', $consultants)
                 ->where('appointments.location_id', $location)
                 ->where('package_advances.cash_amount', '>', 0)
                 ->select('appointments.*')
@@ -2889,6 +2893,7 @@ class DashboardReportsController extends Controller
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                 ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
                 ->where('appointments.location_id', $location)
+                ->whereIn('appointments.doctor_id', $consultants)
                 ->count();
 
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
@@ -2927,8 +2932,8 @@ class DashboardReportsController extends Controller
                     $avg_valu = $new_array[$arrive_category['name']]['avg'];
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-
                         ->whereIn('appointments.location_id', $locations)
+                        ->whereIn('appointments.doctor_id', $consultants)
                         ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
@@ -2938,6 +2943,7 @@ class DashboardReportsController extends Controller
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
+                        ->whereIn('appointments.doctor_id', $consultants)
                         ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 }
