@@ -72,7 +72,9 @@ use App\Http\Controllers\DashboardReportsController;
 Route::get('/', function () {
     return redirect()->route('login');
 });
-
+Route::get('/unathorized', function () {
+    return view('unathorized');
+})->name('unauthorized');
 Auth::routes();
 // Authentication Routes...
 Route::get('login', [App\Http\Controllers\Auth\LoginController::class, 'showLoginForm'])->name('login');
@@ -523,22 +525,22 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('order/refunds', [OrdersController::class, 'refund'])->name('order.refunds.index');
 
     Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
-    Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports');
-    Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted');
+    Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
+    Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
     Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
 
     Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
 
     //Route start for Operations reports
     Route::get('operation_reports/loaddayarray', [OperationsReportController::class, 'loaddayarray'])->name('reports.operations_report_loadday');
-    Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report');
+    Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');;
     Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
     Route::post('operation_reports/converted-report-load', [OperationsReportController::class, 'reportLoadConverted'])->name('reports.converted_report_load');
     Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
     Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
-    Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion');
+    Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
     Route::post('reports/load_conversion_report', [ConversionReportController::class, 'LoadConversionReport'])->name('reports.load_conversion_report');
-    Route::get('reports/staff_wise_arrival', [FinanceReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival');
+    Route::get('reports/staff_wise_arrival', [FinanceReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival')->middleware('permission:staff_wise_arrival_manage');
     Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
     //Route end for Operations reports
 
@@ -572,7 +574,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
         Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
         Route::get('dashboard/patient-follow-up', [PatientFollowupController::class, 'patientFollowUp'])->name('dashboard.patient_follow_up');
-        Route::get('follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up');
+        Route::get('follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');;
         Route::get('follow-up-report-monthly', [DashboardReportsController::class, 'FollowUpReportMonthly'])->name('reports.follow_up_month');
         Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'loadFollowUpReport'])->name('reports.patient_follow_up_report');
         Route::post('dashboard/patient_follow_up_report_monthly', [all_doctor_wise_conversion::class, 'LoadPatientFollowUpReportMonthly'])->name('reports.patient_follow_up_report_monthly');
