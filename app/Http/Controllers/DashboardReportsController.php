@@ -2767,7 +2767,7 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-
+        $sum_conversion_spend2 = 0;
         $locations = $request->centre_id == 'all' ? ACL::getUserCentres() : $request->centre_id;
 
         $consultants = ResourceHasRota::join('resources', 'resources.id', 'resource_has_rota.resource_id')
@@ -2915,6 +2915,7 @@ class DashboardReportsController extends Controller
                     $name = $conversion['service'];
                     $sum_conversion_spend += $conversion['conversion_spend'];
                     $sum_conversion_total += 1;
+                    $sum_conversion_spend2 += $conversion['conversion_spend'];
                 }
                 $avg_by_category = ($sum_conversion_spend / count($conversions));
                 $new_array[$name] = [
@@ -2963,8 +2964,8 @@ class DashboardReportsController extends Controller
             'total_appointments' => $total_apts,
             'converted_appointments' => $converted_apts,
             'categories' => $returnCategoryData,
-            'category_total' => $total_arrived_appointments
-
+            'category_total' => $total_arrived_appointments,
+            'sum_val' => $sum_conversion_spend2
         ]);
     }
     public function GetCentreDoctors(Request $request)
