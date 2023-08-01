@@ -2579,12 +2579,13 @@ class DashboardReportsController extends Controller
             $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
                 ->join('users', 'resources.external_id', 'users.id')
                 ->select('users.name', 'users.id')
+
                 ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
                 ->whereIn('resource_has_rota.location_id', $locations)
                 ->distinct('user_id')
                 ->get();
         }
-
+        $sum_conversion_spend2 = 0;
         foreach ($consultants as $consultant) {
             array_push($lables, $consultant->name);
             $consultant = [$consultant->id];
@@ -2752,6 +2753,7 @@ class DashboardReportsController extends Controller
                             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                             ->whereIn('appointments.location_id', $locations)
                             ->count();
+                            dd($category_total_records, $consultant, $locations);
                     }
                 } else {
                     $name = [$arrive_category['name']][0];
