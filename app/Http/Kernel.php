@@ -70,5 +70,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'checkAccount' => \App\Http\Middleware\CheckAccountStatus::class,
         'auth.common' => \App\Http\Middleware\AuthenticateApiWeb::class,
+        'permission' => \App\Http\Middleware\CheckPermission::class,
     ];
 }
