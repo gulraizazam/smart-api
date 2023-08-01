@@ -2535,7 +2535,6 @@ class DashboardReportsController extends Controller
 
     public function DoctoreWiseConversion(Request $request)
     {
-
         $where = [];
         $total_apts = [];
         $converted_apts = [];
@@ -2549,16 +2548,12 @@ class DashboardReportsController extends Controller
         $periods = GeneralFunctions::GetPeriods();
         $locations = $request->centre_id == 'all' ? ACL::getUserCentres() : [$request->centre_id];
 
-        if ($request->centre_id != 'all') {
-            $where[] = [['appointments.location_id' => $request->centre_id]];
-        }
-
         $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
             ->join('users', 'resources.external_id', 'users.id')
             ->select('users.name', 'users.id')
             ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-            ->when(!empty($data['doctor_id']), function ($query) use ($request) {
-                return $query->whereIn('resources.external_id', $request->doc_id);
+            ->when($request->has('doc_id'), function ($query) use ($request) {
+                return $query->whereIn('resources.external_id', [$request->doc_id]);
             })
             ->whereIn('resource_has_rota.location_id', $locations)
             ->distinct('user_id')
@@ -2711,7 +2706,6 @@ class DashboardReportsController extends Controller
                 'avg' => $avg_by_category,
             ];
         }
-
 
         foreach ($total_arrived_appointments->toArray() as $key => $arrive_category) {
             if (array_key_exists($arrive_category['name'], $new_array)) {
