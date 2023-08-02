@@ -2,7 +2,6 @@
 
 namespace App\Reports;
 
-use DB;
 use Auth;
 use Config;
 use App\User;
@@ -22,6 +21,8 @@ use App\Models\PackageAdvances;
 use App\Models\ResourceHasRota;
 use App\Models\AppointmentTypes;
 use App\Helpers\GeneralFunctions;
+use App\Models\DoctorHasLocations;
+use Illuminate\Support\Facades\DB;
 use App\Models\PabaoRecordPayments;
 use App\Helpers\Widgets\AppointmentEditWidget;
 

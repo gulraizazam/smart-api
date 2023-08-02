@@ -2550,7 +2550,7 @@ class DashboardReportsController extends Controller
         if($request->centre_id == 'all'){
             $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
         }else{
-            $locations=$request->centre_id;
+            $locations=[$request->centre_id];
         }
         $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
             ->join('users', 'resources.external_id', 'users.id')
