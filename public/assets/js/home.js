@@ -680,7 +680,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
             }
-            
+
             arrived_t -= walkin_t;
             total_t -= walkin_t;
 
@@ -931,7 +931,7 @@ function GetDoctors(centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
