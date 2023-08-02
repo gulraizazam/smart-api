@@ -430,6 +430,7 @@ class PatientFollowupController extends Controller
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
+            ->where($where)
             ->orderByDesc('appointments.id')
             ->pluck('patient_id');
 
