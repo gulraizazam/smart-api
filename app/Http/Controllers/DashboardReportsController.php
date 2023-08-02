@@ -2306,7 +2306,7 @@ class DashboardReportsController extends Controller
             ],
             'thismonth' => [
                 'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'lastmonth' => [
                 'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
