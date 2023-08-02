@@ -78,7 +78,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Highest Conversion Value</td>
-                                <td class="bg-light" style="text-align:right;">PKR:{{$maxConversion }}</td>
+                                <td class="bg-light" style="text-align:right;">PKR:{{$maxConversion ?? 0 }}</td>
                             </tr>
                         </thead>
                     </table>
@@ -89,7 +89,7 @@
                              <tr class="">
                                 <td class="border-top bg-light" >Lowest Conversion Value</td>
                                 <td class="border-top bg-light" style="text-align:right;">
-                                PKR:{{ number_format($minConversion,2) }}
+                                PKR:{{ number_format($minConversion ?? 0, 2) }}
                                 </td>
                             </tr>
 
@@ -101,7 +101,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Average Conversion Value</td>
-                                <td class="bg-light" style="text-align:right;">PKR: {{ number_format($average_client_coversion,2) }}</td>
+                                <td class="bg-light" style="text-align:right;">PKR: {{ number_format($average_client_coversion ?? 0, 2) }}</td>
                             </tr>
 
                         </thead>
@@ -112,23 +112,22 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Arrival to Conversion Ratio</td>
-                                <td class="bg-light" style="text-align:right;">{{ number_format($arrival_to_conversion_ratio,2) }} %</td>
+                                <td class="bg-light" style="text-align:right;">{{ number_format($arrival_to_conversion_ratio ?? 0, 2) }} %</td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light">Total Conversion</td>
-                                <td class="bg-light" style="text-align:right;">{{ $total_conversion }}</td>
+                                <td class="bg-light" style="text-align:right;">{{ $total_conversion ?? 0 }}</td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light">Total Arrival</td>
-                                <td class="bg-light" style="text-align:right;">{{ $total_arrival }}</td>
+                                <td class="bg-light" style="text-align:right;">{{ $total_arrival ?? 0 }}</td>
                             </tr>
                         </thead>
                     </table>
                 </div>
             </div>
             <div class="row">
-                @foreach($CategoryConversionData as $key => $conversion)
-
+                @foreach($CategoryConversionData as $conversion)
                 <div class="col-md-4 mb-3">
                     <table class="table border">
                         <thead>
