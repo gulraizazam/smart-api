@@ -221,7 +221,7 @@
                             </div>
                         </div>
                         @endif
-                        @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
+                        @if (\Illuminate\Support\Facades\Gate::allows('dashboard_unattended_report'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="unattended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;overflow-y: hidden;">
@@ -344,7 +344,7 @@
                             </div>
                         </div>
                     @endif
-                    @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
+                    @if (\Illuminate\Support\Facades\Gate::allows('dashboard_overdue_treatments'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="attended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                             style="min-height: 605px;overflow-y: hidden;">
