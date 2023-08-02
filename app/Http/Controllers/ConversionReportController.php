@@ -39,8 +39,10 @@ class ConversionReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        [$report_data, $locationData, $maxConversion, $minConversion, $conversionsByPatient, $average_client_coversion, $arrival_to_conversion_ratio, $total_conversion, $total_arrival, $CategoryConversionData, $avg_cxlient_valu] = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
-
+        //[$report_data, $locationData, /* $maxConversion, $minConversion, $conversionsByPatient, $average_client_coversion, $arrival_to_conversion_ratio, $total_conversion, */ $total_arrival, $CategoryConversionData/* , $avg_cxlient_valu */] = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
+        list($report_data, $locationData, $maxConversion, $minConversion, $CategoryConversionData, $arrival_to_conversion_ratio, $average_client_coversion, $conversionsByPatient, $total_conversion, $total_arrival, $avg_cxlient_valu) = Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id);
+/* $data = get_defined_vars();
+dd($data, Finanaces::LoadConversionReport($request->all(), Auth::user()->account_id)); */
         return view('admin.reports.conversion_report', get_defined_vars());
     }
 }
