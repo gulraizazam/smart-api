@@ -1065,8 +1065,7 @@ function applyFilters(datatable) {
             package_id: $("#search_plan_id").val(),
             location_id: $("#search_location_id").val(),
             status: $("#search_status").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
 
@@ -1085,8 +1084,7 @@ function resetAllFilters(datatable) {
             patient_id: '',
             package_id: '',
             location_id: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             status: '',
             filter: 'filter_cancel',
         }
@@ -1131,15 +1129,9 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_id").val(active_filters.id);
 
-        /*if (active_filters.patient_name !== 'undefined' && active_filters.patient_name != 'undefined') {
-            $("#search_patient_id").html('<option value="'+active_filters.patient_id+'">'+active_filters.patient_name+'</option>');
-            $("#search_patient_id").val(active_filters?.patient_id ?? '');
-        }*/
-
         $("#search_location_id").val(active_filters.location_id);
         $("#search_status").val(active_filters.status);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
 

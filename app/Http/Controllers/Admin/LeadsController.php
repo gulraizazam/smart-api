@@ -2,41 +2,42 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\ExportLead;
-use App\HelperModule\ApiHelper;
+use DB;
+use Auth;
+use File;
+use Config;
+use DateTime;
+use Validator;
+use Carbon\Carbon;
 use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\TelenorSMSAPI;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\FileUploadLeadsRequest;
-use App\Http\Requests\Admin\StoreUpdateLeadCommentsRequest;
-use App\Models\Cities;
-use App\Models\LeadComments;
+use App\Models\User;
 use App\Models\Leads;
-use App\Models\LeadSources;
-use App\Models\LeadsServices;
-use App\Models\LeadStatuses;
-use App\Models\Locations;
-use App\Models\Patients;
+use App\Models\Towns;
+use App\Models\Cities;
 use App\Models\Regions;
+use App\Models\SMSLogs;
+use App\Helpers\Filters;
+use App\Models\Patients;
 use App\Models\Services;
 use App\Models\Settings;
-use App\Models\SMSLogs;
+use App\Models\Locations;
+use App\Exports\ExportLead;
+use App\Models\LeadSources;
+use App\Models\LeadComments;
+use App\Models\LeadStatuses;
 use App\Models\SMSTemplates;
-use App\Models\Towns;
-use App\Models\User;
-use Auth;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Carbon\Carbon;
-use Config;
-use DB;
-use File;
 use Illuminate\Http\Request;
+use App\Models\LeadsServices;
+use App\Helpers\TelenorSMSAPI;
+use App\HelperModule\ApiHelper;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Helpers\GeneralFunctions;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
 use Rap2hpoutre\FastExcel\FastExcel;
-use Validator;
+use App\Http\Requests\Admin\FileUploadLeadsRequest;
+use App\Http\Requests\Admin\StoreUpdateLeadCommentsRequest;
 
 class LeadsController extends Controller
 {
@@ -88,6 +89,7 @@ class LeadsController extends Controller
             }
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
+
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
                 $Leads = Leads::whereIn('id', $ids);
@@ -96,6 +98,16 @@ class LeadsController extends Controller
                 }
                 $records['status'] = true; // pass custom message(useful for getting status of group actions)
                 $records['message'] = 'Records has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
+            }
+            if (hasFilter($filters, 'created_at')) {
+                $date_range = explode(' - ', $filters['created_at']);
+                $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+                $end_date_string = new DateTime($date_range[1]);
+                $end_date_string->setTime(23, 59, 0);
+                $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            } else {
+                $start_date_time = null;
+                $end_date_time = null;
             }
             if ($request->has('sort')) {
                 [$orderBy, $order] = getSortBy($request, 'leads.created_at', 'DESC');
@@ -246,27 +258,16 @@ class LeadsController extends Controller
                     }
                 }
             }
-            if (hasFilter($filters, 'date_from')) {
-                $where[] = ['leads.created_at', '>=', $filters['date_from'] . ' 00:00:00'];
-                Filters::put(Auth::User()->id, $filename, 'date_from', $filters['date_from']);
+            if (hasFilter($filters, 'created_at')) {
+                $where[] = ['leads.created_at', '>=', $start_date_time];
+                $where[] = ['leads.created_at', '<=', $end_date_time];
+                Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
             } else {
                 if ($apply_filter) {
-                    Filters::forget(Auth::User()->id, $filename, 'date_from');
+                    Filters::forget(Auth::User()->id, $filename, 'created_at');
                 } else {
-                    if (Filters::get(Auth::User()->id, $filename, 'date_from')) {
-                        $where[] = ['leads.created_at', '>=', Filters::get(Auth::User()->id, $filename, 'date_from') . ' 00:00:00'];
-                    }
-                }
-            }
-            if (hasFilter($filters, 'date_to')) {
-                $where[] = ['leads.created_at', '<=', $filters['date_to'] . ' 23:59:59'];
-                Filters::put(Auth::User()->id, $filename, 'date_to', $filters['date_to']);
-            } else {
-                if ($apply_filter) {
-                    Filters::forget(Auth::User()->id, $filename, 'date_to');
-                } else {
-                    if (Filters::get(Auth::User()->id, $filename, 'date_to')) {
-                        $where[] = ['leads.created_at', '<=', Filters::get(Auth::User()->id, $filename, 'date_to') . ' 23:59:59'];
+                    if (Filters::get(Auth::User()->id, $filename, 'created_at')) {
+                        $where[] = ['leads.created_at', '>=', Filters::get(Auth::User()->id, $filename, 'created_at') . ' 00:00:00'];
                     }
                 }
             }

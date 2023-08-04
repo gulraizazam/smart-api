@@ -2,50 +2,51 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
+use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
+use App\Models\User;
+use App\Models\Bundles;
+use App\Models\SMSLogs;
 use App\Helpers\Filters;
-use App\Helpers\Financelog;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
-use App\Helpers\JazzSMSAPI;
-use App\Helpers\TelenorSMSAPI;
-use App\Helpers\Widgets\DiscountWidget;
-use App\Helpers\Widgets\PlanAppointmentCalculation;
-use App\Helpers\Widgets\ServiceWidget;
-use App\Http\Controllers\Controller;
 use App\Models\Accounts;
 use App\Models\Activity;
-use App\Models\Appointments;
-use App\Models\AuditTrailChanges;
-use App\Models\AuditTrails;
-use App\Models\BundleHasServices;
-use App\Models\Bundles;
-use App\Models\Discounts;
-use App\Models\Locations;
-use App\Models\PackageAdvances;
-use App\Models\PackageBundles;
 use App\Models\Packages;
-use App\Models\PackageService;
-use App\Models\PaymentModes;
-use App\Models\ServiceHasLocations;
 use App\Models\Services;
 use App\Models\Settings;
-use App\Models\SMSLogs;
-use App\Models\User;
-use App\Models\UserHasLocations;
-use App\Models\UserOperatorSettings;
-use Carbon\Carbon;
-use Composer\Package\Package;
+use App\Models\Discounts;
+use App\Models\Locations;
+use App\Helpers\Financelog;
+use App\Helpers\JazzSMSAPI;
+use App\Models\AuditTrails;
+use App\Models\Appointments;
+use App\Models\PaymentModes;
 use Illuminate\Http\Request;
+use Composer\Package\Package;
+use App\Helpers\TelenorSMSAPI;
+use App\Models\PackageBundles;
+use App\Models\PackageService;
+use App\HelperModule\ApiHelper;
+use App\Models\PackageAdvances;
+use App\Models\UserHasLocations;
+use App\Helpers\GeneralFunctions;
+use App\Models\AuditTrailChanges;
+use App\Models\BundleHasServices;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use App\Models\ServiceHasLocations;
+use Illuminate\Support\Facades\App;
+use App\Http\Controllers\Controller;
+use App\Models\UserOperatorSettings;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use App\Helpers\Widgets\ServiceWidget;
+use Illuminate\Support\Facades\Config;
+use App\Helpers\Widgets\DiscountWidget;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
+use App\Helpers\Widgets\PlanAppointmentCalculation;
 
 class PackagesController extends Controller
 {
@@ -834,6 +835,7 @@ class PackagesController extends Controller
                     }
                 }
             }
+            
             if ($any_deleted) {
                 $records['status'] = true; // pass custom message(useful for getting status of group actions)
                 $records['message'] = 'One or more record has been deleted successfully!'; // pass custom message(useful for getting status of group actions)

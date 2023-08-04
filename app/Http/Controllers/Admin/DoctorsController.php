@@ -2,29 +2,30 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\NodesTree;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Helpers\Widgets\ServiceWidget;
-use App\Http\Controllers\Controller;
-use App\Models\DoctorHasLocations;
+use DateTime;
+use App\Models\User;
 use App\Models\Doctors;
+use App\Helpers\Filters;
+use App\Models\Services;
 use App\Models\Locations;
 use App\Models\Resources;
-use App\Models\ResourceTypes;
-use App\Models\RoleHasUsers;
-use App\Models\Services;
-use App\Models\User;
 use App\Models\UserTypes;
+use App\Helpers\NodesTree;
+use App\Models\RoleHasUsers;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
+use App\Models\ResourceTypes;
+use App\HelperModule\ApiHelper;
+use App\Helpers\GeneralFunctions;
+use App\Models\DoctorHasLocations;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
 use Spatie\Permission\Models\Role;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use App\Helpers\Widgets\ServiceWidget;
+use Illuminate\Support\Facades\Config;
+use App\Helpers\Widgets\LocationsWidget;
+use Illuminate\Support\Facades\Validator;
 
 class DoctorsController extends Controller
 {
@@ -191,6 +192,16 @@ class DoctorsController extends Controller
             $where = [];
             [$orderBy, $order] = getSortBy($request);
 
+            if (hasFilter($filters, 'created_at')) {
+                $date_range = explode(' - ', $filters['created_at']);
+                $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+                $end_date_string = new DateTime($date_range[1]);
+                $end_date_string->setTime(23, 59, 0);
+                $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            } else {
+                $start_date_time = null;
+                $end_date_time = null;
+            }
             if (hasFilter($filters, 'name')) {
                 $where[] = [
                     'users.name',
@@ -308,43 +319,16 @@ class DoctorsController extends Controller
                 '=',
                 2,
             ];
-            if (hasFilter($filters, 'created_from')) {
-                $where[] = [
-                    'users.created_at',
-                    '>=',
-                    $filters['created_from'].' 00:00:00',
-                ];
-                Filters::put(Auth::User()->id, 'doctors', 'created_from', $filters['created_from']);
+            if (hasFilter($filters, 'created_at')) {
+                $where[] = ['users.created_at', '>=', $start_date_time];
+                $where[] = ['users.created_at', '<=', $end_date_time];
+                Filters::put(Auth::User()->id, 'doctors', 'created_at', $filters['created_at']);
             } else {
                 if ($apply_filter) {
-                    Filters::forget(Auth::User()->id, 'doctors', 'created_from');
+                    Filters::forget(Auth::User()->id, 'doctors', 'created_at');
                 } else {
-
-                    if (Filters::get(Auth::User()->id, 'doctors', 'created_from')) {
-                        $where[] = [
-                            'users.created_at',
-                            '>=',
-                            Filters::get(Auth::User()->id, 'doctors', 'created_from').' 00:00:00',
-                        ];
-                    }
-                }
-            }
-            if (hasFilter($filters, 'created_to')) {
-                $where[] = [
-                    'users.created_at',
-                    '<=',
-                    $filters['created_to'].' 23:59:59',
-                ];
-                Filters::put(Auth::User()->id, 'doctors', 'created_to', $filters['created_to']);
-            } else {
-                if ($apply_filter) {
-                    Filters::forget(Auth::User()->id, 'doctors', 'created_to');
-                } else {
-                    if (Filters::get(Auth::User()->id, 'doctors', 'created_to')) {
-                        $where[] = [
-                            'users.created_at',
-                            '<=',
-                            Filters::get(Auth::User()->id, 'doctors', 'created_to').' 23:59:59',
+                    if (Filters::get(Auth::User()->id, 'doctors', 'created_at')) {
+                        $where[] = ['users.created_at', '>=', Filters::get(Auth::User()->id, 'doctors', 'created_at'),
                         ];
                     }
                 }

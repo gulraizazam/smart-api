@@ -166,8 +166,7 @@ function applyFilters(datatable) {
             patient_id: $("#search_patient").val(),
             location_id: $("#search_centres").val(),
             package_id: $("#search_plans").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
 
@@ -186,8 +185,7 @@ function resetAllFilters(datatable) {
             patient_id: '',
             package_id: '',
             location_id: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -223,8 +221,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_id").html(patients_options);
 
         $("#search_id").val(active_filters.patient_id);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
         $("#search_centres").html(location_options);
         $("#search_centres").val(active_filters.location_id);
 
@@ -256,5 +253,5 @@ $(document).ready( function () {
         $('.search_field').val('').change();
         $('.search_patient').val(null).trigger('change');
     });
-
+    $("#date_range").val("");
 });

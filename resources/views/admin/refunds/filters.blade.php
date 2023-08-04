@@ -34,11 +34,6 @@
 
         </div>
 
-        {{--<div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Phone:</label>
-            <input type="text" class="form-control filter-field" placeholder="Phone" id="search_phone" />
-        </div>--}}
-
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Centres:</label>
             <select class="form-control filter-field select2" id="search_centres">
@@ -56,16 +51,10 @@
 
     <div class="row mb-8 advance-filters" style="display: none;">
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Create at:</label>
-            <div class="input-group input-daterange to-from-datepicker">
-                <input type="text" id="search_created_from" class="form-control filter-field datatable-input" name="created_from" placeholder="From">
-                <div class="input-group-append">
-                    <span class="input-group-text">
-                        <i class="la la-ellipsis-h"></i>
-                    </span>
-                </div>
-                <input type="text" id="search_created_to" class="form-control filter-field datatable-input" name="created_to" placeholder="To">
+        <div class="col-md-3 mb-lg-0 mb-6 @if($errors->has('date_range')) has-error @endif">
+            {!! Form::label('date_range', 'Created at:', ['class' => 'control-label']) !!}
+            <div class="input-group">
+                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off']) !!}
             </div>
         </div>
 
