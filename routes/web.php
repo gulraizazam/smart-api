@@ -233,6 +233,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     // Refund Route
     Route::resource('refunds', RefundsController::class)->only('index');
     Route::post('refunds/getplans', [PackagesController::class, 'getPlans'])->name('refunds.getplans');
+    Route::get('refunds/edit/{id}', [PackagesController::class, 'editRefund'])->name('refunds.edit');
+    Route::post('refunds/update', [PackagesController::class, 'updateRefund'])->name('refunds.update');
     //Refunds route end
 
     //Discount route Start

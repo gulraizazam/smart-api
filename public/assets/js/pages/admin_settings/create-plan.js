@@ -400,12 +400,7 @@ function actions(data) {
                     </a>\
                 </li>';
             }
-            actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="refund(`' + refund_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                        <span class="navi-text">Refund</span>\
-                    </a>\
-                </li>';
+           
             if (permissions.log) {
                 actions += '<li class="navi-item">\
                         <a href="'+ log_url + '" class="navi-link">\
@@ -558,8 +553,7 @@ function refundData(response) {
 }
 
 function setEditData(response) {
-    console.log(response);
-
+   
     try {
 
         let appointmentArray = response.data.appointmentArray;
