@@ -281,7 +281,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_gender").val(active_filters.gender);
         $("#search_phone").val(active_filters.phone);
         $("#search_email").val(active_filters.email);
-        $("#search_created_at").val(active_filters.created_at);
+        $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
     } catch (error) {
@@ -291,8 +291,7 @@ function setFilters(filter_values, active_filters) {
 
 function hideShowAdvanceFilters(active_filters) {
 
-    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
-        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
+    if ((typeof active_filters.created_at !== 'undefined' && active_filters.created_at != '')
         || (typeof active_filters.status !== 'undefined' && active_filters.status != '')
         || (typeof active_filters.gender !== 'undefined' && active_filters.gender != '')
     ) {
