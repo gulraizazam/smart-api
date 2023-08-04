@@ -40,7 +40,7 @@ class Refunds extends Model
      */
     public static function createRecord($request, $id)
     {
-        
+        dd($request->all());
       
         /*Only for back date problem*/
         $package_advance_last_in = PackageAdvances::where([
