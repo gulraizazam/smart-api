@@ -35,21 +35,40 @@
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-12 mt-5">
-                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Note <span class="text text-danger">*</span></label>
-                            <textarea id="refund_note" class="form-control" name="refund_note" rows="5" placeholder="Enter Reason Here"></textarea>
+                    <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
+                            <input  class="form-control filter-field search_patient_refund" placeholder="Patient Search">
+                            <input type="hidden" class="filter-field search_field" id="add_patients_id">
+                            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
                         </div>
-
+                        <div class="fv-row col-md-4 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Plans <span class="text text-danger">*</span></label>
+                            <select id="add_plan_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="plan_id_1">
+                                <option value="">Select Plans</option>
+                            </select>
+                        </div>
                         <div class="fv-row col-md-12 mt-5">
                             <label id="document-label" for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Documentation Charges</label>
                           <input type="text" readonly="readonly" id="documentationcharges" class="form-control disable-filed" name="documentationcharges">
                         </div>
-
                         <div class="fv-row col-md-12 mt-5">
+                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Total Received Amount</label>
+                            <input readonly="readonly" type="text" id="received_amount" class="form-control disable-filed" name="received_amount">
+                        </div>
+                        <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Balance</label>
                             <input readonly="readonly" type="text" id="balance" class="form-control disable-filed" name="balance">
                         </div>
-
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
+                            <select id="refund_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                                <option value="">Select Payment Mode</option>
+                                
+                            </select>
+                        </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Amount</label>
                             <input type="number" id="refund_amount" class="form-control" name="refund_amount">
@@ -58,6 +77,10 @@
                         <div class="fv-row col-md-6 mt-5 input-daterange to-from-datepicker">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Date <span class="text text-danger">*</span></label>
                             <input type="text" id="created_at" class="form-control datatable-input" name="created_at">
+                        </div>
+                        <div class="fv-row col-md-6 mt-5 ">
+                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Case Setteled <span class="text text-danger">*</span></label>
+                            <input type="checkbox" id="case_setteled" name="case_setteled">
                         </div>
 
                     </div>

@@ -3778,7 +3778,7 @@ class AppointmentsController extends Controller
                 $packages = DB::table('packages')
                     ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
                     ->where([
-                        ['packages.is_refund', '=', '0'],
+                        // ['packages.is_refund', '=', '0'],
                         ['packages.active', '=', '1'],
                         ['packages.patient_id', '=', $appointment->patient_id],
                         ['package_services.service_id', '=', $appointment->service_id],

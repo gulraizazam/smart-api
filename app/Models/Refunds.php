@@ -16,7 +16,7 @@ class Refunds extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'account_id', 'appointment_type_id', 'appointment_id', 'location_id', 'created_by', 'updated_by', 'created_at', 'updated_at', 'package_id', 'deleted_at', 'invoice_id', 'is_refund', 'refund_note', 'is_adjustment', 'is_tax'];
+    protected $fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'account_id', 'appointment_type_id', 'appointment_id', 'location_id', 'created_by', 'updated_by', 'created_at', 'updated_at', 'package_id', 'deleted_at', 'invoice_id', 'is_refund', 'refund_note', 'is_adjustment', 'is_tax','is_setteled'];
 
     protected static $_fillable = ['cash_flow', 'cash_amount', 'active', 'patient_id', 'payment_mode_id', 'appointment_type_id', 'appointment_id', 'location_id', 'created_by', 'updated_by', 'package_id', 'invoice_id', 'is_refund', 'refund_note', 'is_adjustment', 'is_tax'];
 
@@ -40,17 +40,20 @@ class Refunds extends Model
      */
     public static function createRecord($request, $id)
     {
-       
+        
+      
         /*Only for back date problem*/
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
             ['cash_amount', '>', 0],
+            ['is_setteled', '=', '0'],
             ['package_id', '=', $request->package_id],
         ])->orderBy('created_at', 'desc')->first();
         $package_cash_receive = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0'],
+            ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
         $package_is_refunded_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
@@ -58,10 +61,24 @@ class Refunds extends Model
             ['is_refund', '=', '1'],
             ['is_tax', '=', '0'],
         ])->sum('cash_amount');
+        $package_is_consumed_amount = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '0'],
+            ['is_tax', '=', '0'],
+        ])->sum('cash_amount');
+        $package_is_consumed_tax_amount = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '0'],
+            ['is_tax', '=', '1'],
+        ])->sum('cash_amount');
+        $consumed_amount_with_tax = $package_is_consumed_amount + $package_is_consumed_tax_amount;
+       
         $remaining_amount = $package_cash_receive - $package_is_refunded_amount;
-        if($request->refund_amount  > $remaining_amount){
-            return false;
-        }
+        // if($request->refund_amount  > $remaining_amount){
+        //     return false;
+        // }
        
         $custom_created_at = '';
         if ($request->created_at > $request->date_backend) {
@@ -88,9 +105,9 @@ class Refunds extends Model
         // Set Account ID
         $data['cash_flow'] = 'out';
         $data['cash_amount'] = $request->get('refund_amount');
-        $data['is_refund'] = /* ($request->balance > $request->refund_amount) ? '0' :  */'1';
+        $data['is_refund'] = '1';
         $data['patient_id'] = $request->get('patient_id');
-        $data['payment_mode_id'] = '1';
+        $data['payment_mode_id'] = $request->payment_mode_id;
         $data['account_id'] = $id;
         $data['created_by'] = Auth::User()->id;
         $data['updated_by'] = Auth::User()->id;
@@ -119,48 +136,78 @@ class Refunds extends Model
         if ($packageinformation->is_refund == '0') {
             $package = Packages::updateRecordRefunds($request->package_id);
         }
+        if($request->case_setteled == "on"){
+            $package_is_refunded_amount = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'out'],
+                ['is_refund', '=', '1'],
+                ['is_tax', '=', '0'],
+            ])->sum('cash_amount');
+            $amount_after_refund = $consumed_amount_with_tax + $package_is_refunded_amount;
+            $amount_left = $package_cash_receive - $amount_after_refund;
+            
+            if($amount_left > 0){
+                
+                $data_adjustment['cash_flow'] = 'in';
+                $data_adjustment['cash_amount'] = $amount_left;
+                $data_adjustment['is_adjustment'] = '0';
+                $data_adjustment['is_setteled'] = 1;
+                $data_adjustment['patient_id'] = $request->get('patient_id');
+                $data_adjustment['payment_mode_id'] = $request->payment_mode_id;
+                $data_adjustment['account_id'] = $id;
+                $data_adjustment['created_by'] = Auth::User()->id;
+                $data_adjustment['updated_by'] = Auth::User()->id;
+                $data_adjustment['package_id'] = $request->package_id;
+                $data_adjustment['patient_id'] = $packageinformation->patient_id;
+                $data_adjustment['location_id'] = $packageinformation->location_id;
 
-        if ($package_is_adjustment == '0') {
+                $data_adjustment['created_at'] = $custom_created_at;
+                $data_adjustment['updated_at'] = $custom_created_at;
 
-            $data_adjustment['cash_flow'] = 'out';
-            $data_adjustment['cash_amount'] = $request->get('is_adjustment_amount');
-            $data_adjustment['is_adjustment'] = '1';
-            $data_adjustment['patient_id'] = $request->get('patient_id');
-            $data_adjustment['payment_mode_id'] = '1';
-            $data_adjustment['account_id'] = $id;
-            $data_adjustment['created_by'] = Auth::User()->id;
-            $data_adjustment['updated_by'] = Auth::User()->id;
-            $data_adjustment['package_id'] = $request->package_id;
-            $data_adjustment['patient_id'] = $packageinformation->patient_id;
-            $data_adjustment['location_id'] = $packageinformation->location_id;
-
-            $data_adjustment['created_at'] = $custom_created_at;
-            $data_adjustment['updated_at'] = $custom_created_at;
-
-            $record = self::create($data_adjustment);
-
-            AuditTrails::addEventLogger(self::$_table, 'create', $data_adjustment, self::$_fillable, $record);
-
-            $data_refund_tax['cash_flow'] = 'out';
-            $data_refund_tax['cash_amount'] = $request->get('return_tax_amount');
-            $data_refund_tax['is_tax'] = '1';
-            $data_refund_tax['is_refund'] = '1';
-            $data_refund_tax['patient_id'] = $request->get('patient_id');
-            $data_refund_tax['payment_mode_id'] = '1';
-            $data_refund_tax['account_id'] = $id;
-            $data_refund_tax['created_by'] = Auth::User()->id;
-            $data_refund_tax['updated_by'] = Auth::User()->id;
-            $data_refund_tax['package_id'] = $request->package_id;
-            $data_refund_tax['patient_id'] = $packageinformation->patient_id;
-            $data_refund_tax['location_id'] = $packageinformation->location_id;
-
-            $data_refund_tax['created_at'] = $custom_created_at;
-            $data_refund_tax['updated_at'] = $custom_created_at;
-
-            $record = self::create($data_refund_tax);
-
-            AuditTrails::addEventLogger(self::$_table, 'create', $data_refund_tax, self::$_fillable, $record);
+                $record = self::create($data_adjustment);
+            }
         }
+        // if ($package_is_adjustment == '0') {
+
+        //     $data_adjustment['cash_flow'] = 'out';
+        //     $data_adjustment['cash_amount'] = $request->get('is_adjustment_amount');
+        //     $data_adjustment['is_adjustment'] = '1';
+        //     $data_adjustment['patient_id'] = $request->get('patient_id');
+        //     $data_adjustment['payment_mode_id'] = '1';
+        //     $data_adjustment['account_id'] = $id;
+        //     $data_adjustment['created_by'] = Auth::User()->id;
+        //     $data_adjustment['updated_by'] = Auth::User()->id;
+        //     $data_adjustment['package_id'] = $request->package_id;
+        //     $data_adjustment['patient_id'] = $packageinformation->patient_id;
+        //     $data_adjustment['location_id'] = $packageinformation->location_id;
+
+        //     $data_adjustment['created_at'] = $custom_created_at;
+        //     $data_adjustment['updated_at'] = $custom_created_at;
+
+        //     $record = self::create($data_adjustment);
+
+        //     AuditTrails::addEventLogger(self::$_table, 'create', $data_adjustment, self::$_fillable, $record);
+        
+        //     $data_refund_tax['cash_flow'] = 'out';
+        //     $data_refund_tax['cash_amount'] = $request->get('return_tax_amount');
+        //     $data_refund_tax['is_tax'] = '1';
+        //     $data_refund_tax['is_refund'] = '1';
+        //     $data_refund_tax['patient_id'] = $request->get('patient_id');
+        //     $data_refund_tax['payment_mode_id'] = '1';
+        //     $data_refund_tax['account_id'] = $id;
+        //     $data_refund_tax['created_by'] = Auth::User()->id;
+        //     $data_refund_tax['updated_by'] = Auth::User()->id;
+        //     $data_refund_tax['package_id'] = $request->package_id;
+        //     $data_refund_tax['patient_id'] = $packageinformation->patient_id;
+        //     $data_refund_tax['location_id'] = $packageinformation->location_id;
+
+        //     $data_refund_tax['created_at'] = $custom_created_at;
+        //     $data_refund_tax['updated_at'] = $custom_created_at;
+
+        //     $record = self::create($data_refund_tax);
+
+        //     AuditTrails::addEventLogger(self::$_table, 'create', $data_refund_tax, self::$_fillable, $record);
+        // }
 
         return $record;
     }
