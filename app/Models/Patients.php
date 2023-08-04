@@ -605,27 +605,15 @@ class Patients extends BaseModal
         }
 
         if (hasFilter($filters, 'created_at')) {
-            $where[] = [
-                'created_at',
-                '>=',
-                $start_date_time,
-            ];
-            $where[] = [
-                'created_at',
-                '<=',
-                $end_date_time,
-            ];
+            $where[] = ['created_at', '>=', $start_date_time];
+            $where[] = ['created_at', '<=', $end_date_time];
             Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_at');
             } else {
                 if (Filters::get(Auth::User()->id, $filename, 'created_at')) {
-                    $where[] = [
-                        'created_at',
-                        '>=',
-                        Filters::get(Auth::User()->id, $filename, 'created_at').' 00:00:00',
-                    ];
+                    $where[] = ['created_at', '>=', Filters::get(Auth::User()->id, $filename, 'created_at')];
                 }
             }
         }

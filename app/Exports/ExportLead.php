@@ -2,15 +2,16 @@
 
 namespace App\Exports;
 
+use DateTime;
 use App\Helpers\ACL;
 use App\Models\Leads;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\FromCollection;
 
 class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
@@ -24,7 +25,16 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
     public function collection()
     {
         $where = [];
-
+        if ($this->request->created_at && $this->request->created_at != '') {
+            $date_range = explode(' - ', $this->request->created_at);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
         if ($this->request->id != null || $this->request->id != '') {
             $where[] = [['id' => $this->request->id]];
         }
@@ -52,11 +62,9 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         if ($this->request->name != null || $this->request->name != '') {
             $where[] = ['name', 'like', '%'.$this->request->name.'%'];
         }
-        if ($this->request->start_date != null || $this->request->start_date != '') {
-            $where[] = ['created_at', '>=', $this->request->start_date.' 00:00:00'];
-        }
-        if ($this->request->end_date != null || $this->request->end_date != '') {
-            $where[] = ['created_at', '<=', $this->request->end_date.' 23:59:59'];
+        if ($this->request->created_at && $this->request->created_at != '') {
+            $where[] = ['created_at', '>=', $start_date_time];
+            $where[] = ['created_at', '<=', $end_date_time];
         }
         $result_query = Leads::whereIn('city_id', ACL::getUserCities());
         if (count($where)) {
