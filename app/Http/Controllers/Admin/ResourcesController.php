@@ -258,13 +258,9 @@ class ResourcesController extends Controller
      */
     public function datatable(Request $request)
     {
-
         try {
-
             $filename = 'resources';
-
             $filters = getFilters($request->all());
-
             $apply_filter = checkFilters($filters, $filename);
 
             $records = [];
