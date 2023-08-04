@@ -56,7 +56,7 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
                 var pie = response.data.pie.thismonth;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
-                $(".collection_by_centre_dropdown").text("Tis Month");
+                $(".collection_by_centre_dropdown").text("This Month");
             }
             if (lastmonth != '') {
                 $(".pie-income-title").text('Last Month Income');
