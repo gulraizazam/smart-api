@@ -1091,17 +1091,28 @@ class PackagesController extends Controller
                 ['package_id', '=', $package->id],
                 ['cash_flow', '=', 'in'],
                 ['is_cancel', '=', '0'],
+                ['is_setteled', '=', '0'],
             ])->sum('cash_amount');
 
             $cash_amount_out = PackageAdvances::where([
                 ['package_id', '=', $package->id],
                 ['cash_flow', '=', 'out'],
             ])->sum('cash_amount');
-
-            $cash_amount = $cash_amount_in - $cash_amount_out;
+            $refunded = PackageAdvances::where([
+                ['package_id', '=', $package->id],
+                ['cash_flow', '=', 'out'],
+                ['is_refund', '=', 1],
+            ])->sum('cash_amount');
+            $setteled = PackageAdvances::where([
+                ['package_id', '=', $package->id],
+                ['cash_flow', '=', 'in'],
+                ['is_setteled', '=', 1],
+            ])->sum('cash_amount');
+           
             /*We discuss it in future what happen next*/
-            $grand_total = number_format($total_price - $cash_amount_in);
-
+            $grand_total = $total_price - $cash_amount_in;
+          
+            $remaining_amount  = number_format($grand_total + $refunded + $setteled);
             $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
             //$paymentmodes->prepend('Select Payment Mode', '');
 
@@ -1134,7 +1145,7 @@ class PackagesController extends Controller
                 'packageservices' => $packageservices,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
-                'grand_total' => $grand_total,
+                'grand_total' => $remaining_amount,
                 'range' => $range,
                 'locationhasservice' => $locationhasservice,
                 'total_price' => $total_price,
@@ -1162,10 +1173,22 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0'],
+            ['is_setteled', '=', '0'],
+        ])->sum('cash_amount');
+        $refunded = PackageAdvances::where([
+            ['package_id', '=', $package->id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', 1],
+        ])->sum('cash_amount');
+        $setteled = PackageAdvances::where([
+            ['package_id', '=', $package->id],
+            ['cash_flow', '=', 'in'],
+            ['is_setteled', '=', 1],
         ])->sum('cash_amount');
         $package_advances_cash_amount = $packageadvances_cash_amount;
         $package_total = str_replace(',', '', $request->total);
-        $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
+        $total_with_refunded = $package_total + $refunded + $setteled;
+        $grand_total = number_format(($total_with_refunded - $package_advances_cash_amount) - $request->cash_amount);
         $package_id = Packages::whereId($package->id)->first();
         $package_id->update(['total_price' => $request->total, 'updated_at' => Filters::getCurrentTimeStamp()]);
 
@@ -1901,5 +1924,10 @@ class PackagesController extends Controller
         $package = Packages::where('name', 'LIKE', "%{$request->q}%")->select('name', 'id')->get();
 
         return response()->json($package);
+    }
+    public function getPlans(Request $request)
+    {
+        $plans  = Packages::where('patient_id',$request->patient_id)->pluck('name');
+        return response()->json(['stataus' =>1,'message'=>'plan found','plans'=>$plans]);
     }
 }

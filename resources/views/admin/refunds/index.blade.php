@@ -32,8 +32,9 @@
                                 </span>
                             </span>
                             <h3 class="card-label">Refunds</h3>
+                            
                         </div>
-
+                        <a href="" class="btn btn-primary " style="height: 37px;" data-toggle="modal" data-target="#modal_edit_refunds"> Add Refund</a>
                     </div>
 
                     <div class="card-body">
@@ -88,6 +89,7 @@
                     }
                 });
             }
+            
         </script>
     @endpush
 
