@@ -161,7 +161,64 @@ $("#add_patients_id").on('change',function(){
         }
     });
 });
+function GetPlanDetail(){
+    var planId = $("#add_plan_id").val();
+    let refund_url = route('admin.refunds.refund_create', { id: planId });
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: refund_url,
+        type: "get",
+        
+        cache: false,
+        success: function (response) {
+            let refund = response.data;
 
+            // if (refund.refundable_amount == 0) {
+            //     $("#modal_edit_refunds").modal("hide");
+            //     toastr.error("Insufficient amount to refund");
+            //     return false;
+            // }
+            let paymentmodes = response.data.paymentmodes;
+            let payment_options = '<option value="">Select Payment Mode</option>';
+            if (paymentmodes) {
+                Object.entries(paymentmodes).forEach(function (paymentmode) {
+                    payment_options += '<option value="' + paymentmode[0] + '">' + paymentmode[1] + '</option>';
+                });
+            }
+            $("#modal_edit_refunds").modal("show");
+    
+            $("#modal_edit_refunds_form").attr("action", route('admin.refunds.store'));
+    
+    
+            if (refund.document) {
+                $("#document-label").text('Documentation Charges Already Taken');
+                $("#documentationcharges").hide();
+            } else {
+                $("#document-label").text('Documentation Charges');
+                $("#documentationcharges").show();
+            }
+            $("#refund_amount").html(refund.refundable_amount);
+            $("#documentationcharges").val(refund.documentationcharges.data);
+            $("#balance").val(refund.refundable_amount);
+            $("#refund_amount").attr('max', refund.refundable_amount);
+    
+            $("#package_id").val(refund.id);
+            $("#is_adjustment_amount").val(refund.is_adjustment_amount);
+            $("#return_tax_amount").val(refund.return_tax_amount);
+            $("#date_backend").val(refund.date_backend);
+            $("#refund_payment_mode_id").html(payment_options);
+            $("#received_amount").val(refund.cash_amount);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            
+        }
+    });
+}
 function refundData(response) {
 
     try {
