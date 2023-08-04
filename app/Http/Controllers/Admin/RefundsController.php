@@ -77,20 +77,31 @@ class RefundsController extends Controller
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
+            $packages = Packages::getRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
 
             $records = $this->getFiltersData($records, $filename);
 
             if ($packages) {
                 foreach ($packages as $package) {
-                    $session_count = PackageBundles::where('package_id', '=', $package->id)->count();
-                    /*We discuss in future what happen next*/
+                   
                     $cash_receive = PackageAdvances::where([
                         ['package_id', '=', $package->id],
                         ['cash_flow', '=', 'in'],
                         ['is_cancel', '=', '0'],
+                        ['is_setteled', '=', '0']
                     ])->sum('cash_amount');
-
+                    $refunded_amount = PackageAdvances::where([
+                        ['package_id', '=', $package->id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_refund', '=', '1'],
+                    ])->sum('cash_amount');
+                    $is__case_setteled = PackageAdvances::where([
+                        ['package_id', '=', $package->id],
+                        ['cash_flow', '=', 'in'],
+                        ['is_cancel', '=', '0'],
+                        ['is_setteled', '=', '1'],
+                    ])->sum('cash_amount');
                     if ($cash_receive != 0) {
 
                         $records['data'][] = [
@@ -100,9 +111,10 @@ class RefundsController extends Controller
                             'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
                             'package_id' => $package?->name ?? '-',
                             'location_id' => $package->location->city->name.'-'.$package->location?->name,
-                            'session_count' => $session_count,
                             'total' => number_format($package->total_price),
                             'cash_receive' => number_format($cash_receive),
+                            'refunded' =>$refunded_amount,
+                            'case_setteled' => $is__case_setteled > 0 ? 'Yes' : 'No',
                             'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
                         ];
                     } else {
@@ -196,6 +208,7 @@ class RefundsController extends Controller
         $return_tax_amount = '';
 
         $package_information = Packages::find($id);
+        
 
         /*calculation for back date refund entry*/
         $package_advance_last_in = PackageAdvances::where([
@@ -308,6 +321,7 @@ class RefundsController extends Controller
         } else {
             $document = false;
         }
+       
         $paymentmodes = PaymentModes::where('name' , "!=" , "Settle Amount")->get()->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'id' => $id,
@@ -318,7 +332,8 @@ class RefundsController extends Controller
             'document' => $document,
             'return_tax_amount' => $return_tax_amount,
             'date_backend' => $date_backend,
-            'paymentmodes' => $paymentmodes
+            'paymentmodes' => $paymentmodes,
+            
         ]);
     }
 

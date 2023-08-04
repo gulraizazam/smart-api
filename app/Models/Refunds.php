@@ -40,8 +40,7 @@ class Refunds extends Model
      */
     public static function createRecord($request, $id)
     {
-        dd($request->all());
-      
+        
         /*Only for back date problem*/
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
@@ -76,9 +75,9 @@ class Refunds extends Model
         $consumed_amount_with_tax = $package_is_consumed_amount + $package_is_consumed_tax_amount;
        
         $remaining_amount = $package_cash_receive - $package_is_refunded_amount;
-        // if($request->refund_amount  > $remaining_amount){
-        //     return false;
-        // }
+        if($request->refund_amount  > $package_cash_receive){
+            return false;
+        }
        
         $custom_created_at = '';
         if ($request->created_at > $request->date_backend) {

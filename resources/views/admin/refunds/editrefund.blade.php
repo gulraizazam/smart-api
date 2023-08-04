@@ -22,13 +22,13 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_edit_refunds_form" method="post" action="">
+        <form id="edit_refunds_form" method="post" action="">
             <!--begin::Scroll-->
-
-            <input type="hidden" name="package_id" id="package_id" class="form-control">
-            <input type="hidden" id="is_adjustment_amount" name="is_adjustment_amount" class="form-control">
-            <input type="hidden" id="return_tax_amount" name="return_tax_amount" class="form-control">
-            <input type="hidden" name="date_backend" id="date_backend"  class="form-control">
+            @csrf
+            <input type="hidden" name="package_id" id="edit_package_id" class="form-control">
+            <input type="hidden" id="edit_is_adjustment_amount" name="is_adjustment_amount" class="form-control">
+            <input type="hidden" id="edit_return_tax_amount" name="return_tax_amount" class="form-control">
+            <input type="hidden" name="date_backend" id="edit_date_backend"  class="form-control">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resources_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -37,38 +37,33 @@
                     
                     <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                            <input  class="form-control filter-field search_patient_refund" placeholder="Patient Search">
-                            <input type="hidden" class="filter-field search_field" id="add_patients_id">
-                            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
-                            <div class="suggesstion-box" style="display: none;">
-                                <ul class="suggestion-list"></ul>
-                            </div>
+                            <input type="text" readonly="readonly" class="form-control filter-field " id="patient_info">
+                            <input type="hidden" class="filter-field search_field" id="edit_patients_id" >
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Plans <span class="text text-danger">*</span></label>
-                            <select id="add_plan_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="plan_id_1" onchange="GetPlanDetail()">
-                                <option value="">Select Plans</option>
-                            </select>
+                            <input type="text" readonly="readonly" class="form-control filter-field " id="plan_id_1">
+                            <input type="hidden" class="filter-field search_field" id="edit_plan_id_1" name="plan_id_1">
                         </div>
                         <div class="fv-row col-md-12 mt-5">
-                            <label id="document-label" for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Documentation Charges</label>
-                          <input type="text" readonly="readonly" id="documentationcharges" class="form-control disable-filed" name="documentationcharges">
+                            <label id="edit_document-label" for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Documentation Charges</label>
+                          <input type="text" readonly="readonly" id="edit_documentationcharges" class="form-control disable-filed" name="documentationcharges">
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Total Received Amount</label>
-                            <input readonly="readonly" type="text" id="received_amount" class="form-control disable-filed" name="received_amount">
+                            <input readonly="readonly" type="text" id="edit_received_amount" class="form-control disable-filed" name="received_amount">
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Balance</label>
-                            <input readonly="readonly" type="text" id="balance" class="form-control disable-filed" name="balance">
+                            <input readonly="readonly" type="text" id="edit_balance" class="form-control disable-filed" name="balance">
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Amount</label>
-                            <input type="number" id="refund_amount" class="form-control" name="refund_amount">
+                            <input readonly="readonly" type="number" id="edit_refund_amount" class="form-control" name="refund_amount">
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
-                            <select id="refund_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                            <select id="edit_refund_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
                                 <option value="">Select Payment Mode</option>
                                 
                             </select>
@@ -77,15 +72,15 @@
 
                         <div class="fv-row col-md-6 mt-5 input-daterange to-from-datepicker">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Date <span class="text text-danger">*</span></label>
-                            <input type="text" id="created_at" class="form-control datatable-input" name="created_at">
+                            <input type="text" id="edit_created_at" class="form-control datatable-input" name="created_at">
                         </div>
                         <div class="fv-row col-md-6 mt-5 ">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Case Setteled <span class="text text-danger">*</span></label>
-                            <input type="checkbox" id="case_setteled" name="case_setteled">
+                            <input type="checkbox" id="edit_case_setteled" name="case_setteled">
                         </div>
                         <div class="fv-row col-md-12 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Note <span class="text text-danger">*</span></label>
-                            <textarea id="refund_note" class="form-control" name="refund_note" rows="5" placeholder="Enter Reason Here"></textarea>
+                            <textarea id="edit_refund_note" class="form-control" name="refund_note" rows="5" placeholder="Enter Reason Here"></textarea>
                         </div>
                     </div>
                 </div>
