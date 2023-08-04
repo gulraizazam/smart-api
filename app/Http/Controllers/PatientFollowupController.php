@@ -59,7 +59,7 @@ class PatientFollowupController extends Controller
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->pluck('patient_id');
+            ->pluck('appointments.id');
 
 
         $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
@@ -70,7 +70,7 @@ class PatientFollowupController extends Controller
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -82,7 +82,7 @@ class PatientFollowupController extends Controller
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -94,19 +94,20 @@ class PatientFollowupController extends Controller
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('package_advances.id', 'package_advances.patient_id', 'package_advances.created_at', 'package_advances.location_id')
-            ->whereIn('package_advances.patient_id', $appointments)
+            ->whereIn('package_advances.appointment_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
             ->where('cash_flow','in')
-            ->groupBy('package_advances.patient_id')
-
+            ->groupBy('package_advances.patient_id' )
+            
             ->orderBy('package_advances.patient_id', 'DESC')
             ->get();
+        
         $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
             $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
             $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
