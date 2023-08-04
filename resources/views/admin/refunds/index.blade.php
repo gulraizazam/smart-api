@@ -34,7 +34,7 @@
                             <h3 class="card-label">Refunds</h3>
                             
                         </div>
-                        <a href="" class="btn btn-primary " style="height: 37px;" data-toggle="modal" data-target="#modal_edit_refunds"> Add Refund</a>
+                        <a href="" class="btn btn-primary " style="height: 37px;" data-toggle="modal" data-target="#modal_edit_refunds"><i class="la la-plus"></i>  Add Refund</a>
                     </div>
 
                     <div class="card-body">
@@ -64,7 +64,15 @@
         </div>
         <!--end::Modal dialog-->
     </div>
+    <div class="modal fade" id="edit_refunds_modal" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="refunds_edit">
 
+            @include('admin.refunds.editrefund')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/refunds.js')}}"></script>

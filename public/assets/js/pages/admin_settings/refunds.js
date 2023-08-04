@@ -4,17 +4,12 @@ var table_url = route('admin.refunds.datatable');
 var table_columns = [
     {
         field: 'patient_id',
-        title: 'Patient ID',
+        title: 'ID',
         sortable: false,
-        width: 80,
+        width: 70,
     },{
         field: 'name',
         title: 'Name',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'phone',
-        title: 'Phone',
         sortable: false,
         width: 'auto',
     },{
@@ -23,20 +18,25 @@ var table_columns = [
         sortable: false,
         width: 70,
     },{
-        field: 'session_count',
-        title: 'Session count',
-        sortable: false,
-        width: 'auto',
-    },{
         field: 'total',
-        title: 'Total',
+        title: 'Plan Amount',
         sortable: false,
         width: 80,
     },{
         field: 'cash_receive',
         title: 'Cash receive',
         sortable: false,
-        width: 100,
+        width: 80,
+    },{
+        field: 'refunded',
+        title: 'Refund Amount',
+        sortable: false,
+        width: 70,
+    },{
+        field: 'case_setteled',
+        title: 'Case Setteled',
+        sortable: false,
+        width: 70,
     },{
         field: 'location_id',
         title: 'Centres',
@@ -63,7 +63,7 @@ function actions(data) {
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
-        let url = route('admin.refunds.refund_create', {id: id});
+        let edit_url = route('admin.refunds.edit', {id: id});
 
         if (permissions.refund) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -77,9 +77,9 @@ function actions(data) {
                     </li>';
 
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="refund(`' + url + '`);" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="edit(`' + edit_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                        <span class="navi-text">Refund</span>\
+                        <span class="navi-text">edit</span>\
                     </a>\
                 </li>';
 
@@ -113,6 +113,74 @@ function refund(url) {
         }
     });
 
+
+}
+function edit(url) {
+    $("#edit_refunds_modal").modal("show");
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setEditData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            reInitValidation(EditRefundValidation);
+        }
+    });
+
+
+}
+function setEditData(response) {
+   
+    let refund = response.data;
+
+        $("#edit_refunds_form").attr("action", route('admin.refunds.update'));
+
+
+        if (refund.document) {
+            $("#edit_document-label").text('Documentation Charges Already Taken');
+            $("#edit_documentationcharges").hide();
+        } else {
+            $("#edit_document-label").text('Documentation Charges');
+            $("#edit_documentationcharges").show();
+        }
+        $("#edit_refund_amount").val(refund.refundable_amount);
+        $("#edit_documentationcharges").val(refund.documentationcharges.data);
+        $("#edit_balance").val(refund.refundable_amount);
+        $("#edit_refund_amount").val(refund.refunded_amount);
+        $("#edit_received_amount").val(refund.cash_amount);
+        $("#edit_package_id").val(refund.id);
+        $("#edit_is_adjustment_amount").val(refund.is_adjustment_amount);
+        $("#edit_return_tax_amount").val(refund.return_tax_amount);
+        $("#patient_info").val(refund.patient_name);
+        $("#edit_patients_id").val(refund.patient_id);
+        $("#plan_id_1").val(refund.plan);
+        $("#edit_plan_id_1").val(refund.plan);
+        $("#edit_date_backend").val(refund.date_backend);
+        $("#edit_created_at").val(refund.created_date);
+        $("#edit_refund_note").val(refund.refund_note);
+        let paymentmodes = response.data.paymentmodes;
+        
+        let payment_options = '<option value="">Select Payment Mode</option>';
+        if (paymentmodes) {
+            Object.entries(paymentmodes).forEach(function (paymentmode) {
+               
+                payment_options += '<option value="' + paymentmode[0] + '" >' + paymentmode[1] + '</option>';
+            });
+        }
+        $("#edit_refund_payment_mode_id").html(payment_options);
+        if(refund.package_setteled_amount > 0){
+            $("#edit_case_setteled").attr('checked',true);
+        }else{
+            $("#edit_case_setteled").attr('checked',false);
+        }
 
 }
 
@@ -225,11 +293,11 @@ function refundData(response) {
 
         let refund = response.data;
 
-        if (refund.refundable_amount == 0) {
-            $("#modal_edit_refunds").modal("hide");
-            toastr.error("Insufficient amount to refund");
-            return false;
-        }
+        // if (refund.refundable_amount == 0) {
+        //     $("#modal_edit_refunds").modal("hide");
+        //     toastr.error("Insufficient amount to refund");
+        //     return false;
+        // }
 
         $("#modal_edit_refunds").modal("show");
 
