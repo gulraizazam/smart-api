@@ -2850,57 +2850,39 @@ class FinanceReportController extends Controller
     public function staffWiseArrivalReport(Request $request)
     {
         $where = [];
-        if ($request->location_id && $request->location_id) {
-            $where[] = [['centre_id' => $request->location_id]];
-            $where_walkin[] = [['centre_id' => $request->location_id]];
+        if (isset($request->date_range) && $request->date_range) {
+            $date_range = explode(' - ', $request->date_range);
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
         }
-        if ($request->created_by && $request->created_by != '') {
+        $locations = $request->location_id == null ? ACL::getUserCentres() : [$request->location_id];
+
+        if ($request->created_by && $request->created_by != null) {
             $where[] = [['user_id' => $request->created_by]];
-        }
-        if ($request->date_from) {
-            $where[] = ['scheduled_date', '>=', $request->date_from];
-        }
-        if ($request->date_to) {
-            $where[] = ['scheduled_date', '<=', $request->date_to];
         }
         $records = [];
         $records['data'] = [];
 
         $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
-        if (Gate::allows('appointments_consultancy')) {
-            $resultQuery = AppointmentsDailyStats::whereIn('centre_id', ACL::getUserCentres());
-        }
-        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
-            $resultQuery = AppointmentsDailyStats::whereIn('centre_id', ACL::getUserCentres());
+        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services') || Gate::allows('appointments_consultancy')) {
+            $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
         }
         if (count($where)) {
             $resultQuery->where($where);
         }
-        if (! $request->created_by) {
-            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)->count();
-        }
-        if ($request->location_id && $request->location_id != '' && ! $request->created_by) {
-            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
-                ->where('centre_id', $request->location_id)
-                ->count();
-        }
-        if ($request->date_from && $request->date_to && ! $request->created_by) {
-            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
-                ->whereDate('scheduled_date', '>=', $request->date_from)
-                ->whereDate('scheduled_date', '<=', $request->date_to)
-                ->count();
-        }
-        if ($request->location_id && $request->location_id != '' && $request->date_from && $request->date_to && ! $request->created_by) {
-            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
-                ->where(['centre_id' => $request->location_id])
-                ->whereDate('scheduled_date', '>=', $request->date_from)
-                ->whereDate('scheduled_date', '<=', $request->date_to)
-                ->count();
-        }
+        $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+            ->whereIn('centre_id', $locations)
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
+            ->count();
+
         $Appointments = $resultQuery->with(['user', 'appointment' => function ($q) {
             $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
                 ->orderBy('appointments.created_at', 'DESC');
-        }])
+            }])
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->get();
 
         $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();

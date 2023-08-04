@@ -334,7 +334,7 @@ function setInvoiceData(response) {
         }else{
             $("#client_email_li").hide();
         }
-        
+
         $("#company_name").text(account.name)
         $("#contact_no").text(company_phone_number.data)
         $("#company_email").text(account.email)
@@ -433,8 +433,7 @@ function applyFilters(datatable) {
             service_id: $("#search_service_id").val(),
             invoice_status_id: $("#search_invoice_status_id").val(),
             appointment_type_id: $("#search_appointment_type_id").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
 
@@ -456,8 +455,7 @@ function resetAllFilters(datatable) {
             service_id: '',
             invoice_status_id: '',
             appointment_type_id: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -520,8 +518,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_invoice_status_id").val(active_filters.invoice_status_id);
         $("#search_service_id").val(active_filters.service_id);
 
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
 
@@ -545,3 +542,7 @@ function hideShowAdvanceFilters(active_filters) {
     }
 
 }
+
+jQuery(document).ready( function () {
+    $("#date_range").val("");
+})
