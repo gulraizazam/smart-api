@@ -2093,6 +2093,16 @@ class LeadsController extends Controller
         set_time_limit(0);
         $where = [];
 
+        if ($request->created_at && $request->created_at != '') {
+            $date_range = explode(' - ', $request->created_at);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
         if ($request->id != null || $request->id != '') {
             $where[] = [['id' => $request->id]];
         }
@@ -2120,11 +2130,9 @@ class LeadsController extends Controller
         if ($request->name != null || $request->name != '') {
             $where[] = ['name', 'like', '%' . $request->name . '%'];
         }
-        if ($request->start_date != null || $request->start_date != '') {
-            $where[] = ['created_at', '>=', $request->start_date . ' 00:00:00'];
-        }
-        if ($request->end_date != null || $request->end_date != '') {
-            $where[] = ['created_at', '<=', $request->end_date . ' 23:59:59'];
+        if ($request->created_at == '') {
+            $where[] = ['created_at', '>=', $start_date_time];
+            $where[] = ['created_at', '<=', $end_date_time];
         }
         $resultQuery = Leads::whereIn('city_id', ACL::getUserCities());
         if (count($where)) {
