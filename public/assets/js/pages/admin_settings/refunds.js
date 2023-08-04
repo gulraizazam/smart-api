@@ -116,6 +116,52 @@ function refund(url) {
 
 }
 
+$(document).ready(function () {
+   
+    $("#add_patient_id_selector").on("select2:select", function (e) {
+        $("#add_plan_id").empty();
+        $('#add_plan_id').val(null).trigger('change');
+        getplans($(this).val());
+        
+    });
+
+    patientSearchRefund('search_patient_refund');
+
+    $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
+        $('.package_id').val(null).trigger('change');
+
+        $('.search_patient_refund').val(null).trigger('change');
+    });
+
+});
+$("#add_patients_id").on('change',function(){
+    var patient_id = $('#add_patients_id').val();
+    let url = route('admin.refunds.getplans');
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "post",
+        data:{'patient_id':patient_id},
+        cache: false,
+        success: function (response) {
+            let plans_options = '<option value=""> Select Plan </option>';
+            Object.values(response.plans).forEach(function (value) {
+                plans_options += '<option value="' + value + '"> ' + value + ' </option>';
+            });
+            $("#add_plan_id").html(plans_options);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            
+        }
+    });
+});
+
 function refundData(response) {
 
     try {
