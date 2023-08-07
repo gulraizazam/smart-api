@@ -91,16 +91,16 @@ class RefundsController extends Controller
                         ['is_setteled', '=', '0']
                     ])->sum('cash_amount');
                     $refunded_amount = PackageAdvances::where([
-                        ['package_id', '=', $package->id],
-                        ['cash_flow', '=', 'out'],
-                        ['is_cancel', '=', '0'],
-                        ['is_refund', '=', '1'],
+                        'package_id' => $package->id,
+                        'cash_flow' => 'out',
+                        'is_cancel' => '0',
+                        'is_refund' => '1',
                     ])->sum('cash_amount');
                     $is__case_setteled = PackageAdvances::where([
-                        ['package_id', '=', $package->id],
-                        ['cash_flow', '=', 'in'],
-                        ['is_cancel', '=', '0'],
-                        ['is_setteled', '=', '1'],
+                        'package_id' => $package->id,
+                        'cash_flow' => 'in',
+                        'is_cancel' => '0',
+                        'is_setteled' => '1',
                     ])->sum('cash_amount');
                     if ($cash_receive != 0) {
 
@@ -231,16 +231,16 @@ class RefundsController extends Controller
 
         /*Give amount if already some amount refund*/
         $package_is_refunded_amount = PackageAdvances::where([
-            ['package_id', '=', $id],
-            ['cash_flow', '=', 'out'],
-            ['is_refund', '=', '1'],
-            ['is_tax', '=', '0'],
+            'package_id' => $id,
+            'cash_flow' => 'out',
+            'is_refund' => '1',
+            'is_tax' => '0',
         ])->sum('cash_amount');
         $package_is_setteled = PackageAdvances::where([
-            ['package_id', '=', $id],
-            ['cash_flow', '=', 'in'],
-            ['is_setteled', '=', '1'],
-            ['is_tax', '=', '0'],
+            'package_id' => $id,
+            'cash_flow' => 'in',
+            'is_setteled' => '1',
+            'is_tax' => '0',
         ])->sum('cash_amount');
         
         /*ans is :: 0 */
