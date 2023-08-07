@@ -194,6 +194,7 @@ function setEditData(response) {
         $("#edit_date_backend").val(refund.date_backend);
         $("#edit_created_at").val(refund.created_date);
         $("#edit_refund_note").val(refund.refund_note);
+        $("#record_id").val(response.data.record_id);
         let paymentmodes = response.data.paymentmodes;
         
         let payment_options = '<option value="">Select Payment Mode</option>';
@@ -249,6 +250,7 @@ function setHistoryData(response){
         $(".plan_history").html(history_options);
         $("#user_name").text(package.user.name)
         $("#location_name").text(package.location.name)
+        
 
 
     } catch (error) {
