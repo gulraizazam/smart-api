@@ -2783,7 +2783,7 @@ class DashboardReportsController extends Controller
                 'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                 'appointments.appointment_type_id' => 1
             ])
-            //->whereIn('appointments.doctor_id', $consultants)
+            ->whereIn('appointments.doctor_id', $consultants)
             ->whereIn('appointments.location_id', $locations)
             ->selectRaw('count(*) as arrived, service_id,services.name')
             ->whereBetween('appointments.scheduled_date', [
