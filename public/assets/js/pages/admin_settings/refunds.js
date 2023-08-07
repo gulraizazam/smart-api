@@ -64,7 +64,7 @@ function actions(data) {
         let id = data.id;
 
         let edit_url = route('admin.refunds.edit', {id: id});
-
+        let history = route('admin.packages.display', {id: id});
         if (permissions.refund) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -80,6 +80,12 @@ function actions(data) {
                     <a href="javascript:void(0);" onclick="edit(`' + edit_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">edit</span>\
+                    </a>\
+                </li>';
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="history(`' + history + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-eye"></i></span>\
+                        <span class="navi-text">View History</span>\
                     </a>\
                 </li>';
 
@@ -137,6 +143,28 @@ function edit(url) {
 
 
 }
+function history(url) {
+    $("#edit_history_modal").modal("show");
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setHistoryData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            reInitValidation(EditRefundValidation);
+        }
+    });
+
+
+}
 function setEditData(response) {
    
     let refund = response.data;
@@ -183,7 +211,50 @@ function setEditData(response) {
         }
 
 }
+function setHistoryData(response){
+    try {
 
+        let packageadvances = response.data.packageadvances;
+        let package = response.data.package;
+        let packagebundles = response.data.packagebundles;
+       
+
+        $("#package_pdf").attr("href", route('admin.packages.package_pdf', package.id))
+
+        let history_options = noRecordFoundTable(4);
+
+        if (Object(packageadvances).length) {
+
+            history_options = '';
+            Object.values(packageadvances).forEach(function (packageadvance) {
+
+                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                    history_options += '<tr>';
+                    history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
+                    if(packageadvance.is_refund==1){
+                        history_options += '<td>Refunded</td>';
+                    }else if(packageadvance.is_setteled==1){
+                        history_options += '<td>Case Setteled (In)</td>';
+                    }
+                    else{
+                        history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    }
+                    history_options += '<td>' + packageadvance.package_refund_price + '</td>';
+                    history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
+                    history_options += '<tr>';
+                }
+            });
+        }
+        let service_options = noRecordFoundTable(9);
+        $(".plan_history").html(history_options);
+        $("#user_name").text(package.user.name)
+        $("#location_name").text(package.location.name)
+
+
+    } catch (error) {
+        showException(error);
+    }
+}
 $(document).ready(function () {
    
     $("#add_patient_id_selector").on("select2:select", function (e) {

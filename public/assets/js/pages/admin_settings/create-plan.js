@@ -592,7 +592,7 @@ function setEditData(response) {
                     if(packageadvance.is_refund==1){
                         history_options += '<td>Refunded</td>';
                     }else if(packageadvance.is_setteled==1){
-                        history_options += '<td>Case Setteled (out)</td>';
+                        history_options += '<td>Case Setteled (In)</td>';
                     }
                     else{
                         history_options += '<td>' + packageadvance.cash_flow + '</td>';
@@ -976,7 +976,14 @@ function displayData(response) {
                 if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
                     history_options += '<tr>';
                     history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
-                    history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    if(packageadvance.is_refund==1){
+                        history_options += '<td>Refunded</td>';
+                    }else if(packageadvance.is_setteled==1){
+                        history_options += '<td>Case Setteled (In)</td>';
+                    }
+                    else{
+                        history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    }
                     history_options += '<td>' + packageadvance.package_refund_price + '</td>';
                     history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
                     history_options += '<tr>';
