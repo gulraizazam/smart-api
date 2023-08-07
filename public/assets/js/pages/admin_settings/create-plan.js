@@ -128,6 +128,7 @@ $(document).ready(function () {
         $("#add_appointment_id").empty();
         $('#add_appointment_id').val(null).trigger('change');
         getAppointments($(this).val());
+        
     });
 
 
@@ -284,57 +285,62 @@ var table_columns = [
         }
     }, {
         field: 'patient_id',
-        title: 'Patient ID',
+        title: 'ID',
         sortable: false,
         width: 60,
     }, {
         field: 'name',
-        title: 'Patient',
+        title: 'Name',
         sortable: false,
         width: 80,
     }, {
         field: 'package_id',
         title: 'Plans',
         sortable: false,
-        width: 70,
+        width: 60,
         template: function (data) {
             let display_url = route('admin.packages.display', { id: data.id });
             return '<a href="javascript:void(0);" onclick="viewPlan(`' + display_url + '`)">' + data.package_id + '</a>';
         }
     }, {
         field: 'location_id',
-        title: 'Centres',
+        title: 'Centre',
         sortable: false,
         width: 'auto',
-    }, {
-        field: 'session_count',
-        title: 'Session count',
-        sortable: false,
-        width: 70,
-    }, {
+    },  {
         field: 'total',
         title: 'Total',
         sortable: false,
-        width: 60,
+        width: 50,
     }, {
         field: 'cash_receive',
-        title: 'Cash receive',
+        title: 'Cash In',
         sortable: false,
-        width: 70,
+        width: 50,
     }, {
         field: 'settle_amount',
         title: 'Settle Amount',
         sortable: false,
         width: 60,
     }, {
+        field: 'refunded',
+        title: 'Refund Amount',
+        sortable: false,
+        width: 70,
+    }, {
         field: 'created_at',
-        title: 'Created at',
+        title: 'Created At',
         width: 'auto',
     }, {
         field: 'refund',
         title: 'Refund',
         sortable: false,
         width: 60,
+    },{
+        field: 'session_count',
+        title: 'Session count',
+        sortable: false,
+        width: 70,
     }, {
         field: 'actions',
         title: 'Actions',
@@ -394,12 +400,7 @@ function actions(data) {
                     </a>\
                 </li>';
             }
-            actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="refund(`' + refund_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                        <span class="navi-text">Refund</span>\
-                    </a>\
-                </li>';
+           
             if (permissions.log) {
                 actions += '<li class="navi-item">\
                         <a href="'+ log_url + '" class="navi-link">\
@@ -509,12 +510,18 @@ function refundData(response) {
 
         let refund = response.data;
 
-        if (refund.refundable_amount == 0) {
-            $("#modal_edit_refunds").modal("hide");
-            toastr.error("Insufficient amount to refund");
-            return false;
+        // if (refund.refundable_amount == 0) {
+        //     $("#modal_edit_refunds").modal("hide");
+        //     toastr.error("Insufficient amount to refund");
+        //     return false;
+        // }
+        let paymentmodes = response.data.paymentmodes;
+        let payment_options = '<option value="">Select Payment Mode</option>';
+        if (paymentmodes) {
+            Object.entries(paymentmodes).forEach(function (paymentmode) {
+                payment_options += '<option value="' + paymentmode[0] + '">' + paymentmode[1] + '</option>';
+            });
         }
-
         $("#modal_edit_refunds").modal("show");
 
         $("#modal_edit_refunds_form").attr("action", route('admin.refunds.store'));
@@ -536,7 +543,9 @@ function refundData(response) {
         $("#is_adjustment_amount").val(refund.is_adjustment_amount);
         $("#return_tax_amount").val(refund.return_tax_amount);
         $("#date_backend").val(refund.date_backend);
-
+        $("#refund_payment_mode_id").html(payment_options);
+        $("#received_amount").val(refund.cash_amount);
+        
     } catch (error) {
         showException(error);
     }
@@ -544,7 +553,7 @@ function refundData(response) {
 }
 
 function setEditData(response) {
-
+   
     try {
 
         let appointmentArray = response.data.appointmentArray;
@@ -580,8 +589,15 @@ function setEditData(response) {
                     } else {
                         history_options += '<td>' + packageadvance?.paymentmode?.name + '</td>';
                     }
-
-                    history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    if(packageadvance.is_refund==1){
+                        history_options += '<td>Refunded</td>';
+                    }else if(packageadvance.is_setteled==1){
+                        history_options += '<td>Case Setteled (In)</td>';
+                    }
+                    else{
+                        history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    }
+                        
                     history_options += '<td>' + packageadvance.cash_amount + '</td>';
                     history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
 
@@ -940,7 +956,7 @@ function viewPlan($route) {
 }
 
 function displayData(response) {
-    console.log(response);
+    
     try {
 
         let packageadvances = response.data.packageadvances;
@@ -960,7 +976,14 @@ function displayData(response) {
                 if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
                     history_options += '<tr>';
                     history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
-                    history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    if(packageadvance.is_refund==1){
+                        history_options += '<td>Refunded</td>';
+                    }else if(packageadvance.is_setteled==1){
+                        history_options += '<td>Case Setteled (In)</td>';
+                    }
+                    else{
+                        history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    }
                     history_options += '<td>' + packageadvance.package_refund_price + '</td>';
                     history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
                     history_options += '<tr>';
@@ -1307,7 +1330,6 @@ function setServices(response) {
 }
 
 function getAppointments(patient) {
-
     let location = $("#add_plan_location_id").val();
 
     if (location != '' && patient != '') {

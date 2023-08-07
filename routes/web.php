@@ -232,6 +232,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     // Refund Route
     Route::resource('refunds', RefundsController::class)->only('index');
+    Route::post('refunds/getplans', [PackagesController::class, 'getPlans'])->name('refunds.getplans');
+    Route::get('refunds/edit/{id}', [PackagesController::class, 'editRefund'])->name('refunds.edit');
+    Route::post('refunds/update', [PackagesController::class, 'updateRefund'])->name('refunds.update');
     //Refunds route end
 
     //Discount route Start
@@ -526,9 +529,10 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
     Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
+    Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
     Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
     Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
-
+    Route::post('reports/account_revenue_report_load', [FinanceReportController::class, 'revenueReportLoad'])->name('reports.account_revenue_report_load');
     Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
 
     //Route start for Operations reports
