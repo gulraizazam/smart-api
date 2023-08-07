@@ -1974,7 +1974,8 @@ class PackagesController extends Controller
             ['cash_flow', '=', 'out'],
             ['is_cancel', '=', '0'],
             ['is_refund', '=', '1'],
-        ])->sum('cash_amount');
+            ['cash_amount', '>', '0'],
+        ])->latest()->first();
         $latest_package_refunded_amount = PackageAdvances::where([
             ['package_id', '=', $id],
             ['cash_flow', '=', 'out'],
@@ -2049,7 +2050,8 @@ class PackagesController extends Controller
             'return_tax_amount' => $return_tax_amount,
             'date_backend' => $date_backend,
             'paymentmodes' => $paymentmodes,
-            'refunded_amount' =>$package_refunded_amount,
+            'refunded_amount' =>$package_refunded_amount->cash_amount,
+            'record_id' =>$package_refunded_amount->id,
             'package_setteled_amount'=>$package_setteled_amount,
             'patient_name' => $patient->name,
             'patient_id' =>$patient->id,
@@ -2061,7 +2063,17 @@ class PackagesController extends Controller
     }
     public function updateRefund(Request $request)
     {
-        return 1;
+        $latest_refund = PackageAdvances::where([
+            ["package_id",'=',$request['package_id']],
+            ['is_refund','=',1],
+            ['cash_amount','>',0],
+            ['is_tax','=',0],
+        ]
+            
+        )->latest()->first();
         
+        $latest_refund->where('id',$request['record_id'])->update(['created_at' =>$request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
+        return ApiHelper::apiResponse($this->success, 'Record updated', true, [
+        ]);
     }
 }
