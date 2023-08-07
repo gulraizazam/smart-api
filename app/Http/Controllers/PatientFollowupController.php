@@ -76,7 +76,7 @@ class PatientFollowupController extends Controller
 
             $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_setteled_receive'))
             ->where([
-                'cash_flow' => 'in',
+                'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',
@@ -258,7 +258,7 @@ class PatientFollowupController extends Controller
             ->pluck('cash_receive', 'patient_id');
             $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
-                'cash_flow' => 'in',
+                'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',
@@ -413,7 +413,7 @@ class PatientFollowupController extends Controller
                 'is_tax' => '0',
                 'is_adjustment' => '0',
                 'is_refund' => '0',
-                'is_setteled' => '1',
+                'is_setteled' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
@@ -421,7 +421,7 @@ class PatientFollowupController extends Controller
 
             $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
-                'cash_flow' => 'in',
+                'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',
@@ -573,7 +573,7 @@ class PatientFollowupController extends Controller
             ->pluck('cash_receive', 'patient_id');
             $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
-                'cash_flow' => 'in',
+                'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',

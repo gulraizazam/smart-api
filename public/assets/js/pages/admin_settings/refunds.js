@@ -233,9 +233,9 @@ function setHistoryData(response){
                     history_options += '<tr>';
                     history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
                     if(packageadvance.is_refund==1){
-                        history_options += '<td>Refunded</td>';
+                        history_options += '<td>out / refund</td>';
                     }else if(packageadvance.is_setteled==1){
-                        history_options += '<td>Case Setteled (In)</td>';
+                        history_options += '<td>out / settled</td>';
                     }
                     else{
                         history_options += '<td>' + packageadvance.cash_flow + '</td>';

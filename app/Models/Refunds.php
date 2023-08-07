@@ -147,7 +147,7 @@ class Refunds extends Model
             
             if($amount_left > 0){
                 
-                $data_adjustment['cash_flow'] = 'in';
+                $data_adjustment['cash_flow'] = 'out';
                 $data_adjustment['cash_amount'] = $amount_left;
                 $data_adjustment['is_adjustment'] = '0';
                 $data_adjustment['is_setteled'] = 1;
