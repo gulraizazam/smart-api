@@ -1422,11 +1422,13 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['is_cancel', '=', '0'],
             ['is_adjustment', '=', '0'],
+            ['is_setteled', '=', '0'],
         ])->get();
 
         $cash_amount_in = PackageAdvances::where([
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
+            ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
 
         $cash_amount_out = PackageAdvances::where([

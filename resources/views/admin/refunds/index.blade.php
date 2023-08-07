@@ -73,7 +73,15 @@
         </div>
         <!--end::Modal dialog-->
     </div>
+    <div class="modal fade" id="edit_history_modal" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="refunds_edit">
 
+            @include('admin.refunds.showhistory')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/refunds.js')}}"></script>
     @endpush
