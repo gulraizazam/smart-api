@@ -1106,7 +1106,7 @@ class PackagesController extends Controller
             ])->sum('cash_amount');
             $setteled = PackageAdvances::where([
                 'package_id' => $package->id,
-                'cash_flow' => 'in',
+                'cash_flow' => 'out',
                 'is_setteled' => 1,
             ])->sum('cash_amount');
            
@@ -1180,7 +1180,7 @@ class PackagesController extends Controller
         ])->sum('cash_amount');
         $setteled = PackageAdvances::where([
             'package_id' => $package->id,
-            'cash_flow' => 'in',
+            'cash_flow' => 'out',
             'is_setteled' => 1,
         ])->sum('cash_amount');
         $package_advances_cash_amount = $packageadvances_cash_amount;
@@ -1956,7 +1956,7 @@ class PackagesController extends Controller
         ])->sum('cash_amount');
         $package_is_setteled = PackageAdvances::where([
             ['package_id', '=', $id],
-            ['cash_flow', '=', 'in'],
+            ['cash_flow', '=', 'out'],
             ['is_setteled', '=', '1'],
             ['is_tax', '=', '0'],
         ])->sum('cash_amount');
@@ -1984,7 +1984,7 @@ class PackagesController extends Controller
         ])->latest()->first();
         $package_setteled_amount = PackageAdvances::where([
             ['package_id', '=', $id],
-            ['cash_flow', '=', 'in'],
+            ['cash_flow', '=', 'out'],
             ['is_cancel', '=', '0'],
             ['is_setteled', '=', '1'],
         ])->sum('cash_amount');
