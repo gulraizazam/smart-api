@@ -1142,6 +1142,11 @@ class Finanaces
                             $packagesadvance->is_refund == '1' &&
                             $packagesadvance->is_tax == '0'
                         )
+                        ||
+                        ($packagesadvance->cash_flow == 'in' &&
+                            $packagesadvance->is_setteled == '1' &&
+                            $packagesadvance->is_tax == '0'
+                        )
                     ) {
                         switch ($packagesadvance->cash_flow) {
                             case 'in':
@@ -1209,7 +1214,7 @@ class Finanaces
                                 'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
                                 'transtype' => $transtype,
                                 'payment_mode_id' => $packagesadvance->payment_mode_id,
-                                'payment_mode' => $packagesadvance->paymentmode->name,
+                                'payment_mode' => $packagesadvance->paymentmode->name ?? 'Cash',
                                 'cash_flow' => $packagesadvance->cash_flow,
                                 'revenue_cash_in' => $revenue_cash_in,
                                 'revenue_card_in' => $revenue_card_in,

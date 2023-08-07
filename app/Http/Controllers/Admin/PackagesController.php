@@ -862,7 +862,15 @@ class PackagesController extends Controller
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'in'],
                     ['is_cancel', '=', '0'],
+                    ['is_setteled', '=', '0'],
                 ])->sum('cash_amount');
+                $package_is_refunded_amount = PackageAdvances::where([
+                    'package_id' => $package->id,
+                    'cash_flow' => 'out',
+                    'is_refund' => '1',
+                    'is_tax' => '0',
+                ])->sum('cash_amount');
+                
                 $settle_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'out'],
@@ -893,7 +901,8 @@ class PackagesController extends Controller
                     'location_id' => $package->location->city->name.'-'.$package->location->name,
                     'session_count' => $session_count,
                     'total' => number_format($packageservices_price),
-                    'cash_receive' => number_format($cash_receive),
+                    'cash_receive' => number_format($cash_receive ),
+                    'refunded' => number_format($package_is_refunded_amount ),
                     'settle_amount' => number_format($settle_amount_with_tax),
                     'refund' => $refund_status,
                     'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
@@ -1083,20 +1092,28 @@ class PackagesController extends Controller
                 ['package_id', '=', $package->id],
                 ['cash_flow', '=', 'in'],
                 ['is_cancel', '=', '0'],
+                ['is_setteled', '=', '0'],
             ])->sum('cash_amount');
 
             $cash_amount_out = PackageAdvances::where([
                 ['package_id', '=', $package->id],
                 ['cash_flow', '=', 'out'],
             ])->sum('cash_amount');
-
-            $cash_amount = $cash_amount_in - $cash_amount_out;
+            $refunded = PackageAdvances::where([
+                'package_id' => $package->id,
+                'cash_flow' => 'out',
+                'is_refund' => 1,
+            ])->sum('cash_amount');
+            $setteled = PackageAdvances::where([
+                'package_id' => $package->id,
+                'cash_flow' => 'in',
+                'is_setteled' => 1,
+            ])->sum('cash_amount');
+           
             /*We discuss it in future what happen next*/
-            $grand_total = number_format($total_price - $cash_amount_in);
-
+            $grand_total = $total_price - $cash_amount_in;
+            $remaining_amount  = number_format($grand_total + $refunded + $setteled);
             $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-            //$paymentmodes->prepend('Select Payment Mode', '');
-
             $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
 
             $range = explode(':', $customdiscountrange->data);
@@ -1126,7 +1143,7 @@ class PackagesController extends Controller
                 'packageservices' => $packageservices,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
-                'grand_total' => $grand_total,
+                'grand_total' => $remaining_amount,
                 'range' => $range,
                 'locationhasservice' => $locationhasservice,
                 'total_price' => $total_price,
@@ -1154,10 +1171,22 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0'],
+            ['is_setteled', '=', '0'],
+        ])->sum('cash_amount');
+        $refunded = PackageAdvances::where([
+            'package_id' => $package->id,
+            'cash_flow' => 'out',
+            'is_refund' => 1,
+        ])->sum('cash_amount');
+        $setteled = PackageAdvances::where([
+            'package_id' => $package->id,
+            'cash_flow' => 'in',
+            'is_setteled' => 1,
         ])->sum('cash_amount');
         $package_advances_cash_amount = $packageadvances_cash_amount;
         $package_total = str_replace(',', '', $request->total);
-        $grand_total = number_format(($package_total - $package_advances_cash_amount) - $request->cash_amount);
+        $total_with_refunded = $package_total + $refunded + $setteled;
+        $grand_total = number_format(($total_with_refunded - $package_advances_cash_amount) - $request->cash_amount);
         $package_id = Packages::whereId($package->id)->first();
         $package_id->update(['total_price' => $request->total, 'updated_at' => Filters::getCurrentTimeStamp()]);
 
@@ -1391,11 +1420,13 @@ class PackagesController extends Controller
             ['package_id', '=', $package->id],
             ['is_cancel', '=', '0'],
             ['is_adjustment', '=', '0'],
+            ['is_setteled', '=', '0'],
         ])->get();
 
         $cash_amount_in = PackageAdvances::where([
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
+            ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
 
         $cash_amount_out = PackageAdvances::where([
@@ -1893,5 +1924,144 @@ class PackagesController extends Controller
         $package = Packages::where('name', 'LIKE', "%{$request->q}%")->select('name', 'id')->get();
 
         return response()->json($package);
+    }
+    public function getPlans(Request $request)
+    {
+        $plans  = Packages::where('patient_id',$request->patient_id)->pluck('name');
+        return response()->json(['stataus' =>1,'message'=>'plan found','plans'=>$plans]);
+    }
+    public function editRefund($id)
+    {
+        $return_tax_amount = '';
+
+        $package_information = Packages::find($id);
+        $patient = User::whereId($package_information->patient_id)->first();
+        /*calculation for back date refund entry*/
+        $package_advance_last_in = PackageAdvances::where([
+            ['cash_flow', '=', 'in'],
+            ['is_setteled', '=', '0'],
+            ['cash_amount', '>', 0],
+            ['package_id', '=', $package_information->id],
+        ])->orderBy('created_at', 'desc')->first();
+     
+        $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
+        $bundle_information = PackageBundles::where('package_id', '=', $id)->first();
+        $tax_percentage = $bundle_information->tax_percenatage ?? '';
+        $is_adjustment_amount = 0;
+        $package_is_refunded_amount = PackageAdvances::where([
+            ['package_id', '=', $id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '1'],
+            ['is_tax', '=', '0'],
+        ])->sum('cash_amount');
+        $package_is_setteled = PackageAdvances::where([
+            ['package_id', '=', $id],
+            ['cash_flow', '=', 'in'],
+            ['is_setteled', '=', '1'],
+            ['is_tax', '=', '0'],
+        ])->sum('cash_amount');
+       $amount_to_refund = $package_is_refunded_amount + $package_is_setteled;
+        /*Document charges*/
+        $documentationcharges = Settings::where('slug', '=', 'sys-documentationcharges')->first();
+        $package_cash_receive = PackageAdvances::where([
+            ['package_id', '=', $id],
+            ['cash_flow', '=', 'in'],
+            ['is_cancel', '=', '0'],
+            ['is_setteled', '=', '0'],
+        ])->sum('cash_amount');
+        $package_refunded_amount = PackageAdvances::where([
+            ['package_id', '=', $id],
+            ['cash_flow', '=', 'out'],
+            ['is_cancel', '=', '0'],
+            ['is_refund', '=', '1'],
+        ])->sum('cash_amount');
+        $latest_package_refunded_amount = PackageAdvances::where([
+            ['package_id', '=', $id],
+            ['cash_flow', '=', 'out'],
+            ['is_cancel', '=', '0'],
+            ['is_refund', '=', '1'],
+        ])->latest()->first();
+        $package_setteled_amount = PackageAdvances::where([
+            ['package_id', '=', $id],
+            ['cash_flow', '=', 'in'],
+            ['is_cancel', '=', '0'],
+            ['is_setteled', '=', '1'],
+        ])->sum('cash_amount');
+        if ($package_cash_receive) {
+            $package_service_originalPrice_consumed = PackageService::where([
+                ['package_id', '=', $id],
+                ['is_consumed', '=', '1'],
+            ])->sum('price');
+
+            /*Consume amount tax calculate*/
+            $cosume_amount_tax = 0; //$package_service_originalPrice_consumed*($tax_percentage/100);
+            /*ans is :: 38.4*/
+
+            $refund_1 = $package_service_originalPrice_consumed + $cosume_amount_tax + $documentationcharges->data;
+
+            $refundable_amount = ceil(($package_cash_receive - $refund_1) - $amount_to_refund);
+            
+        }
+
+        if ($refundable_amount > 0) {
+            /*consume final price with tax*/
+            $package_service_Price_consumed_tax = PackageService::where([
+                ['package_id', '=', $id],
+                ['is_consumed', '=', '1'],
+            ])->sum('tax_including_price');
+
+            $package_service_Price_consumed_without_tax = PackageService::where([
+                ['package_id', '=', $id],
+                ['is_consumed', '=', '1'],
+            ])->sum('tax_exclusive_price');
+            /*Tax amount that given from customer*/
+            $given_tax_amount = $package_service_Price_consumed_tax - $package_service_Price_consumed_without_tax;
+            /*ans is :: 32*/
+
+            $return_tax_amount = ($cosume_amount_tax - $given_tax_amount);
+            $cal_adjustment_final = $package_service_Price_consumed_tax + ($package_cash_receive - $refund_1);
+            $is_adjustment_amount = ceil(($package_cash_receive - $cal_adjustment_final) - $return_tax_amount);
+            $return_tax_amount = ceil($return_tax_amount);
+
+        }
+        if ($refundable_amount < 0) {
+            $refundable_amount = 0;
+        }
+        $package_is_adjuestment_amount = PackageAdvances::where([
+            'package_id' => $id,
+            'cash_flow' => 'out',
+            'is_adjustment' => '1',
+        ])->sum('cash_amount');
+
+        if ($package_is_adjuestment_amount == 0) {
+            $document = true;
+        } else {
+            $document = false;
+        }
+        $paymentmodes = PaymentModes::where('name' , "!=" , "Settle Amount")->get()->pluck('name', 'id');
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'id' => $id,
+            'refundable_amount' => $refundable_amount,
+            'cash_amount' => $package_cash_receive,
+            'is_adjustment_amount' => $is_adjustment_amount,
+            'documentationcharges' => $documentationcharges,
+            'document' => $document,
+            'return_tax_amount' => $return_tax_amount,
+            'date_backend' => $date_backend,
+            'paymentmodes' => $paymentmodes,
+            'refunded_amount' =>$package_refunded_amount,
+            'package_setteled_amount'=>$package_setteled_amount,
+            'patient_name' => $patient->name,
+            'patient_id' =>$patient->id,
+            'plan'=>$package_information->name,
+            'created_date'=>Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d'),
+            'refund_note' =>$latest_package_refunded_amount->refund_note,
+            'payment_method_id' =>$latest_package_refunded_amount->payment_method_id
+        ]);
+    }
+    public function updateRefund(Request $request)
+    {
+        return 1;
+        
     }
 }
