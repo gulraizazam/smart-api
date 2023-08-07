@@ -3778,12 +3778,11 @@ class AppointmentsController extends Controller
                 $packages = DB::table('packages')
                     ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
                     ->where([
-                        ['packages.is_refund', '=', '0'],
-                        ['packages.active', '=', '1'],
-                        ['packages.patient_id', '=', $appointment->patient_id],
-                        ['package_services.service_id', '=', $appointment->service_id],
-                        ['package_services.is_consumed', '=', '0'],
-                        ['packages.location_id', '=', $appointment->location_id],
+                        'packages.active' => '1',
+                        'packages.patient_id' =>  $appointment->patient_id,
+                        'package_services.service_id' => $appointment->service_id,
+                        'package_services.is_consumed' => '0',
+                        'packages.location_id' => $appointment->location_id,
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
                 $status = 'true';
                 if (count($packages) <= 0) {

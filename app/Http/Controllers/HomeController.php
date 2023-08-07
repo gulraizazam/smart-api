@@ -2269,10 +2269,7 @@ class HomeController extends Controller
         $locations = ACL::getUserCentres();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         [$start_date, $end_date] = $this->getDates($request);
-        // if($request->type=="lastmonth"){
-        //     $start_date = Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d');
-        //     $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
-        // }
+        
         $where[] = [
             'created_at',
             '>=',

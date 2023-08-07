@@ -120,10 +120,10 @@
                                                         <option value="discount_report">Discount Report</option>
                                                     @endif--}}
                                                     @if(Gate::allows('finance_general_revenue_reports_general_revenue__detail_report'))
-                                                        <option value="general_revenue_report_detail">General Revenue Detail Report</option>
+                                                        <option value="general_revenue_report_detail">Sales Detail Report</option>
                                                     @endif
                                                     @if(Gate::allows('finance_general_revenue_reports_general_revenue__summary_report'))
-                                                        <option value="general_revenue_report_summary">General Revenue Summary Report</option>
+                                                        <option value="general_revenue_report_summary">Sales Summary Report</option>
                                                     @endif
                                                    {{-- @if(Gate::allows('finance_general_revenue_reports_pabau_record_revenue_report'))
                                                         <option value="pabau_record_revenue_report">Pabau Record Revenue Report</option>
