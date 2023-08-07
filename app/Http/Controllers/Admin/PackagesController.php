@@ -862,6 +862,7 @@ class PackagesController extends Controller
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'in'],
                     ['is_cancel', '=', '0'],
+                    ['is_setteled', '=', '0'],
                 ])->sum('cash_amount');
                 $package_is_refunded_amount = PackageAdvances::where([
                     'package_id' => $package->id,
