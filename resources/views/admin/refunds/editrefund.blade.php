@@ -75,7 +75,7 @@
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Date <span class="text text-danger">*</span></label>
                             <input type="text" id="edit_created_at" class="form-control datatable-input" name="created_at">
                         </div>
-                        <div class="fv-row col-md-6 mt-5 ">
+                        <div class="fv-row col-md-6 mt-10 ">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Case Setteled <span class="text text-danger">*</span></label>
                             <input type="checkbox" id="edit_case_setteled" name="case_setteled">
                         </div>
