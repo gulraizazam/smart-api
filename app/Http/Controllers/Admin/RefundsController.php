@@ -96,7 +96,7 @@ class RefundsController extends Controller
                         'is_cancel' => '0',
                         'is_refund' => '1',
                     ])->sum('cash_amount');
-                    $is__case_setteled = PackageAdvances::where([
+                    $is_case_setteled = PackageAdvances::where([
                         'package_id' => $package->id,
                         'cash_flow' => 'in',
                         'is_cancel' => '0',
@@ -114,7 +114,7 @@ class RefundsController extends Controller
                             'total' => number_format($package->total_price),
                             'cash_receive' => number_format($cash_receive),
                             'refunded' =>$refunded_amount,
-                            'case_setteled' => $is__case_setteled > 0 ? 'Yes' : 'No',
+                            'case_setteled' => $is_case_setteled > 0 ? 'Yes' : 'No',
                             'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
                         ];
                     } else {
