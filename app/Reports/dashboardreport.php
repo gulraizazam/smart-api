@@ -94,11 +94,7 @@ class dashboardreport
                             $packagesadvance->is_refund == '1' &&
                             $packagesadvance->is_tax == '0'
                         )
-                        ||
-                        ($packagesadvance->cash_flow == 'in' &&
-                            $packagesadvance->is_setteled == '1' &&
-                            $packagesadvance->is_tax == '0'
-                        )
+                        
                        
                     ) {
                         switch ($packagesadvance->cash_flow) {
