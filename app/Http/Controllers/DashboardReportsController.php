@@ -1066,6 +1066,7 @@ class DashboardReportsController extends Controller
             $today_records = $today_records->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                 ->groupBy('location_id')
                 ->get();
+                
             $total = 0;
             $data[0] = [
                 'Task',
@@ -1087,7 +1088,10 @@ class DashboardReportsController extends Controller
                                     $location_detail->city->name . ' - ' . $location_detail->name,
                                     $todayRecord->total_price,
                                 ];
-                                $total += $todayRecord->total_price;
+                                
+                                $total += $todayRecord->total_price ;
+                               
+                                
                             }
                         }
                     }
