@@ -47,6 +47,7 @@
             <button class="close" data-close="alert"></button>
             Unable to enter same service with different price.
         </div>
+        
         <div id="datanotexist" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
             That center not have any service.
