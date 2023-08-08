@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Helpers\ACL;
+use App\Helpers\Filters;
 use Illuminate\Http\Request;
+use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class PackageAdvances extends BaseModal
 {
@@ -516,5 +517,244 @@ class PackageAdvances extends BaseModal
         }
 
         return $cash_amount;
+    }
+    public static function getRefundedRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $id, $apply_filter, $filename)
+    {
+
+        $where = PackageAdvances::filters($request, $account_id, $id, $apply_filter, $filename);
+
+        [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
+        if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+            return PackageAdvances::when(count($where), fn ($query) => $query->where($where))->where(['is_refund'=>1])->whereIn('location_id', ACL::getUserCentres())
+                ->limit($iDisplayLength)
+                ->offset($iDisplayStart)
+                ->orderby($orderBy, $order)
+                ->get();
+        } else {
+            return PackageAdvances::when(count($where), fn ($query) => $query->where($where))->where(['active' => 1,'is_refund'=>1])->whereIn('location_id', ACL::getUserCentres())
+                ->limit($iDisplayLength)
+                ->offset($iDisplayStart)
+                ->orderby($orderBy, $order)
+                ->get();
+        }
+    }
+    public static function getTotalRefundedRecords(Request $request, $account_id, $id, $apply_filter, $filename)
+    {
+        $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
+
+        if (count($where)) {
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+                return self::where($where)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
+            } else {
+                return self::where($where)->where('active', 1)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
+            }
+        } else {
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+                return self::whereIn('location_id', ACL::getUserCentres())->count();
+            } else {
+                return self::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
+            }
+        }
+    }
+    public static function filters($request, $account_id, $id, $apply_filter, $filename)
+    {
+
+        $where = [];
+
+        $filters = getFilters($request->all());
+        $apply_filter = checkFilters($filters, $filename);
+
+        if ($id != false) {
+            $where[] = [
+                'patient_id',
+                '=',
+                $id,
+            ];
+            Filters::put(Auth::user()->id, $filename, 'patient_id', $id);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, $filename, 'patient_id');
+            } else {
+                if (Filters::get(Auth::user()->id, $filename, 'patient_id')) {
+                    /*$where[] = array(
+                        'patient_id',
+                        '=',
+                        Filters::get(Auth::user()->id,$filename,'patient_id')
+                    );*/
+                }
+            }
+        }
+
+        if ($account_id) {
+            $where[] = [
+                'account_id',
+                '=',
+                $account_id,
+            ];
+            Filters::put(Auth::User()->id, $filename, 'account_id', $account_id);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'account_id');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'account_id')) {
+                    $where[] = [
+                        'account_id',
+                        '=',
+                        Filters::get(Auth::User()->id, $filename, 'account_id'),
+                    ];
+                }
+            }
+        }
+
+        if (hasFilter($filters, 'patient_id')) {
+            $where[] = [
+                'patient_id',
+                '=',
+                $filters['patient_id'],
+            ];
+            // Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
+            // Filters::put(Auth::user()->id , $filename, 'patient_name', str_replace('undefined', '', $filters['patient_name'])) ;
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'patient_id');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'patient_id')) {
+                    /*$where[] = array(
+                        'patient_id',
+                        '=',
+                        Filters::get(Auth::User()->id, $filename, 'patient_id')
+                    );*/
+                }
+            }
+        }
+        if (hasFilter($filters, 'id')) {
+            $where[] = [
+                'patient_id',
+                '=',
+                GeneralFunctions::patientSearch($filters['id']),
+            ];
+            Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['id']));
+            Filters::put(Auth::User()->id, $filename, 'id', GeneralFunctions::patientSearch($filters['id']));
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'id');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'id')) {
+                    /*$where[] = array(
+                        'patient_id',
+                        '=',
+                        Filters::get(Auth::User()->id, $filename, 'id')
+                    );*/
+                }
+            }
+        }
+
+        if (hasFilter($filters, 'package_id')) {
+            $where[] = [
+                'id',
+                '=',
+                $filters['package_id'],
+            ];
+            Filters::put(Auth::User()->id, $filename, 'package_id', $filters['package_id']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'package_id');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'package_id')) {
+                    $where[] = [
+                        'id',
+                        '=',
+                        Filters::get(Auth::User()->id, $filename, 'package_id'),
+                    ];
+                }
+            }
+        }
+        if (hasFilter($filters, 'created_from')) {
+            $where[] = [
+                'created_at',
+                '>=',
+                $filters['created_from'].' 00:00:00',
+            ];
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'].' 00:00:00');
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'created_from');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'created_from')) {
+                    $where[] = [
+                        'created_at',
+                        '>=',
+                        Filters::get(Auth::User()->id, $filename, 'created_from').' 00:00:00',
+                    ];
+                }
+            }
+        }
+
+        if (hasFilter($filters, 'created_to')) {
+            $where[] = [
+                'created_at',
+                '<=',
+                $filters['created_to'].' 23:59:59',
+            ];
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'].' 23:59:59');
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'created_to');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'created_to')) {
+                    $where[] = [
+                        'created_at',
+                        '<=',
+                        Filters::get(Auth::User()->id, $filename, 'created_to').' 23:59:59',
+                    ];
+                }
+            }
+        }
+
+        if (hasFilter($filters, 'location_id')) {
+            $where[] = [
+                'location_id',
+                '=',
+                $filters['location_id'],
+            ];
+            Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'location_id');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'location_id')) {
+                    $where[] = [
+                        'location_id',
+                        '=',
+                        Filters::get(Auth::User()->id, $filename, 'location_id'),
+                    ];
+                }
+            }
+        }
+
+        if (hasFilter($filters, 'status')) {
+            $where[] = [
+                'active',
+                '=',
+                $filters['status'],
+            ];
+            Filters::put(Auth::user()->id, $filename, 'status', $filters['status']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, $filename, 'status');
+            } else {
+                if (Filters::get(Auth::user()->id, $filename, 'status') == 0 || Filters::get(Auth::user()->id, $filename, 'status') == 1) {
+                    if (Filters::get(Auth::user()->id, $filename, 'status') != null) {
+                        $where[] = [
+                            'active',
+                            '=',
+                            Filters::get(Auth::user()->id, $filename, 'status'),
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $where;
     }
 }
