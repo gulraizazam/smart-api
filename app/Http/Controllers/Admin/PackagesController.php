@@ -1935,6 +1935,7 @@ class PackagesController extends Controller
         $return_tax_amount = '';
 
         $package_information = Packages::find($id);
+        
         $patient = User::whereId($package_information->patient_id)->first();
         /*calculation for back date refund entry*/
         $package_advance_last_in = PackageAdvances::where([
@@ -2071,8 +2072,12 @@ class PackagesController extends Controller
         ]
             
         )->latest()->first();
-        
-        $latest_refund->where('id',$request['record_id'])->update(['created_at' =>$request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
+       if($request['case_setteled'] == 'on'){
+        $settled = 1;
+       }else{
+        $settled = 0;
+       }
+        $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id'],'is_setteled'=>$settled]);
         return ApiHelper::apiResponse($this->success, 'Record updated', true, [
         ]);
     }
