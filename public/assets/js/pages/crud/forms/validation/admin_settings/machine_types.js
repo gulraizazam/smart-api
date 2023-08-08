@@ -100,7 +100,7 @@ var EditUserValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('machineTypes');
                 } else {
                     toastr.error(response.message);
                 }
