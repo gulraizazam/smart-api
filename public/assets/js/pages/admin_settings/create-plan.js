@@ -2495,8 +2495,14 @@ jQuery(document).ready(function () {
                         closePopup('update_plane_form');
                         reInitTable();
                     } else {
-                        $('#edit_wrongMessage').show();
-                        toastr.error(resposne.message)
+                        if(resposne.data.setteled==1){
+                            $('#casesetteledamount').show();
+                        }else{
+                            $('#edit_wrongMessage').show();
+                            toastr.error(resposne.message)
+                        }
+                       
+                       
                     }
 
                     hideSpinner("-edit-save");
