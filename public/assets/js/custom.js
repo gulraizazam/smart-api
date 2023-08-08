@@ -32,7 +32,16 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     });
-
+    $('.refund-datepicker').datepicker({
+        todayHighlight: true,
+        format: 'yyyy-mm-dd',
+        defaultDate: new Date(),
+        orientation: 'bottom',
+        templates: {
+            leftArrow: '<i class="la la-angle-left"></i>',
+            rightArrow: '<i class="la la-angle-right"></i>',
+        },
+    });
     customDatePicker();
 
     $('.current-datepicker').datepicker({
