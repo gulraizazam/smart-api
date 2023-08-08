@@ -549,6 +549,10 @@ function reInitTable(page = null) {
             if (typeof datatable !== 'undefined') {
                 centreFilters();
             }
+        } else if (page == "machineTypes") {
+            if (typeof datatable !== 'undefined') {
+                machineTypesFilters();
+            }
         } else {
             $('#kt_datatable').KTDatatable('reload');
         }
@@ -810,7 +814,7 @@ function resourceFilters() {
     }
     datatable.search(filters, 'search');
 }
-function centreFilters(datatable) {
+function centreFilters() {
     let filters = {
         delete: '',
         name: $("#search_name").val(),
@@ -819,6 +823,19 @@ function centreFilters(datatable) {
         address: $("#search_address").val(),
         city_id: $("#search_city").val(),
         region_id: $("#search_region").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+
+function machineTypesFilters() {
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        service: $("#search_service").val(),
         created_from: $("#search_created_from").val(),
         created_to: $("#search_created_to").val(),
         status: $("#search_status").val(),
