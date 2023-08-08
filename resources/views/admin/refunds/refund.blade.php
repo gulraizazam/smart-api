@@ -75,7 +75,7 @@
                         </div>
                       
 
-                        <div class="fv-row col-md-6 mt-5 input-daterange to-from-datepicker">
+                        <div class="fv-row col-md-6 mt-5 input-daterange refund-datepicker">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Date <span class="text text-danger">*</span></label>
                             <input type="text" id="created_at" class="form-control datatable-input" name="created_at">
                         </div>

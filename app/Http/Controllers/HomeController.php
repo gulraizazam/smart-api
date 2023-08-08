@@ -1532,7 +1532,7 @@ class HomeController extends Controller
             $todayRecords = $todayRecords->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                 ->groupBy('location_id')
                 ->get();
-
+               
             $total = 0;
             $data[0] = [
                 'Task',
