@@ -1212,6 +1212,16 @@ class PackagesController extends Controller
      * */
     public function updatepackages(Request $request)
     {
+        $find_package = Packages::where('random_id',$request->random_id)->first();
+        $check_is_setteled = PackageAdvances::where([
+            ['cash_flow', '=', 'out'],
+            ['cash_amount', '>', 0],
+            ['is_setteled', '=', '1'],
+            ['package_id', '=', $find_package->id],
+        ])->first();
+        if($check_is_setteled){
+            return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false,['setteled'=>1]);
+        }
         DB::beginTransaction();
         try {
             if (isset($request->appointment_id)) {
