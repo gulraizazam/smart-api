@@ -72,50 +72,57 @@ class RefundsController extends Controller
             $records['data'] = [];
 
             // Get Total Records
-            $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
+            $iTotalRecords = PackageAdvances::getTotalRefundedRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $packages = Packages::getRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
+            $packages = PackageAdvances::getRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
 
             $records = $this->getFiltersData($records, $filename);
-
+          
             if ($packages) {
                 foreach ($packages as $package) {
-                   
+                    
                     $cash_receive = PackageAdvances::where([
-                        ['package_id', '=', $package->id],
+                        ['package_id', '=', $package->package_id],
                         ['cash_flow', '=', 'in'],
                         ['is_cancel', '=', '0'],
                         ['is_setteled', '=', '0']
                     ])->sum('cash_amount');
+                    
                     $refunded_amount = PackageAdvances::where([
-                        'package_id' => $package->id,
+                        'package_id' => $package->package_id,
                         'cash_flow' => 'out',
                         'is_cancel' => '0',
                         'is_refund' => '1',
                     ])->sum('cash_amount');
+                    $refunded_latest_date = PackageAdvances::where([
+                        'package_id' => $package->package_id,
+                        'cash_flow' => 'out',
+                        'is_cancel' => '0',
+                        'is_refund' => '1',
+                    ])->latest()->first();
                     $is_case_setteled = PackageAdvances::where([
-                        'package_id' => $package->id,
+                        'package_id' => $package->package_id,
                         'cash_flow' => 'out',
                         'is_cancel' => '0',
                         'is_setteled' => '1',
                     ])->sum('cash_amount');
-                    if ($cash_receive != 0) {
+                    if ($refunded_amount != 0) {
 
                         $records['data'][] = [
-                            'id' => $package->id ?? 0,
+                            'id' => $package->package_id ?? 0,
                             'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
                             'name' => $package->user?->name ?? '-',
                             'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
-                            'package_id' => $package?->name ?? '-',
+                            'package_id' => $package?->package_id ?? '-',
                             'location_id' => $package->location->city->name.'-'.$package->location?->name,
                             'total' => number_format($package->total_price),
                             'cash_receive' => number_format($cash_receive),
                             'refunded' =>$refunded_amount,
                             'case_setteled' => $is_case_setteled > 0 ? 'Yes' : 'No',
-                            'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
+                            'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('F j,Y h:i A') : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
                         ];
                     } else {
                         $iTotalRecords--;
