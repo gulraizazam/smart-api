@@ -351,12 +351,13 @@ class RefundsController extends Controller
      */
     public function store(Request $request)
     {
+       
         if (! Gate::allows('refunds_refund')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $validator = $this->verifyFields($request);
-
+       
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
@@ -405,6 +406,10 @@ class RefundsController extends Controller
         return $validator = Validator::make($request->all(), [
             'refund_amount' => 'required',
             'refund_note' => 'required',
+            'package_id' =>'required',
+            'payment_mode_id' =>'required',
+
+            
         ]);
     }
 

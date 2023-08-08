@@ -24,7 +24,7 @@
         <!--begin::Form-->
         <form id="modal_edit_refunds_form" method="post" action="">
             <!--begin::Scroll-->
-
+ 
             <input type="hidden" name="package_id" id="package_id" class="form-control">
             <input type="hidden" id="is_adjustment_amount" name="is_adjustment_amount" class="form-control">
             <input type="hidden" id="return_tax_amount" name="return_tax_amount" class="form-control">
@@ -45,15 +45,12 @@
                             </div>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Plans <span class="text text-danger">*</span></label>
+                            <label for="add_plan_id" class="required fw-bold fs-6 mb-2 pl-0">Plans <span class="text text-danger">*</span></label>
                             <select id="add_plan_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="plan_id_1" onchange="GetPlanDetail()">
-                                <option value="">Select Plans</option>
+                                <option value="">Select Plan</option>
                             </select>
                         </div>
-                        <div class="fv-row col-md-12 mt-5">
-                            <label id="document-label" for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Documentation Charges</label>
-                          <input type="text" readonly="readonly" id="documentationcharges" class="form-control disable-filed" name="documentationcharges">
-                        </div>
+                       
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Total Received Amount</label>
                             <input readonly="readonly" type="text" id="received_amount" class="form-control disable-filed" name="received_amount">
@@ -63,8 +60,8 @@
                             <input readonly="readonly" type="text" id="balance" class="form-control disable-filed" name="balance">
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Amount</label>
-                            <input type="number" id="refund_amount" class="form-control" name="refund_amount">
+                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Amount <span class="text text-danger">*</span></label>
+                            <input type="number" id="refund_amount" class="form-control" name="refund_amount" >
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
@@ -80,7 +77,7 @@
                             <input type="text" id="created_at" class="form-control datatable-input" name="created_at" >
                         </div>
                         <div class="fv-row col-md-6 mt-15 ">
-                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Case Setteled <span class="text text-danger">*</span></label>
+                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Case Setteled </label>
                             <input type="checkbox" id="case_setteled" name="case_setteled">
                         </div>
                         <div class="fv-row col-md-12 mt-5">

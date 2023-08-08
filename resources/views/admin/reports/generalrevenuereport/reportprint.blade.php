@@ -8,7 +8,7 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'General Revenue Detail Report' }}</h1>
+            <h1>{{ 'Sales Detail Report' }}</h1>
         </div>
     </div>
 </div>
@@ -43,9 +43,9 @@
             <th>ID</th>
             <th>Patient Name</th>
             <th>Transaction type</th>
-            <th>Revenue Cash In</th>
-            <th>Revenue Card In</th>
-            <th>Revenue Bank/Wire In</th>
+            <th>Cash </th>
+            <th>Card </th>
+            <th>Bank/Wire Transfer</th>
             <th>Refund/Out</th>
             <th>Created At</th>
         </tr>
@@ -125,15 +125,15 @@
     </table>
     <table class="table">
         <tr>
-            <td>Revenue Cash In</td>
+            <td>Cash </td>
             <td>{{number_format($total_revenue_cash_in,2)}}</td>
         </tr>
         <tr>
-            <td>Revenue Card In</td>
+            <td>Card </td>
             <td>{{number_format($total_revenue_card_in,2)}}</td>
         </tr>
         <tr>
-            <td>Revenue Bank/Wire In</td>
+            <td>Bank/Wire Transfer</td>
             <td>{{number_format($total_revenue_bank_in,2)}}</td>
         </tr>
         <tr>

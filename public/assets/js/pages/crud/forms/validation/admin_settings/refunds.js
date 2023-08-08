@@ -15,6 +15,7 @@ var RefundValidation = function () {
                             }
                         }
                     },
+                    
                     created_at: {
                         validators: {
                             notEmpty: {
@@ -43,6 +44,7 @@ var RefundValidation = function () {
                     closePopup(modal_id);
                     reInitTable();
                 } else {
+                
                     toastr.error(response.message);
                 }
             }, form);
