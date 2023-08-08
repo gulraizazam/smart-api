@@ -10,8 +10,7 @@ let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $('#created_at').datepicker({
     todayHighlight: true,
     orientation: 'bottom',
-    startDate: new Date(),
-    "setDate": "7/11/2011",
+    endDate: new Date(),  
     format: 'yyyy-mm-dd',
     templates: {
         leftArrow: '<i class="la la-angle-left"></i>',

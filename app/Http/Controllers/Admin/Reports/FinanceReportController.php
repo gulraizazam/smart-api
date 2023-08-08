@@ -1229,6 +1229,7 @@ class FinanceReportController extends Controller
 
         if ($report_data) {
             foreach ($report_data as $reportrevenue) {
+                
                 foreach ($reportrevenue['revenue_data'] as $revenue_data) {
                     if ($revenue_data['revenue_cash_in']) {
                         $total_revenue_cash_in += $revenue_data['revenue_cash_in'];

@@ -2,50 +2,52 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
+use Validator;
+use Carbon\Carbon;
 use App\Helpers\ACL;
+use App\Models\User;
+use App\Models\Bundles;
+use App\Models\SMSLogs;
 use App\Helpers\Filters;
-use App\Helpers\Financelog;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
-use App\Helpers\JazzSMSAPI;
-use App\Helpers\TelenorSMSAPI;
-use App\Helpers\Widgets\DiscountWidget;
-use App\Helpers\Widgets\PlanAppointmentCalculation;
-use App\Helpers\Widgets\ServiceWidget;
-use App\Http\Controllers\Controller;
 use App\Models\Accounts;
 use App\Models\Activity;
-use App\Models\Appointments;
-use App\Models\AuditTrailChanges;
-use App\Models\AuditTrails;
-use App\Models\BundleHasServices;
-use App\Models\Bundles;
-use App\Models\Discounts;
-use App\Models\Locations;
-use App\Models\PackageAdvances;
-use App\Models\PackageBundles;
+use App\Models\Invoices;
 use App\Models\Packages;
-use App\Models\PackageService;
-use App\Models\PaymentModes;
-use App\Models\ServiceHasLocations;
 use App\Models\Services;
 use App\Models\Settings;
-use App\Models\SMSLogs;
-use App\Models\User;
-use App\Models\UserHasLocations;
-use App\Models\UserOperatorSettings;
-use Carbon\Carbon;
-use Composer\Package\Package;
+use App\Models\Discounts;
+use App\Models\Locations;
+use App\Helpers\Financelog;
+use App\Helpers\JazzSMSAPI;
+use App\Models\AuditTrails;
+use App\Models\Appointments;
+use App\Models\PaymentModes;
 use Illuminate\Http\Request;
+use Composer\Package\Package;
+use App\Helpers\TelenorSMSAPI;
+use App\Models\PackageBundles;
+use App\Models\PackageService;
+use App\HelperModule\ApiHelper;
+use App\Models\PackageAdvances;
+use App\Models\UserHasLocations;
+use App\Helpers\GeneralFunctions;
+use App\Models\AuditTrailChanges;
+use App\Models\BundleHasServices;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\App;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use App\Models\ServiceHasLocations;
+use Illuminate\Support\Facades\App;
+use App\Http\Controllers\Controller;
+use App\Models\UserOperatorSettings;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use App\Helpers\Widgets\ServiceWidget;
+use Illuminate\Support\Facades\Config;
+use App\Helpers\Widgets\DiscountWidget;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
+use App\Helpers\Widgets\PlanAppointmentCalculation;
 
 class PackagesController extends Controller
 {
@@ -872,7 +874,7 @@ class PackagesController extends Controller
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'in'],
                     ['is_cancel', '=', '0'],
-                    ['is_setteled', '=', '0'],
+                    
                 ])->sum('cash_amount');
                 $package_is_refunded_amount = PackageAdvances::where([
                     'package_id' => $package->id,
@@ -888,6 +890,7 @@ class PackagesController extends Controller
                     ['is_tax', '=', '0'],
                     ['is_adjustment', '=', '0'],
                     ['is_refund', '=', '0'],
+                    ['is_setteled', '=', '0'],
                 ])->sum('cash_amount');
                 $settle_tax_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
@@ -896,6 +899,7 @@ class PackagesController extends Controller
                     ['is_tax', '=', '1'],
                     ['is_adjustment', '=', '0'],
                     ['is_refund', '=', '0'],
+                    ['is_setteled', '=', '0'],
                 ])->sum('cash_amount');
                 $settle_amount_with_tax = $settle_amount + $settle_tax_amount;
                 if ($package->is_refund == '0') {
@@ -1212,6 +1216,7 @@ class PackagesController extends Controller
      * */
     public function updatepackages(Request $request)
     {
+       
         $find_package = Packages::where('random_id',$request->random_id)->first();
         $check_is_setteled = PackageAdvances::where([
             ['cash_flow', '=', 'out'],
@@ -1304,7 +1309,16 @@ class PackagesController extends Controller
             return ApiHelper::apiResponse($this->success, $e->getMessage().' - '.$e->getFile().' - '.$e->getLine(), false);
         }
     }
+    protected function verifyRefundsFields(Request $request)
+    {
+        return $validator = Validator::make($request->all(), [
+            'refund_amount' => 'required',
+            'refund_note' => 'required',
+            'payment_mode_id' =>'required',
 
+            
+        ]);
+    }
     /**
      * Remove the specified resource from storage.
      *
@@ -2079,11 +2093,12 @@ class PackagesController extends Controller
             'plan'=>$package_information->name,
             'created_date'=>Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d'),
             'refund_note' =>$latest_package_refunded_amount->refund_note,
-            'payment_method_id' =>$latest_package_refunded_amount->payment_method_id
+            'payment_method_id' =>$latest_package_refunded_amount->payment_mode_id
         ]);
     }
     public function updateRefund(Request $request)
     {
+       
         $latest_refund = PackageAdvances::where([
             ["package_id",'=',$request['package_id']],
             ['is_refund','=',1],
@@ -2092,12 +2107,84 @@ class PackagesController extends Controller
         ]
             
         )->latest()->first();
+        
        if($request['case_setteled'] == 'on'){
-        $settled = 1;
-       }else{
-        $settled = 0;
-       }
-        $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id'],'is_setteled'=>$settled]);
+       
+        $package_cash_receive = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'in'],
+            ['is_cancel', '=', '0'],
+            
+        ])->sum('cash_amount');
+       
+        $package_is_refunded_amount = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '1'],
+            ['is_tax', '=', '0'],
+            ['is_setteled', '=', '0'],
+        ])->sum('cash_amount');
+        
+        $package_is_consumed_amount = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '0'],
+            ['is_tax', '=', '0'],
+            ['is_setteled', '=', '0'],
+        ])->sum('cash_amount');
+       
+        $package_is_consumed_tax_amount = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '0'],
+            ['is_tax', '=', '1'],
+            ['is_setteled', '=', '0'],
+        ])->sum('cash_amount');
+        $consumed_amount_with_tax = $package_is_consumed_amount + $package_is_consumed_tax_amount;
+       
+        $package_is_refunded_amount = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_refund', '=', '1'],
+            ['is_tax', '=', '0'],
+        ])->sum('cash_amount');
+        $amount_after_refund = $consumed_amount_with_tax + $package_is_refunded_amount;
+        $amount_left = $package_cash_receive - $amount_after_refund;
+        $packageinformation = Packages::find($request->package_id);
+       
+        if($amount_left > 0){
+            
+            $data_adjustment['cash_flow'] = 'out';
+            $data_adjustment['cash_amount'] = $amount_left;
+            $data_adjustment['is_adjustment'] = '0';
+            $data_adjustment['is_setteled'] = 1;
+            $data_adjustment['patient_id'] = $request->get('patient_id');
+            $data_adjustment['payment_mode_id'] = $request->payment_mode_id;
+            $data_adjustment['account_id'] = Auth::User()->account_id;
+            $data_adjustment['created_by'] = Auth::User()->id;
+            $data_adjustment['updated_by'] = Auth::User()->id;
+            $data_adjustment['package_id'] = $request->package_id;
+            $data_adjustment['patient_id'] = $packageinformation->patient_id;
+            $data_adjustment['location_id'] = $packageinformation->location_id;
+
+            $data_adjustment['created_at'] = $request['created_at'];
+            $data_adjustment['updated_at'] = $request['created_at'];
+
+            PackageAdvances::create($data_adjustment);
+            $dataInvoice['total_price'] = $amount_left;
+                $dataInvoice['account_id'] = Auth::User()->account_id;
+                $dataInvoice['patient_id'] = $packageinformation->patient_id;
+                $dataInvoice['appointment_id'] = $packageinformation->appointment_id;
+                $dataInvoice['invoice_status_id'] = 3;
+                $dataInvoice['created_by'] = Auth::User()->id;
+                $dataInvoice['location_id'] =$packageinformation->location_id;
+                //$dataInvoice['doctor_id'] = Auth::User()->id;
+                $dataInvoice['active'] = 1;
+                $dataInvoice['is_exclusive'] = 0;
+                Invoices::create($dataInvoice);
+        }
+    }
+        $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
         return ApiHelper::apiResponse($this->success, 'Record updated', true, [
         ]);
     }
