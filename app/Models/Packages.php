@@ -292,26 +292,7 @@ class Packages extends BaseModal
                 ->get();
         }
     }
-    public static function getRefundedRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $id, $apply_filter, $filename)
-    {
-
-        $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
-
-        [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
-        if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-            return self::when(count($where), fn ($query) => $query->where($where))->where(['is_refund'=>1])->whereIn('location_id', ACL::getUserCentres())
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
-        } else {
-            return self::when(count($where), fn ($query) => $query->where($where))->where(['active' => 1,'is_refund'=>1])->whereIn('location_id', ACL::getUserCentres())
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
-        }
-    }
+    
     public static function filters($request, $account_id, $id, $apply_filter, $filename)
     {
 

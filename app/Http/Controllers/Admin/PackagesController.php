@@ -191,7 +191,17 @@ class PackagesController extends Controller
         $status = true;
 
         $service_data = Bundles::find($request->bundle_id);
-
+        $find_package = Packages::where('random_id',$request->random_id)->first();
+        $check_is_setteled = PackageAdvances::where([
+            ['cash_flow', '=', 'out'],
+            ['cash_amount', '>', 0],
+            ['is_setteled', '=', '1'],
+            ['package_id', '=', $find_package->id],
+        ])->first();
+        if($check_is_setteled){
+            return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false,['setteled'=>1]);
+        }
+        
         /*Total belongs to total Amount that increase when we enter new bundle*/
         $total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
         if ($total == '') {
@@ -1935,6 +1945,7 @@ class PackagesController extends Controller
         $return_tax_amount = '';
 
         $package_information = Packages::find($id);
+        
         $patient = User::whereId($package_information->patient_id)->first();
         /*calculation for back date refund entry*/
         $package_advance_last_in = PackageAdvances::where([
@@ -2071,8 +2082,12 @@ class PackagesController extends Controller
         ]
             
         )->latest()->first();
-        
-        $latest_refund->where('id',$request['record_id'])->update(['created_at' =>$request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
+       if($request['case_setteled'] == 'on'){
+        $settled = 1;
+       }else{
+        $settled = 0;
+       }
+        $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id'],'is_setteled'=>$settled]);
         return ApiHelper::apiResponse($this->success, 'Record updated', true, [
         ]);
     }
