@@ -6,6 +6,18 @@ $(document).keydown(function (event) {
 });
 
 let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
+
+$('#created_at').datepicker({
+    todayHighlight: true,
+    orientation: 'bottom',
+    startDate: new Date(),
+    "setDate": "7/11/2011",
+    format: 'yyyy-mm-dd',
+    templates: {
+        leftArrow: '<i class="la la-angle-left"></i>',
+        rightArrow: '<i class="la la-angle-right"></i>',
+    },
+}).datepicker("setDate", new Date());
 $(document).ready(function () {
     $(document).on("change", ".select2", function () {
         if ($(this).val() != '') {
@@ -32,22 +44,16 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     });
-    $('.refund-datepicker').datepicker({
-        todayHighlight: true,
-        format: 'yyyy-mm-dd',
-        defaultDate: new Date(),
-        orientation: 'bottom',
-        templates: {
-            leftArrow: '<i class="la la-angle-left"></i>',
-            rightArrow: '<i class="la la-angle-right"></i>',
-        },
-    });
+    
+    
+    
     customDatePicker();
 
     $('.current-datepicker').datepicker({
         todayHighlight: true,
         orientation: 'bottom',
         startDate: new Date(),
+        "setDate": "7/11/2011",
         format: 'yyyy-mm-dd',
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',
@@ -259,6 +265,7 @@ function customDatePicker() {
         todayHighlight: true,
         orientation: 'bottom',
         format: 'yyyy-mm-dd',
+        "setDate": new Date(),
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',
             rightArrow: '<i class="la la-angle-right"></i>',
