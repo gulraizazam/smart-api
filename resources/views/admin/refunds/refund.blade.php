@@ -40,7 +40,7 @@
                             <input  class="form-control filter-field search_patient_refund" placeholder="Patient Search">
                             <input type="hidden" class="filter-field search_field" id="add_patients_id">
                             <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
-                            <div class="suggesstion-box" style="display: none;">
+                            <div class="suggesstion-box-refund" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
                         </div>
