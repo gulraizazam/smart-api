@@ -189,9 +189,10 @@ $(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                  
                     let consume = 'NO';
                     if (resposne.status == '1') {
-
+                        
                         $('#table_1').append("" +
                             "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.myarray.record.id + "'>" +
                             "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.myarray.record.id + ")'>" + resposne.myarray.service_name + "</a></td>" +
@@ -245,6 +246,7 @@ $(document).ready(function () {
                         $('#net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
 
                     } else {
+                        
                         $('#AlreadyExitMessage').show();
                         $('#AddPackage_1').attr("disabled", false);
                     }
@@ -2361,6 +2363,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                  
                     let consume = 'NO';
                     if (resposne.status) {
 
@@ -2408,7 +2411,12 @@ jQuery(document).ready(function () {
                         // $('#edit_net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
 
                     } else {
-                        $('#edit_AlreadyExitMessage').show();
+                        if(resposne.data.setteled==1){
+                            $('#casesetteled').show();
+                        }else{
+                            $('#edit_AlreadyExitMessage').show();
+                        }
+                        
                     }
 
                     hideSpinner("-edit-add");

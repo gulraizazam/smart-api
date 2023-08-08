@@ -360,11 +360,15 @@ class RefundsController extends Controller
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
-
-        if (Refunds::createRecord($request, Auth::User()->account_id)) {
+        $record = Refunds::createRecord($request, Auth::User()->account_id);
+        if($record == 'setteled'){
+            return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not refund amount against this plan.', false);
+        }else if($record == 'amountexceed'){
+            return ApiHelper::apiResponse($this->success, 'You can not refund amount more than amount received.', false);
+        } else{
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         }
-
+        
         return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
     }
 
