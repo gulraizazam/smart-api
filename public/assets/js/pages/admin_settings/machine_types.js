@@ -134,14 +134,14 @@ function setEditData(response) {
     let service_options = '';
     let service_value;
     Object.entries(services).forEach(function (value, index) {
-        
+
         if(value[1].parent_id == 0){
             service_value=value[1].name;
         }
         else{
             service_value='\t&nbsp; \t&nbsp; \t&nbsp;'+value[1].name;
         }
-        
+
         service_options += '<option value="' + (value[1].id) + '">' + service_value + '</option>';
     });
     $("#edit_machine_types_services").html(service_options);
