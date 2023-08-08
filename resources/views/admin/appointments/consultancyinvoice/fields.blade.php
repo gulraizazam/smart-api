@@ -71,7 +71,7 @@
 
                 <div class="col-md-12 mt-5 mb-10">
                     <strong class="mt-5">Pay</strong>
-                    <input style="width: 50%;" type="text" name="cash" id="cash" value="{{$cash}}" class="form-control float-right">
+                    <input style="width: 50%;" type="text" name="cash" id="cash" value="{{$cash}}" class="form-control float-right" min="0">
                 </div>
 
                 <div class="col-md-12 mt-5">
