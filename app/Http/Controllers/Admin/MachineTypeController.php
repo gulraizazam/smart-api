@@ -257,14 +257,22 @@ class MachineTypeController extends Controller
                 $machinetype->machinetype_has_services()->delete();
                 $data = $request->all();
                 if (isset($data['services']) && count($data['services'])) {
+                    $services = $data['services'];
                     $servicesData = [];
-                    foreach ($data['services'] as $service) {
-                        $servicesData = [
+
+                    $childServices = Services::whereIn('parent_id', $services)
+                        ->pluck('id')
+                        ->toArray();
+
+                    $filteredServices = array_diff($services, $childServices);
+
+                    foreach ($filteredServices as $service) {
+                        $servicesData[] = [
                             'machine_type_id' => $machinetype->id,
                             'service_id' => $service,
                         ];
-                        MachineTypeHasServices::updateRecord($servicesData, $machinetype);
                     }
+                    MachineTypeHasServices::updateRecord($servicesData, $machinetype);
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
