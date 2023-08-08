@@ -1184,9 +1184,9 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
 function patientSearchRefund(search_id = 'patient_id', flag = 1) {
     $("." + search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
-        $(".suggesstion-box").show();
+        $(".suggesstion-box-refund").show();
         if ($(this).val().length < 2) {
-            $(".suggesstion-box").hide();
+            $(".suggesstion-box-refund").hide();
             return false;
         }
         var that = $(this);
@@ -1206,9 +1206,9 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
                                 html += '<li onClick="selectUserRefund(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
                             });
                             $(".suggestion-list").html(html);
-                            $(".suggesstion-box").show();
+                            $(".suggesstion-box-refund").show();
                         } else {
-                            $(".suggesstion-box").hide();
+                            $(".suggesstion-box-refund").hide();
                         }
                     }
                 });
@@ -1236,7 +1236,7 @@ function selectUserRefund(name, user_id, search_id, flag = 1) {
     $("#add_patients_id").val(user_id);
 
     $("." + search_id).val(name);
-    $(".suggesstion-box").hide();
+    $(".suggesstion-box-refund").hide();
     $("." + search_id).focus();
     // if (flag == 1) {
     //     getplans(user_id);
