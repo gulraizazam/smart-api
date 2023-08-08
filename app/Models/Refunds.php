@@ -173,6 +173,19 @@ class Refunds extends Model
                 $data_adjustment['updated_at'] = $custom_created_at;
 
                 $record = self::create($data_adjustment);
+
+                $dataInvoice['total_price'] = $amount_left;
+                $dataInvoice['account_id'] = Auth::User()->account_id;
+                $dataInvoice['patient_id'] = $packageinformation->patient_id;
+                $dataInvoice['appointment_id'] = $packageinformation->appointment_id;
+                $dataInvoice['invoice_status_id'] = 3;
+                $dataInvoice['created_by'] = Auth::User()->id;
+                $dataInvoice['location_id'] =$packageinformation->location_id;
+                //$dataInvoice['doctor_id'] = Auth::User()->id;
+                $dataInvoice['active'] = 1;
+                $dataInvoice['is_exclusive'] = 0;
+                Invoices::create($dataInvoice);
+
             }
         }
         // if ($package_is_adjustment == '0') {

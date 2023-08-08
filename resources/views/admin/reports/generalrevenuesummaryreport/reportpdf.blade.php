@@ -89,9 +89,9 @@
             <th>Centre</th>
             <th>City</th>
             <th>Region</th>
-            <th>Revenue Cash In</th>
-            <th>Revenue Card In</th>
-            <th>Revenue Bank/Wire In</th>
+            <th>Cash </th>
+            <th>Card </th>
+            <th>Bank/Wire Transfer</th>
             <th>Refund/Out</th>
             <th>In Hand</th>
         </tr>
@@ -131,15 +131,15 @@
         <td></td>
     </tr>
     <tr>
-        <td>Revenue Cash In</td>
+        <td>Cash </td>
         <td>{{number_format($total_revenue_cash_in,2)}}</td>
     </tr>
     <tr>
-        <td>Revenue Card In</td>
+        <td>Card </td>
         <td>{{number_format($total_revenue_card_in,2)}}</td>
     </tr>
     <tr>
-        <td>Revenue Bank/Wire In</td>
+        <td>Bank/Wire Transfer</td>
         <td>{{number_format($total_revenue_bank_in,2)}}</td>
     </tr>
     <tr>

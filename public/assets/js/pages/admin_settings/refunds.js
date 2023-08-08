@@ -198,10 +198,17 @@ function setEditData(response) {
         let paymentmodes = response.data.paymentmodes;
         
         let payment_options = '<option value="">Select Payment Mode</option>';
+        var selected;
         if (paymentmodes) {
+            
             Object.entries(paymentmodes).forEach(function (paymentmode) {
-               
-                payment_options += '<option value="' + paymentmode[0] + '" >' + paymentmode[1] + '</option>';
+                var selected = '';  
+                
+                if (refund.payment_method_id == paymentmode[0]) {
+                    selected = 'selected';  
+                }
+                
+                payment_options += '<option value="' + paymentmode[0] + '" ' + selected + '>' + paymentmode[1] + '</option>';
             });
         }
         $("#edit_refund_payment_mode_id").html(payment_options);
@@ -240,7 +247,7 @@ function setHistoryData(response){
                     else{
                         history_options += '<td>' + packageadvance.cash_flow + '</td>';
                     }
-                    history_options += '<td>' + packageadvance.package_refund_price + '</td>';
+                    history_options += '<td>' + packageadvance.cash_amount + '</td>';
                     history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
                     history_options += '<tr>';
                 }
