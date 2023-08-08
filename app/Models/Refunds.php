@@ -42,6 +42,15 @@ class Refunds extends Model
     {
         
         /*Only for back date problem*/
+        $check_is_setteled = PackageAdvances::where([
+            ['cash_flow', '=', 'out'],
+            ['cash_amount', '>', 0],
+            ['is_setteled', '=', '1'],
+            ['package_id', '=', $request->package_id],
+        ])->first();
+        if($check_is_setteled){
+            return 'setteled';
+        }
         $package_advance_last_in = PackageAdvances::where([
             ['cash_flow', '=', 'in'],
             ['cash_amount', '>', 0],
@@ -76,7 +85,7 @@ class Refunds extends Model
        
         $remaining_amount = $package_cash_receive - $package_is_refunded_amount;
         if($request->refund_amount  > $package_cash_receive){
-            return false;
+            return 'amountexceed';
         }
        
         $custom_created_at = '';
