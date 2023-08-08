@@ -528,12 +528,14 @@ class PackageAdvances extends BaseModal
             return PackageAdvances::when(count($where), fn ($query) => $query->where($where))->where(['is_refund'=>1])->whereIn('location_id', ACL::getUserCentres())
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
+                ->groupBy('package_id')
                 ->orderby($orderBy, $order)
                 ->get();
         } else {
             return PackageAdvances::when(count($where), fn ($query) => $query->where($where))->where(['active' => 1,'is_refund'=>1])->whereIn('location_id', ACL::getUserCentres())
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
+                ->groupBy('package_id')
                 ->orderby($orderBy, $order)
                 ->get();
         }
