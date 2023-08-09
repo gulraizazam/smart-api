@@ -170,14 +170,21 @@ class MachineTypeController extends Controller
             if ($machinetype = MachineType::createRecord($request, Auth::User()->account_id)) {
                 $data = $request->all();
                 if (isset($data['services']) && count($data['services'])) {
+                    $services = $data['services'];
                     $servicesData = [];
-                    foreach ($data['services'] as $service) {
-                        $servicesData = [
+
+                    $childServices = Services::whereIn('parent_id', $services)
+                        ->pluck('id')
+                        ->toArray();
+                        
+                    $filteredServices = array_diff($services, $childServices);
+                    foreach ($filteredServices as $service) {
+                        $servicesData[] = [
                             'machine_type_id' => $machinetype->id,
                             'service_id' => $service,
                         ];
-                        MachineTypeHasServices::createRecord($servicesData, $machinetype);
                     }
+                    MachineTypeHasServices::createRecord($servicesData, $machinetype);
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
