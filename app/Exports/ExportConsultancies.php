@@ -15,7 +15,7 @@ use Maatwebsite\Excel\Events\AfterSheet;
 
 class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, WithEvents
 {
-    private $limit = 1000;
+    private $limit = 10000;
 
     private $offset = 0;
 
@@ -162,6 +162,9 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->where($where)
+            ->when(count($where) >! 1, function($q){
+                return $q->take($this->limit);
+            })
             ->orderBy('scheduled_time','asc')
             ->get();
         return $results;
