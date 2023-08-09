@@ -48,6 +48,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Models\InvoiceDetails;
 
 class PackagesController extends Controller
 {
@@ -2171,6 +2172,7 @@ class PackagesController extends Controller
             $data_adjustment['updated_at'] = $request['created_at'];
 
             PackageAdvances::create($data_adjustment);
+            $package_service = PackageService::where('package_id',$request->package_id)->first();
             $dataInvoice['total_price'] = $amount_left;
                 $dataInvoice['account_id'] = Auth::User()->account_id;
                 $dataInvoice['patient_id'] = $packageinformation->patient_id;
@@ -2181,7 +2183,13 @@ class PackagesController extends Controller
                 //$dataInvoice['doctor_id'] = Auth::User()->id;
                 $dataInvoice['active'] = 1;
                 $dataInvoice['is_exclusive'] = 0;
-                Invoices::create($dataInvoice);
+               $create_invoice =  Invoices::create($dataInvoice);
+               $dataInvoiceDetail['qty'] = 1;
+               $dataInvoiceDetail['service_id'] =$package_service->service_id;
+               
+                //$dataInvoice['doctor_id'] = Auth::User()->id;
+               $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
+               InvoiceDetails::create($dataInvoiceDetail);
         }
     }
         $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
