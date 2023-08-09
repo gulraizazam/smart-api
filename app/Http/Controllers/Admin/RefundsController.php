@@ -108,7 +108,8 @@ class RefundsController extends Controller
                         'cash_flow' => 'out',
                         'is_cancel' => '0',
                         'is_setteled' => '1',
-                    ])->sum('cash_amount');
+                    ])->first();
+                    
                     if ($refunded_amount != 0) {
 
                         $records['data'][] = [
@@ -121,7 +122,7 @@ class RefundsController extends Controller
                             'total' => number_format($package->total_price),
                             'cash_receive' => number_format($cash_receive),
                             'refunded' =>$refunded_amount,
-                            'case_setteled' => $is_case_setteled > 0 ? 'Yes' : 'No',
+                            'case_setteled' => $is_case_setteled->is_setteled == 1 ? 'Yes' : 'No',
                             'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('F j,Y h:i A') : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
                         ];
                     } else {
