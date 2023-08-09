@@ -108,7 +108,7 @@ class RefundsController extends Controller
                         'cash_flow' => 'out',
                         'is_setteled' =>1
                     ])->first();
-dd($is_case_setteled);
+
                     
                     if ($refunded_amount != 0) {
 
