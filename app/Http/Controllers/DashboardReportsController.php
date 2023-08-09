@@ -17,6 +17,7 @@ use Illuminate\Support\Carbon;
 use App\HelperModule\ApiHelper;
 use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
+use App\Models\ResourceHasRota;
 use App\Models\AppointmentTypes;
 use App\Reports\dashboardreport;
 use App\Helpers\GeneralFunctions;
@@ -1065,6 +1066,7 @@ class DashboardReportsController extends Controller
             $today_records = $today_records->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                 ->groupBy('location_id')
                 ->get();
+                
             $total = 0;
             $data[0] = [
                 'Task',
@@ -1086,7 +1088,10 @@ class DashboardReportsController extends Controller
                                     $location_detail->city->name . ' - ' . $location_detail->name,
                                     $todayRecord->total_price,
                                 ];
-                                $total += $todayRecord->total_price;
+                                
+                                $total += $todayRecord->total_price ;
+                               
+                                
                             }
                         }
                     }
@@ -2298,15 +2303,15 @@ class DashboardReportsController extends Controller
             ],
             'last7days' => [
                 'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'week' => [
                 'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfWeek()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'thismonth' => [
                 'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'lastmonth' => [
                 'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
@@ -2318,7 +2323,7 @@ class DashboardReportsController extends Controller
             ->selectRaw('count(*) as total')
             ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
             ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
-            ->whereBetween('cron_current_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->whereIn('centre_id', $center_id)
             ->groupBy('centre_id')
             ->get()->toArray();
@@ -2358,15 +2363,15 @@ class DashboardReportsController extends Controller
             ],
             'last7days' => [
                 'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'week' => [
                 'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfWeek()->format('Y-m-d'),
+                'end_date' => Carbon::now()->endOfWeek()->subDay(1)->format('Y-m-d'),
             ],
             'thismonth' => [
                 'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfMonth()->format('Y-m-d'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
             ],
             'lastmonth' => [
                 'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
@@ -2376,7 +2381,7 @@ class DashboardReportsController extends Controller
         $stats = AppointmentsDailyStats::select($data)
             ->selectRaw('count(*) as total')
             ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
-            ->whereBetween('cron_current_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->whereIn('user_id', $user_id)
             ->orderBy('user_id', 'ASC')
             ->groupBy($data)
@@ -2446,13 +2451,13 @@ class DashboardReportsController extends Controller
         }
         if ($request->period == 'last7days') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id])
                 ->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id, 'appointment_status_id' => 2])
                 ->groupBy('user_id')->get()->toArray();
             foreach ($yesterday_total_appointments as $loc) {
@@ -2466,13 +2471,13 @@ class DashboardReportsController extends Controller
         }
         if ($request->period == 'week') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfWeek()->subDay(1)->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id])
                 ->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfWeek()->subDay(1)->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id])
                 ->where(['appointment_status_id' => 2])
                 ->groupBy('user_id')->get()->toArray();
@@ -2487,13 +2492,13 @@ class DashboardReportsController extends Controller
         }
         if ($request->period == 'thismonth') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id])
                 ->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id, 'appointment_status_id' => 2])
                 ->groupBy('user_id')->get()->toArray();
             foreach ($yesterday_total_appointments as $loc) {
@@ -2507,12 +2512,12 @@ class DashboardReportsController extends Controller
         }
         if ($request->period == 'lastmonth') {
             $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id])->groupBy('user_id')->get()->toArray();
             $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('cron_current_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereDate('cron_current_date', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
                 ->where(['user_id' => $request->user_id, 'appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
             foreach ($yesterday_total_appointments as $loc) {
                 $user = User::findOrFail($loc['user_id']);
@@ -2534,7 +2539,6 @@ class DashboardReportsController extends Controller
 
     public function DoctoreWiseConversion(Request $request)
     {
-
         $where = [];
         $total_apts = [];
         $converted_apts = [];
@@ -2546,249 +2550,209 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-        $locations = $request->centre_id == 'all' ? ACL::getUserCentres() : [$request->centre_id];
-        if ($request->doc_id) {
-            $where[] = [['appointments.doctor_id' => $request->doc_id]];
+        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
+        if($request->centre_id == 'all'){
+            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
+        }else{
+            $locations=[$request->centre_id];
         }
-
-        if ($request->centre_id != 'all') {
-            $where[] = [['appointments.location_id' => $request->centre_id]];
-        }
-        if ($request->centre_id == "all") {
-            $centre_doctors = DoctorHasLocations::where(['location_id' => $request->centre_id])->groupBy('user_id')
-                ->pluck('user_id');
-        }
-        $centre_doctors = DoctorHasLocations::when($request->centre_id && $request->centre_id !== "all", function ($query) use ($request) {
-            return $query->where(['location_id' => $request->centre_id]);
-        })
-
-            ->when($request->doc_id, function ($query) use ($request) {
-                return $query->where(['user_id' => $request->doc_id]);
+        $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+            ->join('users', 'resources.external_id', 'users.id')
+            ->select('users.name', 'users.id')
+            ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+            ->when($request->doc_id != null, function ($query) use ($request) {
+                return $query->whereIn('resources.external_id', [$request->doc_id]);
             })
-            ->groupBy('user_id')
-            ->pluck('user_id');
-        if ($request->doc_id) {
-            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-                ->join('users', 'resources.external_id', 'users.id')
-                ->select('users.name', 'users.id')
-                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1, 'resources.external_id' => $request->doc_id])
-                ->whereIn('resource_has_rota.location_id', $locations)
-                ->distinct('user_id')
-                ->get();
-        } else {
-            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-                ->join('users', 'resources.external_id', 'users.id')
-                ->select('users.name', 'users.id')
-                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-                ->whereIn('resource_has_rota.location_id', $locations)
-                ->distinct('user_id')
-                ->get();
-        }
+            ->whereIn('resource_has_rota.location_id', $locations)
+            ->distinct('user_id')
+            ->get();
+        $consultant = collect($consultants)->pluck('id');
+        $sum_conversion_spend2 = 0;
 
-        foreach ($consultants as $consultant) {
-            array_push($lables, $consultant->name);
-            $consultant = [$consultant->id];
-            $converted_appointments =  Appointments::with('location:id,name')
-                ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-                ->where([
-                    'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                    'appointments.appointment_type_id' => 1
-                ])
-                ->whereIn('appointments.doctor_id', $consultant)
-                ->whereIn('appointments.location_id', $locations)
-                ->where('package_advances.cash_amount', '>', 0)
-                ->select('appointments.*')
-                ->when($period == 'today', function ($query) use ($periods, $period) {
-                    $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
-                })
-                ->when($period == 'yesterday', function ($query) use ($periods, $period) {
-                    $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
-                })
-                ->when($period != 'today' && $period != 'yesterday', function ($query) use ($periods, $period) {
-                    $query->whereBetween('package_advances.created_at', [
-                        $periods[$period]['start_date'],
-                        $periods[$period]['end_date']
-                    ]);
-                })
-                ->get();
+        $converted_appointments =  Appointments::with('location:id,name')
+            ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
+            ->where([
+                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
+                'appointments.appointment_type_id' => 1
+            ])
+            ->whereIn('appointments.doctor_id', $consultant)
+            ->whereIn('appointments.location_id', $locations)
+            ->where('package_advances.cash_amount', '>', 0)
+            ->select('appointments.*')
+            ->when($period == 'today', function ($query) use ($periods, $period) {
+                $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+            })
+            ->when($period == 'yesterday', function ($query) use ($periods, $period) {
+                $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+            })
+            ->when($period != 'today' && $period != 'yesterday', function ($query) use ($periods, $period) {
+                $query->whereBetween('package_advances.created_at', [
+                    $periods[$period]['start_date'],
+                    $periods[$period]['end_date']
+                ]);
+            })
+            ->get();
 
-            if (count($converted_appointments)) {
-                foreach ($converted_appointments as $appointment) {
-                    if (!in_array($appointment->id, $appointments)) {
-                        $appointments_info[$appointment->id] = array(
-                            'patient_id' => $appointment->patient_id,
-                            'appointment_id' => $appointment->id,
-                            'doctor_id' => $appointment->doctor_id,
-                            'doctor' => $appointment->doctor->name,
-                            'client' => $appointment->patient->name,
-                            'phone' => $appointment->patient->phone,
-                            'service' => $appointment->service->name,
-                            'service_id' => $appointment->service->id,
-                            'region' => $appointment->region->name,
-                            'city' => $appointment->city->name,
-                            'centre' => $appointment->location->name,
-                            'doi' => \Carbon\Carbon::parse($appointment->created_at)->format('M d Y'),
-                            'converted' => '',
-                            'conversion_spend' => '',
-                            'conversion_date' => '',
-                        );
-                    }
-                    $appointments[] = $appointment->id;
-                    $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
-                    if (count($package_info)) {
-                        $actual = 0;
-                        $revenue_in = 0;
-                        $out = 0;
-                        $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                            ->where(['cash_flow' => "in"])
+        if (count($converted_appointments)) {
+            foreach ($converted_appointments as $appointment) {
+                if (!in_array($appointment->id, $appointments)) {
+                    $appointments_info[$appointment->id] = array(
+                        'patient_id' => $appointment->patient_id,
+                        'appointment_id' => $appointment->id,
+                        'doctor_id' => $appointment->doctor_id,
+                        'doctor' => $appointment->doctor->name,
+                        'client' => $appointment->patient->name,
+                        'phone' => $appointment->patient->phone,
+                        'service' => $appointment->service->name,
+                        'service_id' => $appointment->service->id,
+                        'region' => $appointment->region->name,
+                        'city' => $appointment->city->name,
+                        'centre' => $appointment->location->name,
+                        'doi' => \Carbon\Carbon::parse($appointment->created_at)->format('M d Y'),
+                        'converted' => '',
+                        'conversion_spend' => '',
+                        'conversion_date' => '',
+                    );
+                }
+                $appointments[] = $appointment->id;
+                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
+                if (count($package_info)) {
+                    $actual = 0;
+                    $revenue_in = 0;
+                    $out = 0;
+                    $packagesadvances = PackageAdvances::whereIn('id', $package_info)
+                        ->where(['cash_flow' => "in"])
+                        ->where('cash_amount', '>', 0)
+                        ->get();
+                    if (count($packagesadvances) > 0) {
+                        $check = 0;
+                        $first_advance = PackageAdvances::whereIn('id', $package_info)
                             ->where('cash_amount', '>', 0)
-                            ->get();
-                        if (count($packagesadvances) > 0) {
-                            $check = 0;
-                            $first_advance = PackageAdvances::whereIn('id', $package_info)
-                                ->where('cash_amount', '>', 0)
-                                ->orderBy('created_at', 'asc')
-                                ->first();
-                            $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
-                            if (($date >= $periods[$period]['start_date']) && ($date <= $periods[$period]['end_date'])) {
-                                $check = 1;
-                            }
-                            if ($check == 1) {
-                                $appointments_info[$appointment->id]['converted'] = 'Yes';
-                                foreach ($packagesadvances as $packagesadvance) {
-                                    $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
-                                    if ($package_advance) {
-                                        $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
-                                        $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
-                                    }
+                            ->orderBy('created_at', 'asc')
+                            ->first();
+                        $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
+                        if (($date >= $periods[$period]['start_date']) && ($date <= $periods[$period]['end_date'])) {
+                            $check = 1;
+                        }
+                        if ($check == 1) {
+                            $appointments_info[$appointment->id]['converted'] = 'Yes';
+                            foreach ($packagesadvances as $packagesadvance) {
+                                $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
+                                if ($package_advance) {
+                                    $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
+                                    $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
                                 }
-                                $actual = $revenue_in - $out;
-                                $appointments_info[$appointment->id]['conversion_spend'] = $actual;
-                                $appointments_info[$appointment->id]['converted'] = 'Yes';
-                                $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
-                                $count[$appointment->location->id][] = 1;
-                                $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                                if ($appointment['converted'] != '') {
-                                    $arrived_count[$appointment->location->id][] = 1;
-                                    $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
-                                }
-                                $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
-                                $locationData[$appointment->location->name]['total'] = $total;
                             }
+                            $actual = $revenue_in - $out;
+                            $appointments_info[$appointment->id]['conversion_spend'] = $actual;
+                            $appointments_info[$appointment->id]['converted'] = 'Yes';
+                            $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
+                            $count[$appointment->location->id][] = 1;
+                            $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+                            if ($appointment['converted'] != '') {
+                                $arrived_count[$appointment->location->id][] = 1;
+                                $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+                            }
+                            $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
+                            $locationData[$appointment->location->name]['total'] = $total;
                         }
                     }
                 }
             }
-
+        }
+        foreach ($consultants as $doctor) {
+            array_push($lables, $doctor->name);
+            $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                 ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
-                ->whereIn('doctor_id', $consultant)
+                ->whereIn('doctor_id', $doctor_id)
                 ->whereIn('appointments.location_id', $locations)
                 ->count();
 
-            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
+            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->whereIn('doctor_id', $doctor_id)->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
-
-            $total_arrived_appointments = Appointments::with('location:id,name')
-                ->join('services', 'appointments.service_id', 'services.id')
-                ->where([
-                    'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                    'appointments.appointment_type_id' => 1
-                ])
-                ->where($where)
-                ->whereIn('appointments.location_id', $locations)
-                ->selectRaw('count(*) as arrived, service_id,services.name')
-                ->whereBetween('appointments.scheduled_date', [
-                    $periods[$period]['start_date'],
-                    $periods[$period]['end_date']
-                ])
-                ->groupBy('service_id')
-                ->get();
-            $maxConversion = collect($appointments_info)->filter(function ($appointment) {
-                if ($appointment['conversion_spend'] > 0) {
-                    return $appointment;
-                }
-            });
-            $maxConversion = $maxConversion->groupBy('service_id');
-
-
-            $new_array = [];
-
-            foreach ($maxConversion as $key => $conversions) {
-                $sum_conversion_total = 0;
-                $sum_conversion_spend = 0;
-                foreach ($conversions as $conversion) {
-                    $name = $conversion['service'];
-                    $sum_conversion_spend += $conversion['conversion_spend'];
-                    $sum_conversion_total += 1;
-                }
-                $avg_by_category = ($sum_conversion_spend / count($conversions));
-                $new_array[$name] = [
-                    'service' => $name,
-                    'total_conversion' => $sum_conversion_total,
-                    'avg' => $avg_by_category,
-                ];
+        }
+        $total_arrived_appointments = Appointments::with('location:id,name')
+            ->join('services', 'appointments.service_id', 'services.id')
+            ->where([
+                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
+                'appointments.appointment_type_id' => 1
+            ])
+            ->where($where)
+            ->whereIn('doctor_id', $consultant)
+            ->whereIn('appointments.location_id', $locations)
+            ->selectRaw('count(*) as arrived, service_id,services.name')
+            ->whereBetween('appointments.scheduled_date', [
+                $periods[$period]['start_date'],
+                $periods[$period]['end_date']
+            ])
+            ->groupBy('service_id')
+            ->get();
+        $maxConversion = collect($appointments_info)->filter(function ($appointment) {
+            if ($appointment['conversion_spend'] > 0) {
+                return $appointment;
             }
+        });
+        $maxConversion = $maxConversion->groupBy('service_id');
 
+        $new_array = [];
 
-            foreach ($total_arrived_appointments->toArray() as $key => $arrive_category) {
-                if (array_key_exists($arrive_category['name'], $new_array)) {
-                    $name = [$arrive_category['name']][0];
-
-                    $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
-                    $avg_valu = $new_array[$arrive_category['name']]['avg'];
-                    if ($request->centre_id && !$request->doc_id) {
-                        $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                            ->whereIn('doctor_id', $centre_doctors)
-                            ->whereIn('appointments.location_id', $locations)
-                            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                            ->whereIn('appointments.location_id', $locations)
-                            ->count();
-                    } else {
-                        $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                            ->whereIn('doctor_id', $consultant)
-                            ->whereIn('appointments.location_id', $locations)
-                            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                            ->whereIn('appointments.location_id', $locations)
-                            ->count();
-                    }
-                } else {
-                    $name = [$arrive_category['name']][0];
-                    $sum_conversion_total = 0;
-                    $avg_valu = 0;
-                    if ($request->centre_id && !$request->doc_id) {
-                        $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                            ->whereIn('doctor_id', $centre_doctors)
-                            ->whereIn('appointments.location_id', $locations)
-                            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                            ->whereIn('appointments.location_id', $locations)
-                            ->count();
-                    } else {
-                        $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                            ->whereIn('doctor_id', $consultant)
-                            ->whereIn('appointments.location_id', $locations)
-                            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                            ->whereIn('appointments.location_id', $locations)
-                            ->count();
-                    }
-                }
-
-                $returnCategoryData[$key] = [
-                    'service' => $name,
-                    'total_arrival' => $category_total_records,
-                    'total_conversion' => $sum_conversion_total,
-                    'avg' => $avg_valu
-                ];
+        foreach ($maxConversion as $key => $conversions) {
+            $sum_conversion_total = 0;
+            $sum_conversion_spend = 0;
+            foreach ($conversions as $conversion) {
+                $name = $conversion['service'];
+                $sum_conversion_spend += $conversion['conversion_spend'];
+                $sum_conversion_total++;
+                $sum_conversion_spend2 += $conversion['conversion_spend'];
             }
+            $avg_by_category = ($sum_conversion_spend / count($conversions));
+            $new_array[$name] = [
+                'service' => $name,
+                'total_conversion' => $sum_conversion_total,
+                'avg' => $avg_by_category,
+            ];
         }
 
+        foreach ($total_arrived_appointments->toArray() as $key => $arrive_category) {
+            if (array_key_exists($arrive_category['name'], $new_array)) {
+                $name = [$arrive_category['name']][0];
+
+                $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
+                $avg_valu = $new_array[$arrive_category['name']]['avg'];
+
+                $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    ->whereIn('doctor_id', $consultant)
+                    ->whereIn('appointments.location_id', $locations)
+                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                    ->count();
+            } else {
+                $name = [$arrive_category['name']][0];
+                $sum_conversion_total = 0;
+                $avg_valu = 0;
+
+                $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    ->whereIn('doctor_id', $consultant)
+                    ->whereIn('appointments.location_id', $locations)
+                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                    ->count();
+            }
+
+            $returnCategoryData[$key] = [
+                'service' => $name,
+                'total_arrival' => $category_total_records,
+                'total_conversion' => $sum_conversion_total,
+                'avg' => $avg_valu
+            ];
+        }
 
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
             'labels' => $lables,
             'total_appointments' => $total_apts,
             'converted_appointments' => $converted_apts,
             'categories' => $returnCategoryData,
-            'category_total' => $total_arrived_appointments
+            'category_total' => $total_arrived_appointments,
+            'sum_val' => $sum_conversion_spend2
 
         ]);
     }
@@ -2804,14 +2768,18 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-
-        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
-        if ($request->centre_id == 'all') {
-            $locations = Locations::whereNotIn('name', $where_not)->where('active', 1)->pluck('id');
-        } else {
-            $locations = $request->centre_id;
+        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
+        if($request->centre_id == 'all'){
+            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
+        }else{
+            $locations=$request->centre_id;
         }
-
+        $consultants = ResourceHasRota::join('resources', 'resources.id', 'resource_has_rota.resource_id')
+            ->join('users', 'resources.external_id', 'users.id')
+            ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+            ->whereIn('resource_has_rota.location_id', $locations)
+            ->distinct('user_id')
+            ->pluck('users.id');
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
@@ -2819,7 +2787,7 @@ class DashboardReportsController extends Controller
                 'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                 'appointments.appointment_type_id' => 1
             ])
-
+            ->whereIn('appointments.doctor_id', $consultants)
             ->whereIn('appointments.location_id', $locations)
             ->selectRaw('count(*) as arrived, service_id,services.name')
             ->whereBetween('appointments.scheduled_date', [
@@ -2834,14 +2802,13 @@ class DashboardReportsController extends Controller
                 array_push($lables, $location_name->name);
             }
 
-
             $converted_appointments =  Appointments::with('location:id,name')
                 ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
                 ->where([
                     'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                     'appointments.appointment_type_id' => 1
                 ])
-
+                ->whereIn('appointments.doctor_id', $consultants)
                 ->where('appointments.location_id', $location)
                 ->where('package_advances.cash_amount', '>', 0)
                 ->select('appointments.*')
@@ -2930,6 +2897,7 @@ class DashboardReportsController extends Controller
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                 ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
                 ->where('appointments.location_id', $location)
+                ->whereIn('appointments.doctor_id', $consultants)
                 ->count();
 
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
@@ -2944,6 +2912,7 @@ class DashboardReportsController extends Controller
             });
             $maxConversion = $maxConversion->groupBy('service_id');
             $new_array = [];
+            $sum_conversion_spend2 = 0;
             foreach ($maxConversion as $key => $conversions) {
                 $sum_conversion_total = 0;
                 $sum_conversion_spend = 0;
@@ -2951,6 +2920,7 @@ class DashboardReportsController extends Controller
                     $name = $conversion['service'];
                     $sum_conversion_spend += $conversion['conversion_spend'];
                     $sum_conversion_total += 1;
+                    $sum_conversion_spend2 += $conversion['conversion_spend'];
                 }
                 $avg_by_category = ($sum_conversion_spend / count($conversions));
                 $new_array[$name] = [
@@ -2968,8 +2938,8 @@ class DashboardReportsController extends Controller
                     $avg_valu = $new_array[$arrive_category['name']]['avg'];
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-
                         ->whereIn('appointments.location_id', $locations)
+                        ->whereIn('appointments.doctor_id', $consultants)
                         ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
@@ -2979,6 +2949,7 @@ class DashboardReportsController extends Controller
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
+                        ->whereIn('appointments.doctor_id', $consultants)
                         ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 }
@@ -2998,8 +2969,8 @@ class DashboardReportsController extends Controller
             'total_appointments' => $total_apts,
             'converted_appointments' => $converted_apts,
             'categories' => $returnCategoryData,
-            'category_total' => $total_arrived_appointments
-
+            'category_total' => $total_arrived_appointments,
+            'sum_val' => $sum_conversion_spend2
         ]);
     }
     public function GetCentreDoctors(Request $request)
@@ -3028,7 +2999,7 @@ class DashboardReportsController extends Controller
         $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
         return view('admin.reports.followup', get_defined_vars());
     }
-    
+
     public function FollowUpReportMonthly()
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
@@ -3037,60 +3008,38 @@ class DashboardReportsController extends Controller
     }
     public function loadFollowupReport(Request $request)
     {
-        if($request->report_type=="monthly"){
+        if (isset($request->date_range) && $request->date_range) {
+            $date_range = explode(' - ', $request->date_range);
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
+        if ($request->report_type == "monthly") {
             $where = [];
-            if ($request->date_from) {
-                $where[] = [
-                    'appointments.scheduled_date',
-                    '>=',
-                    $request->date_from . ' 00:00:00',
-                ];
-            }
-            if ($request->date_to) {
-                $where[] = [
-                    'appointments.scheduled_date',
-                    '<=',
-                    $request->date_to . ' 23:59:00',
-                ];
+            if (isset($request->date_range) && $request->date_range) {
+                $where[] = ['appointments.scheduled_date', '>=', $start_date];
+                $where[] = ['appointments.scheduled_date', '<=', $end_date];
             }
             if ($request->patient_id) {
-                $where[] = [
-                    'appointments.patient_id',
-                    '=',
-                    $request->patient_id,
-                ];
+                $where[] = ['appointments.patient_id', '=', $request->patient_id,];
             }
             $data = $request->all();
-            $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data , $where);
+            $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data, $where);
             return view('admin.reports.patients_follow_up_report_monthly', get_defined_vars());
-        }else{
+        } else {
             $where = [];
-            if ($request->date_from) {
-                $where[] = [
-                    'package_advances.created_at',
-                    '>=',
-                    $request->date_from . ' 00:00:00',
-                ];
-            }
-            if ($request->date_to) {
-                $where[] = [
-                    'package_advances.created_at',
-                    '<=',
-                    $request->date_to . ' 23:59:00',
-                ];
+            if (isset($request->date_range) && $request->date_range) {
+                $where[] = ['package_advances.created_at', '>=', $start_date. ' 00:00:00'];
+                $where[] = ['package_advances.created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
-                $where[] = [
-                    'package_advances.patient_id',
-                    '=',
-                    $request->patient_id,
-                ];
+                $where[] = ['package_advances.patient_id', '=', $request->patient_id];
             }
             $data = $request->all();
-            $patient_data = GeneralFunctions::PatientFollowUpReport($data , $where);
+            $patient_data = GeneralFunctions::PatientFollowUpReport($data, $where);
             return view('admin.reports.patients_follow_up_report', get_defined_vars());
         }
-            
-        
     }
 }

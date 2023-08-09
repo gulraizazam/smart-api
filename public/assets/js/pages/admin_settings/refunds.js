@@ -4,17 +4,12 @@ var table_url = route('admin.refunds.datatable');
 var table_columns = [
     {
         field: 'patient_id',
-        title: 'Patient ID',
+        title: 'ID',
         sortable: false,
-        width: 80,
+        width: 70,
     },{
         field: 'name',
         title: 'Name',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'phone',
-        title: 'Phone',
         sortable: false,
         width: 'auto',
     },{
@@ -23,20 +18,25 @@ var table_columns = [
         sortable: false,
         width: 70,
     },{
-        field: 'session_count',
-        title: 'Session count',
-        sortable: false,
-        width: 'auto',
-    },{
         field: 'total',
-        title: 'Total',
+        title: 'Plan Amount',
         sortable: false,
         width: 80,
     },{
         field: 'cash_receive',
         title: 'Cash receive',
         sortable: false,
-        width: 100,
+        width: 80,
+    },{
+        field: 'refunded',
+        title: 'Refund Amount',
+        sortable: false,
+        width: 70,
+    },{
+        field: 'case_setteled',
+        title: 'Case Setteled',
+        sortable: false,
+        width: 70,
     },{
         field: 'location_id',
         title: 'Centres',
@@ -63,8 +63,8 @@ function actions(data) {
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
-        let url = route('admin.refunds.refund_create', {id: id});
-
+        let edit_url = route('admin.refunds.edit', {id: id});
+        let history = route('admin.packages.display', {id: id});
         if (permissions.refund) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -77,9 +77,15 @@ function actions(data) {
                     </li>';
 
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="refund(`' + url + '`);" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="edit(`' + edit_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                        <span class="navi-text">Refund</span>\
+                        <span class="navi-text">edit</span>\
+                    </a>\
+                </li>';
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="history(`' + history + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-eye"></i></span>\
+                        <span class="navi-text">View History</span>\
                     </a>\
                 </li>';
 
@@ -115,18 +121,263 @@ function refund(url) {
 
 
 }
+function edit(url) {
+    $("#edit_refunds_modal").modal("show");
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setEditData(response);
 
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            reInitValidation(EditRefundValidation);
+        }
+    });
+
+
+}
+function history(url) {
+    $("#edit_history_modal").modal("show");
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setHistoryData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            reInitValidation(EditRefundValidation);
+        }
+    });
+
+
+}
+function setEditData(response) {
+   
+    let refund = response.data;
+
+        $("#edit_refunds_form").attr("action", route('admin.refunds.update'));
+
+
+        if (refund.document) {
+            $("#edit_document-label").text('Documentation Charges Already Taken');
+            $("#edit_documentationcharges").hide();
+        } else {
+            $("#edit_document-label").text('Documentation Charges');
+            $("#edit_documentationcharges").show();
+        }
+        $("#edit_refund_amount").val(refund.refundable_amount);
+        $("#edit_documentationcharges").val(refund.documentationcharges.data);
+        $("#edit_balance").val(refund.refundable_amount);
+        $("#edit_refund_amount").val(refund.refunded_amount);
+        $("#edit_received_amount").val(refund.cash_amount);
+        $("#edit_package_id").val(refund.id);
+        $("#edit_is_adjustment_amount").val(refund.is_adjustment_amount);
+        $("#edit_return_tax_amount").val(refund.return_tax_amount);
+        $("#patient_info").val(refund.patient_name);
+        $("#edit_patients_id").val(refund.patient_id);
+        $("#plan_id_1").val(refund.plan);
+        $("#edit_plan_id_1").val(refund.plan);
+        $("#edit_date_backend").val(refund.date_backend);
+        $("#edit_created_at").val(refund.created_date);
+        $("#edit_refund_note").val(refund.refund_note);
+        $("#record_id").val(response.data.record_id);
+        let paymentmodes = response.data.paymentmodes;
+        
+        let payment_options = '<option value="">Select Payment Mode</option>';
+        var selected;
+        if (paymentmodes) {
+            
+            Object.entries(paymentmodes).forEach(function (paymentmode) {
+                var selected = '';  
+                
+                if (refund.payment_method_id == paymentmode[0]) {
+                    selected = 'selected';  
+                }
+                
+                payment_options += '<option value="' + paymentmode[0] + '" ' + selected + '>' + paymentmode[1] + '</option>';
+            });
+        }
+        $("#edit_refund_payment_mode_id").html(payment_options);
+        if(refund.package_setteled_amount > 0){
+            $("#edit_case_setteled").attr('checked',true);
+        }else{
+            $("#edit_case_setteled").attr('checked',false);
+        }
+
+}
+function setHistoryData(response){
+    try {
+
+        let packageadvances = response.data.packageadvances;
+        let package = response.data.package;
+        let packagebundles = response.data.packagebundles;
+       
+
+        $("#package_pdf").attr("href", route('admin.packages.package_pdf', package.id))
+
+        let history_options = noRecordFoundTable(4);
+
+        if (Object(packageadvances).length) {
+
+            history_options = '';
+            Object.values(packageadvances).forEach(function (packageadvance) {
+
+                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                    history_options += '<tr>';
+                    history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
+                    if(packageadvance.is_refund==1){
+                        history_options += '<td>out / refund</td>';
+                    }else if(packageadvance.is_setteled==1){
+                        history_options += '<td>out / settled</td>';
+                    }
+                    else{
+                        history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    }
+                    history_options += '<td>' + packageadvance.cash_amount + '</td>';
+                    history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
+                    history_options += '<tr>';
+                }
+            });
+        }
+        let service_options = noRecordFoundTable(9);
+        $(".plan_history").html(history_options);
+        $("#user_name").text(package.user.name)
+        $("#location_name").text(package.location.name)
+        
+
+
+    } catch (error) {
+        showException(error);
+    }
+}
+$(document).ready(function () {
+   
+    $("#add_patient_id_selector").on("select2:select", function (e) {
+        $("#add_plan_id").empty();
+        $('#add_plan_id').val(null).trigger('change');
+        getplans($(this).val());
+        
+    });
+
+    patientSearchRefund('search_patient_refund');
+
+    $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
+        $('.package_id').val(null).trigger('change');
+
+        $('.search_patient_refund').val(null).trigger('change');
+    });
+
+});
+$("#add_patients_id").on('change',function(){
+    var patient_id = $('#add_patients_id').val();
+    let url = route('admin.refunds.getplans');
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "post",
+        data:{'patient_id':patient_id},
+        cache: false,
+        success: function (response) {
+            let plans_options = '<option value=""> Select Plan </option>';
+            Object.values(response.plans).forEach(function (value) {
+                plans_options += '<option value="' + value + '"> ' + value + ' </option>';
+            });
+            $("#add_plan_id").html(plans_options);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            
+        }
+    });
+});
+function GetPlanDetail(){
+    var planId = $("#add_plan_id").val();
+    let refund_url = route('admin.refunds.refund_create', { id: planId });
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: refund_url,
+        type: "get",
+        
+        cache: false,
+        success: function (response) {
+            let refund = response.data;
+
+            // if (refund.refundable_amount == 0) {
+            //     $("#modal_edit_refunds").modal("hide");
+            //     toastr.error("Insufficient amount to refund");
+            //     return false;
+            // }
+            let paymentmodes = response.data.paymentmodes;
+            let payment_options = '<option value="">Select Payment Mode</option>';
+            if (paymentmodes) {
+                Object.entries(paymentmodes).forEach(function (paymentmode) {
+                    payment_options += '<option value="' + paymentmode[0] + '">' + paymentmode[1] + '</option>';
+                });
+            }
+            $("#modal_edit_refunds").modal("show");
+    
+            $("#modal_edit_refunds_form").attr("action", route('admin.refunds.store'));
+    
+    
+            if (refund.document) {
+                $("#document-label").text('Documentation Charges Already Taken');
+                $("#documentationcharges").hide();
+            } else {
+                $("#document-label").text('Documentation Charges');
+                $("#documentationcharges").show();
+            }
+            $("#refund_amount").html(refund.refundable_amount);
+            $("#documentationcharges").val(refund.documentationcharges.data);
+            $("#balance").val(refund.refundable_amount);
+            $("#refund_amount").attr('max', refund.refundable_amount);
+    
+            $("#package_id").val(refund.id);
+            $("#is_adjustment_amount").val(refund.is_adjustment_amount);
+            $("#return_tax_amount").val(refund.return_tax_amount);
+            $("#date_backend").val(refund.date_backend);
+            $("#refund_payment_mode_id").html(payment_options);
+            $("#received_amount").val(refund.cash_amount);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            
+        }
+    });
+}
 function refundData(response) {
 
     try {
 
         let refund = response.data;
 
-        if (refund.refundable_amount == 0) {
-            $("#modal_edit_refunds").modal("hide");
-            toastr.error("Insufficient amount to refund");
-            return false;
-        }
+        // if (refund.refundable_amount == 0) {
+        //     $("#modal_edit_refunds").modal("hide");
+        //     toastr.error("Insufficient amount to refund");
+        //     return false;
+        // }
 
         $("#modal_edit_refunds").modal("show");
 
@@ -166,8 +417,7 @@ function applyFilters(datatable) {
             patient_id: $("#search_patient").val(),
             location_id: $("#search_centres").val(),
             package_id: $("#search_plans").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
 
@@ -186,8 +436,7 @@ function resetAllFilters(datatable) {
             patient_id: '',
             package_id: '',
             location_id: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -223,8 +472,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_id").html(patients_options);
 
         $("#search_id").val(active_filters.patient_id);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
         $("#search_centres").html(location_options);
         $("#search_centres").val(active_filters.location_id);
 
@@ -256,5 +504,5 @@ $(document).ready( function () {
         $('.search_field').val('').change();
         $('.search_patient').val(null).trigger('change');
     });
-
+    $("#date_range").val("");
 });

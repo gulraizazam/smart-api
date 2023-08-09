@@ -90,9 +90,6 @@
                 $total_revenue_cash_location = 0;
                 $total_revenue_card_location = 0;
                 $total_revenue_bank_location = 0;
-                $total_refund_cash_location = 0;
-                $total_refund_card_location = 0;
-                $total_refund_bank_location = 0;
                 $total_refund_location = 0;
             @endphp
 
@@ -102,32 +99,31 @@
                     <th>ID</th>
                     <th>Patient Name</th>
                     <th>Transaction type</th>
-                    <th>Cash</th>
+                    <th>Cash </th>
                     <th>Card </th>
                     <th>Bank/Wire Transfer</th>
-                    
+                    <th>Refund/Out</th>
                     <th>Created At</th>
                     </thead>
                     <tbody>
                     @if($report_data)
                         @foreach($report_data as $reportlocation)
-                        <tr style="background:#2fa0d3;color: #fff;">
-                                <td style="color: #fff;">{{$reportlocation['name']}}</td>
-                                <td style="color: #fff;">{{$reportlocation['city']}}</td>
-                                <td style="color: #fff;">{{$reportlocation['region']}}</td>
-                                <td style="color: #fff;"></td>
-                                <td style="color: #fff;"></td>
-                                <td style="color: #fff;"></td>
-                                <td style="color: #fff;"></td>
+                            <tr>
+                                <td>{{$reportlocation['name']}}</td>
+                                <td>{{$reportlocation['city']}}</td>
+                                <td>{{$reportlocation['region']}}</td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                                <td></td>
+                            </tr>
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
                                     $total_revenue_cash_location += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
                                     $total_revenue_card_location += $reportRow['revenue_card_in']?$reportRow['revenue_card_in']:0;
                                     $total_revenue_bank_location += $reportRow['revenue_bank_in']?$reportRow['revenue_bank_in']:0;
-                                    $total_refund_cash_location += $reportRow['refund_cash_in']?$reportRow['refund_cash_in']:0;
-                                    $total_refund_card_location += $reportRow['refund_card_in']?$reportRow['refund_card_in']:0;
-                                    $total_refund_bank_location += $reportRow['refund_bank_in']?$reportRow['refund_bank_in']:0;
                                     $total_refund_location += $reportRow['refund_out']?$reportRow['refund_out']:0;
                                 @endphp
 
@@ -136,46 +132,37 @@
                                     <td>{{$reportRow['patient']}}</td>
                                     <td>{{$reportRow['transtype']}}</td>
                                     <td>@if($reportRow['revenue_cash_in'])
-                                    PKR: {{number_format($reportRow['revenue_cash_in'],2)}}
-                                        @endif
-                                        @if($reportRow['refund_cash_in'])
-                                        PKR: ({{number_format($reportRow['refund_cash_in'],2)}})
+                                            {{number_format($reportRow['revenue_cash_in'],2)}}
                                         @endif
                                     </td>
                                     <td>
                                         @if($reportRow['revenue_card_in'])
-                                        PKR: {{number_format($reportRow['revenue_card_in'],2)}}
-                                        @endif
-                                        @if($reportRow['refund_card_in'])
-                                        PKR: ({{number_format($reportRow['refund_card_in'],2)}})
+                                            {{number_format($reportRow['revenue_card_in'],2)}}
                                         @endif
                                     </td>
                                     <td>
                                         @if($reportRow['revenue_bank_in'])
-                                        PKR: {{number_format($reportRow['revenue_bank_in'],2)}}
-                                        @endif
-                                        @if($reportRow['refund_bank_in'])
-                                        PKR: ({{number_format($reportRow['refund_bank_in'],2)}})
+                                            {{number_format($reportRow['revenue_bank_in'],2)}}
                                         @endif
                                     </td>
-                                   
+                                    <td>
+                                        @if($reportRow['refund_out'])
+                                            {{number_format($reportRow['refund_out'],2)}}
+                                        @endif
+                                    </td>
                                     <td>{{$reportRow['created_at']}}</td>
                                 </tr>
                             @endforeach
-                            @php
-                            $t_cash = $total_revenue_cash_location - $total_refund_cash_location;
-                            $t_card = $total_revenue_card_location - $total_refund_card_location;
-                            $t_bank = $total_revenue_bank_location - $total_refund_bank_location;
-                            @endphp                            
-                                <tr style="background:#364150;color: #fff;">
-                                <td style="color: #fff;">PKR: {{$reportlocation['name']}}</td>
+
+                            <tr style="background:#364150;color: #fff;">
+                                <td style="color: #fff;">{{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">Total</td>
                                 <td style="color: #fff;"></td>
-                                <td style="color: #fff;">PKR: {{number_format($t_cash,2)}}</td>
-                                <td style="color: #fff;">PKR: {{number_format($t_card,2)}}</td>
-                                <td style="color: #fff;">PKR: {{number_format($t_bank,2)}}</td>
-                                
-                                <td style="color: #fff;"></td>
+                                <td style="color: #fff;">{{number_format($total_revenue_cash_location,2)}}</td>
+                                <td style="color: #fff;">{{number_format($total_revenue_card_location,2)}}</td>
+                                <td style="color: #fff;">{{number_format($total_revenue_bank_location,2)}}</td>
+                                <td style="color: #fff;">{{number_format($total_refund_location,2)}}</td>
+                                <td style="color: #fff;">{{number_format(($total_revenue_cash_location+$total_revenue_card_location+$total_revenue_bank_location)-$total_refund_location,2)}}</td>
                             </tr>
 
                             @php
@@ -183,8 +170,6 @@
                                 $total_revenue_card_location = 0;
                                 $total_revenue_bank_location = 0;
                                 $total_refund_location = 0;
-                                $t_revenue = $t_cash + $t_card + $t_bank;
-                                $inhandBalance = $total_revenue -$total_refund;
                             @endphp
 
                         @endforeach
@@ -199,46 +184,28 @@
                 <table class="table">
                     <tr>
                         <th>Cash </th>
-                        <td>PKR: {{number_format( $t_cash,2)}}</td>
+                        <td>{{number_format($total_revenue_cash_in,2)}}</td>
                     </tr>
                     <tr>
                         <th>Card </th>
-                        <td>PKR: {{number_format( $t_card,2)}}</td>
+                        <td>{{number_format($total_revenue_card_in,2)}}</td>
                     </tr>
                     <tr>
                         <th>Bank/Wire Transfer</th>
-                        <td>PKR: {{number_format( $t_bank,2)}}</td>
+                        <td>{{number_format($total_revenue_bank_in,2)}}</td>
                     </tr>
                     <tr>
-                        <th>Total Sales</th>
-                        <td>PKR: {{number_format($total_revenue,2)}}</td>
+                        <th>Total Revenue</th>
+                        <td>{{number_format($total_revenue,2)}}</td>
                     </tr>
                     <tr>
-                        <th>Refund Out <br>
-                        <table class="table table-sm border" style="max-width: 350px; margin:14px auto 10px;">
-                            <tbody>
-                                <tr>
-                                    <th class="pl-3" style="color: #8b8b8b;">Cash</th>
-                                    <td style="font-weight:400;color: #8b8b8b;">PKR: {{$total_refund_cash_location}}</td>
-                                </tr>
-                                <tr>
-                                    <th class="pl-3" style="color: #8b8b8b;">Card</th>
-                                    <td style="font-weight:400;color: #8b8b8b;">PKR: {{$total_refund_card_location}}</td>
-                                </tr>
-                                <tr>
-                                    <th class="pl-3" style="color: #8b8b8b;">Bank/Wire Transfer</th>
-                                    <td style="font-weight:400;color: #8b8b8b;">PKR: {{$total_refund_bank_location}}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                        </th>
-                        <td>PKR: ({{number_format($total_refund,2)}})
-                    </td>
+                        <th>Refund</th>
+                        <td>{{number_format($total_refund,2)}}</td>
                     </tr>
-                    
                     <tr>
-                        <th>Net Sales</th>
-                        <td>PKR: {{number_format($inhandBalance,2)}}</td>
+                        <th>In Hand Balance</th>
+                        <td>{{number_format(($total_revenue-$total_refund),2)}}</td>
+
                     </tr>
                 </table>
             </div>

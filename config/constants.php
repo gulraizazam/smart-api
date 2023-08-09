@@ -24,7 +24,7 @@ return [
         'advance_out' => 'Advance Out',
         'invoice_cancel' => 'Invoice Cancel',
         'invoice_create' => 'Invoice Create',
-        'refund_in' => 'Refund In',
+        'refund_in' => 'Refund Out',
         'refund_out' => 'Refund Out',
         'adjustment' => 'Adjustment',
         'tax_out' => 'Tax Out',

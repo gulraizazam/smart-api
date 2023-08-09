@@ -2,25 +2,26 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
+use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Http\Controllers\Controller;
-use App\Models\Appointments;
 use App\Models\Cities;
+use PHPUnit\Exception;
 use App\Models\Doctors;
-use App\Models\Locations;
 use App\Models\Regions;
+use App\Helpers\Filters;
+use App\Models\Locations;
+use App\Models\Resources;
+use App\Models\Appointments;
+use Illuminate\Http\Request;
+use App\Models\ResourceTypes;
+use App\HelperModule\ApiHelper;
 use App\Models\ResourceHasRota;
 use App\Models\ResourceHasRotaDays;
-use App\Models\Resources;
-use App\Models\ResourceTypes;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
-use PHPUnit\Exception;
 
 class ResourceRotasController extends Controller
 {
@@ -185,9 +186,7 @@ class ResourceRotasController extends Controller
      */
     public function datatable(Request $request)
     {
-
         try {
-
             $fileName = 'resourcehasrota';
 
             $filters = getFilters($request->all());
@@ -196,6 +195,17 @@ class ResourceRotasController extends Controller
 
             $records = [];
             $records['data'] = [];
+
+            if (hasFilter($filters, 'created_at')) {
+                $date_range = explode(' - ', $filters['created_at']);
+                $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+                $end_date_string = new DateTime($date_range[1]);
+                $end_date_string->setTime(23, 59, 0);
+                $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+            } else {
+                $start_date_time = null;
+                $end_date_time = null;
+            }
 
             if (hasFilter($filters, 'delete')) {
                 $ids = explode(',', $filters['delete']);
@@ -385,43 +395,19 @@ class ResourceRotasController extends Controller
                 }
             }
 
-            if (hasFilter($filters, 'created_from')) {
-                $where[] = [
-                    'resource_has_rota.created_at',
-                    '>=',
-                    $filters['created_from'].' 00:00:00',
-                ];
-                Filters::put(Auth::User()->id, $fileName, 'created_from', $filters['created_from'].' 00:00:00');
+            if (hasFilter($filters, 'created_at')) {
+                $where[] = ['resource_has_rota.created_at', '>=', $start_date_time];
+                $where[] = ['resource_has_rota.created_at', '<=', $end_date_time];
+                Filters::put(Auth::User()->id, $fileName, 'created_at', $filters['created_at']);
             } else {
                 if ($apply_filter) {
-                    Filters::forget(Auth::User()->id, $fileName, 'created_from');
+                    Filters::forget(Auth::User()->id, $fileName, 'created_at');
                 } else {
-                    if (Filters::get(Auth::User()->id, $fileName, 'created_from')) {
+                    if (Filters::get(Auth::User()->id, $fileName, 'created_at')) {
                         $where[] = [
                             'resource_has_rota.created_at',
                             '>=',
-                            Filters::get(Auth::User()->id, $fileName, 'created_from').' 00:00:00',
-                        ];
-                    }
-                }
-            }
-
-            if (hasFilter($filters, 'created_to')) {
-                $where[] = [
-                    'resource_has_rota.created_at',
-                    '<=',
-                    $filters['created_to'].' 23:59:59',
-                ];
-                Filters::put(Auth::User()->id, $fileName, 'created_to', $filters['created_to'].' 23:59:59');
-            } else {
-                if ($apply_filter) {
-                    Filters::forget(Auth::User()->id, $fileName, 'created_to');
-                } else {
-                    if (Filters::get(Auth::User()->id, $fileName, 'created_to')) {
-                        $where[] = [
-                            'resource_has_rota.created_at',
-                            '<=',
-                            Filters::get(Auth::User()->id, $fileName, 'created_to').' 23:59:59',
+                            Filters::get(Auth::User()->id, $fileName, 'created_at'),
                         ];
                     }
                 }

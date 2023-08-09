@@ -2,26 +2,27 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Http\Controllers\Controller;
-use App\Models\Locations;
-use App\Models\Patients;
-use App\Models\RoleHasUsers;
-use App\Models\User;
-use App\Models\UserHasLocations;
-use Carbon\Carbon;
-use Illuminate\Contracts\Encryption\DecryptException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Spatie\Permission\Models\Role;
+use DateTime;
 use Validator;
+use Carbon\Carbon;
+use App\Helpers\ACL;
+use App\Models\User;
+use App\Helpers\Filters;
+use App\Models\Patients;
+use App\Models\Locations;
+use App\Models\RoleHasUsers;
+use Illuminate\Http\Request;
+use App\HelperModule\ApiHelper;
+use App\Models\UserHasLocations;
+use App\Helpers\GeneralFunctions;
+use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Config;
+use App\Helpers\Widgets\LocationsWidget;
+use Illuminate\Contracts\Encryption\DecryptException;
 
 class UsersController extends Controller
 {
@@ -63,7 +64,6 @@ class UsersController extends Controller
         $filename = 'users';
 
         $filters = getFilters($request->all());
-
         $apply_filter = checkFilters($filters, $filename);
 
         $records = [];
@@ -78,11 +78,19 @@ class UsersController extends Controller
             $records['status'] = true;
             $records['message'] = 'Records has been deleted successfully!';
         }
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
 
         $where = [];
-
         [$orderBy, $order] = getSortBy($request);
-
         if (Auth::user()->account_id && Auth::user()->account_id != '') {
             $where[] = [
                 'users.account_id',
@@ -248,43 +256,28 @@ class UsersController extends Controller
                 }
             }
         }
-        if (hasFilter($filters, 'created_from')) {
+
+        if (hasFilter($filters, 'created_at')) {
             $where[] = [
                 'users.created_at',
                 '>=',
-                $filters['created_from'].' 00:00:00',
+                $start_date_time,
             ];
-            Filters::put(Auth::user()->id, $filename, 'created_from', $filters['created_from'].' 00:00:00');
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::user()->id, $filename, 'created_from');
-            } else {
-                if (Filters::get(Auth::user()->id, $filename, 'created_from')) {
-                    $where[] = [
-                        'users.created_at',
-                        '>=',
-                        Filters::get(Auth::user()->id, $filename, 'created_from'),
-                    ];
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'created_to')) {
             $where[] = [
                 'users.created_at',
                 '<=',
-                $filters['created_to'].' 23:59:59',
+                $end_date_time,
             ];
-            Filters::put(Auth::user()->id, $filename, 'created_to', $filters['created_to'].' 23:59:59');
+            Filters::put(Auth::user()->id, $filename, 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::user()->id, $filename, 'created_to');
+                Filters::forget(Auth::user()->id, $filename, 'created_at');
             } else {
-                if (Filters::get(Auth::user()->id, $filename, 'created_to')) {
+                if (Filters::get(Auth::user()->id, $filename, 'created_at')) {
                     $where[] = [
                         'users.created_at',
-                        '<=',
-                        Filters::get(Auth::user()->id, $filename, 'created_to'),
+                        '>=',
+                        Filters::get(Auth::user()->id, $filename, 'created_at'),
                     ];
                 }
             }

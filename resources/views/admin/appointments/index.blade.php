@@ -71,7 +71,7 @@
                                         <input type="hidden" id="filter_created_from_id" name="filter_created_from_id">
                                         <input type="hidden" id="filter_created_to_id" name="filter_created_to_id">
                                         <input type="hidden" id="filter_rescheduled_by_id" name="filter_rescheduled_by_id">
-                                        <a onclick="submitFilters()"  id="appointment_exports_submit" class="btn btn-primary font-weight-bolder">
+                                        <a id="appointment_exports_submit" class="btn btn-primary font-weight-bolder">
                                         <i class="la la-file-export"></i> Export
                                     </a>
                                     </form>
@@ -147,6 +147,11 @@
                 $("#appointment_exports").attr('href', route('admin.appointments.export', [limit, offset]));
 
             });
+            $(document).on('click', '#appointment_exports_submit', function(e){
+                e.preventDefault();
+                $("#filtersform").submit();
+
+            });
             function changeLimitOffset($this) {
                 limit = parseInt(limit) + parseInt(appointment_limit);
                 offset = parseInt(offset) + parseInt(appointment_limit);
@@ -159,11 +164,6 @@
             }
             function SetTodate(){
                 $("#filter_date_to").val($("#appoint_appoint_end").val());
-            }
-            function submitFilters()
-            {
-                $("#filtersform").submit();
-
             }
             function SetDocId()
             {
