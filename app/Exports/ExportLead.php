@@ -83,7 +83,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
         }
         $result = $result_query->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
             ->orderBy('id', 'DESC')->latest()->get()->unique('phone');
-dd($result);
+
         return $result;
     }
 
