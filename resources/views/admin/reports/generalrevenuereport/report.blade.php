@@ -118,7 +118,7 @@
                                 <td style="color: #fff;"></td>
                                 <td style="color: #fff;"></td>
                                 <td style="color: #fff;"></td>
-                            
+                                <td style="color: #fff;"></td>
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
