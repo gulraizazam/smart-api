@@ -111,7 +111,7 @@
                     <tbody>
                     @if($report_data)
                         @foreach($report_data as $reportlocation)
-                        <tr style="background:#364150;color: #fff;">
+                        <tr style="background:#2fa0d3;color: #fff;">
                                 <td style="color: #fff;">{{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">{{$reportlocation['city']}}</td>
                                 <td style="color: #fff;">{{$reportlocation['region']}}</td>
