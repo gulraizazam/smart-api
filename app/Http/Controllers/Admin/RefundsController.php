@@ -107,7 +107,7 @@ class RefundsController extends Controller
                         'package_id' => $package->package_id,
                         
                     ])->first();
-                    
+                    dd($is_case_setteled );
                     if ($refunded_amount != 0) {
 
                         $records['data'][] = [
