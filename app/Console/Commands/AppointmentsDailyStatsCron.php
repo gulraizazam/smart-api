@@ -50,7 +50,7 @@ class AppointmentsDailyStatsCron extends Command
             foreach ($locations as $location) {
                 $appointments = Appointments::where(function ($query) use ($location, $consultancyslug, $today,$tomorrow) {
                     $query->where([
-                        ['location_id', 46],
+                        ['location_id', $location],
                         ['appointment_type_id', $consultancyslug]
                     ])
                         ->whereBetween('scheduled_date', [$today , $tomorrow]);
