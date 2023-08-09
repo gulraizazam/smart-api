@@ -2130,7 +2130,7 @@ class LeadsController extends Controller
         if ($request->name != null || $request->name != '') {
             $where[] = ['name', 'like', '%' . $request->name . '%'];
         }
-        if ($request->created_at == '') {
+        if ($request->created_at != '') {
             $where[] = ['created_at', '>=', $start_date_time];
             $where[] = ['created_at', '<=', $end_date_time];
         }
