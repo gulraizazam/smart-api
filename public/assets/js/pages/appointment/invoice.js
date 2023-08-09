@@ -171,7 +171,6 @@ $(document).ready(function () {
             hideSpinner();
             return;
         } else if($('#cash').val() < 0){
-            console.log('condition', $('#cash').val());
             toastr.warning("Amount can not be negative value")
             status = false;
             $(this).attr("disabled", false);
