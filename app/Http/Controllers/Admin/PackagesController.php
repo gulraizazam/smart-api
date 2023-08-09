@@ -206,7 +206,7 @@ class PackagesController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false,['setteled'=>1]);
             }
         }
-        
+
         /*Total belongs to total Amount that increase when we enter new bundle*/
         $total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
         if ($total == '') {
@@ -849,6 +849,7 @@ class PackagesController extends Controller
                     }
                 }
             }
+
             if ($any_deleted) {
                 $records['status'] = true; // pass custom message(useful for getting status of group actions)
                 $records['message'] = 'One or more record has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
@@ -877,7 +878,7 @@ class PackagesController extends Controller
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'in'],
                     ['is_cancel', '=', '0'],
-                    
+
                 ])->sum('cash_amount');
                 $package_is_refunded_amount = PackageAdvances::where([
                     'package_id' => $package->id,
@@ -885,7 +886,7 @@ class PackagesController extends Controller
                     'is_refund' => '1',
                     'is_tax' => '0',
                 ])->sum('cash_amount');
-                
+
                 $settle_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'out'],
@@ -1126,7 +1127,7 @@ class PackagesController extends Controller
                 'cash_flow' => 'out',
                 'is_setteled' => 1,
             ])->sum('cash_amount');
-           
+
             /*We discuss it in future what happen next*/
             $grand_total = $total_price - $cash_amount_in;
             $remaining_amount  = number_format($grand_total + $refunded + $setteled);
@@ -1219,7 +1220,7 @@ class PackagesController extends Controller
      * */
     public function updatepackages(Request $request)
     {
-       
+
         $find_package = Packages::where('random_id',$request->random_id)->first();
         $check_is_setteled = PackageAdvances::where([
             ['cash_flow', '=', 'out'],
@@ -1319,7 +1320,7 @@ class PackagesController extends Controller
             'refund_note' => 'required',
             'payment_mode_id' =>'required',
 
-            
+
         ]);
     }
     /**
@@ -1972,7 +1973,7 @@ class PackagesController extends Controller
         $return_tax_amount = '';
 
         $package_information = Packages::find($id);
-        
+
         $patient = User::whereId($package_information->patient_id)->first();
         /*calculation for back date refund entry*/
         $package_advance_last_in = PackageAdvances::where([
@@ -1981,7 +1982,7 @@ class PackagesController extends Controller
             ['cash_amount', '>', 0],
             ['package_id', '=', $package_information->id],
         ])->orderBy('created_at', 'desc')->first();
-     
+
         $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
         $bundle_information = PackageBundles::where('package_id', '=', $id)->first();
         $tax_percentage = $bundle_information->tax_percenatage ?? '';
@@ -2039,7 +2040,7 @@ class PackagesController extends Controller
             $refund_1 = $package_service_originalPrice_consumed + $cosume_amount_tax + $documentationcharges->data;
 
             $refundable_amount = ceil(($package_cash_receive - $refund_1) - $amount_to_refund);
-            
+
         }
 
         if ($refundable_amount > 0) {
@@ -2101,25 +2102,25 @@ class PackagesController extends Controller
     }
     public function updateRefund(Request $request)
     {
-       
+
         $latest_refund = PackageAdvances::where([
             ["package_id",'=',$request['package_id']],
             ['is_refund','=',1],
             ['cash_amount','>',0],
             ['is_tax','=',0],
         ]
-            
+
         )->latest()->first();
-        
+
        if($request['case_setteled'] == 'on'){
-       
+
         $package_cash_receive = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0'],
-            
+
         ])->sum('cash_amount');
-       
+
         $package_is_refunded_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'out'],
@@ -2127,7 +2128,7 @@ class PackagesController extends Controller
             ['is_tax', '=', '0'],
             ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
-        
+
         $package_is_consumed_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'out'],
@@ -2135,7 +2136,7 @@ class PackagesController extends Controller
             ['is_tax', '=', '0'],
             ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
-       
+
         $package_is_consumed_tax_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'out'],
@@ -2144,7 +2145,7 @@ class PackagesController extends Controller
             ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
         $consumed_amount_with_tax = $package_is_consumed_amount + $package_is_consumed_tax_amount;
-       
+
         $package_is_refunded_amount = PackageAdvances::where([
             ['package_id', '=', $request->package_id],
             ['cash_flow', '=', 'out'],
@@ -2154,9 +2155,9 @@ class PackagesController extends Controller
         $amount_after_refund = $consumed_amount_with_tax + $package_is_refunded_amount;
         $amount_left = $package_cash_receive - $amount_after_refund;
         $packageinformation = Packages::find($request->package_id);
-       
+
         if($amount_left > 0){
-            
+
             $data_adjustment['cash_flow'] = 'out';
             $data_adjustment['cash_amount'] = $amount_left;
             $data_adjustment['is_adjustment'] = '0';
@@ -2188,7 +2189,7 @@ class PackagesController extends Controller
                $create_invoice =  Invoices::create($dataInvoice);
                $dataInvoiceDetail['qty'] = 1;
                $dataInvoiceDetail['service_id'] =$package_service->service_id;
-               
+
                 //$dataInvoice['doctor_id'] = Auth::User()->id;
                $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
                InvoiceDetails::create($dataInvoiceDetail);

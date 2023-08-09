@@ -956,8 +956,7 @@ function applyFilters(datatable) {
             location_id: $("#search_location_id").val(),
             startdate: $("#search_from").val(),
             enddate: $("#search_to").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             status: $("#search_status").val(),
             filter: 'filter',
         }
@@ -980,8 +979,7 @@ function resetAllFilters(datatable) {
             location_id: '',
             startdate: '',
             enddate: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             status: '',
             filter: 'filter_cancel',
         }
@@ -1035,10 +1033,8 @@ function setFilters(filter_values, active_filters) {
         $("#search_resource_name").html(active_filters.resourcename);
         $("#search_from").val(active_filters.startdate);
         $("#search_to").val(active_filters.enddate);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
         $("#search_status").val(active_filters.status).change();
-
         $("#search_type_id").val(active_filters.resource_type_id);
         $("#search_region_id").val(active_filters.region_id);
         $("#search_city_id").val(active_filters.city_id);
