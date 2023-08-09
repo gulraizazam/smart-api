@@ -176,7 +176,7 @@ class AppointmentsController extends Controller
     {
         ini_set('memory_limit', '1024M');
         ini_set('max_execution_time', '0'); // for infinite time of execution
-        $limit = 1000;
+        $limit = 10000;
         $offset = 0;
         if ($request->appointmenttype == 1) {
             return Excel::download(new ExportConsultancies($limit, $offset, $request), 'consultancies.xlsx');
@@ -2297,6 +2297,9 @@ class AppointmentsController extends Controller
                 }
             }
         }
+
+        /*End*/
+
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
         $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
@@ -4556,6 +4559,7 @@ class AppointmentsController extends Controller
                 $lead_service->update(['status' => 1]);
 
         }
+
         $patientData = $appointment_data;
         Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
         $appointment_data['lead_id'] = $lead->id ?? null;
