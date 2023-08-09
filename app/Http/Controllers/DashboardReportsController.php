@@ -3000,54 +3000,34 @@ class DashboardReportsController extends Controller
     }
     public function loadFollowupReport(Request $request)
     {
+        if (isset($request->date_range) && $request->date_range) {
+            $date_range = explode(' - ', $request->date_range);
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
         if ($request->report_type == "monthly") {
             $where = [];
-            if ($request->date_from) {
-                $where[] = [
-                    'appointments.scheduled_date',
-                    '>=',
-                    $request->date_from . ' 00:00:00',
-                ];
-            }
-            if ($request->date_to) {
-                $where[] = [
-                    'appointments.scheduled_date',
-                    '<=',
-                    $request->date_to . ' 23:59:00',
-                ];
+            if (isset($request->date_range) && $request->date_range) {
+                $where[] = ['appointments.scheduled_date', '>=', $start_date];
+                $where[] = ['appointments.scheduled_date', '<=', $end_date];
             }
             if ($request->patient_id) {
-                $where[] = [
-                    'appointments.patient_id',
-                    '=',
-                    $request->patient_id,
-                ];
+                $where[] = ['appointments.patient_id', '=', $request->patient_id,];
             }
             $data = $request->all();
             $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data, $where);
             return view('admin.reports.patients_follow_up_report_monthly', get_defined_vars());
         } else {
             $where = [];
-            if ($request->date_from) {
-                $where[] = [
-                    'package_advances.created_at',
-                    '>=',
-                    $request->date_from . ' 00:00:00',
-                ];
-            }
-            if ($request->date_to) {
-                $where[] = [
-                    'package_advances.created_at',
-                    '<=',
-                    $request->date_to . ' 23:59:00',
-                ];
+            if (isset($request->date_range) && $request->date_range) {
+                $where[] = ['package_advances.created_at', '>=', $start_date. ' 00:00:00'];
+                $where[] = ['package_advances.created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
-                $where[] = [
-                    'package_advances.patient_id',
-                    '=',
-                    $request->patient_id,
-                ];
+                $where[] = ['package_advances.patient_id', '=', $request->patient_id];
             }
             $data = $request->all();
             $patient_data = GeneralFunctions::PatientFollowUpReport($data, $where);

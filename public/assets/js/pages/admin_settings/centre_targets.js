@@ -293,8 +293,7 @@ function applyFilters(datatable) {
             delete: '',
             month: $("#search_month").val(),
             year: $("#search_year").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
 
@@ -311,8 +310,7 @@ function resetAllFilters(datatable) {
             delete: '',
             month: '',
             year: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -344,8 +342,7 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_month").val(active_filters.month);
         $("#search_year").val(active_filters.year);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
 
     } catch (error) {
         showException(error);
@@ -399,3 +396,7 @@ function setDisplayData(response) {
 function displayRows(location_name, amount, sr) {
     return '<tr class="display-rows"> <td>'+sr+'</td><td>'+location_name+'</td><td align="right">'+amount+'</td></tr>';
 }
+
+jQuery(document).ready( function () {
+    $("#date_range").val("");
+})
