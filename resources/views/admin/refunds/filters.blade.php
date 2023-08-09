@@ -38,5 +38,5 @@
         @include('admin.partials.filter-buttons')
         </div>
     </div>
-    
+
 </div>

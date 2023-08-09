@@ -46,16 +46,10 @@
     <div class="row mb-8 advance-filters" style="display: none;">
 
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Create at:</label>
-            <div class="input-daterange input-group to-from-datepicker" >
-                <input type="text" id="search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5">
-                <div class="input-group-append">
-                    <span class="input-group-text">
-                        <i class="la la-ellipsis-h"></i>
-                    </span>
-                </div>
-                <input type="text" id="search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5">
+        <div class="col-lg-3 mb-lg-0 mb-6 @if($errors->has('date_range')) has-error @endif">
+            {!! Form::label('date_range', 'Created at:', ['class' => 'control-label']) !!}
+            <div class="input-group">
+                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off']) !!}
             </div>
         </div>
         @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources"))
