@@ -316,7 +316,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
     Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
 
-    Route::resource('leads', LeadsController::class)->only('index')->middleware('permission:leads_manage');
+    Route::resource('leads', LeadsController::class)->only('index');
     Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
     // Load and Save Lead Statuses
     Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
