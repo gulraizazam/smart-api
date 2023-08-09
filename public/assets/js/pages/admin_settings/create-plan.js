@@ -316,7 +316,7 @@ var table_columns = [
         width: 50,
     }, {
         field: 'cash_receive',
-        title: 'Received',
+        title: 'Cash In',
         sortable: false,
         width: 50,
     }, {
