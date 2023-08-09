@@ -91,8 +91,8 @@ var table_columns = [
             return actions(data);
         }
     }];
-    
-    
+
+
 function actions(data) {
 
     let id = data.id;
@@ -317,8 +317,7 @@ function applyFilters(datatable) {
             gender: $("#search_gender").val(),
             commission: $("#search_commission").val(),
             status: $("#search_status").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
@@ -339,8 +338,7 @@ function resetAllFilters(datatable) {
             role_id: '',
             gender: '',
             status: '',
-            created_from: '',
-            created_to: '',
+            date_range: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -381,8 +379,7 @@ function setFilters(filter_values, active_filters) {
     $("#search_gender").val(active_filters.gender);
     $("#search_commission").val(active_filters.commission);
     $("#search_email").val(active_filters.email);
-    $("#search_created_from").val(active_filters.created_from);
-    $("#search_created_to").val(active_filters.created_to);
+    $("#date_range").val(active_filters.created_at);
 
     $("#search_role").val(active_filters.role_id);
     $("#search_center").val(active_filters.location_id);
@@ -413,4 +410,5 @@ jQuery(document).ready( function () {
         $(".pass-msg").remove();
         $("#add_user_password").removeClass("is-invalid");
     });
+    $("#date_range").val("");
 })

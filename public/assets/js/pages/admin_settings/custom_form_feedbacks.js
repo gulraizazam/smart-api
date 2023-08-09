@@ -108,8 +108,7 @@ function applyFilters(datatable) {
             id: $("#search_id").val(),
             name: $("#search_name").val(),
             patient_name: $("#search_patient_name").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
 
@@ -127,8 +126,7 @@ function resetAllFilters(datatable) {
             id: '',
             name: '',
             patient_name: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -143,10 +141,13 @@ function setFilters(filter_values, active_filters) {
         $("#search_id").val(active_filters.id);
         $("#search_name").val(active_filters.name);
         $("#search_patient_name").val(active_filters.patient_name);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
 
     } catch (error) {
         showException(error);
     }
 }
+
+jQuery(document).ready( function () {
+    $("#date_range").val("");
+})

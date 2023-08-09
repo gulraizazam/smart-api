@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use Auth;
+use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
-use Auth;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Resources extends BaseModal
 {
@@ -552,6 +553,16 @@ class Resources extends BaseModal
 
         $filename = 'resources';
         $filters = getFilters($request->all());
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
 
         if ($account_id) {
             $where[] = array(['account_id' => $account_id]);
@@ -615,28 +626,16 @@ class Resources extends BaseModal
             }
         }
 
-        if (hasFilter($filters, 'created_from')) {
-            $where[] = ['resources.created_at', '>=', $filters['created_from'] . ' 00:00:00',];
-            Filters::put(Auth::User()->id, 'resources', 'created_from', $filters['created_from'] . ' 00:00:00');
+        if (hasFilter($filters, 'created_at')) {
+            $where[] = ['resources.created_at', '>=', $start_date_time];
+            $where[] = ['resources.created_at', '<=', $end_date_time];
+            Filters::put(Auth::User()->id, 'resources', 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'created_from');
+                Filters::forget(Auth::User()->id, 'resources', 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'created_from')) {
-                    $where[] = ['resources.created_at', '>=', Filters::get(Auth::User()->id, 'resources', 'created_from') . ' 00:00:00',];
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'created_to')) {
-            $where[] = ['resources.created_at', '<=', $filters['created_to'] . ' 23:59:59',];
-            Filters::put(Auth::User()->id, 'resources', 'created_to', $filters['created_to'] . ' 23:59:59');
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'resources', 'created_to');
-            } else {
-                if (Filters::get(Auth::User()->id, 'resources', 'created_to')) {
-                    $where[] = ['resources.created_at', '<=', Filters::get(Auth::User()->id, 'resources', 'created_to') . ' 23:59:59',];
+                if (Filters::get(Auth::User()->id, 'resources', 'created_at')) {
+                    $where[] = ['resources.created_at', '>=', Filters::get(Auth::User()->id, 'resources', 'created_at')];
                 }
             }
         }
