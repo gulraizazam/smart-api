@@ -2,78 +2,79 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Exports\ExportAppointment;
-use App\Exports\ExportConsultancies;
-use App\Exports\ExportToday;
-use App\Exports\TodayTreatment;
-use App\HelperModule\ApiHelper;
+use DateTime;
+use Carbon\Carbon;
 use App\Helpers\ACL;
-use App\Helpers\Elastic\AppointmentsElastic;
+use App\Models\User;
+use App\Models\Leads;
+use App\Models\Towns;
+use App\Models\Cities;
+use App\Models\Bundles;
+use App\Models\Doctors;
+use App\Models\Regions;
+use App\Models\SMSLogs;
 use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
-use App\Helpers\JazzSMSAPI;
-use App\Helpers\TelenorSMSAPI;
-use App\Helpers\Widgets\AppointmentCheckesWidget;
-use App\Helpers\Widgets\AppointmentEditWidget;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Helpers\Widgets\PlanAppointmentCalculation;
-use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
-use App\Jobs\IndexSingleAppointmentJob;
 use App\Models\Accounts;
 use App\Models\Activity;
-use App\Models\AppointmentComments;
-use App\Models\Appointments;
-use App\Models\AppointmentStatuses;
-use App\Models\AppointmentTypes;
-use App\Models\AuditTrailActions;
-use App\Models\AuditTrails;
-use App\Models\AuditTrailTables;
-use App\Models\Bundles;
-use App\Models\Cities;
-use App\Models\Discounts;
-use App\Models\DoctorHasLocations;
-use App\Models\Doctors;
-use App\Models\InvoiceDetails;
 use App\Models\Invoices;
-use App\Models\InvoiceStatuses;
-use App\Models\Leads;
-use App\Models\LeadSources;
-use App\Models\LeadsServices;
-use App\Models\LeadStatuses;
-use App\Models\Locations;
-use App\Models\MachineType;
-use App\Models\PackageAdvances;
-use App\Models\PackageBundles;
 use App\Models\Packages;
-use App\Models\PackageService;
 use App\Models\Patients;
-use App\Models\PaymentModes;
-use App\Models\Regions;
-use App\Models\ResourceHasRota;
-use App\Models\ResourceHasRotaDays;
-use App\Models\Resources;
 use App\Models\Services;
 use App\Models\Settings;
-use App\Models\SMSLogs;
+use App\Models\Discounts;
+use App\Models\Locations;
+use App\Models\Resources;
+use App\Helpers\JazzSMSAPI;
+use App\Models\AuditTrails;
+use App\Models\LeadSources;
+use App\Models\MachineType;
+use App\Exports\ExportToday;
+use App\Models\Appointments;
+use App\Models\LeadStatuses;
+use App\Models\PaymentModes;
 use App\Models\SMSTemplates;
-use App\Models\Towns;
-use App\Models\User;
-use App\Models\UserHasLocations;
-use App\Models\UserOperatorSettings;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
-use Illuminate\Support\Facades\Validator;
+use App\Models\LeadsServices;
+use App\Helpers\TelenorSMSAPI;
+use App\Models\InvoiceDetails;
+use App\Models\PackageBundles;
+use App\Models\PackageService;
+use App\Exports\TodayTreatment;
+use App\HelperModule\ApiHelper;
+use App\Models\InvoiceStatuses;
+use App\Models\PackageAdvances;
+use App\Models\ResourceHasRota;
 use Illuminate\Validation\Rule;
+use App\Models\AppointmentTypes;
+use App\Models\AuditTrailTables;
+use App\Models\UserHasLocations;
+use App\Helpers\GeneralFunctions;
+use App\Models\AuditTrailActions;
+use App\Exports\ExportAppointment;
+use App\Models\DoctorHasLocations;
+use Illuminate\Support\Facades\DB;
+use App\Models\AppointmentComments;
+use App\Models\AppointmentStatuses;
+use App\Models\ResourceHasRotaDays;
+use App\Exports\ExportConsultancies;
+use App\Http\Controllers\Controller;
+use App\Models\UserOperatorSettings;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
-use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
+use Illuminate\Support\Facades\Config;
+use App\Jobs\IndexSingleAppointmentJob;
+use App\Helpers\Widgets\LocationsWidget;
+use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use App\Helpers\Elastic\AppointmentsElastic;
+use App\Helpers\Widgets\AppointmentEditWidget;
+use App\Helpers\Widgets\AppointmentCheckesWidget;
+use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
+use App\Helpers\Widgets\PlanAppointmentCalculation;
+use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
+use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
 
 class AppointmentsController extends Controller
 {
@@ -727,6 +728,16 @@ class AppointmentsController extends Controller
          */
         $filename = 'appointments';
         $filters = getFilters($request->all());
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
         if ($request->has('sort')) {
             [$orderBy, $order] = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
@@ -808,21 +819,10 @@ class AppointmentsController extends Controller
             $where[] = [['appointments.consultancy_type' => $filters['consultancy_type']]];
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
-        if (hasFilter($filters, 'created_from')) {
-            $where[] = [
-                'appointments.created_at',
-                '>=',
-                $filters['created_from'].' 00:00:00',
-            ];
-            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
-        }
-        if (hasFilter($filters, 'created_to')) {
-            $where[] = [
-                'appointments.created_at',
-                '<=',
-                $filters['created_to'].' 23:59:59',
-            ];
-            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
+        if (hasFilter($filters, 'created_at')) {
+            $where[] = ['appointments.created_at', '>=', $start_date_time];
+            $where[] = ['appointments.created_at', '<=', $end_date_time];
+            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
         }
         if (hasFilter($filters, 'phone')) {
             $phone = substr($filters['phone'], 1);
@@ -1088,6 +1088,16 @@ class AppointmentsController extends Controller
                 Filters::put(Auth::User()->id, 'appointments', 'order', $order);
             }
         }
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
         if (hasFilter($filters, 'patient_id')) {
             $where[] = [['users.id' => GeneralFunctions::patientSearch($filters['patient_id'])]];
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
@@ -1169,21 +1179,10 @@ class AppointmentsController extends Controller
             $where[] = [['appointments.consultancy_type' => $filters['consultancy_type']]];
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
-        if (hasFilter($filters, 'created_from')) {
-            $where[] = [
-                'appointments.created_at',
-                '>=',
-                $filters['created_from'].' 00:00:00',
-            ];
-            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
-        }
-        if (hasFilter($filters, 'created_to')) {
-            $where[] = [
-                'appointments.created_at',
-                '<=',
-                $filters['created_to'].' 23:59:59',
-            ];
-            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
+        if (hasFilter($filters, 'created_at')) {
+            $where[] = ['appointments.created_at', '>=', $start_date_time];
+            $where[] = ['appointments.created_at', '<=', $end_date_time];
+            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
         }
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
@@ -2464,13 +2463,28 @@ class AppointmentsController extends Controller
                 }
             }
         }
+        // $machines = Resources::where([
+        //     ['resource_type_id', '=', config('constants.resource_room_type_id')],
+        //     ['location_id', '=', $appointment->location_id],
+        //     ['account_id', '=', Auth::user()->account_id]],
+        //     ['actvie', '=', 1]
+        // )->get();
+        /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
+        // foreach ($machines as $machine) {
+        //     $machinetypeid = MachineType::where('id', '=', $machine->machine_type_id)->first();
+        //     $machine_serivce = AppointmentEditWidget::loadmachinetypeservice_edit($machinetypeid->id, Auth::User()->account_id, 'true');
+        //     if (in_array($serviceid->id, $machine_serivce)) {
+        //         $machineids[] = $machine->id;
+        //     }
+        // }
+        //$machines = Resources::whereIn('id', $machineids)->get()->pluck('name', 'id');
+        /*End*/
         $machines = Resources::where([
             ['resource_type_id', '=', config('constants.resource_room_type_id')],
             ['location_id', '=', $appointment->location_id],
             ['account_id', '=', Auth::user()->account_id]],
             ['actvie', '=', 1]
         )->get()->pluck('name', 'id');
-        /*End*/
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
         return ApiHelper::apiResponse($this->success, 'Data found.', true, [
@@ -3766,12 +3780,11 @@ class AppointmentsController extends Controller
                 $packages = DB::table('packages')
                     ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
                     ->where([
-                        ['packages.is_refund', '=', '0'],
-                        ['packages.active', '=', '1'],
-                        ['packages.patient_id', '=', $appointment->patient_id],
-                        ['package_services.service_id', '=', $appointment->service_id],
-                        ['package_services.is_consumed', '=', '0'],
-                        ['packages.location_id', '=', $appointment->location_id],
+                        'packages.active' => '1',
+                        'packages.patient_id' =>  $appointment->patient_id,
+                        'package_services.service_id' => $appointment->service_id,
+                        'package_services.is_consumed' => '0',
+                        'packages.location_id' => $appointment->location_id,
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
                 $status = 'true';
                 if (count($packages) <= 0) {
@@ -4019,6 +4032,15 @@ class AppointmentsController extends Controller
 
     public function saveinvoice(Request $request)
     {
+        $check_is_setteled = PackageAdvances::where([
+            ['cash_flow', '=', 'out'],
+            ['cash_amount', '>', 0],
+            ['is_setteled', '=', '1'],
+            ['package_id', '=', $request->package_id],
+        ])->first();
+        if($check_is_setteled){
+            return ApiHelper::apiResponse($this->success, 'Plan related to this treatment is settled. you can not consume further treatment of this plan.', false,['setteled'=>1]);
+        }
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointmentinfo = Appointments::find($request->appointment_id);

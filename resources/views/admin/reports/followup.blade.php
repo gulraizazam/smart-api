@@ -42,8 +42,8 @@
                                             {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
                                             <select class="form-control " id="report_types" name="report_type">
                                                 <option value="">Select Report</option>
-                                                <option value="weekly">Weekly Follow Up</option>
-                                                <option value="monthly">Monthly Follow Up</option>
+                                                <option value="weekly">Unattended Payments </option>
+                                                <option value="monthly">Overdue Treatments</option>
                                             </select>
 
                                         </div>
@@ -68,16 +68,10 @@
                                             </select>
                                             <span id="location_id_handler"></span>
                                         </div>
-                                        <div class="col-md-3 form-group  ">
-                                        {!! Form::label('conversion_date', 'Conversion Date:', ['class' => 'control-label']) !!}
-                                            <div class="input-daterange input-group to-from-datepicker" >
-                                                <input type="text" id="followup_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" >
-                                                <div class="input-group-append" style="width: 0;">
-                                                    <span class="input-group-text">
-                                                        <i class="la la-ellipsis-h"></i>
-                                                    </span>
-                                                </div>
-                                                <input type="text" id="followup_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
+                                        <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
+                                            {!! Form::label('date_range', 'Date:', ['class' => 'control-label']) !!}
+                                            <div class="input-group">
+                                                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
 
@@ -88,10 +82,6 @@
                                         </div>
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="followup_content"></div>
-                                        {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.staff_wise_arrival_report'], 'id' => 'report-form']) !!}
-                                        {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
-                                        {!! Form::hidden('created_by', null, ['id' => 'created_by-report']) !!}
-                                        {!! Form::close() !!}
                                     </div>
                                 </div>
                             </div>

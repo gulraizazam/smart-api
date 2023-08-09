@@ -2,11 +2,12 @@
 
 namespace App\Models;
 
-use App\Helpers\Filters;
 use Auth;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use DateTime;
+use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class MachineType extends BaseModal
 {
@@ -126,6 +127,16 @@ class MachineType extends BaseModal
     public function scopeFilters($query, $request, $account_id, $apply_filter)
     {
         $filters = getFilters($request->all());
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
         if ($account_id) {
             $query = $query->where('account_id', $account_id);
             Filters::put(Auth::User()->id, 'machinetypes', 'account_id', $account_id);
@@ -140,14 +151,14 @@ class MachineType extends BaseModal
         }
 
         if (hasFilter($filters, 'name')) {
-            $query = $query->where('name', 'like', '%'.$filters['name'].'%');
+            $query = $query->where('name', 'like', '%' . $filters['name'] . '%');
             Filters::put(Auth::User()->id, 'machinetypes', 'name', $filters['name']);
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, 'machinetypes', 'name');
             } else {
                 if (Filters::get(Auth::User()->id, 'machinetypes', 'name')) {
-                    $query = $query->where('name', 'like', '%'.Filters::get(Auth::User()->id, 'machinetypes', 'name').'%');
+                    $query = $query->where('name', 'like', '%' . Filters::get(Auth::User()->id, 'machinetypes', 'name') . '%');
                 }
             }
         }
@@ -169,28 +180,16 @@ class MachineType extends BaseModal
             }
         }
 
-        if (hasFilter($filters, 'created_from')) {
-            $query = $query->where('created_at', '>=', $filters['created_from'].' 00:00:00');
-            Filters::put(Auth::User()->id, 'machinetypes', 'created_from', $filters['created_from']);
+        if (hasFilter($filters, 'created_at')) {
+            $query = $query->where('created_at', '>=', $start_date_time);
+            $query = $query->where('created_at', '<=', $end_date_time);
+            Filters::put(Auth::User()->id, 'machinetypes', 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'machinetypes', 'created_from');
+                Filters::forget(Auth::User()->id, 'machinetypes', 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_from')) {
-                    $query = $query->where('created_at', '>=', Filters::get(Auth::User()->id, 'machinetypes', 'created_from').' 00:00:00');
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'created_to')) {
-            $query = $query->where('created_at', '<=', $filters['created_to'].' 23:59:59');
-            Filters::put(Auth::User()->id, 'machinetypes', 'created_to', $filters['created_to']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'machinetypes', 'created_to');
-            } else {
-                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_to')) {
-                    $query = $query->where('created_at', '<=', Filters::get(Auth::User()->id, 'machinetypes', 'created_to').' 23:59:59');
+                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_at')) {
+                    $query = $query->where('created_at', '>=', Filters::get(Auth::User()->id, 'machinetypes', 'created_at'));
                 }
             }
         }
@@ -209,7 +208,6 @@ class MachineType extends BaseModal
                 }
             }
         }
-
     }
 
     /*
@@ -219,6 +217,17 @@ class MachineType extends BaseModal
     {
         $where = [];
         $filters = getFilters($request->all());
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
+
         if ($account_id) {
             $where[] = [
                 'machine_types.account_id',
@@ -243,7 +252,7 @@ class MachineType extends BaseModal
             $where[] = [
                 'machine_types.name',
                 'like',
-                '%'.$filters['name'].'%',
+                '%' . $filters['name'] . '%',
             ];
             Filters::put(Auth::User()->id, 'machinetypes', 'name', $filters['name']);
         } else {
@@ -254,7 +263,7 @@ class MachineType extends BaseModal
                     $where[] = [
                         'machine_types.name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'machinetypes', 'name').'%',
+                        '%' . Filters::get(Auth::User()->id, 'machinetypes', 'name') . '%',
                     ];
                 }
             }
@@ -280,43 +289,19 @@ class MachineType extends BaseModal
             }
         }
 
-        if (count($filters) && isset($filters['created_from'])) {
-            $where[] = [
-                'machine_types.created_at',
-                '>=',
-                $filters['created_from'].' 00:00:00',
-            ];
-            Filters::put(Auth::User()->id, 'machinetypes', 'created_from', $filters['created_from'].' 00:00:00');
+        if (count($filters) && isset($filters['created_at'])) {
+            $where[] = ['machine_types.created_at', '>=', $start_date_time];
+            $where[] = ['machine_types.created_at', '<=', $end_date_time];
+            Filters::put(Auth::User()->id, 'machinetypes', 'created_at', $filters['created_at']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'machinetypes', 'created_from');
+                Filters::forget(Auth::User()->id, 'machinetypes', 'created_at');
             } else {
-                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_from')) {
+                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_at')) {
                     $where[] = [
                         'machine_types.created_at',
                         '>=',
-                        Filters::get(Auth::User()->id, 'machinetypes', 'created_from').' 00:00:00',
-                    ];
-                }
-            }
-        }
-
-        if (count($filters) && isset($filters['created_to'])) {
-            $where[] = [
-                'machine_types.created_at',
-                '<=',
-                $filters['created_to'].' 23:59:59',
-            ];
-            Filters::put(Auth::User()->id, 'machinetypes', 'created_to', $filters['created_to'].' 23:59:59');
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'machinetypes', 'created_to');
-            } else {
-                if (Filters::get(Auth::User()->id, 'machinetypes', 'created_to')) {
-                    $where[] = [
-                        'machine_types.created_at',
-                        '<=',
-                        Filters::get(Auth::User()->id, 'machinetypes', 'created_to').' 23:59:59',
+                        Filters::get(Auth::User()->id, 'machinetypes', 'created_at'),
                     ];
                 }
             }
@@ -386,7 +371,7 @@ class MachineType extends BaseModal
             'account_id' => $account_id,
         ])->first();
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
 
@@ -407,7 +392,7 @@ class MachineType extends BaseModal
     {
         $machinetype = MachineType::getData($id);
 
-        if (! $machinetype) {
+        if (!$machinetype) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $machinetype->update(['active' => 0]);
@@ -425,7 +410,7 @@ class MachineType extends BaseModal
     public static function activeRecord($id)
     {
         $machinetype = MachineType::getData($id);
-        if (! $machinetype) {
+        if (!$machinetype) {
             return collect(['status' => true, 'message' => 'Resource not found.']);
         }
         $record = $machinetype->update(['active' => 1]);
@@ -443,7 +428,7 @@ class MachineType extends BaseModal
     public static function deleteRecord($id)
     {
         $machinetype = MachineType::getData($id);
-        if (! $machinetype) {
+        if (!$machinetype) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.

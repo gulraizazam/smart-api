@@ -1066,8 +1066,7 @@ function applyFilters(datatable) {
             doctor_id: $("#appoint_search_doctor").val(),
             appointment_status_id: $("#appoint_search_status").val(),
             consultancy_type: $("#appoint_search_consultancy_type").val(),
-            created_from: $("#appoint_search_created_from").val(),
-            created_to: $("#appoint_search_created_to").val(),
+            created_at: $("#date_range").val(),
             created_by: $("#appoint_search_created_by").val(),
             converted_by: $("#appoint_search_rescheduled_by").val(),
             updated_by: $("#appoint_search_updated_by").val(),
@@ -1079,7 +1078,7 @@ function applyFilters(datatable) {
         else{
             datatable.search(filters, 'search');
         }
-       
+
     });
 }
 
@@ -1101,8 +1100,7 @@ function resetAllFilters(datatable) {
             doctor_id: '',
             appointment_status_id: '',
             consultancy_type: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             created_by: '',
             converted_by: '',
             updated_by: '',
@@ -1114,7 +1112,7 @@ function resetAllFilters(datatable) {
 }
 function resetFilters(datatable) {
 
-    
+
         let filters =  {
             delete: '',
             patient_id: '',
@@ -1130,15 +1128,14 @@ function resetFilters(datatable) {
             doctor_id: '',
             appointment_status_id: '',
             consultancy_type: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             created_by: '',
             converted_by: '',
             updated_by: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
-    
+
 
 }
 function setFilters(filter_values, active_filters) {
@@ -1186,12 +1183,12 @@ function setFilters(filter_values, active_filters) {
         let service_options = '';
         Object.values(services).forEach(function(value, index) {
             if (value.name == 'All Services') {
-                  service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                  service_options += '<option value="' + value.id + '" selected>' + value.name + '</option>';
             } else {
                 service_options += '<option value="' + value.id + '">' + value.name + '</option>';
             }
         });
-
+        
         let user_options = '<option value="">All</option>';
         Object.entries(users).forEach(function (user, index) {
             user_options += '<option value="' + user[0] + '">' + user[1] + '</option>';
@@ -1249,8 +1246,9 @@ function setFilters(filter_values, active_filters) {
         }
 
         let service = $("#appoint_search_service").val();
-        if (service == null || service == '') {
+        if (service == null) {
             $("#appoint_search_service").html(service_options);
+            $('#appoint_search_service').val(13).trigger('change')
         }
         let consultancy_type = $("#appoint_search_consultancy_type").val();
         if (consultancy_type == null || consultancy_type == '') {
@@ -1268,7 +1266,6 @@ function setFilters(filter_values, active_filters) {
         $("#appoint_search_region").val(active_filters.region_id);
         $("#appoint_search_service").val(active_filters.service_id);
         $("#appoint_search_consultancy_type").val(active_filters.consultancy_type);
-
         /*For Consultancy filter*/
         let city_value = $("#consultancy_city_filter").val();
 
@@ -1458,4 +1455,5 @@ var AppointScheduleValidation = function () {
 
 jQuery(document).ready(function() {
     AppointScheduleValidation.init();
+    $("#date_range").val("");
 });

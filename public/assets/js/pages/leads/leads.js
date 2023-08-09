@@ -825,8 +825,7 @@ function applyFilters(datatable) {
             service_id: $("#search_service_id").val(),
             gender_id: $("#search_gender_id").val(),
             created_by: $("#search_created_by").val(),
-            date_from: $("#search_created_from").val(),
-            date_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             lead_status_id: $("#search_status_id").val(),
             filter: 'filter',
         }
@@ -845,8 +844,7 @@ function resetAllFilters(datatable) {
             region_id: '',
             service_id: '',
             created_by: '',
-            date_from: '',
-            date_to: '',
+            date_at: '',
             lead_status_id: '',
             gender_id:'',
             filter: 'filter_cancel',
@@ -924,8 +922,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_region_id").val(active_filters.region_id);
         $("#search_status_id").val(active_filters.lead_status_id);
         $("#search_service_id").val(active_filters.service_id);
-        $("#search_created_from").val(active_filters.date_from);
-        $("#search_created_to").val(active_filters.date_to);
+        $("#date_range").val(active_filters.created_at);
         $("#search_created_by").val(active_filters.created_by);
         hideShowAdvanceFilters(active_filters);
         getUserCity();
@@ -948,10 +945,10 @@ function hideShowAdvanceFilters(active_filters) {
 }
 
 function newLead() {
-    
+
     $('.new_lead').change(function () {
-       
-        if ($(this).is(":checked")) { 
+
+        if ($(this).is(":checked")) {
             $('.lead_search_id').attr('readonly',true);
             $('.new_lead').val('1');
             $('.msg_new_lead').show();
@@ -962,7 +959,7 @@ function newLead() {
                 $('.lead_search_id').val('');
                 $("#add_phone").val('');
                 $("#add_full_name").val('');
-                
+
             }
             $("#add_phone").attr("readonly",false);
             $("#add_full_name").attr("readonly",false);
@@ -1287,22 +1284,6 @@ function cencleImport($this) {
     $(".skip_lead_status").css("opacity", 0.7);
 }
 
-jQuery(document).ready( function () {
-    $(".leads_file").change( function () {
-        addValidation($(this))
-    });
-    $(document).on("click", ".croxcli", function () {
-        $('.search_field').val('').change();
-        setTimeout( function () {
-            $("#add_phone").removeAttr("readonly");
-            $("#add_full_name").removeAttr("readonly");
-        },300);
-    });
-    $(document).on( "click", ".popup-close", function () {
-        $(this).parents(".modal").modal("toggle");
-    });
-});
-
 $("#export-pdf-leads").on("click",function(){
     let id =$('#search_id').val();
     let name =$('#search_full_name').val();
@@ -1312,11 +1293,10 @@ $("#export-pdf-leads").on("click",function(){
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
-    let start_date =$("#search_created_from").val()
-    let end_date =$("#search_created_to").val()
+    let created_at =$("#date_range").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by;
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&created_at='+created_at+'&created_by='+created_by;
 });
 
 $("#export-leads").on("click",function(){
@@ -1328,11 +1308,10 @@ $("#export-leads").on("click",function(){
     let region_id =$("#search_region_id").val()
     let lead_status_id =$("#search_status_id").val()
     let service_id =$("#search_service_id").val()
-    let start_date =$("#search_created_from").val()
-    let end_date =$("#search_created_to").val()
+    let created_at =$("#date_range").val()
     let created_by =$("#search_created_by").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&start_date='+start_date+'&end_date='+end_date+'&created_by='+created_by+'&ext=xlsx';
+    window.location.href =  url+'?id='+cleanId(id)+'&name='+name+'&phone='+phone+'&city_id='+city_id+'&location_id='+location_id+'&region_id='+region_id+'&lead_status_id='+lead_status_id+'&service_id='+service_id+'&created_at='+created_at+'&created_by='+created_by+'&ext=xlsx';
 });
 
 $("#csv-leads").on("click",function(){
@@ -1393,4 +1372,19 @@ function LoadLoc()
     });
 }
 
-
+jQuery(document).ready( function () {
+    $(".leads_file").change( function () {
+        addValidation($(this))
+    });
+    $(document).on("click", ".croxcli", function () {
+        $('.search_field').val('').change();
+        setTimeout( function () {
+            $("#add_phone").removeAttr("readonly");
+            $("#add_full_name").removeAttr("readonly");
+        },300);
+    });
+    $(document).on( "click", ".popup-close", function () {
+        $(this).parents(".modal").modal("toggle");
+    });
+    $("#date_range").val("");
+});
