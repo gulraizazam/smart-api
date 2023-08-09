@@ -104,7 +104,7 @@ class RefundsController extends Controller
                         'is_refund' => '1',
                     ])->latest()->first();
                     $is_case_setteled = PackageAdvances::where([
-                        'package_id' => 9177,
+                        'package_id' =>  $package->package_id,
                         'cash_flow' => 'out',
                         'is_setteled' =>1
                     ])->first();
