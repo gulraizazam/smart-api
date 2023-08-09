@@ -1207,19 +1207,19 @@ class Finanaces
                                
                                 if ($packagesadvance->paymentmode->name == 'Cash') {
                                     $refund_cash_in = $packagesadvance->cash_amount;
-                                    $refund_card_in = '';
-                                    $refund_bank_in = '';
+                                    $refund_card_in = 0;
+                                    $refund_bank_in = 0;
                                     $refund_out = '';
                                 }
                                 if ($packagesadvance->paymentmode->name == 'Card') {
-                                    $refund_cash_in = '';
+                                    $refund_cash_in = 0;
                                     $refund_card_in = $packagesadvance->cash_amount;
-                                    $refund_bank_in = '';
+                                    $refund_bank_in = 0;
                                     $refund_out = '';
                                 }
                                 if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer' || $packagesadvance->paymentmode->name == 'Bank') {
-                                    $refund_cash_in = '';
-                                    $refund_card_in = '';
+                                    $refund_cash_in = 0;
+                                    $refund_card_in = 0;
                                     $refund_bank_in = $packagesadvance->cash_amount;
                                     $refund_out = '';
                                 }
