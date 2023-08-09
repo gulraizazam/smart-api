@@ -140,7 +140,7 @@ class Refunds extends Model
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
         $packageinformation = Packages::find($request->package_id);
-
+        $package_service = PackageService::where('package_id',$request->package_id)->first();
         if ($packageinformation->is_refund == '0') {
             $package = Packages::updateRecordRefunds($request->package_id);
         }
