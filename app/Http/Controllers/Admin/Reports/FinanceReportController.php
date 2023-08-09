@@ -79,12 +79,14 @@ class FinanceReportController extends Controller
 
         $select_All = ['' => 'All'];
 
-        $users = ($select_All + $employees->toArray() + $operators->toArray());
-
+        $users = array_merge($select_All, $employees->toArray(), $operators->toArray());
+        
         $operators->prepend('All', '');
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
-        $locations->prepend('All', '');
+        if(!Auth::user()->hasRole('FDM')){
+            $locations->prepend('All', '');
+        }
 
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
 
