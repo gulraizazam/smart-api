@@ -134,14 +134,14 @@ function setEditData(response) {
     let service_options = '';
     let service_value;
     Object.entries(services).forEach(function (value, index) {
-        
+
         if(value[1].parent_id == 0){
             service_value=value[1].name;
         }
         else{
             service_value='\t&nbsp; \t&nbsp; \t&nbsp;'+value[1].name;
         }
-        
+
         service_options += '<option value="' + (value[1].id) + '">' + service_value + '</option>';
     });
     $("#edit_machine_types_services").html(service_options);
@@ -171,8 +171,7 @@ function applyFilters(datatable) {
             delete: '',
             name: $("#search_name").val(),
             service: $("#search_service").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             status: $("#search_status").val(),
             filter: 'filter',
         }
@@ -187,8 +186,7 @@ function resetAllFilters(datatable) {
             delete: '',
             name: '',
             service: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             status: '',
             filter: 'filter_cancel',
         }
@@ -229,10 +227,12 @@ function setFilters(filter_values, active_filters) {
 
     $("#search_name").val(active_filters.name);
     $("#search_status").val(active_filters.status);
-    $("#search_created_from").val(active_filters.created_from);
-    $("#search_created_to").val(active_filters.created_to);
+    $("#date_range").val(active_filters.created_at);
     if (active_filters.service) {
         $("#search_service").val(active_filters.service).change();
     }
 
 }
+jQuery(document).ready( function () {
+    $("#date_range").val("");
+})

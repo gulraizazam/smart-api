@@ -48,16 +48,10 @@
                                             </select>
                                             <span id="location_id_handler"></span>
                                         </div>
-                                        <div class="col-md-3 form-group  ">
-                                        {!! Form::label('scheduled_date', 'Scheduled Date:', ['class' => 'control-label']) !!}
-                                            <div class="input-daterange input-group to-from-datepicker" >
-                                                <input type="text" id="appoint_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" >
-                                                <div class="input-group-append" style="width: 0;">
-                                                    <span class="input-group-text">
-                                                        <i class="la la-ellipsis-h"></i>
-                                                    </span>
-                                                </div>
-                                                <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
+                                        <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
+                                            {!! Form::label('date_range', 'Scheduled Date*', ['class' => 'control-label']) !!}
+                                            <div class="input-group">
+                                                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
                                         <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="users" >
@@ -78,10 +72,6 @@
                                         </div>
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="converted_content"></div>
-                                        {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.staff_wise_arrival_report'], 'id' => 'report-form']) !!}
-                                        {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
-                                        {!! Form::hidden('created_by', null, ['id' => 'created_by-report']) !!}
-                                        {!! Form::close() !!}
                                     </div>
                                 </div>
                             </div>
