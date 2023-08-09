@@ -116,6 +116,10 @@ var EditAppointmentValidation = function () {
                                 min: 10,
                                 max: 12,
                                 message: 'The phone number must be between 10 and 12 characters'
+                            },
+                            regexp: {
+                                regexp: /^\d+$/,
+                                message: 'The phone number must contain only digits (0-9)'
                             }
                         }
                     },
@@ -202,6 +206,10 @@ var CreateConsultancytValidation = function () {
                                 min: 10,
                                 max: 12,
                                 message: 'The phone number must be between 10 and 12 characters'
+                            },
+                            regexp: {
+                                regexp: /^\d+$/,
+                                message: 'The phone number must contain only digits (0-9)'
                             }
                         }
                     },
@@ -295,6 +303,10 @@ var CreateTreatmentValidation = function () {
                                 min: 10,
                                 max: 12,
                                 message: 'The phone number must be between 10 and 12 characters'
+                            },
+                            regexp: {
+                                regexp: /^\d+$/,
+                                message: 'The phone number must contain only digits (0-9)'
                             }
                         }
                     },
