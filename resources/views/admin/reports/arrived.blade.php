@@ -84,16 +84,10 @@
                                             </select>
                                             <span id="report_type_handler"></span>
                                         </div>
-                                        <div class="col-md-3 form-group  ">
-                                        {!! Form::label('scheduled_date', 'Scheduled Date:', ['class' => 'control-label']) !!}
-                                            <div class="input-daterange input-group to-from-datepicker" >
-                                                <input type="text" id="appoint_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" onchange="SetAdvanceFromdate()">
-                                                <div class="input-group-append" style="width: 0;">
-                                                    <span class="input-group-text">
-                                                        <i class="la la-ellipsis-h"></i>
-                                                    </span>
-                                                </div>
-                                                <input type="text" id="appoint_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" onchange="SetAdvanceTodate()">
+                                        <div class="col-md-3 form-group @if($errors->has('date_range')) has-error @endif">
+                                            {!! Form::label('date_range', 'Date:', ['class' => 'control-label']) !!}
+                                            <div class="input-group">
+                                                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
                                         <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
@@ -102,7 +96,7 @@
                                             <select class="form-control select2" id="service_id" name="service_id">
                                                 <option value="">Select Service</option>
                                                 @foreach($services as $service)
-                                                  
+
                                                     <option value="{{$service->id}}">
                                                             <b>{!! $service['name'] !!}</b></option>
                                                 @endforeach
@@ -116,10 +110,6 @@
                                         </div>
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="converted_content"></div>
-                                        {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.converted_report_load'], 'id' => 'report-form']) !!}
-                                        {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
-                                        {!! Form::hidden('service_id', null, ['id' => 'service_id-report']) !!}
-                                        {!! Form::close() !!}
                                     </div>
                                 </div>
                             </div>
@@ -141,7 +131,7 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-        <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>        
+        <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
     @endpush
     @push('js')
         <script>
@@ -157,14 +147,14 @@
                     },
                     cache: false,
                     success: function(response) {
-                        if(response.status) {    
+                        if(response.status) {
                             let dropdowns =  response.data.dropdown;
                             let dropdown_options =  '<option value="">Select a Doctor</option>';
                             Object.entries(dropdowns).forEach(function (dropdown) {
                                 dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                             });
                             $('#doctors_list').html(dropdown_options);
-                        } 
+                        }
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         resetDoctors();
@@ -185,8 +175,7 @@
                     data: {
                         location_id: $('#location_id').val(),
                         doctor_id: $('#doctors_list').val(),
-                        date_from: $('#appoint_search_created_from').val(),
-                        date_to: $('#appoint_search_created_to').val(),
+                        date_range: $('#date_range').val(),
                         service_id:$('#service_id').val(),
                     },
                     success: function(response){
@@ -195,10 +184,10 @@
                         $("#arrived_patients_table").DataTable({
                             dom: 'Bfrtip',
                             buttons: [
-                                
+
                                 'excelHtml5',
                                 'csvHtml5',
-                                'pdfHtml5',  
+                                'pdfHtml5',
                             ],
                             "ordering": false
                         });
