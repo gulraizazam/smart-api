@@ -2935,7 +2935,7 @@ class DashboardReportsController extends Controller
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
-                        ->whereIn('appointments.doctor_id', $consultants)
+                       // ->whereIn('appointments.doctor_id', $consultants)
                         ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
@@ -2945,7 +2945,7 @@ class DashboardReportsController extends Controller
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
-                        ->whereIn('appointments.doctor_id', $consultants)
+                        //->whereIn('appointments.doctor_id', $consultants)
                         ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 }
