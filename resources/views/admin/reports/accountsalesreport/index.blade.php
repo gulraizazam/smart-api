@@ -295,7 +295,7 @@
                     'This Month'  : [moment().startOf('month'), moment().endOf('month')],
                     'Last Month'  : [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
                     'This Year'  : [moment().startOf('year'), moment().endOf('year')],
-                    'Last Year'  : [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
+                    'Last Year'  : [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
                 },
                 startDate: moment().startOf('month'),
                 endDate  :  moment().endOf('month')
