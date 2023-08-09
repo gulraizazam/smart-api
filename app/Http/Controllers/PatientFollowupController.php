@@ -144,7 +144,7 @@ class PatientFollowupController extends Controller
             ->orderBy('package_advances.patient_id', 'DESC')
             ->get();
          
-        $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
+       
         $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts,$cash_setteled_amounts, $settle__adjustment_amounts,$refunded_amounts) {
             $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
             $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
