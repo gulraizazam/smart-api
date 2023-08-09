@@ -2764,7 +2764,7 @@ class Finanaces
 
         $total_appointments = Appointments::whereBetween('scheduled_date', [$start_date, $end_date])
             ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
-            ->whereIn('appointments.doctor_id', $consultants)
+            //->whereIn('appointments.doctor_id', $consultants)
             ->whereIn('appointments.location_id', $locations)
             ->where($where)
             ->count();
