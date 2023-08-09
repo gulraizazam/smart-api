@@ -1181,26 +1181,26 @@ class Finanaces
                             if ($packagesadvance->cash_flow == 'in') {
                                 if ($packagesadvance->paymentmode->name == 'Cash') {
                                     $revenue_cash_in = $packagesadvance->cash_amount;
-                                    $revenue_card_in = '';
-                                    $revenue_bank_in = '';
-                                    $refund_out = '';
+                                    $revenue_card_in =0;
+                                    $revenue_bank_in = 0;
+                                    $refund_out =0;
                                 }
                                 if ($packagesadvance->paymentmode->name == 'Card') {
-                                    $revenue_cash_in = '';
+                                    $revenue_cash_in = 0;
                                     $revenue_card_in = $packagesadvance->cash_amount;
-                                    $revenue_bank_in = '';
-                                    $refund_out = '';
+                                    $revenue_bank_in = 0;
+                                    $refund_out = 0;
                                 }
                                 if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer' || $packagesadvance->paymentmode->name == 'Bank') {
-                                    $revenue_cash_in = '';
-                                    $revenue_card_in = '';
+                                    $revenue_cash_in = 0;
+                                    $revenue_card_in = 0;
                                     $revenue_bank_in = $packagesadvance->cash_amount;
-                                    $refund_out = '';
+                                    $refund_out = 0;
                                 }
                             } else {
-                                $revenue_cash_in = '';
-                                $revenue_card_in = '';
-                                $revenue_bank_in = '';
+                                $revenue_cash_in = 0;
+                                $revenue_card_in = 0;
+                                $revenue_bank_in = 0;
                                 $refund_out = $packagesadvance->cash_amount;
                             }
                             if ($packagesadvance->cash_flow == 'out') {
@@ -1209,24 +1209,24 @@ class Finanaces
                                     $refund_cash_in = $packagesadvance->cash_amount;
                                     $refund_card_in = 0;
                                     $refund_bank_in = 0;
-                                    $refund_out = '';
+                                    $refund_out = 0;
                                 }
                                 if ($packagesadvance->paymentmode->name == 'Card') {
                                     $refund_cash_in = 0;
                                     $refund_card_in = $packagesadvance->cash_amount;
                                     $refund_bank_in = 0;
-                                    $refund_out = '';
+                                    $refund_out = 0;
                                 }
                                 if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer' || $packagesadvance->paymentmode->name == 'Bank') {
                                     $refund_cash_in = 0;
                                     $refund_card_in = 0;
                                     $refund_bank_in = $packagesadvance->cash_amount;
-                                    $refund_out = '';
+                                    $refund_out = 0;
                                 }
                             } else {
-                                $refund_cash_in = '';
-                                $refund_card_in = '';
-                                $refund_bank_in = '';
+                                $refund_cash_in = 0;
+                                $refund_card_in = 0;
+                                $refund_bank_in = 0;
                                 $refund_out = $packagesadvance->cash_amount;
                             }
                           
