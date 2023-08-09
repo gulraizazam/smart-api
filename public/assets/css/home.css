@@ -16,7 +16,16 @@
     margin-top: 106px;
     margin-left: 244px;
 }
-
+.loader-img-unattended{
+    height: 60px;
+    margin-top: 106px;
+    margin-left: 244px;
+}
+.loader-img-attended{
+    height: 60px;
+    margin-top: 106px;
+    margin-left: 244px;
+}
 .nav-tabs>li {
     margin: 0;
     padding: 0;
@@ -198,3 +207,24 @@ img.loader-imgs {
     margin-top: 120px;
     height: 100px;
 }
+.dropdown-menu li a:hover{
+    cursor: pointer;
+}
+#unattended_payments .wrap_unattended_payment{
+    position: sticky;
+    z-index: 1111;
+    background: #fff;
+    top: 0px;
+}
+.table_v_scroll{
+    height: 100%;
+    overflow-y: scroll;
+    
+}
+#attended_payments .wrap_unattended_payment{
+    position: sticky;
+    z-index: 1111;
+    background: #fff;
+    top: 0px;
+}
+

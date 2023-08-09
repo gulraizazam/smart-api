@@ -62,7 +62,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">General Revenue Reports</h3>
+                            <h3 class="card-label">General Sales Reports</h3>
                         </div>
 
                     </div>
@@ -104,7 +104,7 @@
                                                     @endif--}}
 
                                                     @if(Gate::allows('finance_general_revenue_reports_collection_by_service'))
-                                                        <option value="collection_by_service">Collection by Service</option> {{--Ok--}}
+                                                        <option value="collection_by_service">Sales by Service</option> {{--Ok--}}
                                                     @endif
 
                                                    {{-- @if(Gate::allows('finance_general_revenue_reports_daily_employee_stats_summary'))
@@ -120,10 +120,10 @@
                                                         <option value="discount_report">Discount Report</option>
                                                     @endif--}}
                                                     @if(Gate::allows('finance_general_revenue_reports_general_revenue__detail_report'))
-                                                        <option value="general_revenue_report_detail">General Revenue Detail Report</option>
+                                                        <option value="general_revenue_report_detail">Sales Detail Report</option>
                                                     @endif
                                                     @if(Gate::allows('finance_general_revenue_reports_general_revenue__summary_report'))
-                                                        <option value="general_revenue_report_summary">General Revenue Summary Report</option>
+                                                        <option value="general_revenue_report_summary">Sales Summary Report</option>
                                                     @endif
                                                    {{-- @if(Gate::allows('finance_general_revenue_reports_pabau_record_revenue_report'))
                                                         <option value="pabau_record_revenue_report">Pabau Record Revenue Report</option>
@@ -179,16 +179,10 @@
                                                 {!! Form::select('city_id', $cities, null, ['onchange' => 'getCenters($(this));', 'id' => 'city_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
                                                 <span id="city_id_handler"></span>
                                             </div>
-                                           {{-- <div class="form-group col-md-3 sn-select @if($errors->has('region_id')) has-error @endif"
-                                                 id="region_id_E">
-                                                {!! Form::label('region_id', 'Region', ['class' => 'control-label']) !!}
-                                                {!! Form::select('region_id', $regions, null, ['id' => 'region_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
-                                                <span id="region_id_handler"></span>
-                                            </div>--}}
                                             <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                                  id="location_id_E">
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
-                                                {!! Form::select('location_id', $locations, null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select', 'multiple']) !!}
+                                                {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select', 'multiple']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
                                             <div class="form-group col-md-3 sn-select @if($errors->has('machine')) has-error @endif"
@@ -200,7 +194,7 @@
                                                  style="display: none;" id="location_id_D" onchange="SetLocation()">
                                                 {!! Form::label('location_id_com', 'Centres', ['class' => 'control-label']) !!}
 
-                                                {!! Form::select('location_id_com[]', $locations_com, null, ['id' => 'location_id_com','class' => 'form-control select2', 'multiple' => 'multiple']) !!}
+                                                {!! Form::select('location_id_com[]', $locations_com, (Auth::user()->hasRole('FDM')) ? array_keys($locations_com->toArray()) : null, ['id' => 'location_id_com','class' => 'form-control select2', 'multiple' => 'multiple']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
 
@@ -303,8 +297,8 @@
                     'This Year'  : [moment().startOf('year'), moment().endOf('year')],
                     'Last Year'  : [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
                 },
-                startDate: moment().subtract(29, 'days'),
-                endDate  : moment()
+                startDate: moment().startOf('month'),
+                endDate  :  moment().endOf('month')
             });
 
             var loadReport = function (that) {

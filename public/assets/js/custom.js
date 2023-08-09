@@ -1,23 +1,34 @@
 
- $(document).keydown(function(event) {
+$(document).keydown(function (event) {
     if (event.keyCode == 27) {
-      $('.modal').modal('hide');
+        $('.modal').modal('hide');
     }
-  });
+});
 
- let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
+let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
+
+$('#created_at').datepicker({
+    todayHighlight: true,
+    orientation: 'bottom',
+    endDate: new Date(),  
+    format: 'yyyy-mm-dd',
+    templates: {
+        leftArrow: '<i class="la la-angle-left"></i>',
+        rightArrow: '<i class="la la-angle-right"></i>',
+    },
+}).datepicker("setDate", new Date());
 $(document).ready(function () {
     $(document).on("change", ".select2", function () {
-       if ($(this).val() != '') {
+        if ($(this).val() != '') {
             $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").hide();
             $(this).parent(".fv-row").find(".select2-selection").removeClass("select2-is-invalid");
-       } else {
+        } else {
             $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").show();
             $(this).parent(".fv-row").find(".select2-selection").addClass("select2-is-invalid");
-       }
-   });
+        }
+    });
 
-    $(document).on( "click", ".popup-close", function () {
+    $(document).on("click", ".popup-close", function () {
         $(this).parents(".modal").modal("toggle");
         $("#modal_allocate_doctors_form").find("#services").empty();
         $("#modal_allocate_discounts_form").find("#services").empty();
@@ -32,13 +43,16 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     });
-
+    
+    
+    
     customDatePicker();
 
     $('.current-datepicker').datepicker({
         todayHighlight: true,
         orientation: 'bottom',
         startDate: new Date(),
+        "setDate": "7/11/2011",
         format: 'yyyy-mm-dd',
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',
@@ -46,12 +60,28 @@ $(document).ready(function () {
         },
     }).datepicker("setDate", new Date());
 
-    $('.timepicker').timepicker({timeFormat: 'h:mm:ss p'}).timepicker("setTime", new Date());
+    $('.timepicker').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
 
+    $('#date_range').daterangepicker({
+        locale: {
+        },
+        ranges: {
+            'Today': [moment(), moment()],
+            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+            'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+            'This Month': [moment().startOf('month'), moment().endOf('month')],
+            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+            'This Year': [moment().startOf('year'), moment().endOf('year')],
+            'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+        },
+        startDate: moment().subtract(29, 'days'),
+        endDate: moment()
+    }).val();
 
     /*for percentage amount*/
 
-    $(".group_slug").click( function () {
+    $(".group_slug").click(function () {
         if ($(this).val() === 'birthday') {
             $(".birthday_range").removeClass("d-none");
         } else {
@@ -59,7 +89,7 @@ $(document).ready(function () {
         }
     });
 
-    $(".edit_group_slug").click( function () {
+    $(".edit_group_slug").click(function () {
         if ($(this).val() === 'birthday') {
             $(".edit_birthday_range").removeClass("d-none");
         } else {
@@ -67,7 +97,7 @@ $(document).ready(function () {
         }
     });
 
-    $("#add_amount_type").change( function () {
+    $("#add_amount_type").change(function () {
 
         if ($(this).val() === 'Percentage') {
             $("#add_amount").attr("max", 100);
@@ -80,20 +110,19 @@ $(document).ready(function () {
         }
     });
 
-    $("#add_amount").on("keyup", function() {
+    $("#add_amount").on("keyup", function () {
 
         if ($(this).attr("max") == 100) {
             var val = parseInt(this.value);
-            if(val > 100 || val < 0)
-            {
-                this.value ='';
+            if (val > 100 || val < 0) {
+                this.value = '';
                 toastr.error("For percentage type, amount is not allowed greater than 100");
             }
         }
 
     })
 
-    $("#edit_amount_type").change( function () {
+    $("#edit_amount_type").change(function () {
 
         if ($(this).val() === 'Percentage') {
             $("#edit_amount").attr("max", 100);
@@ -106,13 +135,12 @@ $(document).ready(function () {
         }
     });
 
-    $("#edit_amount").on("keyup", function() {
+    $("#edit_amount").on("keyup", function () {
 
         if ($(this).attr("max") == 100) {
             var val = parseInt(this.value);
-            if(val > 100 || val < 0)
-            {
-                this.value ='';
+            if (val > 100 || val < 0) {
+                this.value = '';
                 toastr.error("For percentage type, amount is not allowed greater than 100");
             }
         }
@@ -165,7 +193,7 @@ $(document).ready(function () {
 
     /*Copy to clipboard*/
     var clipboard = new ClipboardJS('.clipboard');
-    clipboard.on('success', function(e) {
+    clipboard.on('success', function (e) {
         e.clearSelection();
         toastr.info("phone is copied to clipboard.")
     });
@@ -175,12 +203,12 @@ $(document).ready(function () {
     });
 
     $('.default-timepicker').timepicker();
-    $('#edit_scheduled_time').on('click', function() {
+    $('#edit_scheduled_time').on('click', function () {
 
         $('.default-timepicker').text($("#edit_scheduled_time").val());
     });
 
-    $("#apply-filters").click( function () {
+    $("#apply-filters").click(function () {
         if ($(".select-all-checkboxes").is(":checked")) {
             $(".select-all-checkboxes").click();
         }
@@ -206,7 +234,7 @@ $(document).ready(function () {
 
     $(document).on('keyup', '.select2-search__field', function (e) {
         if (e.key === 'Enter' || e.keyCode === 13) {
-           submitFilters();
+            submitFilters();
         }
     });
 
@@ -214,7 +242,7 @@ $(document).ready(function () {
     $('.scheduled_date').datepicker({
         format: 'yyyy-mm-dd',
         startDate: date
-    }).on('changeDate', function(ev){
+    }).on('changeDate', function (ev) {
         $(this).datepicker('hide');
     });
 
@@ -252,6 +280,7 @@ function customDatePicker() {
         todayHighlight: true,
         orientation: 'bottom',
         format: 'yyyy-mm-dd',
+        "setDate": new Date(),
         templates: {
             leftArrow: '<i class="la la-angle-left"></i>',
             rightArrow: '<i class="la la-angle-right"></i>',
@@ -285,11 +314,11 @@ function resetFielsValidation() {
 
 function deleteSuccessAndReset(data, datatable) {
     $(".delete-records").addClass("d-none");
-   if (data.status) {
-       toastr.success(data.message);
-   } else {
-       toastr.error(data.message);
-   }
+    if (data.status) {
+        toastr.success(data.message);
+    } else {
+        toastr.error(data.message);
+    }
 }
 
 function deleteRow(route, method = "DELETE", tableClass = null) {
@@ -299,19 +328,19 @@ function deleteRow(route, method = "DELETE", tableClass = null) {
 function deleteConfirm(datatable = null, route = null, method = "DELETE", tableClass = null) {
 
     swal.fire({
-        title: 'Are you sure you want to '+method+'?',
+        title: 'Are you sure you want to ' + method + '?',
         type: 'danger',
         icon: 'info',
         buttonsStyling: false,
-        confirmButtonText: 'Yes, '+method+'!',
+        confirmButtonText: 'Yes, ' + method + '!',
         cancelButtonText: 'No',
         showCancelButton: true,
         cancelButtonClass: 'btn btn-primary font-weight-bold',
         confirmButtonClass: 'btn btn-danger font-weight-bold'
-    }).then(function(result) {
+    }).then(function (result) {
         if (result.value) {
             if (datatable) {
-                let filters =  {
+                let filters = {
                     delete: row_ids.join(','),
                 }
                 datatable.search(filters, 'search');
@@ -327,7 +356,7 @@ function deleteConfirm(datatable = null, route = null, method = "DELETE", tableC
 }
 
 function sendDeleteRequest(route, method) {
-    method = (method == 'DELETE' ?  method : 'POST');
+    method = (method == 'DELETE' ? method : 'POST');
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -336,13 +365,13 @@ function sendDeleteRequest(route, method) {
         type: method,
         cache: false,
         success: function (response) {
-           if (response.status) {
-               toastr.success(response.message);
+            if (response.status) {
+                toastr.success(response.message);
 
-               reInitTable();
-           } else {
-             toastr.error(response.message);
-           }
+                reInitTable();
+            } else {
+                toastr.error(response.message);
+            }
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -350,7 +379,7 @@ function sendDeleteRequest(route, method) {
     });
 }
 
-function statuses(data, status_url,is_column_name_change = false) {
+function statuses(data, status_url, is_column_name_change = false) {
 
     let id = data.id;
 
@@ -361,7 +390,7 @@ function statuses(data, status_url,is_column_name_change = false) {
         if (permissions.active || permissions.inactive) {
             status += '<span class="switch switch-icon">\
             <label>\
-                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
                 <span></span>\
             </label>\
             </span>';
@@ -378,7 +407,7 @@ function statuses(data, status_url,is_column_name_change = false) {
 
         status += '<span class="switch switch-icon">\
         <label>\
-            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
+            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
             <span></span>\
         </label>\
         </span>';
@@ -399,15 +428,15 @@ function updateStatus(route, id, $this) {
         showCancelButton: true,
         cancelButtonClass: 'btn btn-primary font-weight-bold',
         confirmButtonClass: 'btn btn-danger font-weight-bold'
-    }).then(function(result) {
+    }).then(function (result) {
         if (result.value) {
 
-           $.ajax({
+            $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 url: route,
-                data: {id: id, status: $this.is(":checked") ? '1' : '0'},
+                data: { id: id, status: $this.is(":checked") ? '1' : '0' },
                 type: "POST",
                 cache: false,
                 success: function (response) {
@@ -451,8 +480,8 @@ function reInitSelect2(elem, title = 'Select') {
 function autoFocusFields(validate) {
     var fields = validate.getFields();
     fields = Object.keys(fields).reverse();
-    $(fields).each(function(index, field) {
-        $("input[name='"+field+"']").focus();
+    $(fields).each(function (index, field) {
+        $("input[name='" + field + "']").focus();
         return false;
     });
 }
@@ -479,77 +508,81 @@ function reInitTable(page = null) {
             if (typeof datatable !== 'undefined') {
                 treatmentFilters();
             }
-        } else if(page == 'consultancy') {
+        } else if (page == 'consultancy') {
             if (typeof datatable !== 'undefined') {
                 consultancyFilters();
             }
-        } else if(page == "user"){
+        } else if (page == "user") {
             if (typeof datatable !== 'undefined') {
                 userFilters();
             }
-        } else if(page == "doctor"){
+        } else if (page == "doctor") {
             if (typeof datatable !== 'undefined') {
                 doctorFilters();
             }
-        } else if(page == "permission"){
+        } else if (page == "permission") {
             if (typeof datatable !== 'undefined') {
                 permissionFilters();
             }
-        } else if(page == "userType"){
+        } else if (page == "userType") {
             if (typeof datatable !== 'undefined') {
                 userTypeFilters();
             }
-        } else if(page == "patient"){
+        } else if (page == "patient") {
             if (typeof datatable !== 'undefined') {
                 patientFilters();
             }
-        } else if(page == "lead"){
+        } else if (page == "lead") {
             if (typeof datatable !== 'undefined') {
                 leadFilters();
             }
-        } else if(page == "plan"){
+        } else if (page == "plan") {
             if (typeof datatable !== 'undefined') {
                 planFilters();
             }
-        } else if(page == "service"){
+        } else if (page == "service") {
             if (typeof datatable !== 'undefined') {
                 serviceFilters();
             }
-        } else if(page == "bundles"){
+        } else if (page == "bundles") {
             if (typeof datatable !== 'undefined') {
                 bundlesFilters();
             }
-        } else if(page == "discount"){
+        } else if (page == "discount") {
             if (typeof datatable !== 'undefined') {
                 discountFilters();
             }
-        } else if(page == "rota"){
+        } else if (page == "rota") {
             if (typeof datatable !== 'undefined') {
                 rotaFilters();
             }
-        } else if(page == "globalSetting"){
+        } else if (page == "globalSetting") {
             if (typeof datatable !== 'undefined') {
                 globalSettingFilters();
             }
-        } else if(page == "operatorSetting"){
+        } else if (page == "operatorSetting") {
             if (typeof datatable !== 'undefined') {
                 operatorSettingFilters();
             }
-        } else if(page == "payment"){
+        } else if (page == "payment") {
             if (typeof datatable !== 'undefined') {
                 paymentFilters();
             }
-        } else if(page == "town"){
+        } else if (page == "town") {
             if (typeof datatable !== 'undefined') {
                 townFilters();
             }
-        } else if(page == "resource"){
+        } else if (page == "resource") {
             if (typeof datatable !== 'undefined') {
                 resourceFilters();
             }
-        } else if(page == "centre"){
+        } else if (page == "centre") {
             if (typeof datatable !== 'undefined') {
                 centreFilters();
+            }
+        } else if (page == "machineTypes") {
+            if (typeof datatable !== 'undefined') {
+                machineTypesFilters();
             }
         } else {
             $('#kt_datatable').KTDatatable('reload');
@@ -559,7 +592,7 @@ function reInitTable(page = null) {
 }
 
 function treatmentFilters() {
-    let filters =  {
+    let filters = {
         delete: '',
         patient_id: $("#treatment_patient_id").val(),
         date_from: $("#treatment_search_start").val(),
@@ -581,7 +614,7 @@ function treatmentFilters() {
 }
 
 function consultancyFilters() {
-    let filters =  {
+    let filters = {
         delete: '',
         patient_id: $("#appointment_patient_id").val(),
         date_from: $("#appoint_search_start").val(),
@@ -604,7 +637,7 @@ function consultancyFilters() {
     datatable.search(filters, 'search');
 }
 function rotaFilters() {
-   let filters =  {
+    let filters = {
         delete: '',
         resourcename: $("#search_resource_name").val(),
         resource_type_id: $("#search_type_id").val(),
@@ -621,7 +654,7 @@ function rotaFilters() {
     datatable.search(filters, 'search');
 }
 function userFilters() {
-    let filters =  {
+    let filters = {
         delete: '',
         name: $("#search_name").val(),
         email: $("#search_email").val(),
@@ -639,24 +672,24 @@ function userFilters() {
 
 }
 function permissionFilters() {
-        let filters =  {
-            delete: '',
-            search: $("#search_search").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        search: $("#search_search").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function userTypeFilters() {
-        let filters =  {
-            delete: '',
-            name: $("#search_name").val(),
-            type: $("#search_type").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        type: $("#search_type").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
-function patientFilters(){
-    let filters =  {
+function patientFilters() {
+    let filters = {
         delete: '',
         patient_id: $("#search_patient_id").val(),
         name: $("#search_name").val(),
@@ -670,7 +703,7 @@ function patientFilters(){
     }
     datatable.search(filters, 'search');
 }
-function leadFilters(){
+function leadFilters() {
     let filters = {
         delete: '',
         lead_id: $("#search_id").val(),
@@ -690,106 +723,106 @@ function leadFilters(){
     datatable.search(filters, 'search');
 }
 function planFilters() {
-        let filters =  {
-            delete: '',
-            id: $("#search_id").val(),
-            patient_id: $("#search_patient_id").val(),
-            patient_name: $("#search_patient_id").text(),
-            package_id: $("#search_plan_id").val(),
-            location_id: $("#search_location_id").val(),
-            status: $("#search_status").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        id: $("#search_id").val(),
+        patient_id: $("#search_patient_id").val(),
+        patient_name: $("#search_patient_id").text(),
+        package_id: $("#search_plan_id").val(),
+        location_id: $("#search_location_id").val(),
+        status: $("#search_status").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function serviceFilters() {
-        let filters =  {
-            delete: '',
-            name: $("#search_name").val(),
-            status: $("#search_status").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function bundlesFilters() {
-        let filters = {
-            delete: '',
-            name: $("#search_name").val(),
-            price: $("#search_price").val(),
-            total_services: $("#search_total_services").val(),
-            apply_discount: $("#search_apply_discount").val(),
-            startdate: $("#search_startdate").val(),
-            enddate: $("#search_enddate").val(),
-            created_from: $("#created_from").val(),
-            created_to: $("#created_to").val(),
-            status: $("#search_status").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        price: $("#search_price").val(),
+        total_services: $("#search_total_services").val(),
+        apply_discount: $("#search_apply_discount").val(),
+        startdate: $("#search_startdate").val(),
+        enddate: $("#search_enddate").val(),
+        created_from: $("#created_from").val(),
+        created_to: $("#created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function discountFilters() {
-        let filters =  {
-            delete: '',
-            name: $("#search_name").val(),
-            type: $("#search_type").val(),
-            amount: $("#search_amount").val(),
-            discount_type: $("#search_discount_type").val(),
-            startdate: $("#search_start").val(),
-            enddate: $("#search_end").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
-            status: $("#search_status").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        type: $("#search_type").val(),
+        amount: $("#search_amount").val(),
+        discount_type: $("#search_discount_type").val(),
+        startdate: $("#search_start").val(),
+        enddate: $("#search_end").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function doctorFilters() {
-        let filters =  {
-            delete: '',
-            name: $("#search_name").val(),
-            email: $("#search_email").val(),
-            phone: $("#search_phone").val(),
-            role_id: $("#search_role").val(),
-            gender: $("#search_gender").val(),
-            status: $("#search_status").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        email: $("#search_email").val(),
+        phone: $("#search_phone").val(),
+        role_id: $("#search_role").val(),
+        gender: $("#search_gender").val(),
+        status: $("#search_status").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function globalSettingFilters() {
-        let filters = {
-            delete: '',
-            name: $("#search_name").val(),
-            data: $("#search_data").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        data: $("#search_data").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function operatorSettingFilters() {
-        let filters = {
-            delete: '',
-            operator_name: $("#operator_name").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        operator_name: $("#operator_name").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 function paymentFilters() {
-        let filters =  {
-            delete: '',
-            name: $("#search_name").val(),
-            type: $("#search_type").val(),
-            payment_type: $("#search_payment_type").val(),
-            status: $("#search_status").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        type: $("#search_type").val(),
+        payment_type: $("#search_payment_type").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
-function townFilters(){
-    let filters =  {
+function townFilters() {
+    let filters = {
         delete: '',
         name: $("#search_name").val(),
         city_id: $("#search_city").val(),
@@ -799,34 +832,47 @@ function townFilters(){
     datatable.search(filters, 'search');
 }
 function resourceFilters() {
-        let filters =  {
-            delete: '',
-            name: $("#search_name").val(),
-            resource_type_id: $("#search_resource_type_id").val(),
-            location_id: $("#search_location_id").val(),
-            machine_type_id: $("#search_machine_type_id").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
-            status: $("#search_status").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        resource_type_id: $("#search_resource_type_id").val(),
+        location_id: $("#search_location_id").val(),
+        machine_type_id: $("#search_machine_type_id").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
-function centreFilters(datatable) {
-        let filters =  {
-            delete: '',
-            name: $("#search_name").val(),
-            fdo_name: $("#search_fdo_name").val(),
-            fdo_phone: $("#search_fdo_phone").val(),
-            address: $("#search_address").val(),
-            city_id: $("#search_city").val(),
-            region_id: $("#search_region").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
-            status: $("#search_status").val(),
-            filter: 'filter',
-        }
-        datatable.search(filters, 'search');
+function centreFilters() {
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        fdo_name: $("#search_fdo_name").val(),
+        fdo_phone: $("#search_fdo_phone").val(),
+        address: $("#search_address").val(),
+        city_id: $("#search_city").val(),
+        region_id: $("#search_region").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+
+function machineTypesFilters() {
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        service: $("#search_service").val(),
+        created_from: $("#search_created_from").val(),
+        created_to: $("#search_created_to").val(),
+        status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
 }
 
 function reloadTable(table_class) {
@@ -858,20 +904,20 @@ function phoneReset(className) {
     $("." + className).val('');
 }
 
-function showPreLoader(){
+function showPreLoader() {
     $('.page-loader-base').show();
 }
 
-function hidePreLoader(){
+function hidePreLoader() {
     $('.page-loader-base').hide();
 }
 
 function inputSpinner(show = true, elem = 'AddPackage') {
     if (show) {
-        $("#" + elem ).prop("disabled", true).addClass("disabled-btn");
+        $("#" + elem).prop("disabled", true).addClass("disabled-btn");
         $(".input-spinner").show();
     } else {
-        $("#" + elem ).prop("disabled", false).removeClass("disabled-btn");
+        $("#" + elem).prop("disabled", false).removeClass("disabled-btn");
         $(".input-spinner").hide();
     }
 }
@@ -886,13 +932,13 @@ function hideSpinner(suffix = '') {
 
 function hideSpinnerRestForm(form = null, imageReset = false) {
     $(".spinner-button").removeClass("spinner spinner-white spinner-right mr-3").prop('disabled', false);
-   if (form) {
-       form.reset();
-   }
-   if (!imageReset) {
-       $(".image-input-wrapper").css('background-image', "url()");
-       $(".image-input-wrapper").parent(".image-input").find("span").removeClass("btn-shadow");
-   }
+    if (form) {
+        form.reset();
+    }
+    if (!imageReset) {
+        $(".image-input-wrapper").css('background-image', "url()");
+        $(".image-input-wrapper").parent(".image-input").find("span").removeClass("btn-shadow");
+    }
     $("#complimentary").addClass("d-none");
 }
 
@@ -911,7 +957,7 @@ function submitForm(action, method, data, callback, form = '') {
                 callback({
                     'status': response.status,
                     'message': response.message,
-                    'data' : response?.data
+                    'data': response?.data
                 });
                 hideSpinnerRestForm(form);
             } else {
@@ -919,7 +965,7 @@ function submitForm(action, method, data, callback, form = '') {
                     'status': response.status,
                     'message': response.message,
                 });
-                 hideSpinnerRestForm();
+                hideSpinnerRestForm();
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -955,8 +1001,8 @@ function submitFileForm(action, method, form_id, callback, no_reset = false) {
     var data = new FormData(form);
 
     let files = $('#file')[0].files;
-    if(files.length){
-        data.append('file',files[0]);
+    if (files.length) {
+        data.append('file', files[0]);
     }
 
     $.ajax({
@@ -1017,7 +1063,7 @@ function childCheckbox(data, id = null) {
     if (id === null) {
         id = data.id
     }
-    return '<label class="checkbox checkbox-single checkbox-all"><input value="'+id+'" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
+    return '<label class="checkbox checkbox-single checkbox-all"><input value="' + id + '" class="table-checkboxes" type="checkbox">&nbsp;<span></span></label>';
 }
 
 
@@ -1033,11 +1079,11 @@ function showException(error) {
 }
 
 function noRecordFoundTable(colspan) {
-    return '<tr class="text-center"><td colspan="'+colspan+'">No record found</td></tr>';
+    return '<tr class="text-center"><td colspan="' + colspan + '">No record found</td></tr>';
 }
 
 function phoneField($this) {
-   return $this.value = $this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
+    return $this.value = $this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');
 }
 
 function formatDate(date, format = 'ddd MMM, DD yyyy hh:mm A') {
@@ -1055,7 +1101,7 @@ function getGender(gender_id) {
         return gender_id == 1 ? 'Male' : 'Female';
 
     } catch (e) {
-       return gender_id == 1 ? 'Male' : 'Female';
+        return gender_id == 1 ? 'Male' : 'Female';
     }
 
 
@@ -1070,16 +1116,16 @@ function makeArray(object) {
 
     let array = [];
 
-   Object.entries(object).forEach(function (value) {
-       array[value[0]] = value[1];
-   });
+    Object.entries(object).forEach(function (value) {
+        array[value[0]] = value[1];
+    });
 
-  return array
+    return array
 
 }
 
 function phoneClip(data) {
-    return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="'+data.phone+'" data-original-title="Click to Copy" aria-describedby="tooltip'+data.id+'">'+data.phone+'</a>';
+    return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="' + data.phone + '" data-original-title="Click to Copy" aria-describedby="tooltip' + data.id + '">' + data.phone + '</a>';
 }
 
 function makePhoneNumber(phoneNo, permission, type = 0) {
@@ -1111,26 +1157,26 @@ function setQueryStringParameter(name, value = null) {
     var URL = `${window.location.pathname}?${params}`;
     var queryStringencode = encodeURIComponent(URL);
     var queryString = decodeURIComponent(queryStringencode);
-    var getURL =  window.location.href;
-    if(!getURL.includes('#loaded')){
+    var getURL = window.location.href;
+    if (!getURL.includes('#loaded')) {
         window.history.replaceState({}, "", queryString);
     }
-    if(!getURL.includes('#loaded') && getURL.includes('scheduledDate=2')){
+    if (!getURL.includes('#loaded') && getURL.includes('scheduledDate=2')) {
         window.location = window.location + '#loaded';
         window.location.reload();
     }
 }
-function get_query(){
+function get_query() {
     var url = document.location.href;
     var qs = url.substring(url.indexOf('?') + 1).split('&');
-    for(var i = 0, result = {}; i < qs.length; i++){
+    for (var i = 0, result = {}; i < qs.length; i++) {
         qs[i] = qs[i].split('=');
         result[qs[i][0]] = decodeURIComponent(qs[i][1]);
     }
     return result;
 }
-function patientSearch(search_id = 'patient_id',flag=1) {
-    $("." + search_id).on("keyup",function() {
+function patientSearch(search_id = 'patient_id', flag = 1) {
+    $("." + search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         if ($(this).val().length < 2) {
@@ -1139,19 +1185,19 @@ function patientSearch(search_id = 'patient_id',flag=1) {
         }
         var that = $(this);
         if ($(this).val() != '') {
-            setTimeout(function(){
+            setTimeout(function () {
                 $.ajax({
                     type: "GET",
                     url: route('admin.users.getpatient.id'),
                     dataType: 'json',
-                    data: {search: that.val()},
+                    data: { search: that.val() },
                     success: function (response) {
                         let html = '';
                         $(".suggestion-list").html(html);
                         let patients = response.data.patients;
                         if (patients.length) {
                             patients.forEach(function (patient) {
-                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + patient.name +' - '+ makePatientId(patient.id) +'</li>'
+                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
                             });
                             $(".suggestion-list").html(html);
                             $(".suggesstion-box").show();
@@ -1160,7 +1206,45 @@ function patientSearch(search_id = 'patient_id',flag=1) {
                         }
                     }
                 });
-            },1000);
+            }, 1000);
+        } else {
+            $(".suggesstion-box").hide();
+        }
+    });
+    return false;
+}
+function patientSearchRefund(search_id = 'patient_id', flag = 1) {
+    $("." + search_id).on("keyup", function () {
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box-refund").show();
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box-refund").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectUserRefund(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box-refund").show();
+                        } else {
+                            $(".suggesstion-box-refund").hide();
+                        }
+                    }
+                });
+            }, 1000);
         } else {
             $(".suggesstion-box").hide();
         }
@@ -1168,20 +1252,30 @@ function patientSearch(search_id = 'patient_id',flag=1) {
     return false;
 }
 
-function selectUser(name, user_id,  search_id,flag=1) {
+function selectUser(name, user_id, search_id, flag = 1) {
     $("." + search_id).parent('div').find('.search_field').val(user_id).change();
     $("#add_patient_id").val(user_id);
-   // $(".search_field").val(user_id).change();
+    // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
-    if(flag == 1){
+    if (flag == 1) {
         getServices('add');
     }
 }
+function selectUserRefund(name, user_id, search_id, flag = 1) {
+    $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+    $("#add_patients_id").val(user_id);
 
-function leadSearch(search_id = 'lead_search_id',flag=1) {
-    $("." + search_id).on("keyup",function() {
+    $("." + search_id).val(name);
+    $(".suggesstion-box-refund").hide();
+    $("." + search_id).focus();
+    // if (flag == 1) {
+    //     getplans(user_id);
+    // }
+}
+function leadSearch(search_id = 'lead_search_id', flag = 1) {
+    $("." + search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         if ($(this).val().length < 2) {
@@ -1195,22 +1289,22 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
                 url: route('admin.leads.getlead.id'),
                 dataType: 'json',
                 delay: 250,
-                data: {search: $(this).val()},
+                data: { search: $(this).val() },
                 success: function (response) {
-                    console.log('res' , response);
+                    console.log('res', response);
                     let html = '';
                     let leads = response.data.leads;
                     let haveObjleads = Object.keys(leads).length;
                     if (leads.length) {
 
                         leads.forEach(function (lead) {
-                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
+                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
                         });
                         $(".suggestion-list").html(html);
                         $(".suggesstion-box").show();
                     } else if (haveObjleads) {
                         for (const [key, lead] of Object.entries(leads)) {
-                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `'+ search_id+'`, `'+ flag+'`);">' + lead.name +' - '+ lead.id +'</li>'
+                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
                         }
                         $(".suggestion-list").html(html);
                         $(".suggesstion-box").show();
@@ -1226,13 +1320,13 @@ function leadSearch(search_id = 'lead_search_id',flag=1) {
     return false;
 }
 
-function selectLead(name, lead_id,  search_id, flag=1) {
+function selectLead(name, lead_id, search_id, flag = 1) {
     $("." + search_id).parent('div').find('.search_field').val(lead_id).change();
     $("#add_lead_id").val(lead_id);
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
-    if(flag == 1){
+    if (flag == 1) {
         getServices('add');
     }
 }
@@ -1334,6 +1428,25 @@ function toggleMenu($this, $class) {
     $(".all-sections").hide();
 
     $(".section-" + $class).show();
+}
+
+function dateRangePicker($this) {
+    $('#date_range').daterangepicker({
+        locale: {
+        },
+        ranges: {
+            'Today': [moment(), moment()],
+            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+            'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+            'This Month': [moment().startOf('month'), moment().endOf('month')],
+            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+            'This Year': [moment().startOf('year'), moment().endOf('year')],
+            'Last Year': [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
+        },
+        startDate: moment().subtract(29, 'days'),
+        endDate: moment()
+    });
 }
 
 

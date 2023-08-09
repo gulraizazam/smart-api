@@ -227,8 +227,7 @@ function applyFilters(datatable) {
             email: $("#search_email").val(),
             phone: $("#search_phone").val(),
             gender: $("#search_gender").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             status: $("#search_status").val(),
             filter: 'filter',
         }
@@ -247,8 +246,7 @@ function resetAllFilters(datatable) {
             email: '',
             phone: '',
             gender: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             status: '',
             filter: 'filter_cancel',
         }
@@ -283,8 +281,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_gender").val(active_filters.gender);
         $("#search_phone").val(active_filters.phone);
         $("#search_email").val(active_filters.email);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
     } catch (error) {
@@ -294,8 +291,7 @@ function setFilters(filter_values, active_filters) {
 
 function hideShowAdvanceFilters(active_filters) {
 
-    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
-        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
+    if ((typeof active_filters.created_at !== 'undefined' && active_filters.created_at != '')
         || (typeof active_filters.status !== 'undefined' && active_filters.status != '')
         || (typeof active_filters.gender !== 'undefined' && active_filters.gender != '')
     ) {
@@ -305,4 +301,9 @@ function hideShowAdvanceFilters(active_filters) {
     }
 
 }
+
+
+jQuery(document).ready( function () {
+    $("#date_range").val("");
+})
 

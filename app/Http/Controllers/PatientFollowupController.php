@@ -5,14 +5,15 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use App\Helpers\ACL;
 use App\Models\Patients;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 use App\Models\Appointments;
 use Illuminate\Http\Request;
 use App\Exports\ExportFollowUp;
 use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Facades\Excel;
+
 use Illuminate\Support\Facades\Config;
 
 class PatientFollowupController extends Controller
@@ -30,104 +31,189 @@ class PatientFollowupController extends Controller
     }
     public function patientFollowUp(Request $request)
     {
-        $center_id = ACL::getUserCentres();
-        $appointments = DB::select("
-                select appointments.id, appointments.patient_id from appointments,
-                (
-                    select a.patient_id, max(a.created_at) as created_at from appointments a
-                        WHERE a.appointment_type_id = 1
-                        AND a.base_appointment_status_id = 2
-                        AND a.location_id IN (" . implode(',', ACL::getUserCentres()) . ")
-                        group by a.patient_id
-                ) max_appointments
-                where appointments.patient_id = max_appointments.patient_id
-                and appointments.created_at = max_appointments.created_at
-                ORDER by appointments.id DESC
-            ");
-        $appointmentIds = array_map(function ($appointment) {
-            return $appointment->id;
-        }, $appointments);
+        $where = [];
+        $where[] = [
+            'package_advances.created_at',
+            '>=',
+            Carbon::now()->subDays(30)->format('Y-m-d'),
+        ];
+        // $where[] = [
+        //     'package_advances.created_at',
+        //     '<=',
+        //     Carbon::now()->format('Y-m-d'),
+        // ];
 
-        $plans_check = DB::table('package_advances')
-            ->select(
-                'package_advances.id',
-                'package_advances.patient_id',
-                'package_advances.created_at',
-                'cash_received_amount_query.cash_receive',
-                'settle_amount_query.settle_amount',
-                'settle_tax_amount_query.settle_tax_amount'
-            )
-            ->leftJoin(DB::raw('(SELECT patient_id, SUM(cash_amount) AS cash_receive
-                        FROM package_advances
-                        WHERE cash_flow = "in"
-                          AND is_cancel = 0
-                          AND is_tax = 0
-                          AND is_adjustment = 0
-                          AND is_refund = 0
-                        GROUP BY patient_id) AS cash_received_amount_query'), 'package_advances.patient_id', '=', 'cash_received_amount_query.patient_id')
-            ->leftJoin(DB::raw('(SELECT patient_id, SUM(cash_amount) AS settle_amount
-                        FROM package_advances
-                        WHERE cash_flow = "out"
-                          AND is_cancel = 0
-                          AND is_tax = 0
-                          AND is_adjustment = 0
-                          AND is_refund = 0
-                        GROUP BY patient_id) AS settle_amount_query'), 'package_advances.patient_id', '=', 'settle_amount_query.patient_id')
-            ->leftJoin(DB::raw('(SELECT patient_id, SUM(cash_amount) AS settle_tax_amount
-                        FROM package_advances
-                        WHERE cash_flow = "out"
-                          AND is_cancel = 0
-                          AND is_tax = 1
-                          AND is_adjustment = 0
-                          AND is_refund = 0
-                        GROUP BY patient_id) AS settle_tax_amount_query'), 'package_advances.patient_id', '=', 'settle_tax_amount_query.patient_id')
+
+        $center_id =  ACL::getUserCentres();
+        $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
+            ->join(DB::raw('(
+                SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
+                FROM appointments appointment
+                WHERE appointment.appointment_type_id = 1
+                    AND appointment.base_appointment_status_id = 2
+                    AND appointment.location_id IN (' . implode(',', $center_id) . ')
+
+                GROUP BY appointment.patient_id
+            ) latest_appointments'), function ($join) {
+                $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
+                    ->on('appointments.created_at', '=', 'latest_appointments.created_at');
+            })
+            ->orderByDesc('appointments.id')
+            ->pluck('appointments.id');
+
+
+        $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
-                ['package_advances.cash_flow', '=', 'in'],
-                ['package_advances.is_cancel', '=', '0'],
+                'cash_flow' => 'in',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '0',
             ])
-            ->whereIn('package_advances.appointment_id', $appointmentIds)
+            ->whereIn('appointment_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('cash_receive', 'patient_id');
+
+            $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_setteled_receive'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_setteled' => '1',
+                
+            ])
+            ->whereIn('patient_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('cash_setteled_receive', 'patient_id');
+        $settleAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '0',
+            ])
+            ->whereIn('appointment_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('settle_amount', 'patient_id');
+            $settle__adjustment_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_adjust_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '1',
+                'is_refund' => '0',
+            ])
+            ->whereIn('patient_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('settle_adjust_amount', 'patient_id');
+            $refunded_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS refunded_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '1',
+            ])
+            ->whereIn('patient_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('refunded_amount', 'patient_id');
+        
+
+        $settleTaxAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '1',
+                'is_adjustment' => '0',
+
+            ])
+            ->whereIn('appointment_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('settle_tax_amount', 'patient_id');
+
+        $plans_check = PackageAdvances::select('package_advances.id', 'package_advances.patient_id', 'package_advances.created_at', 'package_advances.location_id')
+            ->whereIn('package_advances.appointment_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
+            ->where($where)
+            ->where('cash_flow','in')
+            ->groupBy('package_advances.patient_id' )
+            
             ->groupBy('package_advances.patient_id')
             ->orderBy('package_advances.patient_id', 'DESC')
-            ->limit(500)
             ->get();
-        $plans_check_array = json_decode(json_encode($plans_check), true);
+         
+       
+        $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts,$cash_setteled_amounts, $settle__adjustment_amounts,$refunded_amounts) {
+            $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
+            $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
+            $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
+            $item->cash_setteled_amounts = $cash_setteled_amounts[$item->patient_id] ?? null;
+            $item->settle__adjustment_amounts = $settle__adjustment_amounts[$item->patient_id] ?? null;
+            $item->refunded_amounts = $refunded_amounts[$item->patient_id] ?? null;
+            return $item;
+        });
         $not_treatment = [];
         $is_treatment = [];
         $patient_data = [];
-        $plan_check_no_treatment = collect($plans_check_array)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
-
-        foreach ($plans_check_array as $data) {
+        $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
+            ->where('created_at', '<', Carbon::now()->subDays(3))
+            ->pluck('patient_id')->toArray();
+        foreach ($plans_check as $data) {
+       
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
             ])
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();
-
+            $conversion_date = PackageAdvances::where([
+                ['patient_id', '=', $data['patient_id']],
+                ['cash_amount' ,'>',0],
+                ['cash_flow' ,'=','in'],
+                ['is_setteled' ,'=',0],
+                ['is_tax' ,'=',0],
+                
+            ])->first();
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
             $data['patient_id'] = $patient->id;
             $data['name'] = $patient->name;
             $data['phone'] = $patient->phone;
-            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
+            $data['settle_amount_with_tax'] = ($data['settle_amount'] + $data['settle_tax_amount']  + $data['settle__adjustment_amounts']);
+           
+           if($conversion_date){
+            $data['created_at'] = Carbon::parse($conversion_date->created_at)->format('Y-m-d');
+           }else{
+            $data['created_at'] = Carbon::parse($data['created_at'])->format('Y-m-d');
+           }
+            
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts']==null&& ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
+
+
                 }
+                
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
             }
-        }
-        $patient_data = array_merge(array_slice($is_treatment, 0, 10), array_slice($not_treatment, 0, 10));
 
+        }
+        $patient_data = array_merge($is_treatment, $not_treatment);
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => array_slice($patient_data, 0, 15)
+            'patient_data' => $patient_data
         ]);
     }
     public function patientFollowUpDownload(Request $request)
@@ -145,7 +231,7 @@ class PatientFollowupController extends Controller
             '<=',
             Carbon::now()->toDateString(),
         ];
-        
+
         $center_id = ACL::getUserCentres();
         $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
@@ -175,18 +261,52 @@ class PatientFollowupController extends Controller
             ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
-
+            $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_setteled' => '1',
+                
+            ])
+            ->whereIn('patient_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('cash_receive', 'patient_id');
         $settleAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
             ->where([
                 'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',
-
+                'is_refund' => '0',
             ])
             ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
+            $settle__adjustment_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '1',
+                'is_refund' => '0',
+            ])
+            ->whereIn('patient_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('settle_amount', 'patient_id');
+            $refunded_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS refunded_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '1',
+            ])
+            ->whereIn('patient_id', $appointments)
+            ->groupBy('patient_id')
+            ->pluck('refunded_amount', 'patient_id');
+        
 
         $settleTaxAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
@@ -207,10 +327,13 @@ class PatientFollowupController extends Controller
             ->groupBy('package_advances.patient_id')
             ->orderBy('package_advances.patient_id', 'DESC')
             ->get();
-        $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
+        $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts,$cash_setteled_amounts, $settle__adjustment_amounts,$refunded_amounts) {
             $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
             $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
             $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
+            $item->cash_setteled_amounts = $cash_setteled_amounts[$item->patient_id] ?? null;
+            $item->settle__adjustment_amounts = $settle__adjustment_amounts[$item->patient_id] ?? null;
+            $item->refunded_amounts = $refunded_amounts[$item->patient_id] ?? null;
             return $item;
         });
 
@@ -218,7 +341,7 @@ class PatientFollowupController extends Controller
         $is_treatment = [];
         $patient_data = [];
         $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
-            ->where('created_at', '<', Carbon::now()->subDays(7))
+            ->where('created_at', '<', Carbon::now()->subDays(3))
             ->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
@@ -232,28 +355,37 @@ class PatientFollowupController extends Controller
             $data['patient_id'] = $patient->id;
             $data['name'] = $patient->name;
             $data['phone'] = $patient->phone;
-            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
+            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'] + $data['refunded_amount'] + $data['settle__adjustment_amounts'];
+           
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id != 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
+
+
                 }
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
             }
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['created_at']) - strtotime($a['created_at']);
+        });
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.followup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
         return $pdf->download('followup.pdf');
-        
+
     }
+
     public function patientMonthlyFollowUpDownload(Request $request)
     {
         $where = [];
@@ -262,11 +394,7 @@ class PatientFollowupController extends Controller
             '>=',
             Carbon::now()->subMonths(3)->toDateString(),
         ];
-        $where[] = [
-            'appointments.scheduled_date',
-            '<=',
-            Carbon::now()->toDateString(),
-        ];
+
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
@@ -290,21 +418,57 @@ class PatientFollowupController extends Controller
                 'is_tax' => '0',
                 'is_adjustment' => '0',
                 'is_refund' => '0',
+                'is_setteled' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
+            $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_setteled' => '1',
+                
+            ])
+            ->whereIn('patient_id', $patient_ids)
+            ->groupBy('patient_id')
+            ->pluck('cash_receive', 'patient_id');
         $settle_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
             ->where([
                 'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',
+                'is_refund' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
+            $settle__adjustment_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '1',
+                'is_refund' => '0',
+            ])
+            ->whereIn('patient_id', $patient_ids)
+            ->groupBy('patient_id')
+            ->pluck('settle_amount', 'patient_id');
+            $refunded_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS refunded_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '1',
+            ])
+            ->whereIn('patient_id', $patient_ids)
+            ->groupBy('patient_id')
+            ->pluck('refunded_amount', 'patient_id');
 
         $settle_tax_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
@@ -324,12 +488,15 @@ class PatientFollowupController extends Controller
             ->orderBy('patient_id', 'DESC')
             ->limit(3000)
             ->get();
-        $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts) {
-            $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
-            $item->settle_amount = $settle_amounts[$item->patient_id] ?? null;
-            $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
-            return $item;
-        });
+            $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts,$cash_setteled_amounts,$refunded_amounts,$settle__adjustment_amounts) {
+                $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
+                $item->settle_amount = $settle_amounts[$item->patient_id] ?? null;
+                $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
+                $item->cash_setteled_amounts = $cash_setteled_amounts[$item->patient_id] ?? null;
+                $item->refunded_amount = $refunded_amounts[$item->patient_id] ?? null;
+                $item->settle__adjustment_amounts = $settle__adjustment_amounts[$item->patient_id] ?? null;
+                return $item;
+            });
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
@@ -344,40 +511,42 @@ class PatientFollowupController extends Controller
             $data['patient_id'] = $patient->id;
             $data['name'] = $patient->name;
             $data['phone'] = $patient->phone;
-            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
+            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'] + $data['refunded_amount'] + $data['settle__adjustment_amounts'];
+           
 
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id == 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
+                    if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts']==null&& ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                         $data['is_treatment'] = 1;
+                        $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
                     }
                 }
             }
-           
+
         }
-       //return view('admin.reports.monthlyfollowup-pdf' , compact('patient_data'));
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.reports.monthlyfollowup-pdf', compact('patient_data'))->setPaper($customPaper, 'portrait');
 
         return $pdf->download('monthlyfollowup.pdf');
     }
+
     public function patientFollowUpOneMonth(Request $request)
     {
-       
+
         $where = [];
         $where[] = [
             'appointments.scheduled_date',
             '>=',
-            Carbon::now()->subMonths(3)->toDateString(),
+            Carbon::now()->subMonths(3)->format('Y-m-d'),
         ];
-        $where[] = [
-            'appointments.scheduled_date',
-            '<=',
-            Carbon::now()->toDateString(),
-        ];
+
         $center_id = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
@@ -391,6 +560,7 @@ class PatientFollowupController extends Controller
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
+            ->where($where)
             ->orderByDesc('appointments.id')
             ->pluck('patient_id');
 
@@ -401,22 +571,56 @@ class PatientFollowupController extends Controller
                 'is_tax' => '0',
                 'is_adjustment' => '0',
                 'is_refund' => '0',
+                
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
-
+            $cash_setteled_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_setteled' => '1',
+                
+            ])
+            ->whereIn('patient_id', $patient_ids)
+            ->groupBy('patient_id')
+            ->pluck('cash_receive', 'patient_id');
         $settle_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
             ->where([
                 'cash_flow' => 'out',
                 'is_cancel' => '0',
                 'is_tax' => '0',
                 'is_adjustment' => '0',
+                'is_refund' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
-
+            $settle__adjustment_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '1',
+                'is_refund' => '0',
+            ])
+            ->whereIn('patient_id', $patient_ids)
+            ->groupBy('patient_id')
+            ->pluck('settle_amount', 'patient_id');
+            $refunded_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS refunded_amount'))
+            ->where([
+                'cash_flow' => 'out',
+                'is_cancel' => '0',
+                'is_tax' => '0',
+                'is_adjustment' => '0',
+                'is_refund' => '1',
+            ])
+            ->whereIn('patient_id', $patient_ids)
+            ->groupBy('patient_id')
+            ->pluck('refunded_amount', 'patient_id');
         $settle_tax_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
                 'cash_flow' => 'out',
@@ -431,19 +635,23 @@ class PatientFollowupController extends Controller
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
+
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
-            ->take(2000)
             ->get();
-        $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts) {
+        $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts,$cash_setteled_amounts,$refunded_amounts,$settle__adjustment_amounts) {
             $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
             $item->settle_amount = $settle_amounts[$item->patient_id] ?? null;
             $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
+            $item->cash_setteled_amounts = $cash_setteled_amounts[$item->patient_id] ?? null;
+            $item->refunded_amount = $refunded_amounts[$item->patient_id] ?? null;
+            $item->settle__adjustment_amounts = $settle__adjustment_amounts[$item->patient_id] ?? null;
             return $item;
         });
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
         foreach ($plans_check as $data) {
+           
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
@@ -453,25 +661,29 @@ class PatientFollowupController extends Controller
                 ->get();
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
             $data['patient_id'] = $patient->id;
-            $data['name'] = $patient->name;
+            $data['name'] = Str::limit($patient->name,16,$end="...");
             $data['phone'] = $patient->phone;
-            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
-
+            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'] + $data['refunded_amount'] + $data['settle__adjustment_amounts'];
+           
             if (count($treatments) > 0) {
+                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
-                if ($check_treatments->base_appointment_status_id == 2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
+                    if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
                         $data['is_treatment'] = 1;
+                        $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
                     }
                 }
             }
-           
+
         }
-       
+        usort($patient_data, function ($a, $b) {
+            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
+        });
         return ApiHelper::apiResponse($this->success, 'patient data', true, [
-            'patient_data' => array_slice($patient_data, 0, 15)
+            'patient_data' => $patient_data
         ]);
     }
 }
