@@ -210,7 +210,7 @@
                         <td>PKR: {{number_format( $t_bank,2)}}</td>
                     </tr>
                     <tr>
-                        <th>Total Revenue</th>
+                        <th>Total Sales</th>
                         <td>PKR: {{number_format($total_revenue,2)}}</td>
                     </tr>
                     <tr>
