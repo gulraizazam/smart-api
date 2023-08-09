@@ -133,9 +133,9 @@
                     <thead>
                     <th>Patient Name</th>
                     <th>Transaction type</th>
-                    <th>Revenue Cash In</th>
-                    <th>Revenue Card In</th>
-                    <th>Revenue Bank/Wire In</th>
+                    <th>Cash</th>
+                    <th>Card</th>
+                    <th>Bank/Wire Transfer</th>
                     <th>Refund/Out</th>
                     <th>Cash In Hand</th>
                     <th>Created At</th>
