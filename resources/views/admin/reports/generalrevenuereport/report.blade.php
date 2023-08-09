@@ -111,16 +111,14 @@
                     <tbody>
                     @if($report_data)
                         @foreach($report_data as $reportlocation)
-                            <tr>
-                                <td>{{$reportlocation['name']}}</td>
-                                <td>{{$reportlocation['city']}}</td>
-                                <td>{{$reportlocation['region']}}</td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
+                        <tr style="background:#364150;color: #fff;">
+                                <td style="color: #fff;">{{$reportlocation['name']}}</td>
+                                <td style="color: #fff;">{{$reportlocation['city']}}</td>
+                                <td style="color: #fff;">{{$reportlocation['region']}}</td>
+                                <td style="color: #fff;"></td>
+                                <td style="color: #fff;"></td>
+                                <td style="color: #fff;"></td>
+                            
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
