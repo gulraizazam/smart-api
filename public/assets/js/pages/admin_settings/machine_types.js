@@ -199,7 +199,7 @@ function setFilters(filter_values, active_filters) {
     let status = filter_values.status;
     let status_options = '<option value="">All</option>';
     let services = filter_values.services;
-    let services_options = '<option value="">Select</option>';
+    let services_options = '<option value="">All Services</option>';
 
     Object.entries(status).forEach(function (value, index) {
         status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
