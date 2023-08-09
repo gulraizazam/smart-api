@@ -216,7 +216,7 @@
                     </tr>
                     <tr>
                         <th>Refund</th>
-                        <td>{{number_format($total_refund,2)}}</td>
+                        <td>{{number_format($refund_out,2)}}</td>
                     </tr>
                     
                 </table>

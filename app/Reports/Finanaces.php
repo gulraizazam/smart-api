@@ -1243,7 +1243,7 @@ class Finanaces
                                 'refund_cash_in' => $refund_cash_in,
                                 'refund_card_in' =>  $refund_card_in,
                                 'refund_bank_in' =>$refund_bank_in,
-                                'refund_out' => $refund_out,
+                                'refund_out' => $refund_cash_in +$refund_card_in+ $refund_bank_in,
                                 'Balance' => $balance,
                                 'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A'),
                             ];
