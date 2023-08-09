@@ -452,8 +452,14 @@ $(document).ready(function () {
                                         $("#treatment-invoice-create").remove();
                                         window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
                                     } else {
-                                        $('#wrongMessage').show();
-                                        toastr.error(" Something Went Wrong!")
+                                        if(resposne.data.setteled==1){
+                                            
+                                            $('#setteledMessage').show();
+                                        }else{
+                                            $('#wrongMessage').show();
+                                            toastr.error(" Something Went Wrong!")
+                                        }
+                                       
                                     }
         
                                     hideSpinner();

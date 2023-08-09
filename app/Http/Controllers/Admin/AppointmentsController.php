@@ -3777,12 +3777,11 @@ class AppointmentsController extends Controller
                 $packages = DB::table('packages')
                     ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
                     ->where([
-                        ['packages.is_refund', '=', '0'],
-                        ['packages.active', '=', '1'],
-                        ['packages.patient_id', '=', $appointment->patient_id],
-                        ['package_services.service_id', '=', $appointment->service_id],
-                        ['package_services.is_consumed', '=', '0'],
-                        ['packages.location_id', '=', $appointment->location_id],
+                        'packages.active' => '1',
+                        'packages.patient_id' =>  $appointment->patient_id,
+                        'package_services.service_id' => $appointment->service_id,
+                        'package_services.is_consumed' => '0',
+                        'packages.location_id' => $appointment->location_id,
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
                 $status = 'true';
                 if (count($packages) <= 0) {
@@ -4030,6 +4029,15 @@ class AppointmentsController extends Controller
 
     public function saveinvoice(Request $request)
     {
+        $check_is_setteled = PackageAdvances::where([
+            ['cash_flow', '=', 'out'],
+            ['cash_amount', '>', 0],
+            ['is_setteled', '=', '1'],
+            ['package_id', '=', $request->package_id],
+        ])->first();
+        if($check_is_setteled){
+            return ApiHelper::apiResponse($this->success, 'Plan related to this treatment is settled. you can not consume further treatment of this plan.', false,['setteled'=>1]);
+        }
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
