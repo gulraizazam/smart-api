@@ -107,7 +107,7 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function map($lead): array
     {
-        dd($lead);
+       
         if (! Gate::allows('contact')) {
             $phone = '***********';
         } else {
