@@ -185,6 +185,7 @@
                                 $total_revenue_card_location = 0;
                                 $total_revenue_bank_location = 0;
                                 $total_refund_location = 0;
+                                $t_revenue = $t_cash + $t_card + $t_bank;
                             @endphp
 
                         @endforeach
