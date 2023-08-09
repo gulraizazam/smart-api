@@ -162,8 +162,7 @@ function applyFilters(datatable) {
             address: $("#search_address").val(),
             city_id: $("#search_city").val(),
             region_id: $("#search_region").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             status: $("#search_status").val(),
             filter: 'filter',
         }
@@ -184,8 +183,7 @@ function resetAllFilters(datatable) {
             address: '',
             city_id: '',
             region_id: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             status: '',
             filter: 'filter_cancel',
         }
@@ -233,8 +231,7 @@ function setFilters(filter_values, active_filters) {
     $("#search_fdo_name").val(active_filters.fdo_name);
     $("#search_fdo_phone").val(active_filters.fdo_phone);
     $("#search_address").val(active_filters.address);
-    $("#search_created_from").val(active_filters.created_from);
-    $("#search_created_to").val(active_filters.created_to);
+    $("#date_range").val(active_filters.created_at);
 
     $("#search_status").val(active_filters.status);
     $("#search_city").val(active_filters.city_id);
@@ -317,3 +314,7 @@ function hideShowAdvanceFilters(active_filters) {
         $(".advance-arrow").addClass("fa fa-caret-down");
     }
 }
+
+jQuery(document).ready( function () {
+    $("#date_range").val("");
+})

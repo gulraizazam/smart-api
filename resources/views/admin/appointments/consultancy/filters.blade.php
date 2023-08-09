@@ -14,7 +14,7 @@
 
         <div class="col-lg-6 mb-lg-0 mb-6">
             <label>Doctor:</label>
-            <select onchange="ConsultancyDoctorListener($(this).val());" class="form-control select2" id="consultancy_doctor_filter"></select>
+            <select onchange="ConsultancyDoctorListener($(this).val());" class="form-control select2" id="consultancy_doctor_filter" disabled></select>
         </div>
 
     </div>

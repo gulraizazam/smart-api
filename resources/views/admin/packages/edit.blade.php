@@ -47,6 +47,14 @@
             <button class="close" data-close="alert"></button>
             Unable to enter same service with different price.
         </div>
+        <div id="casesetteled" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Plan is already settled. you can not add further treatment in this plan.please create another plan.
+        </div>
+        <div id="casesetteledamount" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            Plan is already settled. you can not receive further amount against this plan.
+        </div>
         <div id="edit_datanotexist" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
             That center not have any service.

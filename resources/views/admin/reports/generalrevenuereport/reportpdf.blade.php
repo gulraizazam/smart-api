@@ -72,7 +72,7 @@
                 <table style="float: right;">
                     <tr>
                         <td style="width: 70px;">Name</td>
-                        <td>General Revenue Detail Report</td>
+                        <td>Sales Detail Report</td>
                     </tr>
                     <tr>
                         <td style="width: 70px;">Duration</td>
@@ -100,9 +100,9 @@
             <th>ID</th>
             <th>Patient Name</th>
             <th>Transaction type</th>
-            <th>Revenue Cash In</th>
-            <th>Revenue Card In</th>
-            <th>Revenue Bank/Wire In</th>
+            <th>Cash</th>
+            <th>Card</th>
+            <th>Bank/Wire Transfer</th>
             <th>Refund/Out</th>
             <th>Created At</th>
         </tr>
@@ -184,15 +184,15 @@
             <td></td>
         </tr>
         <tr style="font-weight: bold">
-            <td>Revenue Cash In</td>
+            <td>Cash </td>
             <td>{{number_format($total_revenue_cash_in,2)}}</td>
         </tr>
         <tr style="font-weight: bold">
-            <td>Revenue Card In</td>
+            <td>Card</td>
             <td>{{number_format($total_revenue_card_in,2)}}</td>
         </tr>
         <tr style="font-weight: bold">
-            <th>Revenue Bank/Wire In</th>
+            <th>Bank/Wire Transfer</th>
             <td>{{number_format($total_revenue_bank_in,2)}}</td>
         </tr>
         <tr>

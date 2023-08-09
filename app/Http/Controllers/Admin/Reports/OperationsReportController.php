@@ -1804,19 +1804,15 @@ class OperationsReportController extends Controller
                 $request->service_id,
             ];
         }
-        $patients = DB::table('users')
-            ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*', 'appointments.doctor_id', 'appointments.location_id', 'appointments.service_id', 'appointments.scheduled_date', 'appointments.id as apt_id')
-            ->join('appointments', 'appointments.patient_id', '=', 'users.id')
-            ->leftJoin('package_advances', function ($join) {
-                $join->on('package_advances.patient_id', '=', 'users.id');
-                $join->where('package_advances.cash_flow', '=', 'in');
-            })
-            ->where($where)
-            ->groupBy('users.id')
-            ->havingRaw('cash_amount_test < 1')
-            ->orderBy('appointments.scheduled_date', 'desc')
-            ->get();
-        if ($request->date_to && $request->date_from) {
+        if (isset($request->date_range) && $request->date_range) {
+            $date_range = explode(' - ', $request->date_range);
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
+        if (isset($request->date_range) && $request->date_range) {
             $patients = DB::table('users')
                 ->select(DB::raw('SUM(package_advances.cash_amount) as cash_amount_test'), 'users.*', 'appointments.doctor_id', 'appointments.location_id', 'appointments.service_id', 'appointments.scheduled_date', 'appointments.id as apt_id')
                 ->join('appointments', 'appointments.patient_id', '=', 'users.id')
@@ -1825,8 +1821,7 @@ class OperationsReportController extends Controller
                     $join->where('package_advances.cash_flow', '=', 'in');
                 })
                 ->where($where)
-                ->where('appointments.scheduled_date', '>=', $request->date_from.' 00:00:00')
-                ->where('appointments.scheduled_date', '<=', $request->date_to.' 23:59:59')
+                ->whereBetween('appointments.scheduled_date', [$start_date, $end_date])
                 ->groupBy('users.id')
                 ->havingRaw('cash_amount_test < 1')
                 ->orderBy('appointments.scheduled_date', 'desc')

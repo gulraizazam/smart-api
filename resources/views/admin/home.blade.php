@@ -221,15 +221,15 @@
                             </div>
                         </div>
                         @endif
-                        @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                        @if (\Illuminate\Support\Facades\Gate::allows('dashboard_unattended_report'))
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="unattended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;overflow-y: auto;">
+                                style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
                                     <div class="card-body p-0">
                                     <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Follow Up Report</span>
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
+                                        <span class="dashboard-counter text-uppercase">Unattended Payments</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
@@ -251,20 +251,26 @@
                                         </ul>
                                         
                                     </div>
-                                        <div class="card-spacer2">
+                                        <div class="card-spacer2 table_v_scroll" >
                                             <div class='table-responsive'>
                                                 <table class="table">
+                                                
                                                     <thead>
                                                         <tr>
                                                             <th class='table-cols'>ID</th>
                                                             <th class='table-cols'>Name</th>
                                                             <th class='table-cols'>Treatment</th>
                                                             <th class='table-cols'>Balance</th>
-                                                            <th class='table-cols'>Con. Date</th>
+                                                            <th class='table-cols'>Conversion Date</th>
                                                         </tr>
                                                     </thead>
-                                                    <tbody id="patient-follow-up"></tbody>
+                                                    
+                                                    <tbody id="patient-follow-up">
+                                                   
+                                                    </tbody>
+                                                    
                                                 </table>
+                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended" >
                                             </div>
                                         </div>
                                         
@@ -338,15 +344,15 @@
                             </div>
                         </div>
                     @endif
-                    @if (\Illuminate\Support\Facades\Gate::allows('follow_up_manage'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                    @if (\Illuminate\Support\Facades\Gate::allows('dashboard_overdue_treatments'))
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="attended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                            style="min-height: 605px;overflow-y: auto;">
+                            style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
                                     <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                        <span class="dashboard-counter text-uppercase">Follow Up Report One Month</span>
+                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
+                                        <span class="dashboard-counter text-uppercase">Overdue Treatments</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
@@ -368,7 +374,7 @@
                                         </ul>
                                         
                                     </div>
-                                        <div class="card-spacer2">
+                                        <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
                                                 <table class="table">
                                                     <thead>
@@ -376,11 +382,12 @@
                                                             <th class='table-cols'>ID</th>
                                                             <th class='table-cols'>Name</th>
                                                             <th class='table-cols'>Balance</th>
-                                                            <th class='table-cols'>Con. Date</th>
+                                                            <th class='table-cols'>Last Arrived</th>
                                                         </tr>
                                                     </thead>
                                                     <tbody id="patient-follow-up-one-month"></tbody>
                                                 </table>
+                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                             </div>
                                         </div>
                                        
@@ -660,7 +667,7 @@
                                                     @if (Auth::user()->hasRole('Administrator') ||
                                                             Auth::user()->hasRole('Super-Admin') ||
                                                             Auth::user()->hasRole('Head of Operations') ||
-                                                            Auth::user()->hasRole('Finance'))
+                                                            Auth::user()->hasRole('Finance') ||  Auth::user()->hasRole('HRM'))
                                                         @php
                                                             $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
                                                             $locations = \App\Helpers\ACL::getUserCentres();
@@ -945,7 +952,7 @@
                                                             aria-expanded="false" id="all_docs"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right" id="doc_nav">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_nav">
 
                                                         </ul>
                                                     </div>
@@ -1075,7 +1082,7 @@
                         $("#activitydiv").html(response);
                     },
                 });
-
+                
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
@@ -1090,6 +1097,7 @@
                         Auth::user()->hasRole('Head of Operations') ||
                         Auth::user()->hasRole('Finance'))
                     GetAllDoctors(centre_id);
+               
                 @else
                     $('.loader-imgs').css('display', "none");
                     GetDoctors(centre_id, 'firsttime');
@@ -1130,6 +1138,7 @@
                         'centre_id': centre_id
                     },
                     success: function(response) {
+                        
                         $('.loader-imgs').css('display', "none");
                         var categories = response.data.categories
 
@@ -1148,7 +1157,7 @@
                         });
                         TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" +
                             converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) +
-                            "%</td><td>" + ((avg_sum / categories.length)).toFixed(2) + "</td></tr>";
+                            "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
 
                         jQuery('#categories-table-body').append(TABLE_HTML);
                         AllDoctorWiseConversion(response);
@@ -1202,7 +1211,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.14) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.10) && !
                     revenue_by_center) {
                     revenue_by_center = true;
                     $.ajax({
@@ -1221,7 +1230,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.32) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.15) && !
                     revenue_by_service) {
                     revenue_by_service = true;
                     $.ajax({
@@ -1255,7 +1264,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.32) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.20) && !
                     revenue_by_service_category) {
                     revenue_by_service_category = true;
                     $.ajax({
@@ -1289,7 +1298,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.33) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.24) && !
                     collection_by_service_category) {
                     collection_by_service_category = true;
                     $.ajax({
@@ -1325,7 +1334,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.50) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
                     consultancy_by_status) {
                     consultancy_by_status = true;
                     $.ajax({
@@ -1361,7 +1370,7 @@
                         }
                     });
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.50) && !
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
                     treatment_by_status) {
                     treatment_by_status = true;
                     $.ajax({
