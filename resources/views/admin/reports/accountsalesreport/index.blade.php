@@ -62,7 +62,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">General Revenue Reports</h3>
+                            <h3 class="card-label">General Sales Reports</h3>
                         </div>
 
                     </div>
@@ -104,7 +104,7 @@
                                                     @endif--}}
 
                                                     @if(Gate::allows('finance_general_revenue_reports_collection_by_service'))
-                                                        <option value="collection_by_service">Collection by Service</option> {{--Ok--}}
+                                                        <option value="collection_by_service">Sales by Service</option> {{--Ok--}}
                                                     @endif
 
                                                    {{-- @if(Gate::allows('finance_general_revenue_reports_daily_employee_stats_summary'))
@@ -120,10 +120,10 @@
                                                         <option value="discount_report">Discount Report</option>
                                                     @endif--}}
                                                     @if(Gate::allows('finance_general_revenue_reports_general_revenue__detail_report'))
-                                                        <option value="general_revenue_report_detail">General Revenue Detail Report</option>
+                                                        <option value="general_revenue_report_detail">Sales Detail Report</option>
                                                     @endif
                                                     @if(Gate::allows('finance_general_revenue_reports_general_revenue__summary_report'))
-                                                        <option value="general_revenue_report_summary">General Revenue Summary Report</option>
+                                                        <option value="general_revenue_report_summary">Sales Summary Report</option>
                                                     @endif
                                                    {{-- @if(Gate::allows('finance_general_revenue_reports_pabau_record_revenue_report'))
                                                         <option value="pabau_record_revenue_report">Pabau Record Revenue Report</option>
@@ -303,8 +303,8 @@
                     'This Year'  : [moment().startOf('year'), moment().endOf('year')],
                     'Last Year'  : [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
                 },
-                startDate: moment().subtract(29, 'days'),
-                endDate  : moment()
+                startDate: moment().startOf('month'),
+                endDate  :  moment().endOf('month')
             });
 
             var loadReport = function (that) {

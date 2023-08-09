@@ -1183,7 +1183,7 @@ class FinanceReportController extends Controller
      */
     public function generalrevenuereportdetail(Request $request)
     {
-        //$request->location_id_com
+       
 
         if (is_array($request->location_id_com) && count($request->location_id_com) > 1) {
             $location[] = implode(',', $request->location_id_com);
@@ -1203,14 +1203,14 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        //$report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
+    
 
         if ($request->medium_type == 'web' && $location && count($location) > 0) {
-
+            
             $report_data = Finanaces::generalrevenuereportdetail($request->all(), Auth::User()->account_id);
 
         } elseif ($request->medium_type != 'web' && $location) {
-
+           
             $location_id_com = Explode_Multi_select::explode($location);
             $request->merge([
                 'location_id_com' => $location_id_com,
@@ -1229,6 +1229,7 @@ class FinanceReportController extends Controller
 
         if ($report_data) {
             foreach ($report_data as $reportrevenue) {
+                
                 foreach ($reportrevenue['revenue_data'] as $revenue_data) {
                     if ($revenue_data['revenue_cash_in']) {
                         $total_revenue_cash_in += $revenue_data['revenue_cash_in'];
