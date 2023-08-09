@@ -316,12 +316,12 @@ var table_columns = [
         width: 50,
     }, {
         field: 'cash_receive',
-        title: 'Cash In',
+        title: 'Received',
         sortable: false,
         width: 50,
     }, {
         field: 'settle_amount',
-        title: 'Settle Amount',
+        title: 'Settled',
         sortable: false,
         width: 60,
     }, {
