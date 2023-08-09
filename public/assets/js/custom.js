@@ -75,8 +75,8 @@ $(document).ready(function () {
             'This Year': [moment().startOf('year'), moment().endOf('year')],
             'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
         },
-        startDate: moment().subtract(29, 'days'),
-        endDate: moment()
+        startDate: moment().startOf('month'),
+        endDate: moment().endOf('month')
     }).val();
 
     /*for percentage amount*/
@@ -1444,8 +1444,8 @@ function dateRangePicker($this) {
             'This Year': [moment().startOf('year'), moment().endOf('year')],
             'Last Year': [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
         },
-        startDate: moment().subtract(29, 'days'),
-        endDate: moment()
+        startDate: moment().startOf('month'),
+        endDate: moment().endOf('month')
     });
 }
 
