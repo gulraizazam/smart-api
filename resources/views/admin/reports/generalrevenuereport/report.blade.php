@@ -210,24 +210,24 @@
                         <td>PKR: {{number_format( $t_bank,2)}}</td>
                     </tr>
                     <tr>
-                        <th>Total Revenue</th>
+                        <th>Total Sales</th>
                         <td>PKR: {{number_format($total_revenue,2)}}</td>
                     </tr>
                     <tr>
                         <th>Refund Out <br>
-                        <table class="table table-sm border" style="max-width: 350px; margin:14px 0px 10px;">
+                        <table class="table table-sm border" style="max-width: 350px; margin:14px auto 10px;">
                             <tbody>
                                 <tr>
-                                    <th class="pl-3">Cash</th>
-                                    <td style="font-weight:400;">PKR: {{$total_refund_cash_location}}</td>
+                                    <th class="pl-3" style="color: #8b8b8b;">Cash</th>
+                                    <td style="font-weight:400;color: #8b8b8b;">PKR: {{$total_refund_cash_location}}</td>
                                 </tr>
                                 <tr>
-                                    <th class="pl-3">Card</th>
-                                    <td style="font-weight:400;">PKR: {{$total_refund_card_location}}</td>
+                                    <th class="pl-3" style="color: #8b8b8b;">Card</th>
+                                    <td style="font-weight:400;color: #8b8b8b;">PKR: {{$total_refund_card_location}}</td>
                                 </tr>
                                 <tr>
-                                    <th class="pl-3">Bank/Wire Transfer</th>
-                                    <td style="font-weight:400;">PKR: {{$total_refund_bank_location}}</td>
+                                    <th class="pl-3" style="color: #8b8b8b;">Bank/Wire Transfer</th>
+                                    <td style="font-weight:400;color: #8b8b8b;">PKR: {{$total_refund_bank_location}}</td>
                                 </tr>
                             </tbody>
                         </table>
