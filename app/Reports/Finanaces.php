@@ -1229,6 +1229,7 @@ class Finanaces
                                 $refund_bank_in = '';
                                 $refund_out = $packagesadvance->cash_amount;
                             }
+                           dd( $refund_cash_in , $refund_card_in,$refund_bank_in);
                             $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
                                 'patient_id' => $packagesadvance->patient_id,
                                 'patient' => $packagesadvance->user->name,
