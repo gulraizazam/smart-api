@@ -10,7 +10,7 @@ let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 $('#created_at').datepicker({
     todayHighlight: true,
     orientation: 'bottom',
-    endDate: new Date(),  
+    endDate: new Date(),
     format: 'yyyy-mm-dd',
     templates: {
         leftArrow: '<i class="la la-angle-left"></i>',
@@ -43,9 +43,9 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     });
-    
-    
-    
+
+
+
     customDatePicker();
 
     $('.current-datepicker').datepicker({
@@ -585,7 +585,8 @@ function reInitTable(page = null) {
                 machineTypesFilters();
             }
         } else {
-            $('#kt_datatable').KTDatatable('reload');
+            datatable.reload();
+            /* $('#kt_datatable').KTDatatable('reload'); */
         }
 
     }, 400);
