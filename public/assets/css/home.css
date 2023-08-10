@@ -5,11 +5,13 @@
     display: inline-block;
     border: 0;
 }
+
 .nav:before {
     content: " ";
     display: table;
 }
-.loader-img{
+
+.loader-img {
     height: 60px;
     margin-top: 106px;
     margin-left: 244px;
@@ -33,6 +35,7 @@
     display: block;
     position: relative;
 }
+
 .nav-tabs>li>a {
     margin: 0;
     padding: 12px 13px 13px;
@@ -42,18 +45,21 @@
     background: 0 0;
 
 }
+
 .nav-tabs>li a.active {
     background: 0 0;
     border-bottom: 4px solid #35a1d4;
     position: relative;
 }
+
 .hover-effect {
     border-color: #3598dc !important;
     color: #FFF !important;
     background-color: #3598dc !important;
-    border-radius: 25px!important;
+    border-radius: 25px !important;
     overflow: hidden;
 }
+
 .dropdown-menu {
     box-shadow: 5px 5px rgb(102 102 102 / 10%);
     left: 0;
@@ -75,15 +81,21 @@
     -o-border-radius: 4px;
     border-radius: 4px;
 }
-.btn-group>.dropdown-menu,.dropdown-toggle>.dropdown-menu, .dropdown>.dropdown-menu{
+
+.btn-group>.dropdown-menu,
+.dropdown-toggle>.dropdown-menu,
+.dropdown>.dropdown-menu {
     margin-top: 10px;
 }
-.btn-group>.dropdown-menu:before, .dropdown-toggle>.dropdown-menu:before, .dropdown>.dropdown-menu:before {
+
+.btn-group>.dropdown-menu:before,
+.dropdown-toggle>.dropdown-menu:before,
+.dropdown>.dropdown-menu:before {
     position: absolute;
     top: -8px;
     left: 9px;
     right: auto;
-    display: inline-block!important;
+    display: inline-block !important;
     border-right: 8px solid transparent;
     border-bottom: 8px solid #e0e0e0;
     border-left: 8px solid transparent;
@@ -91,10 +103,14 @@
     right: auto;
     left: 9px;
 }
-.btn-group>.dropdown-menu.dropdown-menu-right:before, .dropdown-toggle>.dropdown-menu.dropdown-menu-right:before, .dropdown>.dropdown-menu.dropdown-menu-right:before{
+
+.btn-group>.dropdown-menu.dropdown-menu-right:before,
+.dropdown-toggle>.dropdown-menu.dropdown-menu-right:before,
+.dropdown>.dropdown-menu.dropdown-menu-right:before {
     left: auto;
     right: 9px;
 }
+
 .dropdown-menu>li>a {
     padding: 8px 16px;
     color: #6f6f6f;
@@ -105,68 +121,85 @@
     line-height: 18px;
     white-space: nowrap;
 }
-.centre-name{
+
+.centre-name {
     font-size: 14px;
     color: #3598dc;
 }
-.table-cols{
+
+.table-cols {
     font-size: 12px;
 }
 
-.wise_arrival_ul .dropdown-menu li a{
-    cursor:pointer;
+.wise_arrival_ul .dropdown-menu li a {
+    cursor: pointer;
 }
-.wise_arrival_ul .dropdown-menu li a:hover{
-    background:#f3f3f3;
+
+.wise_arrival_ul .dropdown-menu li a:hover {
+    background: #f3f3f3;
 }
-.appenddoctorlist .nav.nav-pills.nav-fill .nav-item{ 
-justify-content: center;
-flex: none;
+
+.dropdown-menu li a {
+    cursor: pointer;
 }
-.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a{
--webkit-box-pack: flex-start;
--ms-flex-pack: flex-start;
-justify-content: flex-start;
-padding: 5px 10px;
-text-align: left;
+
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item {
+    justify-content: center;
+    flex: none;
 }
-.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a.active{
-color: #3699FF;
-background-color: transparent;
-position: relative;
-display: flex;
-justify-content: center;
+
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a {
+    -webkit-box-pack: flex-start;
+    -ms-flex-pack: flex-start;
+    justify-content: flex-start;
+    padding: 5px 10px;
+    text-align: left;
 }
-.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a.active::before{
-content: "";
-position: absolute;
-bottom: 3px;
-width: 70%;
-height: 2px;
-background: #3699FF;
+
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a.active {
+    color: #3699FF;
+    background-color: transparent;
+    position: relative;
+    display: flex;
+    justify-content: center;
 }
-.btn.btndropdown{
+
+.appenddoctorlist .nav.nav-pills.nav-fill .nav-item a.active::before {
+    content: "";
+    position: absolute;
+    bottom: 3px;
+    width: 70%;
+    height: 2px;
+    background: #3699FF;
+}
+
+.btn.btndropdown {
     padding-right: 2rem;
     display: flex;
     align-items: center;
 }
-.btn.btndropdown i{
+
+.btn.btndropdown i {
     position: absolute;
     right: 5px;
     color: #000;
 }
+
 a.btn.form-control.btndropdown.btn_Report {
     border: 1px solid #E4E6EF;
     border-radius: 2px;
 }
-.custom_hover_effect li a{
+
+.custom_hover_effect li a {
     transition: all ease .3s;
 }
-.custom_hover_effect li a.active{
+
+.custom_hover_effect li a.active {
     border-bottom: 0px;
     background: #eef0f8;
 }
-.custom_hover_effect li a:hover{
+
+.custom_hover_effect li a:hover {
     background: #eef0f8;
 }
 img.loader-imgs {

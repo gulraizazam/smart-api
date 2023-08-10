@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Plans')
 @section('content')
 <style>
     .form-control:disabled, .form-control[readonly] {
@@ -130,8 +130,19 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_edit_refunds" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="refunds_edit">
+
+            @include('admin.refunds.refund')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
     @push('js')
         <script src="{{asset('assets/js/pages/admin_settings/create-plan.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js')}}"></script>
 
         <script>
             function getUserCentre() {

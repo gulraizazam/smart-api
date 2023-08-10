@@ -109,7 +109,7 @@ Route::get('/update_apt', function () {
     }
 });
 Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
-    
+
 // Check Session
 Route::get('check-session', [App\Http\Controllers\Auth\LoginController::class, 'checkSession'])->name('check_session');
 
@@ -232,6 +232,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     // Refund Route
     Route::resource('refunds', RefundsController::class)->only('index');
+    Route::post('refunds/getplans', [PackagesController::class, 'getPlans'])->name('refunds.getplans');
+    Route::get('refunds/edit/{id}', [PackagesController::class, 'editRefund'])->name('refunds.edit');
+    Route::post('refunds/update', [PackagesController::class, 'updateRefund'])->name('refunds.update');
     //Refunds route end
 
     //Discount route Start
@@ -313,7 +316,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
     Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
 
-    Route::resource('leads', LeadsController::class)->only('index')->middleware('permission:leads_manage');
+    Route::resource('leads', LeadsController::class)->only('index');
     Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
     // Load and Save Lead Statuses
     Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
@@ -526,9 +529,10 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
     Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
+    Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
     Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
     Route::post('reports/account_sales_report_load', [FinanceReportController::class, 'reportLoad'])->name('reports.account_sales_report_load');
-
+    Route::post('reports/account_revenue_report_load', [FinanceReportController::class, 'revenueReportLoad'])->name('reports.account_revenue_report_load');
     Route::post('appointmentreports/appointments-general-load', [ReportAppointmentsController::class, 'reportLoad'])->name('reports.appointments_general_load');
 
     //Route start for Operations reports

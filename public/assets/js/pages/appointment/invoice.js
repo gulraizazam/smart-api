@@ -164,7 +164,20 @@ $(document).ready(function () {
         $('#customfield').hide();
 
         var status = true;
-
+        var numbers = /^[-+]?[0-9]+$/;
+        if ($('#cash').val() == "" && $('#cash').val().match(numbers) == null) {
+            toastr.warning("Amount field can not be empty")
+            status = false;
+            $(this).attr("disabled", false);
+            hideSpinner();
+            return;
+        } else if($('#cash').val() < 0){
+            toastr.warning("Amount can not be negative value")
+            status = false;
+            $(this).attr("disabled", false);
+            hideSpinner();
+            return;
+        }
         var appointment_id = $('#invoice_appointment_id').val();
         var amount_create = $('.amount').val();
         var tax_create = $('.tax').val();
@@ -213,6 +226,7 @@ $(document).ready(function () {
             } else {
                 $('#definefield').hide();
                 status = true;
+
             }
         }
 
@@ -385,7 +399,7 @@ $(document).ready(function () {
         var tax_treatment_type_id = $('#tax_treatment_type_id').val();
         var  remaining = $('#remaining').val();
         var status_checked_treatment = true;
-        
+
         if(checked_treatment == 0){
             var exclusive_or_bundle = $('#checked_bundle_id').val();
             if(exclusive_or_bundle == 0){
@@ -446,17 +460,23 @@ $(document).ready(function () {
                                         $("#treatment-invoice-create").remove();
                                         window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
                                     } else {
-                                        $('#wrongMessage').show();
-                                        toastr.error(" Something Went Wrong!")
+                                        if(resposne.data.setteled==1){
+
+                                            $('#setteledMessage').show();
+                                        }else{
+                                            $('#wrongMessage').show();
+                                            toastr.error(" Something Went Wrong!")
+                                        }
+
                                     }
-        
+
                                     hideSpinner();
                                 }
                             });
                         }
-                        
+
                     }
-                    
+
                 } else {
                     hideSpinner();
                     toastr.error("Request is not valid");

@@ -1082,7 +1082,7 @@
                         $("#activitydiv").html(response);
                     },
                 });
-
+                
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
@@ -1097,6 +1097,7 @@
                         Auth::user()->hasRole('Head of Operations') ||
                         Auth::user()->hasRole('Finance'))
                     GetAllDoctors(centre_id);
+               
                 @else
                     $('.loader-imgs').css('display', "none");
                     GetDoctors(centre_id, 'firsttime');

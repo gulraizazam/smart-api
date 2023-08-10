@@ -26,7 +26,7 @@ class ACL
     public static function getUserCentres()
     {
         if (Auth::user()->id == 1) {
-            $locations = Locations::whereActive(1)->get()->pluck('id');
+            $locations = Locations::whereActive(1)->where('name' ,'!=','All Centres')->get()->pluck('id');
         } else {
             if (Auth::user()->user_type_id == Config::get('constants.practitioner_id')) {
                 $locations = DoctorHasLocations::where('user_id', '=', Auth::user()->id)->groupBy('location_id')->get()->pluck('location_id');

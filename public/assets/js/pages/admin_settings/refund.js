@@ -321,3 +321,9 @@ function resetFilterOrder(){
     addUsers();
     removeProducts();
 }
+function addUserstest() {
+    $(".suggesstion-box").hide();
+    $('.patient_id').val(null).trigger('change');
+    $('.patient_search_id').val(null).trigger('change');
+    $('.search_field').val('').change();
+}

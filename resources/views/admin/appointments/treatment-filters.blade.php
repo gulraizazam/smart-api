@@ -35,7 +35,7 @@
 
         <div class="filterouterdiv  mb-6 position-relative">
             <label>Patient Search:</label>
-            <input class="form-control filter-field appointment_patient_id">
+            <input class="form-control filter-field appointment_patient_id"  placeholder="Patients Search">
             <input type="hidden" class="filter-field search_field" id="treatment_patient_id">
             <span onclick="addUsers()" class="croxcli" ><i class="fa fa-times" aria-hidden="true"></i></span>
             <div class="suggesstion-box" style="display: none;">
@@ -43,21 +43,6 @@
             </div>
 
         </div>
-
-        {{--<div class="col-lg-1  mb-6" id="patient_id">
-            <label style="width: 127%">ID:</label>
-            <input style="width: 127%" type="text" class="form-control filter-field " id="appoint_search_id" placeholder="Patient ID">
-        </div>
-
-        <div class="col-lg-2  mb-6">
-            <label>Patient:</label>
-            <input style="width: 70%;" type="text" class="form-control filter-field" id="appoint_search_patient" placeholder="Patient Name" onchange="SetPatient()">
-        </div>
-
-        <div class="col-lg-2  mb-6" style="margin-left: -6%;">
-            <label>Phone:</label>
-            <input style="width: 65%;" type="text" oninput="phoneField(this);" id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field">
-        </div>--}}
 
         <div class="filterouterdiv mb-6">
             <label>Scheduled:</label>
@@ -122,16 +107,10 @@
             <select class="form-control filter-field select2" id="treatment_search_created_by" onchange="SetCreated()">
             </select>
         </div>
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6">
-            <label>Created At:</label>
-            <div class="input-daterange input-group to-from-datepicker" >
-                <input type="text" id="treatment_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" onchange="SetAdvanceFromdate()">
-                <div class="input-group-append" style="width: 0;">
-                    <span class="input-group-text">
-                        <i class="la la-ellipsis-h"></i>
-                    </span>
-                </div>
-                <input type="text" id="treatment_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" onchange="SetAdvanceTodate()">
+        <div class="col-lg-3 mb-lg-0 mb-6 mt-6 @if($errors->has('date_range')) has-error @endif">
+            {!! Form::label('date_range', 'Created at:', ['class' => 'control-label']) !!}
+            <div class="input-group">
+                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off', 'placeholder' => 'Select Date Range']) !!}
             </div>
         </div>
         <div class="col-lg-2 mb-lg-0 mb-6 mt-6">

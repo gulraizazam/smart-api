@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Payment Modes')
 @section('content')
 
     <!--begin::Content-->

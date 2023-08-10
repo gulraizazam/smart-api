@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Appointment Statuses')
 @section('content')
 
     <!--begin::Content-->
