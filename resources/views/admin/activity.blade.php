@@ -30,7 +30,11 @@
                             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
                                 <span style="color: #056FBF;">{{$log['created_by'] ?? 'N/A'}}</span>
                                 {{$log['action']}} 
+                                @if($log['action'] == 'refunded')
+                                <strong >Rs. {{ round($log['amount'])}}</strong> to
+                                @else
                                     <strong >Rs. {{ round($log['amount'])}}</strong> from
+                                    @endif
                                 <span  style="color: #056FBF;"> {{$log['patient']}}</span> for
                                 <a href="{{route('admin.packages.index')}}"><span  style="color: #e55c00;">Plan ID: {{$log['planId']}}</span></a>
                                     at  {{$log['location']}} Centre.
