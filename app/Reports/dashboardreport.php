@@ -92,6 +92,9 @@ class dashboardreport
                         )||
                         ($packagesadvance->cash_flow == 'out' &&
                             $packagesadvance->is_refund == '1' &&
+                            $packagesadvance->is_adjustment == '0' &&
+                            $packagesadvance->is_tax == '0' &&
+                            $packagesadvance->is_cancel == '0' &&
                             $packagesadvance->is_tax == '0'
                         )
                         
