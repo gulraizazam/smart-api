@@ -185,7 +185,7 @@ class dashboardreport
                 ];
                 $total += $In_hand_balance;
             }
-            dd( $report_data );
+     
             $counter++;
         }
 
