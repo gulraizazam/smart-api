@@ -2716,22 +2716,38 @@ class DashboardReportsController extends Controller
 
                 $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
-
-                $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                if($request->doc_id){
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    ->whereIn('doctor_id', $consultant)
+                    ->whereIn('appointments.location_id', $locations)
+                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                    ->count();
+                }else{
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                     //->whereIn('doctor_id', $consultant)
                     ->whereIn('appointments.location_id', $locations)
                     ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                     ->count();
+                }
+               
             } else {
                 $name = [$arrive_category['name']][0];
                 $sum_conversion_total = 0;
                 $avg_valu = 0;
 
-                $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                if($request->doc_id){
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    ->whereIn('doctor_id', $consultant)
+                    ->whereIn('appointments.location_id', $locations)
+                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                    ->count();
+                }else{
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                     //->whereIn('doctor_id', $consultant)
                     ->whereIn('appointments.location_id', $locations)
                     ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                     ->count();
+                }
             }
 
             $returnCategoryData[$key] = [
