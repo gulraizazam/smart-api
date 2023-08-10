@@ -4023,6 +4023,11 @@ class AppointmentsController extends Controller
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
+        if (! Gate::allows('appointments_log_excel')) {
+            if ($appointmentinfo->scheduled_date < date('Y-m-d') || $appointmentinfo->scheduled_date > date('Y-m-d')) {
+                return response()->json(['message' => 'Invoice can not be generated in past and future dates.', 'status' => false]);
+            }
+        }
         if (isset($request->appointment_id_consultancy)) {
             // Now we need to work our tag appointment for upselling
             $tag_appoint = explode('.', $request->appointment_id_consultancy);
