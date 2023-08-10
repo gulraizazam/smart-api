@@ -84,10 +84,16 @@ class dashboardreport
                 foreach ($packagesadvances as $packagesadvance) {
 
                     if (
-                        $packagesadvance->cash_flow == 'in' &&
+                        ($packagesadvance->cash_flow == 'in' &&
                         $packagesadvance->is_adjustment == '0' &&
                         $packagesadvance->is_tax == '0' &&
-                        $packagesadvance->is_cancel == '0'
+                        $packagesadvance->is_cancel == '0') || 
+                        ($packagesadvance->cash_flow == 'out' &&
+                        $packagesadvance->is_adjustment == '0' &&
+                        $packagesadvance->is_tax == '0' &&
+                        $packagesadvance->is_cancel == '0' &&
+                        $packagesadvance->is_refund == 1
+                        )
                     ) {
                         switch ($packagesadvance->cash_flow) {
                             case 'in':
@@ -164,10 +170,14 @@ class dashboardreport
                             }
                         }
                     }
+                    
                 }
             }
+            
             $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
+          
             $In_hand_balance = $total_revenue - $total_refund_out;
+           
             if ($In_hand_balance > 0) {
                 $report_data[$location_infomation] = [
                     $location_single_info->city->name.' - '.$location_single_info->name,
@@ -175,6 +185,7 @@ class dashboardreport
                 ];
                 $total += $In_hand_balance;
             }
+     
             $counter++;
         }
 
@@ -420,10 +431,16 @@ class dashboardreport
                 $total_refund_out = 0;
                 foreach ($packagesadvances as $packagesadvance) {
                     if (
-                        $packagesadvance->cash_flow == 'in' &&
+                        ($packagesadvance->cash_flow == 'in' &&
                         $packagesadvance->is_adjustment == '0' &&
                         $packagesadvance->is_tax == '0' &&
-                        $packagesadvance->is_cancel == '0'
+                        $packagesadvance->is_cancel == '0') || 
+                        ($packagesadvance->cash_flow == 'out' &&
+                        $packagesadvance->is_adjustment == '0' &&
+                        $packagesadvance->is_tax == '0' &&
+                        $packagesadvance->is_cancel == '0' &&
+                        $packagesadvance->is_refund == 1
+                        )
                     ) {
                         switch ($packagesadvance->cash_flow) {
                             case 'in':

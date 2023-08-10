@@ -1,4 +1,5 @@
 @extends('admin.layouts.master')
+@section('title', 'Patients Follow Up Monthly Report')
 @section('content')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
@@ -41,7 +42,7 @@
                                         <input class="form-control filter-field appointment_patient_id" onchange="SetPatient()">
                                         <input type="hidden" class="filter-field search_field" id="appointment_patient_id" value="">
                                         <input type="hidden" class="filter-field search_field" id="patient_id" value="">
-                                        
+
                                         <div class="suggesstion-box" style="display: none;">
                                             <ul class="suggestion-list w-100"><li onclick="selectLead(`Gulraiz azam`, `116197`, `lead_search_id`, `1`);">Gulraiz azam - 116197</li></ul>
                                         </div>
@@ -69,7 +70,7 @@
                                                 <input type="text" id="followupmonth_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
                                             </div>
                                         </div>
-                                       
+
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                             <a href="javascript:void(0);" onclick="loadPatientFollowUpMonthReport($(this));" id="load_patient_foolow_up_monthly_report"

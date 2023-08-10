@@ -47,6 +47,14 @@
             <button class="close" data-close="alert"></button>
             Unable to enter same service with different price.
         </div>
+        <div id="casesetteled" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            This plan is settled out and cannot accommodate any additional treatments.
+        </div>
+        <div id="casesetteledamount" class="alert alert-danger display-hide" style="display: none;">
+            <button class="close" data-close="alert"></button>
+            This plan is settled out and cannot receive any further payments.
+        </div>
         <div id="edit_datanotexist" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
             That center not have any service.

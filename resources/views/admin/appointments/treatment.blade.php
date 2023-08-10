@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Treatments')
 @section('content')
 
     @push('css')
@@ -77,7 +77,7 @@
                                         <input type="hidden" id="filter_created_from_id" name="filter_created_from_id">
                                         <input type="hidden" id="filter_created_to_id" name="filter_created_to_id">
                                         <input type="hidden" id="filter_rescheduled_by_id" name="filter_rescheduled_by_id">
-                                        <a onclick="submitFilters()"  id="appointment_exports_submit" class="btn btn-primary font-weight-bolder">
+                                        <a id="appointment_exports_submit" class="btn btn-primary font-weight-bolder">
                                             <i class="la la-file-export"></i> Export
                                         </a>
                                     </form>
@@ -194,6 +194,10 @@
                     }, 1300);
                 }
             });
+            $(document).on('click', '#appointment_exports_submit', function(e){
+                e.preventDefault();
+                $("#filtersform").submit();
+            });
             let appointment_limit = '{{config('constants.export-appointment-limit')}}';
             var limit = '{{config('constants.export-appointment-limit')}}';
             var offset = 0;
@@ -214,10 +218,6 @@
             }
             function SetTodate(){
                 $("#filter_date_to").val($("#treatment_appoint_end").val());
-            }
-            function submitFilters()
-            {
-                $("#filtersform").submit();
             }
             function SetPhone()
              {
