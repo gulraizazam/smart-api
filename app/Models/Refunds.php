@@ -128,7 +128,20 @@ class Refunds extends Model
         $data['updated_at'] = $custom_created_at;
 
         $record = self::create($data);
-
+        $patient = User::whereId($packageinformation->patient_id)->first();
+        $location = Locations::whereId($packageinformation->location_id)->first();
+        $activity = new Activity();
+        $activity->timestamps = false;
+        $activity->action = 'refunded';
+        $activity->patient = $patient->name;
+        $activity->appointment_type = 'Plan';
+        $activity->created_by = Auth::user()->name;
+        $activity->planId =  $request->package_id;
+        $activity->amount = $request->refund_amount;
+        $activity->location = $location->name;
+        $activity->created_at = Filters::getCurrentTimeStamp();
+        $activity->updated_at = Filters::getCurrentTimeStamp();
+        $activity->save();
         // Here We sand the message of refund
         if ($record->cash_amount > 0) {
             Invoice_Plan_Refund_Sms_Functions::RefundCashReceived_SMS($record);
