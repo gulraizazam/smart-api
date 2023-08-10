@@ -1066,6 +1066,7 @@ class DashboardReportsController extends Controller
             $today_records = $today_records->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                 ->groupBy('location_id')
                 ->get();
+                
             $total = 0;
             $data[0] = [
                 'Task',
@@ -1087,7 +1088,10 @@ class DashboardReportsController extends Controller
                                     $location_detail->city->name . ' - ' . $location_detail->name,
                                     $todayRecord->total_price,
                                 ];
-                                $total += $todayRecord->total_price;
+                                
+                                $total += $todayRecord->total_price ;
+                               
+                                
                             }
                         }
                     }
@@ -2987,22 +2991,22 @@ class DashboardReportsController extends Controller
     }
     public function GetCentreDoctors(Request $request)
     {
-        if($request->centre_id == 'all'){
-            $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
-            ->join('users','resources.external_id','users.id')
-            ->select('users.name','users.id')
-            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 ])
-            ->distinct('user_id')
-            ->get();
-        }else{
-            $consultants = DB::table('resource_has_rota')->join('resources','resources.id','resource_has_rota.resource_id')
-            ->join('users','resources.external_id','users.id')
-            ->select('users.name','users.id')
-            ->where(['resource_has_rota.is_consultancy' => 1 , 'users.active' => 1 , 'resource_has_rota.location_id' => $request->centre_id])
-            ->distinct('user_id')
-            ->get();
+        if ($request->centre_id == 'all') {
+            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+                ->join('users', 'resources.external_id', 'users.id')
+                ->select('users.name', 'users.id')
+                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+                ->distinct('user_id')
+                ->get();
+        } else {
+            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+                ->join('users', 'resources.external_id', 'users.id')
+                ->select('users.name', 'users.id')
+                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1, 'resource_has_rota.location_id' => $request->centre_id])
+                ->distinct('user_id')
+                ->get();
         }
-       
+
         return response()->json(['status' => 1, 'doctors' => $consultants]);
     }
     public function FollowUpReport()
@@ -3011,7 +3015,7 @@ class DashboardReportsController extends Controller
         $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
         return view('admin.reports.followup', get_defined_vars());
     }
-    
+
     public function FollowUpReportMonthly()
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
@@ -3020,60 +3024,38 @@ class DashboardReportsController extends Controller
     }
     public function loadFollowupReport(Request $request)
     {
-        if($request->report_type=="monthly"){
+        if (isset($request->date_range) && $request->date_range) {
+            $date_range = explode(' - ', $request->date_range);
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
+        if ($request->report_type == "monthly") {
             $where = [];
-            if ($request->date_from) {
-                $where[] = [
-                    'appointments.scheduled_date',
-                    '>=',
-                    $request->date_from . ' 00:00:00',
-                ];
-            }
-            if ($request->date_to) {
-                $where[] = [
-                    'appointments.scheduled_date',
-                    '<=',
-                    $request->date_to . ' 23:59:00',
-                ];
+            if (isset($request->date_range) && $request->date_range) {
+                $where[] = ['appointments.scheduled_date', '>=', $start_date];
+                $where[] = ['appointments.scheduled_date', '<=', $end_date];
             }
             if ($request->patient_id) {
-                $where[] = [
-                    'appointments.patient_id',
-                    '=',
-                    $request->patient_id,
-                ];
+                $where[] = ['appointments.patient_id', '=', $request->patient_id,];
             }
             $data = $request->all();
-            $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data , $where);
+            $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data, $where);
             return view('admin.reports.patients_follow_up_report_monthly', get_defined_vars());
-        }else{
+        } else {
             $where = [];
-            if ($request->date_from) {
-                $where[] = [
-                    'package_advances.created_at',
-                    '>=',
-                    $request->date_from . ' 00:00:00',
-                ];
-            }
-            if ($request->date_to) {
-                $where[] = [
-                    'package_advances.created_at',
-                    '<=',
-                    $request->date_to . ' 23:59:00',
-                ];
+            if (isset($request->date_range) && $request->date_range) {
+                $where[] = ['package_advances.created_at', '>=', $start_date. ' 00:00:00'];
+                $where[] = ['package_advances.created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
-                $where[] = [
-                    'package_advances.patient_id',
-                    '=',
-                    $request->patient_id,
-                ];
+                $where[] = ['package_advances.patient_id', '=', $request->patient_id];
             }
             $data = $request->all();
-            $patient_data = GeneralFunctions::PatientFollowUpReport($data , $where);
+            $patient_data = GeneralFunctions::PatientFollowUpReport($data, $where);
             return view('admin.reports.patients_follow_up_report', get_defined_vars());
         }
-            
-        
     }
 }

@@ -139,8 +139,7 @@ function applyFilters(datatable) {
             delete: '',
             name: $("#search_name").val(),
             form_type_id: $("#search_form_type").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             status: $("#search_status").val(),
             filter: 'filter',
         }
@@ -158,8 +157,7 @@ function resetAllFilters(datatable) {
             delete: '',
             name: '',
             form_type_id: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             status: '',
             filter: 'filter_cancel',
         }
@@ -192,11 +190,14 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_name").val(active_filters.name);
         $("#search_form_type").val(active_filters.form_type_id);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
         $("#search_status").val(active_filters.status);
 
     } catch (error) {
         showException(error);
     }
 }
+
+jQuery(document).ready( function () {
+    $("#date_range").val("");
+})

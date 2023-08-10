@@ -60,9 +60,12 @@
                                     <td class="border-top bg-light" >Arrival Ratio Without Walk-In</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
-                                       
                                         if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0 ) {
-                                            echo number_format(((($arrived) - $walkin_customers) / (count($Appointments) - $walkin_customers ?? 0)) * 100, 2) . '%';
+                                            if(($arrived - $walkin_customers) > 0) {
+                                                echo number_format(((($arrived) - $walkin_customers) / (count($Appointments)- $walkin_customers)) * 100, 2) . '%';
+                                            } else {
+                                                echo '00.00 %';
+                                            }
                                         } else {
                                             echo '00.00 %';
                                         }
