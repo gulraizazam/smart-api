@@ -919,7 +919,7 @@ select2-container--default .select2-selection--single .select2-selection__render
     }
     #consultancy_by_status, #treatment_by_status, #revenue-service, #revenue-centre, #collection-by-centre{
         height: 300px !important;
-    } 
+    }
     .card-body.appointment-section .datatable-table td[data-field="actions"] > span, .card-body.appointment-section .datatable-table th[data-field="actions"] > span{
         width: 65px !important;
         text-align: right;
@@ -932,4 +932,14 @@ select2-container--default .select2-selection--single .select2-selection__render
         display: block;
         width: 100%;
     }
+}
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
 }
