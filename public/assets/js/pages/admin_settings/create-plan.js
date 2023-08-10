@@ -580,7 +580,7 @@ function setEditData(response) {
 
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
-
+console.log('packageadvance',packageadvance);
                 if (packageadvance.cash_amount != '0') {
 
                     let selector = 'history_cash_row_' + packageadvance.id;
