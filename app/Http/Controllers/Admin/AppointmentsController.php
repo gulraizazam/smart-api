@@ -4044,6 +4044,7 @@ class AppointmentsController extends Controller
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
+        
         if (isset($request->appointment_id_consultancy)) {
             // Now we need to work our tag appointment for upselling
             $tag_appoint = explode('.', $request->appointment_id_consultancy);
