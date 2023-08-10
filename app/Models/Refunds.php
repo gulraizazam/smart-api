@@ -153,7 +153,7 @@ class Refunds extends Model
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
         $packageinformation = Packages::find($request->package_id);
-        $package_service = PackageService::where('package_id',$request->package_id)->first();
+        $services = Services::where('name','Refund Settelment')->first();
         if ($packageinformation->is_refund == '0') {
             $package = Packages::updateRecordRefunds($request->package_id);
         }
@@ -174,19 +174,16 @@ class Refunds extends Model
                 $data_adjustment['is_adjustment'] = '0';
                 $data_adjustment['is_setteled'] = 1;
                 $data_adjustment['patient_id'] = $request->get('patient_id');
-                $data_adjustment['payment_mode_id'] = $request->payment_mode_id;
+                $data_adjustment['payment_mode_id'] = 5;
                 $data_adjustment['account_id'] = $id;
                 $data_adjustment['created_by'] = Auth::User()->id;
                 $data_adjustment['updated_by'] = Auth::User()->id;
                 $data_adjustment['package_id'] = $request->package_id;
                 $data_adjustment['patient_id'] = $packageinformation->patient_id;
                 $data_adjustment['location_id'] = $packageinformation->location_id;
-
                 $data_adjustment['created_at'] = $custom_created_at;
                 $data_adjustment['updated_at'] = $custom_created_at;
-
                 $record = self::create($data_adjustment);
-
                 $dataInvoice['total_price'] = $amount_left;
                 $dataInvoice['account_id'] = Auth::User()->account_id;
                 $dataInvoice['patient_id'] = $packageinformation->patient_id;
@@ -194,60 +191,15 @@ class Refunds extends Model
                 $dataInvoice['invoice_status_id'] = 3;
                 $dataInvoice['created_by'] = Auth::User()->id;
                 $dataInvoice['location_id'] =$packageinformation->location_id;
-                //$dataInvoice['doctor_id'] = Auth::User()->id;
                 $dataInvoice['active'] = 1;
                 $dataInvoice['is_exclusive'] = 0;
                 $create_invoice =  Invoices::create($dataInvoice);
                $dataInvoiceDetail['qty'] = 1;
-               $dataInvoiceDetail['service_id'] =$package_service->service_id;
-               
-                //$dataInvoice['doctor_id'] = Auth::User()->id;
+               $dataInvoiceDetail['service_id'] =$services->id;
                $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
                InvoiceDetails::create($dataInvoiceDetail);
             }
         }
-        // if ($package_is_adjustment == '0') {
-
-        //     $data_adjustment['cash_flow'] = 'out';
-        //     $data_adjustment['cash_amount'] = $request->get('is_adjustment_amount');
-        //     $data_adjustment['is_adjustment'] = '1';
-        //     $data_adjustment['patient_id'] = $request->get('patient_id');
-        //     $data_adjustment['payment_mode_id'] = '1';
-        //     $data_adjustment['account_id'] = $id;
-        //     $data_adjustment['created_by'] = Auth::User()->id;
-        //     $data_adjustment['updated_by'] = Auth::User()->id;
-        //     $data_adjustment['package_id'] = $request->package_id;
-        //     $data_adjustment['patient_id'] = $packageinformation->patient_id;
-        //     $data_adjustment['location_id'] = $packageinformation->location_id;
-
-        //     $data_adjustment['created_at'] = $custom_created_at;
-        //     $data_adjustment['updated_at'] = $custom_created_at;
-
-        //     $record = self::create($data_adjustment);
-
-        //     AuditTrails::addEventLogger(self::$_table, 'create', $data_adjustment, self::$_fillable, $record);
-        
-        //     $data_refund_tax['cash_flow'] = 'out';
-        //     $data_refund_tax['cash_amount'] = $request->get('return_tax_amount');
-        //     $data_refund_tax['is_tax'] = '1';
-        //     $data_refund_tax['is_refund'] = '1';
-        //     $data_refund_tax['patient_id'] = $request->get('patient_id');
-        //     $data_refund_tax['payment_mode_id'] = '1';
-        //     $data_refund_tax['account_id'] = $id;
-        //     $data_refund_tax['created_by'] = Auth::User()->id;
-        //     $data_refund_tax['updated_by'] = Auth::User()->id;
-        //     $data_refund_tax['package_id'] = $request->package_id;
-        //     $data_refund_tax['patient_id'] = $packageinformation->patient_id;
-        //     $data_refund_tax['location_id'] = $packageinformation->location_id;
-
-        //     $data_refund_tax['created_at'] = $custom_created_at;
-        //     $data_refund_tax['updated_at'] = $custom_created_at;
-
-        //     $record = self::create($data_refund_tax);
-
-        //     AuditTrails::addEventLogger(self::$_table, 'create', $data_refund_tax, self::$_fillable, $record);
-        // }
-
         return $record;
     }
 

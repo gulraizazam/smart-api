@@ -2175,7 +2175,7 @@ class PackagesController extends Controller
             $data_adjustment['updated_at'] = $request['created_at'];
 
             PackageAdvances::create($data_adjustment);
-            $package_service = PackageService::where('package_id',$request->package_id)->first();
+            $services = Services::where('name','Refund Settelment')->first();
             $dataInvoice['total_price'] = $amount_left;
                 $dataInvoice['account_id'] = Auth::User()->account_id;
                 $dataInvoice['patient_id'] = $packageinformation->patient_id;
@@ -2183,14 +2183,12 @@ class PackagesController extends Controller
                 $dataInvoice['invoice_status_id'] = 3;
                 $dataInvoice['created_by'] = Auth::User()->id;
                 $dataInvoice['location_id'] =$packageinformation->location_id;
-                //$dataInvoice['doctor_id'] = Auth::User()->id;
+  
                 $dataInvoice['active'] = 1;
                 $dataInvoice['is_exclusive'] = 0;
                $create_invoice =  Invoices::create($dataInvoice);
                $dataInvoiceDetail['qty'] = 1;
-               $dataInvoiceDetail['service_id'] =$package_service->service_id;
-
-                //$dataInvoice['doctor_id'] = Auth::User()->id;
+               $dataInvoiceDetail['service_id'] =$services->id;
                $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
                InvoiceDetails::create($dataInvoiceDetail);
         }
