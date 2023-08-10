@@ -386,7 +386,7 @@ class ConsultancyInvoiceController extends Controller
         $appointmentinfo = Appointments::find($request->appointment_id);
         if (! Gate::allows('appointments_log_excel')) {
             if ($appointmentinfo->scheduled_date < date('Y-m-d') || $appointmentinfo->scheduled_date > date('Y-m-d')) {
-                return response()->json(['message' => 'Invoice can not be genersted in past and future dates.', 'status' => false]);
+                return response()->json(['message' => 'Invoice can not be generated in past and future dates.', 'status' => false]);
             }
         }
         if ($request->tax_treatment_type_id == Config::get('constants.tax_both')) {
