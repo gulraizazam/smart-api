@@ -2135,6 +2135,7 @@ class PackagesController extends Controller
             ['is_refund', '=', '0'],
             ['is_tax', '=', '0'],
             ['is_setteled', '=', '0'],
+            ['is_adjustment', '=', '0'],
         ])->sum('cash_amount');
 
         $package_is_consumed_tax_amount = PackageAdvances::where([
