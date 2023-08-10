@@ -116,7 +116,7 @@
         <div class="col-md-3 mb-lg-0 mb-6 mt-6 @if($errors->has('date_range')) has-error @endif">
             {!! Form::label('date_range', 'Created at:', ['class' => 'control-label']) !!}
             <div class="input-group">
-                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off']) !!}
+                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off', 'placeholder' => 'Select Date Range']) !!}
             </div>
         </div>
         <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
