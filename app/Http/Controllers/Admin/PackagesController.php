@@ -2145,7 +2145,7 @@ class PackagesController extends Controller
             ['is_tax', '=', '1'],
             ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
-        dd($package_cash_receive , $package_is_refunded_amount , $package_is_consumed_amount , $package_is_consumed_tax_amount );
+       
         $consumed_amount_with_tax = $package_is_consumed_amount + $package_is_consumed_tax_amount;
 
         $package_is_refunded_amount = PackageAdvances::where([
