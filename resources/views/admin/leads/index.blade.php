@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-
+@section('title', 'Leads')
 @section('content')
 
     <!--begin::Content-->
@@ -234,9 +234,9 @@
                 @endif
                 @if(request('from') != '' && request('to') != '')
                     setTimeout( function () {
-
-                        $("#search_created_from").val("{{request('from')}}");
-                        $("#search_created_to").val("{{request('to')}}");
+                        $("#date_range").val("{{request('from')}}");
+                        //$("#search_created_from").val("{{request('from')}}");
+                        //$("#search_created_to").val("{{request('to')}}");
                         $("#apply-filters").click();
 
                     }, 800);

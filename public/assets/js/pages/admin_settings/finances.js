@@ -49,8 +49,7 @@ function applyFilters(datatable) {
             delete: '',
             id: $("#add_patient_id").val(),
             patient_id: $("#add_patient_id").val(),
-            created_from: $("#search_created_from").val(),
-            created_to: $("#search_created_to").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
@@ -64,8 +63,7 @@ function resetAllFilters(datatable) {
             delete: '',
             id: '',
             patient_id: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -77,8 +75,7 @@ function setFilters(filter_values, active_filters) {
     try {
         let patients = filter_values.patient;
         $("#search_patient_id").val(active_filters.id);
-        $("#search_created_from").val(active_filters.created_from);
-        $("#search_created_to").val(active_filters.created_to);
+        $("#date_range").val(active_filters.created_at);
 
         let patient_options = "";
         Object.values(patients).forEach( function (value) {
@@ -106,4 +103,5 @@ jQuery(document).ready(function () {
         $('.patient_search_id').val(null).trigger('change');
     });
     patientSearch('patient_search_id');
+    $("#date_range").val("");
 })

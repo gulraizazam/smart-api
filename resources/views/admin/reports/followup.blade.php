@@ -1,4 +1,5 @@
 @extends('admin.layouts.master')
+@section('title', 'Patients Follow Up Report')
 @section('content')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
@@ -44,14 +45,14 @@
                                                 <option value="weekly">Unattended Payments </option>
                                                 <option value="monthly">Overdue Treatments</option>
                                             </select>
-                                            
+
                                         </div>
                                     <div class="form-group col-md-2">
                                         <label>Patient Search:</label>
                                         <input class="form-control filter-field appointment_patient_id" onchange="SetPatient()">
                                         <input type="hidden" class="filter-field search_field" id="appointment_patient_id" value="">
                                         <input type="hidden" class="filter-field search_field" id="patient_id" value="">
-                                        
+
                                         <div class="suggesstion-box" style="display: none;">
                                             <ul class="suggestion-list w-100"><li onclick="selectLead(`Gulraiz azam`, `116197`, `lead_search_id`, `1`);">Gulraiz azam - 116197</li></ul>
                                         </div>
@@ -67,19 +68,13 @@
                                             </select>
                                             <span id="location_id_handler"></span>
                                         </div>
-                                        <div class="col-md-3 form-group  ">
-                                        {!! Form::label('conversion_date', ' Date:', ['class' => 'control-label']) !!}
-                                            <div class="input-daterange input-group to-from-datepicker" >
-                                                <input type="text" id="followup_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" data-col-index="5" >
-                                                <div class="input-group-append" style="width: 0;">
-                                                    <span class="input-group-text">
-                                                        <i class="la la-ellipsis-h"></i>
-                                                    </span>
-                                                </div>
-                                                <input type="text" id="followup_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" data-col-index="5" >
+                                        <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
+                                            {!! Form::label('date_range', 'Date:', ['class' => 'control-label']) !!}
+                                            <div class="input-group">
+                                                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
-                                       
+
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                             <a href="javascript:void(0);" onclick="loadPatientFollowUpReport($(this));" id="load_patient_foolow_up_report"
@@ -87,10 +82,6 @@
                                         </div>
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="followup_content"></div>
-                                        {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.staff_wise_arrival_report'], 'id' => 'report-form']) !!}
-                                        {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
-                                        {!! Form::hidden('created_by', null, ['id' => 'created_by-report']) !!}
-                                        {!! Form::close() !!}
                                     </div>
                                 </div>
                             </div>

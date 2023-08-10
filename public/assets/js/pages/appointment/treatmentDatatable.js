@@ -1048,8 +1048,7 @@ function applyFilters(datatable) {
             doctor_id: $("#treatment_search_doctor").val(),
             appointment_status_id: $("#treatment_search_status").val(),
             consultancy_type: $("#treatment_search_consultancy_type").val(),
-            created_from: $("#treatment_search_created_from").val(),
-            created_to: $("#treatment_search_created_to").val(),
+            created_at: $("#date_range").val(),
             created_by: $("#treatment_search_created_by").val(),
             converted_by: $("#treatment_search_rescheduled_by").val(),
             updated_by: $("#treatment_search_updated_by").val(),
@@ -1083,8 +1082,7 @@ function resetFilters(datatable) {
         doctor_id: '',
         appointment_status_id: '',
         consultancy_type: '',
-        created_from: '',
-        created_to: '',
+        created_at: '',
         created_by: '',
         converted_by: '',
         updated_by: '',
@@ -1112,8 +1110,7 @@ function resetAllFilters(datatable) {
             doctor_id: '',
             appointment_status_id: '',
             consultancy_type: '',
-            created_from: '',
-            created_to: '',
+            created_at: '',
             created_by: '',
             converted_by: '',
             updated_by: '',
@@ -1168,7 +1165,7 @@ function setFilters(filter_values, active_filters) {
         let service_options = '<option value=""></option>';
         Object.values(services).forEach(function (service, index) {
             if (service.name == 'All Services') {
-                service_options += '<option value="' + service.id + '">' + service.name + '</option>';
+                service_options += '<option value="' + service.id + '" selected>' + service.name + '</option>';
             } else {
                 service_options += '<option value="bold-' + service.id + '">' + service.name + '</option>';
                 Object.values(service.children).forEach(function (child, index) {
@@ -1438,4 +1435,5 @@ var AppointScheduleValidation = function () {
 
 jQuery(document).ready(function() {
     AppointScheduleValidation.init();
+    $("#date_range").val("");
 });

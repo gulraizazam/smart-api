@@ -52,7 +52,6 @@
                                             </g>
                                         </svg>--}}
                                         <i class="font-icon la la-home"></i>
-
                                     </span>
                             <span class="menu-text">Dashboard</span>
                         </a>
@@ -273,7 +272,14 @@
                         </a>
                     </li>
                 @endif
-
+                @if(Gate::allows('refunds_manage'))
+                <li class="menu-item {{activeMenu('admin.refunds.index')}}" aria-haspopup="true">
+                    <a href="{{route('admin.refunds.index')}}" class="menu-link">
+                    <span class="svg-icon menu-icon"><i class="font-icon la la-cog"></i></span>
+                        <span class="menu-text"> Refunds </span>
+                    </a>
+                </li>
+                @endif
                 @if( Gate::allows('services_manage') || Gate::allows('packages_manage') || Gate::allows('discounts_manage'))
 
                     <li class="menu-item menu-item-submenu {{openMenu(['admin.services.index'])}} {{openMenu(['admin.bundles.index'])}} {{openMenu(['admin.discounts.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
@@ -360,7 +366,7 @@
                         Gate::allows('logs_manage') ||
                         Gate::allows('finances_manage') ||
                         Gate::allows('invoices_manage') ||
-                        Gate::allows('refunds_manage') ||
+                       
                         Gate::allows('pabao_records_manage') ||
                         Gate::allows('machineType_manage') ||
                         Gate::allows('towns_manage')
@@ -386,7 +392,7 @@
                         'admin.machine_types.index',
                         'admin.resources.index',
                         'admin.logs.index',
-                        'admin.refunds.index',
+                        
                         'admin.sms_templates.index',
                         'admin.centre_targets.index',
                         'admin.doctors.index',
@@ -756,51 +762,7 @@
                             </div>
                         @endcan
 
-                        @can('refunds_manage')
-                         <div class="menu-submenu">
-                            <i class="menu-arrow"></i>
-                            <ul class="menu-subnav">
-                                <li class="menu-item  {{openMenu(['admin.refunds.index'])}} {{openMenu(['admin.nonplansrefunds.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
-
-                                    <a href="javascript:void(0);" class="menu-link menu-toggle">
-                                <span class="svg-icon menu-icon">
-                                <i class="fas fa-paper-plane"></i>
-                                </span>
-                                        <span class="menu-text">Refunds</span>
-                                        <i class="menu-arrow"></i>
-                                    </a>
-                                    <div class="menu-submenu">
-                                        <i class="menu-arrow"></i>
-                                        <ul class="menu-subnav">
-
-
-                                                <li class="menu-item {{activeMenu('admin.refunds.index')}}" aria-haspopup="true">
-                                                    <a href="{{route('admin.refunds.index')}}" class="menu-link">
-                                                        <i class="menu-bullet menu-bullet-dot">
-                                                            <span></span>
-                                                        </i>
-                                                        <span class="menu-text">Plan Refunds </span>
-                                                    </a>
-                                                </li>
-
-
-                                                <li class="menu-item {{activeMenu('admin.nonplansrefunds.index')}}" aria-haspopup="true">
-                                                    <a href="{{route('admin.nonplansrefunds.index')}}" class="menu-link">
-                                                        <i class="menu-bullet menu-bullet-dot">
-                                                            <span></span>
-                                                        </i>
-                                                        <span class="menu-text">Non Plan Refunds </span>
-                                                    </a>
-                                                </li>
-
-
-                                        </ul>
-                                    </div>
-
-                                </li>
-                            </ul>
-                        </div>
-                        @endcan
+                        
 
                     </li>
 
@@ -904,7 +866,7 @@
 
                     <!-- End Inventory menu -->
 
-                   
+
                         <li class="menu-item menu-item-submenu {{openMenu([
                             'admin.reports.finance_reports',
                             'admin.reports.operations_report'
@@ -928,7 +890,7 @@
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>
-                                                <span class="menu-text">General Revenue Report</span>
+                                                <span class="menu-text">General Sales Report</span>
                                             </a>
                                         </li>
 
@@ -951,7 +913,7 @@
 
                                     </ul>
                                 </div>
-                                
+
                             @endcan
                             @can('non_converted_customers_manage')
                             <div class="menu-submenu">
@@ -981,7 +943,7 @@
                                                  <span class="menu-text">Conversion Report </span>
                                              </a>
                                          </li>
- 
+
                                      </ul>
                                  </div>
                                 @endcan
@@ -1014,10 +976,10 @@
                                         </li>
                                     </ul>
                                 </div>
-                                
+
                                 @endcan
                         </li>
-                   
+
 
                 </ul>
                 <!--end::Menu Nav-->

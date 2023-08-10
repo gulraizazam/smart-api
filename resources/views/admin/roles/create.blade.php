@@ -1,4 +1,5 @@
 @extends('admin.layouts.master')
+@section('title', 'Roles Create')
 @section('content')
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     @include('admin.partials.breadcrumb', ['module' => 'Create Roles', 'title' => 'Roles'])
