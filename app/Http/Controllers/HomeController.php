@@ -587,8 +587,10 @@ class HomeController extends Controller
                     ->groupBy('invoice_details.service_id')
                     ->get();
                 $prepareData = [];
+                dd($todayRecords->toArray());
                 foreach ($todayRecords as $key => $todayRecord) {
                     $parent_services = Services::with('parent')->where('id', $todayRecord->service_id)->first();
+                   
                     $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
                     $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
 
