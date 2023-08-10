@@ -84,21 +84,16 @@ class dashboardreport
                 foreach ($packagesadvances as $packagesadvance) {
 
                     if (
-                        (
-                        $packagesadvance->cash_flow == 'in' &&
+                        ($packagesadvance->cash_flow == 'in' &&
                         $packagesadvance->is_adjustment == '0' &&
                         $packagesadvance->is_tax == '0' &&
-                        $packagesadvance->is_cancel == '0' 
-                        )||
+                        $packagesadvance->is_cancel == '0') || 
                         ($packagesadvance->cash_flow == 'out' &&
-                            $packagesadvance->is_refund == '1' &&
-                            $packagesadvance->is_adjustment == '0' &&
-                            $packagesadvance->is_tax == '0' &&
-                            $packagesadvance->is_cancel == '0' &&
-                            $packagesadvance->is_tax == '0'
+                        $packagesadvance->is_adjustment == '0' &&
+                        $packagesadvance->is_tax == '0' &&
+                        $packagesadvance->is_cancel == '0' &&
+                        $packagesadvance->is_refund == 1
                         )
-                        
-                       
                     ) {
                         switch ($packagesadvance->cash_flow) {
                             case 'in':
