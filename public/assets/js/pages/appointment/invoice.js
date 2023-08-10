@@ -164,7 +164,8 @@ $(document).ready(function () {
         $('#customfield').hide();
 
         var status = true;
-        if ($('#cash').val() == "") {
+        var numbers = /^[-+]?[0-9]+$/;
+        if ($('#cash').val() == "" && $('#cash').val().match(numbers) == null) {
             toastr.warning("Amount field can not be empty")
             status = false;
             $(this).attr("disabled", false);
@@ -225,6 +226,7 @@ $(document).ready(function () {
             } else {
                 $('#definefield').hide();
                 status = true;
+
             }
         }
 
@@ -459,13 +461,13 @@ $(document).ready(function () {
                                         window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
                                     } else {
                                         if(resposne.data.setteled==1){
-                                            
+
                                             $('#setteledMessage').show();
                                         }else{
                                             $('#wrongMessage').show();
                                             toastr.error(" Something Went Wrong!")
                                         }
-                                       
+
                                     }
 
                                     hideSpinner();
