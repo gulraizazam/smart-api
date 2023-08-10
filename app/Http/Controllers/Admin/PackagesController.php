@@ -2111,7 +2111,7 @@ class PackagesController extends Controller
         ]
 
         )->latest()->first();
-
+dd($latest_refund);
        if($request['case_setteled'] == 'on'){
 
         $package_cash_receive = PackageAdvances::where([
