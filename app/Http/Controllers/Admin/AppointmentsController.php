@@ -4039,7 +4039,7 @@ class AppointmentsController extends Controller
             ['package_id', '=', $request->package_id],
         ])->first();
         if($check_is_setteled){
-            return ApiHelper::apiResponse($this->success, 'Plan related to this treatment is settled. you can not consume further treatment of this plan.', false,['setteled'=>1]);
+            return ApiHelper::apiResponse($this->success, 'This plan is settled out and cannot consume any further treatments.', false,['setteled'=>1]);
         }
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
