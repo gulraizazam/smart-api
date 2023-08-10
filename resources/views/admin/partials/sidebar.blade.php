@@ -366,7 +366,7 @@
                         Gate::allows('logs_manage') ||
                         Gate::allows('finances_manage') ||
                         Gate::allows('invoices_manage') ||
-                        Gate::allows('refunds_manage') ||
+                       
                         Gate::allows('pabao_records_manage') ||
                         Gate::allows('machineType_manage') ||
                         Gate::allows('towns_manage')
@@ -392,7 +392,7 @@
                         'admin.machine_types.index',
                         'admin.resources.index',
                         'admin.logs.index',
-                        'admin.refunds.index',
+                        
                         'admin.sms_templates.index',
                         'admin.centre_targets.index',
                         'admin.doctors.index',
@@ -890,7 +890,7 @@
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>
-                                                <span class="menu-text">Sales Report</span>
+                                                <span class="menu-text">General Sales Report</span>
                                             </a>
                                         </li>
 

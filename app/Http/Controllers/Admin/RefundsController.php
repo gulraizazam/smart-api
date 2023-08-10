@@ -405,7 +405,7 @@ class RefundsController extends Controller
     protected function verifyFields(Request $request)
     {
         return $validator = Validator::make($request->all(), [
-            'refund_amount' => 'required',
+            'refund_amount' => ['required', 'numeric', 'regex:/^[0-9]+$/'],
             'refund_note' => 'required',
             'package_id' =>'required',
             'payment_mode_id' =>'required',
