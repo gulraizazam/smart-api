@@ -61,7 +61,7 @@
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Amount <span class="text text-danger">*</span></label>
-                            <input type="number" id="refund_amount" class="form-control" name="refund_amount" >
+                            <input type="number" min="0" id="refund_amount" class="form-control" name="refund_amount" >
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
