@@ -49,7 +49,7 @@
         <div class="col-lg-3 mb-lg-0 mb-6 @if($errors->has('date_range')) has-error @endif">
             {!! Form::label('date_range', 'Created at:', ['class' => 'control-label']) !!}
             <div class="input-group">
-                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off']) !!}
+                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off', 'placeholder' => 'Select Date Range']) !!}
             </div>
         </div>
         @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_resources"))
