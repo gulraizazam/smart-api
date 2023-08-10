@@ -560,7 +560,7 @@ class Appointments extends Model
                 'message' => 'Child records exist, unable to delete appointment',
             ];
         }
-        $appointment->update('deleted_by',Auth::id);
+        $appointment->update('deleted_by',Auth::id());
         $appointment->delete();
 
         //log request for delete for audit trail
