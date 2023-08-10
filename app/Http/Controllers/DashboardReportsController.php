@@ -2718,7 +2718,7 @@ class DashboardReportsController extends Controller
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
 
                 $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    //->whereIn('doctor_id', $consultant)
+                    ->whereIn('doctor_id', $consultant)
                     ->whereIn('appointments.location_id', $locations)
                     ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                     ->count();
@@ -2728,7 +2728,7 @@ class DashboardReportsController extends Controller
                 $avg_valu = 0;
 
                 $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    //->whereIn('doctor_id', $consultant)
+                    ->whereIn('doctor_id', $consultant)
                     ->whereIn('appointments.location_id', $locations)
                     ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                     ->count();
