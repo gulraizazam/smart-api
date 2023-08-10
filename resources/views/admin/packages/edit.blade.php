@@ -49,11 +49,11 @@
         </div>
         <div id="casesetteled" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
-            Plan is already settled. you can not add further treatment in this plan.please create another plan.
+            This plan is settled out and cannot accommodate any additional treatments.
         </div>
         <div id="casesetteledamount" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
-            Plan is already settled. you can not receive further amount against this plan.
+            This plan is settled out and cannot receive any further payments.
         </div>
         <div id="edit_datanotexist" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>

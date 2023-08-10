@@ -10,7 +10,7 @@
     </div>
     <div id="setteledMessage" class="alert alert-warning display-hide" style="display: none;">
         <button class="close" data-close="alert"></button>
-        Plan related to this treatment is settled. you can not consume further treatment of this plan.
+        This plan is settled out and cannot consume any further treatments.
     </div>
     <div id="noconsultancy" class="alert alert-danger display-hide" style="display: none;">
         <button class="close" data-close="alert"></button>
