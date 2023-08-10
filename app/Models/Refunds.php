@@ -166,7 +166,7 @@ class Refunds extends Model
             ])->sum('cash_amount');
             $amount_after_refund = $consumed_amount_with_tax + $package_is_refunded_amount;
             $amount_left = $package_cash_receive - $amount_after_refund;
-            
+            $find_doc = Appointments::where('id',$packageinformation->appointment_id)->first();
             if($amount_left > 0){
                 
                 $data_adjustment['cash_flow'] = 'out';
@@ -191,6 +191,7 @@ class Refunds extends Model
                 $dataInvoice['invoice_status_id'] = 3;
                 $dataInvoice['created_by'] = Auth::User()->id;
                 $dataInvoice['location_id'] =$packageinformation->location_id;
+                $dataInvoice['doctor_id'] =$find_doc->doctor_id;
                 $dataInvoice['active'] = 1;
                 $dataInvoice['is_exclusive'] = 0;
                 $create_invoice =  Invoices::create($dataInvoice);
