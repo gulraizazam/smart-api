@@ -142,7 +142,8 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $this->request->filter_created_to_id.' 23:59:59',
             ];
         }
-        if ($this->request->filter_service_id) {
+        
+        if ($this->request->filter_service_id && $this->request->filter_service_id != 13) {
             $where[] = [
                 'appointments.service_id',
                 '=',
@@ -157,7 +158,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $phone,
             ];
         }
-        dd($where);
+        
         $results = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
             ->where(['users.user_type_id' => config('constants.patient_id')])
             ->whereIn('appointments.city_id', ACL::getUserCities())
