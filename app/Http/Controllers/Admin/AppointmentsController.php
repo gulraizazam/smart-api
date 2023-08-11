@@ -1638,6 +1638,7 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
+        
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1761,7 +1762,9 @@ class AppointmentsController extends Controller
                     $lead_service->update(['status' => 1]);
                 }
             } else {
-                $lead = Leads::findOrFail($request->lead_id);
+                $lead = Leads::whereId($request->lead_id)->first();
+                //$lead = Leads::findOrFail(39778);
+              
                 /*
                  * If appointment is for the first time then
                  * update user information, otherwise not
