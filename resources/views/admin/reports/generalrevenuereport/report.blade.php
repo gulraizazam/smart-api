@@ -112,6 +112,7 @@
                     @if($report_data)
                         
                         @foreach($report_data as $reportlocation)
+                        @dd($reportlocation);
                         <tr style="background:#2fa0d3;color: #fff;">
                                 <td style="color: #fff;">{{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">{{$reportlocation['city']}}</td>
