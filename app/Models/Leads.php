@@ -139,7 +139,7 @@ class Leads extends BaseModal
      * */
     public static function getLeadidAjax($name, $account_id)
     {
-        dd($name);
+       
         $leads = collect();
         if (is_numeric($name)) {
             $leads = self::where([
