@@ -51,7 +51,7 @@
                                         <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
                                             {!! Form::label('date_range', 'Scheduled Date*', ['class' => 'control-label']) !!}
                                             <div class="input-group">
-                                                {!! Form::text('date_range', null, ['id' => 'date_range_arrival', 'class' => 'form-control']) !!}
+                                                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
                                         <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="users" >
