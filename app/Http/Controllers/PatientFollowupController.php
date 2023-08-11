@@ -115,6 +115,7 @@ class PatientFollowupController extends Controller
                 'is_tax' => '0',
                 'is_adjustment' => '0',
                 'is_refund' => '1',
+                'is_setteled' => '0',
             ])
             ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
