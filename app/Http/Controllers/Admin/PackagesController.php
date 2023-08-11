@@ -2172,7 +2172,7 @@ class PackagesController extends Controller
             $data_adjustment['package_id'] = $request->package_id;
             $data_adjustment['patient_id'] = $packageinformation->patient_id;
             $data_adjustment['location_id'] = $packageinformation->location_id;
-
+            $data_adjustment['appointment_id'] = $packageinformation->appointment_id;
             $data_adjustment['created_at'] = $request['created_at'];
             $data_adjustment['updated_at'] = $request['created_at'];
 
