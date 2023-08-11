@@ -184,7 +184,9 @@
                                 $total_revenue_cash_location +=$t_cash;
                                 $total_revenue_card_location +=$t_card ;
                                 $total_revenue_bank_location +=$t_bank;
-                                
+                                $total_refund_cash_location += $total_refund_cash_location1;
+                                $total_refund_card_location +=$total_refund_card_location1;
+                                $total_refund_bank_location +=$total_refund_bank_location1;
                                 @endphp    
                                 <tr style="background:#364150;color: #fff;">
                                 <td style="color: #fff;"> {{$reportlocation['name']}}</td>
