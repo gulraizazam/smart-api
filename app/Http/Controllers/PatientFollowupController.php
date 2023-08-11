@@ -49,10 +49,11 @@ class PatientFollowupController extends Controller
             ->join(DB::raw('(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
+
                 WHERE appointment.appointment_type_id = 1
                     AND appointment.base_appointment_status_id = 2
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
-
+                    AND patient_id = 88700
                 GROUP BY appointment.patient_id
             ) latest_appointments'), function ($join) {
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
