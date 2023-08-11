@@ -2193,6 +2193,9 @@ class PackagesController extends Controller
                $dataInvoiceDetail['service_id'] =$services->id;
                $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
                InvoiceDetails::create($dataInvoiceDetail);
+        }else{
+            $latest_refund->where('id',$request['record_id'])->update(['is_setteled' => 1]);
+       
         }
     }
         $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
