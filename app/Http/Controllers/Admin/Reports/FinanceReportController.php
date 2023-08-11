@@ -1193,7 +1193,7 @@ class FinanceReportController extends Controller
         } else {
             $location = $request->location_id_com;
         }
-
+dd($location);
         if (! Gate::allows('finance_general_revenue_reports_general_revenue__detail_report')) {
             return abort(401);
         }
