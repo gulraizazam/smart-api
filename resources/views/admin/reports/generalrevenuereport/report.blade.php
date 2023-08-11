@@ -94,6 +94,7 @@
                 $total_refund_card_location = 0;
                 $total_refund_bank_location = 0;
                 $total_refund_location = 0;
+                $total_cash
             @endphp
 
             <div class="table-wrapper" id="topscroll">
@@ -211,15 +212,15 @@
                 <table class="table">
                     <tr>
                         <th>Cash </th>
-                        <td> {{number_format( $t_cash,2)}}</td>
+                        <td> {{number_format(  $total_revenue_cash_location1,2)}}</td>
                     </tr>
                     <tr>
                         <th>Card </th>
-                        <td> {{number_format( $t_card,2)}}</td>
+                        <td> {{number_format( $total_revenue_card_location1,2)}}</td>
                     </tr>
                     <tr>
                         <th>Bank/Wire Transfer</th>
-                        <td> {{number_format( $t_bank,2)}}</td>
+                        <td> {{number_format($total_revenue_bank_location1,2)}}</td>
                     </tr>
                     <tr>
                         <th>Gross Sales</th>
