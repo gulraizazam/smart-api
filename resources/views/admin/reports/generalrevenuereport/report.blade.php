@@ -235,15 +235,15 @@
                             <tbody>
                                 <tr>
                                     <th class="pl-3" style="color: #8b8b8b;">Cash</th>
-                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_cash_location1}}</td>
+                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_cash_location}}</td>
                                 </tr>
                                 <tr>
                                     <th class="pl-3" style="color: #8b8b8b;">Card</th>
-                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_card_location1}}</td>
+                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_card_location}}</td>
                                 </tr>
                                 <tr>
                                     <th class="pl-3" style="color: #8b8b8b;">Bank/Wire Transfer</th>
-                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_bank_location1}}</td>
+                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_bank_location}}</td>
                                 </tr>
                             </tbody>
                         </table>
