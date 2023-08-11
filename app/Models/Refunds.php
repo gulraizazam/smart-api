@@ -123,7 +123,7 @@ class Refunds extends Model
         $data['package_id'] = $request->package_id;
         $data['patient_id'] = $packageinformation->patient_id;
         $data['location_id'] = $packageinformation->location_id;
-
+        $data['appointment_id'] = $packageinformation->appointment_id;
         $data['created_at'] = $custom_created_at;
         $data['updated_at'] = $custom_created_at;
 
@@ -181,6 +181,7 @@ class Refunds extends Model
                 $data_adjustment['package_id'] = $request->package_id;
                 $data_adjustment['patient_id'] = $packageinformation->patient_id;
                 $data_adjustment['location_id'] = $packageinformation->location_id;
+                $data_adjustment['appointment_id'] = $packageinformation->appointment_id;
                 $data_adjustment['created_at'] = $custom_created_at;
                 $data_adjustment['updated_at'] = $custom_created_at;
                 $record = self::create($data_adjustment);
