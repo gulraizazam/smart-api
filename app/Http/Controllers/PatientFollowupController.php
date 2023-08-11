@@ -120,7 +120,7 @@ class PatientFollowupController extends Controller
             ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('refunded_amount', 'patient_id');
-        
+        dd($appointments->toArray() , $refunded_amounts);
 
         $settleTaxAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
