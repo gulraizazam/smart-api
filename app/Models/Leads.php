@@ -161,18 +161,18 @@ class Leads extends BaseModal
             } else {
                 $condition[] = ['name', 'LIKE', "%{$name}%"];
             }
-            $patients = Patients::where(['active' => '1', 'account_id' => $account_id])
-            ->where($condition)
-            ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get();
-            if(count($patients) > 0){
-                return $patients;
-            }else{
+            // $patients = Patients::where(['active' => '1', 'account_id' => $account_id])
+            // ->where($condition)
+            // ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get();
+            // if(count($patients) > 0){
+            //     return $patients;
+            // }else{
                 $lead_result = Leads::where(['active' => '1', 'account_id' => $account_id])
                 ->where($condition)
                 ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
 
              return $lead_result;
-            }
+            //}
             
         }
 
