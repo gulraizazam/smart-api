@@ -110,9 +110,18 @@
                     </thead>
                     <tbody>
                     @if($report_data)
-                    @dd($report_data);
+                    
                         @foreach($report_data as $reportlocation)
-                        
+                        @php
+                            $total_revenue_cash_location1 = 0;
+                            $total_revenue_card_location1 = 0;
+                            $total_revenue_bank_location1 = 0;
+                            $total_refund_cash_location1 = 0;
+                            $total_refund_card_location1= 0;
+                            $total_refund_bank_location1 = 0;
+                            
+                        @endphp
+
                         <tr style="background:#2fa0d3;color: #fff;">
                                 <td style="color: #fff;">{{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">{{$reportlocation['city']}}</td>
@@ -124,12 +133,12 @@
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
-                                    $total_revenue_cash_location += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
-                                    $total_revenue_card_location += $reportRow['revenue_card_in']?$reportRow['revenue_card_in']:0;
-                                    $total_revenue_bank_location += $reportRow['revenue_bank_in']?$reportRow['revenue_bank_in']:0;
-                                    $total_refund_cash_location += $reportRow['refund_cash_in']?$reportRow['refund_cash_in']:0;
-                                    $total_refund_card_location += $reportRow['refund_card_in']?$reportRow['refund_card_in']:0;
-                                    $total_refund_bank_location += $reportRow['refund_bank_in']?$reportRow['refund_bank_in']:0;
+                                    $total_revenue_cash_location1 += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
+                                    $total_revenue_card_location1 += $reportRow['revenue_card_in']?$reportRow['revenue_card_in']:0;
+                                    $total_revenue_bank_location1 += $reportRow['revenue_bank_in']?$reportRow['revenue_bank_in']:0;
+                                    $total_refund_cash_location1 += $reportRow['refund_cash_in']?$reportRow['refund_cash_in']:0;
+                                    $total_refund_card_location1 += $reportRow['refund_card_in']?$reportRow['refund_card_in']:0;
+                                    $total_refund_bank_location1 += $reportRow['refund_bank_in']?$reportRow['refund_bank_in']:0;
                                     $total_refund_location += $reportRow['refund_out']?$reportRow['refund_out']:0;
                                 @endphp
 
@@ -163,13 +172,13 @@
                                    
                                     <td>{{$reportRow['created_at']}}</td>
                                 </tr>
-                                @php
-                                $t_cash = $total_revenue_cash_location - $total_refund_cash_location;
-                                $t_card = $total_revenue_card_location - $total_refund_card_location;
-                                $t_bank = $total_revenue_bank_location - $total_refund_bank_location;
-                                @endphp  
+                                
                             @endforeach
-                                     
+                            @php
+                                $t_cash = $total_revenue_cash_location1 - $total_refund_cash_location1;
+                                $t_card = $total_revenue_card_location1 - $total_refund_card_location1;
+                                $t_bank = $total_revenue_bank_location1 - $total_refund_bank_location1;
+                                @endphp    
                                 <tr style="background:#364150;color: #fff;">
                                 <td style="color: #fff;"> {{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">Total</td>
