@@ -110,11 +110,7 @@
                     </thead>
                     <tbody>
                     @if($report_data)
-                        @php
-                            $t_cash = $total_revenue_cash_location - $total_refund_cash_location;
-                            $t_card = $total_revenue_card_location - $total_refund_card_location;
-                            $t_bank = $total_revenue_bank_location - $total_refund_bank_location;
-                            @endphp 
+                        
                         @foreach($report_data as $reportlocation)
                         <tr style="background:#2fa0d3;color: #fff;">
                                 <td style="color: #fff;">{{$reportlocation['name']}}</td>
@@ -127,7 +123,7 @@
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
-                                    $total_revenue_cash_location += $reportRow['revenue_cash_in']?($reportRow['revenue_cash_in'] - $total_refund_cash_location):0;
+                                    $total_revenue_cash_location += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
                                     $total_revenue_card_location += $reportRow['revenue_card_in']?$reportRow['revenue_card_in']:0;
                                     $total_revenue_bank_location += $reportRow['revenue_bank_in']?$reportRow['revenue_bank_in']:0;
                                     $total_refund_cash_location += $reportRow['refund_cash_in']?$reportRow['refund_cash_in']:0;
@@ -166,13 +162,18 @@
                                    
                                     <td>{{$reportRow['created_at']}}</td>
                                 </tr>
+                                @php
+                                $t_cash = $total_revenue_cash_location - $total_refund_cash_location;
+                                $t_card = $total_revenue_card_location - $total_refund_card_location;
+                                $t_bank = $total_revenue_bank_location - $total_refund_bank_location;
+                                @endphp  
                             @endforeach
-                                                      
+                                     
                                 <tr style="background:#364150;color: #fff;">
                                 <td style="color: #fff;"> {{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">Total</td>
                                 <td style="color: #fff;"></td>
-                                <td style="color: #fff;"> {{number_format($total_revenue_cash_location,2)}}</td>
+                                <td style="color: #fff;"> {{number_format($t_cash,2)}}</td>
                                 <td style="color: #fff;"> {{number_format($t_card,2)}}</td>
                                 <td style="color: #fff;"> {{number_format( $t_bank,2)}}</td>
                                 
