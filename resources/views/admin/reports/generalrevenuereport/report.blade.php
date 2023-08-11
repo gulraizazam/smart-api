@@ -171,9 +171,9 @@
                                 <td style="color: #fff;"> {{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">Total</td>
                                 <td style="color: #fff;"></td>
-                                <td style="color: #fff;"> {{number_format($t_cash,2)}}</td>
-                                <td style="color: #fff;"> {{number_format($t_card,2)}}</td>
-                                <td style="color: #fff;"> {{number_format($t_bank,2)}}</td>
+                                <td style="color: #fff;"> {{number_format($total_revenue_cash_location,2)}}</td>
+                                <td style="color: #fff;"> {{number_format($total_revenue_card_location,2)}}</td>
+                                <td style="color: #fff;"> {{number_format( $total_revenue_bank_location,2)}}</td>
                                 
                                 <td style="color: #fff;"></td>
                             </tr>
