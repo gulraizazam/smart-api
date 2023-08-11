@@ -1173,7 +1173,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
                     
                     let patient = patientData[i];
                     console.log(patient);
-                    balance = patient.cash_receive - patient.settle_amount_with_tax -patient.refunded_amounts;
+                    balance = (patient.cash_receive - patient.settle_amount_with_tax) -patient.refunded_amounts;
                     
                     if(balance > 0){
                         TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: "+(balance).toFixed(2)+"</td><td>" + formatDate(patient.created_at , 'MMM, DD yyyy ')+ "</td></tr>";
