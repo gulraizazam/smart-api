@@ -49,10 +49,11 @@ class PatientFollowupController extends Controller
             ->join(DB::raw('(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
+
                 WHERE appointment.appointment_type_id = 1
                     AND appointment.base_appointment_status_id = 2
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
-
+                    
                 GROUP BY appointment.patient_id
             ) latest_appointments'), function ($join) {
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
@@ -83,7 +84,7 @@ class PatientFollowupController extends Controller
                 'is_setteled' => '1',
                 
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('cash_setteled_receive', 'patient_id');
         $settleAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
@@ -105,7 +106,7 @@ class PatientFollowupController extends Controller
                 'is_adjustment' => '1',
                 'is_refund' => '0',
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_adjust_amount', 'patient_id');
             $refunded_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS refunded_amount'))
@@ -115,12 +116,12 @@ class PatientFollowupController extends Controller
                 'is_tax' => '0',
                 'is_adjustment' => '0',
                 'is_refund' => '1',
+                'is_setteled' => '0',
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('refunded_amount', 'patient_id');
         
-
         $settleTaxAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
             ->where([
                 'cash_flow' => 'out',
