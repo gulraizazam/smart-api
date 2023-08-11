@@ -110,6 +110,11 @@
                     </thead>
                     <tbody>
                     @if($report_data)
+                        @php
+                            $t_cash = $total_revenue_cash_location - $total_refund_cash_location;
+                            $t_card = $total_revenue_card_location - $total_refund_card_location;
+                            $t_bank = $total_revenue_bank_location - $total_refund_bank_location;
+                            @endphp 
                         @foreach($report_data as $reportlocation)
                         <tr style="background:#2fa0d3;color: #fff;">
                                 <td style="color: #fff;">{{$reportlocation['name']}}</td>
@@ -162,18 +167,14 @@
                                     <td>{{$reportRow['created_at']}}</td>
                                 </tr>
                             @endforeach
-                            @php
-                            $t_cash = $total_revenue_cash_location - $total_refund_cash_location;
-                            $t_card = $total_revenue_card_location - $total_refund_card_location;
-                            $t_bank = $total_revenue_bank_location - $total_refund_bank_location;
-                            @endphp                            
+                                                      
                                 <tr style="background:#364150;color: #fff;">
                                 <td style="color: #fff;"> {{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">Total</td>
                                 <td style="color: #fff;"></td>
-                                <td style="color: #fff;"> {{number_format($total_revenue_cash_location,2)}}</td>
-                                <td style="color: #fff;"> {{number_format($total_revenue_card_location,2)}}</td>
-                                <td style="color: #fff;"> {{number_format( $total_revenue_bank_location,2)}}</td>
+                                <td style="color: #fff;"> {{number_format($t_cash,2)}}</td>
+                                <td style="color: #fff;"> {{number_format($t_card,2)}}</td>
+                                <td style="color: #fff;"> {{number_format( $t_bank,2)}}</td>
                                 
                                 <td style="color: #fff;"></td>
                             </tr>
