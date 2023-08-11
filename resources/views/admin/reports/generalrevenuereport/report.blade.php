@@ -134,7 +134,7 @@
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
-                                $total_revenue_cash_location += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
+                                
                                    
                                     $total_revenue_cash_location1 += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
                                     $total_revenue_card_location1 += $reportRow['revenue_card_in']?$reportRow['revenue_card_in']:0;
