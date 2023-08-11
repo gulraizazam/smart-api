@@ -134,6 +134,8 @@
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
+                                $total_revenue_cash_location += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
+                                   
                                     $total_revenue_cash_location1 += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
                                     $total_revenue_card_location1 += $reportRow['revenue_card_in']?$reportRow['revenue_card_in']:0;
                                     $total_revenue_bank_location1 += $reportRow['revenue_bank_in']?$reportRow['revenue_bank_in']:0;
@@ -179,6 +181,10 @@
                                 $t_cash = $total_revenue_cash_location1 - $total_refund_cash_location1;
                                 $t_card = $total_revenue_card_location1 - $total_refund_card_location1;
                                 $t_bank = $total_revenue_bank_location1 - $total_refund_bank_location1;
+                                $total_revenue_cash_location +=$total_revenue_cash_location1;
+                                $total_revenue_card_location +=$total_revenue_card_location1;
+                                $total_revenue_bank_location +=$total_revenue_bank_location1;
+                                
                                 @endphp    
                                 <tr style="background:#364150;color: #fff;">
                                 <td style="color: #fff;"> {{$reportlocation['name']}}</td>
@@ -192,10 +198,7 @@
                             </tr>
 
                             @php
-                                $total_revenue_cash_location = 0;
-                                $total_revenue_card_location = 0;
-                                $total_revenue_bank_location = 0;
-                                $total_refund_location = 0;
+                                
                                 $t_revenue = $t_cash + $t_card + $t_bank;
                                 $inhandBalance = $total_revenue -$total_refund;
                             @endphp
@@ -212,15 +215,15 @@
                 <table class="table">
                     <tr>
                         <th>Cash </th>
-                        <td> {{number_format(  $total_revenue_cash_location1,2)}}</td>
+                        <td> {{number_format(  $total_revenue_cash_location,2)}}</td>
                     </tr>
                     <tr>
                         <th>Card </th>
-                        <td> {{number_format( $total_revenue_card_location1,2)}}</td>
+                        <td> {{number_format( $total_revenue_card_location,2)}}</td>
                     </tr>
                     <tr>
                         <th>Bank/Wire Transfer</th>
-                        <td> {{number_format($total_revenue_bank_location1,2)}}</td>
+                        <td> {{number_format($total_revenue_bank_location,2)}}</td>
                     </tr>
                     <tr>
                         <th>Gross Sales</th>
@@ -232,15 +235,15 @@
                             <tbody>
                                 <tr>
                                     <th class="pl-3" style="color: #8b8b8b;">Cash</th>
-                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_cash_location}}</td>
+                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_cash_location1}}</td>
                                 </tr>
                                 <tr>
                                     <th class="pl-3" style="color: #8b8b8b;">Card</th>
-                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_card_location}}</td>
+                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_card_location1}}</td>
                                 </tr>
                                 <tr>
                                     <th class="pl-3" style="color: #8b8b8b;">Bank/Wire Transfer</th>
-                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_bank_location}}</td>
+                                    <td style="font-weight:400;color: #8b8b8b;"> {{$total_refund_bank_location1}}</td>
                                 </tr>
                             </tbody>
                         </table>
