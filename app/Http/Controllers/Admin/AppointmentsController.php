@@ -1768,8 +1768,10 @@ class AppointmentsController extends Controller
                  */
                 if($request->lead_id){
                     $patient = Patients::where(['id' => $request->lead_id])->first();
+                    dd($request->lead_id , $patient);
                 }else{
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                    dd($request->lead_id , $patient);
                 }
 
                 if (! $patient) {
@@ -1796,7 +1798,7 @@ class AppointmentsController extends Controller
                 $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
                 $lead_service->update(['status' => 1]);
             }
-            dd($patient);
+           
             
             // Set Lead ID for Appointment
             $appointment_data['patient_id'] = $patient->id;
