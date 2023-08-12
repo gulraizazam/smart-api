@@ -1768,10 +1768,10 @@ class AppointmentsController extends Controller
                  */
                 if($request->lead_id){
                     $patient = Patients::where(['id' => $request->lead_id])->first();
-                    dd($request->lead_id , $patient);
+                    dd('here',$request->lead_id , $patient);
                 }else{
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
-                    dd($request->lead_id , $patient);
+                    dd('herwwe',$request->lead_id , $patient);
                 }
 
                 if (! $patient) {
