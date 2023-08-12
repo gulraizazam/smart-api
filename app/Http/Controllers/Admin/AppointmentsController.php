@@ -1766,14 +1766,14 @@ class AppointmentsController extends Controller
                  * If appointment is for the first time then
                  * update user information, otherwise not
                  */
-                if($request->lead_id){
-                    $lId = (int)$request->lead_id;
-                    $patient = Patients::where(['id' => $lId])->first();
+                // if($request->lead_id){
+                //     $lId = (int)$request->lead_id;
+                //     $patient = Patients::where(['id' => $lId])->first();
                    
-                }else{
+                // }else{
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
                    
-                }
+                //}
 dd($patient);
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
