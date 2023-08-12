@@ -1767,11 +1767,12 @@ class AppointmentsController extends Controller
                  * update user information, otherwise not
                  */
                 if($request->lead_id){
-                    $patient = Patients::where(['id' => $request->lead_id])->first();
-                    dd('here',$request->lead_id , $patient);
+                    $lId = (int)$request->lead_id;
+                    $patient = Patients::where(['id' => $lId])->first();
+                   
                 }else{
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
-                    dd('herwwe',$request->lead_id , $patient);
+                   
                 }
 
                 if (! $patient) {
