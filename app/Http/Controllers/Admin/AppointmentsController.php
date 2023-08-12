@@ -1776,7 +1776,7 @@ class AppointmentsController extends Controller
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
                 } else {
-                    dd($patient);
+                    
                     $appointment_data['patient_id'] = $patient->id;
                     Patients::where(['id' => $patient->id])->update([
                         'name' => $appointment_data['name'],
@@ -1796,6 +1796,7 @@ class AppointmentsController extends Controller
                 $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
                 $lead_service->update(['status' => 1]);
             }
+            dd($patient);
             
             // Set Lead ID for Appointment
             $appointment_data['patient_id'] = $patient->id;
