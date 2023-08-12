@@ -1774,7 +1774,7 @@ class AppointmentsController extends Controller
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
                    
                 }
-
+dd($patient);
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
