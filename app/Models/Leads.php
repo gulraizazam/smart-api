@@ -137,39 +137,38 @@ class Leads extends BaseModal
         /*
      * Ajax base result of patient according to id or name
      * */
-        public static function getLeadidAjax($name, $account_id)
-        {
-            $leads = collect();
-            if (is_numeric($name)) {
-                $leads = self::where([
-                    'active' => '1',
-                    'account_id' => $account_id,
-                    'id' => $name,
-                ])->select('name', 'id', 'phone')->get();
-            }
-            if ($leads->count() > 0) {
-                return $leads;
-            }
-
-            $name = GeneralFunctions::patientSearch($name);
-            $phone_numeric = GeneralFunctions::clearnString($name);
-
-            $condition = [];
-            if (is_numeric($phone_numeric)) {
-                $phone = GeneralFunctions::cleanNumber($name);
-                $condition[] = ['phone', 'LIKE', "%{$phone}%"];
-            } else {
-                $condition[] = ['name', 'LIKE', "%{$name}%"];
-            }
-          
-                $lead_result = Leads::where(['active' => '1', 'account_id' => $account_id])
-                ->where($condition)
-                ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
-
-             return $lead_result;
-            
-            
+    public static function getLeadidAjax($name, $account_id)
+    {
+       
+        $leads = collect();
+        if (is_numeric($name)) {
+            $leads = self::where([
+                'active' => '1',
+                'account_id' => $account_id,
+                'id' => $name,
+            ])->select('name', 'id', 'phone')->get();
         }
+        if ($leads->count() > 0) {
+            return $leads;
+        }
+
+        $name = GeneralFunctions::patientSearch($name);
+        $phone_numeric = GeneralFunctions::clearnString($name);
+
+        $condition = [];
+        if (is_numeric($phone_numeric)) {
+            $phone = GeneralFunctions::cleanNumber($name);
+            $condition[] = ['phone', 'LIKE', "%{$phone}%"];
+        } else {
+            $condition[] = ['name', 'LIKE', "%{$name}%"];
+        }
+
+        $lead_result = Leads::where(['active' => '1', 'account_id' => $account_id])
+            ->where($condition)
+            ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
+
+        return $lead_result;
+    }
 
     /**
      * Prepare SMS Contnet for Delivery
