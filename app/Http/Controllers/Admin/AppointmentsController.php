@@ -1769,16 +1769,20 @@ class AppointmentsController extends Controller
                  * If appointment is for the first time then
                  * update user information, otherwise not
                  */
-                if($request->lead_id){
-                    $patient = Patients::where(['id' => $request->lead_id])->first();
-                }else{
+                // if($request->lead_id){
+                //     $lId = (int)$request->lead_id;
+                //     $patient = Patients::where(['id' => $lId])->first();
+                   
+                // }else{
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
-                }
+                   
+                //}
 
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
                 } else {
+                    
                     $appointment_data['patient_id'] = $patient->id;
                     Patients::where(['id' => $patient->id])->update([
                         'name' => $appointment_data['name'],
@@ -1798,6 +1802,8 @@ class AppointmentsController extends Controller
                 $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
                 $lead_service->update(['status' => 1]);
             }
+           
+            
             // Set Lead ID for Appointment
             $appointment_data['patient_id'] = $patient->id;
             $appointment_data['lead_id'] = $lead->id;
