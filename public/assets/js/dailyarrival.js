@@ -73,7 +73,7 @@ var loadStaffWiseArrivalReport = function (that) {
         data: {
             location_id: $('#location_id').val(),
             doctor_id: $('#doctors_list').val(),
-            date_range: $('#date_range').val(),
+            date_range: $('#date_range_arrival').val(),
             created_by:$('#created_by').val(),
             apt_type:$('#apt_type').val(),
         },
