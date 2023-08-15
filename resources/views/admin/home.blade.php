@@ -926,14 +926,14 @@
                                                                     Auth::user()->hasRole('Head of Operations') ||
                                                                     Auth::user()->hasRole('Finance'))
                                                                 <li onclick="initDoctorWiseConversion('thismonth', 'all')">
-                                                                    <a class="dropdown-item" data-period="thismonth"
+                                                                    <a class="dropdown-item doctor_wise_centre_id" data-period="thismonth"
                                                                         data-id="all" >All
                                                                         Centres</a>
                                                                 </li>
                                                             @endif
                                                             @foreach ($centres as $centre)
                                                                 <li onclick="initDoctorWiseConversion('thismonth', {{ $centre->id }})">
-                                                                    <a class="dropdown-item" data-period="thismonth"
+                                                                    <a class="dropdown-item doctor_wise_centre_id" data-period="thismonth"
                                                                     data-id="{{ $centre->id }}">{{ $centre->name }}</a>
                                                                 </li>
                                                             @endforeach
@@ -970,31 +970,31 @@
                                                             id="doctor_wise_list">
                                                             <li class="today">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('today');">Today</a>
+                                                                    onclick="initDoctorWiseConversion('today', 'centre');">Today</a>
                                                             </li>
                                                             <li class="yesterday">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
+                                                                    onclick="initDoctorWiseConversion('yesterday', 'centre');">Yesterday</a>
                                                             </li>
                                                             <li class="last7days">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('last7days');">Last 7
+                                                                    onclick="initDoctorWiseConversion('last7days', 'centre');">Last 7
                                                                     Days</a>
                                                             </li>
                                                             <li class="week">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('week');">This
+                                                                    onclick="initDoctorWiseConversion('week', 'centre');">This
                                                                     Week</a>
                                                             </li>
                                                             <li class="thismonth">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     class="active" active
-                                                                    onclick="initDoctorWiseConversion('thismonth');">This
+                                                                    onclick="initDoctorWiseConversion('thismonth', 'centre');">This
                                                                     Month</a>
                                                             </li>
                                                             <li class="lastmonth">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('lastmonth');">Last
+                                                                    onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
                                                                     Month</a>
                                                             </li>
                                                         </ul>
@@ -1094,68 +1094,6 @@
 
             });
 
-            /* function GetAllDoctors(centre_id) {
-                var all = "all";
-                var TABLE_HTML = "";
-                $.ajax({
-                    url: route('admin.getdoctors'),
-                    type: "GET",
-                    data: {
-                        'centre_id': centre_id
-                    },
-                    cache: false,
-                    success: function(response) {
-                        jQuery('#doc_nav').html("");
-                        jQuery.each(response.doctors, function(index, doctor) {
-
-                            TABLE_HTML += " <li><a class='dropdown-item centre-item'  data-id=" + doctor
-                                .id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name +
-                                "</a></li>";
-                        });
-                        jQuery('#doc_nav').append(TABLE_HTML);
-                    },
-                });
-                let converted = 0;
-                let arrived = 0;
-                let avg_sum = 0;
-                $.ajax({
-                    url: route('admin.dashboard.all_doctor_wise_conversion'),
-                    type: 'GET',
-                    cache: false,
-                    data: {
-                        'period': 'thismonth',
-                        'centre_id': centre_id
-                    },
-                    success: function(response) {
-
-                        $('.loader-imgs').css('display', "none");
-                        var categories = response.data.categories
-
-                        jQuery('#categories-table-body').html("");
-                        var TABLE_HTML = "";
-                        jQuery.each(categories, function(index, category) {
-                            arrived += category.total_arrival;
-                            converted += category.total_conversion;
-                            avg_sum += category.avg;
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category
-                                .service + "</td><td>" + category.total_conversion + "/" + category
-                                .total_arrival + "</td><td>" + ((category.total_conversion / category
-                                    .total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg)
-                                .toFixed(2) + "</td></tr>";
-
-                        });
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" +
-                            converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) +
-                            "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
-
-                        jQuery('#categories-table-body').append(TABLE_HTML);
-                        AllDoctorWiseConversion(response);
-                    },
-                    error: function(xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                });
-            } */
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
