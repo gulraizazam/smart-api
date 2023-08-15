@@ -635,7 +635,6 @@ function CollectionByServiceCategory(service, colors) {
 }
 
 function initCentreWiseArrival(period, centreID, time = '') {
-
     if (time != 'firsttime') {
         central_wise_arrival_chart.destroy();
     }
@@ -971,7 +970,6 @@ function GetDoctors(centre_id, time = '') {
                 'centre_id': centre_id
             },
             success: function (response) {
-                console.log("resssss" , response);
                 var categories = response.data.categories
                 jQuery('#categories-table-body').html("");
                 var TABLE_HTML = "";
@@ -992,7 +990,6 @@ function GetDoctors(centre_id, time = '') {
             }
         });
     }
-    var all = "all";
     var TABLE_HTML = "";
     $.ajax({
         url: route('admin.getdoctors'),
@@ -1011,7 +1008,6 @@ function GetDoctors(centre_id, time = '') {
 }
 
 function LoadDocWiseConversion(doc_id,time = '') {
-
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
@@ -1047,7 +1043,6 @@ function LoadDocWiseConversion(doc_id,time = '') {
             });
 
             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
-
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
         },
