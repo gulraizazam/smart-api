@@ -1,7 +1,22 @@
 jQuery(document).ready(function() {
     patientSearch('appointment_patient_id');
 })
-
+$('#date_range_arrival').daterangepicker({
+    locale: {
+    },
+    ranges: {
+        'Today': [moment(), moment()],
+        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
+        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
+        'This Month': [moment().startOf('month'), moment().subtract(1, 'days')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        'This Year': [moment().startOf('year'), moment().endOf('year')],
+        'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().subtract(1, 'days')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -58,7 +73,7 @@ var loadStaffWiseArrivalReport = function (that) {
         data: {
             location_id: $('#location_id').val(),
             doctor_id: $('#doctors_list').val(),
-            date_range: $('#date_range').val(),
+            date_range: $('#date_range_arrival').val(),
             created_by:$('#created_by').val(),
             apt_type:$('#apt_type').val(),
         },
