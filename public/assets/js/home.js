@@ -823,8 +823,13 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
+    if (centre_id == 'centre') {
+        centre_id = $('.doctorwiseconversion').attr('data-id');
+    }
+    if (centre_id == '' || centre_id == undefined) {
+        centre_id = $(".doctorwiseconversion").data('id');
+    }
     $('.loader-imgs').css('display', "block");
-    var centre_id = (centre_id == '') ? $(".doctorwiseconversion").data('id') : centre_id;
     var doc_id = $(".doctorname").data('id');
     $('#doc_nav').empty();
     $(".doctorname").html('Select doctor <i class="fa fa-angle-down"></i>');
@@ -835,7 +840,6 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
     $('.arrivalbtn').text();
     $("#categories-table-body").html("");
 
-    console.log(centre_id, doc_id);
     if (centre_id == 'all' && doc_id == 'all-docs') {
         $.ajax({
             url: route('admin.dashboard.all_doctor_wise_conversion'),
