@@ -1948,17 +1948,12 @@ class LeadsController extends Controller
     public function getleadnumber(Request $request)
     {
 
-        $lead = Patients::find($request->lead_id);
-        if ($lead) {
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-                'lead' => $lead,
-            ]);
-        } else {
+        
             $lead = Leads::find($request->lead_id);
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'lead' => $lead,
             ]);
-        }
+        
     }
 
     public function phoneSearch(Request $request)
