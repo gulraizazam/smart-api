@@ -29,11 +29,11 @@
                     <table class="table border">
                         <thead>
                             <tr class="">
-                                <td class="bg-light">Total Scheduled Appointments</td>
+                                <td class="bg-light">Total Scheduled Appointments (Walkin included)</td>
                                 <td class="bg-light" style="text-align:right;">{{count($Appointments) ?? 0}}</td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light"> Arrived</td>
+                                <td class="border-top bg-light"> Arrived (Walkin included)</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
                             </tr>
                             <!-- @if(isset($walkin_customers))
@@ -43,7 +43,7 @@
                             </tr>
                             @endif -->
                                 <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio</td>
+                                    <td class="border-top bg-light" >Arrival Ratio (Walkin included)</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
                                         if (isset($arrived) && isset($Appointments)) {
