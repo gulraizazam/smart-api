@@ -112,7 +112,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Arrival to Conversion Ratio</td>
-                                <td class="bg-light" style="text-align:right;">{{ number_format($arrival_to_conversion_ratio ?? 0, 2) }} %</td>
+                                <td class="bg-light" style="text-align:right;">{{ number_format($total_conversion /$total_arrival  ?? 0, 2) }} %</td>
                             </tr>
                             <tr class="">
                                 <td class="bg-light">Total Conversion</td>
