@@ -244,17 +244,17 @@
                                                             href="{{ route('admin.follow_up.download') }}" > Download
                                                             <i class="fa fa-angle-right"></i>
                                                         </a>
-                                                        
+
                                                     </div>
                                                 </div>
                                             </li>
                                         </ul>
-                                        
+
                                     </div>
                                         <div class="card-spacer2 table_v_scroll" >
                                             <div class='table-responsive'>
                                                 <table class="table">
-                                                
+
                                                     <thead>
                                                         <tr>
                                                             <th class='table-cols'>ID</th>
@@ -264,22 +264,22 @@
                                                             <th class='table-cols'>Conversion Date</th>
                                                         </tr>
                                                     </thead>
-                                                    
+
                                                     <tbody id="patient-follow-up">
-                                                   
+
                                                     </tbody>
-                                                    
+
                                                 </table>
                                                 <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended" >
                                             </div>
                                         </div>
-                                        
+
                                     </div>
                                 </div>
                             </div>
                         </div>
                         @endif
-                   
+
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
@@ -367,12 +367,12 @@
                                                         href="{{ route('admin.monthly_follow_up.download') }}"  > Download
                                                             <i class="fa fa-angle-right"></i>
                                                         </a>
-                                                        
+
                                                     </div>
                                                 </div>
                                             </li>
                                         </ul>
-                                        
+
                                     </div>
                                         <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
@@ -390,7 +390,7 @@
                                                 <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                             </div>
                                         </div>
-                                       
+
                                     </div>
                                 </div>
                             </div>
@@ -903,11 +903,12 @@
                                                                 Auth::user()->hasRole('Super-Admin') ||
                                                                 Auth::user()->hasRole('Head of Operations') ||
                                                                 Auth::user()->hasRole('Finance'))
-                                                            <a data-id="all"
+                                                            <a
                                                                 class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false"> All Centres
+                                                                aria-expanded="false"
+                                                                data-id="all"> All Centres
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @else
@@ -924,18 +925,16 @@
                                                                     Auth::user()->hasRole('Super-Admin') ||
                                                                     Auth::user()->hasRole('Head of Operations') ||
                                                                     Auth::user()->hasRole('Finance'))
-                                                                <li>
+                                                                <li onclick="initDoctorWiseConversion('thismonth', 'all')">
                                                                     <a class="dropdown-item" data-period="thismonth"
-                                                                        data-id="all" onclick="GetDoctors('all')">All
+                                                                        data-id="all" >All
                                                                         Centres</a>
                                                                 </li>
                                                             @endif
                                                             @foreach ($centres as $centre)
-                                                                <li>
-                                                                    <a class="dropdown-item centre-item"
-                                                                        data-period="yesterday"
-                                                                        data-id="{{ $centre->id }}"
-                                                                        onclick="GetDoctors({{ $centre->id }})">{{ $centre->name }}</a>
+                                                                <li onclick="initDoctorWiseConversion('thismonth', {{ $centre->id }})">
+                                                                    <a class="dropdown-item" data-period="thismonth"
+                                                                    data-id="{{ $centre->id }}">{{ $centre->name }}</a>
                                                                 </li>
                                                             @endforeach
                                                         </ul>
@@ -1039,7 +1038,7 @@
                             </div>
                         </div>
                     @endif
-                   
+
                 </div>
             </div>
         </div>
@@ -1082,30 +1081,20 @@
                         $("#activitydiv").html(response);
                     },
                 });
-                
+
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
-                    initDoctorWiseConversion('thismonth', 'firsttime');
+                    initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
 
-                    initCentreWiseArrival('thismonth', '', 'firsttime');
-                @endif
-                @if (Auth::user()->hasRole('Administrator') ||
-                        Auth::user()->hasRole('Super-Admin') ||
-                        Auth::user()->hasRole('Head of Operations') ||
-                        Auth::user()->hasRole('Finance'))
-                    GetAllDoctors(centre_id);
-               
-                @else
-                    $('.loader-imgs').css('display', "none");
-                    GetDoctors(centre_id, 'firsttime');
+                    initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
                 @endif
 
             });
 
-            function GetAllDoctors(centre_id) {
+            /* function GetAllDoctors(centre_id) {
                 var all = "all";
                 var TABLE_HTML = "";
                 $.ajax({
@@ -1138,7 +1127,7 @@
                         'centre_id': centre_id
                     },
                     success: function(response) {
-                        
+
                         $('.loader-imgs').css('display', "none");
                         var categories = response.data.categories
 
@@ -1166,7 +1155,7 @@
                         errorMessage(xhr);
                     }
                 });
-            }
+            } */
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
