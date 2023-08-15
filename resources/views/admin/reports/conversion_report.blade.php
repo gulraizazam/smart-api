@@ -112,7 +112,11 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Arrival to Conversion Ratio</td>
+                                @if($total_arrival > 0)
                                 <td class="bg-light" style="text-align:right;">{{ number_format(($total_conversion /$total_arrival)*100  ?? 0, 2) }} %</td>
+                                @else
+                                <td class="bg-light" style="text-align:right;">0.00 %</td>
+                                @endif
                             </tr>
                             <tr class="">
                                 <td class="bg-light">Total Conversion</td>
