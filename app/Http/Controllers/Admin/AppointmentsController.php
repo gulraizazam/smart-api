@@ -1763,21 +1763,7 @@ class AppointmentsController extends Controller
                 }
             } else {
                 $lead = Leads::whereId($request->lead_id)->first();
-                //$lead = Leads::findOrFail(39778);
-              
-                /*
-                 * If appointment is for the first time then
-                 * update user information, otherwise not
-                 */
-                // if($request->lead_id){
-                //     $lId = (int)$request->lead_id;
-                //     $patient = Patients::where(['id' => $lId])->first();
-                   
-                // }else{
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
-                   
-                //}
-
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
