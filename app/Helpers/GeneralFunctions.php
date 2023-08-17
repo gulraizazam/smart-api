@@ -193,19 +193,27 @@ class GeneralFunctions
            
             $mergedServices = [];
             foreach ($services as $service) {
-                if(Gate::allows(('view_inactive_services'))){
-                    $children = Services::where(['parent_id' => $service->id])
-                    ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
-                    ->orderBy('id', 'asc')
-                    ->get()
-                    ->toArray();
+                if (!hasFilter($filters, 'status')) {
+                    if(Gate::allows(('view_inactive_services'))){
+                        $children = Services::where(['parent_id' => $service->id])
+                        ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                        ->orderBy('id', 'asc')
+                        ->get()
+                        ->toArray();
+                    }else{
+                        $children = Services::where(['parent_id' => $service->id])
+                        ->where('active',1)
+                        ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                        ->orderBy('id', 'asc')
+                        ->get()
+                        ->toArray();
+                    }
                 }else{
                     $children = Services::where(['parent_id' => $service->id])
-                    ->where('active',1)
-                    ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
-                    ->orderBy('id', 'asc')
-                    ->get()
-                    ->toArray();
+                        ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                        ->orderBy('id', 'asc')
+                        ->get()
+                        ->toArray();
                 }
 
                 $mergedServices[] = $service->toArray();
