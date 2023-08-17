@@ -325,13 +325,13 @@
                 if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
                     return false;
                 }
-                var date_range;
-                if($("#date_range_fdm").val() !=""){
-                    date_range = $("#date_range_fdm").val();
+                var date_ranges;
+                if($("#date_range_fdm").val()!=""){
+                    date_ranges = $("#date_range_fdm").val();
                 }else{
-                    date_range = $("#date_range").val();
+                    date_ranges = $("#date_range").val();
                 }
-                alert($("#date_range").val());
+                
                 showSpinner();
                 $.ajax({
                     headers: {
@@ -340,7 +340,8 @@
                     url: route('admin.reports.account_sales_report_load'),
                     type: "POST",
                     data: {
-                        date_range: date_range,
+                        
+                        date_range: date_ranges,
                         patient_id: $('#patient_id').val(),
                         appointment_type_id: $('#appointment_type_id').val(),
                         location_id: $('#location_id').val(),
