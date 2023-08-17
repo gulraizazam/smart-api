@@ -325,12 +325,13 @@
                 if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
                     return false;
                 }
+                var date_range;
                 if($("#date_range_fdm").val() !=""){
                     date_range = $("#date_range_fdm").val();
                 }else{
                     date_range = $("#date_range").val();
                 }
-                alert(date_range);
+                alert($("#date_range").val());
                 showSpinner();
                 $.ajax({
                     headers: {
