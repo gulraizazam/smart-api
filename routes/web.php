@@ -187,7 +187,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     // Locations
     Route::get('locations/sort_get', [LocationsController::class, 'getSortOrder'])->name('locations.sort_get');
     Route::resource('locations', LocationsController::class)->only('index');
-
+    Route::get('locations/getservices', [LocationsController::class,'getServices'])->name('locations.getservices');
     // Payment Modes
     Route::get('payment_modes', [PaymentModesController::class, 'index'])->name('payment_modes.index');
     Route::get('payment_modes/sort', [PaymentModesController::class, 'sortOrder'])->name('payment_modes.sort');
