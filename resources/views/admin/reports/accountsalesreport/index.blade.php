@@ -330,6 +330,7 @@
                 }else{
                     date_range = $("#date_range").val();
                 }
+                alert(date_range);
                 showSpinner();
                 $.ajax({
                     headers: {
