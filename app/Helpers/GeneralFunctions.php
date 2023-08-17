@@ -177,7 +177,7 @@ class GeneralFunctions
                 }
             }
             $services = Services::where('slug', '!=', 'all')
-                ->where(['parent_id' => 0])
+                //->where(['parent_id' => 0])
                 ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                 ->orderBy('id', 'asc')
                 ->get();
