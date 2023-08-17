@@ -1080,7 +1080,7 @@ class DashboardReportsController extends Controller
                             'Hours per Day',
                         ];
                     }
-                    dd($today_records);
+                    
 
                     if ($today_records) {
                         foreach ($today_records as $todayRecord) {
