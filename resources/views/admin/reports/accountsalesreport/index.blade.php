@@ -326,14 +326,14 @@
                     return false;
                 }
                 var date_ranges;
-                if($("#date_range_fdm").val()!=""){
+                if($("#date_range_fdm").val()!=undefined){
                   
                     date_ranges = $("#date_range_fdm").val();
                 }else{
                    
                     date_ranges = $("#date_range").val();
                 }
-                console.log($("#date_range_fdm").val());
+                
                 showSpinner();
                 $.ajax({
                     headers: {
