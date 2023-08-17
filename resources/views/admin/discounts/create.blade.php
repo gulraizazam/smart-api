@@ -29,47 +29,40 @@
 
                 <div class="form-group">
                     <div class="row">
-
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <div class="radio-inline tax-radios mb-3">
-                                <label class="radio">
-                                    <input type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'add');">
-                                    <span></span>
-                                    Treatment
-                                </label>
-                            </div>
-
-                            <div class="radio-inline tax-radios mb-3">
-                                <label class="radio">
-                                    <input type="radio" value="Consultancy" name="discount_type" onchange="discountType(this,'add');">
-                                    <span></span>
-                                    Consultancy
-                                </label>
-
-                            </div>
-
-                            <div class="radio-inline tax-radios">
-                                <label class="radio">
-                                    <input type="radio" value="Inventory" name="discount_type" onchange="discountType(this,'add');">
-                                    <span></span>
-                                    Inventory
-                                </label>
-
-                            </div>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Name <span class="text text-danger">*</span></label>
+                            <input id="add_name" class="form-control" type="text" name="name" placeholder="Name">
                         </div>
-
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Group</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable On <span class="text text-danger">*</span></label>
+                            <select id="add_amount_types" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
+                                <option value="">Select </option>
+                                <option value="Treatment">Treatment</option>
+                                <option value="Consultancy">Consultancy</option>
+                                <option value="Inventory">Inventory</option>
+                            </select>
+                        </div>
+                    
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
+                            <select id="add_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" onchange="SetFields()">
+                                <option value="">Select Amount Type</option>
+                                <option value="Fixed">Fixed</option>
+                                <option value="Percentage">Percentage</option>
+                                <option value="Configurable">Configurable</option>
+                            </select>
+                        </div>
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Type</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
                                     <input type="radio" class="group_slug" value="default" checked name="slug">
                                     <span></span>
-                                    Default
+                                    Fixed
                                 </label>
                             </div>
 
-                            <div class="radio-inline tax-radios mb-3">
+                            <div class="radio-inline tax-radios mb-3" id="custom">
                                 <label class="radio">
                                     <input type="radio" class="group_slug" value="custom" name="slug">
                                     <span></span>
@@ -78,49 +71,14 @@
 
                             </div>
 
-                            <div class="radio-inline tax-radios">
-                                <label class="radio">
-                                    <input type="radio" class="group_slug" value="birthday" name="slug">
-                                    <span></span>
-                                    Birthday
-                                </label>
-
-                            </div>
-
                         </div>
-
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
-                            <input id="add_name" class="form-control" type="text" name="name">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Type <span class="text text-danger">*</span></label>
-                            <select id="add_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
-                                <option value="">Select Amount Type</option>
-                                <option value="Fixed">Fixed</option>
-                                <option value="Percentage">Percentage</option>
-                            </select>
-                        </div>
-
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
                             <input min="0" id="add_amount" class="form-control" type="number" name="amount">
                         </div>
                     </div>
 
-                    <div class="row birthday_range d-none">
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Pre Days</label>
-                            <input id="add_pre_days" class="form-control" type="number" name="pre_days">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Post Days</label>
-                            <input id="add_post_days" class="form-control" type="number" name="post_days">
-                        </div>
-                    </div>
+                   
 
                     <div class="row">
 
@@ -143,7 +101,30 @@
                         </span>
 
                     </div>
+                    <!-- <div class="row">
 
+                        <div class="fv-row col-md-5 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre <span class="text text-danger">*</span></label>
+                            <select id="locations" onchange="getCentreServices($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                                <option value="">Select Centre</option>
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-5 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
+                            <select id="services" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
+                                <option value="">Select Services</option>
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-2 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0" style="opacity: 0;">Add <span class="text text-danger">*</span></label>
+                            <button type="submit" class="btn btn-primary spinner-button">
+                                <span class="indicator-label">Add</span>
+                            </button>
+                        </div>
+
+                    </div> -->
                 </div>
 
             </div>
