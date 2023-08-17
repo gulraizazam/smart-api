@@ -1076,7 +1076,7 @@ class DashboardReportsController extends Controller
                 foreach ($locations as $counter => $location) {
                     
                     $location_detail = Locations::find($location);
-                    dd($location ,  $locations,$location_detail);
+                   
                     if ($counter == 0) {
                         $data[0] = [
                             'Task',
