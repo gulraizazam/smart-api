@@ -327,11 +327,13 @@
                 }
                 var date_ranges;
                 if($("#date_range_fdm").val()!=""){
+                    console.log("here");
                     date_ranges = $("#date_range_fdm").val();
                 }else{
+                    console.log("mmhere");
                     date_ranges = $("#date_range").val();
                 }
-                
+                console.log(date_ranges);
                 showSpinner();
                 $.ajax({
                     headers: {
