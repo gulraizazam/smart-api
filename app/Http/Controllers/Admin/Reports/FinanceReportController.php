@@ -1185,7 +1185,7 @@ class FinanceReportController extends Controller
      */
     public function generalrevenuereportdetail(Request $request)
     {
- dd($request->all());
+
 
         if (is_array($request->location_id_com) && count($request->location_id_com) > 1) {
             $location[] = implode(',', $request->location_id_com);
