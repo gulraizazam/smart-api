@@ -90,7 +90,11 @@
                     <tr>
                         <td>{{$patient->id}}</td>
                         <td>{{$patient->name}}</td>
-                        <td>{{$patient->phone}}</td>
+                        @if(Gate::allows('contact'))
+                            <td>{{$patient->phone}}</td>
+                        @else
+                        <td>***********</td>
+                        @endif
                         <td>{{$service->name}}</td>
                         <td>{{$doct->name}}</td>
                         <td>{{$loc->name}}</td>
