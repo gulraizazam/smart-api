@@ -54,7 +54,11 @@
                     <tr>
                         <td>C-{{$patient['patient_id']}}</td>
                         <td>{{$patient['name']}}</td>
+                        @if(Gate::allows('contact'))
                         <td>{{$patient['phone']}}</td>
+                        @else
+                        <td>***********</td>
+                        @endif
                         <td>{{$location_name->name}}</td>
                         <td>{{$patient['is_treatment'] == 1 ? 'Yes' : 'No'}}</td>
                         <td>{{ Carbon\Carbon::parse($patient['created_at'])->format('Y-m-d') }}</td>
