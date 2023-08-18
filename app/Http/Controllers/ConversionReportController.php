@@ -21,7 +21,12 @@ class ConversionReportController extends Controller
         $users = ($select_All + $employees->toArray() + $operators->toArray());
         $operators->prepend('All', '');
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
-        $locations->prepend('All', '');
+        if(Auth::user()->hasRole('FDM')){
+
+        }else{
+            $locations->prepend('All', '');
+        }
+        
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
 
         return view('admin.reports.conversion', get_defined_vars());
