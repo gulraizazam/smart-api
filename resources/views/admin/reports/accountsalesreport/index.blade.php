@@ -75,7 +75,15 @@
 
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
+                                            @if(Auth::user()->hasRole('FDM'))
+                                            <div class="form-group col-md-3 sn-select @if($errors->has('date_range')) has-error @endif">
+                                                {!! Form::label('date_range_fdm', 'Date Range*', ['class' => 'control-label']) !!}
+                                                <div class="input-group">
 
+                                                    {!! Form::text('date_range', null, ['id' => 'date_range_fdm', 'class' => 'form-control','disabled']) !!}
+                                                </div>
+                                            </div>
+                                            @else
                                             <div class="form-group col-md-3 sn-select @if($errors->has('date_range')) has-error @endif">
                                                 {!! Form::label('date_range', 'Date Range*', ['class' => 'control-label']) !!}
                                                 <div class="input-group">
@@ -83,6 +91,7 @@
                                                     {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                                 </div>
                                             </div>
+                                            @endif
                                             <div class="form-group col-md-3 sn-select @if($errors->has('report_type')) has-error @endif">
                                                 {!! Form::label('report_type', 'Report Type*', ['class' => 'control-label']) !!}
                                                 <select name="report_type" id="report_type" style="width:100%" class="form-control select2">
@@ -300,13 +309,31 @@
                 startDate: moment().startOf('month'),
                 endDate  :  moment().endOf('month')
             });
+            $('#date_range_fdm').daterangepicker({
+                locale: {
+                },
+                ranges   : {
+                    'Today' : [moment(), moment()],
+                    
+                },
+                startDate: moment(),
+                endDate  :  moment()
+            });
 
             var loadReport = function (that) {
 
                 if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
                     return false;
                 }
-
+                var date_ranges;
+                if($("#date_range_fdm").val()!=undefined){
+                  
+                    date_ranges = $("#date_range_fdm").val();
+                }else{
+                   
+                    date_ranges = $("#date_range").val();
+                }
+                
                 showSpinner();
                 $.ajax({
                     headers: {
@@ -315,7 +342,8 @@
                     url: route('admin.reports.account_sales_report_load'),
                     type: "POST",
                     data: {
-                        date_range: $('#date_range').val(),
+                        
+                        date_range: date_ranges,
                         patient_id: $('#patient_id').val(),
                         appointment_type_id: $('#appointment_type_id').val(),
                         location_id: $('#location_id').val(),
@@ -349,7 +377,9 @@
             }
 
             var printReport = function (medium_type) {
+               
                 $('#date_range-report').val($('#date_range').val());
+               
                 $('#date_range_by-report').val($('#date_range_by').val());
                 $('#date_range_by_first-report').val($('#date_range_by_first').val());
                 $('#patient_id-report').val($('#patient_id').val());
