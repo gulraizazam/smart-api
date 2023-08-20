@@ -914,7 +914,7 @@
                                                             <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false" data-id="{{ $centres[0]->id }}">
+                                                                aria-expanded="false" data-id="{{ $centres ? $centres[0]->id :'' }}">
                                                                 {{ $centres ? $centres[0]->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
