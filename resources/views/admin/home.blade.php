@@ -915,7 +915,7 @@
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false" data-id="{{ $centres[0]->id }}">
-                                                                {{ $centres[0]->name }}
+                                                                {{ $centres ? $centres[0]->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @endif
