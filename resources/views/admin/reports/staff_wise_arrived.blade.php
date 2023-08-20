@@ -30,11 +30,11 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Total Scheduled Appointments</td>
-                                <td class="bg-light" style="text-align:right;">{{count($Appointments) > 0 ?count($Appointments) -$walkin_customers  ? 0}}</td>
+                                <td class="bg-light" style="text-align:right;">{{count($Appointments) > 0 ?count($Appointments) -$walkin_customers  : 0}}</td>
                             </tr>
                             <tr class="">
                                 <td class="border-top bg-light"> Arrived</td>
-                                <td class="border-top bg-light" style="text-align:right;">{{$arrived > 0 ?$arrived -$walkin_customers  ? 0}}</td>
+                                <td class="border-top bg-light" style="text-align:right;">{{$arrived > 0 ?$arrived - $walkin_customers  : 0}}</td>
                             </tr>
                             <!-- @if(isset($walkin_customers))
                             <tr class="">
