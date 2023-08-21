@@ -2725,7 +2725,7 @@ class Finanaces
             ->where('package_advances.created_at','<=',$end_date.' 23:59:59')
             
             ->get();
-            dd($converted_appointments);
+            
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
                 if (!in_array($appointment->id, $appointments)) {
@@ -2756,9 +2756,8 @@ class Finanaces
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
-                        ->where('package_advances.created_at','>=',$start_date)
-                            ->where('package_advances.created_at','<=',$end_date)
-            
+                        ->where('package_advances.created_at','>=',$start_date.' 00:00:00')
+            ->where('package_advances.created_at','<=',$end_date.' 23:59:59')
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
