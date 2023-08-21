@@ -96,10 +96,7 @@ Route::get('/daily-stats', function () {
     \Artisan::call('appointments:daily-stats');
 });
 Route::get('/get_deleted', function () {
-    $appointments = Appointments::where('deleted_by', 4)
-        ->where('deleted_at','!=',null)
-        
-        ->get();
+    $appointments = Appointments::onlyTrashed()->get();
     return view('deleted',get_defined_vars());
 });
 Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
