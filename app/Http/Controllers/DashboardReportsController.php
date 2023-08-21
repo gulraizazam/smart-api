@@ -1073,13 +1073,17 @@ class DashboardReportsController extends Controller
             ];
             if ($locations) {
                 foreach ($locations as $counter => $location) {
+                    
                     $location_detail = Locations::find($location);
+                   
                     if ($counter == 0) {
                         $data[0] = [
                             'Task',
                             'Hours per Day',
                         ];
                     }
+                    
+
                     if ($today_records) {
                         foreach ($today_records as $todayRecord) {
                             if ($todayRecord->location_id == $location_detail->id) {
@@ -2620,6 +2624,10 @@ class DashboardReportsController extends Controller
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
+                        ->whereBetween('package_advances.created_at', [
+                            $periods[$period]['start_date'],
+                            $periods[$period]['end_date']
+                        ])
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
@@ -2869,7 +2877,12 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                             ->where(['cash_flow' => "in"])
                             ->where('cash_amount', '>', 0)
+                            ->whereBetween('package_advances.created_at', [
+                                $periods[$period]['start_date'],
+                                $periods[$period]['end_date']
+                            ])
                             ->get();
+                            
                         if (count($packagesadvances) > 0) {
                             $first_advance = PackageAdvances::whereIn('id', $package_info)
                                 ->where('cash_amount', '>', 0)
