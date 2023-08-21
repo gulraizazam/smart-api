@@ -25,8 +25,8 @@
                                                 Week</option>
                                             <option value="month" {{ request('type') == 'month' ? 'selected' : '' }}>This
                                                 Month</option>
-                                            <option value="lastmonth"
-                                                {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option>
+                                            <!-- <option value="lastmonth"
+                                                {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
                                         </select>
                                     </div>
                                 </div>
@@ -199,11 +199,11 @@
                                                                     onclick="initCollectionByCentre('', '', '','', 'thismonth','');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li>
+                                                            <!-- <li>
                                                                 <a href="#location_collection_4" data-toggle="tab"
                                                                     onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
                                                                     Month</a>
-                                                            </li>
+                                                            </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -234,13 +234,13 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                        <a class="form-control btndropdown btn_Report dashboard_unattended_report"
                                                         href="{{ route('admin.reports.follow_up') }}" > View Report
                                                         <i class="fa fa-angle-right"></i>
                                                         </a>
                                                     </div>
                                                     <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                        <a class="form-control btndropdown btn_Report dashboard_unattended_report"
                                                             href="{{ route('admin.follow_up.download') }}" > Download
                                                             <i class="fa fa-angle-right"></i>
                                                         </a>
@@ -323,11 +323,11 @@
                                                                     onclick="initRevenueByCentre('thismonth');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li>
+                                                            <!-- <li>
                                                                 <a href="#location_revenue_3" data-toggle="tab"
                                                                     onclick="initRevenueByCentre('lastmonth');">Last
                                                                     Month</a>
-                                                            </li>
+                                                            </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -357,13 +357,13 @@
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                    <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                    <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
                                                         href="{{ route('admin.reports.follow_up') }}" > View Report
                                                         <i class="fa fa-angle-right"></i>
                                                         </a>
                                                     </div>
                                                         <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
+                                                        <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
                                                         href="{{ route('admin.monthly_follow_up.download') }}"  > Download
                                                             <i class="fa fa-angle-right"></i>
                                                         </a>
@@ -397,7 +397,7 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                        <div class="col-lg-6 col-xxl-6">
+                        <div class="col-lg-6 col-xxl-6 mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -436,11 +436,11 @@
                                                                     onclick="InitRevenueByServiceCategory('', '', '', 'thismonth','');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li>
+                                                            <!-- <li>
                                                                 <a href="#service_revenue_3" data-toggle="tab"
                                                                     onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
                                                                     Month</a>
-                                                            </li>
+                                                            </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -456,7 +456,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -500,11 +500,11 @@
                                                                     onclick="initRevenueByService('', '', '','', 'thismonth','');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li>
+                                                            <!-- <li>
                                                                 <a href="#service_revenue_3"data-toggle="tab"
                                                                     onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
                                                                     Month</a>
-                                                            </li>
+                                                            </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -565,11 +565,11 @@
                                                                     onclick="initConsultancyByStatus('thismonth','1');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li>
+                                                            <!-- <li>
                                                                 <a href="#appointment_by_status_3" data-toggle="tab"
                                                                     onclick="initConsultancyByStatus('lastmonth','1');">Last
                                                                     Month</a>
-                                                            </li>
+                                                            </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -631,11 +631,11 @@
                                                                     onclick="initTreatmentByStatus('thismonth','2');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li>
+                                                            <!-- <li>
                                                                 <a href="#appointment_by_status_3" data-toggle="tab"
                                                                     onclick="initTreatmentByStatus('lastmonth','2');">Last
                                                                     Month</a>
-                                                            </li>
+                                                            </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -745,7 +745,7 @@
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">
-                                                                {{ $centres->name }}
+                                                                {{ $centres ? $centres->name :'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         </div>
@@ -915,8 +915,8 @@
                                                             <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false" data-id="{{ $centres[0]->id }}">
-                                                                {{ $centres[0]->name }}
+                                                                aria-expanded="false" data-id="{{ count($centres) > 0 ? $centres[0]->id :'' }}">
+                                                                {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @endif
@@ -992,11 +992,11 @@
                                                                     onclick="initDoctorWiseConversion('thismonth', 'centre');">This
                                                                     Month</a>
                                                             </li>
-                                                            <li class="lastmonth">
+                                                            <!-- <li class="lastmonth">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
                                                                     Month</a>
-                                                            </li>
+                                                            </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
