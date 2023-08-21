@@ -2931,7 +2931,7 @@ class Finanaces
         } else {
             $avg_cxlient_value = 0;
         }
-dd( $appointments_info->toArray());
+dd( $appointments_info);
         return [
             $appointments_info,
             $locationData,
