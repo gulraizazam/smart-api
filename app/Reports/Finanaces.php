@@ -2754,6 +2754,10 @@ class Finanaces
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
+                        ->whereBetween('package_advances.created_at', [
+                            $start_date,
+                            $end_date
+                        ])
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
