@@ -35,7 +35,7 @@
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable On <span class="text text-danger">*</span></label>
-                            <select id="add_amount_types" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
+                            <select id="add_amount_types" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type" onchange="discountType(this,'add')">
                                 <option value="">Select </option>
                                 <option value="Treatment">Treatment</option>
                                 <option value="Consultancy">Consultancy</option>
@@ -72,14 +72,58 @@
                             </div>
 
                         </div>
+                        <div class="discount_wrap w-100">
+                            <div class="fv-row col-12 discount_type_wrap d-flex mt-3">    
+                                <label class="fw-bold fs-6 pl-0 pr-4 pt-2">Buy</label>
+                                <select class="form-control form-control-solid mb-3" name="type">
+                                    <option value="">Select Session</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <label class="fw-bold fs-6 px-5 text-nowrap pt-2">Sessions of</label>
+                                <select class="form-control form-control-solid mb-3" name="base_service" id="base_service">
+                                    
+                                </select>
+                            </div>
+                            <div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">    
+                                <a class="btn p btn-primary px-3 mr-4 py-0 add_new_discount d-flex justify-content-center align-items-center"><i class="la la-plus p-0 m-0"></i></a>
+                                <label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
+                                <select class="form-control form-control-solid mb-0" name="type">
+                                    <option value="">Select Session</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <label class="fw-bold fs-6 px-5 text-nowrap pt-2 mb-0">Sessions of</label>
+                                <select class="form-control form-control-solid mb-0" name="services" id="services">
+                                    
+                                </select>
+                                <div class="d-flex align-items-center ml-5">
+                                    <div class="radio-inline tax-radios mb-0 mr-3">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug" value="default" checked name="complimentory">
+                                            <span class="mr-2"></span>
+                                            Complimentory
+                                        </label>
+                                    </div>
+
+                                    <div class="radio-inline tax-radios mb-0" id="custom">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug" value="custom" name="percentage">
+                                            <span class="mr-2"></span>
+                                            Percentage
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
                             <input min="0" id="add_amount" class="form-control" type="number" name="amount">
                         </div>
                     </div>
-
                    
-
                     <div class="row">
 
                         <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
