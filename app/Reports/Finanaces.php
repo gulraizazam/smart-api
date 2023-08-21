@@ -2815,7 +2815,7 @@ class Finanaces
             ->where($where)
             ->count();
         }
-        dd( $total_appointments );
+        
         array_push($converted_apts, collect($appointments_info)
         ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
         ->where('conversion_spend', '!=', "")->count());
@@ -2931,7 +2931,7 @@ class Finanaces
         } else {
             $avg_cxlient_value = 0;
         }
-
+dd( $appointments_info->toArray());
         return [
             $appointments_info,
             $locationData,
