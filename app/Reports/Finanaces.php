@@ -2683,7 +2683,7 @@ class Finanaces
         if (!empty($data['service_id'])) {
             $where[] = [['appointments.service_id' => $data['service_id']]];
         }
-
+dd($start_date , $end_date);
         $consultants = ResourceHasRota::join('resources', 'resources.id', 'resource_has_rota.resource_id')
             ->join('users', 'resources.external_id', 'users.id')
             ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
