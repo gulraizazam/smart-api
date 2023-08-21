@@ -94,7 +94,7 @@
                             <td>{{$patient->phone}}</td>
                        
                         <td>{{$service->name}}</td>
-                        <td>{{$doct->name}}</td>
+                        <td>{{$created->name}}</td>
                         <td>{{$loc->name}}</td>
                         <td>{{$patient->scheduled_date}}</td> 
                     </tr>
