@@ -2721,8 +2721,8 @@ class Finanaces
             ->where($where)
             ->where('package_advances.cash_amount', '>', 0)
             ->select('appointments.*')
-            ->where('package_advances.created_at','>=',$start_date)
-            ->where('package_advances.created_at','<=',$end_date)
+            ->where('package_advances.created_at','>=',$start_date.' 00:00:00')
+            ->where('package_advances.created_at','<=',$end_date.' 23:59:59')
             
             ->get();
             dd($converted_appointments);
