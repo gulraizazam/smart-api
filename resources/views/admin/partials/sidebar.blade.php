@@ -57,8 +57,8 @@
                         </a>
                     </li>
 
-                    @if(Gate::allows('permissions_manage') || Gate::allows('roles_manage') || Gate::allows('users_manage') || Gate::allows('user_types_manage'))
-                        <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.roles.edit', 'admin.users.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
+                    @if(Gate::allows('permissions_manage') || Gate::allows('roles_manage') || Gate::allows('users_manage') || Gate::allows('user_types_manage') || Gate::allows('doctors_manage') )
+                        <li class="menu-item menu-item-submenu {{openMenu(['admin.permissions.index', 'admin.users.index', 'admin.roles.index', 'admin.roles.edit', 'admin.users.index','admin.doctors.index', 'admin.user_types.index'])}}" aria-haspopup="true" data-menu-toggle="hover">
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <span class="svg-icon menu-icon">
                                     <i class="font-icon la la-user"></i>
@@ -99,11 +99,23 @@
                                                 <i class="menu-bullet menu-bullet-dot">
                                                     <span></span>
                                                 </i>
-                                                <span class="menu-text">Users</span>
+                                                <span class="menu-text">Application Users</span>
                                             </a>
                                         </li>
                                     @endcan
+                                    @can('doctors_manage')
+                                      
+                                        <li class="menu-item {{activeMenu('admin.doctors.index')}}" aria-haspopup="true">
+                                            <a href="{{route('admin.doctors.index')}}" class="menu-link">
+                                                <i class="menu-bullet menu-bullet-dot">
+                                                    <span></span>
+                                                </i>
+                                                <span class="menu-text">Doctors</span>
+                                            </a>
+                                        </li>
 
+                                            
+                                @endcan
                                     @can('user_types_manage')
                                         <li class="menu-item {{activeMenu('admin.user_types.index')}}" aria-haspopup="true">
                                             <a href="{{route('admin.user_types.index')}}" class="menu-link">
@@ -355,7 +367,7 @@
                         Gate::allows('custom_forms_manage') ||
                         Gate::allows('custom_form_feedbacks_manage') ||
                         Gate::allows('locations_manage') ||
-                        Gate::allows('doctors_manage') ||
+                       
                         Gate::allows('staff_targets_manage') ||
                         Gate::allows('centre_targets_manage') ||
                         Gate::allows('lead_sources_manage') ||
@@ -395,7 +407,7 @@
                         
                         'admin.sms_templates.index',
                         'admin.centre_targets.index',
-                        'admin.doctors.index',
+                        
                         'admin.packagesadvances.index',
                         'admin.resourcerotas.calender-view',
                         'admin.invoices.index',
@@ -676,22 +688,7 @@
                             </div>
                         @endcan
 
-                        @can('doctors_manage')
-                            <div class="menu-submenu">
-                                <i class="menu-arrow"></i>
-                                <ul class="menu-subnav">
-                            <li class="menu-item {{activeMenu('admin.doctors.index')}}" aria-haspopup="true">
-                                <a href="{{route('admin.doctors.index')}}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Doctors</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                            </div>
-                        @endcan
+                        
 
                         @can('finances_manage')
                             <div class="menu-submenu">
