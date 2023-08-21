@@ -2672,8 +2672,8 @@ class Finanaces
         $locations = $data['location_id'] == 'all' ? ACL::getUserCentres() : $data['location_id'];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0])) . '00:00:00';
-            $end_date = date('Y-m-d', strtotime($date_range[1])). '23:59:00';
+            $start_date = date('Y-m-d', strtotime($date_range[0])) . ' 00:00:00';
+            $end_date = date('Y-m-d', strtotime($date_range[1])). ' 23:59:00';
         } else {
             $start_date = null;
             $end_date = null;
