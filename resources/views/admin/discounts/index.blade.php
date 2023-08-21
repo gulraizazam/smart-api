@@ -77,7 +77,7 @@
 
     <div class="modal fade" id="modal_add_discounts" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="discounts_add">
+        <div class="modal-dialog modal-dialog-centered form-popup medium_modal" id="discounts_add">
 
             @include('admin.discounts.create')
 

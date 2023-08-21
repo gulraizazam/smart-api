@@ -78,6 +78,7 @@ class DiscountsController extends Controller
      */
     public function store(Request $request)
     {
+        
         if (! Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
