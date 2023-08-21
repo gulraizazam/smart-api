@@ -2678,6 +2678,7 @@ class Finanaces
             $start_date = null;
             $end_date = null;
         }
+        dd( $start_date, $end_date);
        
         if (!empty($data['service_id'])) {
             $where[] = [['appointments.service_id' => $data['service_id']]];
