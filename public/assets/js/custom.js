@@ -1128,14 +1128,14 @@ function makeArray(object) {
 function phoneClip(data) {
     if(data.phone == "***********"){
         return '<a  href="javascript:void(0);" class="clipboard">' + data.phone + '</a>';
-
+    
     }else{
         return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="' + data.phone + '" data-original-title="Click to Copy" aria-describedby="tooltip' + data.id + '">' + data.phone + '</a>';
-
+    
     }
    
-    
 }
+
 function makePhoneNumber(phoneNo, permission, type = 0) {
 
     if (typeof phoneNo !== "undefined") {
