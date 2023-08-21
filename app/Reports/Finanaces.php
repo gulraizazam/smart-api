@@ -2811,7 +2811,9 @@ class Finanaces
             ->count();
         }
         
-        array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
+        array_push($converted_apts, collect($appointments_info)
+        ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
+        ->where('conversion_spend', '!=', "")->count());
         array_push($total_apts, $total_appointments);
 
         $maxConversion = collect($appointments_info)->filter(function ($appointment) {
@@ -2819,7 +2821,9 @@ class Finanaces
                 return $appointment;
             }
         });
+        
         $maxConversion = $maxConversion->groupBy('service_id');
+        dd($maxConversion->toArray());
         $new_array = [];
         foreach ($maxConversion as $key => $conversions) {
             $sum_conversion_total = 0;
