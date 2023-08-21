@@ -2672,8 +2672,8 @@ class Finanaces
         $locations = $data['location_id'] == 'all' ? ACL::getUserCentres() : $data['location_id'];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0])) . ' 00:00:00';
-            $end_date = date('Y-m-d', strtotime($date_range[1])). ' 23:59:00';
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
         } else {
             $start_date = null;
             $end_date = null;
@@ -2726,7 +2726,6 @@ class Finanaces
                 $end_date
             ])
             ->get();
-            
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
                 if (!in_array($appointment->id, $appointments)) {
@@ -2749,11 +2748,7 @@ class Finanaces
                     );
                 }
                 $appointments[] = $appointment->id;
-                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->whereBetween('package_advances.created_at', [
-                    $start_date,
-                    $end_date
-                ])->pluck('id');
-              
+                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
@@ -2761,9 +2756,11 @@ class Finanaces
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
-                        
+                        ->whereBetween('package_advances.created_at', [
+                            $start_date,
+                            $end_date
+                        ])
                         ->get();
-                        
                     if (count($packagesadvances) > 0) {
                         $check = 0;
                         $first_advance = PackageAdvances::whereIn('id', $package_info)
