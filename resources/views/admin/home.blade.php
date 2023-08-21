@@ -397,7 +397,7 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                        <div class="col-lg-6 col-xxl-6">
+                        <div class="col-lg-6 col-xxl-6 mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -456,7 +456,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -745,7 +745,7 @@
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">
-                                                                {{ $centres->name }}
+                                                                {{ $centres ? $centres->name :'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         </div>
@@ -915,8 +915,8 @@
                                                             <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false" data-id="{{ $centres[0]->id }}">
-                                                                {{ $centres[0]->name }}
+                                                                aria-expanded="false" data-id="{{ count($centres) > 0 ? $centres[0]->id :'' }}">
+                                                                {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @endif
