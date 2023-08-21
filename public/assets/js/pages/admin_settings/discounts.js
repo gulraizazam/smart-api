@@ -534,3 +534,34 @@ function getCentreServices()
         }
     });
 }
+
+$('.discount_type_wrap.get_discount_type .add_new_discount').on('click', function(){
+    var cloneElements = $(this).parent('.get_discount_type').html();
+    cloneElements = cloneElements.replace('add_new_discount', 'remove_discount');
+    cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
+    cloneElements = cloneElements.replace('la-plus', 'la-minus');
+    $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">'+cloneElements+'</div>');
+});
+
+$(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount', function(){
+    $(this).parent('.get_discount_type').remove();
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
