@@ -397,7 +397,7 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                        <div class="col-lg-6 col-xxl-6">
+                        <div class="col-lg-6 col-xxl-6 mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -456,7 +456,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
