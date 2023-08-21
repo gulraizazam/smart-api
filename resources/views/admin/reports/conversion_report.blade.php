@@ -152,6 +152,7 @@
                 </div>
                 @endforeach
             </div>
+            @dd($report_data);
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="conversion_table">
                     <thead>
