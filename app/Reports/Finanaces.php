@@ -2753,6 +2753,7 @@ class Finanaces
                     $start_date,
                     $end_date
                 ])->pluck('id');
+                dd( $package_info);
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
