@@ -83,7 +83,7 @@
                 <tbody>
                 @foreach($appointments as $patient)
                     <?php
-                    $doct = \App\Models\User::whereId($patient->doctor_id)->first();
+                    $created = \App\Models\User::whereId($patient->created_by)->first();
                     $service = \App\Models\Services::whereId($patient->service_id)->first();
                     $loc = \App\Models\Locations::whereId($patient->location_id)->first();
                     ?>
