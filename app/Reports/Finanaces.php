@@ -2709,7 +2709,7 @@ class Finanaces
             
             ->groupBy('service_id')
             ->get();
-            dd($total_arrived_appointments);
+            
         $converted_appointments =  Appointments::with('location:id,name')
             ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->where([
@@ -2725,6 +2725,7 @@ class Finanaces
             ->where('package_advances.created_at','<=',$end_date)
             
             ->get();
+            dd($converted_appointments);
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
                 if (!in_array($appointment->id, $appointments)) {
