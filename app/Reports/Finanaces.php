@@ -2823,7 +2823,7 @@ class Finanaces
         });
         
         $maxConversion = $maxConversion->groupBy('service_id');
-        dd($maxConversion->toArray());
+        
         $new_array = [];
         foreach ($maxConversion as $key => $conversions) {
             $sum_conversion_total = 0;
