@@ -2760,6 +2760,7 @@ class Finanaces
                             $start_date,
                             $end_date
                         ])
+                        
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
