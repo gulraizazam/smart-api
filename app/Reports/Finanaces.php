@@ -2756,6 +2756,11 @@ class Finanaces
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
+                        ->whereBetween('package_advances.created_at', [
+                            $start_date,
+                            $end_date
+                        ])
+                        
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
@@ -2809,7 +2814,9 @@ class Finanaces
             ->count();
         }
         
-        array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
+        array_push($converted_apts, collect($appointments_info)
+        ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
+        ->where('conversion_spend', '!=', "")->count());
         array_push($total_apts, $total_appointments);
 
         $maxConversion = collect($appointments_info)->filter(function ($appointment) {
@@ -2817,7 +2824,9 @@ class Finanaces
                 return $appointment;
             }
         });
+        
         $maxConversion = $maxConversion->groupBy('service_id');
+        
         $new_array = [];
         foreach ($maxConversion as $key => $conversions) {
             $sum_conversion_total = 0;
