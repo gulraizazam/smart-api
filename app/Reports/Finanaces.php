@@ -2726,7 +2726,7 @@ class Finanaces
                 $end_date
             ])
             ->get();
-            dd( $converted_appointments);
+            
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
                 if (!in_array($appointment->id, $appointments)) {
@@ -2762,6 +2762,7 @@ class Finanaces
                             $end_date
                         ])
                         ->get();
+                        dd($packagesadvances);
                     if (count($packagesadvances) > 0) {
                         $check = 0;
                         $first_advance = PackageAdvances::whereIn('id', $package_info)
