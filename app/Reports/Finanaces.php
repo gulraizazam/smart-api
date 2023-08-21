@@ -2753,7 +2753,7 @@ class Finanaces
                     $start_date,
                     $end_date
                 ])->pluck('id');
-                dd( $package_info);
+              
                 if (count($package_info)) {
                     $actual = 0;
                     $revenue_in = 0;
@@ -2815,7 +2815,7 @@ class Finanaces
             ->where($where)
             ->count();
         }
-        
+        dd( $total_appointments );
         array_push($converted_apts, collect($appointments_info)
         ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
         ->where('conversion_spend', '!=', "")->count());
