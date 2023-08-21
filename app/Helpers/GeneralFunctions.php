@@ -178,19 +178,18 @@ class GeneralFunctions
             }
             if(Gate::allows('view_inactive_services')){
                 $services = Services::where('slug', '!=', 'all')
-                ->where(['parent_id' => 0])
-                ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
-                ->orderBy('id', 'asc')
-                ->get();
-            }else{
-                $services = Services::where('slug', '!=', 'all')
-                ->where(['parent_id' => 0])
-                ->where(['active' => 1])
-                ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
-                ->orderBy('id', 'asc')
-                ->get();
-            }
-           
+                    ->where(['parent_id' => 0])
+                    ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
+                    ->orderBy('id', 'asc')
+                    ->get();
+                }else{
+                    $services = Services::where('slug', '!=', 'all')
+                    ->where(['parent_id' => 0])
+                    ->where(['active' => 1])
+                    ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
+                    ->orderBy('id', 'asc')
+                    ->get();
+                }
             $mergedServices = [];
             foreach ($services as $service) {
                 if(Gate::allows('view_inactive_services')){
