@@ -2709,6 +2709,7 @@ class Finanaces
             
             ->groupBy('service_id')
             ->get();
+            dd($total_arrived_appointments);
         $converted_appointments =  Appointments::with('location:id,name')
             ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->where([
@@ -2931,7 +2932,7 @@ class Finanaces
         } else {
             $avg_cxlient_value = 0;
         }
-dd($appointments_info);
+
         return [
             $appointments_info,
             $locationData,
