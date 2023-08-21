@@ -72,9 +72,10 @@
                     <tr>
                         <th>ID</th>
                         <th>Patient Name</th>
-                        <th>Phone</th>
+                        
                         <th>Service</th>
-                        <th>Doctor</th>
+                        <th>Created By</th>
+                        <th>Deleted By</th>
                         <th>Centre</th>
                         <th>Scheduled Date</th>
                     </tr>
@@ -84,6 +85,7 @@
                 @foreach($appointments as $patient)
                     <?php
                     $created = \App\Models\User::whereId($patient->created_by)->first();
+                    $deleted = \App\Models\User::whereId($patient->deleted_by)->first();
                     $service = \App\Models\Services::whereId($patient->service_id)->first();
                     $loc = \App\Models\Locations::whereId($patient->location_id)->first();
                     ?>
@@ -91,10 +93,11 @@
                         <td>{{$patient->id}}</td>
                         <td>{{$patient->name}}</td>
                         
-                            <td>{{$patient->phone}}</td>
+                     
                        
                         <td>{{$service->name}}</td>
                         <td>{{$created->name}}</td>
+                        <td>{{$deleted->name}}</td>
                         <td>{{$loc->name}}</td>
                         <td>{{$patient->scheduled_date}}</td> 
                     </tr>
