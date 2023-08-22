@@ -3010,19 +3010,29 @@ class DashboardReportsController extends Controller
     public function GetCentreDoctors(Request $request)
     {
         if ($request->centre_id == 'all') {
-            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-                ->join('users', 'resources.external_id', 'users.id')
-                ->select('users.name', 'users.id')
-                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-                ->distinct('user_id')
-                ->get();
+
+            $consultant = DoctorHasLocations::distinct('user_id')
+            ->pluck('user_id'); 
+
+            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+
+            // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+            //     ->join('users', 'resources.external_id', 'users.id')
+            //     ->select('users.name', 'users.id')
+            //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+            //     ->distinct('user_id')
+            //     ->get();
         } else {
-            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-                ->join('users', 'resources.external_id', 'users.id')
-                ->select('users.name', 'users.id')
-                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1, 'resource_has_rota.location_id' => $request->centre_id])
-                ->distinct('user_id')
-                ->get();
+            $consultant = DoctorHasLocations::whereIn('location_id', $request->centre_id)
+            ->distinct('user_id')
+            ->pluck('user_id');
+            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+            // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+            //     ->join('users', 'resources.external_id', 'users.id')
+            //     ->select('users.name', 'users.id')
+            //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1, 'resource_has_rota.location_id' => $request->centre_id])
+            //     ->distinct('user_id')
+            //     ->get();
         }
 
         return response()->json(['status' => 1, 'doctors' => $consultants]);
