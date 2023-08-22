@@ -2564,7 +2564,7 @@ class DashboardReportsController extends Controller
         })
         ->distinct('user_id')
         ->pluck('user_id');
-        $consultants = User::whereIn('id',$consultant)->get();
+        $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
         // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
         //     ->join('users', 'resources.external_id', 'users.id')
         //     ->select('users.name', 'users.id')
