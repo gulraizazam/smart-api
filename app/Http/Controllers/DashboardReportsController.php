@@ -2673,16 +2673,16 @@ class DashboardReportsController extends Controller
         }
        
         foreach ($consultant as $doctor) {
-            dd( $doctor);
-            array_push($lables, $doctor->name);
-            $doctor_id = [$doctor->id];
+          $doctorname = User::whereId($doctor)->first();
+            array_push($lables, $doctorname->name);
+            $doctor_id = [$doctorname->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                 ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
-                ->whereIn('doctor_id', $doctor_id)
+                ->whereIn('doctor_id', $doctor)
                 ->whereIn('appointments.location_id', $locations)
                 ->count();
 
-            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->whereIn('doctor_id', $doctor_id)->where('conversion_spend', '!=', "")->count());
+            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->whereIn('doctor_id', $doctor)->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
         }
         $total_arrived_appointments = Appointments::with('location:id,name')
