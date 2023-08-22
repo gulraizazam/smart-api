@@ -497,8 +497,33 @@ function SetFields()
 {
     if($("#add_amount_type").val()=="Configurable"){
         $("#custom").css('display','none');
+        $("#amount").css('display','none');
+        $("#configurable_fields").css('display','block');
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route("admin.discounts.getDiscountServices"),
+            type: "GET",
+            data: {},
+            cache: false,
+            success: function (response) {
+    
+                setServicesData(response);
+    
+                reInitSelect2(".select2", "");
+    
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+    
+                reInitValidation(EditValidation);
+            }
+        });
     }else{
         $("#custom").css('display','block');
+        $("#amount").css('display','block');
+        $("#configurable_fields").css('display','none');
     }
 }
 function getCentreServices()

@@ -211,6 +211,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('discounts/status', [DiscountsController::class, 'status'])->name('discounts.status');
     Route::get('discounts/locations/{id}', [DiscountsController::class, 'displayDlocation'])->name('discounts.location_manage');
     Route::get('getDservice', [DiscountsController::class, 'getDservices'])->name('discounts.get_Dservice');
+    Route::get('getDiscountServices', [DiscountsController::class, 'getDiscountServices'])->name('discounts.getDiscountServices');
     Route::post('saveDervice', [DiscountsController::class, 'saveDservices'])->name('discounts.save_Dervice');
     Route::post('deleteDservice', [DiscountsController::class, 'deleteDservice'])->name('discounts.delete_service');
 
