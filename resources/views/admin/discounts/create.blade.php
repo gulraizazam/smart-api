@@ -72,7 +72,7 @@
                             </div>
 
                         </div>
-                        <div class="discount_wrap w-100">
+                        <div class="discount_wrap w-100" style="display: none;" id="configurable_fields">
                             <div class="fv-row col-12 discount_type_wrap d-flex mt-3">    
                                 <label class="fw-bold fs-6 pl-0 pr-4 pt-2">Buy</label>
                                 <select class="form-control form-control-solid mb-3" name="type">
@@ -118,7 +118,7 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="fv-row col-md-12 mt-5">
+                        <div class="fv-row col-md-12 mt-5" id="amount">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
                             <input min="0" id="add_amount" class="form-control" type="number" name="amount">
                         </div>
