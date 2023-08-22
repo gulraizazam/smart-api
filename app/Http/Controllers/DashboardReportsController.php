@@ -2558,7 +2558,7 @@ class DashboardReportsController extends Controller
         }else{
             $locations=[$request->centre_id];
         }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         
         })
@@ -2574,7 +2574,7 @@ class DashboardReportsController extends Controller
         //     ->whereIn('resource_has_rota.location_id', $locations)
         //     ->distinct('user_id')
         //     ->get();
-        $consultant = collect($consultants)->pluck('id');
+        //$consultant = collect($consultants)->pluck('id');
         $sum_conversion_spend2 = 0;
 
         $converted_appointments =  Appointments::with('location:id,name')
