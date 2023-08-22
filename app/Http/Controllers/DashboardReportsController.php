@@ -2671,7 +2671,9 @@ class DashboardReportsController extends Controller
                 }
             }
         }
+        dd( $consultant);
         foreach ($consultant as $doctor) {
+            
             array_push($lables, $doctor->name);
             $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
