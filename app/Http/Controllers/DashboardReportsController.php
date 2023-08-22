@@ -2624,10 +2624,9 @@ class DashboardReportsController extends Controller
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
-                        ->whereBetween('package_advances.created_at', [
-                            $periods[$period]['start_date'],
-                            $periods[$period]['end_date']
-                        ])
+                        ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
+                        ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
+                        
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
@@ -2877,10 +2876,9 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                             ->where(['cash_flow' => "in"])
                             ->where('cash_amount', '>', 0)
-                            ->whereBetween('package_advances.created_at', [
-                                $periods[$period]['start_date'],
-                                $periods[$period]['end_date']
-                            ])
+                            ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
+                            ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
+                            
                             ->get();
                             
                         if (count($packagesadvances) > 0) {
