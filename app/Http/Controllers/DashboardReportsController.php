@@ -2558,16 +2558,22 @@ class DashboardReportsController extends Controller
         }else{
             $locations=[$request->centre_id];
         }
-        $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-            ->join('users', 'resources.external_id', 'users.id')
-            ->select('users.name', 'users.id')
-            ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-            ->when($request->doc_id != null, function ($query) use ($request) {
-                return $query->whereIn('resources.external_id', [$request->doc_id]);
-            })
-            ->whereIn('resource_has_rota.location_id', $locations)
-            ->distinct('user_id')
-            ->get();
+        $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+            return $query->whereIn('user_id', [$request->doc_id]);
+        
+        })
+        ->distinct('user_id')
+        ->pluck('user_id');
+        // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+        //     ->join('users', 'resources.external_id', 'users.id')
+        //     ->select('users.name', 'users.id')
+        //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+        //     ->when($request->doc_id != null, function ($query) use ($request) {
+        //         return $query->whereIn('resources.external_id', [$request->doc_id]);
+        //     })
+        //     ->whereIn('resource_has_rota.location_id', $locations)
+        //     ->distinct('user_id')
+        //     ->get();
         $consultant = collect($consultants)->pluck('id');
         $sum_conversion_spend2 = 0;
 
