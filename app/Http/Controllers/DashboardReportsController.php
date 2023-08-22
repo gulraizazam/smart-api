@@ -2673,7 +2673,7 @@ class DashboardReportsController extends Controller
             }
         }
        
-        foreach ($$consultants as $doctor) {
+        foreach ($consultants as $doctor) {
           
             array_push($lables, $doctor->name);
             $doctor_id = [$doctor->id];
