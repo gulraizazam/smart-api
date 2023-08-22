@@ -2564,6 +2564,7 @@ class DashboardReportsController extends Controller
         })
         ->distinct('user_id')
         ->pluck('user_id');
+        $consultants = User::whereIn('id',$consultant)->get();
         // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
         //     ->join('users', 'resources.external_id', 'users.id')
         //     ->select('users.name', 'users.id')
@@ -2672,17 +2673,17 @@ class DashboardReportsController extends Controller
             }
         }
        
-        foreach ($consultant as $doctor) {
-          $doctorname = User::whereId($doctor)->first();
-            array_push($lables, $doctorname->name);
-            $doctor_id = [$doctorname->id];
+        foreach ($$consultants as $doctor) {
+          
+            array_push($lables, $doctor->name);
+            $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                 ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
-                ->whereIn('doctor_id', $doctor)
+                ->whereIn('doctor_id', $doctor_id)
                 ->whereIn('appointments.location_id', $locations)
                 ->count();
 
-            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->whereIn('doctor_id', $doctor)->where('conversion_spend', '!=', "")->count());
+            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->whereIn('doctor_id', $doctor_id)->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
         }
         $total_arrived_appointments = Appointments::with('location:id,name')
