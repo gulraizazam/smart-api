@@ -683,7 +683,19 @@ class DiscountsController extends Controller
             'locaiton_id_1' => $request->id,
         ]);
     }
-
+    public function getDiscountServices(Request $request)
+    {
+        if (! Gate::allows('discounts_allocate')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+        
+        $serive = ServiceWidget::generateServiceArrayDiscount($request, Auth::User()->account_id);
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'services' => $serive,
+            'locaiton_id_1' => $request->id,
+        ]);
+    }
+    
     /**
      * save services against location id.
      */
