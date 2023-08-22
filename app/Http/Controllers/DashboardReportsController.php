@@ -3023,7 +3023,7 @@ class DashboardReportsController extends Controller
             //     ->distinct('user_id')
             //     ->get();
         } else {
-            $consultant = DoctorHasLocations::whereIn('location_id', $request->centre_id)
+            $consultant = DoctorHasLocations::where('location_id', $request->centre_id)
             ->distinct('user_id')
             ->pluck('user_id');
             $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
