@@ -586,7 +586,8 @@ class HomeController extends Controller
                 $todayRecords = $todayRecords->select('invoices.id', 'invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                     ->groupBy('invoice_details.service_id')
                     ->get();
-                    dd($todayRecords->toArray());
+
+
                 $prepareData = [];
 
                 foreach ($todayRecords as $key => $todayRecord) {
