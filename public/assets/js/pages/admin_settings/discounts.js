@@ -27,7 +27,7 @@ var table_columns = [
         width: 60
     },{
         field: 'discount_type',
-        title: 'Discount Type',
+        title: 'Applicable On',
         sortable: false,
         width: 'auto',
     },{
@@ -509,8 +509,23 @@ function SetFields()
             cache: false,
             success: function (response) {
     
-                setServicesData(response);
-    
+                let services = response.data.services;
+                let service_child_value = '';
+                let service_options = '<option value="">Select</option>';
+            
+                Object.values(services).forEach(function(value, index) {
+                    if (value.name == 'All Services') {
+                          service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                    } else {
+                        service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                        Object.values(value.children).forEach(function (child, index) {
+                            service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                            service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                        });
+                    }
+                });
+                $("#base_service").html(service_options);
+                $("#services").html(service_options);
                 reInitSelect2(".select2", "");
     
             },
@@ -560,9 +575,9 @@ function getCentreServices()
     });
 }
 
-$('.discount_type_wrap.get_discount_type .add_new_discount').on('click', function(){
+$('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', function(){
     var cloneElements = $(this).parent('.get_discount_type').html();
-    cloneElements = cloneElements.replace('add_new_discount', 'remove_discount');
+    cloneElements = cloneElements.replace('add_new_discount_field', 'remove_discount');
     cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
     cloneElements = cloneElements.replace('la-plus', 'la-minus');
     $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">'+cloneElements+'</div>');
