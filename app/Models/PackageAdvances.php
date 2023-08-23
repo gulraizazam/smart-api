@@ -7,6 +7,7 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Helpers\GeneralFunctions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -543,17 +544,20 @@ class PackageAdvances extends BaseModal
         $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
 
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-                return self::where($where)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
-            } else {
-                return self::where($where)->where('active', 1)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
-            }
+            $totalRecords = DB::table(function ($subquery) {
+                $subquery->from('package_advances')
+                    ->selectRaw('count(*)')
+                    ->where('is_refund', 1)
+                    ->whereNull('deleted_at')
+                    ->groupBy('package_id');
+            }, 'sub')
+            ->selectRaw('COUNT(*) as total_records')
+            ->first();
+            
+            $count = $totalRecords->total_records;
+return $count;     
         } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-                return self::whereIn('location_id', ACL::getUserCentres())->count();
-            } else {
-                return self::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
-            }
+            return self::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
         }
     }
     public static function filters($request, $account_id, $id, $apply_filter, $filename)
