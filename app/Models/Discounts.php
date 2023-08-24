@@ -68,7 +68,55 @@ class Discounts extends BaseModal
 
         return $record;
     }
+    public static function createConfigurableDiscount($data)
+    {
+   
 
+        $discount = Discounts::Create([
+            'slug' =>$data['slug'],
+            'name' =>$data['name'],
+            'type' =>$data['type'],
+        
+            'amount' => "0",
+            'discount_type' =>$data['discount_type'],
+            'start' =>$data['start'],
+            'end' =>$data['end'],
+            'active' =>$data['active'],
+            'account_id' =>1,
+        ]);
+        $base_service_price = Services::whereId($data['base_service'])->first();
+        $base_discount_service = BaseDiscountService::Create([
+            'discount_id' =>$discount->id,
+            'service_id' =>$data['base_service'],
+            'service_price' =>$base_service_price->price,
+            'sessions'=>$data['sessions_buy'],
+        ]);
+        $service_check = [];
+       foreach($data['service'] as $service){
+       
+        foreach($service as $key=>$value){
+            if(!in_array($key, $service_check)){
+            array_push($service_check, $key);
+            }
+        }
+       }
+       foreach($service_check as $value){
+        //dd($data['service']['get_percentage']);
+        $service_price = Services::find($data['service']['services_name'][$value]);
+        $store = new GetDiscountService();
+        $store->sessions = $data['service']['sessions_get'][$value];
+        $store->service_id =$data['service']['services_name'][$value];
+        $store->service_price =$service_price->price;
+        $store->base_service_id =$data['base_service'];
+        $store->discount_id =$discount->id;
+        $store->save();
+    }
+        
+        
+
+        return $discount;
+    }
+    
     /**
      * Get the Package Service.
      */
