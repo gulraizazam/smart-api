@@ -102,7 +102,12 @@ class DiscountsController extends Controller
             }
 
             if ($request->start <= $request->end) {
-
+                if($request->type =="Configurable"){
+                    if(Discounts::createConfigurableDiscount($data)){
+                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    }
+                   
+                }
                 if (Discounts::createDiscount($data)) {
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
@@ -129,7 +134,7 @@ class DiscountsController extends Controller
         return Validator::make($request->all(), [
             'name' => 'required',
             'type' => 'required',
-            'amount' => 'required',
+            //'amount' => 'required',
             'start' => 'required',
             'end' => 'required',
         ]);
