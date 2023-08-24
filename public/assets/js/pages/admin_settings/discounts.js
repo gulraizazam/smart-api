@@ -580,6 +580,8 @@ $('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', f
     cloneElements = cloneElements.replace('add_new_discount_field', 'remove_discount');
     cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
     cloneElements = cloneElements.replace('la-plus', 'la-minus');
+    
+
     $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">'+cloneElements+'</div>');
 });
 
