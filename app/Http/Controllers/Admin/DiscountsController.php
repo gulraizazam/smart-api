@@ -8,6 +8,7 @@ use App\Helpers\NodesTree;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Helpers\Widgets\ServiceWidget;
 use App\Http\Controllers\Controller;
+use App\Models\BaseDiscountService;
 use App\Models\DiscountHasLocations;
 use App\Models\Discounts;
 use App\Models\Locations;
@@ -200,7 +201,7 @@ class DiscountsController extends Controller
                 }
             }
 
-            $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby('created_at','desc')->get();
 
             $records = $this->getFiltersData($records, $filename);
 
@@ -652,8 +653,10 @@ class DiscountsController extends Controller
             $discount = Discounts::find($id);
 
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+           
+                $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
 
-            $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
+            
 
             return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
                 'discount' => $discount,
@@ -683,7 +686,11 @@ class DiscountsController extends Controller
         } else {
             $serive = ServiceWidget::generateServiceArrayConsultancy($request, Auth::User()->account_id);
         }
-
+        if($discount_info->type =="Configurable"){
+            $serive = BaseDiscountService::join('services','services.id','base_discount_services.service_id')
+            ->select('services.name','services.id')->where('discount_id',$request->discount_id)->get()->toArray();
+        }
+       
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $serive,
             'locaiton_id_1' => $request->id,

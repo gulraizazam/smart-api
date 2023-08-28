@@ -96,7 +96,7 @@
                                     <option value="3">3</option>
                                 </select>
                                 <label class="fw-bold fs-6 px-5 text-nowrap pt-2 mb-0">Sessions of</label>
-                                <select class="form-control form-control-solid mb-0" name="service[services_name][]" id="services">
+                                <select class="form-control form-control-solid mb-0" name="service[services_name][]" id="services_sessions">
                                     
                                 </select>
                                 <div class="d-flex align-items-center ml-5">

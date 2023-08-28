@@ -140,7 +140,7 @@ function allocateRow(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-
+           
             setAllocateData(response);
 
             reInitSelect2(".select2", "");
@@ -166,7 +166,7 @@ function setAllocateData(response) {
 
         let location_options = '<option value="">Select Centre</option>';
         let location_services = '';
-
+       
         Object.values(locations).forEach(function(value, index) {
 
             location_options += '<option value="">Select</option>\
@@ -178,13 +178,17 @@ function setAllocateData(response) {
             location_options += '</optgroup>';
         });
 
-        Object.values(discount_locations).forEach(function(value, index) {
-            let location_name = value.location.city.name +"-"+ value.location.name;
-            location_services += serviceLocation(value.id, location_name, value.service.name);
-        });
+    Object.values(discount_locations).forEach(function(value, index) {
+       
+        let location_name = value.location.city.name +"-"+ value.location.name;
+        location_services += serviceLocation(value.id, location_name, value.service.name);
+        $('#allocate_services').append(location_services)
+    });
+
+        
 
         $('.HR_SERVICES').remove()
-        $('#allocate_services').append(location_services)
+        
 
         $("#discount_id").val(discount.id);
 
@@ -223,7 +227,7 @@ function getDesrvice($this) {
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+            errorMessage(xhr);0
 
             reInitValidation(EditValidation);
         }
@@ -242,10 +246,13 @@ function setServicesData(response) {
               service_options += '<option value="' + value.id + '">' + value.name + '</option>';
         } else {
             service_options += '<option value="' + value.id + '">' + value.name + '</option>';
-            Object.values(value.children).forEach(function (child, index) {
-                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
-                service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
-            });
+            if(value.children){
+                Object.values(value.children).forEach(function (child, index) {
+                    service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                    service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                });
+            }
+            
         }
     });
     $("#services").html(service_options);

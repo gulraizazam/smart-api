@@ -150,26 +150,34 @@ class PackagesController extends Controller
             $discount_data = Discounts::find($discount_id);
 
             if ($discount_data->slug == 'custom') {
+               
 
                 return ApiHelper::apiResponse($this->success, 'custom', true, [
                     'custom_checked' => 1,
                 ]);
 
             } else {
+               
                 if ($discount_data->type == Config::get('constants.Fixed')) {
-
+                   
                     $discount_type = Config::get('constants.Fixed');
                     $discount_price = $discount_data->amount;
                     $net_amount = ($service_data->price) - ($discount_data->amount);
 
-                } else {
-
+                } else if($discount_data->type == Config::get('constants.Percentage')) {
+                   
                     $discount_type = Config::get('constants.Percentage');
                     $discount_price = $discount_data->amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }
-
+                else if($discount_data->type == "Configurable") {
+                   
+                    $discount_type = "Configurable";
+                    $discount_price = $discount_data->amount;
+                    $discount_price_cal = $service_data->price * (($discount_price) / 100);
+                    $net_amount = ($service_data->price) - ($discount_price_cal);
+                }
                 return ApiHelper::apiResponse($this->success, 'Record Found', true, [
                     'discount_type' => $discount_type,
                     'discount_price' => $discount_price,
