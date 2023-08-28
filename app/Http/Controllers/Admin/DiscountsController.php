@@ -655,9 +655,7 @@ class DiscountsController extends Controller
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
            
                 $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
-
-            
-
+                
             return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
                 'discount' => $discount,
                 'location' => $location,
