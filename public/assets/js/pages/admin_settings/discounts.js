@@ -182,14 +182,14 @@ function setAllocateData(response) {
         
         let location_name = value.location.city.name +"-"+ value.location.name;
         location_services += serviceLocation(value.id, location_name, value.service.name);
-        console.log(location_services);
-        $('#allocate_services').append(location_services)
+        
+       
     });
 
         
 
         $('.HR_SERVICES').remove()
-        
+        $('#allocate_services').append(location_services)
 
         $("#discount_id").val(discount.id);
 
@@ -533,7 +533,7 @@ function SetFields()
                     }
                 });
                 $("#base_service").html(service_options);
-                $("#services").html(service_options);
+                $("#services_sessions").html(service_options);
                 reInitSelect2(".select2", "");
     
             },
