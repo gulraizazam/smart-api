@@ -179,9 +179,10 @@ function setAllocateData(response) {
         });
 
     Object.values(discount_locations).forEach(function(value, index) {
-       
+        
         let location_name = value.location.city.name +"-"+ value.location.name;
         location_services += serviceLocation(value.id, location_name, value.service.name);
+        console.log(location_services);
         $('#allocate_services').append(location_services)
     });
 
