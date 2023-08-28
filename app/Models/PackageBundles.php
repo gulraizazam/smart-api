@@ -25,6 +25,10 @@ class PackageBundles extends Model
      *  */
     public static function createPackagebundle($data)
     {
+        $discount_type = Discounts::find($data['discount_id']);
+        if($discount_type && $discount_type->type =="Configurable"){
+            $data['discount_type'] = $discount_type->type;
+        }
         $record = self::create($data);
 
         return $record;

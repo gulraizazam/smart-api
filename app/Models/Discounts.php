@@ -101,12 +101,14 @@ class Discounts extends BaseModal
         }
        }
        foreach($service_check as $value){
-        
+       
         $service_price = Services::find($data['service']['services_name'][$value]);
+        $find_bundle = Bundles::where('name',$service_price->name)->first();
         $store = new GetDiscountService();
         $store->sessions = $data['service']['sessions_get'][$value];
         $store->service_id =$data['service']['services_name'][$value];
         $store->service_price =$service_price->price;
+        $store->bundle_id =$find_bundle->id;
         $store->base_service_id =$data['base_service'];
         $store->discount_id =$discount->id;
         $store->save();
