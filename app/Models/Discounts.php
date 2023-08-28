@@ -101,7 +101,7 @@ class Discounts extends BaseModal
         }
        }
        foreach($service_check as $value){
-        //dd($data['service']['get_percentage']);
+        
         $service_price = Services::find($data['service']['services_name'][$value]);
         $store = new GetDiscountService();
         $store->sessions = $data['service']['sessions_get'][$value];
