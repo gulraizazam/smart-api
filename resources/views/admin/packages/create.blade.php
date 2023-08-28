@@ -87,19 +87,26 @@
                                 <option value="">Select Discount</option>
                             </select>
                         </div>
-                        <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
+                        <div class="fv-row col-md-4 mt-5" id="select_discount_type">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
                             <select id="add_discount_type" onchange="changeDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type_1">
                                 <option value="">Select Discount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
                             </select>
                         </div>
-                        <div class="fv-row col-md-4 mt-5">
+                        <div class="fv-row col-md-4 mt-5" id="configurable_discount_type" style="display: none;">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
+                            <select id="add_discount_type_configurable"  class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type_1">
+                                <option value="Configurable">Configurable</option>
+                                
+                            </select>
+                        </div>
+                        <div class="fv-row col-md-4 mt-5" id="discount_value_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
                             <input type="text" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled>
                         </div>
-                        <div class="fv-row col-md-4 mt-5">
+                        <div class="fv-row col-md-4 mt-5" >
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
                             <div class="blockui input-spinner" style="display: none; background: transparent; box-shadow: none; position: absolute;margin-top: 28px;margin-left: 15%;">
                                 <span>Please wait...</span>
