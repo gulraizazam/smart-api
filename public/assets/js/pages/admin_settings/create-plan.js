@@ -189,6 +189,7 @@ $(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    
                   
                     let consume = 'NO';
                     if (resposne.status == '1') {
@@ -1382,7 +1383,7 @@ function setAppointments(response) {
 
 /*Add Plan functions*/
 function getServiceDiscount($this, type = '') {
-
+console.log($this.val());
     hideMessages();
     var service_id = $this.val();
     var patient_id = $('#add_patient_id').val();
@@ -1508,6 +1509,7 @@ function getDiscountInfo($this) {
                 'bundle_id': service_id, //Basicailly it is bundle id
             },
             success: function (resposne) {
+                console.log("resposne",resposne);
                 if (resposne.status) {
                     $("#add_discount_type").prop("disabled", true);
                     $("#add_discount_type").val('').trigger('change');
@@ -1530,17 +1532,30 @@ function getDiscountInfo($this) {
                     'discount_id': discount_id
                 },
                 success: function (resposne) {
+                   
                     if (resposne.status) {
 
                         if (resposne.data.custom_checked == 0) {
+                          console.log(resposne.data);
                             $("#add_discount_type").val(resposne.data.discount_type).change();
-                            $("#add_discount_type").prop("disabled", true);
+                            if(resposne.data.discount_type == "Configurable"){
+                                $("#select_discount_type").css("display","none");
+                                $("#configurable_discount_type").css("display","block");
+                                $("#discount_value_div").css("display","none");
+                                $("#price_div").css("display","none");
+                            }else{
+                                $("#select_discount_type").css("display","block");
+                                $("#configurable_discount_type").css("display","none");
+                                $("#add_discount_type").prop("disabled", true);
+                            }
+                            
                             $("#discount_value_1").val(resposne.data.discount_price);
                             $("#discount_value_1").prop("disabled", true);
                             $("#net_amount_1").val(resposne.data.net_amount);
                             $("#net_amount_1").prop("disabled", true);
                             $("#slug_1").val('not_custom');
                         } else {
+                          
                             $("#add_discount_type").prop("disabled", false);
                             $("#add_discount_type").val('').trigger('change');
                             $("#discount_value_1").prop("disabled", false);
@@ -2139,26 +2154,28 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    console.log("resposne",resposne);
                     let consume = 'NO';
                     if (resposne.status) {
 
                         $("#package_total_1").val(resposne?.data?.myarray?.total ?? 0);
-
-                        $('#plan_services').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.myarray.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.myarray.record.id + ")'>" + resposne.data.myarray.service_name + "</a></td>" +
-                            "<td>" + resposne.data.myarray.service_price.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_name + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_type + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_percenatage + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
-                            "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.myarray.record.id + "' />" +
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + resposne.data.myarray.record.id + ")'>" + trashBtn() + "</button>" +
-                            "</td>" +
-                            "</tr>");
+                        jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
+                            $('#plan_services').append("" +
+                                "<tr id='table_1' class='HR_" + random_id + " HR_" +single_record_detail.record.id + "'>" +
+                                "<td><a href='javascript:void(0)' onClick='toggle(" +single_record_detail.record.id + ")'>" +single_record_detail.service_name + "</a></td>" +
+                                "<td>" +single_record_detail.service_price.toLocaleString() + "</td>" +
+                                "<td>" +single_record_detail.discount_name + "</td>" +
+                                "<td>" +single_record_detail.discount_type + "</td>" +
+                                "<td>" +single_record_detail.discount_price + "</td>" +
+                                "<td>" +single_record_detail.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                                "<td>" +single_record_detail.record.tax_percenatage + "</td>" +
+                                "<td>" +single_record_detail.record.tax_including_price.toLocaleString() + "</td>" +
+                                "<td>" +
+                                "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
+                                "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
+                                "</td>" +
+                                "</tr>");
+                        });
 
                         jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
                             if (record_detail.is_consumed == '0') {
