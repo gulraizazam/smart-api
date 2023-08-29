@@ -91,19 +91,31 @@ class Discounts extends BaseModal
             'sessions'=>$data['sessions_buy'],
         ]);
         $service_check = [];
-        foreach ($data['service'] as $key => $session) {
-            dd($key,$session);
+        $bulk_record = [];
+        $sessions = $data['sessions'];
+        foreach($sessions as $key => $value) {
+            $temp_array = [
+                'session' => $value,
+                'service_name' =>$data['services_name'][$key],
+                'discount_type' => $data['disc_type'][$key],
+            ];
+            array_push($bulk_record, $temp_array);
+        }
+        
+        foreach ($bulk_record as $key => $session) {
+          
            
-            $service_price = Services::find($data['services_name'][$key]);
+            $service_price = Services::find($session['service_name']);
            
             $find_bundle = Bundles::where('name',$service_price->name)->first();
             $store = new GetDiscountService();
-            $store->sessions = $data['sessions_get'][$key];
-            $store->service_id =$data['services_name'][$key];
+            $store->sessions = $session['session'];
+            $store->service_id =$session['service_name'];
             $store->service_price =$service_price->price;
             $store->bundle_id =$find_bundle->id;
             $store->base_service_id =$data['base_service'];
             $store->discount_id =$discount->id;
+            $store->discount_type =$session['discount_type'];
             $store->save();
         }
     //    foreach($data['service'] as $service){

@@ -425,6 +425,7 @@ class Bundles extends BaseModal
             }
         } else {
             $ratio = -1 * (1 - round(($price / $services_price), 8));
+
             foreach ($services as $key => $service) {
                 $services[$key]['calculated_price'] = round($services[$key]['service_price'] + ($services[$key]['service_price'] * $ratio), 2);
             }
