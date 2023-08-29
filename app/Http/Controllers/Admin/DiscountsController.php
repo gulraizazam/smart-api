@@ -80,17 +80,7 @@ class DiscountsController extends Controller
     public function store(Request $request)
     {
         // dd($request->services_name);
-        $bulk_record = [];
-        $sessions = $request->sessions;
-        foreach($sessions as $key => $value) {
-            $temp_array = [
-                'session' => $value,
-                'service_name' => $request->services_name[$key],
-                'discount_type' => $request->disc_type[$key],
-            ];
-            array_push($bulk_record, $temp_array);
-        }
-        dd($bulk_record);
+        
 
         if (! Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
