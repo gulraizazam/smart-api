@@ -73,7 +73,7 @@
                  <table class="table" id="arrived_patients_table">
                     <thead>
                     <tr>
-                        <th>ID</th>
+                        
                         <th>Service Name</th>
                         
                         <th>Duration</th>
@@ -88,7 +88,7 @@
                 @foreach($mergedServices as $service)
                 
                     <tr>
-                        <td>{{$service['id']}}</td>
+                       
                         <td>{{$service['name']}}</td>
                         
                      
