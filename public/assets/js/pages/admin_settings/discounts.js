@@ -583,14 +583,25 @@ function getCentreServices()
     });
 }
 
+var cloneCounter = 1;
+
 $('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', function(){
+    console.log(cloneCounter);
     var cloneElements = $(this).parent('.get_discount_type').html();
+    
+    // Replace names of input fields with unique names
+    cloneElements = cloneElements.replace('sessions[]', 'sessions[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('services_name[]', 'services_name[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('disc_type[]', 'disc_type[' + cloneCounter + ']');
+   
     cloneElements = cloneElements.replace('add_new_discount_field', 'remove_discount');
     cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
     cloneElements = cloneElements.replace('la-plus', 'la-minus');
-    
 
     $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">'+cloneElements+'</div>');
+    
+    // Increment the counter for the next clone
+    cloneCounter++;
 });
 
 $(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount', function(){
