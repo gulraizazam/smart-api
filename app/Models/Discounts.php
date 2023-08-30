@@ -84,11 +84,13 @@ class Discounts extends BaseModal
             'account_id' =>1,
         ]);
         $base_service_price = Services::whereId($data['base_service'])->first();
+        $find_bundle_base = Bundles::where('name',$base_service_price->name)->first();
         $base_discount_service = BaseDiscountService::Create([
             'discount_id' =>$discount->id,
             'service_id' =>$data['base_service'],
             'service_price' =>$base_service_price->price,
             'sessions'=>$data['sessions_buy'],
+            'bundle_id'=>$find_bundle_base->id,
         ]);
         $service_check = [];
         $bulk_record = [];
