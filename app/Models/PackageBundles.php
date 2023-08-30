@@ -27,10 +27,21 @@ class PackageBundles extends Model
     {
        
         $discount_type = Discounts::find($data['discount_id']);
-        if($discount_type && $discount_type->type =="Configurable"){
-            $data['discount_type'] = 'Complimentory';
+        if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0){
+            $data['discount_type'] = 'Configurable';
+            
+        }else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] == 0){
+            $data['discount_type'] = 'Percentage';
             $data['discount_price'] = 100;
+            $data['net_amount'] = 0;
+            $data['tax_including_price'] = 0;
+            $data['tax_exclusive_net_amount'] = 0;
+            $data['tax_price'] = 0;
+        }else{
+            $data['discount_type'] = $data['discount_type'];
+            $data['discount_price'] = $data['discount_price'];
         }
+       
         $record = self::create($data);
 
         return $record;
