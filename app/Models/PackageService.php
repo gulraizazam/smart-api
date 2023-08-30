@@ -23,6 +23,29 @@ class PackageService extends Model
 
     public static function createPackageService($data)
     {
+        
+       $find_package_bundle = PackageBundles::find($data['package_bundle_id']);
+       $find_discount = Discounts::find($find_package_bundle->discount_id);
+       if($find_discount && $find_discount->type =="Configurable" && $data['tax_including_price'] > 0){
+
+        $data['price'] = $data['price'];
+        $data['tax_price'] = $data['tax_price'];
+        $data['tax_exclusive_price'] = $data['tax_exclusive_price'];
+        $data['tax_including_price'] = $data['tax_including_price'];
+        
+    }else if($find_discount && $find_discount->type =="Configurable" && $data['tax_including_price'] == 0){
+
+        $data['price'] = 0;
+        $data['tax_price'] = 0;
+        $data['tax_exclusive_price'] = 0;
+        $data['tax_including_price'] =0;
+    }else{
+
+        $data['price'] = $data['price'];
+        $data['tax_price'] = $data['tax_price'];
+        $data['tax_exclusive_price'] = $data['tax_exclusive_price'];
+        $data['tax_including_price'] = $data['tax_including_price'];
+    }
         $record = self::create($data);
 
         return $record;
