@@ -2102,6 +2102,7 @@ class PackagesController extends Controller
     }
     public function updateRefund(Request $request)
     {
+        dd($request->all());
 
         $latest_refund = PackageAdvances::where([
             ["package_id",'=',$request['package_id']],

@@ -48,7 +48,7 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'Deleted Customer Report' }}</h1>
+            <h1>{{ 'Services Report' }}</h1>
         </div>
        
     </div>
@@ -68,43 +68,40 @@
                
             </div>
             <div class="table-wrapper all-sections section-detail" id="topscroll">
-                <table class="table" id="arrived_patients_table">
+                
+
+                 <table class="table" id="arrived_patients_table">
                     <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Patient Name</th>
                         
-                        <th>Service</th>
-                        <th>Created By</th>
-                        <th>Deleted By</th>
-                        <th>Centre</th>
-                        <th>Scheduled Date</th>
+                        <th>Service Name</th>
+                        
+                        <th>Duration</th>
+                        <th>Color </th>
+                        <th>Price</th>
+                        <th>Complimentory</th>
+                        <th>Status</th>
                     </tr>
                     </thead>
                     
                 <tbody>
-                @foreach($appointments as $patient)
-                    <?php
-                    $created = \App\Models\User::whereId($patient->created_by)->first();
-                    $deleted = \App\Models\User::whereId($patient->deleted_by)->first();
-                    $service = \App\Models\Services::whereId($patient->service_id)->first();
-                    $loc = \App\Models\Locations::whereId($patient->location_id)->first();
-                    ?>
+                @foreach($mergedServices as $service)
+                
                     <tr>
-                        <td>{{$patient->id}}</td>
-                        <td>{{$patient->name}}</td>
+                       
+                        <td>{{$service['name']}}</td>
                         
                      
                        
-                        <td>{{$service->name}}</td>
-                        <td>{{$created->name}}</td>
-                        <td>{{$deleted->name}}</td>
-                        <td>{{$loc->name}}</td>
-                        <td>{{$patient->scheduled_date}}</td> 
+                        <td>{{$service['duration']}}</td>
+                        <td>{{$service['color']}}</td>
+                        <td>{{$service['price']}}</td>
+                        <td>{{$service['complimentory']==1 ?'Yes' : 'No'}}</td>
+                        <td>{{$service['active']==1 ?'Active' :"Inactive"}}</td> 
                     </tr>
                 @endforeach
                 </tbody>
-                </table>
+                </table> 
             </div>
 
             
@@ -130,7 +127,8 @@
                     'csvHtml5',
                     'pdfHtml5',
                 ],
-                "ordering": false
+                "ordering": false,
+                "pageLength": 500
             });
         </script>
 </div>
