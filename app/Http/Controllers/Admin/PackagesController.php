@@ -2102,7 +2102,7 @@ class PackagesController extends Controller
     }
     public function updateRefund(Request $request)
     {
-        dd($request->all());
+        dd($request->all(),Carbon::now()->toTimeString() );
 
         $latest_refund = PackageAdvances::where([
             ["package_id",'=',$request['package_id']],
