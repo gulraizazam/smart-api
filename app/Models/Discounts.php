@@ -70,7 +70,7 @@ class Discounts extends BaseModal
     }
     public static function createConfigurableDiscount($data)
     {
-   
+   //dd($data);
 
         $discount = Discounts::Create([
             'slug' =>$data['slug'],
@@ -85,13 +85,19 @@ class Discounts extends BaseModal
         ]);
         $base_service_price = Services::whereId($data['base_service'])->first();
         $find_bundle_base = Bundles::where('name',$base_service_price->name)->first();
-        $base_discount_service = BaseDiscountService::Create([
-            'discount_id' =>$discount->id,
-            'service_id' =>$data['base_service'],
-            'service_price' =>$base_service_price->price,
-            'sessions'=>$data['sessions_buy'],
-            'bundle_id'=>$find_bundle_base->id,
-        ]);
+        $sessionCount = $data['sessions_buy'];
+
+        for ($i = 0; $i < $sessionCount; $i++) {
+            $base_discount_service = BaseDiscountService::Create([
+                'discount_id' =>$discount->id,
+                'service_id' =>$data['base_service'],
+                'service_price' =>$base_service_price->price,
+                //'sessions'=>$data['sessions_buy'],
+                'bundle_id'=>$find_bundle_base->id,
+            ]);
+        }
+
+        
         $service_check = [];
         $bulk_record = [];
         $sessions = $data['sessions'];
@@ -120,27 +126,7 @@ class Discounts extends BaseModal
             $store->discount_type =$session['discount_type'];
             $store->save();
         }
-    //    foreach($data['service'] as $service){
-       
-    //     foreach($service as $key=>$value){
-    //         if(!in_array($key, $service_check)){
-    //         array_push($service_check, $key);
-    //         }
-    //     }
-    //    }
-    //    foreach($service_check as $value){
-       
-    //     $service_price = Services::find($data['service']['services_name'][$value]);
-    //     $find_bundle = Bundles::where('name',$service_price->name)->first();
-    //     $store = new GetDiscountService();
-    //     $store->sessions = $data['service']['sessions_get'][$value];
-    //     $store->service_id =$data['service']['services_name'][$value];
-    //     $store->service_price =$service_price->price;
-    //     $store->bundle_id =$find_bundle->id;
-    //     $store->base_service_id =$data['base_service'];
-    //     $store->discount_id =$discount->id;
-    //     $store->save();
-    // }
+    
         
         
 

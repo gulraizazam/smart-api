@@ -739,6 +739,7 @@ class PackagesController extends Controller
      */
     public function savepackages(Request $request)
     {
+        
         DB::beginTransaction();
         try {
             if (isset($request->appointment_id)) {
@@ -1290,6 +1291,7 @@ class PackagesController extends Controller
             $total_price = PackageBundles::where('package_id', '=', $id)->sum('tax_including_price');
 
             $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
+           
             $packageservices = PackageService::with('service')->where('package_id', '=', $package->id)->get();
 
             $packageadvances = PackageAdvances::with('paymentmode')->where([

@@ -2168,14 +2168,14 @@ jQuery(document).ready(function () {
                                 single_record_detail.total = single_record_detail.total.replace(',' , '');
                                 total_amount += parseInt(single_record_detail.total);
                                 var del_icon;
-                                if(single_record_detail.net_amount > 0){
+                               // if(single_record_detail.net_amount > 0){
                                     del_icon =  "<td>" +
                                     "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
                                     "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
                                     "</td>" ;
-                                }else{
-                                    del_icon="<td></td>";
-                                }
+                                // }else{
+                                //     del_icon="<td></td>";
+                                // }
                                 $('#plan_services').append("" +
                                     "<tr id='table_1' class='HR_" + random_id + " HR_" +single_record_detail.record.id + "'>" +
                                     "<td><a href='javascript:void(0)' onClick='toggle(" +single_record_detail.record.id + ")'>" +single_record_detail.service_name + "</a></td>" +
