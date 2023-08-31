@@ -26,6 +26,7 @@ class PackageBundles extends Model
     public static function createPackagebundle($data)
     {
        
+      
         $discount_type = Discounts::find($data['discount_id']);
         if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0){
             $data['discount_type'] = 'Configurable';
@@ -37,6 +38,7 @@ class PackageBundles extends Model
             $data['tax_including_price'] = 0;
             $data['tax_exclusive_net_amount'] = 0;
             $data['tax_price'] = 0;
+          
         }else{
             $data['discount_type'] = $data['discount_type'];
             $data['discount_price'] = $data['discount_price'];
@@ -86,6 +88,7 @@ class PackageBundles extends Model
             'package_id' => $package->id,
             'is_allocate' => 1,
         ];
+       
         foreach ($request['package_bundles'] as $bundle_id) {
             self::where([
                 'id' => $bundle_id,
