@@ -544,20 +544,17 @@ class PackageAdvances extends BaseModal
         $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
 
         if (count($where)) {
-            $totalRecords = DB::table(function ($subquery) {
-                $subquery->from('package_advances')
-                    ->selectRaw('count(*)')
-                    ->where('is_refund', 1)
-                    ->whereNull('deleted_at')
-                    ->groupBy('package_id');
-            }, 'sub')
-            ->selectRaw('COUNT(*) as total_records')
-            ->first();
-            
-            $count = $totalRecords->total_records;
-return $count;     
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+                return Packages::where($where)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
+            } else {
+                return Packages::where($where)->where('active', 1)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
+            }
         } else {
-            return self::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
+            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+                return Packages::whereIn('location_id', ACL::getUserCentres())->count();
+            } else {
+                return Packages::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
+            }
         }
     }
     public static function filters($request, $account_id, $id, $apply_filter, $filename)

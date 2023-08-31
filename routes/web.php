@@ -52,6 +52,7 @@ use App\Http\Controllers\ConversionReportController;
 use App\Http\Controllers\PatientFollowupController;
 use App\Models\Appointments;
 use App\Models\Leads;
+use App\Models\Services;
 use App\Models\PackageAdvances;
 use Facade\Ignition\Support\Packagist\Package;
 use Illuminate\Support\Facades\Route;
@@ -98,6 +99,28 @@ Route::get('/daily-stats', function () {
 Route::get('/get_deleted', function () {
     $appointments = Appointments::onlyTrashed()->where('deleted_by',4)->get();
     return view('deleted',get_defined_vars());
+});
+Route::get('getservices',function(){
+    
+    $services = Services::where('slug', '!=', 'all')
+        ->where(['parent_id' => 0])
+        
+        ->orderBy('id', 'asc')
+        ->get();
+    
+$mergedServices = [];
+foreach ($services as $service) {
+    
+        $children = Services::where(['parent_id' => $service->id])
+        
+        ->orderBy('id', 'asc')->get()->toArray();
+    
+    $mergedServices[] = $service->toArray();
+    foreach ($children as $child) {
+        $mergedServices[] = $child;
+    }
+}
+return view('deleted',compact('mergedServices'));
 });
 Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
 
