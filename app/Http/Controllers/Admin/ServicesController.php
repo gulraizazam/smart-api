@@ -97,7 +97,65 @@ class ServicesController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function getSortOrder()
+    {
+        if (! Gate::allows('locations_sort')) {
+            return abort(401);
+        }
 
+        return view('admin.services.Sort');
+    }
+    public function sortOrderGet()
+    {
+       
+        try {
+            if (! Gate::allows('cities_sort')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+           
+                $services = Services::where('slug', '!=', 'all')
+                    ->where(['parent_id' => 0])
+                    ->orderBy('id', 'asc')
+                    ->get();
+                
+            $mergedServices = [];
+            foreach ($services as $service) {
+               
+                    $children = Services::where(['parent_id' => $service->id])->orderby('sort_number', 'ASC')->get()->toArray();
+                
+                $mergedServices[] = $service->toArray();
+                foreach ($children as $child) {
+                    $mergedServices[] = $child;
+                }
+            }
+            //$cities = Services::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+
+            return ApiHelper::apiResponse($this->success, 'Success', true, $mergedServices);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+    public function sortOrderSave(Request $request)
+    {
+       
+        try {
+            if (! Gate::allows('cities_sort')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            $itemIDs = $request->item_ids;
+            if (count($itemIDs)) {
+                foreach ($itemIDs as $key => $itemID) {
+                    Services::where('id', '=', $itemID)->update(['sort_number' => $key]);
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Records are sorted Successfully!');
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Something went Wrong! Records are not sorted', false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
     private function getExtraData($records = [])
     {
 
