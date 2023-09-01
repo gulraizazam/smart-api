@@ -51,7 +51,7 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
-                            @if(Gate::allows('locations_sort'))
+                            @if(Gate::allows('services_sort'))
                                 <a id="delete-table-rows" href="{{route('admin.services.sort_get')}}" class="btn btn-info">
                                     <i class="fa fa-sort-amount-up"></i>Sort
                                 </a>&nbsp;&nbsp;
