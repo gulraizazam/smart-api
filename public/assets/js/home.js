@@ -1097,6 +1097,12 @@ function AllDoctorWiseConversion(bar) {
     } else {
         modifiedData = lables;
     }
+    if (lables.some(str => str.includes('CUTERA'))) {
+        modifiedData = lables.map(location => location.replace('CUTERA ', ''));
+    } else {
+        modifiedData = lables;
+    }
+    
     var options = {
         series: [{
             name: 'Total Appointments',
