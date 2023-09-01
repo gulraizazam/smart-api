@@ -657,7 +657,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
             'centre_id': centreID
         },
         success: function (response) {
-            console.log('response',response);
+            
             $('#table-body').html("");
             dropDownList('centre', period, centreID = '');
             var TABLE_HTML = "";
@@ -764,7 +764,7 @@ function ConsultanciesByStatus(bar) {
             modifiedData = Data;
         }
     } else {
-        modifiedData = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
+        modifiedData = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore','Faisalabad'];
     }
     if (bar.data?.walkin != undefined) {
         for (var i = 0; i < bar.data.walkin.length; i++) {
@@ -827,7 +827,7 @@ function initDoctorWiseConversion(period, time = '') {
     $('.loader-imgs').css('display', "block");
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
-    CENTRE_ID = centre_id;console.log(centre_id)
+    CENTRE_ID = centre_id;
     var doc_id = $(".doctorname").attr('data-id');
     DOC_ID = doc_id;
     let converted = 0;
@@ -951,7 +951,6 @@ function GetDoctors(centre_id, time = '') {
                 'centre_id': centre_id
             },
             success: function (response) {
-                console.log("resssss" ,response);
                 var categories = response.data.categories
                 jQuery('#categories-table-body').html("");
                 var TABLE_HTML = "";
@@ -1173,7 +1172,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
                 for (let i = 0; i < patientData.length; i++) {
                     
                     let patient = patientData[i];
-                    console.log(patient);
+
                     balance = patient.cash_receive - patient.settle_amount_with_tax -patient.refunded_amounts;
                     if(balance > 0){
                         TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: "+(balance).toFixed(2)+"</td><td>" + formatDate(patient.created_at , 'MMM, DD yyyy ')+ "</td></tr>";
