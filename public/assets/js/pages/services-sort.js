@@ -58,9 +58,14 @@ jQuery(document).ready(function () {
 
 
 function dragAbleField(id, title,parent_id) {
-   
+    var classatr;
+   if(parent_id==0){
+    classatr = "card border border-secondary card-custom element-draggable gutter-b parentsrc";
+   }else{
+    classatr = "card border border-secondary card-custom element-draggable gutter-b draggable";
+   }
     return `
-    <div class="card border border-secondary card-custom element-draggable gutter-b draggable" id="` + id + `">
+    <div class="`+classatr+`" id="` + id + `">
         <div class="card-header draggable-handle">
             <div class="card-toolbar">
                 <h3 class="card-label">
