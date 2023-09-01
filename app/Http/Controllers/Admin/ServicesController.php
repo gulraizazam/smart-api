@@ -146,6 +146,7 @@ class ServicesController extends Controller
             $itemIDs = $request->item_ids;
             if (count($itemIDs)) {
                 foreach ($itemIDs as $key => $itemID) {
+                    
                     Services::where('id', '=', $itemID)->update(['sort_number' => $key]);
                 }
 
