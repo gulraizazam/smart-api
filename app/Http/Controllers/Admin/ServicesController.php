@@ -99,7 +99,7 @@ class ServicesController extends Controller
     }
     public function getSortOrder()
     {
-        if (! Gate::allows('locations_sort')) {
+        if (! Gate::allows('services_sort')) {
             return abort(401);
         }
 
@@ -109,7 +109,7 @@ class ServicesController extends Controller
     {
        
         try {
-            if (! Gate::allows('cities_sort')) {
+            if (! Gate::allows('services_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
            
@@ -128,7 +128,7 @@ class ServicesController extends Controller
                     $mergedServices[] = $child;
                 }
             }
-            //$cities = Services::where(['account_id' => Auth::User()->account_id])->orderby('sort_number', 'ASC')->get();
+            
 
             return ApiHelper::apiResponse($this->success, 'Success', true, $mergedServices);
         } catch (\Exception $e) {
@@ -140,7 +140,7 @@ class ServicesController extends Controller
        
        
         try {
-            if (! Gate::allows('cities_sort')) {
+            if (! Gate::allows('services_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $itemIDs = $request->item_ids;
