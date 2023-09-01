@@ -2316,6 +2316,7 @@ class PackagesController extends Controller
     }
     public function updateRefund(Request $request)
     {
+        
 
         $latest_refund = PackageAdvances::where([
             ["package_id",'=',$request['package_id']],
@@ -2387,8 +2388,8 @@ class PackagesController extends Controller
             $data_adjustment['patient_id'] = $packageinformation->patient_id;
             $data_adjustment['location_id'] = $packageinformation->location_id;
             $data_adjustment['appointment_id'] = $packageinformation->appointment_id;
-            $data_adjustment['created_at'] = $request['created_at'];
-            $data_adjustment['updated_at'] = $request['created_at'];
+            $data_adjustment['created_at'] = $request['created_at'].' '.Carbon::now()->toTimeString();
+            $data_adjustment['updated_at'] = $request['created_at'].' '.Carbon::now()->toTimeString();
 
             PackageAdvances::create($data_adjustment);
             $services = Services::where('name','Refund Settelment')->first();
@@ -2412,7 +2413,7 @@ class PackagesController extends Controller
        
         }
     }
-        $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'] , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
+        $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'].' '.Carbon::now()->toTimeString() , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
         return ApiHelper::apiResponse($this->success, 'Record updated', true, [
         ]);
     }
