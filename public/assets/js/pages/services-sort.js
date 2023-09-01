@@ -62,7 +62,7 @@ function dragAbleField(id, title,parent_id) {
    if(parent_id==0){
     classatr = "card border border-secondary card-custom element-draggable gutter-b parentsrc";
    }else{
-    classatr = "card border border-secondary card-custom element-draggable gutter-b draggable";
+    classatr = "card border border-secondary card-custom element-draggable gutter-b draggable ml-5";
    }
     return `
     <div class="`+classatr+`" id="` + id + `">
