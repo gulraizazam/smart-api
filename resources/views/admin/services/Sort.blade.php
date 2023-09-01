@@ -1,12 +1,16 @@
 @extends('admin.layouts.master')
 
 @section('content')
-
+<style>
+        .parentsrc{
+            background: #dddddd;
+        }
+    </style>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
     @include('admin.partials.breadcrumb', ['module' => 'Sort Services', 'title' => 'Sort Services'])
-
+    
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
