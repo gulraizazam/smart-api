@@ -657,6 +657,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
             'centre_id': centreID
         },
         success: function (response) {
+            console.log('response',response);
             $('#table-body').html("");
             dropDownList('centre', period, centreID = '');
             var TABLE_HTML = "";
