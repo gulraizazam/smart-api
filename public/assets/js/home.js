@@ -764,7 +764,7 @@ function ConsultanciesByStatus(bar) {
             modifiedData = Data;
         }
     } else {
-        modifiedData = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore','Faisalabad'];
+        modifiedData = ['BHD KHI', 'Gulshan Johar', 'DHA KHI', 'JT LHR', 'Gulberg LHR', 'DHA LHR','Faisalabad'];
     }
     if (bar.data?.walkin != undefined) {
         for (var i = 0; i < bar.data.walkin.length; i++) {
