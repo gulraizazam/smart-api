@@ -70,7 +70,7 @@ class Discounts extends BaseModal
     }
     public static function createConfigurableDiscount($data)
     {
-   //dd($data);
+ 
 
         $discount = Discounts::Create([
             'slug' =>$data['slug'],
@@ -109,27 +109,25 @@ class Discounts extends BaseModal
             ];
             array_push($bulk_record, $temp_array);
         }
-        
+
         foreach ($bulk_record as $key => $session) {
-          
+            for ($i = 0; $i < $session['session']; $i++) {
            
-            $service_price = Services::find($session['service_name']);
-           
-            $find_bundle = Bundles::where('name',$service_price->name)->first();
-            $store = new GetDiscountService();
-            $store->sessions = $session['session'];
-            $store->service_id =$session['service_name'];
-            $store->service_price =$service_price->price;
-            $store->bundle_id =$find_bundle->id;
-            $store->base_service_id =$data['base_service'];
-            $store->discount_id =$discount->id;
-            $store->discount_type =$session['discount_type'];
-            $store->save();
+                $service_price = Services::find($session['service_name']);
+            
+                $find_bundle = Bundles::where('name',$service_price->name)->first();
+                $store = new GetDiscountService();
+                $store->sessions = $session['session'];
+                $store->service_id =$session['service_name'];
+                $store->service_price =$service_price->price;
+                $store->bundle_id =$find_bundle->id;
+                $store->base_service_id =$data['base_service'];
+                $store->discount_id =$discount->id;
+                $store->discount_type =$session['discount_type'];
+                $store->save();
+            }
         }
     
-        
-        
-
         return $discount;
     }
     
