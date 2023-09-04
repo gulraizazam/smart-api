@@ -255,7 +255,7 @@ class PackagesController extends Controller
                 $discounted_services = GetDiscountService::where('discount_id' , $request->discount_id)->get();
                
                 $merged_services = $base_services->merge($discounted_services);
-             
+            
                 foreach($merged_services as $ds){
                     $service_data1 = Bundles::whereId($ds->bundle_id)->first();
                   
@@ -359,15 +359,20 @@ class PackagesController extends Controller
                         $packageservice = PackageService::createPackageService($data_service);
 
                     }
-                    $total = str_replace(',', '', $request->package_total);
-            
+                     $total = str_replace(',', '', $request->package_total);
+                   
            
                     if ($total == '') {
                         $total = 0;
                     }
-                  
+                    
                     $total = number_format((float) $total + (float) $packagesbundly->tax_including_price);
+                    
                    
+               
+                 
+                  
+                    
                     /*Set variables for return to show information*/
                     $net_amount = $packagesbundly->net_amount;
                     $service_name = $packagesbundly->bundle->name;
@@ -399,11 +404,25 @@ class PackagesController extends Controller
                         'discount_type' => $discount_type,
                         'discount_price' => $discount_price,
                         'net_amount' => $net_amount,
-                        'total' => $total,
+                        'total' =>  str_replace(',', '', $total),
                     ];
 
 
                 }
+              
+                $grand_total = str_replace(',', '', $request->package_total);
+                if ($grand_total == '') {
+                    $grand_total = 0;
+                }
+                $package_id = Packages::where('random_id',$request->random_id)->first();
+                if($package_id){
+                    $sum_services_price = PackageBundles::where('package_id',$package_id->id)->sum('tax_including_price');
+                    
+                    $grand_total =  (float) $sum_services_price;
+                    $myarray[0]['grand_total'] =  $grand_total;
+                    
+                }
+                   
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'myarray' => $myarray,
                 ]);
