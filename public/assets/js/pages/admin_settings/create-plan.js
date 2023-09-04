@@ -2164,7 +2164,7 @@ jQuery(document).ready(function () {
                         
                         if(resposne.data.myarray.length >0){
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
-                                console.log(single_record_detail);
+                               
                                 single_record_detail.total = single_record_detail.total.replace(',' , '');
                                 total_amount += parseInt(single_record_detail.total);
                                 var del_icon;
@@ -2423,12 +2423,13 @@ jQuery(document).ready(function () {
                   
                     let consume = 'NO';
                     let total_amount;
+                    let single_amount;
                     if (resposne.status) {
                         if(resposne.data.myarray.length >0){
                             console.log("single_record_detail1",resposne.data.myarray[0].total);
                             total_amount = resposne.data.myarray[0].total.replace(',' , '');
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
-                                
+                               
                                 $('#edit_plan_services').append("" +
                                     "<tr id='table_1' class='HR_" + random_id + " HR_" +single_record_detail.record.id + "'>" +
                                     "<td><a href='javascript:void(0)' onClick='toggle(" +single_record_detail.record.id + ")'>" +single_record_detail.service_name + "</a></td>" +
