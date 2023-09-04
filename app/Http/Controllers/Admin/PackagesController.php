@@ -221,7 +221,7 @@ class PackagesController extends Controller
         $find_discount = Discounts::find($request->discount_id);
         
         if($find_discount && $find_discount->type=="Configurable"){
-           
+            
             if ($request->is_exclusive == '') {
                 $request->merge(['is_exclusive' => 1]);
             }
@@ -412,6 +412,7 @@ class PackagesController extends Controller
             return ApiHelper::apiResponse($this->success, 'No Record found', false);
 
        }else{
+
       
         /*Total belongs to total Amount that increase when we enter new bundle*/
         $total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
@@ -840,6 +841,7 @@ class PackagesController extends Controller
         $bundle = Bundles::find($request->bundle_id);
 
         if ($bundle && $bundle->type == 'single') {
+            
 
             $bundleService = BundleHasServices::where([
                 'bundle_id' => $bundle->id,
@@ -857,6 +859,7 @@ class PackagesController extends Controller
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
 
         } else {
+            
             if ($bundle && $bundle->apply_discount == '1') {
                 $bundleServices = BundleHasServices::where([
                     'bundle_id' => $bundle->id,
