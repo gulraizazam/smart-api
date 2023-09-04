@@ -1538,7 +1538,6 @@ function getDiscountInfo($this) {
                     if (resposne.status) {
 
                         if (resposne.data.custom_checked == 0) {
-                          console.log(resposne.data);
                             $("#add_discount_type").val(resposne.data.discount_type).change();
                             if(resposne.data.discount_type == "Configurable"){
                                 $("#select_discount_type").css("display","none");
@@ -1824,7 +1823,17 @@ function editDiscountInfo($this) {
 
                         if (resposne.data.custom_checked == 0) {
                             $("#edit_discount_type").val(resposne.data.discount_type).change();
-                            $("#edit_discount_type").prop("disabled", true);
+                            if(resposne.data.discount_type == "Configurable"){
+                                $("#select_edit_discount_type").css("display","none");
+                                $("#edit_configurable_discount_type").css("display","block");
+                                $("#edit_discount_value_div").css("display","none");
+                                $("#edit_price_div").css("display","none");
+                            }else{
+                                $("#select_edit_discount_type").css("display","block");
+                                $("#edit_configurable_discount_type").css("display","none");
+                                $("#edit_discount_type_configurable").prop("disabled", true);
+                            }
+                            
                             $("#edit_discount_value_1").val(resposne.data.discount_price);
                             $("#edit_discount_value_1").prop("disabled", true);
                             $("#edit_net_amount_1").val(resposne.data.net_amount);
@@ -2160,12 +2169,12 @@ jQuery(document).ready(function () {
                     let consume = 'NO';
                     var total_amount = 0;
                     if (resposne.status) {
-
+                        
                         
                         if(resposne.data.myarray.length >0){
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
                                
-                                single_record_detail.total = single_record_detail.total.replace(',' , '');
+                               
                                 total_amount += parseInt(single_record_detail.total);
                                 var del_icon;
                                // if(single_record_detail.net_amount > 0){
@@ -2199,6 +2208,7 @@ jQuery(document).ready(function () {
                                         $('#plan_services').append("<tr class='inner_records_hr HR_" + single_record_detail.record.id + " " + single_record_detail.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                                     });
                             });
+                           
                             $("#package_total_1").val(total_amount ?? 0);
                            
                            
@@ -2425,8 +2435,10 @@ jQuery(document).ready(function () {
                     let total_amount;
                     let single_amount;
                     if (resposne.status) {
+                       
                         if(resposne.data.myarray.length >0){
-                            console.log("single_record_detail1",resposne.data.myarray[0].total);
+                           
+                            
                             total_amount = resposne.data.myarray[0].total.replace(',' , '');
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
                                
@@ -2455,7 +2467,7 @@ jQuery(document).ready(function () {
                                         $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + single_record_detail.record.id + " " + single_record_detail.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                                     });
                             });
-                            $("#edit_package_total_1").val(total_amount ?? 0);
+                            $("#edit_package_total_1").val(resposne.data.myarray[0].grand_total ?? 0);
                         }else{
 
                         
