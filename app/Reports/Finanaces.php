@@ -2721,7 +2721,7 @@ class Finanaces
             ->where('package_advances.created_at','<=',$end_date.' 23:59:59')
             
             ->get();
-            dd($converted_appointments->toArray());
+            
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
                 if (!in_array($appointment->id, $appointments)) {
