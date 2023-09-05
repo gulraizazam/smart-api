@@ -221,19 +221,15 @@ class PackagesController extends Controller
         $find_discount = Discounts::find($request->discount_id);
         
         if($find_discount && $find_discount->type=="Configurable"){
-            
             if ($request->is_exclusive == '') {
                 $request->merge(['is_exclusive' => 1]);
             }
-            
             if ($request->get('package_bundles')) {
                 $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
                 if ($package_bundles) {
                     foreach ($package_bundles as $bundle) {
                         if ($service_data->tax_treatment_type_id == 1) {
-    
                             if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int) $request->is_exclusive)) {
-    
                                 $status = false;
                             }
                         } else { /*this is commented because we want to add services with different prices*/
@@ -245,7 +241,6 @@ class PackagesController extends Controller
                     }
                 }
             }
-    
             if ($status == true) {
                 /*First we need to make the data to save in package bundle*/
                 $data = $request->all();
@@ -253,12 +248,10 @@ class PackagesController extends Controller
                 $discount_info = Discounts::find($request->discount_id);
                 $base_services = BaseDiscountService::where('discount_id' , $request->discount_id)->get();
                 $discounted_services = GetDiscountService::where('discount_id' , $request->discount_id)->get();
-               
                 $merged_services = $base_services->merge($discounted_services);
-            
                 foreach($merged_services as $ds){
                     $service_data1 = Bundles::whereId($ds->bundle_id)->first();
-                  
+                   
                     $data['qty'] = '1';
                     $data['bundle_id'] = $service_data1->id;
                     $data['service_price'] = $service_data1->price;
@@ -271,7 +264,6 @@ class PackagesController extends Controller
                             $data['tax_percenatage'] =$ds->discount_type =="complimentory" ? 0 : $location_information->tax_percentage;
                             $data['tax_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
                             $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
-        
                             $data['is_exclusive'] = 1;
                         } else {
                             $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $request->net_amount;
@@ -289,12 +281,35 @@ class PackagesController extends Controller
         
                         $data['is_exclusive'] = 1;
                     } else {
-                        $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $request->net_amount;
-                        $data['tax_percenatage'] =$ds->discount_type =="complimentory" ? 0 : $location_information?->tax_percentage ?? '00.00';
-                        $data['tax_exclusive_net_amount'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
-                        $data['tax_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
-        
-                        $data['is_exclusive'] = 0;
+                       
+                        if($ds->discount_type =="complimentory"){
+                            $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $request->net_amount;
+                            $data['tax_percenatage'] =$ds->discount_type =="complimentory" ? 0 : $location_information?->tax_percentage ?? '00.00';
+                            $data['tax_exclusive_net_amount'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+            
+                            $data['is_exclusive'] = 0;
+                        }elseif($ds->discount_type =="custom"){
+                            $amount_after_discount = ($ds->discount_amount/100) * $service_data1->price;
+                            
+                            $data['tax_including_price'] = $service_data1->price - $amount_after_discount;
+                            $data['discount_type'] =$ds->discount_type;
+                            $data['discount_price'] =$ds->discount_amount;
+                            $data['tax_percenatage'] =$location_information?->tax_percentage ?? '00.00';
+                            $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_price'] =ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+            
+                            $data['is_exclusive'] = 0;
+                        }else{
+                            
+                            $data['tax_including_price'] = $request->net_amount;
+                            $data['tax_percenatage'] =$location_information?->tax_percentage ?? '00.00';
+                            $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_price'] =ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+            
+                            $data['is_exclusive'] = 0;
+                        }
+                       
                     }
                     if ($request->discount_id == '0' || $request->discount_id == '') {
                         $data['discount_id'] = null;
@@ -303,9 +318,7 @@ class PackagesController extends Controller
                     $data['updated_at'] = Filters::getCurrentTimeStamp();
                     $packagesbundly = PackageBundles::createPackagebundle($data);
                     $bundle_details = BundleHasServices::where('bundle_id', '=', $packagesbundly->bundle_id)->get();
-    
                     $calculable_servcies = [];
-    
                     foreach ($bundle_details as $detail) {
                         $calculable_servcies[] = [
                             'service_price' => $detail->calculated_price,
@@ -315,13 +328,28 @@ class PackagesController extends Controller
                     }
                     $calculated_services = Bundles::calculatePrices($calculable_servcies, $data['service_price'], $data['net_amount']);
                     foreach ($calculated_services as $detail) {
-    
-                        $data_service['random_id'] = $request->random_id;
-                        $data_service['package_bundle_id'] = $packagesbundly->id;
-                        $data_service['service_id'] = $detail['service_id'];
-                        $data_service['price'] = $ds->discount_type =="complimentory" ? 0 :$detail['calculated_price'];
-                        $data_service['orignal_price'] =$ds->discount_type =="complimentory" ? 0 : $detail['service_price'];
-        
+                        if($ds->discount_type=="complimentory"){
+                            $data_service['random_id'] = $request->random_id;
+                            $data_service['package_bundle_id'] = $packagesbundly->id;
+                            $data_service['service_id'] = $detail['service_id'];
+                            $data_service['price'] =  0 ;
+                            $data_service['orignal_price'] = 0;
+                        }elseif($ds->discount_type=="custom"){
+                           
+                            $amount_after_discount = ($ds->discount_amount/100) * $service_data1->price;
+                            $data_service['random_id'] = $request->random_id;
+                            $data_service['package_bundle_id'] = $packagesbundly->id;
+                            $data_service['service_id'] = $detail['service_id'];
+                            $data_service['price'] = $service_data1->price - $amount_after_discount;
+                            $data_service['orignal_price'] =$service_data1->price;
+                        }else{
+                            $data_service['random_id'] = $request->random_id;
+                            $data_service['package_bundle_id'] = $packagesbundly->id;
+                            $data_service['service_id'] = $detail['service_id'];
+                            $data_service['price'] = $detail['calculated_price'];
+                            $data_service['orignal_price'] =$detail['service_price'];
+                        }
+                        
                         /*Checked it exclusive or not*/
                         if ($service_data1->tax_treatment_type_id == Config::get('constants.tax_both')) {
                             if ($request->is_exclusive == '1') {
@@ -329,7 +357,6 @@ class PackagesController extends Controller
                                 $data_service['tax_percenatage'] = $location_information->tax_percentage;
                                 $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
                                 $data_service['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
-        
                                 $data_service['is_exclusive'] = 1;
                             } else {
                                 $data_service['tax_including_price'] = $ds->discount_type =="complimentory" ? 0 :$detail['calculated_price'];
@@ -347,12 +374,29 @@ class PackagesController extends Controller
         
                             $data_service['is_exclusive'] = 1;
                         } else {
-                            $data_service['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $detail['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                            $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
-                            $data_service['tax_price'] = $ds->discount_type =="complimentory" ? 0 :ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+                            if($ds->discount_type =="complimentory"){
+                                $data_service['tax_including_price'] =0;
+                                $data_service['tax_percenatage'] = 0;
+                                $data_service['tax_exclusive_price'] =0;
+                                $data_service['tax_price'] = 0;
         
-                            $data_service['is_exclusive'] = 0;
+                                $data_service['is_exclusive'] = 0;
+
+                            }else if($ds->discount_type =="custom"){
+                                $amount_after_discount = ($ds->discount_amount/100) * $service_data1->price;
+                                $data_service['tax_including_price'] = $service_data1->price - $amount_after_discount;
+                                $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                                $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_price'] = $ds->discount_type =="complimentory" ? 0 :ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+                                $data_service['is_exclusive'] = 0;
+                            }else{
+                                $data_service['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $detail['calculated_price'];
+                                $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                                $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_price'] = $ds->discount_type =="complimentory" ? 0 :ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+                                $data_service['is_exclusive'] = 0;
+                            }
+                            
                         }
                         $data_service['created_at'] = Filters::getCurrentTimeStamp();
                         $data_service['updated_at'] = Filters::getCurrentTimeStamp();
