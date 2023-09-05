@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -25,10 +26,16 @@ class PackageBundles extends Model
      *  */
     public static function createPackagebundle($data)
     {
+      
        $package_id = Packages::where('random_id',$data['random_id'])->first();
         $discount_type = Discounts::find($data['discount_id']);
-        if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0){
+        if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']==null){
             $data['discount_type'] = 'Configurable';
+            $data['package_id'] =  $package_id->id ?? null;
+            
+        }
+        else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']!=null){
+            $data['discount_type'] = $data['discount_type'];
             $data['package_id'] =  $package_id->id ?? null;
             
         }else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] == 0){
