@@ -583,22 +583,23 @@ function getCentreServices()
     });
 }
 
+
 var cloneCounter = 1;
 
 $('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', function(){
     console.log(cloneCounter);
-    var cloneElements = $(this).parent('.get_discount_type').html();
+    var cloneElements = $(this).parent().parent('.get_discount_type').children().html();
     
     // Replace names of input fields with unique names
     cloneElements = cloneElements.replace('sessions[]', 'sessions[' + cloneCounter + ']');
     cloneElements = cloneElements.replace('services_name[]', 'services_name[' + cloneCounter + ']');
-    cloneElements = cloneElements.replace('disc_type[]', 'disc_type[' + cloneCounter + ']');
-   
+    cloneElements = cloneElements.replaceAll('disc_type[]', 'disc_type[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('configurable_amount[]', 'configurable_amount[' + cloneCounter + ']');
     cloneElements = cloneElements.replace('add_new_discount_field', 'remove_discount');
     cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
     cloneElements = cloneElements.replace('la-plus', 'la-minus');
 
-    $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">'+cloneElements+'</div>');
+    $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type mt-3"><div class="d-flex">'+cloneElements+'</div></div>');
     
     // Increment the counter for the next clone
     cloneCounter++;
@@ -606,6 +607,15 @@ $('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', f
 
 $(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount', function(){
     $(this).parent('.get_discount_type').remove();
+});
+
+$(document).on('change', '.discount_type_wrap.get_discount_type .radio-inline .group_slug', function(){
+    var Elementindex = $(this).parents('.discount_type_wrap.get_discount_type').index();
+    if($(this).is(':checked') && $(this).val() == "custom"){
+        $(this).parent().parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input min="0" id="add_configurable_amount" class="form-control" type="number" name="configurable_amount['+(parseInt(Elementindex)-1)+']"></div>');
+    } else{
+        $(this).parents('.discount_type_wrap.get_discount_type').find('#configurable_amount').remove();
+    }
 });
 
 

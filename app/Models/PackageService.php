@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
 class PackageService extends Model
@@ -23,6 +24,7 @@ class PackageService extends Model
 
     public static function createPackageService($data)
     {
+        Log::info($data);
         
        $find_package_bundle = PackageBundles::find($data['package_bundle_id']);
        $find_discount = Discounts::find($find_package_bundle->discount_id);

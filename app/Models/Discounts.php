@@ -70,8 +70,8 @@ class Discounts extends BaseModal
     }
     public static function createConfigurableDiscount($data)
     {
- 
-
+       
+     
         $discount = Discounts::Create([
             'slug' =>$data['slug'],
             'name' =>$data['name'],
@@ -88,33 +88,31 @@ class Discounts extends BaseModal
         $sessionCount = $data['sessions_buy'];
 
         for ($i = 0; $i < $sessionCount; $i++) {
-            $base_discount_service = BaseDiscountService::Create([
+            BaseDiscountService::Create([
                 'discount_id' =>$discount->id,
                 'service_id' =>$data['base_service'],
                 'service_price' =>$base_service_price->price,
-                //'sessions'=>$data['sessions_buy'],
                 'bundle_id'=>$find_bundle_base->id,
             ]);
         }
 
-        
-        $service_check = [];
         $bulk_record = [];
         $sessions = $data['sessions'];
         foreach($sessions as $key => $value) {
+           
             $temp_array = [
                 'session' => $value,
                 'service_name' =>$data['services_name'][$key],
                 'discount_type' => $data['disc_type'][$key],
+                'discount_amount' => isset($data['configurable_amount'][$key]) ?$data['configurable_amount'][$key]: 0,
             ];
             array_push($bulk_record, $temp_array);
         }
 
         foreach ($bulk_record as $key => $session) {
+         
             for ($i = 0; $i < $session['session']; $i++) {
-           
                 $service_price = Services::find($session['service_name']);
-            
                 $find_bundle = Bundles::where('name',$service_price->name)->first();
                 $store = new GetDiscountService();
                 $store->sessions = $session['session'];
@@ -124,6 +122,7 @@ class Discounts extends BaseModal
                 $store->base_service_id =$data['base_service'];
                 $store->discount_id =$discount->id;
                 $store->discount_type =$session['discount_type'];
+                $store->discount_amount=$session['discount_amount'];
                 $store->save();
             }
         }
