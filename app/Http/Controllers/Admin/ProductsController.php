@@ -433,22 +433,22 @@ class ProductsController extends Controller
             $products_logs = Activity::where(['log_name' => 'product', 'subject_id' => $id])->orderBy('id', 'DESC')->get();
           
 
-            $users = User::all()->getDictionary();
+            //$users = User::where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
             
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
-            dd( $brands);
+            
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
            
-            $products_logs = collect($products_logs)->map(function ($log) use ($users, $brands, $centres, $warehouse) {
+            $products_logs = collect($products_logs)->map(function ($log) use ($brands, $centres, $warehouse) {
                 $properties = json_decode($log->properties)->attributes;
                
                 $log->product_name = $properties->name;
                 $log->brand_id = (array_key_exists($properties->brand_id, $brands)) ? $brands[$properties->brand_id]->name : 'N/A';
                 $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
                 $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
-                $log->created_by = (array_key_exists($properties->created_by, $users)) ? $users[$properties->created_by]->name : 'N/A';
-                $log->updated_by = (array_key_exists($properties->updated_by, $users)) ? $users[$properties->updated_by]->name : 'N/A';
+                $log->created_by = (array_key_exists($properties->created_by,[54434] )) ? 'Super Admin' : 'N/A';
+                $log->updated_by = (array_key_exists($properties->updated_by, [54434])) ? 'Super Admin' : 'N/A';
                
                 return $log;
             });
