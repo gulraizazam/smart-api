@@ -687,7 +687,7 @@ class DiscountsController extends Controller
         }
         if($discount_info->type =="Configurable"){
             $serive = BaseDiscountService::join('services','services.id','base_discount_services.service_id')
-            ->select('services.name','services.id')->where('discount_id',$request->discount_id)->get()->toArray();
+            ->select('services.name','services.id')->where('discount_id',$request->discount_id)->take(1)->get()->toArray();
         }
        
         return ApiHelper::apiResponse($this->success, 'Record found', true, [

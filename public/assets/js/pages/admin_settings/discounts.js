@@ -522,10 +522,11 @@ function SetFields()
                 let service_options = '<option value="">Select</option>';
             
                 Object.values(services).forEach(function(value, index) {
+                    
                     if (value.name == 'All Services') {
-                          service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                          service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
                     } else {
-                        service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                        service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
                         Object.values(value.children).forEach(function (child, index) {
                             service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
                             service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
@@ -534,6 +535,8 @@ function SetFields()
                 });
                 $("#base_service").html(service_options);
                 $("#services_sessions").html(service_options);
+                $('#base_service').select2();
+               
                 reInitSelect2(".select2", "");
     
             },
@@ -606,18 +609,28 @@ $('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', f
 });
 
 $(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount', function(){
-    $(this).parent('.get_discount_type').remove();
+    $(this).parent().parent('.get_discount_type').remove();
 });
 
 $(document).on('change', '.discount_type_wrap.get_discount_type .radio-inline .group_slug', function(){
     var Elementindex = $(this).parents('.discount_type_wrap.get_discount_type').index();
     if($(this).is(':checked') && $(this).val() == "custom"){
-        $(this).parent().parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input min="0" id="add_configurable_amount" class="form-control" type="number" name="configurable_amount['+(parseInt(Elementindex)-1)+']"></div>');
+        $(this).parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control"  name="configurable_amount['+(parseInt(Elementindex)-1)+']"></div>');
     } else{
         $(this).parents('.discount_type_wrap.get_discount_type').find('#configurable_amount').remove();
     }
 });
+$(document).on("keyup", ".add_configurable_amount", function () {
 
+    
+        var val = parseInt(this.value);
+        if (val > 100 || val < 0) {
+            this.value = '';
+            toastr.error("Amount is not allowed greater than 100");
+        }
+    
+
+})
 
 
 
