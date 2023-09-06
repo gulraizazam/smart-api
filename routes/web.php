@@ -1,63 +1,60 @@
 <?php
 
-use App\Http\Controllers\Admin\AppointmentimageController;
-use App\Http\Controllers\Admin\AppointmentMeasurementController;
-use App\Http\Controllers\Admin\AppointmentMedicalController;
-use App\Http\Controllers\Admin\AppointmentsController;
-use App\Http\Controllers\Admin\AppointmentStatusesController;
-use App\Http\Controllers\Admin\BrandsController;
-use App\Http\Controllers\Admin\BundlesController;
-use App\Http\Controllers\Admin\CentreTargetsController;
-use App\Http\Controllers\Admin\CitiesController;
-use App\Http\Controllers\Admin\ConsultancyInvoiceController;
-use App\Http\Controllers\Admin\CustomFormFeedbacksController;
-use App\Http\Controllers\Admin\CustomFormsController;
-use App\Http\Controllers\Admin\DiscountsController;
-use App\Http\Controllers\Admin\DoctorsController;
-use App\Http\Controllers\Admin\InvoicesController;
-use App\Http\Controllers\Admin\LeadsController;
-use App\Http\Controllers\Admin\LeadSourcesController;
-use App\Http\Controllers\Admin\LeadStatusesController;
-use App\Http\Controllers\Admin\LocationsController;
-use App\Http\Controllers\Admin\LogsController;
-use App\Http\Controllers\Admin\MachineTypeController;
-use App\Http\Controllers\Admin\OrdersController;
-use App\Http\Controllers\Admin\PackageAdvancesController;
-use App\Http\Controllers\Admin\PackagesController;
-use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
-use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
-use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
-use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
-use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
-use App\Http\Controllers\Admin\PatientsController;
-use App\Http\Controllers\Admin\PaymentModesController;
-use App\Http\Controllers\Admin\PermissionsController;
-use App\Http\Controllers\Admin\ProductsController;
-use App\Http\Controllers\Admin\RefundsController;
-use App\Http\Controllers\Admin\RegionsController;
-use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
-use App\Http\Controllers\Admin\Reports\FinanceReportController;
-use App\Http\Controllers\Admin\Reports\OperationsReportController;
-use App\Http\Controllers\Admin\ResourceRotasController;
-use App\Http\Controllers\Admin\ResourcesController;
-use App\Http\Controllers\Admin\RolesController;
-use App\Http\Controllers\Admin\ServicesController;
-use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\SMSTemplatesController;
-use App\Http\Controllers\Admin\TownController;
-use App\Http\Controllers\Admin\UserOperatorSettingsController;
-use App\Http\Controllers\Admin\UsersController;
-use App\Http\Controllers\Admin\UserTypesController;
-use App\Http\Controllers\ConversionReportController;
-use App\Http\Controllers\PatientFollowupController;
 use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\Services;
 use App\Models\PackageAdvances;
-use Facade\Ignition\Support\Packagist\Package;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\LogsController;
+use App\Http\Controllers\Admin\TownController;
+use Facade\Ignition\Support\Packagist\Package;
+use App\Http\Controllers\Admin\LeadsController;
+use App\Http\Controllers\Admin\RolesController;
+use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\BrandsController;
+use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\OrdersController;
+use App\Http\Controllers\Admin\BundlesController;
+use App\Http\Controllers\Admin\DoctorsController;
+use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Admin\RegionsController;
+use App\Http\Controllers\Admin\InvoicesController;
+use App\Http\Controllers\Admin\PackagesController;
+use App\Http\Controllers\Admin\PatientsController;
+use App\Http\Controllers\Admin\ProductsController;
+use App\Http\Controllers\Admin\ServicesController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Admin\LocationsController;
+use App\Http\Controllers\Admin\ResourcesController;
+use App\Http\Controllers\Admin\UserTypesController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\ConversionReportController;
+use App\Http\Controllers\PatientFollowupController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
-use App\Http\Controllers\DashboardReportsController;
+use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\LeadStatusesController;
+use App\Http\Controllers\Admin\PaymentModesController;
+use App\Http\Controllers\Admin\SMSTemplatesController;
+use App\Http\Controllers\Admin\CentreTargetsController;
+use App\Http\Controllers\Admin\ResourceRotasController;
+use App\Http\Controllers\Admin\PackageAdvancesController;
+use App\Http\Controllers\Admin\AppointmentimageController;
+use App\Http\Controllers\Admin\TransferProductsController;
+use App\Http\Controllers\Admin\AppointmentMedicalController;
+use App\Http\Controllers\Admin\ConsultancyInvoiceController;
+use App\Http\Controllers\Admin\AppointmentStatusesController;
+use App\Http\Controllers\Admin\CustomFormFeedbacksController;
+use App\Http\Controllers\Admin\UserOperatorSettingsController;
+use App\Http\Controllers\Admin\Reports\FinanceReportController;
+use App\Http\Controllers\Admin\AppointmentMeasurementController;
+use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
+use App\Http\Controllers\Admin\Reports\OperationsReportController;
+use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
+use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
+use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageController;
+use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
+use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,20 +98,20 @@ Route::get('/get_deleted', function () {
     return view('deleted',get_defined_vars());
 });
 Route::get('getservices',function(){
-    
+
     $services = Services::where('slug', '!=', 'all')
         ->where(['parent_id' => 0])
-        
+
         ->orderBy('id', 'asc')
         ->get();
-    
+
 $mergedServices = [];
 foreach ($services as $service) {
-    
+
         $children = Services::where(['parent_id' => $service->id])
-        
+
         ->orderBy('id', 'asc')->get()->toArray();
-    
+
     $mergedServices[] = $service->toArray();
     foreach ($children as $child) {
         $mergedServices[] = $child;
@@ -531,10 +528,13 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
     Route::post('download-filter-data', [AppointmentsController::class, 'downloadExportdata']);
     /*Inventory Routes*/
+    Route::get('warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
 
     Route::get('brands', [BrandsController::class, 'index'])->name('brands.index');
 
     Route::get('products', [ProductsController::class, 'index'])->name('products.index');
+
+    Route::get('transfer-product', [TransferProductsController::class, 'index'])->name('transfer_product.index');
 
     Route::get('orders', [OrdersController::class, 'index'])->name('orders.index');
 
@@ -596,9 +596,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');
         Route::get('dashboard/follow-up-report-monthly', [DashboardReportsController::class, 'FollowUpReportMonthly'])->name('reports.follow_up_month');
         Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'loadFollowUpReport'])->name('reports.patient_follow_up_report');
-        Route::post('dashboard/patient_follow_up_report_monthly', [all_doctor_wise_conversion::class, 'LoadPatientFollowUpReportMonthly'])->name('reports.patient_follow_up_report_monthly');
+        //Route::post('dashboard/patient_follow_up_report_monthly', [all_doctor_wise_conversion::class, 'LoadPatientFollowUpReportMonthly'])->name('reports.patient_follow_up_report_monthly');
         Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
         Route::get('dashboard/patient-follow-up/download', [PatientFollowupController::class, 'patientFollowUpDownload'])->name('follow_up.download');
         Route::get('dashboard/patient-monthly-follow-up/download', [PatientFollowupController::class, 'patientMonthlyFollowUpDownload'])->name('monthly_follow_up.download');
-    
+
     });

@@ -15,14 +15,24 @@ class CreateOrdersTable extends Migration
     {
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id');
-            $table->integer('patient_id');
+            $table->unsignedInteger('patient_id');
+            $table->unsignedInteger('location_id')->nullable();
+            $table->foreignId('warehouse_id')->nullable();
             $table->float('total_price', 8, 2)->nullable();
             $table->integer('refund_order_id')->nullable();
-            $table->enum('order_type', ['sale', 'refund']);
+            $table->enum('order_type', ['sale', 'refund', 'in_house_use']);
             $table->tinyInteger('status')->default(1);
-            $table->integer('created_by');
+            $table->unsignedInteger('created_by');
+            $table->unsignedInteger('updated_by')->nullable();
+            $table->unsignedInteger('account_id');
             $table->timestamps();
+
+            $table->foreign('account_id')->references('id')->on('accounts');
+            $table->foreign('patient_id')->references('id')->on('users');
+            $table->foreign('location_id')->references('id')->on('locations');
+            $table->foreign('warehouse_id')->references('id')->on('warehouses');
+            $table->foreign('created_by')->references('id')->on('users');
+            $table->foreign('updated_by')->references('id')->on('users');
         });
     }
 
