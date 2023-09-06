@@ -10,7 +10,7 @@ class Stock extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['account_id', 'product_id', 'quantity', 'stock_type'];
+    protected $fillable = ['account_id', 'product_id', 'order_id', 'quantity', 'stock_type', 'transfer_id', 'product_detail_id'];
 
     protected $table = 'stocks';
 
@@ -22,9 +22,8 @@ class Stock extends Model
      */
     public static function getTotalRecords(Request $request, $account_id = false, $product_id = 0)
     {
-
         if ($product_id == 0) {
-            return self::where('product_id', $id)->count();
+            return self::where('product_id', $product_id)->count();
         } else {
             return self::count();
         }
