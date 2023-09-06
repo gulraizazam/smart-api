@@ -525,7 +525,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::delete('products/{id}', [ProductsController::class, 'destroy'])->name('products.destroy');
     Route::get('products/transfer-product/{id}', [ProductsController::class, 'transferProductGetData'])->name('products.transfer_product.get');
     Route::post('products/transfer-product', [ProductsController::class, 'transferProduct'])->name('products.transfer_product');
-    Route::get('products/logs/{id}', [ProductsController::class, 'logs'])->name('products.logs');
     /*Product routes*/
 
     /* Transfer Product */
