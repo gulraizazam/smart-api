@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Http\Controllers\Controller;
-use App\Models\Discounts;
+use stdClass;
+use App\Helpers\ACL;
+use App\Models\User;
 use App\Models\Order;
-use App\Models\OrderDetail;
-use App\Models\Product;
 use App\Models\Stock;
+use App\Models\Product;
+use App\Models\Discounts;
+use App\Models\Locations;
+use App\Models\Warehouse;
+use App\Models\OrderDetail;
 use Illuminate\Http\Request;
+use App\HelperModule\ApiHelper;
+use App\Models\TransferProduct;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -35,7 +41,7 @@ class OrdersController extends Controller
      */
     public function index()
     {
-        if (! Gate::allows('order_manage')) {
+        if (!Gate::allows('order_manage')) {
             return abort(401);
         }
 
@@ -52,28 +58,26 @@ class OrdersController extends Controller
         try {
             $records = [];
             $records['data'] = [];
+            $filename = 'transfer_product';
+            $filters = getFilters($request->all());
+            $apply_filter = checkFilters($filters, $filename);
 
-            if (isset($request->input('query')['search'])) {
-                $apply_filter = $request->input('query')['search'];
-                if (isset($apply_filter['delete'])) {
-                    $ids = explode(',', $apply_filter['delete']);
-                    $orders = Order::getBulkData($ids);
-                    if ($orders) {
-                        foreach ($orders as $order) {
-                            $detail_records = OrderDetail::where('order_id', $order->id)->get();
-                            if (! $detail_records->isEmpty()) {
-                                foreach ($detail_records as $detail_record) {
-                                    $detail_record->delete();
-                                }
+            if (isset($apply_filter['delete'])) {
+                $ids = explode(',', $apply_filter['delete']);
+                $orders = Order::getBulkData($ids);
+                if ($orders) {
+                    foreach ($orders as $order) {
+                        $detail_records = OrderDetail::where('order_id', $order->id)->get();
+                        if (!$detail_records->isEmpty()) {
+                            foreach ($detail_records as $detail_record) {
+                                $detail_record->delete();
                             }
-                            $order->delete();
                         }
+                        $order->delete();
                     }
-                    $records['status'] = true;
-                    $records['message'] = 'Records has been deleted successfully!';
                 }
-            } else {
-                $apply_filter = false;
+                $records['status'] = true;
+                $records['message'] = 'Records has been deleted successfully!';
             }
 
             // Get Total Records
@@ -82,15 +86,27 @@ class OrdersController extends Controller
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $orders = Order::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+            $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
+            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+            $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
+            $products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
             //$products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
             $records['data'] = $orders;
             $records['permissions'] = [
-                'manage' => Gate::allows('product_manage'),
-                'refund' => Gate::allows('refund_manage'),
+                'manage' => Gate::allows('order_manage'),
+                'edit' => Gate::allows('order_edit'),
+                'refund' => Gate::allows('order_refund'),
+                'delete' => Gate::allows('order_destroy'),
             ];
             $records['active_filters'] = $apply_filter;
+            $records['filter_values'] = [
+                'centres' => collect($centres)->pluck('name', 'id'),
+                'warehouse' => collect($warehouse)->pluck('name', 'id'),
+                'users' => $users,
+                'products' => $products,
+            ];
             $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
@@ -113,7 +129,7 @@ class OrdersController extends Controller
      */
     public function refund()
     {
-        if (! Gate::allows('refund_manage')) {
+        if (!Gate::allows('refund_manage')) {
             return abort(401);
         }
 
@@ -139,7 +155,7 @@ class OrdersController extends Controller
                     if ($orders) {
                         foreach ($orders as $order) {
                             $detail_records = OrderDetail::where('order_id', $order->id)->get();
-                            if (! $detail_records->isEmpty()) {
+                            if (!$detail_records->isEmpty()) {
                                 foreach ($detail_records as $detail_record) {
                                     $detail_record->delete();
                                 }
@@ -161,19 +177,25 @@ class OrdersController extends Controller
 
             $orders = Order::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, 'refund');
 
-            //$products = Product::getAllRecordsDictionary(Auth::User()->account_id);
+            $products = Product::getAllRecordsDictionary(Auth::User()->account_id);
+
+            $all_products = array();
+            foreach ($products as $product) {
+                $all_products[$product->id] = $product->name;
+            }
+
 
             $records['data'] = $orders;
-            $records['permissions'] = [];
             $records['active_filters'] = $apply_filter;
-            // $all_products = array();
-            // foreach ($products as $product) {
-            //     $all_products[$product->id] = $product->name;
-            // }
-            // $records['filter_values'] = [
-            //     'products' => $all_products,
-            //     'status' => config('constants.status')
-            // ];
+            $records['permissions'] = [
+                'manage' => Gate::allows('order_manage'),
+                'create' => Gate::allows('order_create'),
+                'refund' => Gate::allows('order_refund'),
+            ];
+            $records['filter_values'] = [
+                'products' => $all_products,
+                'status' => config('constants.status')
+            ];
             $records['meta'] = [
                 'field' => $orderBy,
                 'page' => $page,
@@ -196,7 +218,7 @@ class OrdersController extends Controller
      */
     public function orderRefund($id)
     {
-        if (! Gate::allows('refund_manage')) {
+        if (!Gate::allows('refund_manage')) {
             return abort(401);
         }
         $order_refund = Order::refund($id);
@@ -221,7 +243,6 @@ class OrdersController extends Controller
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
         ]);
-
     }
 
     /*
@@ -235,7 +256,6 @@ class OrdersController extends Controller
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'discounts' => $discounts,
         ]);
-
     }
 
     /**
@@ -246,15 +266,13 @@ class OrdersController extends Controller
     public function store(Request $request)
     {
         try {
-            if (! Gate::allows('order_create')) {
+            if (!Gate::allows('order_create')) {
                 return abort(401);
             }
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
                     $total_price = OrderDetail::where('order_id', $order->id)->sum('sale_price_after_discount');
-                    $order->total_price = $total_price;
-                    $order->save();
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
@@ -298,10 +316,67 @@ class OrdersController extends Controller
         }
     }
 
+    public function edit($id)
+    {
+        try {
+            if (!Gate::allows('order_edit')) {
+                return abort(401);
+            }
+            $response = Order::getRecord($id);
+            if ($response->location_id != null) {
+                $from_id = $response->location_id;
+                $from_key = 'location_id';
+            } elseif($response->warehouse_id != null){
+                $from_id = $response->warehouse_id;
+                $from_key = 'warehouse_id';
+            } else {
+                $from_id = '';
+                $from_key = '';
+            }
+
+            $data = [];
+            $data['request_from'] = 'order';
+            $data['from_id'] = $from_id;
+            $data['from_key'] = $from_key;
+
+            $products = Product::getProductsAjax($data, Auth::User()->account_id);
+            foreach ($products as $product) {
+                $product->quantity = Stock::sumProductQuantity($product->id);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Get Record', true, [
+                'response' => $response,
+                'products' => $products,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    public function update(Request $request, $id)
+    {
+        try {
+            $order = Order::updateRecord($request, Auth::user()->account_id, $id);
+            if ($order) {
+                if (OrderDetail::updateRecord($order->id, $request, Auth::User()->account_id)) {
+                    $total_price = OrderDetail::priceCalculate($request);
+                    $order = Order::where(['id' => $order->id])->update([
+                        'total_price' => $total_price
+                    ]);
+                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                }
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
     public function orderRefundDetail($id)
     {
         try {
-            if (! Gate::allows('refund_manage')) {
+            if (!Gate::allows('refund_manage')) {
                 return abort(401);
             }
             $records = [];
