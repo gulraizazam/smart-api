@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 
 class PackageService extends Model
@@ -23,6 +24,40 @@ class PackageService extends Model
 
     public static function createPackageService($data)
     {
+       
+       $find_package_bundle = PackageBundles::find($data['package_bundle_id']);
+       $find_discount = Discounts::find($find_package_bundle->discount_id);
+       
+       if($find_discount && $find_discount->type =="Configurable" && $data['tax_including_price'] > 0){
+        $find_package = Packages::where('random_id',$data['random_id'])->first();
+        if($find_package){
+            $data['package_id'] = $find_package->id;
+        }
+        $data['price'] = $data['price'];
+        $data['tax_price'] = $data['tax_price'];
+        $data['tax_exclusive_price'] = $data['tax_exclusive_price'];
+        $data['tax_including_price'] = $data['tax_including_price'];
+        
+    }else if($find_discount && $find_discount->type =="Configurable" && $data['tax_including_price'] == 0){
+        $find_package = Packages::where('random_id',$data['random_id'])->first();
+        if($find_package){
+            $data['package_id'] = $find_package->id;
+        }
+        $data['price'] = 0;
+        $data['tax_price'] = 0;
+        $data['tax_exclusive_price'] = 0;
+        $data['tax_including_price'] =0;
+    }else{
+        $find_package = Packages::where('random_id',$data['random_id'])->first();
+        if($find_package){
+            $data['package_id'] = $find_package->id;
+        }
+
+        $data['price'] = $data['price'];
+        $data['tax_price'] = $data['tax_price'];
+        $data['tax_exclusive_price'] = $data['tax_exclusive_price'];
+        $data['tax_including_price'] = $data['tax_including_price'];
+    }
         $record = self::create($data);
 
         return $record;

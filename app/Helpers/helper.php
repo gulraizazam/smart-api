@@ -19,7 +19,7 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null)
     return [$orderBy, $order];
 }
 
-function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 20)
+function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 30)
 {
 
     $iDisplayLength = intval($request->pagination['perpage'] ?? $defaultPerPage);

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -25,6 +26,33 @@ class PackageBundles extends Model
      *  */
     public static function createPackagebundle($data)
     {
+      
+       $package_id = Packages::where('random_id',$data['random_id'])->first();
+        $discount_type = Discounts::find($data['discount_id']);
+        if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']==null){
+            $data['discount_type'] = 'Configurable';
+            $data['package_id'] =  $package_id->id ?? null;
+            
+        }
+        else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']!=null){
+            $data['discount_type'] = $data['discount_type'];
+            $data['package_id'] =  $package_id->id ?? null;
+            
+        }else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] == 0){
+            $data['discount_type'] = 'Percentage';
+            $data['discount_price'] = 100;
+            $data['net_amount'] = 0;
+            $data['tax_including_price'] = 0;
+            $data['tax_exclusive_net_amount'] = 0;
+            $data['tax_price'] = 0;
+            $data['package_id'] = $package_id->id ?? null;
+          
+        }else{
+            $data['discount_type'] = $data['discount_type'];
+            $data['discount_price'] = $data['discount_price'];
+            
+        }
+       
         $record = self::create($data);
 
         return $record;
@@ -69,6 +97,7 @@ class PackageBundles extends Model
             'package_id' => $package->id,
             'is_allocate' => 1,
         ];
+       
         foreach ($request['package_bundles'] as $bundle_id) {
             self::where([
                 'id' => $bundle_id,
