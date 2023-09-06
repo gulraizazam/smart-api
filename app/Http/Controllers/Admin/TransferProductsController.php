@@ -1,0 +1,280 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Helpers\ACL;
+use App\Models\Brand;
+use App\Models\Stock;
+use App\Models\Product;
+use App\Models\Locations;
+use App\Models\Warehouse;
+use Illuminate\Http\Request;
+use App\Models\ProductDetail;
+use App\HelperModule\ApiHelper;
+use App\Models\TransferProduct;
+use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
+
+class TransferProductsController extends Controller
+{
+    protected $error;
+
+    protected $success;
+
+    protected $unauthorized;
+
+    public function __construct()
+    {
+        $this->error = config('constants.api_status.error');
+        $this->success = config('constants.api_status.success');
+        $this->unauthorized = config('constants.api_status.unauthorized');
+    }
+
+    /**
+     * Display a listing of products.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function index()
+    {
+        if (!Gate::allows('product_manage')) {
+            return abort(401);
+        }
+
+        return view('admin.transfer_product.index');
+    }
+
+    /**
+     * Display a listing of products
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function datatable(Request $request)
+    {
+        try {
+            $records = [];
+            $records['data'] = [];
+            $filename = 'transfer_product';
+            $filters = getFilters($request->all());
+            $apply_filter = checkFilters($filters, $filename);
+
+            if (hasFilter($filters, 'delete')) {
+                $ids = explode(',', $apply_filter['delete']);
+                $transfer_products = TransferProduct::getBulkData($ids);
+                if ($transfer_products) {
+                    foreach ($transfer_products as $product) {
+                        $detail_records = ProductDetail::where('product_id', $product->id)->get();
+                        if (!$detail_records->isEmpty()) {
+                            foreach ($detail_records as $detail_record) {
+                                $detail_record->delete();
+                            }
+                        }
+                        $product->delete();
+                    }
+                }
+                $records['status'] = true;
+                $records['message'] = 'Records has been deleted successfully!';
+            }
+            // Get Total Records
+            $iTotalRecords = TransferProduct::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+            [$orderBy, $order] = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
+
+            $transfer_products = TransferProduct::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+            $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
+            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+
+
+            if ($transfer_products) {
+                $transfer_products = collect($transfer_products)->map(function ($transfer_product) {
+                    $transfer_product_name = Product::where(['id' => $transfer_product->product_id])->select('name')->first();
+                    $product_detail_quantity = ProductDetail::where(['id' => $transfer_product->product_detail_id])->first();
+
+                    $transfer_product->from = TransferProduct::parentLocation($transfer_product->id);
+                    $transfer_product->to = TransferProduct::childLocation($transfer_product->id);
+                    $transfer_product->name = $transfer_product_name->name;
+                    $transfer_product->quantity = $product_detail_quantity->quantity;
+                    $transfer_product->transfer_date = $transfer_product->transfer_date;
+                    return $transfer_product;
+                });
+            }
+            $records['data'] = $transfer_products;
+            $records['permissions'] = [
+                'edit' => Gate::allows('transfer_product_edit'),
+                'manage' => Gate::allows('transfer_product_manage'),
+                'delete' => Gate::allows('transfer_product_destroy'),
+                'create' => Gate::allows('transfer_product_create'),
+            ];
+            $records['active_filters'] = $filters;
+            $records['filter_values'] = [
+                'centres' => collect($centres)->pluck('name', 'id'),
+                'warehouse' => collect($warehouse)->pluck('name', 'id')
+            ];
+            $records['meta'] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
+
+            return ApiHelper::apiDataTable($records);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    public function create()
+    {
+        try {
+            if (!Gate::allows('product_create')) {
+                return abort(401);
+            }
+
+            $centres = Locations::whereIn('id', ACL::getUserCentres())->pluck('name', 'id');
+            $warehouse = Warehouse::whereActive(1)->pluck('name', 'id');
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'centres' => $centres,
+                'warehouse' => $warehouse
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+    /**
+     * Store a newly created Product in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function store(Request $request)
+    {
+        try {
+            if (!Gate::allows('product_create')) {
+                return abort(401);
+            }
+            $validator = $this->verifyFields($request);
+            if ($validator->fails()) {
+                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+            }
+            $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
+            if ($transfer_product['record']) {
+                $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['id']);
+                if ($product_detail) {
+                    TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                }
+            }
+            $message = ($transfer_product['message'] != null) ? $transfer_product['message'] : 'Something went wrong, please try again later.';
+            return ApiHelper::apiResponse($this->success, $message, false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Validate form fields
+     *
+     * @return \Illuminate\Contracts\Validation\Validator
+     */
+    protected function verifyFields(Request $request)
+    {
+        return $validator = Validator::make($request->all(), [
+            'product_id' => 'required',
+            'quantity' => 'required',
+        ]);
+    }
+
+    /**
+     * Show the form for editing products.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function edit($id)
+    {
+        try {
+            if (!Gate::allows('product_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            $data['product'] = TransferProduct::findOrFail($id);
+            $data['product_details'] = ProductDetail::findOrFail($data['product']->product_detail_id);
+            if (!$data['product']) {
+                return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Success', true, $data);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Update products in storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            if (!Gate::allows('product_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            $validator = $this->verifyFields($request);
+            if ($validator->fails()) {
+                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+            }
+            $transfer_product = TransferProduct::updateRecord($id, $request, Auth::User()->account_id);
+            $product_detail = ProductDetail::updateRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['product_detail_id']);
+            if ($transfer_product) {
+                if ($product_detail) {
+                    TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                }
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Remove products from storage.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy($id)
+    {
+        try {
+            if (!Gate::allows('product_destroy')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            $response = TransferProduct::DeleteRecord($id);
+
+            return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Inactive Record from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function getProducts(Request $request)
+    {
+        $products = Product::getProductsAjax($request, Auth::User()->account_id);
+        foreach ($products as $product) {
+            $product->quantity = Stock::sumProductQuantity($product->id);
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'products' => $products,
+        ]);
+    }
+}
