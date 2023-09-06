@@ -1,50 +1,53 @@
 <?php
 
-use App\Http\Controllers\Admin\AppointmentimageController;
-use App\Http\Controllers\Admin\AppointmentMeasurementController;
-use App\Http\Controllers\Admin\AppointmentMedicalController;
-use App\Http\Controllers\Admin\AppointmentsController;
-use App\Http\Controllers\Admin\AppointmentsPlansController;
-use App\Http\Controllers\Admin\AppointmentStatusesController;
-use App\Http\Controllers\Admin\BrandsController;
-use App\Http\Controllers\Admin\BundlesController;
-use App\Http\Controllers\Admin\CentreTargetsController;
-use App\Http\Controllers\Admin\CitiesController;
-use App\Http\Controllers\Admin\ConsultancyInvoiceController;
-use App\Http\Controllers\Admin\CustomFormFeedbacksController;
-use App\Http\Controllers\Admin\CustomFormsController;
-use App\Http\Controllers\Admin\DiscountsController;
-use App\Http\Controllers\Admin\DoctorsController;
-use App\Http\Controllers\Admin\InvoicesController;
-use App\Http\Controllers\Admin\LeadsController;
-use App\Http\Controllers\Admin\LeadSourcesController;
-use App\Http\Controllers\Admin\LeadStatusesController;
-use App\Http\Controllers\Admin\LocationsController;
-use App\Http\Controllers\Admin\LogsController;
-use App\Http\Controllers\Admin\MachineTypeController;
-use App\Http\Controllers\Admin\OrdersController;
-use App\Http\Controllers\Admin\PackageAdvancesController;
-use App\Http\Controllers\Admin\PackagesController;
-use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
-use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
-use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
-use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
-use App\Http\Controllers\Admin\PatientsController;
-use App\Http\Controllers\Admin\PaymentModesController;
-use App\Http\Controllers\Admin\PermissionsController;
-use App\Http\Controllers\Admin\ProductsController;
-use App\Http\Controllers\Admin\RefundsController;
-use App\Http\Controllers\Admin\RegionsController;
-use App\Http\Controllers\Admin\ResourceRotasController;
-use App\Http\Controllers\Admin\ResourcesController;
-use App\Http\Controllers\Admin\ServicesController;
-use App\Http\Controllers\Admin\SettingsController;
-use App\Http\Controllers\Admin\SMSTemplatesController;
-use App\Http\Controllers\Admin\TownController;
-use App\Http\Controllers\Admin\UserOperatorSettingsController;
-use App\Http\Controllers\Admin\UsersController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\LogsController;
+use App\Http\Controllers\Admin\TownController;
+use App\Http\Controllers\Admin\LeadsController;
+use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Admin\BrandsController;
+use App\Http\Controllers\Admin\CitiesController;
+use App\Http\Controllers\Admin\OrdersController;
+use App\Http\Controllers\Admin\BundlesController;
+use App\Http\Controllers\Admin\DoctorsController;
+use App\Http\Controllers\Admin\RefundsController;
+use App\Http\Controllers\Admin\RegionsController;
+use App\Http\Controllers\Admin\InvoicesController;
+use App\Http\Controllers\Admin\PackagesController;
+use App\Http\Controllers\Admin\PatientsController;
+use App\Http\Controllers\Admin\ProductsController;
+use App\Http\Controllers\Admin\ServicesController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Admin\LocationsController;
+use App\Http\Controllers\Admin\ResourcesController;
+use App\Http\Controllers\Admin\WarehouseController;
+use App\Http\Controllers\Admin\CustomFormsController;
+use App\Http\Controllers\Admin\LeadSourcesController;
+use App\Http\Controllers\Admin\MachineTypeController;
+use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Admin\AppointmentsController;
+use App\Http\Controllers\Admin\LeadStatusesController;
+use App\Http\Controllers\Admin\PaymentModesController;
+use App\Http\Controllers\Admin\SMSTemplatesController;
+use App\Http\Controllers\Admin\CentreTargetsController;
+use App\Http\Controllers\Admin\ResourceRotasController;
+use App\Http\Controllers\Admin\PackageAdvancesController;
+use App\Http\Controllers\Admin\TransferProductController;
+use App\Http\Controllers\Admin\AppointmentimageController;
+use App\Http\Controllers\Admin\TransferProductsController;
+use App\Http\Controllers\Admin\AppointmentsPlansController;
+use App\Http\Controllers\Admin\AppointmentMedicalController;
+use App\Http\Controllers\Admin\ConsultancyInvoiceController;
+use App\Http\Controllers\Admin\AppointmentStatusesController;
+use App\Http\Controllers\Admin\CustomFormFeedbacksController;
+use App\Http\Controllers\Admin\UserOperatorSettingsController;
+use App\Http\Controllers\Admin\AppointmentMeasurementController;
+use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
+use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
+use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
+use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 
 /*
 |-----------------------------------------viewDetail---------------------------------
@@ -488,6 +491,18 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     /*Inventory Routes Start*/
 
+    /*Warehouseroutes*/
+    Route::post('warehouse/datatable', [WarehouseController::class, 'datatable'])->name('warehouse.datatable');
+    Route::get('warehouse/create', [WarehouseController::class, 'create'])->name('warehouse.create');
+    Route::post('warehouse', [WarehouseController::class, 'store'])->name('warehouse.store');
+    Route::get('warehouse/{id}/edit', [WarehouseController::class, 'edit'])->name('warehouse.edit');
+    Route::put('warehouse/{id}', [WarehouseController::class, 'update'])->name('warehouse.update');
+    Route::delete('warehouse/{id}', [WarehouseController::class, 'destroy'])->name('warehouse.destroy');
+    Route::patch('warehouse/active/{id}', [WarehouseController::class, 'active'])->name('warehouse.active');
+    Route::post('warehouse/status', [WarehouseController::class, 'status'])->name('warehouse.status');
+    Route::get('warehouse/sort', [WarehouseController::class, 'sortorder'])->name('warehouse.sort');
+    /*Warehouseroutes*/
+
     /*Brand routes*/
     Route::post('brands/datatable', [BrandsController::class, 'datatable'])->name('brands.datatable');
     Route::post('brands', [BrandsController::class, 'store'])->name('brands.store');
@@ -498,6 +513,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     /*Product routes*/
     Route::post('products/datatable', [ProductsController::class, 'datatable'])->name('products.datatable');
+    Route::get('products/create', [ProductsController::class, 'create'])->name('products.create');
     Route::post('products', [ProductsController::class, 'store'])->name('products.store');
     Route::post('products/status', [ProductsController::class, 'status'])->name('products.status');
     Route::get('products/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
@@ -507,16 +523,28 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('products/{id}/updatesaleprice', [ProductsController::class, 'updateSalePrice'])->name('products.update-sale-price');
     Route::post('products/{id}/addstock', [ProductsController::class, 'addStock'])->name('products.add-stock');
     Route::delete('products/{id}', [ProductsController::class, 'destroy'])->name('products.destroy');
+    Route::get('products/transfer-product/{id}', [ProductsController::class, 'transferProductGetData'])->name('products.transfer_product.get');
+    Route::post('products/transfer-product', [ProductsController::class, 'transferProduct'])->name('products.transfer_product');
+    Route::get('products/logs/{id}', [ProductsController::class, 'logs'])->name('products.logs');
     /*Product routes*/
+
+    /* Transfer Product */
+    Route::post('transfer-product/datatable', [TransferProductsController::class, 'datatable'])->name('transfer_products.datatable');
+    Route::get('transfer-product/get-products', [TransferProductsController::class, 'getProducts'])->name('transfer_products.get_products');
+    Route::resource('transfer_product', TransferProductsController::class)->except('index');
+    /* Transfer Product Route */
 
     /*Order routes*/
     Route::post('orders/datatable', [OrdersController::class, 'datatable'])->name('orders.datatable');
     Route::post('orders/refund/datatable', [OrdersController::class, 'refunddatatable'])->name('orders.refund.datatable');
     Route::get('orders/getproducts', [OrdersController::class, 'getProducts'])->name('orders.getproducts');
     Route::get('orders/getdiscounts', [OrdersController::class, 'getDiscounts'])->name('orders.getdiscounts');
-    Route::get('orders/refund/{id}/detail', [OrdersController::class, 'orderRefundDetail'])->name('orders.refund.detail');
+
     Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
-    Route::post('orders/{id}/cancel', [OrdersController::class, 'cancel'])->name('orders.cancel');
+    Route::get('orders/{id}/edit', [OrdersController::class, 'edit'])->name('orders.edit');
+    Route::post('orders/update/{id}', [OrdersController::class, 'update'])->name('orders.update');
+
+    Route::get('orders/refund/{id}/detail', [OrdersController::class, 'orderRefundDetail'])->name('orders.refund.detail');
     Route::post('orders/{id}/refund', [OrdersController::class, 'orderRefund'])->name('orders.refund');
     Route::delete('orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
 
