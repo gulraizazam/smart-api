@@ -433,10 +433,11 @@ class ProductsController extends Controller
             $products_logs = Activity::where(['log_name' => 'product', 'subject_id' => $id])->orderBy('id', 'DESC')->get();
            
             $users = User::where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
+            dd($products_logs);
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
-           dd(collect($products_logs));
+           
             $products_logs = collect($products_logs)->map(function ($log) use ($users, $brands, $centres, $warehouse) {
                 $properties = json_decode($log->properties)->attributes;
                
