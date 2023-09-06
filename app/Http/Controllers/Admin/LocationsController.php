@@ -155,7 +155,6 @@ class LocationsController extends Controller
             ];
 
         } //end
-
         return response()->json($records);
     }
 

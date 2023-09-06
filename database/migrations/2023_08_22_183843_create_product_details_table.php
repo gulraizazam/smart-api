@@ -15,14 +15,16 @@ class CreateProductDetailsTable extends Migration
     {
         Schema::create('product_details', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id');
             $table->foreignId('product_id');
+            $table->foreignId('product_detail_id');
+            $table->unsignedInteger('account_id');
             $table->float('purchase_price', 8, 2);
             $table->float('total_purchase_price', 8, 2);
             $table->integer('quantity');
-            $table->integer('bulq');
             $table->timestamps();
+
             $table->foreign('product_id')->references('id')->on('products');
+            $table->foreign('product_detail_id')->references('id')->on('product_details');
         });
     }
 

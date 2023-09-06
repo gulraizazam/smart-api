@@ -22,13 +22,6 @@ var AddUserValidation = function () {
                             }
                         }
                     },
-                    sale_price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Sale price field is required'
-                            }
-                        }
-                    },
                     purchase_price: {
                         validators: {
                             notEmpty: {
@@ -50,6 +43,20 @@ var AddUserValidation = function () {
                             }
                         }
                     },
+                    product_type: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Product Type field is required'
+                            }
+                        }
+                    },
+                    product_type_option: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Product Type Option field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
@@ -64,13 +71,13 @@ var AddUserValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('product');
                 } else {
                     toastr.error(response.message);
                 }
@@ -80,7 +87,7 @@ var AddUserValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             AddValidation();
         }
     };
@@ -109,13 +116,6 @@ var EditUserValidation = function () {
                             }
                         }
                     },
-                    sale_price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Sale price field is required'
-                            }
-                        }
-                    },
                     purchase_price: {
                         validators: {
                             notEmpty: {
@@ -137,6 +137,20 @@ var EditUserValidation = function () {
                             }
                         }
                     },
+                    product_type: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Product Type field is required'
+                            }
+                        }
+                    },
+                    product_type_option: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Product Type Option field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
@@ -151,13 +165,13 @@ var EditUserValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    reInitTable('product');
                 } else {
                     toastr.error(response.message);
                 }
@@ -167,7 +181,7 @@ var EditUserValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             EditValidation();
         }
     };
@@ -203,7 +217,7 @@ var UpdateSalePriceValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -219,8 +233,88 @@ var UpdateSalePriceValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             UpdateSaleValidation();
+        }
+    };
+}();
+
+var TransferProductValidation = function () {
+    // Private functions
+    var TransferValidation = function () {
+        let modal_id = 'modal_transfer_products_form_submit';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    product_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Product id field is required'
+                            }
+                        }
+                    },
+                    quantity: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Quantity field is required'
+                            }
+                        }
+                    },
+                    product_type_option_from: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Product Type Option field is required'
+                            }
+                        }
+                    },
+                    product_type_option_to: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Product Type Option field is required'
+                            }
+                        }
+                    },
+                    transfer_date: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Transfer Date field is required'
+                            }
+                        }
+                    },
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+            select2Validation();
+        });
+        validate.on('core.form.valid', function (event) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+
+                if (response.status) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                    reInitTable();
+                } else {
+                    toastr.error(response.message);
+                }
+            }, form);
+        });
+    }
+
+    return {
+        // public functions
+        init: function () {
+            TransferValidation();
         }
     };
 }();
@@ -269,7 +363,7 @@ var AddStockValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -285,15 +379,16 @@ var AddStockValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             stockValidation();
         }
     };
 }();
 
-jQuery(document).ready(function() {
+jQuery(document).ready(function () {
     AddUserValidation.init();
     EditUserValidation.init();
     UpdateSalePriceValidation.init();
     AddStockValidation.init();
+    TransferProductValidation.init();
 });
