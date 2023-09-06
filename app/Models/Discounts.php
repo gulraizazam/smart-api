@@ -68,7 +68,68 @@ class Discounts extends BaseModal
 
         return $record;
     }
+    public static function createConfigurableDiscount($data)
+    {
+       
+     
+        $discount = Discounts::Create([
+            'slug' =>$data['slug'],
+            'name' =>$data['name'],
+            'type' =>$data['type'],
+            'amount' => "0",
+            'discount_type' =>$data['discount_type'],
+            'start' =>$data['start'],
+            'end' =>$data['end'],
+            'active' =>$data['active'],
+            'account_id' =>1,
+        ]);
+        $base_service_price = Services::whereId($data['base_service'])->first();
+        $find_bundle_base = Bundles::where('name',$base_service_price->name)->first();
+        $sessionCount = $data['sessions_buy'];
 
+        for ($i = 0; $i < $sessionCount; $i++) {
+            BaseDiscountService::Create([
+                'discount_id' =>$discount->id,
+                'service_id' =>$data['base_service'],
+                'service_price' =>$base_service_price->price,
+                'bundle_id'=>$find_bundle_base->id,
+            ]);
+        }
+
+        $bulk_record = [];
+        $sessions = $data['sessions'];
+        foreach($sessions as $key => $value) {
+           
+            $temp_array = [
+                'session' => $value,
+                'service_name' =>$data['services_name'][$key],
+                'discount_type' => $data['disc_type'][$key],
+                'discount_amount' => isset($data['configurable_amount'][$key]) ?$data['configurable_amount'][$key]: 0,
+            ];
+            array_push($bulk_record, $temp_array);
+        }
+
+        foreach ($bulk_record as $key => $session) {
+         
+            for ($i = 0; $i < $session['session']; $i++) {
+                $service_price = Services::find($session['service_name']);
+                $find_bundle = Bundles::where('name',$service_price->name)->first();
+                $store = new GetDiscountService();
+                $store->sessions = $session['session'];
+                $store->service_id =$session['service_name'];
+                $store->service_price =$service_price->price;
+                $store->bundle_id =$find_bundle->id;
+                $store->base_service_id =$data['base_service'];
+                $store->discount_id =$discount->id;
+                $store->discount_type =$session['discount_type'];
+                $store->discount_amount=$session['discount_amount'];
+                $store->save();
+            }
+        }
+    
+        return $discount;
+    }
+    
     /**
      * Get the Package Service.
      */

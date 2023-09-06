@@ -59,7 +59,15 @@ class ServiceWidget
             }
         }
     }
-
+    public static function generateServiceArrayDiscount($request, $account_id)
+    {
+        $Services = [];
+        $result = [];
+        $Services = GeneralFunctions::ServicesTreeList();
+        return $Services;              
+                   
+    }
+    
     /*
      * create Service Dropdown with Heiracrchy for consultancy
      * @param: $request (int) $account_id

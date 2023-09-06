@@ -51,7 +51,11 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
-
+                            @if(Gate::allows('services_sort'))
+                                <a id="delete-table-rows" href="{{route('admin.services.sort_get')}}" class="btn btn-info">
+                                    <i class="fa fa-sort-amount-up"></i>Sort
+                                </a>&nbsp;&nbsp;
+                            @endif
                             @if(Gate::allows('services_create'))
                                 <a href="javascript:void(0);" onclick="createService('{{ route('admin.services.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_services">
                                     <i class="la la-plus"></i>
