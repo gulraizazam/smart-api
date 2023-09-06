@@ -17,6 +17,7 @@ class CreateStocksTable extends Migration
             $table->id();
             $table->unsignedInteger('account_id');
             $table->foreignId('product_id');
+            $table->foreignId('product_detail_id')->nullable();
             $table->foreignId('transfer_id')->nullable();
             $table->foreignId('order_id')->nullable();
             $table->integer('quantity');
@@ -24,6 +25,7 @@ class CreateStocksTable extends Migration
             $table->timestamps();
 
             $table->foreign('product_id')->references('id')->on('products');
+            $table->foreign('product_detail_id')->references('id')->on('product_details');
             $table->foreign('transfer_id')->references('id')->on('transfer_products');
             $table->foreign('order_id')->references('id')->on('orders');
         });
