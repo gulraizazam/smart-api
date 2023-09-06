@@ -447,8 +447,8 @@ class ProductsController extends Controller
                 $log->brand_id = (array_key_exists($properties->brand_id, $brands)) ? $brands[$properties->brand_id]->name : 'N/A';
                 $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
                 $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
-                $log->created_by = (array_key_exists($properties->created_by,[54434] )) ? $users[$properties->created_by]->name : 'N/A';
-                $log->updated_by = (array_key_exists($properties->updated_by, [54434])) ? $users[$properties->updated_by]->name : 'N/A';
+                $log->created_by = (array_key_exists($properties->created_by,$users )) ? $users[$properties->created_by]->name : 'N/A';
+                $log->updated_by = (array_key_exists($properties->updated_by, $users)) ? $users[$properties->updated_by]->name : 'N/A';
                
                 return $log;
             });
