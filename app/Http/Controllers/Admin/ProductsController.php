@@ -436,10 +436,10 @@ class ProductsController extends Controller
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
-           
+           dd(collect($products_logs));
             $products_logs = collect($products_logs)->map(function ($log) use ($users, $brands, $centres, $warehouse) {
                 $properties = json_decode($log->properties)->attributes;
-                dd($properties);
+               
                 $log->product_name = $properties->name;
                 $log->brand_id = (array_key_exists($properties->brand_id, $brands)) ? $brands[$properties->brand_id]->name : 'N/A';
                 $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
