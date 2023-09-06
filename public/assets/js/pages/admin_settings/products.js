@@ -1,45 +1,52 @@
-
 var table_url = route('admin.products.datatable');
 
 var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
-        title: 'Product ID'
-    },
-    {
+        width: '40',
+        title: renderCheckbox(),
+        template: function (data) {
+            return childCheckbox(data);
+        }
+    }, {
         field: 'name',
         title: 'Name',
         width: 'auto',
         sortable: false,
-    },
-    {
+    }, {
         field: 'brand_id',
         title: 'Brand',
         width: 'auto',
         sortable: false,
-    },
-    {
+    }, {
+        field: 'product_type',
+        title: 'Type',
+        width: 'auto',
+        sortable: false,
+    }, {
+        field: 'stock_have',
+        title: 'Stock Location',
+        width: 'auto',
+        sortable: false,
+    }, {
         field: 'sale_price',
         title: 'Sale Price',
         width: 'auto',
         sortable: false,
-    },
-    {
+    }, {
         field: 'quantity',
         title: 'Quantity',
         width: 'auto',
         sortable: false,
-    },
-    {
+    }, {
         field: 'status',
         title: 'status',
         width: 80,
         sortable: false,
         template: function (data) {
             let status_url = route('admin.products.status');
-            return statusesProduct(data, status_url,true);
+            return statusesProduct(data, status_url, true);
         }
     }, {
         field: 'actions',
@@ -56,10 +63,12 @@ var table_columns = [
 
 function actions(data) {
     let id = data.id;
-    let url = route('admin.products.edit', {id: id});
-    let delete_url = route('admin.products.destroy', {id: id});
-    let edit_sale_price_url = route('admin.products.edit-sale-price', {id: id});
-    let stock_url = route('admin.products.stock', {id: id});
+    let url = route('admin.products.edit', { id: id });
+    let delete_url = route('admin.products.destroy', { id: id });
+    let edit_sale_price_url = route('admin.products.edit-sale-price', { id: id });
+    let stock_url = route('admin.products.stock', { id: id });
+    let transfer_product_url = route('admin.products.transfer_product.get', { id: id });
+    let log_url = route('admin.products.logs', { id: id });
     if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -70,41 +79,57 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-            actions += '<li class="navi-item">\
+        actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="addProductStock(`' + id + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-plus"></i></span>\
                         <span class="navi-text">Add Stock</span>\
                         </a>\
                      </li>';
-            actions += '<li class="navi-item">\
+        actions += '<li class="navi-item">\
                      <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
-                     <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                     <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
                      <span class="navi-text">Sale Price</span>\
                      </a>\
                   </li>';
         if (permissions.edit) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+url+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+ url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
         }
+        if (permissions.transfer_product) {
             actions += '<li class="navi-item">\
-                    <a href="'+stock_url+'" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                        <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
+                        <span class="navi-text">Transfer Product</span>\
+                        </a>\
+                     </li>';
+        }
+        actions += '<li class="navi-item">\
+                    <a href="'+ stock_url + '" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-archway"></i></span>\
                         <span class="navi-text">Stock</span>\
                     </a>\
                 </li>';
-        
-    //    if (permissions.delete) {
-            // actions += '<li class="navi-item">\
-            //                 <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
-            //                 <span class="navi-icon"><i class="la la-trash"></i></span>\
-            //                 <span class="navi-text">Delete</span>\
-            //                 </a>\
-            //              </li>';
-    //    }
+
+        if (permissions.delete) {
+            actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-trash"></i></span>\
+                        <span class="navi-text">Delete</span>\
+                        </a>\
+                     </li>';
+        }
+        if (permissions.log) {
+            actions += '<li class="navi-item">\
+                        <a href="' + log_url + '" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-scroll"></i></span>\
+                        <span class="navi-text">Log</span>\
+                        </a>\
+                     </li>';
+        }
 
         actions += '</ul>\
             </div>\
@@ -113,10 +138,6 @@ function actions(data) {
         return actions;
     }
     return '';
-}
-
-function stockDetail(stock_url){
-    
 }
 
 function editRow(url) {
@@ -141,62 +162,126 @@ function editRow(url) {
 function setEditData(response) {
     let product = response.data.product;
     let product_detail = response.data.product_detail;
-    let action = route('admin.products.update', {id: product.id,detail:product_detail.id});
+    let action = route('admin.products.update', { id: product.id, detail: product_detail.id });
     $("#modal_edit_products_form").attr("action", action);
+
+    /* Products */
     $("#edit_name").val(product.name);
     $("#edit_products_brand").val(product.brand_id).trigger('change');
     $("#edit_sale_price").val(product.sale_price);
+    $("#edit_product_centre").val(product.location_id).trigger('change');
+    $("#edit_product_warehouse").val(product.warehouse_id).trigger('change');
+    $("#edit_product_type").val(product.product_type).trigger('change');
+    $('#edit_select_option').show();
+    if (product.product_type == 'in_house_use') {
+        $('#edit_sale_price_section').hide();
+    } else if (product.product_type == 'for_sale') {
+        $('#edit_sale_price_section').show();
+    }
+    if (product.warehouse_id != null) {
+        $('#edit_product_type_option').val('in_warehouse').trigger('change');
+        $('#edit_select_warehouse').show();
+        $('#edit_select_centre').hide();
+    }
+    if (product.location_id != null) {
+        $('#edit_product_type_option').val('in_branch').trigger('change');
+        $('#edit_select_centre').show();
+        $('#edit_select_warehouse').hide();
+    }
+    console.log(product.product_type, $("#edit_product_type_option").val());
+
+    /* Product Details */
     $("#edit_purchase_price").val(product_detail.purchase_price);
     $("#edit_total_purchase_price").val(product_detail.total_purchase_price);
     $("#edit_quantity").val(product_detail.quantity);
 }
 
 function applyFilters(datatable) {
+    $('#apply-filters').on('click', function () {
 
-    $('#apply-filters').on('click', function() {
-
-        let filters =  {
+        let filters = {
             delete: '',
             name: $("#search_name").val(),
+            product_type: $("#search_product_type").val(),
+            status: $("#search_status").val(),
             brand_id: $("#search_brand_id").val(),
+            centre_id: $("#search_centre_id").val(),
+            warehouse_id: $("#search_warehouse_id").val(),
+            created_at: $("#date_range").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function resetAllFilters(datatable) {
-
-    $('#reset-filters').on('click', function() {
-        let filters =  {
+    $('#reset-filters').on('click', function () {
+        let filters = {
             delete: '',
             name: '',
             brand_id: '',
+            centre_id: '',
+            warehouse_id: '',
+            product_type: '',
+            status: '',
+            created_at: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {
-
     let brands = filter_values.brands;
+    let centres = filter_values.centres;
+    let warehouses = filter_values.warehouse;
 
     let brands_options = '<option value="">Select Brand</option>';
-    Object.entries(brands).forEach(function(value, index) {
-        brands_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    let centre_options = '<option value="">Select Centre</option>';
+    let warehouse_options = '<option value="">Select Warehouse</option>';
+
+    Object.entries(brands).forEach(function (value, index) {
+        brands_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+    });
+    Object.entries(centres).forEach(function (value, index) {
+        centre_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+    });
+    Object.entries(warehouses).forEach(function (value, index) {
+        warehouse_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
+    /* List Filters values */
     $("#search_brand_id").html(brands_options);
+    $("#search_centre_id").html(centre_options);
+    $("#search_warehouse_id").html(warehouse_options);
+
+    /* Add product values */
     $("#add_products_brand").html(brands_options);
+    $("#add_product_centre").html(centre_options);
+    $("#add_product_warehouse").html(warehouse_options);
+
+    /* Edit Product values */
     $("#edit_products_brand").html(brands_options);
+    $("#edit_product_centre").html(centre_options);
+    $("#edit_product_warehouse").html(warehouse_options);
+
+    /* Transfer Product values */
+    $("#transfer_product_centre_from").html(centre_options);
+    $("#transfer_product_warehouse_from").html(warehouse_options);
+    $("#transfer_product_centre_to").html(centre_options);
+    $("#transfer_product_warehouse_to").html(warehouse_options);
+
+    /* Active Filters */
     $("#search_name").val(active_filters.name);
+    $("#search_product_type").val(active_filters.product_type);
+    $("#search_status").val(active_filters.status);
     $("#search_brand_id").val(active_filters.brand_id);
+    $("#search_centre_id").val(active_filters.centre_id);
+    $("#search_warehouse_id").val(active_filters.warehouse_id);
+    $("#date_range").val(active_filters.created_at);
 }
 
-function editSalePrice(url){
+function editSalePrice(url) {
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -217,12 +302,12 @@ function editSalePrice(url){
 
 function setEditSalePriceData(response) {
     let product = response.data;
-    let action = route('admin.products.update-sale-price', {id: product.id});
+    let action = route('admin.products.update-sale-price', { id: product.id });
     $("#modal_edit_products_sale_price_form").attr("action", action);
     $("#update_sale_price").val(product.sale_price);
 }
 
-function statusesProduct(data, status_url,is_column_name_change = false) {
+function statusesProduct(data, status_url, is_column_name_change = false) {
 
     let id = data.id;
 
@@ -233,7 +318,7 @@ function statusesProduct(data, status_url,is_column_name_change = false) {
         if (permissions.active) {
             status += '<span class="switch switch-icon">\
             <label>\
-                <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" checked="checked" name="select">\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
                 <span></span>\
             </label>\
             </span>';
@@ -250,7 +335,7 @@ function statusesProduct(data, status_url,is_column_name_change = false) {
 
         status += '<span class="switch switch-icon">\
         <label>\
-            <input value="1" onchange="updateStatus(`'+status_url+'`, `'+id+'`, $(this));" type="checkbox" name="select">\
+            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
             <span></span>\
         </label>\
         </span>';
@@ -259,48 +344,133 @@ function statusesProduct(data, status_url,is_column_name_change = false) {
     return status;
 }
 
-function addProductStock(id){
-    let action = route('admin.products.add-stock', {id: id});
+function addProductStock(id) {
+    let action = route('admin.products.add-stock', { id: id });
     $("#modal_add_product_stock_form").attr("action", action);
     $("#modal_add_product_stock").modal("show");
 }
 
-function getTotalPurchase(type){
-    if(type == 'add'){
+function getTotalPurchase(type) {
+    if (type == 'add') {
         let purchase_price = $("#purchase_price").val();
-        let quantity=$("#quantity").val();
-        if(purchase_price != "" && quantity != ""){
-            $("#total_purchase_price").val(purchase_price*quantity);
-        }else{
+        let quantity = $("#quantity").val();
+        if (purchase_price != "" && quantity != "") {
+            $("#total_purchase_price").val(purchase_price * quantity);
+        } else {
             $("#total_purchase_price").val('');
         }
-    }else if(type == 'edit'){
+    } else if (type == 'edit') {
         let purchase_price = $("#edit_purchase_price").val();
-        let quantity=$("#edit_quantity").val();
-        if(purchase_price != "" && quantity != ""){
-            $("#edit_total_purchase_price").val(purchase_price*quantity);
-        }else{
+        let quantity = $("#edit_quantity").val();
+        if (purchase_price != "" && quantity != "") {
+            $("#edit_total_purchase_price").val(purchase_price * quantity);
+        } else {
             $("#edit_total_purchase_price").val('');
-        } 
-    }else{
+        }
+    } else {
         let purchase_price = $("#add_stock_purchase_price").val();
-        let quantity=$("#add_stock_quantity").val();
-        if(purchase_price != "" && quantity != ""){
-            $("#add_stock_total_purchase_price").val(purchase_price*quantity);
-        }else{
+        let quantity = $("#add_stock_quantity").val();
+        if (purchase_price != "" && quantity != "") {
+            $("#add_stock_total_purchase_price").val(purchase_price * quantity);
+        } else {
             $("#add_stock_total_purchase_price").val('');
-        } 
+        }
     }
 }
 
-$("#purchase_price, #quantity").on('keyup',function(){
+function transferProductRow(url) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            $("#modal_transfer_products_form").modal("show");
+            transferProductSetData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+/* Transfer Product Set Data */
+function transferProductSetData(response) {
+
+    let transferProduct = response.data.product;
+    let date = new Date();
+
+    /* Products */
+    console.log('transfer', transferProduct);
+
+    let location_from_option = transferProduct.location_id != null ? 'in_branch' : 'in_warehouse';
+
+    $("#transfer_product_type_option_from").val(location_from_option).trigger('change');
+    $('#transfer_transfer_product').select2().val(transferProduct.id).trigger('change');
+    $('#transfer_total_stock').val(transferProduct.quantity);
+    if (location_from_option == 'in_branch') {
+        $('.select_centre_from').show();
+        $("#transfer_product_centre_from").val(transferProduct.location_id).trigger('change');
+    } else {
+        $('.select_warehouse_from').show();
+        $("#transfer_product_warehouse_from").val(transferProduct.warehouse_id).trigger('change');
+    }
+
+    $('#transfer_product_quantity').val(transferProduct.quantity);
+    $('#transfer_transfer_date').val(moment().format('YYYY-MM-DD'));
+
+}
+
+
+
+$("#purchase_price, #quantity").on('keyup', function () {
     getTotalPurchase('add');
 });
 
-$("#edit_purchase_price, #edit_quantity").on('keyup',function(){
+$("#edit_purchase_price, #edit_quantity").on('keyup', function () {
     getTotalPurchase('edit');
 });
 
-$("#add_stock_purchase_price, add_stock_quantity").on('keyup',function(){
+$("#add_stock_purchase_price, add_stock_quantity").on('keyup', function () {
     getTotalPurchase('new');
 });
+
+$(document).ready(function () {
+    $('#add_product_type').on('change', function () {
+        $('#select_option').show();
+        if (this.value == 'in_house_use') {
+            $('#sale_price_section').hide();
+            $('#sale_price').val('');
+        } else {
+            $('#sale_price_section').show();
+        }
+    });
+    $('#add_product_type_option').on('change', function () {
+        if (this.value == 'in_warehouse') {
+            $('#select_centre').hide();
+            $('#select_warehouse').show();
+        } else if (this.value == 'in_branch') {
+            $('#select_centre').show();
+            $('#select_warehouse').hide();
+        } else {
+            $('#select_centre').hide();
+            $('#select_warehouse').hide();
+        }
+    });
+
+    $('#transfer_product_type_option_to').on('change', function () {
+        if (this.value == 'in_warehouse') {
+            $('.select_centre_to').hide();
+            $('.select_warehouse_to').show();
+        } else if (this.value == 'in_branch') {
+            $('.select_centre_to').show();
+            $('.select_warehouse_to').hide();
+        } else {
+            $('.select_centre_to').hide();
+            $('.select_warehouse_to').hide();
+        }
+    });
+
+})

@@ -63,7 +63,6 @@
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
-
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
