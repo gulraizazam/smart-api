@@ -79,9 +79,7 @@ class DiscountsController extends Controller
      */
     public function store(Request $request)
     {
-        // dd($request->services_name);
         
-
         if (! Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -136,7 +134,6 @@ class DiscountsController extends Controller
         return Validator::make($request->all(), [
             'name' => 'required',
             'type' => 'required',
-            //'amount' => 'required',
             'start' => 'required',
             'end' => 'required',
         ]);
