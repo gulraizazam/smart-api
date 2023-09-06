@@ -459,6 +459,10 @@ class PackagesController extends Controller
                     $grand_total =  (float) $sum_services_price;
                     $myarray[0]['grand_total'] =  $grand_total;
                     
+                }else{
+                    $sum_services_price = PackageBundles::where('random_id',$request->random_id)->sum('tax_including_price');
+                    $grand_total =  (float) $sum_services_price;
+                    $myarray[0]['grand_total'] =  $grand_total;
                 }
                    
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
