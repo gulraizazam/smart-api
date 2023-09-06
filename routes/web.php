@@ -32,17 +32,21 @@ use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\PatientFollowupController;
 use App\Http\Controllers\ConversionReportController;
 use App\Http\Controllers\DashboardReportsController;
+use App\Http\Controllers\Admin\CustomFormsController;
+use App\Http\Controllers\Admin\LeadSourcesController;
+use App\Http\Controllers\Admin\MachineTypeController;
+use App\Http\Controllers\Admin\PermissionsController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\CentreTargetsController;
+
 use App\Http\Controllers\Admin\ResourceRotasController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\TransferProductsController;
-
 use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\ConsultancyInvoiceController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
