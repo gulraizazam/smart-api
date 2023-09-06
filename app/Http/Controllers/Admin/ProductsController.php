@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\ACL;
+use App\Models\User;
 use App\Models\Brand;
 use App\Models\Stock;
 use App\Models\Product;
@@ -12,8 +13,8 @@ use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Models\Activity;
@@ -433,7 +434,8 @@ class ProductsController extends Controller
             $products_logs = Activity::where(['log_name' => 'product', 'subject_id' => $id])->orderBy('id', 'DESC')->get();
           
 
-            $users = User::where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
+            $users = User::where(['account_id' => Auth::User()->account_id])->get()->keyBy('id');
+            Log::info( $users );
             
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
   
