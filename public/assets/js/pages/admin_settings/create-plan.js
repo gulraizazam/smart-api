@@ -2117,7 +2117,6 @@ jQuery(document).ready(function () {
 
     /*save data for both predefined discounts and keyup trigger*/
     $("#AddPackage").click(function () {
-        alert("here");
         hideMessages();
 
         $(this).attr("disabled", true);
@@ -2181,10 +2180,8 @@ jQuery(document).ready(function () {
                         
                         
                         if(resposne.data.myarray.length >0){
-                            console.log("here1");
                             total_amount = parseInt(resposne.data.myarray[0].total);
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
-                                console.log("single_record_detail",single_record_detail);
                                
                                 var del_icon;
                                 //if(single_record_detail.net_amount > 0){
@@ -2223,7 +2220,6 @@ jQuery(document).ready(function () {
                            
                            
                         }else{
-                            console.log("here");
                             $("#package_total_1").val(resposne.data.myarray.total ?? 0);
                                 $('#plan_services').append("" +
                                     "<tr id='table_1' class='HR_" + random_id + " HR_" +resposne.data.myarray.record.id + "'>" +
