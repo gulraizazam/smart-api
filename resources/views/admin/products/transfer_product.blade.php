@@ -31,6 +31,9 @@
                 data-kt-scroll-dependencies="#kt_modal_add_user_header"
                 data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
+                    <input type="hidden" id="transfer_product_id" name="product_id">
+                    <input type="hidden" id="transfer_location_id_from" name="from_location_id">
+                    <input type="hidden" id="transfer_warehouse_id_from" name="from_warehouse_id">
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Transfer From <span
@@ -58,15 +61,15 @@
                             <div class="fv-row select_centre_from" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
                                 <select id="transfer_product_centre_from"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2 product_search_id"
-                                    name="from_location_id" onchange="productSearch(this.value, 'location_id', 'transfer')">
+                                    class="form-control form-control-solid mb-3 mb-lg-0"
+                                    name="from_location_id" onchange="productSearch(this.value, 'location_id', 'transfer', 'transfer')">
                                 </select>
                             </div>
                             <div class="fv-row select_warehouse_from" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
                                 <select id="transfer_product_warehouse_from"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2 product_search_id"
-                                    name="from_warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'transfer')">
+                                    class="form-control form-control-solid mb-3 mb-lg-0"
+                                    name="from_warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'transfer', 'transfer')">
                                 </select>
                             </div>
                         </div>
@@ -92,9 +95,7 @@
                         <div class="col-md-6">
                             <div class="fv-row">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
-                                <select id="transfer_transfer_product"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="product_id">
+                                <select id="transfer_transfer_product" class="form-control form-control-solid mb-3 mb-lg-0" name="product_id">
                                 </select>
                             </div>
                         </div>

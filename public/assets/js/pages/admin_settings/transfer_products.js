@@ -113,9 +113,6 @@ function setEditData(response) {
     let action = route('admin.transfer_product.update', { id: transferProduct.id, detail: transferProduct.product_detail_id });
     $("#modal_edit_transfer_products_form").attr("action", action);
 
-    /* Products */
-    console.log(transferProduct, product_detail);
-
     let location_from_option = transferProduct.from_location_id != null ? 'in_branch' : 'in_warehouse';
     let location_to_option = transferProduct.to_location_id != null ? 'in_branch' : 'in_warehouse';
 
