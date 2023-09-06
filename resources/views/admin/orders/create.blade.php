@@ -66,14 +66,14 @@
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
                                 <select id="add_order_centre"
                                     class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="location_id" onchange="productSearch(this.value, 'location_id', 'add')">
+                                    name="location_id" onchange="productSearch(this.value, 'location_id', 'add', 'order')">
                                 </select>
                             </div>
                             <div class="fv-row select_warehouse" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
                                 <select id="add_order_warehouse"
                                     class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'add')">
+                                    name="warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'add', 'order')">
                                 </select>
                             </div>
                         </div>

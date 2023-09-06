@@ -276,7 +276,7 @@ function productSelect(product_id, id = null) {
             let products = response.data.products;
             if (products.length) {
 
-                products.forEach(function (product) {console.log(product)
+                products.forEach(function (product) {
                     $("#" + id + "_available_quantity").val(product.quantity);
                     $("#" + id + "_price").val(product.sale_price);
                     $("#" + id + "_total_price").val(product.sale_price);
@@ -289,7 +289,7 @@ function productSelect(product_id, id = null) {
     });
 }
 
-function productSearch(from_id, from_key, id = null) {
+function productSearch(from_id, from_key, id = null, type = null) {
     if (from_id != '') {
         $.ajax({
             type: "GET",
@@ -298,6 +298,7 @@ function productSearch(from_id, from_key, id = null) {
             data: {
                 from_key: from_key,
                 from_id: from_id,
+                type: type
             },
             success: function (response) {
                 let html = '';
@@ -357,9 +358,6 @@ $(document).ready(function () {
         if ($("#add_quantity").val() > 0) {
             let total_price = $("#add_quantity").val() * $("#add_price").val();
             $("#add_total_price").val(total_price);
-            /* if($("#add_disccount_id").val() != ''){
-                $("#add_disccount_id").val(null).trigger('change');
-            } */
 
         } else {
             $("#add_total_price").val(0);
@@ -371,9 +369,6 @@ $(document).ready(function () {
         if ($("#edit_quantity").val() > 0) {
             let total_price = $("#edit_quantity").val() * $("#edit_price").val();
             $("#edit_total_price").val(total_price);
-            /* if($("#edit_disccount_id").val() != ''){
-                $("#edit_disccount_id").val(null).trigger('change');
-            } */
 
         } else {
             $("#edit_total_price").val(0);
