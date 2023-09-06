@@ -2,17 +2,50 @@
 
 namespace App\Models;
 
-use Auth;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use DateTime;
+use App\Helpers\Filters;
 use Illuminate\Http\Request;
+use Spatie\Activitylog\LogOptions;
+use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends BaseModal
 {
-    use HasFactory;
+    use LogsActivity, HasFactory;
 
-    protected $fillable = ['name', 'account_id', 'brand_id', 'sale_price', 'status'];
+    protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by'];
 
     protected $table = 'products';
+
+    protected static $logAttributes = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by'];
+
+    protected static $logName = 'product';
+
+
+    // Customize the log description (optional)
+    protected static $logDescriptionForEvent = [
+        'created' => 'Product has been created',
+        'updated' => 'Product has been updated',
+        'deleted' => 'Product has been deleted',
+    ];
+
+    // Customize the log event name (optional)
+    public function getLogEventName(string $eventName): string
+    {
+        return "Product has been was {$eventName}";
+    }
+
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName(self::$logName)
+            ->logOnly(self::$logAttributes)
+            ->setDescriptionForEvent(fn(string $eventName) => self::$logDescriptionForEvent[$eventName])
+            ->dontSubmitEmptyLogs();
+    }
+    
 
     /**
      * Get Total Records
@@ -60,26 +93,49 @@ class Product extends BaseModal
     public static function lead_sources_filters($request, $account_id, $search = false)
     {
         $where = [];
-        if ($search != false) {
-            if (isset($search['name'])) {
-                $where[] = [
-                    'name',
-                    'like',
-                    '%'.$search['name'].'%',
-                ];
-            }
+        $filters = getFilters($request->all());
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
         }
-        if ($search != false) {
-            if (isset($search['brand_id'])) {
-                $where[] = [
-                    'brand_id',
-                    '=',
-                    $search['brand_id'],
-                ];
+
+        if ($search) {
+            if (hasFilter($filters, 'name')) {
+                $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+            }
+            if (hasFilter($filters, 'product_type')) {
+                $where[][] = ['product_type' => $filters['product_type']];
+            }
+            if (hasFilter($filters, 'brand_id')) {
+                $where[][] = ['brand_id' => $filters['brand_id']];
+            }
+            if (hasFilter($filters, 'centre_id')) {
+                $where[][] = ['location_id' => $filters['centre_id']];
+            }
+            if (hasFilter($filters, 'warehouse_id')) {
+                $where[][] = ['warehouse_id' => $filters['warehouse_id']];
+            }
+            if (hasFilter($filters, 'status')) {
+                $where[][] = ['active' => $filters['status']];
+            }
+            if (hasFilter($filters, 'created_at')) {
+                $where[] = ['created_at', '>=', $start_date_time];
+                $where[] = ['created_at', '<=', $end_date_time];
             }
         }
 
         return $where;
+    }
+
+    public function productDetail()
+    {
+        return $this->hasOne(ProductDetail::class);
     }
 
     /**
@@ -90,9 +146,14 @@ class Product extends BaseModal
      */
     public static function createRecord($request, $account_id)
     {
-        $data = $request->all();
+        if (!is_array($request)) {
+            $data = $request->all();
+        } else {
+            $data = $request;
+        }
         // Set Account ID
         $data['account_id'] = $account_id;
+        $data['created_by'] = Auth::user()->id;
         $record = self::create($data);
 
         return $record;
@@ -108,24 +169,27 @@ class Product extends BaseModal
     {
         $old_data = (self::find($id))->toArray();
 
-        $data = $request->all();
-
-        // Set Account ID
+        if (!is_array($request)) {
+            $data = $request->all();
+        } else {
+            $data = $request;
+        }
         $data['account_id'] = $account_id;
+        $data['updated_by'] = Auth::user()->id;
 
         $record = self::where([
             'id' => $id,
             'account_id' => $account_id,
         ])->first();
-
-        if (! $record) {
+        if ($record->product_type == 'in_house_use') {
             return null;
         }
 
+        if (!$record) {
+            return null;
+        }
         $record->update($data);
-
         return $record;
-
     }
 
     /**
@@ -137,7 +201,7 @@ class Product extends BaseModal
     public static function DeleteRecord($id)
     {
         $product = self::getData($id);
-        if (! $product) {
+        if (!$product) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
@@ -145,7 +209,7 @@ class Product extends BaseModal
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $detail_records = ProductDetail::where('product_id', $id)->get();
-        if (! $detail_records->isEmpty()) {
+        if (!$detail_records->isEmpty()) {
             foreach ($detail_records as $detail_record) {
                 $detail_record->delete();
             }
@@ -163,25 +227,37 @@ class Product extends BaseModal
      */
     public static function isChildExists($id, $account_id)
     {
+        $product_details = ProductDetail::where(['id' => $id, 'account_id' => $account_id])->get();
+        if ($product_details) {
+            return true;
+        }
         return false;
     }
 
     /* * Ajax base result of patient according to id or name
     * */
-    public static function getProductsAjax($name, $account_id)
+    public static function getProductsAjax($request, $account_id)
     {
-        if (is_numeric($name)) {
+        if (isset($request->from_id)) {
             return self::where([
                 ['status', '=', '1'],
                 ['account_id', '=', $account_id],
-                ['id', $name],
-            ])->select('sale_price', 'name', 'id')->get();
-        } else {
+                [$request->from_key, $request->from_id],
+                ['product_type', 'for_sale']
+            ])->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+        } else if (isset($request->product_id)) {
             return self::where([
                 ['status', '=', '1'],
                 ['account_id', '=', $account_id],
-                ['name', 'LIKE', "%{$name}%"],
-            ])->select('sale_price', 'name', 'id')->get();
+                ['id', $request->product_id],
+                ['product_type', 'for_sale']
+            ])->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+        } else if ($request['request_from'] == 'order') {
+            return self::where([
+                ['status', '=', '1'],
+                ['account_id', '=', $account_id],
+                [$request['from_key'], $request['from_id']],
+            ])->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         }
     }
 
@@ -196,23 +272,33 @@ class Product extends BaseModal
         return self::where(['account_id' => $account_id])->get()->getDictionary();
     }
 
-   /**
-    * active Record
-    *
-    * @param id
-    * @return (mixed)
-    */
-   public static function activeRecord($id, $status = 1)
-   {
-       $product = self::getData($id);
+    /**
+     * active Record
+     *
+     * @param id
+     * @return (mixed)
+     */
+    public static function activeRecord($id, $status = 1)
+    {
+        $product = self::getData($id);
 
-       if (! $product) {
+        if (!$product) {
 
-           return false;
-       }
+            return false;
+        }
 
-       $record = $product->update(['status' => $status]);
+        $record = $product->update(['status' => $status]);
 
-       return $record;
-   }
+        return $record;
+    }
+
+    public function children()
+    {
+        return $this->hasMany(self::class, 'parent_id');
+    }
+
+    public function parent()
+    {
+        return $this->hasOne(self::class, 'id', 'parent_id');
+    }
 }
