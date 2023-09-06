@@ -77,7 +77,7 @@
     <!--end::Content-->
 
     @push('datatable-js')
-        <script src="{{ asset('assets/js/pages/admin_settings/product_log.js') }}"></script>
+        {{-- <script src="{{ asset('assets/js/pages/admin_settings/product_log.js') }}"></script> --}}
     @endpush
 
 @endsection

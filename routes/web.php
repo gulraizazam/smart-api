@@ -1,8 +1,8 @@
 <?php
 
-use App\Models\Appointments;
 use App\Models\Leads;
 use App\Models\Services;
+use App\Models\Appointments;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
@@ -29,8 +29,9 @@ use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\ConversionReportController;
 use App\Http\Controllers\PatientFollowupController;
+use App\Http\Controllers\ConversionReportController;
+use App\Http\Controllers\DashboardReportsController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
@@ -41,6 +42,7 @@ use App\Http\Controllers\Admin\ResourceRotasController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\TransferProductsController;
+
 use App\Http\Controllers\Admin\AppointmentMedicalController;
 use App\Http\Controllers\Admin\ConsultancyInvoiceController;
 use App\Http\Controllers\Admin\AppointmentStatusesController;
