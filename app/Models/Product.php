@@ -42,10 +42,10 @@ class Product extends BaseModal
         return LogOptions::defaults()
             ->useLogName(self::$logName)
             ->logOnly(self::$logAttributes)
-            ->setDescriptionForEvent(fn(string $eventName) => self::$logDescriptionForEvent[$eventName])
+            ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName])
             ->dontSubmitEmptyLogs();
     }
-    
+
 
     /**
      * Get Total Records
@@ -242,22 +242,26 @@ class Product extends BaseModal
             return self::where([
                 ['status', '=', '1'],
                 ['account_id', '=', $account_id],
-                [$request->from_key, $request->from_id],
-                ['product_type', 'for_sale']
-            ])->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+                [$request->from_key, $request->from_id]
+            ])->when($request->type == 'order', function ($q) {
+                return $q->where(['product_type' => 'for_sale']);
+            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         } else if (isset($request->product_id)) {
             return self::where([
                 ['status', '=', '1'],
                 ['account_id', '=', $account_id],
                 ['id', $request->product_id],
-                ['product_type', 'for_sale']
-            ])->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+            ])->when($request->type == 'order', function ($q) {
+                return $q->where(['product_type' => 'for_sale']);
+            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         } else if ($request['request_from'] == 'order') {
             return self::where([
                 ['status', '=', '1'],
                 ['account_id', '=', $account_id],
-                [$request['from_key'], $request['from_id']],
-            ])->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+                [$request['from_key'], $request['from_id']]
+            ])->when($request->type == 'order', function ($q) {
+                return $q->where(['product_type' => 'for_sale']);
+            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         }
     }
 

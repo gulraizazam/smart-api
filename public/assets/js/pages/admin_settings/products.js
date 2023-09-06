@@ -113,6 +113,14 @@ function actions(data) {
                         <span class="navi-text">Stock</span>\
                     </a>\
                 </li>';
+        if (permissions.log) {
+            actions += '<li class="navi-item">\
+                                <a href="' + log_url + '" class="navi-link">\
+                                <span class="navi-icon"><i class="la la-scroll"></i></span>\
+                                <span class="navi-text">Log</span>\
+                                </a>\
+                             </li>';
+        }
 
         if (permissions.delete) {
             actions += '<li class="navi-item">\
@@ -122,14 +130,7 @@ function actions(data) {
                         </a>\
                      </li>';
         }
-        if (permissions.log) {
-            actions += '<li class="navi-item">\
-                        <a href="' + log_url + '" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-scroll"></i></span>\
-                        <span class="navi-text">Log</span>\
-                        </a>\
-                     </li>';
-        }
+
 
         actions += '</ul>\
             </div>\
@@ -188,7 +189,6 @@ function setEditData(response) {
         $('#edit_select_centre').show();
         $('#edit_select_warehouse').hide();
     }
-    console.log(product.product_type, $("#edit_product_type_option").val());
 
     /* Product Details */
     $("#edit_purchase_price").val(product_detail.purchase_price);
@@ -398,29 +398,32 @@ function transferProductRow(url) {
 }
 /* Transfer Product Set Data */
 function transferProductSetData(response) {
-
     let transferProduct = response.data.product;
-    let date = new Date();
 
-    /* Products */
-    console.log('transfer', transferProduct);
+    $("#transfer_product_id").val(transferProduct.id);
+    $("#transfer_transfer_product").attr('disabled', 'true');
+    $("#transfer_location_id_from").val(transferProduct.location_id);
+    $("#transfer_warehouse_id_from").val(transferProduct.warehouse_id);
 
     let location_from_option = transferProduct.location_id != null ? 'in_branch' : 'in_warehouse';
 
     $("#transfer_product_type_option_from").val(location_from_option).trigger('change');
+    $("#transfer_product_type_option_from").attr('disabled', 'true');
+
     $('#transfer_transfer_product').select2().val(transferProduct.id).trigger('change');
     $('#transfer_total_stock').val(transferProduct.quantity);
     if (location_from_option == 'in_branch') {
         $('.select_centre_from').show();
         $("#transfer_product_centre_from").val(transferProduct.location_id).trigger('change');
+        $("#transfer_product_centre_from").attr('disabled', 'true');
     } else {
         $('.select_warehouse_from').show();
         $("#transfer_product_warehouse_from").val(transferProduct.warehouse_id).trigger('change');
+        $("#transfer_product_warehouse_from").attr('disabled', 'true');
     }
 
     $('#transfer_product_quantity').val(transferProduct.quantity);
     $('#transfer_transfer_date').val(moment().format('YYYY-MM-DD'));
-
 }
 
 
