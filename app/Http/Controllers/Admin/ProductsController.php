@@ -431,9 +431,9 @@ class ProductsController extends Controller
                 return abort(401);
             }
             $products_logs = Activity::where(['log_name' => 'product', 'subject_id' => $id])->orderBy('id', 'DESC')->get();
-           
-            $users = User::where(['account_id' => Auth::User()->account_id])->get();
             dd($products_logs);
+            $users = User::where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
+           
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
