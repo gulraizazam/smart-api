@@ -535,6 +535,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('brands', [BrandsController::class, 'index'])->name('brands.index');
 
     Route::get('products', [ProductsController::class, 'index'])->name('products.index');
+    Route::get('products/logs/{id}', [ProductsController::class, 'logs'])->name('products.logs');
 
     Route::get('transfer-product', [TransferProductsController::class, 'index'])->name('transfer_product.index');
 
