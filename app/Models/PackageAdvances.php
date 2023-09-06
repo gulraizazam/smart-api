@@ -7,6 +7,7 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Helpers\GeneralFunctions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -527,14 +528,14 @@ class PackageAdvances extends BaseModal
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->groupBy('package_id')
-                ->orderby($orderBy, $order)
+                ->orderby('created_at','desc')
                 ->get();
         } else {
             return PackageAdvances::when(count($where), fn ($query) => $query->where($where))->where(['active' => 1,'is_refund'=>1])->whereIn('location_id', ACL::getUserCentres())
                 ->limit($iDisplayLength)
                 ->offset($iDisplayStart)
                 ->groupBy('package_id')
-                ->orderby($orderBy, $order)
+                ->orderby('created_at','desc')
                 ->get();
         }
     }
@@ -544,15 +545,15 @@ class PackageAdvances extends BaseModal
 
         if (count($where)) {
             if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-                return self::where($where)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
+                return Packages::where($where)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
             } else {
-                return self::where($where)->where('active', 1)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
+                return Packages::where($where)->where('active', 1)->where('is_refund',1)->whereIn('location_id', ACL::getUserCentres())->count();
             }
         } else {
             if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-                return self::whereIn('location_id', ACL::getUserCentres())->count();
+                return Packages::whereIn('location_id', ACL::getUserCentres())->count();
             } else {
-                return self::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
+                return Packages::whereIn('location_id', ACL::getUserCentres())->where('active', 1)->count();
             }
         }
     }
