@@ -583,7 +583,7 @@ function setEditData(response) {
 
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
-console.log('packageadvance',packageadvance);
+
                 if (packageadvance.cash_amount != '0') {
 
                     let selector = 'history_cash_row_' + packageadvance.id;
@@ -630,6 +630,13 @@ console.log('packageadvance',packageadvance);
         if (packagebundles.length) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
+                console.log(packagebundle);
+                var del_icon;
+                if(packagebundle.net_amount > 0){
+                    del_icon="<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+                }else{
+                    del_icon="<td></td>";
+                }
 
                 service_options += '<tr class="HR_' + packagebundle.id + '">';
                 service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
@@ -666,7 +673,7 @@ console.log('packageadvance',packageadvance);
                 //  service_options +=  '<td>'+packagebundle.tax_price+'</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
 
-                service_options += "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+                service_options += del_icon;
                 service_options += '</tr>';
 
 
@@ -1385,7 +1392,7 @@ function setAppointments(response) {
 
 /*Add Plan functions*/
 function getServiceDiscount($this, type = '') {
-console.log($this.val());
+
     hideMessages();
     var service_id = $this.val();
     var patient_id = $('#add_patient_id').val();
@@ -1511,7 +1518,7 @@ function getDiscountInfo($this) {
                 'bundle_id': service_id, //Basicailly it is bundle id
             },
             success: function (resposne) {
-                console.log("resposne",resposne);
+                
                 if (resposne.status) {
                     $("#add_discount_type").prop("disabled", true);
                     $("#add_discount_type").val('').trigger('change');
@@ -2173,18 +2180,16 @@ jQuery(document).ready(function () {
                         
                         if(resposne.data.myarray.length >0){
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
-                               
-                               
                                 total_amount += parseInt(single_record_detail.total);
                                 var del_icon;
-                               // if(single_record_detail.net_amount > 0){
+                                if(single_record_detail.net_amount > 0){
                                     del_icon =  "<td>" +
                                     "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
                                     "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
                                     "</td>" ;
-                                // }else{
-                                //     del_icon="<td></td>";
-                                // }
+                                }else{
+                                    del_icon="<td></td>";
+                                }
                                 $('#plan_services').append("" +
                                     "<tr id='table_1' class='HR_" + random_id + " HR_" +single_record_detail.record.id + "'>" +
                                     "<td><a href='javascript:void(0)' onClick='toggle(" +single_record_detail.record.id + ")'>" +single_record_detail.service_name + "</a></td>" +
@@ -2441,7 +2446,15 @@ jQuery(document).ready(function () {
                             
                             total_amount = resposne.data.myarray[0].total.replace(',' , '');
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
-                               
+                                var del_icon;
+                                if(single_record_detail.net_amount > 0){
+                                    del_icon =  "<td>" +
+                                    "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
+                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
+                                    "</td>" ;
+                                }else{
+                                    del_icon="<td></td>";
+                                }
                                 $('#edit_plan_services').append("" +
                                     "<tr id='table_1' class='HR_" + random_id + " HR_" +single_record_detail.record.id + "'>" +
                                     "<td><a href='javascript:void(0)' onClick='toggle(" +single_record_detail.record.id + ")'>" +single_record_detail.service_name + "</a></td>" +
@@ -2452,10 +2465,8 @@ jQuery(document).ready(function () {
                                     "<td>" +single_record_detail.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                                     "<td>" +single_record_detail.record.tax_percenatage + "</td>" +
                                     "<td>" +single_record_detail.record.tax_including_price.toLocaleString() + "</td>" +
-                                    "<td>" +
-                                    "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
-                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
-                                    "</td>" +
+                                     
+                                    del_icon +
                                     "</tr>");
                                     jQuery.each(single_record_detail.record_detail, function (i, record_detail) {
                                         

@@ -411,12 +411,6 @@ class PackagesController extends Controller
                     }
                     
                     $total = number_format((float) $total + (float) $packagesbundly->tax_including_price);
-                    
-                   
-               
-                 
-                  
-                    
                     /*Set variables for return to show information*/
                     $net_amount = $packagesbundly->net_amount;
                     $service_name = $packagesbundly->bundle->name;
