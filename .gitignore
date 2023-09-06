@@ -8,6 +8,7 @@
 /bootstrap/cache
 /storage/*.key
 /storage/settings/
+/storage/debugger/
 /vendor
 .env
 .env.backup

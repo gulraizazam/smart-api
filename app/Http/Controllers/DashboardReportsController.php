@@ -1073,13 +1073,17 @@ class DashboardReportsController extends Controller
             ];
             if ($locations) {
                 foreach ($locations as $counter => $location) {
+                    
                     $location_detail = Locations::find($location);
+                   
                     if ($counter == 0) {
                         $data[0] = [
                             'Task',
                             'Hours per Day',
                         ];
                     }
+                    
+
                     if ($today_records) {
                         foreach ($today_records as $todayRecord) {
                             if ($todayRecord->location_id == $location_detail->id) {
@@ -2553,17 +2557,24 @@ class DashboardReportsController extends Controller
         }else{
             $locations=[$request->centre_id];
         }
-        $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-            ->join('users', 'resources.external_id', 'users.id')
-            ->select('users.name', 'users.id')
-            ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-            ->when($request->doc_id != null, function ($query) use ($request) {
-                return $query->whereIn('resources.external_id', [$request->doc_id]);
-            })
-            ->whereIn('resource_has_rota.location_id', $locations)
-            ->distinct('user_id')
-            ->get();
-        $consultant = collect($consultants)->pluck('id');
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+            return $query->whereIn('user_id', [$request->doc_id]);
+        
+        })
+        ->distinct('user_id')
+        ->pluck('user_id');
+        $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+        // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+        //     ->join('users', 'resources.external_id', 'users.id')
+        //     ->select('users.name', 'users.id')
+        //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+        //     ->when($request->doc_id != null, function ($query) use ($request) {
+        //         return $query->whereIn('resources.external_id', [$request->doc_id]);
+        //     })
+        //     ->whereIn('resource_has_rota.location_id', $locations)
+        //     ->distinct('user_id')
+        //     ->get();
+        //$consultant = collect($consultants)->pluck('id');
         $sum_conversion_spend2 = 0;
 
         $converted_appointments =  Appointments::with('location:id,name')
@@ -2620,6 +2631,9 @@ class DashboardReportsController extends Controller
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
+                        ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
+                        ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
+                        
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
@@ -2657,7 +2671,9 @@ class DashboardReportsController extends Controller
                 }
             }
         }
+       
         foreach ($consultants as $doctor) {
+          
             array_push($lables, $doctor->name);
             $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
@@ -2787,12 +2803,12 @@ class DashboardReportsController extends Controller
         }else{
             $locations=$request->centre_id;
         }
-        $consultants = ResourceHasRota::join('resources', 'resources.id', 'resource_has_rota.resource_id')
-            ->join('users', 'resources.external_id', 'users.id')
-            ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-            ->whereIn('resource_has_rota.location_id', $locations)
-            ->distinct('user_id')
-            ->pluck('users.id');
+        $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+            return $query->whereIn('user_id', [$request->doc_id]);
+        
+        })
+        ->distinct('user_id')
+        ->pluck('user_id');
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
@@ -2869,7 +2885,11 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                             ->where(['cash_flow' => "in"])
                             ->where('cash_amount', '>', 0)
+                            ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
+                            ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
+                            
                             ->get();
+                            
                         if (count($packagesadvances) > 0) {
                             $first_advance = PackageAdvances::whereIn('id', $package_info)
                                 ->where('cash_amount', '>', 0)
@@ -2982,19 +3002,29 @@ class DashboardReportsController extends Controller
     public function GetCentreDoctors(Request $request)
     {
         if ($request->centre_id == 'all') {
-            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-                ->join('users', 'resources.external_id', 'users.id')
-                ->select('users.name', 'users.id')
-                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-                ->distinct('user_id')
-                ->get();
+
+            $consultant = DoctorHasLocations::distinct('user_id')
+            ->pluck('user_id'); 
+
+            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+
+            // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+            //     ->join('users', 'resources.external_id', 'users.id')
+            //     ->select('users.name', 'users.id')
+            //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
+            //     ->distinct('user_id')
+            //     ->get();
         } else {
-            $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-                ->join('users', 'resources.external_id', 'users.id')
-                ->select('users.name', 'users.id')
-                ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1, 'resource_has_rota.location_id' => $request->centre_id])
-                ->distinct('user_id')
-                ->get();
+            $consultant = DoctorHasLocations::where('location_id', $request->centre_id)
+            ->distinct('user_id')
+            ->pluck('user_id');
+            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+            // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
+            //     ->join('users', 'resources.external_id', 'users.id')
+            //     ->select('users.name', 'users.id')
+            //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1, 'resource_has_rota.location_id' => $request->centre_id])
+            //     ->distinct('user_id')
+            //     ->get();
         }
 
         return response()->json(['status' => 1, 'doctors' => $consultants]);

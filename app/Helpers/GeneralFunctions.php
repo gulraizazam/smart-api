@@ -176,15 +176,28 @@ class GeneralFunctions
                     }
                 }
             }
-            $services = Services::where('slug', '!=', 'all')
-                ->where(['parent_id' => 0])
-                ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
-                ->orderBy('id', 'asc')
-                ->get();
+            if(Gate::allows('view_inactive_services')){
+                $services = Services::where('slug', '!=', 'all')
+                    ->where(['parent_id' => 0])
+                    ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
+                    ->orderBy('id', 'asc')
+                    ->get();
+                }else{
+                    $services = Services::where('slug', '!=', 'all')
+                    ->where(['parent_id' => 0])
+                    ->where(['active' => 1])
+                    ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
+                    ->orderBy('id', 'asc')
+                    ->get();
+                }
             $mergedServices = [];
             foreach ($services as $service) {
-                $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('id', 'asc')->get()->toArray();
-
+                if(Gate::allows('view_inactive_services')){
+                    $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number','asc')->get()->toArray();
+                }else{
+                    $children = Services::where(['parent_id' => $service->id,'active'=>1])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number','asc')->get()->toArray();
+                
+                }
                 $mergedServices[] = $service->toArray();
                 foreach ($children as $child) {
                     $mergedServices[] = $child;
@@ -952,7 +965,7 @@ class GeneralFunctions
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->pluck('patient_id');
+            ->pluck('appointments.id');
 
 
         $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
@@ -963,7 +976,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -975,7 +988,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -987,12 +1000,12 @@ class GeneralFunctions
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('patient_id', $appointments)
+            ->whereIn('appointment_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('package_advances.id', 'package_advances.patient_id', 'package_advances.created_at', 'package_advances.location_id')
-            ->whereIn('package_advances.patient_id', $appointments)
+            ->whereIn('package_advances.appointment_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
             ->groupBy('package_advances.patient_id')
@@ -1062,7 +1075,7 @@ class GeneralFunctions
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->pluck('patient_id');
+            ->pluck('appointments.id');
 
         $cash_received_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
@@ -1072,7 +1085,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('appointment_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -1083,7 +1096,7 @@ class GeneralFunctions
                 'is_tax' => '0',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('appointment_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -1094,12 +1107,12 @@ class GeneralFunctions
                 'is_tax' => '1',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('appointment_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
-            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('appointment_id', $patient_ids)
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')

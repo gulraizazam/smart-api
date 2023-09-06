@@ -1,5 +1,9 @@
 <?php
 
+use App\Models\Appointments;
+use App\Models\Leads;
+use App\Models\Services;
+use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
@@ -25,13 +29,8 @@ use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\UserTypesController;
 use App\Http\Controllers\Admin\WarehouseController;
-use App\Http\Controllers\PatientFollowupController;
 use App\Http\Controllers\ConversionReportController;
-use App\Http\Controllers\DashboardReportsController;
-use App\Http\Controllers\Admin\CustomFormsController;
-use App\Http\Controllers\Admin\LeadSourcesController;
-use App\Http\Controllers\Admin\MachineTypeController;
-use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\PatientFollowupController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
@@ -94,18 +93,31 @@ Route::get('/check-expired-records', function () {
 Route::get('/daily-stats', function () {
     \Artisan::call('appointments:daily-stats');
 });
-Route::get('/update_apt', function () {
-    $appointments = Appointments::join('packages', 'appointments.id', '=', 'packages.appointment_id')
-        ->join('package_advances', 'packages.id', '=', 'package_advances.package_id')
-        ->where('appointments.base_appointment_status_id', config('constants.appointment_status_arrived'))
-        ->where('appointments.appointment_type_id', 1)
-        ->whereNull('package_advances.appointment_id')
-        ->select('packages.appointment_id', 'packages.id as pkg_id')
-        ->orderBy('appointments.created_at', 'asc')
+Route::get('/get_deleted', function () {
+    $appointments = Appointments::onlyTrashed()->where('deleted_by',4)->get();
+    return view('deleted',get_defined_vars());
+});
+Route::get('getservices',function(){
+
+    $services = Services::where('slug', '!=', 'all')
+        ->where(['parent_id' => 0])
+
+        ->orderBy('id', 'asc')
         ->get();
-    foreach ($appointments as $apt) {
-        PackageAdvances::where('package_id', $apt->pkg_id)->where('appointment_id', null)->update(['appointment_id' => $apt->appointment_id]);
+
+$mergedServices = [];
+foreach ($services as $service) {
+
+        $children = Services::where(['parent_id' => $service->id])
+
+        ->orderBy('id', 'asc')->get()->toArray();
+
+    $mergedServices[] = $service->toArray();
+    foreach ($children as $child) {
+        $mergedServices[] = $child;
     }
+}
+return view('deleted',compact('mergedServices'));
 });
 Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
 
@@ -185,8 +197,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     // Locations
     Route::get('locations/sort_get', [LocationsController::class, 'getSortOrder'])->name('locations.sort_get');
+    Route::get('services/sort_get', [ServicesController::class, 'getSortOrder'])->name('services.sort_get');
     Route::resource('locations', LocationsController::class)->only('index');
-
+    Route::get('locations/getservices', [LocationsController::class,'getServices'])->name('locations.getservices');
     // Payment Modes
     Route::get('payment_modes', [PaymentModesController::class, 'index'])->name('payment_modes.index');
     Route::get('payment_modes/sort', [PaymentModesController::class, 'sortOrder'])->name('payment_modes.sort');
