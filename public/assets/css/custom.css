@@ -317,7 +317,9 @@ div > input {
 .rota-form-to, .mediam-modal {
     max-width: 900px;
 }
-
+.medium_modal{
+    max-width: 850px;
+}
 .big-modal {
     max-width: 1100px;
 }
@@ -329,6 +331,9 @@ div > input {
 }
 .full-page-view {
     max-width: 100%;
+}
+.discount_type_wrap .add_new_discount, .discount_type_wrap .remove_discount{
+    margin-left: -52px;
 }
 select2-container--default .select2-selection--single .select2-selection__rendered{
         line-height: normal !important;
