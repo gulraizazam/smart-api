@@ -2178,10 +2178,11 @@ jQuery(document).ready(function () {
                     var total_amount = 0;
                     if (resposne.status) {
                         
-                        
+                        console.log('resposne.data.myarray',resposne.data.myarray);
                         if(resposne.data.myarray.length >0){
-                            total_amount = parseInt(resposne.data.myarray[0].total);
+                            total_amount = parseInt(resposne.data.myarray[0].grand_total);
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
+                               
                                
                                 var del_icon;
                                 //if(single_record_detail.net_amount > 0){
