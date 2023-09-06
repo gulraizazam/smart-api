@@ -8,6 +8,7 @@ use App\Helpers\NodesTree;
 use App\Helpers\Widgets\LocationsWidget;
 use App\Helpers\Widgets\ServiceWidget;
 use App\Http\Controllers\Controller;
+use App\Models\BaseDiscountService;
 use App\Models\DiscountHasLocations;
 use App\Models\Discounts;
 use App\Models\Locations;
@@ -78,6 +79,7 @@ class DiscountsController extends Controller
      */
     public function store(Request $request)
     {
+        
         if (! Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -100,7 +102,12 @@ class DiscountsController extends Controller
             }
 
             if ($request->start <= $request->end) {
-
+                if($request->type =="Configurable"){
+                    if(Discounts::createConfigurableDiscount($data)){
+                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    }
+                   
+                }
                 if (Discounts::createDiscount($data)) {
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
@@ -127,7 +134,6 @@ class DiscountsController extends Controller
         return Validator::make($request->all(), [
             'name' => 'required',
             'type' => 'required',
-            'amount' => 'required',
             'start' => 'required',
             'end' => 'required',
         ]);
@@ -193,7 +199,7 @@ class DiscountsController extends Controller
                 }
             }
 
-            $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby($orderBy, $order)->get();
+            $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby('created_at','desc')->get();
 
             $records = $this->getFiltersData($records, $filename);
 
@@ -645,9 +651,9 @@ class DiscountsController extends Controller
             $discount = Discounts::find($id);
 
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
-
-            $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
-
+           
+                $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
+                
             return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
                 'discount' => $discount,
                 'location' => $location,
@@ -676,13 +682,29 @@ class DiscountsController extends Controller
         } else {
             $serive = ServiceWidget::generateServiceArrayConsultancy($request, Auth::User()->account_id);
         }
-
+        if($discount_info->type =="Configurable"){
+            $serive = BaseDiscountService::join('services','services.id','base_discount_services.service_id')
+            ->select('services.name','services.id')->where('discount_id',$request->discount_id)->take(1)->get()->toArray();
+        }
+       
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $serive,
             'locaiton_id_1' => $request->id,
         ]);
     }
-
+    public function getDiscountServices(Request $request)
+    {
+        if (! Gate::allows('discounts_allocate')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+        
+        $serive = ServiceWidget::generateServiceArrayDiscount($request, Auth::User()->account_id);
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'services' => $serive,
+            'locaiton_id_1' => $request->id,
+        ]);
+    }
+    
     /**
      * save services against location id.
      */

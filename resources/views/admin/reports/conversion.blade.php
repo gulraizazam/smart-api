@@ -78,10 +78,12 @@
                                             <div class="form-group col-md-3 @if($errors->has('discount_id')) has-error @endif" id="discount"
                                                     style="display: none;">
                                             </div>
+
                                             <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                                     id="location_id_E">
+                                                   
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
-                                                {!! Form::select('location_id', $locations, null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select', 'multiple']) !!}
+                                                {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select', 'multiple']) !!} 
                                                 <span id="location_id_handler"></span>
                                             </div>
                                             <div class="form-group col-md-3 sn-select @if($errors->has('machine')) has-error @endif"

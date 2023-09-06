@@ -29,11 +29,11 @@
                     <table class="table border">
                         <thead>
                             <tr class="">
-                                <td class="bg-light">Total Scheduled Appointments (Walkin included)</td>
+                                <td class="bg-light">Total Scheduled Appointments</td>
                                 <td class="bg-light" style="text-align:right;">{{count($Appointments) ?? 0}}</td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light"> Arrived (Walkin included)</td>
+                                <td class="border-top bg-light"> Arrived </td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
                             </tr>
                             <!-- @if(isset($walkin_customers))
@@ -43,7 +43,7 @@
                             </tr>
                             @endif -->
                                 <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio (Walkin included)</td>
+                                    <td class="border-top bg-light" >Arrival Ratio</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
                                         if (isset($arrived) && isset($Appointments)) {
@@ -89,12 +89,12 @@
                                 <td class="border-top bg-light"> Arrived</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
                             </tr>
-                            <tr class="">
+                            <!-- <tr class="">
                                 <td class="border-top bg-light"> Walk-In Customers</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$walkin_customers ?? 0}}</td>
-                            </tr>
+                            </tr> -->
                             <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio With Walk-In</td>
+                                    <td class="border-top bg-light" >Arrival Ratio</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
                                         if (isset($arrived) && isset($Appointments) && count($Appointments) > 0) {
@@ -105,20 +105,20 @@
                                         ?>
                                     </td>
                                 </tr>
-                                @if(isset($walkin_customers))
+                                <!-- @if(isset($walkin_customers))
                                 <tr class="">
                                     <td class="border-top bg-light" >Arrival Ratio Without Walk-In</td>
                                     <td class="border-top bg-light" style="text-align:right;">
                                         <?php
-                                        if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0) {
-                                            echo number_format(((($arrived) - $walkin_customers) / (count($Appointments) - $walkin_customers ?? 0)) * 100, 2) . '%';
-                                        } else {
-                                            echo '00.00 %';
-                                        }
+                                        // if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0) {
+                                        //     echo number_format(((($arrived) - $walkin_customers) / (count($Appointments) - $walkin_customers ?? 0)) * 100, 2) . '%';
+                                        // } else {
+                                        //     echo '00.00 %';
+                                        // }
                                         ?>
                                     </td>
                                 </tr>
-                                @endif
+                                @endif -->
                         </thead>
                     </table>
                 </div>
