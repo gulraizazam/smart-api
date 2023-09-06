@@ -2,24 +2,25 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Helpers\NodesTree;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Http\Controllers\Controller;
-use App\Models\Cities;
-use App\Models\Locations;
-use App\Models\Regions;
-use App\Models\ServiceHasLocations;
-use App\Models\Services;
-use App\Models\UserHasLocations;
+use Validator;
 use Carbon\Carbon;
+use App\Helpers\ACL;
+use App\Models\Cities;
+use App\Models\Regions;
+use App\Helpers\Filters;
+use App\Models\Services;
+use App\Models\Locations;
+use App\Helpers\NodesTree;
 use Illuminate\Http\Request;
+use App\HelperModule\ApiHelper;
+use App\Models\UserHasLocations;
+use App\Helpers\GeneralFunctions;
+use App\Models\ServiceHasLocations;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Validator;
+use App\Helpers\Widgets\ServiceWidget;
+use App\Helpers\Widgets\LocationsWidget;
 
 class LocationsController extends Controller
 {
@@ -536,5 +537,13 @@ class LocationsController extends Controller
             'status' => 1,
             'message' => 'Record has been verified successfully.',
         ]);
+    }
+    public function getServices(Request $request)
+    {
+        $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
+
+        $myarray = ['services' => $serive, 'locaiton_id_1' => $request->id];
+
+        return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
     }
 }

@@ -112,7 +112,9 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::delete('cities/{id}', [CitiesController::class, 'destroy'])->name('cities.destroy');
     Route::post('cities/status', [CitiesController::class, 'status'])->name('cities.status');
     Route::post('cities_sort_save', [CitiesController::class, 'sortOrderSave'])->name('cities.sort_save');
+    Route::post('services_save', [ServicesController::class, 'sortOrderSave'])->name('services.sort_save');
     Route::get('cities_sort', [CitiesController::class, 'sortOrderGet'])->name('cities.sort_get');
+    Route::get('services_sort', [ServicesController::class, 'sortOrderGet'])->name('services.get_sort');
     // Cities Routes End
 
     // Lead Sources Routes Start
@@ -211,6 +213,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('discounts/status', [DiscountsController::class, 'status'])->name('discounts.status');
     Route::get('discounts/locations/{id}', [DiscountsController::class, 'displayDlocation'])->name('discounts.location_manage');
     Route::get('getDservice', [DiscountsController::class, 'getDservices'])->name('discounts.get_Dservice');
+    Route::get('getDiscountServices', [DiscountsController::class, 'getDiscountServices'])->name('discounts.getDiscountServices');
     Route::post('saveDervice', [DiscountsController::class, 'saveDservices'])->name('discounts.save_Dervice');
     Route::post('deleteDservice', [DiscountsController::class, 'deleteDservice'])->name('discounts.delete_service');
 
