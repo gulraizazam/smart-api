@@ -1146,14 +1146,14 @@ function makeArray(object) {
 }
 
 function phoneClip(data) {
-    if(data.phone == "***********"){
+    if (data.phone == "***********") {
         return '<a  href="javascript:void(0);" class="clipboard">' + data.phone + '</a>';
-    
-    }else{
+
+    } else {
         return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="' + data.phone + '" data-original-title="Click to Copy" aria-describedby="tooltip' + data.id + '">' + data.phone + '</a>';
-    
+
     }
-   
+
 }
 
 function makePhoneNumber(phoneNo, permission, type = 0) {
@@ -1280,7 +1280,7 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
     return false;
 }
 
-function productSearch(from_id, from_key, id = null) {
+function productSearch(from_id, from_key, id = null, type = null) {
     if (from_id != '') {
         $.ajax({
             type: "GET",
@@ -1289,6 +1289,7 @@ function productSearch(from_id, from_key, id = null) {
             data: {
                 from_key: from_key,
                 from_id: from_id,
+                type: type,
             },
             success: function (response) {
                 let html = '';
@@ -1298,7 +1299,13 @@ function productSearch(from_id, from_key, id = null) {
                 if (products.length) {
                     let html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        html += '<option value="' + product.id + '">' + product.name + '</option>'
+                        let oldProduct = $('#' + id + '_product_id').val();
+
+                        if (product.id == oldProduct) {
+                            html += '<option value="' + product.id + '" selected>' + product.name + '</option>';
+                        } else {
+                            html += '<option value="' + product.id + '">' + product.name + '</option>';
+                        }
                     });
                     $("#" + id + "_transfer_product").html(html);
                 }
