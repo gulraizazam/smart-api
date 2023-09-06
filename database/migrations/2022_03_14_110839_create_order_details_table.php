@@ -15,7 +15,6 @@ class CreateOrderDetailsTable extends Migration
     {
         Schema::create('order_details', function (Blueprint $table) {
             $table->id();
-            $table->unsignedInteger('account_id');
             $table->foreignId('order_id');
             $table->foreignId('product_id');
             $table->foreignId('discount_id')->nullable();
@@ -23,9 +22,11 @@ class CreateOrderDetailsTable extends Migration
             $table->float('sale_price', 8, 2);
             $table->float('discount_price', 8, 2)->nullable();
             $table->float('sale_price_after_discount', 8, 2);
-            $table->enum('order_type', ['sale', 'refund']);
+            $table->enum('order_type', ['sale', 'refund', 'in_house_use']);
             $table->text('reason')->nullable();
+            $table->unsignedInteger('account_id');
             $table->timestamps();
+
             $table->foreign('order_id')->references('id')->on('orders');
             $table->foreign('product_id')->references('id')->on('products');
         });
