@@ -32,6 +32,8 @@ $(document).ready(function () {
         $(this).parents(".modal").modal("toggle");
         $("#modal_allocate_doctors_form").find("#services").empty();
         $("#modal_allocate_discounts_form").find("#services").empty();
+        $("#modal_create_order_form").find('form').trigger('reset');
+        $("#modal_edit_transfer_products_form").find('form').trigger('reset');
     });
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
@@ -584,6 +586,10 @@ function reInitTable(page = null) {
             if (typeof datatable !== 'undefined') {
                 machineTypesFilters();
             }
+        } else if (page == "warehouse") {
+            if (typeof datatable !== 'undefined') {
+                warehouseFilters();
+            }
         } else {
             datatable.reload();
             /* $('#kt_datatable').KTDatatable('reload'); */
@@ -871,6 +877,20 @@ function machineTypesFilters() {
         created_from: $("#search_created_from").val(),
         created_to: $("#search_created_to").val(),
         status: $("#search_status").val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+
+function warehouseFilters() {
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        manager_name: $("#search_manager_name").val(),
+        manager_phone: $("#search_manager_phone").val(),
+        status: $("#search_status").val(),
+        city: $("#search_city").val(),
+        created_at: $('#date_range').val(),
         filter: 'filter',
     }
     datatable.search(filters, 'search');
@@ -1258,6 +1278,40 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
         }
     });
     return false;
+}
+
+function productSearch(from_id, from_key, id = null) {
+    if (from_id != '') {
+        $.ajax({
+            type: "GET",
+            url: route('admin.transfer_products.get_products'),
+            dataType: 'json',
+            data: {
+                from_key: from_key,
+                from_id: from_id,
+            },
+            success: function (response) {
+                let html = '';
+                $("#" + id + "_transfer_product").html(html);
+                let products = response.data.products;
+                console.log('custom js file product', products);
+                if (products.length) {
+                    let html = '<option value="">Select Product</option>';
+                    products.forEach(function (product) {
+                        html += '<option value="' + product.id + '">' + product.name + '</option>'
+                    });
+                    $("#" + id + "_transfer_product").html(html);
+                }
+            }
+        });
+    }
+    return false;
+}
+
+function selectProduct(name, product_id, quantity, product_type, warehouse_id, location_id) {
+    //$("." + search_id).parent('div').find('.search_field').val(product_id).change();
+    console.log(name, product_id);
+    $("#quantity").val(quantity);
 }
 
 function selectUser(name, user_id, search_id, flag = 1) {

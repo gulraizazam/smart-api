@@ -9,7 +9,7 @@ class OrderDetail extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['account_id', 'order_id', 'product_id', 'discount_id', 'quantity', 'sale_price', 'discount_price', 'sale_price_after_discount', 'order_type', 'reason'];
+    protected $fillable = ['order_id', 'product_id', 'discount_id', 'quantity', 'sale_price', 'discount_price', 'sale_price_after_discount', 'order_type', 'reason', 'account_id'];
 
     /**
      * Create Record
@@ -20,15 +20,14 @@ class OrderDetail extends BaseModal
     public static function createRecord($request, $account_id, $order_id)
     {
         $data = $request->all();
-        foreach ($data['data'] as $order) {
-            // Set Account ID and Order ID
-            $order['account_id'] = $account_id;
-            $order['order_id'] = $order_id;
-            $order['stock_type'] = 'out';
-            $stock = Stock::create($order);
-            $record = self::create($order);
-        }
+        $data['account_id'] = $account_id;
+        $data['order_id'] = $order_id;
+        $data['sale_price'] = $data['total_price'];
+        $data['stock_type'] = 'out';
 
+        Stock::create($data);
+
+        self::create($data);
         return true;
     }
 
@@ -48,18 +47,28 @@ class OrderDetail extends BaseModal
         $data['account_id'] = $account_id;
 
         $record = self::where([
-            'id' => $id,
+            'order_id' => $id,
             'account_id' => $account_id,
         ])->first();
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
+        $stock = Stock::where([
+            'order_id' => $id,
+            'account_id' => $account_id,
+        ])->first();
+
+        $stock->update([
+            'account_id' => $account_id,
+            'product_id' => $data['product_id'],
+            'order_id' => $id,
+            'quantity' => $data['quantity'],
+            'stock_type' => 'out',
+        ]);
 
         $record->update($data);
-
         return $record;
-
     }
 
     /**
@@ -99,17 +108,24 @@ class OrderDetail extends BaseModal
         }
     }
 
-   /** Get the patients of order.
-    */
-   public function product()
-   {
-       return $this->belongsTo(Product::class, 'product_id');
-   }
+    /** Get the patients of order.
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 
     /** Get the patients of order.
      */
     public function discount()
     {
         return $this->belongsTo(Discounts::class, 'discount_id');
+    }
+
+    public static function priceCalculate($request)
+    {
+        $product = Product::where(['id' => $request->product_id])->first();
+        $total_price = $product->sale_price * $request->quantity;
+        return $total_price;
     }
 }

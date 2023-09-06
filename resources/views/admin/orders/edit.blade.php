@@ -10,8 +10,10 @@
             <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
             <span class="svg-icon svg-icon-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
-                    <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1"
+                        transform="rotate(-45 6 17.3137)" fill="black" />
+                    <rect x="7.41422" y="6" width="16" height="2" rx="1"
+                        transform="rotate(45 7.41422 6)" fill="black" />
                 </svg>
             </span>
             <!--end::Svg Icon-->
@@ -21,112 +23,102 @@
     <!--end::Modal header-->
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
-        <div id="inputfieldMessage" class="alert alert-danger display-hide" style="display: none;">
-            <button class="close" data-close="alert"></button>
-            Kindly enter required fields or you enter wrong value.
-        </div>
-        <div id="inputExistMessage" class="alert alert-danger display-hide" style="display: none;">
-            <button class="close" data-close="alert"></button>
-            Product already exist
-        </div>
-        <div id="inputEmptyMessage" class="alert alert-danger display-hide" style="display: none;">
-            <button class="close" data-close="alert"></button>
-            Product not exist. Please add first then save
-        </div>
         <!--begin::Form-->
-        <form id="modal_edit_order_form" action="">
-            @method('put')
+        <form id="modal_edit_order_form" method="post" action="">
             <!--begin::Scroll-->
-            <input type="hidden" id="edit_unit_price" />
-            <input type="hidden" id="edit_discount_price" />
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true"
+                data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto"
+                data-kt-scroll-dependencies="#kt_modal_add_user_header"
+                data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
-                    <div class="row">
+                    <input type="hidden" id="edit_price" >
+                    <input type="hidden" id="edit_product_type" name="product_type">
+                    <input type="hidden" id="edit_old_product" name="old_product">
+                    <div class="row mt-2">
+                        <div class="fv-row col-md-12">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>
+                            <input class="form-control order_patient_search_id" placeholder="Patients Search" required>
 
-                        <div class="fv-row col-md-12 mt-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Customer <span class="text text-danger">*</span></label>
-                            <select  id="edit_patient_id" class="patient_id form-control form-control-solid mb-3 mb-lg-0 select2" name="patient_id" disabled>
-                                <option value="">Select Patient</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <div class="row">
-
-                        <div class="fv-row col-md-6 mt-6 select2-search">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Product <span class="text text-danger">*</span></label>
-                            <select id="edit_product_id" class="form-control product_id form-control-solid mb-3 mb-lg-0 select2" name="product_id">
-                                <option value="">Select Product</option>
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Quantity </label>
-                            <input type="number" name="quantity" class="form-control" id="edit_quantity">
-                        </div>
-
-
-                    </div>
-                </div>
-
-                
-                    <div class="row">
-
-                        <div class="fv-row col-md-6 mt-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount <span class="text text-danger">*</span></label>
-                            <select id="edit_disccount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
-                                <option value="">Select Discount</option>
-                            </select>
-                        </div>
-                       
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
-                            <input type="number" name="price" class="form-control" id="edit_price" readonly>
-                        </div>
-
-                    </div>
-                    <div class="text-center"">
-                            <div class="text-center mt-10">
-                                <button type="button" id="edit_order" class="btn btn-primary spinner-button">
-                                    <span class="indicator-label">Add</span>
-                                </button>
+                            <input type="hidden" id="edit_order_patient" name="patient_id"
+                                class="filter-field search_field">
+                            <span onclick="addUsers()" class="croxcli"
+                                style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i
+                                    class="fa fa-times" aria-hidden="true"></i></span>
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Order From <span
+                                    class="text text-danger">*</span></label>
+                            <select id="edit_order_type_option" class="form-control form-control mb-3 mb-lg-0"
+                                name="product_type_option">
+                                <option value="">Select Option</option>
+                                <option value="in_warehouse">In Warehouse</option>
+                                <option value="in_branch">In Branch</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <div class="fv-row select_centre" style="display: none">
+                                <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
+                                <select id="edit_order_centre"
+                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
+                                    name="location_id" onchange="productSearch(this.value, 'location_id', 'edit')">
+                                </select>
+                            </div>
+                            <div class="fv-row select_warehouse" style="display: none">
+                                <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
+                                <select id="edit_order_warehouse"
+                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
+                                    name="warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'edit')">
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
+                    <div class="row mt-2">
+                        <div class="fv-row col-md-6">
+                                <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
+                                <select id="edit_order_product"
+                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
+                                    name="product_id" onchange="productSelect(this.value, 'edit')">
+                                </select>
+                        </div>
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Available Quantity </label>
+                            <input type="number" id="edit_available_quantity"
+                                class="form-control form-control-lg form-control-solid mb-2" readonly>
+                        </div>
+                    </div>
 
-                <hr>
-
-                <div class="table-responsive add_center_target_table">
-                    <table id="add_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
-
-                        <thead>
-                        <tr>
-                            <th>Product Name</th>
-                            <th>Discount</th>
-                            <th>Quantity</th>
-                            <th>Price</th>
-                            <th>Action</th>
-                        </tr>
-                        </thead>
-
-                        <tbody class="plan_services"><tr class="text-center"><td colspan="8">No record found</td></tr></tbody>
-
-                    </table>
+                    <div class="row mt-2">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Price (per unit) </label>
+                                <input type="number" id="edit_total_price"
+                                class="form-control form-control-lg form-control-solid mb-2" readonly name="total_price">
+                        </div>
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Quantity <span
+                                    class="text text-danger">*</span></label>
+                            <input type="number" id="edit_quantity" name="quantity"
+                                class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+                    </div>
                 </div>
-
-                <hr>
 
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="button" class="btn btn-primary spinner-button" onclick="updateOrder();">
-                    <span class="indicator-label">Update</span>
+                <button type="reset" class="btn btn-light me-3 popup-close"
+                    data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="submit" class="btn btn-primary spinner-button" data-kt-users-modal-action="submit">
+                    <span class="indicator-label">Submit</span>
                 </button>
             </div>
             <!--end::Actions-->

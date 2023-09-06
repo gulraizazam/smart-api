@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use Auth;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use DateTime;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Order extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['account_id', 'patient_id', 'total_price', 'refund_order_id', 'order_type', 'created_by'];
+    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'created_by', 'updated_by', 'account_id'];
 
     /**
      * Get Total Records
@@ -20,7 +21,6 @@ class Order extends BaseModal
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-
         $where = self::general_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
@@ -41,15 +41,8 @@ class Order extends BaseModal
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false, $order_type = 'sale')
     {
         $where = self::general_filters($request, $account_id, $apply_filter);
-        $wherein = self::general_filters($request, $account_id, $apply_filter, true);
-        if (count($where) && ! count($wherein)) {
+        if (count($where)) {
             return self::with('patients', 'orders.product')->where($where)->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
-        } elseif (count($wherein) && ! count($where)) {
-            return self::with('patients', 'orders.product')->whereIn('id', $wherein[1])->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
-        } elseif (count($where) && count($wherein)) {
-            return self::with('patients', 'orders.product')->where(function ($query) use ($where, $wherein, $order_type) {
-                $query->where($where)->whereIn('id', $wherein[1])->where('order_type', $order_type)->whereNull('refund_order_id');
-            })->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         } else {
             return self::with('patients', 'orders.product')->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         }
@@ -64,26 +57,46 @@ class Order extends BaseModal
      */
     public static function general_filters($request, $account_id, $search = false, $filter_flag = false)
     {
+
         $where = [];
+        $filters = getFilters($request->all());
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
 
-        if ($search != false) {
-            if (isset($search['patient_id'])) {
-                $where[] = [
-                    'patient_id',
-                    '=',
-                    $search['patient_id'],
-                ];
+        if ($search) {
+            if (hasFilter($filters, 'order_id')) {
+                $where[][] = ['order_id' => $filters['order_id']];
             }
-            if ($filter_flag == true && isset($search['product_id']) && $search['product_id'] > 0) {
-                $wherein = [];
-                $order_ids = OrderDetail::where('product_id', $search['product_id'])->pluck('order_id')->toArray();
-                $wherein = ['id', $order_ids];
-
-                return $wherein;
-            } elseif ($filter_flag == true) {
-                $wherein = [];
-
-                return $wherein;
+            if (hasFilter($filters, 'patient_id')) {
+                $where[][] = ['patient_id' => $filters['patient_id']];
+            }
+            if (hasFilter($filters, 'product_id')) {
+                $where[][] = ['product_id' => $filters['product_id']];
+            }
+            if (hasFilter($filters, 'location_type')) {
+                if ($filters['location_type'] == 'branch') {
+                    $where[][] = ['location_id' => $filters['location']];
+                } else if ($filters['location_type'] == 'warehouse') {
+                    $where[][] = ['warehouse_id' => $filters['location']];
+                }
+            }
+            if (hasFilter($filters, 'created_by')) {
+                $where[][] = ['created_by' => $filters['created_by']];
+            }
+            if (hasFilter($filters, 'updated_by')) {
+                $where[][] = ['updated_by' => $filters['updated_by']];
+            }
+            if (hasFilter($filters, 'created_at')) {
+                $where[] = ['created_at', '>=', $start_date_time];
+                $where[] = ['created_at', '<=', $end_date_time];
             }
         }
 
@@ -99,11 +112,27 @@ class Order extends BaseModal
     public static function createRecord($request, $account_id)
     {
         $data = $request->all();
-        $order = $data['data'][0];
         // Set Account ID
-        $order['account_id'] = $account_id;
-        $order['created_by'] = Auth::id();
-        $record = self::create($order);
+        $data['account_id'] = $account_id;
+        $data['created_by'] = Auth::id();
+        $data['total_price'] = $data['total_price'];
+        $record = self::create($data);
+
+        return $record;
+    }
+
+    public static function updateRecord($request, $account_id, $id)
+    {
+        $data = $request->all();
+        // Set Account ID
+        $data['account_id'] = $account_id;
+        $data['updated_by'] = Auth::id();
+        $record = self::where([
+            'id' => $id,
+            'account_id' => $account_id,
+        ])->first();
+
+        $record->update($data);
 
         return $record;
     }
@@ -117,7 +146,7 @@ class Order extends BaseModal
     public static function DeleteRecord($id)
     {
         $order = self::getData($id);
-        if (! $order) {
+        if (!$order) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         // Check if child records exists or not, If exist then disallow to delete it.
@@ -125,9 +154,15 @@ class Order extends BaseModal
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $detail_records = OrderDetail::where('order_id', $id)->get();
-        if (! $detail_records->isEmpty()) {
+        if (!$detail_records->isEmpty()) {
             foreach ($detail_records as $detail_record) {
                 $detail_record->delete();
+            }
+        }
+        $stock_records = Stock::where('order_id', $id)->get();
+        if (!$stock_records->isEmpty()) {
+            foreach ($stock_records as $stock_record) {
+                $stock_record->delete();
             }
         }
         $record = $order->delete();
@@ -153,7 +188,6 @@ class Order extends BaseModal
         }
 
         return false;
-
     }
 
     /**
@@ -199,5 +233,17 @@ class Order extends BaseModal
     public function orders()
     {
         return $this->hasMany(OrderDetail::class, 'order_id');
+    }
+
+    public static function getRecord($id)
+    {
+        $record = self::with('orders')->where([
+            'id' => $id,
+        ])->first();
+        $patient = User::where(['id' => $record->patient_id])->first();
+        $record->patient_name = $patient->name;
+        $record->quantity = Stock::sumProductQuantity($record->orders[0]->product_id);
+
+        return $record;
     }
 }
