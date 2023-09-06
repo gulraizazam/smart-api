@@ -65,7 +65,6 @@
                                 </tbody>
                             </table>
 
-
                         <!--end: Datatable-->
                     </div>
                 </div>
