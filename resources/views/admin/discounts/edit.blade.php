@@ -32,7 +32,7 @@
                     <div class="row">
 
                         <div class="fv-row col-md-6 mt-5 discount_type">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable on</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
                                     <input class="treatment" type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'edit');">
@@ -66,7 +66,7 @@
                                 <label class="radio">
                                     <input type="radio" class="edit_group_slug default" value="default" checked name="slug">
                                     <span></span>
-                                    Default
+                                    Fixed
                                 </label>
                             </div>
 
@@ -79,50 +79,30 @@
 
                             </div>
 
-                            <div class="radio-inline tax-radios">
-                                <label class="radio">
-                                    <input type="radio" class="edit_group_slug birthday" value="birthday" name="slug">
-                                    <span></span>
-                                    Birthday
-                                </label>
-
-                            </div>
-
                         </div>
-
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
                             <input id="edit_name" class="form-control" type="text" name="name">
                         </div>
-
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Type <span class="text text-danger">*</span></label>
-                            <select id="edit_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
+                            <select id="edit_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" onchange="SetFields()">
                                 <option value="">Select Amount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
+                                <option value="Configurable">Configurable</option>
                             </select>
                         </div>
+                       
 
-                        <div class="fv-row col-md-12 mt-5">
+                        <div class="fv-row col-md-12 mt-5" id="edit_amount_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
                             <input min="0" id="edit_amount" class="form-control" type="number" name="amount">
                         </div>
                     </div>
 
-                    <div class="row edit_birthday_range d-none">
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Pre Days</label>
-                            <input id="edit_pre_days" class="form-control" type="number" name="pre_days">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Post Days</label>
-                            <input id="edit_post_days" class="form-control" type="number" name="post_days">
-                        </div>
-                    </div>
-
+                    
                     <div class="row">
 
                         <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
