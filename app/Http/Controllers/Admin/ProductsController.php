@@ -434,7 +434,7 @@ class ProductsController extends Controller
             $products_logs = Activity::where(['log_name' => 'product', 'subject_id' => $id])->orderBy('id', 'DESC')->get();
           
 
-            $users = User::where(['account_id' => Auth::user()->account_id])->get()->getDictionary();dd($users);
+            $users = [];dd($users);
             
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
