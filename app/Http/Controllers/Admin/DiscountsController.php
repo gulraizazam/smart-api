@@ -504,15 +504,7 @@ class DiscountsController extends Controller
 
                     $discountServices = [];
                 }
-                /* Create Nodes with Parents */
-                $parentGroups = new NodesTree();
-                $parentGroups->current_id = -1;
-                $parentGroups->build(0, Auth::User()->account_id, true, true);
-                $parentGroups->toList($parentGroups, -1);
-
-                $Services = $parentGroups->nodeList;
-
-                $locations = Locations::getActiveSorted();
+                
 
                 if ($discount) {
                     $Discount = $discount->toArray();
@@ -527,8 +519,6 @@ class DiscountsController extends Controller
 
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'discount' => $Discount ?? $discount,
-                    'locations' => $locations,
-                    'services' => $Services,
                     'discount_services' => $discountServices,
                 ]);
             }
