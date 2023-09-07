@@ -1088,7 +1088,7 @@
                     initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
-
+                    initCentreWiseArrival('thismonth', '', 'firsttime');
                     initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
                 @endif
 
