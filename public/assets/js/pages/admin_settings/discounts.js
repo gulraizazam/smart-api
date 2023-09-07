@@ -321,10 +321,14 @@ function editRow(url) {
 }
 
 function setEditData(response) {
+    console.log('response',response);
 
     try {
 
         let discount = response.data.discount;
+        if(discount.type=="Configurable"){
+            $("#edit_amount_div").css('display','none');
+        }
 
         $("#modal_edit_discounts_form").attr("action", route('admin.discounts.update', {id: discount.id}));
 
@@ -343,11 +347,7 @@ function setEditData(response) {
             $(".custom").prop("checked", true);
             $(".edit_birthday_range").addClass("d-none");
         }
-        if (discount.slug == 'birthday') {
-            $(".birthday").prop("checked", true);
-            $(".edit_birthday_range").removeClass("d-none");
-
-        }
+        
 
         $("#edit_name").val(discount.name);
         $("#edit_amount_type").val(discount.type);
