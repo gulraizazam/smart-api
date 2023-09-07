@@ -321,17 +321,46 @@ function editRow(url) {
 }
 
 function setEditData(response) {
-    console.log('response',response);
-
+    
+    console.log(response);
     try {
 
         let discount = response.data.discount;
+
         if(discount.type=="Configurable"){
             $("#edit_amount_div").css('display','none');
+            $("#buy_services_section").css('display','block');
+            let services = response.data.services;
+            let get_services = response.data.get_discount_services;
+            let sessions_buy = response.data.base_discount_services.length;
+            let base_service_id = response.data.base_discount_services[0].service_id;
+            $('#sessions_buy').val(sessions_buy).change();
+            let service_child_value = '';
+            let service_options = '<option value="">Select</option>';
+            Object.values(services).forEach(function(value, index) {
+                if (value.name == 'All Services') {
+                      service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                } else {
+                    service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                    Object.values(value.children).forEach(function (child, index) {
+                        service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                        service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                    });
+                }
+            });
+            $("#edit_get_services").html(service_options);
+
+            Object.values(get_services).forEach(function(value, index) {
+               
+                populateSection(value,index);
+                
+            });
+            $("#edit_base_service").html(service_options);
+            $("#edit_base_service").select2();
+            $("#edit_base_service").val(base_service_id).change();
         }
 
         $("#modal_edit_discounts_form").attr("action", route('admin.discounts.update', {id: discount.id}));
-
         if (discount.discount_type == 'Treatment') {
             $(".treatment").prop("checked", true);
         }
@@ -364,7 +393,30 @@ function setEditData(response) {
     }
 
 }
+function populateSection(data,index) {
 
+    let newindex = index + 1;
+    var templateSection = $("#get_services_section").clone().removeAttr("style");
+
+    // Use a single modifiedHTML variable to accumulate changes
+    let modifiedHTML = templateSection.html();
+    modifiedHTML = modifiedHTML.replace(/edit_services_name\[\]/g, 'edit_services_name[' + index + ']');
+    modifiedHTML = modifiedHTML.replace(/edit_sessions\[\]/g, 'edit_sessions[' + index + ']');
+    modifiedHTML = modifiedHTML.replace(/edit_disc_type\[\]/g, 'edit_disc_type[' + index + ']');
+    templateSection.html(modifiedHTML);
+
+    templateSection.find('[name="edit_sessions['+ index + ']"]').val(data.sessions);
+    templateSection.find('[name="edit_services_name['+ index + ']"]').val(data.service_id).change();
+
+    if (data.discount_type == "complimentory") {
+        templateSection.find('[name="edit_disc_type['+ index + ']"][value="complimentory"]').prop("checked", true);
+    } else {
+        templateSection.find('[name="edit_disc_type['+ index + ']"][value="custom"]').prop("checked", true);
+    }
+
+    $("#tes_container").append(templateSection);
+
+}
 function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function() {
@@ -590,7 +642,7 @@ function getCentreServices()
 var cloneCounter = 1;
 
 $('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', function(){
-    console.log(cloneCounter);
+
     var cloneElements = $(this).parent().parent('.get_discount_type').children().html();
     
     // Replace names of input fields with unique names
