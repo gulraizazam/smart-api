@@ -94,8 +94,53 @@
                                 <option value="Configurable">Configurable</option>
                             </select>
                         </div>
-                       
+                        <div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3" id="buy_services_section" style="display:none">    
+                            <label class="fw-bold fs-6 pl-0 pr-4 pt-2">Buy</label>
+                            <select class="form-control form-control-solid mb-3" name="edit_sessions_buy" id="sessions_buy">
+                                <option value="">Select Session</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                            <label class="fw-bold fs-6 px-5 text-nowrap pt-2">Sessions of</label>
+                            <select class="form-control form-control-solid mb-3 select2" name="edit_base_service" id="edit_base_service">
+                                
+                            </select>
+                        </div>
+                        <div class="fv-row col-12 discount_type_wrap get_discount_type mt-3" id="get_services_section" style="display: none;">
+                            <div class="d-flex">
+                                <label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
+                                <select class="form-control form-control-solid mb-0" name="edit_sessions[]">
+                                    <option value="">Select Session</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <label class="fw-bold fs-6 px-5 text-nowrap pt-2 mb-0">Sessions of</label>
+                                <select class="form-control form-control-solid mb-0 " name="edit_services_name[]" id="edit_get_services">
+                                </select>
+                                <div class="d-flex align-items-center ml-5">
+                                    <div class="radio-inline tax-radios mb-0 mr-3">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug" value="complimentory" name="edit_disc_type[]">
+                                            <span class="mr-2"></span>
+                                            Complimentory
+                                        </label>
+                                    </div>
 
+                                    <div class="radio-inline tax-radios mb-0" id="edit_custom">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug percentage" value="custom" name="edit_disc_type[]">
+                                            <span class="mr-2"></span>
+                                            Percentage
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tes_container">
+                            <!-- Existing sections and new sections will be added here -->
+                        </div>
                         <div class="fv-row col-md-12 mt-5" id="edit_amount_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
                             <input min="0" id="edit_amount" class="form-control" type="number" name="amount">
