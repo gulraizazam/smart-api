@@ -2,11 +2,13 @@
 
 namespace App\Models;
 
-use App\HelperModule\ApiHelper;
 use Auth;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
+use App\HelperModule\ApiHelper;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 
 class Discounts extends BaseModal
 {
@@ -128,6 +130,81 @@ class Discounts extends BaseModal
         }
     
         return $discount;
+    }
+    public static function updateConfigurableDiscount($data, $id)
+    {
+        return DB::transaction(function () use ($data, $id) {
+            Discounts::where('id', $id)->update([
+                'name' => $data['name'],
+                'discount_type' => $data['discount_type'],
+                'slug' => $data['slug'],
+                'type' => $data['type'],
+                'amount' => $data['amount'],
+                'start' => $data['start'],
+                'end' => $data['end'],
+                'active' => $data['active'],
+            ]);
+    
+            $baseService = Services::findOrFail($data['edit_base_service']);
+
+            $bundle = Bundles::where('name', $baseService->name)->first();
+            for ($i = 0; $i < $data['edit_sessions_buy']; $i++) {
+               $res= BaseDiscountService::updateOrCreate([
+                    'discount_id' => $id,
+                   
+                ], [
+                    'service_price' => $baseService->price,
+                    'bundle_id' => $bundle->id,
+                    'sessions' => $data['edit_sessions_buy'],
+                    'service_id' => $data['edit_base_service'],
+                ]);
+ 
+                
+            }
+
+            // Prepare data for GetDiscountServices records
+
+            $sessions = $data['edit_sessions'];
+            $bulkRecords = [];
+    
+            foreach ($sessions as $key => $value) {
+                $tempArray = [
+                    'session' => $value,
+                    'edit_services_name' => $data['edit_services_name'][$key],
+                    'discount_type' => $data['edit_disc_type'][$key],
+                    'discount_amount' => isset($data['configurable_amount'][$key]) ? $data['configurable_amount'][$key] : 0,
+                ];
+                $bulkRecords[] = $tempArray;
+            }
+
+
+    //dd(  $bulkRecords);
+            // Update or create GetDiscountServices records
+            foreach ($bulkRecords as $session) {
+                $servicePrice = Services::findOrFail($session['edit_services_name']);
+                $bundle = Bundles::where('name', $servicePrice->name)->first();
+    
+                for ($i = 0; $i < $session['session']; $i++) {
+                    Log::info($id);
+                    Log::info( $session['edit_services_name']);
+                    GetDiscountService::updateOrCreate([
+                        'discount_id' => $id,
+
+                    ], [
+                        'service_id' => $session['edit_services_name'],
+                        "sessions" => $session['session'],
+                        "service_price" => $servicePrice->price,
+                        "base_service_id" => $data['edit_base_service'],
+                        "discount_type" => $session['discount_type'],
+                        "discount_amount" => $session['discount_amount'],
+                        'bundle_id' => $bundle->id,
+                    ]);
+                }
+            }
+    
+            // Return the updated Discount model
+            return Discounts::find($id);
+        });
     }
     
     /**
