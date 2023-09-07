@@ -432,24 +432,24 @@ class ProductsController extends Controller
                 return abort(401);
             }
             $products_logs = Activity::where(['log_name' => 'product', 'subject_id' => $id])->orderBy('id', 'DESC')->get();
-          
+
 
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
-            
+
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
-           
-            $products_logs = collect($products_logs)->map(function ($log) use ($users, $brands, $centres, $warehouse) {
+
+            $products_logs = collect($products_logs)->map(function ($log) use ($Users, $brands, $centres, $warehouse) {
                 $properties = json_decode($log->properties)->attributes;
-               
+
                 $log->product_name = $properties->name;
                 $log->brand_id = (array_key_exists($properties->brand_id, $brands)) ? $brands[$properties->brand_id]->name : 'N/A';
                 $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
                 $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
                 $log->created_by = (array_key_exists($properties->created_by,$Users )) ? $Users[$properties->created_by]->name : 'N/A';
                 $log->updated_by = (array_key_exists($properties->updated_by, $Users)) ? $Users[$properties->updated_by]->name : 'N/A';
-               
+
                 return $log;
             });
             return view('admin.products.logs', compact('products_logs'));
