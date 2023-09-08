@@ -321,8 +321,8 @@ function editRow(url) {
 }
 
 function setEditData(response) {
-    
-    console.log(response);
+    $('#tes_container').empty();
+
     try {
 
         let discount = response.data.discount;
@@ -413,7 +413,6 @@ function populateSection(data,index) {
     } else {
         templateSection.find('[name="edit_disc_type['+ index + ']"][value="custom"]').prop("checked", true);
     }
-
     $("#tes_container").append(templateSection);
 
 }
@@ -494,7 +493,7 @@ function setFilters(filter_values, active_filters) {
 }
 
 function createDiscount($route) {
-
+    $("#add_amount_type").val([]).trigger("change");
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -666,8 +665,11 @@ $(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount'
 
 $(document).on('change', '.discount_type_wrap.get_discount_type .radio-inline .group_slug', function(){
     var Elementindex = $(this).parents('.discount_type_wrap.get_discount_type').index();
+    if(!$('#modal_edit_discounts.show').length){
+        Elementindex = (parseInt(Elementindex)-1);
+    }
     if($(this).is(':checked') && $(this).val() == "custom"){
-        $(this).parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control"  name="configurable_amount['+(parseInt(Elementindex)-1)+']"></div>');
+        $(this).parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control"  name="configurable_amount['+Elementindex+']"></div>');
     } else{
         $(this).parents('.discount_type_wrap.get_discount_type').find('#configurable_amount').remove();
     }
@@ -683,21 +685,4 @@ $(document).on("keyup", ".add_configurable_amount", function () {
     
 
 })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
