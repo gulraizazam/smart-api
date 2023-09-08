@@ -172,7 +172,7 @@ class Discounts extends BaseModal
                             'session' => $value,
                             'edit_services_name' => isset($data['edit_services_name'][$key]) ? $data['edit_services_name'][$key] : '', // Use index 0
                             'discount_type' => isset($data['edit_disc_type'][$key]) ? $data['edit_disc_type'][$key] : '', // Use index 0
-                            
+                            'discount_amount' => isset($data['configurable_amount'][$key]) ?$data['configurable_amount'][$key]: 0,
                         ];
 
                     $bulkRecords[] = $tempArray;
