@@ -54,7 +54,7 @@ var table_columns = [
         sortable: false,
         template: function (data) {
             let status_url = route('admin.warehouse.status');
-            return statuses(data, status_url);
+            return statuses(data, status_url, true);
         }
     },
     {
@@ -113,6 +113,43 @@ function actions(data) {
         return actions;
     }
     return '';
+}
+
+function statuses(data, status_url, is_column_name_change = false) {
+
+    let id = data.id;
+
+    let active = is_column_name_change == false ? data.active : data.status;
+    let status = '';
+    
+    if (active) {
+        if (permissions.active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        } else {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
+
+    } else {
+
+        status += '<span class="switch switch-icon">\
+        <label>\
+            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
+            <span></span>\
+        </label>\
+        </span>';
+    }
+
+    return status;
 }
 
 function createWarehouse($route) {
