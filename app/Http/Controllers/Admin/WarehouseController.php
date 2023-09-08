@@ -76,7 +76,7 @@ class WarehouseController extends Controller
 
             $warehouses = Warehouse::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $cities = Cities::getAllRecordsDictionary(Auth::User()->account_id);
-            //dd($iTotalRecords, $warehouses);
+
             if ($warehouses->count()) {
                 foreach ($warehouses as $warehouse) {
                     /*
@@ -99,6 +99,7 @@ class WarehouseController extends Controller
                 'create' => Gate::allows('warehouse_create'),
                 'edit' => Gate::allows('warehouse_edit'),
                 'delete' => Gate::allows('warehouse_destroy'),
+                'active' => Gate::allows('warehouse_active'),
             ];
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
