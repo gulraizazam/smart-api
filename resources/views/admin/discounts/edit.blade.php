@@ -108,8 +108,9 @@
                             </select>
                         </div>
                         <div class="fv-row col-12 discount_type_wrap get_discount_type mt-3" id="get_services_section" style="display: none;">
+                        
                             <div class="d-flex">
-                                <label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
+                            <a class="btn p btn-danger px-3 mr-4 py-0  d-flex justify-content-center align-items-center remove_discount add_new_discount"><i class="la la-minus p-0 m-0"></i></a><label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
                                 <select class="form-control form-control-solid mb-0" name="edit_sessions[]">
                                     <option value="">Select Session</option>
                                     <option value="1">1</option>
