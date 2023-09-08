@@ -178,7 +178,7 @@ class Discounts extends BaseModal
             }
 
 
-    //dd(  $bulkRecords);
+    
             // Update or create GetDiscountServices records
             foreach ($bulkRecords as $session) {
                 $servicePrice = Services::findOrFail($session['edit_services_name']);
