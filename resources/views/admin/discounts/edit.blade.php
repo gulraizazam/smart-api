@@ -35,7 +35,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable on</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input class="treatment" type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'edit');">
+                                    <input  class="treatment" type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'edit');">
                                     <span></span>
                                     Treatment
                                 </label>
@@ -64,7 +64,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Group</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input type="radio" class="edit_group_slug default" value="default" checked name="slug">
+                                    <input type="radio" class="edit_group_slug default" value="default" checked name="slug" >
                                     <span></span>
                                     Fixed
                                 </label>
@@ -72,7 +72,7 @@
 
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input type="radio" class="edit_group_slug custom" value="custom" name="slug">
+                                    <input type="radio" class="edit_group_slug custom" value="custom" name="slug" >
                                     <span></span>
                                     Custom
                                 </label>
@@ -87,7 +87,7 @@
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
-                            <select id="edit_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" onchange="SetFields()">
+                            <select  id="edit_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" onchange="SetFields()">
                                 <option value="">Select Amount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
