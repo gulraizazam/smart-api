@@ -412,7 +412,9 @@ function populateSection(data,index) {
         templateSection.find('[name="edit_disc_type['+ index + ']"][value="complimentory"]').prop("checked", true);
     } else {
         templateSection.find('[name="edit_disc_type['+ index + ']"][value="custom"]').prop("checked", true);
+        templateSection.append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control" name="configurable_amount['+ index + ']" value="'+data.discount_amount+'"></div>');
     }
+
     $("#tes_container").append(templateSection);
 
 }
