@@ -64,7 +64,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Group</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input type="radio" class="edit_group_slug default" value="default" checked name="slug" disabled>
+                                    <input type="radio" class="edit_group_slug default" value="default" checked name="slug" >
                                     <span></span>
                                     Fixed
                                 </label>
@@ -72,7 +72,7 @@
 
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input type="radio" class="edit_group_slug custom" value="custom" name="slug" disabled>
+                                    <input type="radio" class="edit_group_slug custom" value="custom" name="slug" >
                                     <span></span>
                                     Custom
                                 </label>
