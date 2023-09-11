@@ -380,6 +380,7 @@ function setEditData(response) {
 
         $("#edit_name").val(discount.name);
         $("#edit_amount_type").val(discount.type);
+        $("#disc_type").val(discount.type);
         $("#edit_amount").val(discount.amount);
         $("#edit_pre_days").val(discount.pre_days);
         $("#edit_post_days").val(discount.post_days);
