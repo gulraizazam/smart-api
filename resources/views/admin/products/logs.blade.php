@@ -43,8 +43,13 @@
 
                     <div class="card-body">
                         <!--begin: Datatable-->
-
-                            <table>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Activity</th>
+                                        <th>Date/Time</th>
+                                    </tr>
+                                </thead>
                                 <tbody>
                                     @foreach ($products_logs as $data)
                                         @php
@@ -55,11 +60,15 @@
                                         <tr>
                                             {{-- @dd($products_logs, $data, $properties, $properties->name) --}}
                                             @if ($data->event == 'created')
-                                                <td>{{ $data->created_by }} is {{ $data->event }} {{ $properties->name }} product with in {{ $location_area }} {{ $location_name }} created at {{ $data->created_at }}</th>
+                                                <td><strong>{{ $data->created_by }}</strong> {{ $data->event }} <strong>{{ $properties->name }}</strong> product  <strong>{{ $location_area }} {{ $location_name }}</strong>.</td>
                                                 @elseIf($data->event == 'updated')
-                                                <td>{{ $data->updated_by }} is {{ $data->event }} {{ $properties->name }} product with  in {{ $location_area }} {{ $location_name }} updated at {{ $data->updated_at }}</th>
+                                                <td><strong>{{ $data->updated_by }}</strong> {{ $data->event }} <strong>{{ $properties->name }}</strong> product <strong>{{ $location_area }} {{ $location_name }}</strong>.</td>
                                             @endif
-
+                                            @if ($data->event == 'created')
+                                            <td>{{ Carbon\Carbon::parse($data->created_at)->format('d-M-Y G:i a') }}</td>
+                                            @elseIf($data->event == 'updated')
+                                            <td>{{ Carbon\Carbon::parse($data->updated_at)->format('d-M-Y G:i a') }}</td>
+                                            @endif
                                         </tr>
                                     @endforeach
                                 </tbody>
