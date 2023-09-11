@@ -86,8 +86,12 @@ class DiscountsController extends Controller
         }
 
         try {
-
-            $validator = $this->verifyFields($request);
+            if($request->type =="Configurable"){
+                $validator = $this->verifyConfigurableFields($request);
+            }else{
+                $validator = $this->verifyFields($request);
+            }
+            
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
@@ -139,7 +143,26 @@ class DiscountsController extends Controller
             'end' => 'required',
         ]);
     }
-
+    protected function verifyConfigurableFields(Request $request)
+    {
+        $rules = [];
+        $sessions = $request->input('sessions');
+        foreach ($sessions as $key => $value) {
+            $rules["sessions.{$key}"] = 'required';
+            $rules["services_name.{$key}"] = 'required';
+            $rules["disc_type.{$key}"] = 'required';
+            
+        }
+        
+        return Validator::make($request->all(), [
+            'name' => 'required',
+            'type' => 'required',
+            'start' => 'required',
+            'end' => 'required',
+            'sessions_buy' => 'required',
+            'base_service' => 'required',
+        ] + $rules);
+    }
     /**
      * Display the discount in datatable form.
      *
