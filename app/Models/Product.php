@@ -18,9 +18,11 @@ class Product extends BaseModal
 
     protected $table = 'products';
 
-    protected static $logAttributes = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by'];
+    protected static $logAttributes = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by', 'productDetail.product_id', 'productDetail.purchase_price', 'productDetail.total_purchase_price', 'productDetail.quantity'];
 
     protected static $logName = 'product';
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
 
 
     // Customize the log description (optional)
@@ -29,13 +31,6 @@ class Product extends BaseModal
         'updated' => 'Product has been updated',
         'deleted' => 'Product has been deleted',
     ];
-
-    // Customize the log event name (optional)
-    public function getLogEventName(string $eventName): string
-    {
-        return "Product has been was {$eventName}";
-    }
-
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -46,6 +41,10 @@ class Product extends BaseModal
             ->dontSubmitEmptyLogs();
     }
 
+    public function productDetail()
+    {
+        return $this->hasOne(ProductDetail::class);
+    }
 
     /**
      * Get Total Records
@@ -131,11 +130,6 @@ class Product extends BaseModal
         }
 
         return $where;
-    }
-
-    public function productDetail()
-    {
-        return $this->hasOne(ProductDetail::class);
     }
 
     /**
