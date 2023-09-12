@@ -30,6 +30,18 @@ class Warehouse extends Model
         ])->first();
     }
 
+    public static function getBulkData($id)
+    {
+        if (!is_array($id)) {
+            $id = [$id];
+        }
+
+        return self::where([
+            ['account_id', '=', Auth::User()->account_id],
+        ])->whereIn('id', $id)
+            ->get();
+    }
+
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
@@ -186,7 +198,7 @@ class Warehouse extends Model
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $fileName = time().'-'.$file->getClientOriginalName();
+            $fileName = time() . '-' . $file->getClientOriginalName();
             $file->storeAs('public/warehouse_logo', $fileName);
             $ext = $file->getClientOriginalExtension();
             $data['image_src'] = $fileName;
@@ -213,7 +225,7 @@ class Warehouse extends Model
         //Set Image
         if ($request->file('file')) {
             $file = $request->file('file');
-            $fileName = time().'-'.$file->getClientOriginalName();
+            $fileName = time() . '-' . $file->getClientOriginalName();
             $file->storeAs('public/warehouse_logo', $fileName);
             $ext = $file->getClientOriginalExtension();
             $data['image_src'] = $fileName;
@@ -223,7 +235,7 @@ class Warehouse extends Model
             'account_id' => $account_id,
         ])->first();
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
 
@@ -247,8 +259,14 @@ class Warehouse extends Model
                 'message' => 'Resource not found.',
             ];
         }
-
-        $warehouse->delete();
+        if (!Warehouse::isChildExists($warehouse->id, Auth::User()->account_id)) {
+            $warehouse->delete();
+        } else {
+            return [
+                'status' => false,
+                'message' => 'Child records exist, unable to delete resource!',
+            ];
+        }
 
         return [
             'status' => true,
@@ -264,9 +282,15 @@ class Warehouse extends Model
      */
     public static function isChildExists($id, $account_id)
     {
-        if (DB::table('products')->where('brand_id', '=', $id)->count()) {
+        if (
+            Product::where(['warehouse_id' => $id, 'account_id' => $account_id])->count() ||
+            Order::where(['warehouse_id' => $id, 'account_id' => $account_id])->count() ||
+            TransferProduct::where(['from_warehouse_id' => $id, 'account_id' => $account_id])->where(['to_warehouse_id' => $id, 'account_id' => $account_id])->count()
+        ) {
             return true;
         }
+
+        return false;
     }
 
     /**

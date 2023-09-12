@@ -76,7 +76,7 @@ class Product extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         } else {
             return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         }
@@ -203,6 +203,7 @@ class Product extends BaseModal
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $detail_records = ProductDetail::where('product_id', $id)->get();
+        Stock::where(['product_id' => $product->id])->delete();
         if (!$detail_records->isEmpty()) {
             foreach ($detail_records as $detail_record) {
                 $detail_record->delete();
@@ -221,8 +222,10 @@ class Product extends BaseModal
      */
     public static function isChildExists($id, $account_id)
     {
-        $product_details = ProductDetail::where(['id' => $id, 'account_id' => $account_id])->get();
-        if ($product_details) {
+        if (
+            TransferProduct::where(['product_id' => $id, 'account_id' => $account_id])->orwhere(['child_product_id' => $id])->count() ||
+            OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()
+        ) {
             return true;
         }
         return false;

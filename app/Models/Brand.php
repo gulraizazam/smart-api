@@ -2,10 +2,11 @@
 
 namespace App\Models;
 
-use Auth;
-use DB;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Brand extends BaseModal
 {
@@ -61,14 +62,13 @@ class Brand extends BaseModal
     public static function lead_sources_filters($request, $account_id, $search = false)
     {
         $where = [];
-        if ($search != false) {
-            if (isset($search['name'])) {
+        $filters = getFilters($request->all());
+        if (hasFilter($filters, 'name')) {
                 $where[] = [
                     'name',
                     'like',
-                    '%'.$search['name'].'%',
+                    '%'.$filters['name'].'%',
                 ];
-            }
         }
 
         return $where;
@@ -149,9 +149,10 @@ class Brand extends BaseModal
      */
     public static function isChildExists($id, $account_id)
     {
-        if (DB::table('products')->where('brand_id', '=', $id)->count()) {
+        if (Product::where(['brand_id' => $id, 'account_id' => $account_id])->count()) {
             return true;
         }
+        return false;
     }
 
     /**
