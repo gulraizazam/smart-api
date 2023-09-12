@@ -742,7 +742,7 @@ class PackagesController extends Controller
         ])->first();
         if ($status) {
 
-            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false);
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false,['del'=>1]);
 
         } else {
 
