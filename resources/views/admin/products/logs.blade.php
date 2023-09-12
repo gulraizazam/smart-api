@@ -43,36 +43,80 @@
 
                     <div class="card-body">
                         <!--begin: Datatable-->
-                            <table class="table">
-                                <thead>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Activity</th>
+                                    <th>Date/Time</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($products_logs as $data)
+                                    @php
+                                        $location_name = $data->location != 'N/A' ? 'centre' : 'warehouse';
+                                        $location_area = $data->location != 'N/A' ? $data->location : $data->warehouse;
+                                    @endphp
                                     <tr>
-                                        <th>Activity</th>
-                                        <th>Date/Time</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach ($products_logs as $data)
-                                        @php
-                                            $properties = json_decode($data->properties)->attributes;
-                                            $location_name = ($data->location != 'N/A') ? 'centre' : 'warehouse';
-                                            $location_area = ($data->location != 'N/A') ? $data->location : $data->warehouse;
-                                        @endphp
-                                        <tr>
-                                            {{-- @dd($products_logs, $data, $properties, $properties->name) --}}
-                                            @if ($data->event == 'created')
-                                                <td><strong>{{ $data->created_by }}</strong> {{ $data->event }} <strong>{{ $properties->name }}</strong> product  <strong>{{ $location_area }} {{ $location_name }}</strong>.</td>
+                                        @switch($data->logo_name)
+                                            @case('product')
+                                                @dd($data)
+                                                @if ($data->event == 'created')
+                                                    <td><strong>{{ $data->created_by }}</strong> {{ $data->event }}
+                                                        <strong>{{-- {{ $properties->name }} --}}</strong> product
+                                                        <strong>{{ $location_area }} {{ $location_name }}</strong>.
+                                                    </td>
+                                                    <td>{{ Carbon\Carbon::parse($data->created_at)->format('d-M-Y G:i a') }}</td>
                                                 @elseIf($data->event == 'updated')
-                                                <td><strong>{{ $data->updated_by }}</strong> {{ $data->event }} <strong>{{ $properties->name }}</strong> product <strong>{{ $location_area }} {{ $location_name }}</strong>.</td>
-                                            @endif
-                                            @if ($data->event == 'created')
-                                            <td>{{ Carbon\Carbon::parse($data->created_at)->format('d-M-Y G:i a') }}</td>
-                                            @elseIf($data->event == 'updated')
-                                            <td>{{ Carbon\Carbon::parse($data->updated_at)->format('d-M-Y G:i a') }}</td>
-                                            @endif
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
+                                                    <td><strong>{{ $data->updated_by }}</strong> {{ $data->event }}
+                                                        <strong>{{-- {{ $properties->name }} --}}</strong> product
+                                                        <strong>{{ $location_area }} {{ $location_name }}</strong>.
+                                                    </td>
+                                                    <td>{{ Carbon\Carbon::parse($data->updated_at)->format('d-M-Y G:i a') }}</td>
+                                                @endif
+                                            @break
+
+                                            @case('transfer_product')
+                                                @if ($data->event == 'created')
+                                                    <td><strong>{{ $data->created_by }}</strong> {{ $data->event }}
+                                                        <strong>{{-- {{ $properties->name }} --}}</strong> product
+                                                        <strong>{{ $location_area }} {{ $location_name }}</strong>.
+                                                    </td>
+                                                    <td>{{ Carbon\Carbon::parse($data->created_at)->format('d-M-Y G:i a') }}</td>
+                                                @elseIf($data->event == 'updated')
+                                                    <td><strong>{{ $data->updated_by }}</strong> {{ $data->event }}
+                                                        <strong>{{-- {{ $properties->name }} --}}</strong> product
+                                                        <strong>{{ $location_area }} {{ $location_name }}</strong>.
+                                                    </td>
+                                                    <td>{{ Carbon\Carbon::parse($data->updated_at)->format('d-M-Y G:i a') }}</td>
+                                                @endif
+                                            @break
+
+                                            @case('product_detail')
+                                                @if ($data->event == 'created')
+                                                    <td><strong>{{ $data->created_by }}</strong> {{ $data->event }}
+                                                        <strong>{{-- {{ $properties->name }} --}}</strong> product
+                                                        <strong>{{ $location_area }} {{ $location_name }}</strong>.
+                                                    </td>
+                                                    <td>{{ Carbon\Carbon::parse($data->created_at)->format('d-M-Y G:i a') }}</td>
+                                                @elseIf($data->event == 'updated')
+                                                    <td><strong>{{ $data->updated_by }}</strong> {{ $data->event }}
+                                                        <strong>{{-- {{ $properties->name }} --}}</strong> product
+                                                        <strong>{{ $location_area }} {{ $location_name }}</strong>.
+                                                    </td>
+                                                    <td>{{ Carbon\Carbon::parse($data->updated_at)->format('d-M-Y G:i a') }}</td>
+                                                @endif
+                                            @break
+
+                                            @default
+                                                @dd($data)
+                                        @endswitch
+                                        {{-- @dd($products_logs, $data, $properties, $properties->name) --}}
+
+
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
 
                         <!--end: Datatable-->
                     </div>
