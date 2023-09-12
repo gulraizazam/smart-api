@@ -63,22 +63,27 @@ class ProductsController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $apply_filter['delete']);
+            if (isset($filters['delete'])) {
+                $ids = explode(',', $filters['delete']);
                 $products = Product::getBulkData($ids);
+                $is_child = false;
                 if ($products) {
                     foreach ($products as $product) {
-                        $detail_records = ProductDetail::where('product_id', $product->id)->get();
-                        if (!$detail_records->isEmpty()) {
-                            foreach ($detail_records as $detail_record) {
-                                $detail_record->delete();
-                            }
+                        if (!Product::isChildExists($product->id, Auth::User()->account_id)) {
+                            ProductDetail::where(['product_id' => $product->id])->delete();
+                            Stock::where(['product_id' => $product->id])->delete();
+                            $product->delete();
+                            $is_child = true;
                         }
-                        $product->delete();
                     }
                 }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
+                if (!$is_child) {
+                    $records['status'] = false;
+                    $records['message'] = 'Child records exist, unable to delete resource!';
+                } else {
+                    $records['status'] = true;
+                    $records['message'] = 'Records has been deleted successfully!';
+                }
             }
             // Get Total Records
             $iTotalRecords = Product::getTotalRecords($request, Auth::User()->account_id, $apply_filter);

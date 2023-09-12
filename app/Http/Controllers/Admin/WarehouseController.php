@@ -57,16 +57,26 @@ class WarehouseController extends Controller
             $filters = getFilters($request->all());
 
             $apply_filter = checkFilters($filters, $filename);
-            if (isset($apply_filter['delete'])) {
-                $ids = explode(',', $apply_filter['delete']);
+
+            if (isset($filters['delete'])) {
+                $ids = explode(',', $filters['delete']);
                 $warehouses = Warehouse::getBulkData($ids);
+                $is_child = false;
                 if ($warehouses) {
                     foreach ($warehouses as $warehouse) {
-                        $warehouse->delete();
+                        if (!Warehouse::isChildExists($warehouse->id, Auth::User()->account_id)) {
+                            $warehouse->delete();
+                            $is_child = true;
+                        }
                     }
                 }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
+                if (!$is_child) {
+                    $records['status'] = false;
+                    $records['message'] = 'Child records exist, unable to delete resource!';
+                } else {
+                    $records['status'] = true;
+                    $records['message'] = 'Records has been deleted successfully!';
+                }
             }
 
             // Get Total Records
@@ -127,7 +137,7 @@ class WarehouseController extends Controller
      */
     public function create()
     {
-        if (! Gate::allows('warehouse_create')) {
+        if (!Gate::allows('warehouse_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -151,7 +161,7 @@ class WarehouseController extends Controller
      */
     public function store(Request $request)
     {
-        if (! Gate::allows('warehouse_create')) {
+        if (!Gate::allows('warehouse_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -201,7 +211,7 @@ class WarehouseController extends Controller
      */
     public function edit($id)
     {
-        if (! Gate::allows('warehouse_edit')) {
+        if (!Gate::allows('warehouse_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $warehouse = Warehouse::getData($id);
@@ -231,7 +241,7 @@ class WarehouseController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (! Gate::allows('locations_edit')) {
+        if (!Gate::allows('locations_edit')) {
             return abort(401);
         }
         $validator = $this->verifyFields($request);
@@ -255,7 +265,7 @@ class WarehouseController extends Controller
      */
     public function destroy($id)
     {
-        if (! Gate::allows('warehouse_destroy')) {
+        if (!Gate::allows('warehouse_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $result = Warehouse::deleteRecord($id);
@@ -269,7 +279,7 @@ class WarehouseController extends Controller
 
     public function status(Request $request)
     {
-        if (! Gate::allows('warehouse_active')) {
+        if (!Gate::allows('warehouse_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 

@@ -7,6 +7,7 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Models\ProductDetail;
+use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -60,7 +61,7 @@ class TransferProduct extends BaseModal
 
         $product_id = [];
         if ($request['query'] != null) {
-            if ($request['query']['search']['name'] != null) {
+            if (isset($request['query']['search']['name']) && $request['query']['search']['name'] != null) {
                 $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->get()->pluck('id');
             }
         }
@@ -89,7 +90,7 @@ class TransferProduct extends BaseModal
         $product_id = null;
 
         if ($request['query'] != null) {
-            if ($request['query']['search']['name'] != null) {
+            if (isset($request['query']['search']['name']) && $request['query']['search']['name'] != null) {
                 $product_id = Product::where('name', 'like', '%' . $request['query']['search']['name'] . '%')->get()->pluck('id');
             }
         }
@@ -315,15 +316,17 @@ class TransferProduct extends BaseModal
         if (self::isChildExists($id, Auth::User()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-        $detail_p_records = Product::where('id', $transfer_product->product_id)->get();
-        $detail_p_records->delete();
-        $detail_records = ProductDetail::where('product_id', $transfer_product->product_id)->get();
-        if (!$detail_records->isEmpty()) {
-            foreach ($detail_records as $detail_record) {
-                $detail_record->delete();
+        DB::transaction(function () use($transfer_product) {
+            Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
+            Stock::where(['transfer_id' => $transfer_product->id])->delete();
+            $record = $transfer_product->delete();
+
+            $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->get();
+            foreach ($product_detail as $data) {
+                $data->delete();
             }
-        }
-        $record = $transfer_product->delete();
+            Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
+        });
 
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
@@ -336,8 +339,8 @@ class TransferProduct extends BaseModal
      */
     public static function isChildExists($id, $account_id)
     {
-        $product_details = ProductDetail::where(['id' => $id, 'account_id' => $account_id])->get();
-        if ($product_details) {
+        if (OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()
+        ) {
             return true;
         }
         return false;
