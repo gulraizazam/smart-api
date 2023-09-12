@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
+use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -60,22 +61,35 @@ class TransferProductsController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $apply_filter['delete']);
+            if (isset($filters['delete'])) {
+                $ids = explode(',', $filters['delete']);
                 $transfer_products = TransferProduct::getBulkData($ids);
+                $is_child = false;
                 if ($transfer_products) {
-                    foreach ($transfer_products as $product) {
-                        $detail_records = ProductDetail::where('product_id', $product->id)->get();
-                        if (!$detail_records->isEmpty()) {
-                            foreach ($detail_records as $detail_record) {
-                                $detail_record->delete();
-                            }
+                    foreach ($transfer_products as $transfer_product) {
+                        if (!TransferProduct::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
+                            DB::transaction(function () use($transfer_product) {
+                                Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
+                                Stock::where(['transfer_id' => $transfer_product->id])->delete();
+                                $transfer_product->delete();
+
+                                $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->get();
+                                foreach ($product_detail as $data) {
+                                    $data->delete();
+                                }
+                                Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
+                            });
+                            $is_child = true;
                         }
-                        $product->delete();
                     }
                 }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
+                if (!$is_child) {
+                    $records['status'] = false;
+                    $records['message'] = 'Child records exist, unable to delete resource!';
+                } else {
+                    $records['status'] = true;
+                    $records['message'] = 'Records has been deleted successfully!';
+                }
             }
             // Get Total Records
             $iTotalRecords = TransferProduct::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
