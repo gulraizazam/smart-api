@@ -7,21 +7,41 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Models\ProductDetail;
+use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class TransferProduct extends BaseModal
 {
-    use HasFactory;
+    use LogsActivity, HasFactory;
 
-    protected $fillable = ['product_id', 'child_product_id', 'product_detail_id', 'account_id', 'from_location_id', 'to_location_id', 'from_warehouse_id', 'to_warehouse_id', 'quantity', 'transfer_date', 'created_by'];
+    protected $fillable = ['product_id', 'child_product_id', 'product_detail_id', 'account_id', 'from_location_id', 'to_location_id', 'from_warehouse_id', 'to_warehouse_id', 'quantity', 'transfer_date', 'created_by', 'updated_by'];
 
     protected $table = 'transfer_products';
 
-    protected $_fillable = ['product_id', 'child_product_id', 'product_detail_id', 'account_id', 'from_location_id', 'to_location_id', 'from_warehouse_id', 'to_warehouse_id', 'quantity', 'transfer_date'];
+    protected static $logAttributes = ['product_id', 'child_product_id', 'product_detail_id', 'account_id', 'from_location_id', 'to_location_id', 'from_warehouse_id', 'to_warehouse_id', 'quantity', 'transfer_date', 'created_by', 'updated_by'];
 
-    protected static $_table = 'transfer_products';
+    protected static $logName = 'transfer_product';
 
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
+
+
+    // Customize the log description (optional)
+    protected static $logDescriptionForEvent = [
+        'created' => 'Product has been created',
+        'updated' => 'Product has been updated',
+        'deleted' => 'Product has been deleted',
+    ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName(self::$logName)
+            ->logOnly(self::$logAttributes)
+            ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName])
+            ->dontSubmitEmptyLogs();
+    }
 
     public function transferProductItem()
     {
