@@ -60,7 +60,7 @@
                             <input type="text" id="add_address" name="address" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
-                    <div class="row">
+                    {{-- <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Select Logo</label>
                             <div class="col-lg-9 col-xl-6">
@@ -79,7 +79,7 @@
                             </div>
                         </div>
 
-                    </div>
+                    </div> --}}
                 </div>
 
             </div>
