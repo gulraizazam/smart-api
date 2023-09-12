@@ -78,7 +78,7 @@ class Product extends BaseModal
         if (count($where)) {
             return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         }
     }
 
