@@ -175,7 +175,7 @@
                             <th>Amount</th>
                             <th>Tax </th>
                             <th>Amount.</th>
-                            <th>Is Consumed</th>
+                            <!-- <th>Is Consumed</th> -->
                             <th>Action</th>
                         </tr>
                         </thead>
