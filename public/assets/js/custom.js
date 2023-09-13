@@ -34,6 +34,7 @@ $(document).ready(function () {
         $("#modal_allocate_discounts_form").find("#services").empty();
         $("#modal_create_order_form").find('form').trigger('reset');
         $("#modal_edit_transfer_products_form").find('form').trigger('reset');
+        $("#modal_add_product_stock").find('form').trigger('reset');
     });
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
