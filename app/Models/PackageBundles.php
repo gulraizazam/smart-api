@@ -11,7 +11,7 @@ class PackageBundles extends Model
 {
     use SoftDeletes;
 
-    protected $fillable = ['random_id', 'qty', 'discount_name', 'discount_type', 'discount_price', 'service_price', 'net_amount', 'is_exclusive', 'tax_exclusive_net_amount', 'tax_percenatage', 'tax_price', 'tax_including_price', 'location_id', 'discount_id', 'bundle_id', 'package_id', 'active', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['random_id', 'qty', 'discount_name', 'discount_type', 'discount_price', 'service_price', 'net_amount', 'is_exclusive', 'tax_exclusive_net_amount', 'tax_percenatage', 'tax_price', 'tax_including_price', 'location_id', 'discount_id', 'bundle_id', 'package_id', 'active', 'created_at', 'updated_at', 'deleted_at','base_service_id'];
 
     protected static $_fillable = ['qty', 'discount_name', 'discount_type', 'discount_price', 'service_price', 'net_amount', 'is_exclusive', 'tax_exclusive_net_amount', 'tax_percenatage', 'tax_price', 'tax_including_price', 'location_id', 'discount_id', 'bundle_id', 'package_id', 'active'];
 
@@ -29,16 +29,22 @@ class PackageBundles extends Model
       
        $package_id = Packages::where('random_id',$data['random_id'])->first();
         $discount_type = Discounts::find($data['discount_id']);
+        
         if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']==null){
+            $find_base_service = BaseDiscountService::where('discount_id',$discount_type->id)->first();
             $data['discount_type'] = 'Configurable';
             $data['package_id'] =  $package_id->id ?? null;
+            $data['base_service_id'] = $find_base_service->service_id;
             
         }
         else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']!=null){
+            $find_base_service = BaseDiscountService::where('discount_id',$discount_type->id)->first();
             $data['discount_type'] = $data['discount_type'];
             $data['package_id'] =  $package_id->id ?? null;
+            $data['base_service_id'] = $find_base_service->service_id;
             
         }else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] == 0){
+            $find_base_service = BaseDiscountService::where('discount_id',$discount_type->id)->first();
             $data['discount_type'] = 'Percentage';
             $data['discount_price'] = 100;
             $data['net_amount'] = 0;
@@ -46,6 +52,7 @@ class PackageBundles extends Model
             $data['tax_exclusive_net_amount'] = 0;
             $data['tax_price'] = 0;
             $data['package_id'] = $package_id->id ?? null;
+            $data['base_service_id'] = $find_base_service->service_id;
           
         }else{
             $data['discount_type'] = $data['discount_type'];
