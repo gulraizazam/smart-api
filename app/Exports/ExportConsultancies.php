@@ -162,14 +162,14 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
         }
        
         $results = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
-        ->select('appointments.*','users.name')
+        ->select('appointments.*','users.name','users.phone')
             ->where(['users.user_type_id' => config('constants.patient_id')])
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
             ->where($where)
-            // ->when(count($where) >! 1, function($q){
-            //     return $q->take($this->limit);
-            // })
+            ->when(count($where) >! 1, function($q){
+                return $q->take($this->limit);
+            })
             ->orderBy('scheduled_time','asc')
             ->get();
             
