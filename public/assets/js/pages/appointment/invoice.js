@@ -310,6 +310,7 @@ $(document).ready(function () {
         } else {
             $("#treatment_addinvoice").show();
         }
+        var TaxPrice = [];
         if (package_id_create) {
             $.ajax({
                 type: 'get',
@@ -319,11 +320,11 @@ $(document).ready(function () {
                     'appointment_id_create': appointment_id_create
                 },
                 success: function (resposne) {
-
+                    console.log(resposne);
                     if (resposne.status == '1') {
                         $('#table_1').find('tbody').html('');
                         jQuery.each(resposne.packagebundles, function (i, packagebundles) {
-
+                            //packagebundles = resposne.packagebundles;
                             if (packagebundles.discount_id == null) {
                                 var discountname = '-';
                             } else {
@@ -340,32 +341,41 @@ $(document).ready(function () {
                                 var discountprice = packagebundles.discount_price;
                             }
                             $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
-
                             jQuery.each(resposne.packageservices, function (i, packageservices) {
-
+                                
                                 if (packageservices.package_bundle_id == packagebundles.id) {
 
                                     if (packageservices.is_consumed == '0') {
+                                        TaxPrice.push({
+                                            'taxprice': packageservices.tax_including_price,
+                                            'id': packagebundles.id,
+                                            'childID': packageservices.id
+                                        });
                                         var consume = 'NO';
-                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td><input type='checkbox' class='invoicecheckbox' value=" + packageservices.id + "></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td style='vertical-align:middle;'></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                                     } else {
                                         var consume = 'YES';
-                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td style='vertical-align:middle;'></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + packageservices.tax_percenatage + "</td><td>Tax Amt. : " + packageservices.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                                     }
                                 }
                             });
                         });
-                        $('.invoicecheckbox').click(function () {
+                        $(document).on('click', '.invoicecheckbox', function () {                            
                             $(".invoicecheckbox").prop('checked', false);
                             $(this).prop('checked', true);
                             /*Here I need to set the bundle id so I can Checked on save exclusive*/
                             $('#checked_bundle_id').val($(this).val());
                             calculateInvoice($(this).val(), 'treatment_');
                         });
+                        const maxVal = TaxPrice.reduce((max, obj) => (obj.taxprice > max.taxprice ? obj : max), TaxPrice[0]);
+                        console.log('TaxPrice', TaxPrice);
+                        console.log('maxVal', maxVal);
+                        $('#treatment-invoice-create').find('#table_1').find('tr.HR_'+maxVal.id+'.'+maxVal.id+'').find('td:first-child').append("<input type='checkbox' class='invoicecheckbox' value=" + maxVal.childID + ">");
                     }
                 }
             });
         }
+       
     });
 
     $('#package_id_create').change();
