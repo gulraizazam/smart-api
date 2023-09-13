@@ -3,19 +3,46 @@
 namespace App\Models;
 
 use Auth;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ProductDetail extends BaseModal
 {
-    use HasFactory;
+    use LogsActivity, HasFactory;
 
     protected $fillable = ['account_id', 'product_id', 'purchase_price', 'total_purchase_price', 'quantity'];
 
     protected $table = 'product_details';
 
-    protected static $_fillable = ['account_id', 'product_id', 'purchase_price', 'total_purchase_price', 'quantity'];
+    protected static $logAttributes = ['product.name', 'product_id', 'purchase_price', 'total_purchase_price', 'quantity'];
 
-    protected static $_table = 'product_details';
+    protected static $logName = 'product_detail';
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
+
+
+    // Customize the log description (optional)
+    protected static $logDescriptionForEvent = [
+        'created' => 'Product has been created',
+        'updated' => 'Product has been updated',
+        'deleted' => 'Product has been deleted',
+    ];
+
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName(self::$logName)
+            ->logOnly(self::$logAttributes)
+            ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName])
+            ->dontSubmitEmptyLogs();
+    }
+
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
 
     /**
      * Create Record

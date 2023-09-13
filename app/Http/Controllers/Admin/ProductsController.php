@@ -63,22 +63,27 @@ class ProductsController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (hasFilter($filters, 'delete')) {
-                $ids = explode(',', $apply_filter['delete']);
+            if (isset($filters['delete'])) {
+                $ids = explode(',', $filters['delete']);
                 $products = Product::getBulkData($ids);
+                $is_child = false;
                 if ($products) {
                     foreach ($products as $product) {
-                        $detail_records = ProductDetail::where('product_id', $product->id)->get();
-                        if (!$detail_records->isEmpty()) {
-                            foreach ($detail_records as $detail_record) {
-                                $detail_record->delete();
-                            }
+                        if (!Product::isChildExists($product->id, Auth::User()->account_id)) {
+                            ProductDetail::where(['product_id' => $product->id])->delete();
+                            Stock::where(['product_id' => $product->id])->delete();
+                            $product->delete();
+                            $is_child = true;
                         }
-                        $product->delete();
                     }
                 }
-                $records['status'] = true;
-                $records['message'] = 'Records has been deleted successfully!';
+                if (!$is_child) {
+                    $records['status'] = false;
+                    $records['message'] = 'Child records exist, unable to delete resource!';
+                } else {
+                    $records['status'] = true;
+                    $records['message'] = 'Records has been deleted successfully!';
+                }
             }
             // Get Total Records
             $iTotalRecords = Product::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
@@ -431,29 +436,55 @@ class ProductsController extends Controller
             if (!Gate::allows('product_log')) {
                 return abort(401);
             }
-            $products_logs = Activity::where(['log_name' => 'product', 'subject_id' => $id])->orderBy('id', 'DESC')->get();
+            $products_logs = Activity::orderBy('id', 'DESC')->get();
 
 
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+            $products = Product::getAllRecordsDictionary(Auth::user()->account_id);
 
-            $products_logs = collect($products_logs)->map(function ($log) use ($users, $brands, $centres, $warehouse) {
+            $products_logs = collect($products_logs)->map(function ($log) use ($id, $users, $brands, $centres, $warehouse, $products) {
                 $properties = json_decode($log->properties)->attributes;
+                if ($log->subject_id == $id || $properties->product_id == $id) {
+                    switch ($log->log_name) {
+                        case "product":
+                            $log->product_name = $properties->name;
+                            $log->brand_id = (array_key_exists($properties->brand_id, $brands)) ? $brands[$properties->brand_id]->name : 'N/A';
+                            $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
+                            $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
+                            $log->created_by = (array_key_exists($properties->created_by, $users)) ? $users[$properties->created_by]->name : 'N/A';
+                            $log->updated_by = (array_key_exists($properties->updated_by, $users)) ? $users[$properties->updated_by]->name : 'N/A';
+                            break;
+                        case "transfer_product":
+                            $log->product_name = (array_key_exists($properties->product_id, $products)) ? $products[$properties->product_id]->name : 'N/A';
+                            $log->location_from = (array_key_exists($properties->from_location_id, $centres)) ? $centres[$properties->from_location_id]->name : 'N/A';
+                            $log->warehouse_from = (array_key_exists($properties->from_warehouse_id, $warehouse)) ? $warehouse[$properties->from_warehouse_id]->name : 'N/A';
 
-                $log->product_name = $properties->name;
-                $log->brand_id = (array_key_exists($properties->brand_id, $brands)) ? $brands[$properties->brand_id]->name : 'N/A';
-                $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
-                $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
-                $log->created_by = (array_key_exists($properties->created_by,$users )) ? $users[$properties->created_by]->name : 'N/A';
-                $log->updated_by = (array_key_exists($properties->updated_by, $users)) ? $users[$properties->updated_by]->name : 'N/A';
+                            $log->location_to = (array_key_exists($properties->to_location_id, $centres)) ? $centres[$properties->to_location_id]->name : 'N/A';
+                            $log->warehouse_to = (array_key_exists($properties->to_warehouse_id, $warehouse)) ? $warehouse[$properties->to_warehouse_id]->name : 'N/A';
 
-                return $log;
-            });
+                            $log->created_by = (array_key_exists($properties->created_by, $users)) ? $users[$properties->created_by]->name : 'N/A';
+                            $log->updated_by = (array_key_exists($properties->updated_by, $users)) ? $users[$properties->updated_by]->name : 'N/A';
+                            break;
+                        case "product_detail":
+                            $log->product_name = $properties->name;
+                            $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
+                            $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
+                            break;
+                        default:
+                            return null;
+                    }
+                    return $log;
+                } else {
+                    return null;
+                }
+            })->filter();
             return view('admin.products.logs', compact('products_logs'));
         } catch (\Exception $e) {
-            return view('admin.products.logs', compact('products_logs'));
+            dd($e->getMessage());
+            return ApiHelper::apiException($e);
         }
     }
 }
