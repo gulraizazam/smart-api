@@ -2264,7 +2264,7 @@ jQuery(document).ready(function () {
                                 //if(single_record_detail.net_amount > 0){
                                     del_icon =  "<td>" +
                                     "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
-                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deleteConfPlanRow(" +single_record_detail.record.base_service_id + ")'>" + trashBtn() + "</button>" +
+                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.base_service_id + ")'>" + trashBtn() + "</button>" +
                                     "</td>" ;
                                 // }else{
                                 //     del_icon="<td></td>";
