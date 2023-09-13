@@ -81,6 +81,7 @@
                                     <option value="2">2</option>
                                     <option value="3">3</option>
                                 </select>
+                               
                                 <label class="fw-bold fs-6 px-5 text-nowrap pt-2">Sessions of</label>
                                 <select class="form-control form-control-solid mb-3 select2" name="base_service" id="base_service">
                                     

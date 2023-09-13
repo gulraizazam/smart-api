@@ -191,7 +191,7 @@ $(document).ready(function () {
                 success: function (resposne) {
                     
                   
-                    let consume = 'NO';
+                    let consume = 'No';
                     if (resposne.status == '1') {
                         
                         $('#table_1').append("" +
@@ -212,9 +212,9 @@ $(document).ready(function () {
 
                         jQuery.each(resposne.myarray.record_detail, function (i, record_detail) {
                             if (record_detail.is_consumed == '0') {
-                                consume = 'NO';
+                                consume = 'No';
                             } else {
-                                consume = 'YES';
+                                consume = 'Yes';
                             }
                             $('#table_1').append("<tr class='inner_records_hr HR_" + resposne.myarray.record.id + " " + resposne.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
@@ -669,31 +669,33 @@ function setEditData(response) {
                 service_options += '</td>';
 
                 service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
-                service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
-                //  service_options +=  '<td>'+packagebundle.tax_price+'</td>';
+                //service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
+                  service_options +=  '<td>'+packagebundle.tax_price+'</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
-
+                service_options += '<td id="cc-'+packagebundle.id+'"></td>';
                 service_options += del_icon;
                 service_options += '</tr>';
 
 
                 Object.values(packageservices).forEach(function (packageservice) {
-                    let consume = 'NO';
+                    let consume = 'No';
                     if (packageservice.package_bundle_id == packagebundle.id) {
 
                         if (packageservice.is_consumed == '0') {
-                            consume = 'NO';
+                            consume = 'No';
                         } else {
-                            consume = 'YES';
+                            consume = 'Yes';
                         }
-
+                        setTimeout(() => {
+                            $("#cc-"+packagebundle.id).text(consume);    
+                        }, 500);
                         service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
                         service_options += '<td></td>';
                         service_options += '<td>' + packageservice.service.name + '</td>';
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
-                        service_options += '<td>Tax % : ' + packageservice.tax_percenatage + '</td>';
-                        service_options += '<td>Total Amount : ' + packageservice.tax_including_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '<td>Tax:' + packageservice.tax_price + '</td>';
+                        service_options += '<td>Total Amount:' + packageservice.tax_including_price + '</td>';
+                        service_options += '<td colspan="4">Is Consumed:' + consume + '</td>';
                         service_options += '</tr>';
                     }
 
@@ -1048,13 +1050,13 @@ function displayData(response) {
 
 
                 Object.values(packageservices).forEach(function (packageservice) {
-                    let consume = 'NO';
+                    let consume = 'No';
                     if (packageservice.package_bundle_id == packagebundle.id) {
 
                         if (packageservice.is_consumed == '0') {
-                            consume = 'NO';
+                            consume = 'No';
                         } else {
-                            consume = 'YES';
+                            consume = 'Yes';
                         }
 
                         service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
@@ -2050,7 +2052,25 @@ function deletePlanRow(id, type = '') {
         }
     });
 }
+function deleteConfPlanRow(id, type = '') {
 
+    hideMessages();
+    swal.fire({
+        title: 'Are you sure you want to delete?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+        if (result.value) {
+            deleteConfPlan(id, type);
+        }
+    });
+}
 function deletePlan(id, type) {
 
     var package_total = $('#' + type + 'package_total_1').val();
@@ -2064,7 +2084,7 @@ function deletePlan(id, type) {
             'package_total': package_total
         },
         success: function (resposne) {
-
+   
             if (resposne.status) {
 
                 $('.HR_' + resposne.data.id).remove();
@@ -2087,7 +2107,63 @@ function deletePlan(id, type) {
                 }
 
             } else {
-                $('#' + type + 'wrongMessage').show();
+               
+                if(resposne.data.del==1){
+                    
+                    $('#edit_consume' ).show();
+                }else{
+                    $('#' + type + 'wrongMessage').show();
+                }
+               
+            }
+        }
+    });
+
+}
+function deleteConfPlan(id, type) {
+
+    var package_total = $('#' + type + 'package_total_1').val();
+
+    $.ajax({
+        type: 'post',
+        url: route('admin.packages.deleteconfpackages_service'),
+        data: {
+            '_token': $('input[name=_token]').val(),
+            'id': id,
+            'package_total': package_total
+        },
+        success: function (resposne) {
+   
+            if (resposne.status) {
+
+                $('.HR_' + resposne.data.id).remove();
+                if (resposne?.data?.total > 1) {
+                    $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
+                } else {
+                    $("#" + type + "package_total_1").val(0);
+                }
+                if (type == 'edit_') {
+                    edit_keyfunction_grandtotal();
+                } else {
+                    keyfunction_grandtotal();
+                }
+
+
+                var rows = $('#plan_services tbody tr.HR_' + $('#random_id_1').val()).length;
+                if (rows <= 1) {
+                    $("#add_plan_location_id").prop("disabled", false);
+                    $("#edit_plan_location_id").prop("disabled", false);
+                }
+
+            } else {
+               
+                if(resposne.data.del==1){
+                    
+                    $('#edit_consume' ).show();
+                }else{
+                    $('#' + type + 'wrongMessage').show();
+                }
+               
             }
         }
     });
@@ -2174,21 +2250,21 @@ jQuery(document).ready(function () {
                 data: formData,
                 success: function (resposne) {
                    
-                    let consume = 'NO';
+                    let consume = 'No';
                     var total_amount = 0;
                     if (resposne.status) {
                         
-                        console.log('resposne.data.myarray',resposne.data.myarray);
+                        
                         if(resposne.data.myarray.length >0){
                             total_amount = parseInt(resposne.data.myarray[0].grand_total);
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
                                
-                               
+                             
                                 var del_icon;
                                 //if(single_record_detail.net_amount > 0){
                                     del_icon =  "<td>" +
                                     "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
-                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
+                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deleteConfPlanRow(" +single_record_detail.record.base_service_id + ")'>" + trashBtn() + "</button>" +
                                     "</td>" ;
                                 // }else{
                                 //     del_icon="<td></td>";
@@ -2201,19 +2277,29 @@ jQuery(document).ready(function () {
                                     "<td>" +single_record_detail.discount_type + "</td>" +
                                     "<td>" +single_record_detail.discount_price + "</td>" +
                                     "<td>" +single_record_detail.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                                    "<td>" +single_record_detail.record.tax_percenatage + "</td>" +
+                                    "<td>" +single_record_detail.record.tax_price + "</td>" +
                                     "<td>" +single_record_detail.record.tax_including_price.toLocaleString() + "</td>" +
+                                    "<td id='cc-"+single_record_detail.record.id+"'></td>" +
                                     del_icon +
                                     
                                     "</tr>");
                                     jQuery.each(single_record_detail.record_detail, function (i, record_detail) {
                                         
                                         if (record_detail.is_consumed == '0') {
-                                            consume = 'NO';
+                                            consume = 'No';
                                         } else {
-                                            consume = 'YES';
+                                            consume = 'Yes';
                                         }
-                                        $('#plan_services').append("<tr class='inner_records_hr HR_" + single_record_detail.record.id + " " + single_record_detail.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                                        setTimeout(() => {
+                                            $("#cc-"+record_detail.package_bundle_id).text(consume);
+                                        }, 400);
+                                        $('#plan_services').append(
+                                            "<tr class='inner_records_hr HR_" + single_record_detail.record.id 
+                                            + " " + single_record_detail.record.id + "'><td></td><td>" 
+                                            + record_detail.name + "</td><td>Amount : " 
+                                            + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " 
+                                            + record_detail.tax_price + "</td><td>Total Amount : " 
+                                            + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consumed:" + consume + "</td></tr>");
                                     });
                             });
                            
@@ -2230,7 +2316,7 @@ jQuery(document).ready(function () {
                                     "<td>" +resposne.data.myarray.discount_type + "</td>" +
                                     "<td>" +resposne.data.myarray.discount_price + "</td>" +
                                     "<td>" +resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                                    "<td>" +resposne.data.myarray.record.tax_percenatage + "</td>" +
+                                    "<td>" +resposne.data.myarray.record.tax_price + "</td>" +
                                     "<td>" +resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
                                     "<td>" +
                                     "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +resposne.data.myarray.record.id + "' />" +
@@ -2239,9 +2325,9 @@ jQuery(document).ready(function () {
                                     "</tr>");
                                     jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
                                         if (record_detail.is_consumed == '0') {
-                                            consume = 'NO';
+                                            consume = 'No';
                                         } else {
-                                            consume = 'YES';
+                                            consume = 'Yes';
                                         }
                                         $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                                     });
@@ -2439,7 +2525,7 @@ jQuery(document).ready(function () {
                 data: formData,
                 success: function (resposne) {
                   
-                    let consume = 'NO';
+                    let consume = 'No';
                     let total_amount;
                     let single_amount;
                     if (resposne.status) {
@@ -2475,11 +2561,11 @@ jQuery(document).ready(function () {
                                     jQuery.each(single_record_detail.record_detail, function (i, record_detail) {
                                         
                                         if (record_detail.is_consumed == '0') {
-                                            consume = 'NO';
+                                            consume = 'No';
                                         } else {
-                                            consume = 'YES';
+                                            consume = 'Yes';
                                         }
-                                        $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + single_record_detail.record.id + " " + single_record_detail.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                                        $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + single_record_detail.record.id + " " + single_record_detail.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consumed: " + consume + "</td></tr>");
                                     });
                             });
                             $("#edit_package_total_1").val(resposne.data.myarray[0].grand_total ?? 0);
@@ -2506,9 +2592,9 @@ jQuery(document).ready(function () {
 
                         jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
                             if (record_detail.is_consumed == '0') {
-                                consume = 'NO';
+                                consume = 'No';
                             } else {
-                                consume = 'YES';
+                                consume = 'Yes';
                             }
                             $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
