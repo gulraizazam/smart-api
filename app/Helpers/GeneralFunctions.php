@@ -19,6 +19,7 @@ use App\Models\Locations;
 use App\Models\Appointments;
 use App\Models\AppointmentLog;
 use Illuminate\Support\Carbon;
+use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;

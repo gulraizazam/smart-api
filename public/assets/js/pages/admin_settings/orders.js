@@ -326,6 +326,15 @@ function productSearch(from_id, from_key, id = null, type = null) {
     return false;
 }
 
+function formRest() {
+    $(".order_patient_search_id").val("");
+    $("#modal_create_order_form").find('form').trigger('reset');
+    $("#modal_create_order_form").find('.order_patient_search_id').empty();
+    $("#modal_create_order_form").find('.order_patient_search_id').attr('disabled', false);
+    $('.select_centre').hide();
+    $('.select_warehouse').hide();
+}
+
 $(document).ready(function () {
     patientSearch('order_patient_search_id');
     $('#add_order_type_option').on('change', function () {
