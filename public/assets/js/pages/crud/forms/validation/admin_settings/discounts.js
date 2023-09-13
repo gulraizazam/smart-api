@@ -22,13 +22,13 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    amount: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The amount field is required'
-                            }
-                        }
-                    },
+                    // amount: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The amount field is required'
+                    //         }
+                    //     }
+                    // },
 
                     start: {
                         validators: {

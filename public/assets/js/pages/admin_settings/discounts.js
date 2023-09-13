@@ -27,7 +27,7 @@ var table_columns = [
         width: 60
     },{
         field: 'discount_type',
-        title: 'Discount Type',
+        title: 'Applicable On',
         sortable: false,
         width: 'auto',
     },{
@@ -140,7 +140,7 @@ function allocateRow(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-
+           
             setAllocateData(response);
 
             reInitSelect2(".select2", "");
@@ -166,7 +166,7 @@ function setAllocateData(response) {
 
         let location_options = '<option value="">Select Centre</option>';
         let location_services = '';
-
+       
         Object.values(locations).forEach(function(value, index) {
 
             location_options += '<option value="">Select</option>\
@@ -178,10 +178,15 @@ function setAllocateData(response) {
             location_options += '</optgroup>';
         });
 
-        Object.values(discount_locations).forEach(function(value, index) {
-            let location_name = value.location.city.name +"-"+ value.location.name;
-            location_services += serviceLocation(value.id, location_name, value.service.name);
-        });
+    Object.values(discount_locations).forEach(function(value, index) {
+        
+        let location_name = value.location.city.name +"-"+ value.location.name;
+        location_services += serviceLocation(value.id, location_name, value.service.name);
+        
+       
+    });
+
+        
 
         $('.HR_SERVICES').remove()
         $('#allocate_services').append(location_services)
@@ -223,7 +228,7 @@ function getDesrvice($this) {
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+            errorMessage(xhr);0
 
             reInitValidation(EditValidation);
         }
@@ -242,10 +247,13 @@ function setServicesData(response) {
               service_options += '<option value="' + value.id + '">' + value.name + '</option>';
         } else {
             service_options += '<option value="' + value.id + '">' + value.name + '</option>';
-            Object.values(value.children).forEach(function (child, index) {
-                service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
-                service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
-            });
+            if(value.children){
+                Object.values(value.children).forEach(function (child, index) {
+                    service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                    service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                });
+            }
+            
         }
     });
     $("#services").html(service_options);
@@ -313,13 +321,46 @@ function editRow(url) {
 }
 
 function setEditData(response) {
+    $('#tes_container').empty();
 
     try {
 
         let discount = response.data.discount;
 
-        $("#modal_edit_discounts_form").attr("action", route('admin.discounts.update', {id: discount.id}));
+        if(discount.type=="Configurable"){
+            $("#edit_amount_div").css('display','none');
+            $("#buy_services_section").css('display','block');
+            let services = response.data.services;
+            let get_services = response.data.get_discount_services;
+            let sessions_buy = response.data.base_discount_services.length;
+            let base_service_id = response.data.base_discount_services[0].service_id;
+            $('#sessions_buy').val(sessions_buy).change();
+            let service_child_value = '';
+            let service_options = '<option value="">Select</option>';
+            Object.values(services).forEach(function(value, index) {
+                if (value.name == 'All Services') {
+                      service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                } else {
+                    service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                    Object.values(value.children).forEach(function (child, index) {
+                        service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                        service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                    });
+                }
+            });
+            $("#edit_get_services").html(service_options);
 
+            Object.values(get_services).forEach(function(value, index) {
+               
+                populateSection(value,index);
+                
+            });
+            $("#edit_base_service").html(service_options);
+            $("#edit_base_service").select2();
+            $("#edit_base_service").val(base_service_id).change();
+        }
+
+        $("#modal_edit_discounts_form").attr("action", route('admin.discounts.update', {id: discount.id}));
         if (discount.discount_type == 'Treatment') {
             $(".treatment").prop("checked", true);
         }
@@ -335,14 +376,11 @@ function setEditData(response) {
             $(".custom").prop("checked", true);
             $(".edit_birthday_range").addClass("d-none");
         }
-        if (discount.slug == 'birthday') {
-            $(".birthday").prop("checked", true);
-            $(".edit_birthday_range").removeClass("d-none");
-
-        }
+        
 
         $("#edit_name").val(discount.name);
         $("#edit_amount_type").val(discount.type);
+        $("#disc_type").val(discount.type);
         $("#edit_amount").val(discount.amount);
         $("#edit_pre_days").val(discount.pre_days);
         $("#edit_post_days").val(discount.post_days);
@@ -356,7 +394,31 @@ function setEditData(response) {
     }
 
 }
+function populateSection(data,index) {
 
+    let newindex = index + 1;
+    var templateSection = $("#get_services_section").clone().removeAttr("style");
+
+    // Use a single modifiedHTML variable to accumulate changes
+    let modifiedHTML = templateSection.html();
+    modifiedHTML = modifiedHTML.replace(/edit_services_name\[\]/g, 'edit_services_name[' + index + ']');
+    modifiedHTML = modifiedHTML.replace(/edit_sessions\[\]/g, 'edit_sessions[' + index + ']');
+    modifiedHTML = modifiedHTML.replace(/edit_disc_type\[\]/g, 'edit_disc_type[' + index + ']');
+    templateSection.html(modifiedHTML);
+
+    templateSection.find('[name="edit_sessions['+ index + ']"]').val(data.sessions);
+    templateSection.find('[name="edit_services_name['+ index + ']"]').val(data.service_id).change();
+
+    if (data.discount_type == "complimentory") {
+        templateSection.find('[name="edit_disc_type['+ index + ']"][value="complimentory"]').prop("checked", true);
+    } else {
+        templateSection.find('[name="edit_disc_type['+ index + ']"][value="custom"]').prop("checked", true);
+        templateSection.append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control" name="configurable_amount['+ index + ']" value="'+data.discount_amount+'"></div>');
+    }
+
+    $("#tes_container").append(templateSection);
+
+}
 function applyFilters(datatable) {
 
     $('#apply-filters').on('click', function() {
@@ -434,7 +496,7 @@ function setFilters(filter_values, active_filters) {
 }
 
 function createDiscount($route) {
-
+    $("#add_amount_type").val([]).trigger("change");
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -443,6 +505,17 @@ function createDiscount($route) {
         type: "GET",
         cache: false,
         success: function (response) {
+            let locations = response.data.locations;
+            let location_options = '<option value="">Select Centre</option>';
+            Object.values(locations).forEach(function(value, index) {
+                location_options += '<optgroup label="'+value.name+'">';
+                Object.values(value.children).forEach(function(child, index) {
+                    location_options += '<option value="'+child.id+'">'+child.name+'</option>';
+                });
+                location_options += '</optgroup>';
+            });
+
+            $("#locations").html(location_options);
 
             //setDiscountData(response);
         },
@@ -482,3 +555,137 @@ function serviceLocation(id, location_name, service_name) {
 function deleteIcon(id) {
     return '<a href="javascript:void(0);" onClick="deleteModel('+id+')" class="btn btn-icon btn-light btn-hover-danger btn-sm"> <span class="svg-icon svg-icon-md svg-icon-danger"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1"> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect x="0" y="0" width="24" height="24"></rect> <path d="M6,8 L6,20.5 C6,21.3284271 6.67157288,22 7.5,22 L16.5,22 C17.3284271,22 18,21.3284271 18,20.5 L18,8 L6,8 Z" fill="#000000" fill-rule="nonzero"></path> <path d="M14,4.5 L14,4 C14,3.44771525 13.5522847,3 13,3 L11,3 C10.4477153,3 10,3.44771525 10,4 L10,4.5 L5.5,4.5 C5.22385763,4.5 5,4.72385763 5,5 L5,5.5 C5,5.77614237 5.22385763,6 5.5,6 L18.5,6 C18.7761424,6 19,5.77614237 19,5.5 L19,5 C19,4.72385763 18.7761424,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"></path> </g> </svg> </span> </a>';
 }
+function SetFields()
+{
+    if($("#add_amount_type").val()=="Configurable"){
+        $("#custom").css('display','none');
+        $("#amount").css('display','none');
+        $("#configurable_fields").css('display','block');
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route("admin.discounts.getDiscountServices"),
+            type: "GET",
+            data: {},
+            cache: false,
+            success: function (response) {
+    
+                let services = response.data.services;
+                let service_child_value = '';
+                let service_options = '<option value="">Select</option>';
+            
+                Object.values(services).forEach(function(value, index) {
+                    
+                    if (value.name == 'All Services') {
+                          service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                    } else {
+                        service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                        Object.values(value.children).forEach(function (child, index) {
+                            service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                            service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                        });
+                    }
+                });
+                $("#base_service").html(service_options);
+                $("#services_sessions").html(service_options);
+                $('#base_service').select2();
+               
+                reInitSelect2(".select2", "");
+    
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+    
+                reInitValidation(EditValidation);
+            }
+        });
+    }else{
+        $("#custom").css('display','block');
+        $("#amount").css('display','block');
+        $("#configurable_fields").css('display','none');
+    }
+}
+function getCentreServices()
+{
+    var location = $("#locations").val();
+    $.ajax({
+        
+        url: route('admin.locations.getservices'),
+        type: "GET",
+        data: {id: location},
+        cache: false,
+        success: function (response) {
+            let services = response.data.services;
+            let locaiton_id = response.data.locaiton_id_1;
+            let service_child_value = '';
+            let service_options = '<option value="">Select</option>';
+
+            Object.values(services).forEach(function(value, index) {
+                if (value.name == 'All Services') {
+                    service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                } else {
+                    service_options += '<option value="' + value.id + '">' + value.name + '</option>';
+                    Object.values(value.children).forEach(function (child, index) {
+                        service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                        service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                    });
+                }
+            });
+            $("#services").html(service_options);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+           
+        }
+    });
+}
+
+
+var cloneCounter = 1;
+
+$('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', function(){
+
+    var cloneElements = $(this).parent().parent('.get_discount_type').children().html();
+    
+    // Replace names of input fields with unique names
+    cloneElements = cloneElements.replace('sessions[]', 'sessions[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('services_name[]', 'services_name[' + cloneCounter + ']');
+    cloneElements = cloneElements.replaceAll('disc_type[]', 'disc_type[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('configurable_amount[]', 'configurable_amount[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('add_new_discount_field', 'remove_discount');
+    cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
+    cloneElements = cloneElements.replace('la-plus', 'la-minus');
+
+    $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type mt-3"><div class="d-flex">'+cloneElements+'</div></div>');
+    
+    // Increment the counter for the next clone
+    cloneCounter++;
+});
+
+$(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount', function(){
+    $(this).parent().parent('.get_discount_type').remove();
+});
+
+$(document).on('change', '.discount_type_wrap.get_discount_type .radio-inline .group_slug', function(){
+    var Elementindex = $(this).parents('.discount_type_wrap.get_discount_type').index();
+    if(!$('#modal_edit_discounts.show').length){
+        Elementindex = (parseInt(Elementindex)-1);
+    }
+    if($(this).is(':checked') && $(this).val() == "custom"){
+        $(this).parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control"  name="configurable_amount['+Elementindex+']"></div>');
+    } else{
+        $(this).parents('.discount_type_wrap.get_discount_type').find('#configurable_amount').remove();
+    }
+});
+$(document).on("keyup", ".add_configurable_amount", function () {
+
+    
+        var val = parseInt(this.value);
+        if (val > 100 || val < 0) {
+            this.value = '';
+            toastr.error("Amount is not allowed greater than 100");
+        }
+    
+
+})
+
