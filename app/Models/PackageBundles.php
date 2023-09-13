@@ -29,20 +29,22 @@ class PackageBundles extends Model
       
        $package_id = Packages::where('random_id',$data['random_id'])->first();
         $discount_type = Discounts::find($data['discount_id']);
-        $find_base_service = BaseDiscountService::where('discount_id',$discount_type->id)->first();
+        
         if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']==null){
-
+            $find_base_service = BaseDiscountService::where('discount_id',$discount_type->id)->first();
             $data['discount_type'] = 'Configurable';
             $data['package_id'] =  $package_id->id ?? null;
             $data['base_service_id'] = $find_base_service->service_id;
             
         }
         else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] > 0 && $data['discount_type']!=null){
+            $find_base_service = BaseDiscountService::where('discount_id',$discount_type->id)->first();
             $data['discount_type'] = $data['discount_type'];
             $data['package_id'] =  $package_id->id ?? null;
             $data['base_service_id'] = $find_base_service->service_id;
             
         }else if($discount_type && $discount_type->type =="Configurable" && $data['tax_including_price'] == 0){
+            $find_base_service = BaseDiscountService::where('discount_id',$discount_type->id)->first();
             $data['discount_type'] = 'Percentage';
             $data['discount_price'] = 100;
             $data['net_amount'] = 0;
