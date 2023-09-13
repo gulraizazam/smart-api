@@ -1064,7 +1064,7 @@ function displayData(response) {
                         service_options += '<td>' + packageservice.service.name + '</td>';
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
                        
-                        service_options += '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>';
+                        service_options += '<td>Tax Amt. : ' + packageservice.tax_price + '</td>';
                         service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
                         service_options += '</tr>';
                     }
