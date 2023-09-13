@@ -175,9 +175,6 @@ class Product extends BaseModal
             'id' => $id,
             'account_id' => $account_id,
         ])->first();
-        if ($record->product_type == 'in_house_use') {
-            return null;
-        }
 
         if (!$record) {
             return null;
@@ -256,7 +253,7 @@ class Product extends BaseModal
                 ['status', '=', '1'],
                 ['account_id', '=', $account_id],
                 [$request['from_key'], $request['from_id']]
-            ])->when($request->type == 'order', function ($q) {
+            ])->when(isset($request->type) && $request->type == 'order', function ($q) {
                 return $q->where(['product_type' => 'for_sale']);
             })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         }

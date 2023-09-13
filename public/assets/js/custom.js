@@ -36,6 +36,7 @@ $(document).ready(function () {
         $("#modal_edit_transfer_products_form").find('form').trigger('reset');
         $("#modal_add_product_stock").find('form').trigger('reset');
     });
+
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
         todayHighlight: true,
@@ -593,7 +594,7 @@ function reInitTable(page = null) {
             }
         } else {
             datatable.reload();
-            /* $('#kt_datatable').KTDatatable('reload'); */
+            //$('#kt_datatable').KTDatatable('reload');
         }
 
     }, 400);
