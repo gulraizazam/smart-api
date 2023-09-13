@@ -18,9 +18,11 @@ class Product extends BaseModal
 
     protected $table = 'products';
 
-    protected static $logAttributes = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by'];
+    protected static $logAttributes = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by', 'productDetail.product_id', 'productDetail.purchase_price', 'productDetail.total_purchase_price', 'productDetail.quantity'];
 
     protected static $logName = 'product';
+
+    protected static $recordEvents = ['created', 'updated', 'deleted'];
 
 
     // Customize the log description (optional)
@@ -29,13 +31,6 @@ class Product extends BaseModal
         'updated' => 'Product has been updated',
         'deleted' => 'Product has been deleted',
     ];
-
-    // Customize the log event name (optional)
-    public function getLogEventName(string $eventName): string
-    {
-        return "Product has been was {$eventName}";
-    }
-
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -46,6 +41,10 @@ class Product extends BaseModal
             ->dontSubmitEmptyLogs();
     }
 
+    public function productDetail()
+    {
+        return $this->hasOne(ProductDetail::class);
+    }
 
     /**
      * Get Total Records
@@ -77,9 +76,9 @@ class Product extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         }
     }
 
@@ -131,11 +130,6 @@ class Product extends BaseModal
         }
 
         return $where;
-    }
-
-    public function productDetail()
-    {
-        return $this->hasOne(ProductDetail::class);
     }
 
     /**
@@ -209,6 +203,7 @@ class Product extends BaseModal
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
         $detail_records = ProductDetail::where('product_id', $id)->get();
+        Stock::where(['product_id' => $product->id])->delete();
         if (!$detail_records->isEmpty()) {
             foreach ($detail_records as $detail_record) {
                 $detail_record->delete();
@@ -227,8 +222,10 @@ class Product extends BaseModal
      */
     public static function isChildExists($id, $account_id)
     {
-        $product_details = ProductDetail::where(['id' => $id, 'account_id' => $account_id])->get();
-        if ($product_details) {
+        if (
+            TransferProduct::where(['product_id' => $id, 'account_id' => $account_id])->orwhere(['child_product_id' => $id])->count() ||
+            OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()
+        ) {
             return true;
         }
         return false;
