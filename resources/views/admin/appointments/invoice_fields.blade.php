@@ -56,6 +56,7 @@
                     {{ csrf_field() }}
                     <thead>
                     <tr>
+                    <th> </th>
                         <th> Name</th>
                         <th> Price</th>
                         <th> Discount Name</th>
