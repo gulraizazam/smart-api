@@ -73,7 +73,7 @@ class Discounts extends BaseModal
     public static function createConfigurableDiscount($data)
     {
        
-     
+        
         $discount = Discounts::Create([
             'slug' =>$data['slug'],
             'name' =>$data['name'],

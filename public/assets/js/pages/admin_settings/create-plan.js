@@ -2052,7 +2052,25 @@ function deletePlanRow(id, type = '') {
         }
     });
 }
+function deleteConfPlanRow(id, type = '') {
 
+    hideMessages();
+    swal.fire({
+        title: 'Are you sure you want to delete?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+        if (result.value) {
+            deleteConfPlan(id, type);
+        }
+    });
+}
 function deletePlan(id, type) {
 
     var package_total = $('#' + type + 'package_total_1').val();
@@ -2060,6 +2078,55 @@ function deletePlan(id, type) {
     $.ajax({
         type: 'post',
         url: route('admin.packages.deletepackages_service'),
+        data: {
+            '_token': $('input[name=_token]').val(),
+            'id': id,
+            'package_total': package_total
+        },
+        success: function (resposne) {
+   
+            if (resposne.status) {
+
+                $('.HR_' + resposne.data.id).remove();
+                if (resposne?.data?.total > 1) {
+                    $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
+                } else {
+                    $("#" + type + "package_total_1").val(0);
+                }
+                if (type == 'edit_') {
+                    edit_keyfunction_grandtotal();
+                } else {
+                    keyfunction_grandtotal();
+                }
+
+
+                var rows = $('#plan_services tbody tr.HR_' + $('#random_id_1').val()).length;
+                if (rows <= 1) {
+                    $("#add_plan_location_id").prop("disabled", false);
+                    $("#edit_plan_location_id").prop("disabled", false);
+                }
+
+            } else {
+               
+                if(resposne.data.del==1){
+                    
+                    $('#edit_consume' ).show();
+                }else{
+                    $('#' + type + 'wrongMessage').show();
+                }
+               
+            }
+        }
+    });
+
+}
+function deleteConfPlan(id, type) {
+
+    var package_total = $('#' + type + 'package_total_1').val();
+
+    $.ajax({
+        type: 'post',
+        url: route('admin.packages.deleteconfpackages_service'),
         data: {
             '_token': $('input[name=_token]').val(),
             'id': id,
@@ -2192,12 +2259,12 @@ jQuery(document).ready(function () {
                             total_amount = parseInt(resposne.data.myarray[0].grand_total);
                             jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
                                
-                               console.log('single_record_detail',single_record_detail);
+                             
                                 var del_icon;
                                 //if(single_record_detail.net_amount > 0){
                                     del_icon =  "<td>" +
                                     "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
-                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
+                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deleteConfPlanRow(" +single_record_detail.record.base_service_id + ")'>" + trashBtn() + "</button>" +
                                     "</td>" ;
                                 // }else{
                                 //     del_icon="<td></td>";
