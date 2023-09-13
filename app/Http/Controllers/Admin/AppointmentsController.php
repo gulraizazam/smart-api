@@ -122,6 +122,7 @@ class AppointmentsController extends Controller
      */
     public function datatable(Request $request)
     {
+     
         $listing_setting = Settings::where([
             'account_id' => Auth::User()->account_id,
             'slug' => 'sys-list-mode',
@@ -192,6 +193,7 @@ class AppointmentsController extends Controller
      */
     private function getElasticListing(Request $request)
     {
+       
         $where = [];
         $filter = [];
         $where[] = [
@@ -728,6 +730,7 @@ class AppointmentsController extends Controller
          */
         $filename = 'appointments';
         $filters = getFilters($request->all());
+        dd($filters);
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
