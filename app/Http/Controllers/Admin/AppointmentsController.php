@@ -731,16 +731,16 @@ class AppointmentsController extends Controller
         $filename = 'appointments';
         $filters = getFilters($request->all());
        
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
+        // if (hasFilter($filters, 'created_at')) {
+        //     $date_range = explode(' - ', $filters['created_at']);
+        //     $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+        //     $end_date_string = new DateTime($date_range[1]);
+        //     $end_date_string->setTime(23, 59, 0);
+        //     $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        // } else {
+        //     $start_date_time = null;
+        //     $end_date_time = null;
+        // }
         if ($request->has('sort')) {
             [$orderBy, $order] = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
@@ -822,10 +822,13 @@ class AppointmentsController extends Controller
             $where[] = [['appointments.consultancy_type' => $filters['consultancy_type']]];
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
-        if (hasFilter($filters, 'created_at')) {
-            $where[] = ['appointments.created_at', '>=', $start_date_time];
-            $where[] = ['appointments.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
+        
+        if (hasFilter($filters, 'created_from')) {
+            
+            $where[] = ['appointments.created_at', '>=', $filters['created_from'].'00:00:00'];
+            $where[] = ['appointments.created_at', '<=', $filters['created_to'].'23:59:00'];
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
         if (hasFilter($filters, 'phone')) {
             $phone = substr($filters['phone'], 1);
