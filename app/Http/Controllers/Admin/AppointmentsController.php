@@ -122,7 +122,6 @@ class AppointmentsController extends Controller
      */
     public function datatable(Request $request)
     {
-     
         $listing_setting = Settings::where([
             'account_id' => Auth::User()->account_id,
             'slug' => 'sys-list-mode',
@@ -193,7 +192,6 @@ class AppointmentsController extends Controller
      */
     private function getElasticListing(Request $request)
     {
-       
         $where = [];
         $filter = [];
         $where[] = [
@@ -730,17 +728,16 @@ class AppointmentsController extends Controller
          */
         $filename = 'appointments';
         $filters = getFilters($request->all());
-       
-        // if (hasFilter($filters, 'created_at')) {
-        //     $date_range = explode(' - ', $filters['created_at']);
-        //     $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-        //     $end_date_string = new DateTime($date_range[1]);
-        //     $end_date_string->setTime(23, 59, 0);
-        //     $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-        // } else {
-        //     $start_date_time = null;
-        //     $end_date_time = null;
-        // }
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
         if ($request->has('sort')) {
             [$orderBy, $order] = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
             Filters::put(Auth::User()->id, 'appointments', 'order_by', $orderBy);
@@ -822,13 +819,10 @@ class AppointmentsController extends Controller
             $where[] = [['appointments.consultancy_type' => $filters['consultancy_type']]];
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
-        
-        if (hasFilter($filters, 'created_from')) {
-            
-            $where[] = ['appointments.created_at', '>=', $filters['created_from'].' 00:00:00'];
-            $where[] = ['appointments.created_at', '<=', $filters['created_to'].' 23:59:00'];
-            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
-            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
+        if (hasFilter($filters, 'created_at')) {
+            $where[] = ['appointments.created_at', '>=', $start_date_time];
+            $where[] = ['appointments.created_at', '<=', $end_date_time];
+            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
         }
         if (hasFilter($filters, 'phone')) {
             $phone = substr($filters['phone'], 1);
@@ -903,7 +897,6 @@ class AppointmentsController extends Controller
         [$i_display_length, $i_display_start, $pages, $page] = getPaginationElement($request, $i_total_records);
         $records = [];
         $records['data'] = [];
-      
         if (Gate::allows('appointments_consultancy')) {
             $result_query = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id');
@@ -1645,6 +1638,7 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
+        
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1768,20 +1762,8 @@ class AppointmentsController extends Controller
                     $lead_service->update(['status' => 1]);
                 }
             } else {
-                $lead = Leads::findOrFail($request->lead_id);
-                /*
-                 * If appointment is for the first time then
-                 * update user information, otherwise not
-                 */
-                // if($request->lead_id){
-                //     $lId = (int)$request->lead_id;
-                //     $patient = Patients::where(['id' => $lId])->first();
-                   
-                // }else{
+                $lead = Leads::whereId($request->lead_id)->first();
                     $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
-                   
-                //}
-
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
@@ -3868,6 +3850,7 @@ class AppointmentsController extends Controller
             ])
             ->select('bundles.id')
             ->get();
+            
         foreach ($bundleinfo as $bundleinfo) {
             $bundleid[] = $bundleinfo->id;
         }
@@ -3879,18 +3862,24 @@ class AppointmentsController extends Controller
                 'packageservices' => [],
             ]);
         }
-        $packagebundles = PackageBundles::leftjoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
+        $packagebundles = PackageBundles::leftJoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
             ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+            
             ->where('package_bundles.package_id', '=', $package->id)
             ->whereIn('package_bundles.bundle_id', $bundleid)
             ->select('package_bundles.*', 'discounts.name as discountname', 'bundles.name as bundlename')
-            ->get();
+           
+            ->get(); 
+           
+            
         $packageservices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
             ->where([
                 ['package_services.package_id', '=', $package->id],
                 ['package_services.service_id', '=', $appointmentinfo->service_id],
+                
             ])
             ->select('package_services.*', 'services.name as servicename')
+            
             ->get();
 
         return response()->json([
