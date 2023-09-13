@@ -7,5 +7,6 @@ use Illuminate\Database\Eloquent\Model;
 
 class GetDiscountService extends Model
 {
+    protected $guarded=[];
     use HasFactory;
 }
