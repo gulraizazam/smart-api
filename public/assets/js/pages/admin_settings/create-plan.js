@@ -672,7 +672,7 @@ function setEditData(response) {
                 //service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
                   service_options +=  '<td>'+packagebundle.tax_price+'</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
-                service_options += '<td id="cc-'+packagebundle.id+'"></td>';
+                // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
                 service_options += del_icon;
                 service_options += '</tr>';
 
@@ -686,9 +686,9 @@ function setEditData(response) {
                         } else {
                             consume = 'Yes';
                         }
-                        setTimeout(() => {
-                            $("#cc-"+packagebundle.id).text(consume);    
-                        }, 500);
+                        // setTimeout(() => {
+                        //     $("#cc-"+packagebundle.id).text(consume);    
+                        // }, 500);
                         service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
                         service_options += '<td></td>';
                         service_options += '<td>' + packageservice.service.name + '</td>';
@@ -2279,7 +2279,7 @@ jQuery(document).ready(function () {
                                     "<td>" +single_record_detail.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                                     "<td>" +single_record_detail.record.tax_price + "</td>" +
                                     "<td>" +single_record_detail.record.tax_including_price.toLocaleString() + "</td>" +
-                                    "<td id='cc-"+single_record_detail.record.id+"'></td>" +
+                                    // "<td id='cc-"+single_record_detail.record.id+"'></td>" +
                                     del_icon +
                                     
                                     "</tr>");
@@ -2290,9 +2290,9 @@ jQuery(document).ready(function () {
                                         } else {
                                             consume = 'Yes';
                                         }
-                                        setTimeout(() => {
-                                            $("#cc-"+record_detail.package_bundle_id).text(consume);
-                                        }, 400);
+                                        // setTimeout(() => {
+                                        //     $("#cc-"+record_detail.package_bundle_id).text(consume);
+                                        // }, 400);
                                         $('#plan_services').append(
                                             "<tr class='inner_records_hr HR_" + single_record_detail.record.id 
                                             + " " + single_record_detail.record.id + "'><td></td><td>" 
