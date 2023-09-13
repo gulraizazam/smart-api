@@ -825,8 +825,8 @@ class AppointmentsController extends Controller
         
         if (hasFilter($filters, 'created_from')) {
             
-            $where[] = ['appointments.created_at', '>=', $filters['created_from'].'00:00:00'];
-            $where[] = ['appointments.created_at', '<=', $filters['created_to'].'23:59:00'];
+            $where[] = ['appointments.created_at', '>=', $filters['created_from'].' 00:00:00'];
+            $where[] = ['appointments.created_at', '<=', $filters['created_to'].' 23:59:00'];
             Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
             Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
@@ -903,6 +903,7 @@ class AppointmentsController extends Controller
         [$i_display_length, $i_display_start, $pages, $page] = getPaginationElement($request, $i_total_records);
         $records = [];
         $records['data'] = [];
+      
         if (Gate::allows('appointments_consultancy')) {
             $result_query = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id');
