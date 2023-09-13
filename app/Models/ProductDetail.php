@@ -80,15 +80,13 @@ class ProductDetail extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id, $product_id)
     {
-        $old_data = (self::find($id))->toArray();
-
         $data = $request->all();
         $data['account_id'] = $account_id;
 
         $record = self::where([
             'id' => $id,
             'account_id' => $account_id,
-        ])->first();
+        ])->orderBy('id', 'desc')->first();
 
         if (!$record) {
             return null;
@@ -115,7 +113,7 @@ class ProductDetail extends BaseModal
         return self::where([
             ['product_id', '=', $id],
             ['account_id', '=', Auth::user()->account_id],
-        ])->first();
+        ])->orderBy('id', 'desc')->first();
     }
 
     public static function createRecordTransferProduct($data, $account_id, $product_id)

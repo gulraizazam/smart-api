@@ -12,6 +12,7 @@ use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
+use App\Helpers\GeneralFunctions;
 use App\Models\TransferProduct;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
@@ -215,8 +216,10 @@ class ProductsController extends Controller
             }
             $product = Product::getData($id);
             $product_detail = ProductDetail::getProductDetailData($product->id);
+
             $data['product'] = $product;
             $data['product_detail'] = $product_detail;
+            $data['quantity'] = GeneralFunctions::stockCheck($id);
             if (!$product) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }

@@ -14,6 +14,7 @@ use App\Models\Warehouse;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
+use App\Helpers\GeneralFunctions;
 use App\Models\TransferProduct;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -268,6 +269,9 @@ class OrdersController extends Controller
         try {
             if (!Gate::allows('order_create')) {
                 return abort(401);
+            }dd($request->all());
+            if(GeneralFunctions::stockCheck(1, Auth::User()->account_id)){
+
             }
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
