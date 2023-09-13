@@ -1042,7 +1042,7 @@ function displayData(response) {
                 service_options += '</td>';
 
                 service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
-                service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
+              
                 service_options += '<td>' + packagebundle.tax_price + '</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
 
@@ -1063,7 +1063,7 @@ function displayData(response) {
                         service_options += '<td></td>';
                         service_options += '<td>' + packageservice.service.name + '</td>';
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
-                        service_options += '<td>Tax % : ' + packageservice.tax_percenatage + '</td>';
+                       
                         service_options += '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>';
                         service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
                         service_options += '</tr>';
