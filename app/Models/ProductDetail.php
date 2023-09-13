@@ -86,7 +86,7 @@ class ProductDetail extends BaseModal
         $record = self::where([
             'id' => $id,
             'account_id' => $account_id,
-        ])->orderBy('id', 'desc')->first();
+        ])->first();
 
         if (!$record) {
             return null;
