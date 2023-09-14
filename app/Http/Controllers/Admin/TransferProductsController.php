@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
+use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -72,7 +73,6 @@ class TransferProductsController extends Controller
                                 Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
                                 Stock::where(['transfer_id' => $transfer_product->id])->delete();
                                 $transfer_product->delete();
-
                                 $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->get();
                                 foreach ($product_detail as $data) {
                                     $data->delete();
@@ -99,7 +99,6 @@ class TransferProductsController extends Controller
             $transfer_products = TransferProduct::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
-
 
             if ($transfer_products) {
                 $transfer_products = collect($transfer_products)->map(function ($transfer_product) {
@@ -174,6 +173,10 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            $stock_check = GeneralFunctions::stockCheck($request->product_id); //dd($stock_check['status']);
+            if (!$stock_check['stock_available']) {
+                return collect(['status' => false, 'message' => 'This product stock not available.']);
+            }
             $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
             if ($transfer_product['record']) {
                 $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['id']);
@@ -215,6 +218,7 @@ class TransferProductsController extends Controller
             }
             $data['product'] = TransferProduct::findOrFail($id);
             $data['product_details'] = ProductDetail::findOrFail($data['product']->product_detail_id);
+            $data['products'] = Product::getAllRecordsDictionary(Auth::user()->account_id);
             if (!$data['product']) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
