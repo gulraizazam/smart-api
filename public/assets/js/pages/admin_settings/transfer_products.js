@@ -115,6 +115,7 @@ function setEditData(response) {
 
     let location_from_option = transferProduct.from_location_id != null ? 'in_branch' : 'in_warehouse';
     let location_to_option = transferProduct.to_location_id != null ? 'in_branch' : 'in_warehouse';
+    $("#edit_product_id").val(transferProduct.product_id);
 
     $("#edit_product_type_option_from").val(location_from_option).trigger('change');
     $("#edit_product_type_option_to").val(location_to_option).trigger('change');
@@ -267,6 +268,16 @@ function productSelect(product_id, id = null) {
             }
         }
     });
+}
+
+function formRest() {
+    $("#add_product_type_option_from").val("");
+    $("#add_product_type_option_to").val("");
+    $("#add_transfer_product").val("").trigger("change");
+    $('.select_centre_from').hide();
+    $('.select_warehouse_from').hide();
+    $('.select_centre_to').hide();
+    $('.select_warehouse_to').hide();
 }
 
 $(document).ready(function () {
