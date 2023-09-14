@@ -314,7 +314,7 @@ class LocationsController extends Controller
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        return $validator = \Validator::make($request->all(), [
             'name' => 'required',
             'fdo_name' => 'required',
             'fdo_phone' => 'required',
