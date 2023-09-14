@@ -35,7 +35,10 @@ class ProductDetail extends BaseModal
             ->useLogName(self::$logName)
             ->logOnly(self::$logAttributes)
             ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName])
-            ->dontSubmitEmptyLogs();
+            ->dontSubmitEmptyLogs()
+            ->logEvent('my-custom-event', [
+                'custom_property' => 'custom_value',
+            ]);
     }
 
 
@@ -68,6 +71,10 @@ class ProductDetail extends BaseModal
 
         $data['product_detail_id'] = $record->id;
         Stock::create($data);
+
+        $record->logEvent('my-custom-event', [
+            'custom_property' => 'custom_value',
+        ]);
 
         return $record;
     }
