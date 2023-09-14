@@ -67,7 +67,6 @@ class ServiceWidget
         return $Services;              
                    
     }
-    
     /*
      * create Service Dropdown with Heiracrchy for consultancy
      * @param: $request (int) $account_id
