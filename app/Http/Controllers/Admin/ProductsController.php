@@ -439,8 +439,8 @@ class ProductsController extends Controller
             if (!Gate::allows('product_log')) {
                 return abort(401);
             }
-            $products_logs = Activity::orderBy('id', 'DESC')->get();
 
+            $products_logs = Activity::where(['subject_id' => $id])->orWhere(['properties->attributes->product_id' => $id])->orderBy('id', 'DESC')->get();
 
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
@@ -449,41 +449,29 @@ class ProductsController extends Controller
             $products = Product::getAllRecordsDictionary(Auth::user()->account_id);
 
             $products_logs = collect($products_logs)->map(function ($log) use ($id, $users, $brands, $centres, $warehouse, $products) {
-                $properties = json_decode($log->properties)->attributes;
-                if ($log->subject_id == $id || $properties->product_id == $id) {
-                    switch ($log->log_name) {
-                        case "product":
-                            $log->product_name = $properties->name;
-                            $log->brand_id = (array_key_exists($properties->brand_id, $brands)) ? $brands[$properties->brand_id]->name : 'N/A';
-                            $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
-                            $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
-                            $log->created_by = (array_key_exists($properties->created_by, $users)) ? $users[$properties->created_by]->name : 'N/A';
-                            $log->updated_by = (array_key_exists($properties->updated_by, $users)) ? $users[$properties->updated_by]->name : 'N/A';
-                            break;
-                        case "transfer_product":
-                            $log->product_name = (array_key_exists($properties->product_id, $products)) ? $products[$properties->product_id]->name : 'N/A';
-                            $log->location_from = (array_key_exists($properties->from_location_id, $centres)) ? $centres[$properties->from_location_id]->name : 'N/A';
-                            $log->warehouse_from = (array_key_exists($properties->from_warehouse_id, $warehouse)) ? $warehouse[$properties->from_warehouse_id]->name : 'N/A';
-
-                            $log->location_to = (array_key_exists($properties->to_location_id, $centres)) ? $centres[$properties->to_location_id]->name : 'N/A';
-                            $log->warehouse_to = (array_key_exists($properties->to_warehouse_id, $warehouse)) ? $warehouse[$properties->to_warehouse_id]->name : 'N/A';
-
-                            $log->created_by = (array_key_exists($properties->created_by, $users)) ? $users[$properties->created_by]->name : 'N/A';
-                            $log->updated_by = (array_key_exists($properties->updated_by, $users)) ? $users[$properties->updated_by]->name : 'N/A';
-                            break;
-                        case "product_detail":
-                            $log->product_name = $properties->name;
-                            $log->location = (array_key_exists($properties->location_id, $centres)) ? $centres[$properties->location_id]->name : 'N/A';
-                            $log->warehouse = (array_key_exists($properties->warehouse_id, $warehouse)) ? $warehouse[$properties->warehouse_id]->name : 'N/A';
-                            break;
-                        default:
-                            return null;
-                    }
-                    return $log;
-                } else {
-                    return null;
+                $properties = null;
+                if (isset($log->properties['attributes'])) {
+                    $properties = $log->properties['attributes'];
                 }
-            })->filter();
+
+                $brand_id = isset($properties['brand_id']) ? $properties['brand_id'] : null;
+                $location_id = isset($properties['location_id']) ? $properties['location_id'] : null;
+                $warehouse_id = isset($properties['warehouse_id']) ? $properties['warehouse_id'] : null;
+                $created_by = isset($properties['created_by']) ? $properties['created_by'] : null;
+                $updated_by = isset($properties['updated_by']) ? $properties['updated_by'] : null;
+
+                $log->product_id = $id;
+                $log->product_name = isset($properties['name']) ? $properties['name'] : null;;
+                //dd($properties);
+
+                $log->brand_id = (array_key_exists($brand_id, $brands)) ? $brands[$brand_id]->name : 'N/A';
+                $log->location = (array_key_exists($location_id, $centres)) ? $centres[$location_id]->name : 'N/A';
+                $log->warehouse = (array_key_exists($warehouse_id, $warehouse)) ? $warehouse[$warehouse_id]->name : 'N/A';
+                $log->created_by = (array_key_exists($created_by, $users)) ? $users[$created_by]->name : 'N/A';
+                $log->updated_by = (array_key_exists($updated_by, $users)) ? $users[$updated_by]->name : 'N/A';
+
+                return $log;
+            });
             return view('admin.products.logs', compact('products_logs'));
         } catch (\Exception $e) {
             dd($e->getMessage());
