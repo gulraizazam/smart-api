@@ -673,6 +673,7 @@ function setEditData(response) {
                   service_options +=  '<td>'+packagebundle.tax_price+'</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
                 // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
+                // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
                 service_options += del_icon;
                 service_options += '</tr>';
 
