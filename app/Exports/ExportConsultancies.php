@@ -172,7 +172,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             })
             ->orderBy('scheduled_time','asc')
             ->get();
-            
+        
            
         return $results;
     }
@@ -216,7 +216,8 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
         }
 
         return [
-            GeneralFunctions::patientSearchStringAdd($appointment->id),
+            //GeneralFunctions::patientSearchStringAdd($appointment->id),
+            'C-'.$appointment->patient_id,
             $appointment->name ?? 'N/A',
             $phone,
             Carbon::parse($appointment->scheduled_date)->format('F j,Y').' '.Carbon::parse($appointment->scheduled_time)->format('h:i A') ?? 'N/A',
