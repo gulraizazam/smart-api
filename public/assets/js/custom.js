@@ -1184,6 +1184,7 @@ function get_query() {
     return result;
 }
 function patientSearch(search_id = 'patient_id', flag = 1) {
+    let debounceTimer;
     $("." + search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
@@ -1193,7 +1194,8 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
         }
         var that = $(this);
         if ($(this).val() != '') {
-            setTimeout(function () {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
                 $.ajax({
                     type: "GET",
                     url: route('admin.users.getpatient.id'),
@@ -1214,7 +1216,7 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                         }
                     }
                 });
-            }, 1000);
+            }, 500);
         } else {
             $(".suggesstion-box").hide();
         }
@@ -1283,6 +1285,7 @@ function selectUserRefund(name, user_id, search_id, flag = 1) {
     // }
 }
 function leadSearch(search_id = 'lead_search_id', flag = 1) {
+    let debounceTimer;
     $("." + search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
@@ -1290,37 +1293,41 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
             $(".suggesstion-box").hide();
             return false;
         }
+        that = $(this).val();
         if ($(this).val() != '') {
             let form_type = $(this).parents("form").find('.form_type').val();
-            $.ajax({
-                type: "GET",
-                url: route('admin.leads.getlead.id'),
-                dataType: 'json',
-                delay: 250,
-                data: { search: $(this).val() },
-                success: function (response) {
-                    console.log('res', response);
-                    let html = '';
-                    let leads = response.data.leads;
-                    let haveObjleads = Object.keys(leads).length;
-                    if (leads.length) {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {                
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.leads.getlead.id'),
+                    dataType: 'json',
+                    delay: 250,
+                    data: { search: that },
+                    success: function (response) {
+                        console.log('res', response);
+                        let html = '';
+                        let leads = response.data.leads;
+                        let haveObjleads = Object.keys(leads).length;
+                        if (leads.length) {
 
-                        leads.forEach(function (lead) {
-                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
-                        });
-                        $(".suggestion-list").html(html);
-                        $(".suggesstion-box").show();
-                    } else if (haveObjleads) {
-                        for (const [key, lead] of Object.entries(leads)) {
-                            html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
+                            leads.forEach(function (lead) {
+                                html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                        } else if (haveObjleads) {
+                            for (const [key, lead] of Object.entries(leads)) {
+                                html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
+                            }
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                        } else {
+                            $(".suggesstion-box").hide();
                         }
-                        $(".suggestion-list").html(html);
-                        $(".suggesstion-box").show();
-                    } else {
-                        $(".suggesstion-box").hide();
                     }
-                }
-            });
+                });
+            },500)
         } else {
             $(".suggesstion-box").hide();
         }
