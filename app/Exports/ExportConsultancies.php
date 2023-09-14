@@ -6,6 +6,7 @@ use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -28,6 +29,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
 
     public function collection()
     {
+        DB::enableQueryLog();
         $where = [];
         if ($this->request->filter_date_from) {
             $where[] = [
@@ -158,8 +160,9 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
                 $phone,
             ];
         }
-        
+       
         $results = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')
+        ->select('appointments.*','users.name','users.phone')
             ->where(['users.user_type_id' => config('constants.patient_id')])
             ->whereIn('appointments.city_id', ACL::getUserCities())
             ->whereIn('appointments.location_id', ACL::getUserCentres())
@@ -169,6 +172,7 @@ class ExportConsultancies implements FromCollection, WithHeadings, WithMapping, 
             })
             ->orderBy('scheduled_time','asc')
             ->get();
+            
            
         return $results;
     }
