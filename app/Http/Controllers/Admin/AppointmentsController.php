@@ -4141,7 +4141,7 @@ class AppointmentsController extends Controller
                 $data_detail['discount_type'] = $packages->discount_type;
                 $data_detail['discount_price'] = $packages->discount_price;
                 $data_detail['discount_id'] = $packages->discount_id;
-                $data_detail['discount_name'] = $discount_info->name;
+                $data_detail['discount_name'] = $discount_info->name ?? '';
             }
             $data_detail['package_id'] = $request->package_id;
         }
