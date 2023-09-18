@@ -243,7 +243,7 @@ class BundlesController extends Controller
             if (! $bundle) {
                 return ApiHelper::apiResponse($this->success, 'No record found!', false);
             }
-            $services = GeneralFunctions::ServicesTreeList();
+            $services = Services::getServices();
             $relationships = BundleHasServices::where([
                 'bundle_id' => $bundle->id,
             ])->select('service_id')->get();
@@ -255,9 +255,13 @@ class BundlesController extends Controller
                 'bundle_id' => $bundle->id,
                 'get_service' =>1,
             ])->get();
-           
+            $bundle_services = collect(new Services());
+            if ($relationships->count()) {
+                $bundle_services = Services::whereIn('id', $relationships)->where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
+            }
+            $tax_treatment_types = TaxTreatmentType::get();
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, ['bundle' => $bundle, 'services' => $services, 'bundle_services' => $relationships, 'relationships' => $relationships,'base_service'=>$base_services,'get_services'=>$get_services]);
+            return ApiHelper::apiResponse($this->success, 'Success', true, ['bundle' => $bundle, 'services' => $services, 'bundle_services' => $bundle_services, 'relationships' => $relationships,'base_service'=>$base_services,'get_services'=>$get_services,'tax_treatment_types' => $tax_treatment_types]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
