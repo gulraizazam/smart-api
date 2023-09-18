@@ -819,7 +819,7 @@ class Bundles extends BaseModal
         if (! $record) {
             return null;
         }
-
+        $data['base_service_session']= $request->edit_sessions_buy;
         $record->update($data);
         $baseService = Services::findOrFail($data['edit_base_service']);
         BundleHasServices::where('bundle_id',$record->id)->delete();
