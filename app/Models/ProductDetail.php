@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
-use Auth;
+
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ProductDetail extends BaseModal
@@ -32,9 +34,6 @@ class ProductDetail extends BaseModal
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName(self::$logName)
-            ->logOnly(self::$logAttributes)
-            ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName])
             ->dontSubmitEmptyLogs();
     }
 
@@ -53,6 +52,7 @@ class ProductDetail extends BaseModal
     public static function createRecord($request, $account_id, $product_id)
     {
         $data = $request->all();
+
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['product_id'] = $product_id;
@@ -69,6 +69,9 @@ class ProductDetail extends BaseModal
         $data['product_detail_id'] = $record->id;
         Stock::create($data);
 
+        $subjectModel = self::find($record->id);
+        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
+
         return $record;
     }
 
@@ -80,8 +83,6 @@ class ProductDetail extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id, $product_id)
     {
-        $old_data = (self::find($id))->toArray();
-
         $data = $request->all();
         $data['account_id'] = $account_id;
 
@@ -98,8 +99,10 @@ class ProductDetail extends BaseModal
             'account_id' => $account_id,
             'quantity' => $data['quantity']
         ]);
-
         $record->update($data);
+
+        $subjectModel = self::find($id);
+        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
         return $record;
     }
 
@@ -115,7 +118,7 @@ class ProductDetail extends BaseModal
         return self::where([
             ['product_id', '=', $id],
             ['account_id', '=', Auth::user()->account_id],
-        ])->first();
+        ])->orderBy('id', 'desc')->first();
     }
 
     public static function createRecordTransferProduct($data, $account_id, $product_id)
@@ -140,6 +143,8 @@ class ProductDetail extends BaseModal
             'quantity' => $data['quantity'],
         ]);
 
+        $subjectModel = self::find($record->id);
+        activityLog(self::$logName, $subjectModel, $data['type'], $record, $data['message']);
         return $record;
     }
 
