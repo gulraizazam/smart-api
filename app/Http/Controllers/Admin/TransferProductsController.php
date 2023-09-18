@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Spatie\Activitylog\Facades\LogBatch;
 use Illuminate\Support\Facades\Validator;
 
 class TransferProductsController extends Controller
@@ -69,7 +70,7 @@ class TransferProductsController extends Controller
                 if ($transfer_products) {
                     foreach ($transfer_products as $transfer_product) {
                         if (!TransferProduct::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
-                            DB::transaction(function () use($transfer_product) {
+                            DB::transaction(function () use ($transfer_product) {
                                 Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
                                 Stock::where(['transfer_id' => $transfer_product->id])->delete();
                                 $transfer_product->delete();
@@ -177,11 +178,16 @@ class TransferProductsController extends Controller
             if (!$stock_check['stock_available']) {
                 return collect(['status' => false, 'message' => 'This product stock not available.']);
             }
+            LogBatch::startBatch();
+            $request['type'] = 'product_transfer_create';
+            $request['message'] = 'Transfer Product create';
+
             $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
             if ($transfer_product['record']) {
                 $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['id']);
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                    LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
@@ -244,11 +250,16 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            LogBatch::startBatch();
+            $request['type'] = 'product_transfer_update';
+            $request['message'] = 'Transfer Product update';
+
             $transfer_product = TransferProduct::updateRecord($id, $request, Auth::User()->account_id);
             $product_detail = ProductDetail::updateRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['product_detail_id']);
             if ($transfer_product) {
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                    LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
