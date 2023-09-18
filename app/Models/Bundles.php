@@ -838,7 +838,7 @@ class Bundles extends BaseModal
             BundleServicesPriceHistory::createRecord([
                 'bundle_id' => $record->id,
                 'bundle_price' => $record->price,
-                'service_id' =>$data['base_service'],
+                'service_id' =>$data['edit_base_service'],
                 //'service_price' => $data['service_price'][$key],
                 'service_price' =>$baseService->price,
                 'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
