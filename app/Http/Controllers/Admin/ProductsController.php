@@ -12,14 +12,17 @@ use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
-use App\Helpers\GeneralFunctions;
 use App\Models\TransferProduct;
+use App\Helpers\GeneralFunctions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Models\Activity;
+use Spatie\Activitylog\Facades\LogBatch;
 use Illuminate\Support\Facades\Validator;
+use PhpParser\Node\Stmt\Break_;
 
 class ProductsController extends Controller
 {
@@ -176,9 +179,14 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            LogBatch::startBatch();
+            $request['type'] = 'product_create';
+            $request['message'] = 'Product create';
+
             $product = Product::createRecord($request, Auth::User()->account_id);
             if ($product) {
                 if (ProductDetail::createRecord($request, Auth::User()->account_id, $product->id)) {
+                    LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
@@ -245,10 +253,15 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            LogBatch::startBatch();
+            $request['type'] = 'product_update';
+            $request['message'] = 'Product update';
+
             $product = Product::updateRecord($id, $request, Auth::User()->account_id);
             if ($product) {
                 if (ProductDetail::updateRecord($detail, $request, Auth::User()->account_id, $id)) {
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    LogBatch::endBatch();
+                    return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
                 }
             }
 
@@ -269,7 +282,16 @@ class ProductsController extends Controller
             if (!Gate::allows('product_sale_price')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
+            $product = Product::getData($id);;
+            if ($product->product_type == 'in_house_use') {
+                return ApiHelper::apiResponse($this->success, 'This product for in house use. so do not add sale price!', false);
+            }
+            LogBatch::startBatch();
+            $request['type'] = 'product_sale_price_update';
+            $request['message'] = 'Product sale price update';
+
             $product = Product::updateRecord($id, $request, Auth::User()->account_id);
+            LogBatch::endBatch();
             if ($product) {
                 return ApiHelper::apiResponse($this->success, 'Record has been update successfully.');
             }
@@ -291,7 +313,12 @@ class ProductsController extends Controller
             if (!Gate::allows('product_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $response = Product::DeleteRecord($id);
+            LogBatch::startBatch();
+            $data['type'] = 'product_delete';
+            $data['message'] = 'Product delete';
+            $response = Product::DeleteRecord($id, $data);
+
+            LogBatch::endBatch();
 
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
@@ -312,7 +339,10 @@ class ProductsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Success', true, $product);
+
+
+                return ApiHelper::apiResponse($this->success, 'Success', true, $product);
+
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -329,7 +359,12 @@ class ProductsController extends Controller
             if (!Gate::allows('product_add_stock')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
+            LogBatch::startBatch();
+            $request['type'] = 'stock_add';
+            $request['message'] = 'Stock add';
+
             if (ProductDetail::createRecord($request, Auth::User()->account_id, $id)) {
+                LogBatch::endBatch();
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
 
@@ -418,11 +453,16 @@ class ProductsController extends Controller
             if (!Gate::allows('product_transfer')) {
                 return abort(401);
             }
+            LogBatch::startBatch();
+            $request['type'] = 'product_transfer_create';
+            $request['message'] = 'Product transfer';
+
             $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
             if ($transfer_product['record']) {
                 $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['id']);
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                    LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
@@ -439,8 +479,40 @@ class ProductsController extends Controller
             if (!Gate::allows('product_log')) {
                 return abort(401);
             }
+            $products_logs = Activity::where(['subject_id' => $id])
+                ->orWhere(['properties->attributes->product_id' => $id])
+                ->orWhere(['properties->attributes->child_product_id' => $id])
+                ->get()->toArray();
 
-            $products_logs = Activity::where(['subject_id' => $id])->orWhere(['properties->attributes->product_id' => $id])->orderBy('id', 'DESC')->get();
+            $ids = [];
+            $data = [];
+            $data2 = [];
+            $batch_uuid = [];
+
+            $productsCount = sizeof($products_logs);
+
+            for ($i = 0; $i < $productsCount; $i++) {
+                $foundInInnerLoop = false; // Flag to check if a match is found in the inner loop
+                for ($j = $i + 1; $j < $productsCount; $j++) {
+                    if (isset($products_logs[$i]['batch_uuid']) && isset($products_logs[$j]['batch_uuid'])) {
+                        if ($products_logs[$i]['batch_uuid'] == $products_logs[$j]['batch_uuid']) {
+                            if (!in_array($products_logs[$i]['id'], $ids) && !in_array($products_logs[$j]['id'], $ids)) {
+                                $data2[] = [$products_logs[$i], $products_logs[$j]];
+                                $ids[] = $products_logs[$i]['id'];
+                                $ids[] = $products_logs[$j]['id'];
+                                $batch_uuid[] = $products_logs[$i]['batch_uuid'];
+                            }
+                            $foundInInnerLoop = true; // Mark that a match is found in the inner loop
+                        }
+                    }
+                }
+
+                // If no match is found in the inner loop, include only the outer loop element
+                if (!$foundInInnerLoop && !in_array($products_logs[$i]['id'], $ids) && !in_array($products_logs[$i]['batch_uuid'], $batch_uuid)) {
+                    $data[] = $products_logs[$i];
+                    $ids[] = $products_logs[$i]['id'];
+                }
+            }
 
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
@@ -448,10 +520,42 @@ class ProductsController extends Controller
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
             $products = Product::getAllRecordsDictionary(Auth::user()->account_id);
 
-            $products_logs = collect($products_logs)->map(function ($log) use ($id, $users, $brands, $centres, $warehouse, $products) {
+            //dd($data, $data2, $ids);
+            $records = [];
+            $records2 = [];
+            foreach ($data as $key => $log) {
+                $data = [];
+                $data['log_name'] = $log['log_name'];
+                $data['event'] = $log['event'];
+                $data['subject_id'] = $log['subject_id'];
+                $data['causer_id'] = $log['causer_id'];
+                $data['batch_uuid'] = $log['batch_uuid'];
+                $data['properties']['attributes'] = $log['properties']['attributes'];
+                $data['created_at'] = $log['created_at'];
+                $data['updated_at'] = $log['updated_at'];
+                $records[] = $data;
+            }
+            foreach ($data2 as $key => $log) {
+                $data = [];
+                $data['log_name'] = $log[0]['log_name'];
+                $data['event'] = $log[0]['event'];
+                $data['subject_id'] = $log[0]['subject_id'];
+                $data['causer_id'] = $log[0]['causer_id'];
+                $data['batch_uuid'] = $log[0]['batch_uuid'];
+                $data['properties']['attributes'] = array_merge($log[0]['properties']['attributes'], $log[1]['properties']['attributes']);
+                unset($data['properties']['attributes']['id']);
+                $data['created_at'] = $log[0]['created_at'];
+                $data['updated_at'] = $log[0]['updated_at'];
+                $records2[] = $data;
+            }
+
+            //dd('records2', $records2, $records, array_merge($records, $records2));
+
+            $final_records = array_merge($records, $records2);
+            $records = collect($final_records)->map(function ($log) use ($id, $users, $brands, $centres, $warehouse, $products) {
                 $properties = null;
-                if (isset($log->properties['attributes'])) {
-                    $properties = $log->properties['attributes'];
+                if (isset($log['properties']['attributes'])) {
+                    $properties = $log['properties']['attributes'];
                 }
 
                 $brand_id = isset($properties['brand_id']) ? $properties['brand_id'] : null;
@@ -459,20 +563,33 @@ class ProductsController extends Controller
                 $warehouse_id = isset($properties['warehouse_id']) ? $properties['warehouse_id'] : null;
                 $created_by = isset($properties['created_by']) ? $properties['created_by'] : null;
                 $updated_by = isset($properties['updated_by']) ? $properties['updated_by'] : null;
+                $to_location_id = isset($properties['to_location_id']) ? $properties['to_location_id'] : null;
+                $to_warehouse_id = isset($properties['to_warehouse_id']) ? $properties['to_warehouse_id'] : null;
+                $from_location_id = isset($properties['from_location_id']) ? $properties['from_location_id'] : null;
+                $from_warehouse_id = isset($properties['from_warehouse_id']) ? $properties['from_warehouse_id'] : null;
+                $child_product_id = isset($properties['child_product_id']) ? $properties['child_product_id'] : null;
+                $product_name = isset($properties['name']) ? $properties['name'] : (isset($properties['product_id']) ? $properties['product_id'] : null);
+                $causer_id = (array_key_exists($log['causer_id'], $users)) ? $users[$log['causer_id']]->name : 'N/A';
 
-                $log->product_id = $id;
-                $log->product_name = isset($properties['name']) ? $properties['name'] : null;;
-                //dd($properties);
+                $log['product_id'] = $id;
+                $log['product_name'] = (array_key_exists($product_name, $products)) ? $products[$properties['product_id']]->name : $product_name;
 
-                $log->brand_id = (array_key_exists($brand_id, $brands)) ? $brands[$brand_id]->name : 'N/A';
-                $log->location = (array_key_exists($location_id, $centres)) ? $centres[$location_id]->name : 'N/A';
-                $log->warehouse = (array_key_exists($warehouse_id, $warehouse)) ? $warehouse[$warehouse_id]->name : 'N/A';
-                $log->created_by = (array_key_exists($created_by, $users)) ? $users[$created_by]->name : 'N/A';
-                $log->updated_by = (array_key_exists($updated_by, $users)) ? $users[$updated_by]->name : 'N/A';
+                $log['brand_id'] = (array_key_exists($brand_id, $brands)) ? $brands[$brand_id]->name : 'N/A';
+                $log['location'] = (array_key_exists($location_id, $centres)) ? $centres[$location_id]->name : 'N/A';
+                $log['warehouse'] = (array_key_exists($warehouse_id, $warehouse)) ? $warehouse[$warehouse_id]->name : 'N/A';
+                $log['to_location'] = (array_key_exists($to_location_id, $centres)) ? $centres[$to_location_id]->name : 'N/A';
+                $log['to_warehouse'] = (array_key_exists($to_warehouse_id, $warehouse)) ? $warehouse[$to_warehouse_id]->name : 'N/A';
+                $log['from_location'] = (array_key_exists($from_location_id, $centres)) ? $centres[$from_location_id]->name : 'N/A';
+                $log['from_warehouse'] = (array_key_exists($from_warehouse_id, $warehouse)) ? $warehouse[$from_warehouse_id]->name : 'N/A';
+                $log['child_product'] = (array_key_exists($child_product_id, $products)) ? $products[$child_product_id]->name : 'N/A';
+                $log['created_by'] = (array_key_exists($created_by, $users)) ? $users[$created_by]->name : $causer_id;
+                $log['updated_by'] = (array_key_exists($updated_by, $users)) ? $users[$updated_by]->name : $causer_id;
 
                 return $log;
-            });
-            return view('admin.products.logs', compact('products_logs'));
+            })->sortByDesc('created_at');
+
+            //dd($records);
+            return view('admin.products.logs', compact('records'));
         } catch (\Exception $e) {
             dd($e->getMessage());
             return ApiHelper::apiException($e);
