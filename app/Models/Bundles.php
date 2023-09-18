@@ -854,7 +854,7 @@ class Bundles extends BaseModal
                 'updated_by' => Auth::User()->id,
             ], 1);
             $package_total_price += $baseService->price;
-            $package_services_price =$baseService->price;
+            $package_services_price +=$baseService->price;
             
         }
         $new_services_price = $package_services_price;
