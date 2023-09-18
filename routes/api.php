@@ -291,7 +291,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('packages/savepackagesservice', [PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
 
     Route::post('packages/deletepackagesservice', [PackagesController::class, 'deletepackagesservice'])->name('packages.deletepackages_service');
-
+    Route::post('packages/deleteconfpackagesservice', [PackagesController::class, 'deleteconfpackagesservice'])->name('packages.deleteconfpackages_service');
     Route::get('packages/deletepackagesexclusive', [PackagesController::class, 'deletepackagesexclusive'])->name('packages.deletepackages_exclusive');
 
     Route::get('packages/getgrandtotal', [PackagesController::class, 'getgrandtotal'])->name('packages.getgrandtotal');

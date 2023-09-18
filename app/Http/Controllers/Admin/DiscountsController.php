@@ -2,22 +2,23 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
+use PHPUnit\Exception;
 use App\Helpers\Filters;
-use App\Helpers\NodesTree;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Helpers\Widgets\ServiceWidget;
-use App\Http\Controllers\Controller;
-use App\Models\BaseDiscountService;
-use App\Models\DiscountHasLocations;
 use App\Models\Discounts;
 use App\Models\Locations;
+use App\Helpers\NodesTree;
 use Illuminate\Http\Request;
+use App\HelperModule\ApiHelper;
+use App\Models\GetDiscountService;
+use App\Models\BaseDiscountService;
+use App\Http\Controllers\Controller;
+use App\Models\DiscountHasLocations;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
+use App\Helpers\Widgets\ServiceWidget;
+use Illuminate\Support\Facades\Config;
+use App\Helpers\Widgets\LocationsWidget;
 use Illuminate\Support\Facades\Validator;
-use PHPUnit\Exception;
 
 class DiscountsController extends Controller
 {
@@ -85,8 +86,12 @@ class DiscountsController extends Controller
         }
 
         try {
-
-            $validator = $this->verifyFields($request);
+            if($request->type =="Configurable"){
+                $validator = $this->verifyConfigurableFields($request);
+            }else{
+                $validator = $this->verifyFields($request);
+            }
+            
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
@@ -138,7 +143,26 @@ class DiscountsController extends Controller
             'end' => 'required',
         ]);
     }
-
+    protected function verifyConfigurableFields(Request $request)
+    {
+        $rules = [];
+        $sessions = $request->input('sessions');
+        foreach ($sessions as $key => $value) {
+            $rules["sessions.{$key}"] = 'required';
+            $rules["services_name.{$key}"] = 'required';
+            $rules["disc_type.{$key}"] = 'required';
+            
+        }
+        
+        return Validator::make($request->all(), [
+            'name' => 'required',
+            'type' => 'required',
+            'start' => 'required',
+            'end' => 'required',
+            'sessions_buy' => 'required',
+            'base_service' => 'required',
+        ] + $rules);
+    }
     /**
      * Display the discount in datatable form.
      *
@@ -504,7 +528,10 @@ class DiscountsController extends Controller
 
                     $discountServices = [];
                 }
+                /* Create Nodes with Parents */
+                $Services = ServiceWidget::generateServiceArrayDiscount($id, Auth::User()->account_id);
                 
+                $locations = Locations::getActiveSorted();
 
                 if ($discount) {
                     $Discount = $discount->toArray();
@@ -516,10 +543,14 @@ class DiscountsController extends Controller
                         $Discount['end'] = $discount->dateFormat($Discount['end'], 'Y-m-d');
                     }
                 }
-
+                $base_discount_services = BaseDiscountService::where(['discount_id' => $id])->get();
+                $get_discount_services = GetDiscountService::where(['discount_id' => $id])->get();
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'discount' => $Discount ?? $discount,
-                    'discount_services' => $discountServices,
+                    'locations' => $locations,
+                    'services' => $Services,
+                    'base_discount_services' => $base_discount_services,
+                    'get_discount_services' => $get_discount_services,
                 ]);
             }
         } catch (\Exception $e) {
@@ -535,6 +566,7 @@ class DiscountsController extends Controller
      */
     public function update(Request $request, $id)
     {
+       
         if (! Gate::allows('discounts_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -557,7 +589,12 @@ class DiscountsController extends Controller
         }
 
         if ($request->start <= $request->end) {
-
+            if($request->type =="Configurable"){
+                if(Discounts::updateConfigurableDiscount($data,$id)){
+                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                }
+               
+            }
             if (Discounts::updateDiscount($data, $id)) {
 
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
