@@ -212,9 +212,10 @@ function setEditData(response) {
     calculateServicesTotal();
 }
 function setConfEditData(response) {
-   console.log(response);
+   
     let bundle = response.data.bundle;
     let base_service_id = response.data.base_service[0].service_id;
+    console.log(base_service_id);
     let action = route('admin.bundles.update', {id: bundle.id});
     $("#modal_edit_conf_bundles_form").attr("action", action);
     $('#editput_input').html('<input type="hidden" name="_method" value="put">');
