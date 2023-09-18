@@ -35,7 +35,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Applicable on</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input class="treatment" type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'edit');">
+                                    <input  class="treatment" type="radio" value="Treatment" checked name="discount_type" onchange="discountType(this,'edit');">
                                     <span></span>
                                     Treatment
                                 </label>
@@ -64,7 +64,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Group</label>
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input type="radio" class="edit_group_slug default" value="default" checked name="slug">
+                                    <input type="radio" class="edit_group_slug default" value="default" checked name="slug" >
                                     <span></span>
                                     Fixed
                                 </label>
@@ -72,7 +72,7 @@
 
                             <div class="radio-inline tax-radios mb-3">
                                 <label class="radio">
-                                    <input type="radio" class="edit_group_slug custom" value="custom" name="slug">
+                                    <input type="radio" class="edit_group_slug custom" value="custom" name="slug" >
                                     <span></span>
                                     Custom
                                 </label>
@@ -85,17 +85,64 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
                             <input id="edit_name" class="form-control" type="text" name="name">
                         </div>
+                        <input type="hidden" name="type" id="disc_type">
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
-                            <select id="edit_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" onchange="SetFields()">
+                            <select disabled id="edit_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" onchange="SetFields()">
                                 <option value="">Select Amount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
                                 <option value="Configurable">Configurable</option>
                             </select>
                         </div>
-                       
+                        <div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3" id="buy_services_section" style="display:none">    
+                            <label class="fw-bold fs-6 pl-0 pr-4 pt-2">Buy</label>
+                            <select class="form-control form-control-solid mb-3" name="edit_sessions_buy" id="sessions_buy">
+                                <option value="">Select Session</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                            <label class="fw-bold fs-6 px-5 text-nowrap pt-2">Sessions of</label>
+                            <select class="form-control form-control-solid mb-3 select2" name="edit_base_service" id="edit_base_service">
+                                
+                            </select>
+                        </div>
+                        <div class="fv-row col-12 discount_type_wrap get_discount_type mt-3" id="get_services_section" style="display: none;">
+                        
+                            <div class="d-flex">
+                            <a class="btn p btn-danger px-3 mr-4 py-0  d-flex justify-content-center align-items-center remove_discount add_new_discount"><i class="la la-minus p-0 m-0"></i></a><label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
+                                <select class="form-control form-control-solid mb-0" name="edit_sessions[]">
+                                    <option value="">Select Session</option>
+                                    <option value="1">1</option>
+                                    <option value="2">2</option>
+                                    <option value="3">3</option>
+                                </select>
+                                <label class="fw-bold fs-6 px-5 text-nowrap pt-2 mb-0">Sessions of</label>
+                                <select class="form-control form-control-solid mb-0 " name="edit_services_name[]" id="edit_get_services">
+                                </select>
+                                <div class="d-flex align-items-center ml-5">
+                                    <div class="radio-inline tax-radios mb-0 mr-3">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug" value="complimentory" name="edit_disc_type[]">
+                                            <span class="mr-2"></span>
+                                            Complimentory
+                                        </label>
+                                    </div>
 
+                                    <div class="radio-inline tax-radios mb-0" id="edit_custom">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug percentage" value="custom" name="edit_disc_type[]">
+                                            <span class="mr-2"></span>
+                                            Percentage
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="tes_container">
+                            <!-- Existing sections and new sections will be added here -->
+                        </div>
                         <div class="fv-row col-md-12 mt-5" id="edit_amount_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
                             <input min="0" id="edit_amount" class="form-control" type="number" name="amount">

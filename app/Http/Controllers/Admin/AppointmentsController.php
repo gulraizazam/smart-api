@@ -3850,6 +3850,7 @@ class AppointmentsController extends Controller
             ])
             ->select('bundles.id')
             ->get();
+            
         foreach ($bundleinfo as $bundleinfo) {
             $bundleid[] = $bundleinfo->id;
         }
@@ -3861,18 +3862,24 @@ class AppointmentsController extends Controller
                 'packageservices' => [],
             ]);
         }
-        $packagebundles = PackageBundles::leftjoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
+        $packagebundles = PackageBundles::leftJoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
             ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+            
             ->where('package_bundles.package_id', '=', $package->id)
             ->whereIn('package_bundles.bundle_id', $bundleid)
             ->select('package_bundles.*', 'discounts.name as discountname', 'bundles.name as bundlename')
-            ->get();
+           
+            ->get(); 
+           
+            
         $packageservices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
             ->where([
                 ['package_services.package_id', '=', $package->id],
                 ['package_services.service_id', '=', $appointmentinfo->service_id],
+                
             ])
             ->select('package_services.*', 'services.name as servicename')
+            
             ->get();
 
         return response()->json([
