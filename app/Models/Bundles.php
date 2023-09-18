@@ -513,6 +513,7 @@ class Bundles extends BaseModal
     public static function createConfigurableRecord($request, $account_id)
     {
         $data = $request->all();
+       
 
         // Set Account ID
         $data['account_id'] = $account_id;
@@ -524,35 +525,30 @@ class Bundles extends BaseModal
             $data['apply_discount'] = 0;
         }
 
+      
+        $base_service_price = Services::whereId($data['base_service'])->first();
         if (is_array($data['services_name']) && count($data['services_name'])) {
-            $data['total_services'] = count($data['services_name']);
-
-            $data['services_price'] = 0.00;
-            foreach ($data['service_price'] as $service_price) {
-                $data['services_price'] = $data['services_price'] + $service_price;
+            $data_pkg['total_services'] = count($data['services_name']) + 1;
+            $data_pkg['services_price'] = 0.00;
+            foreach($data['services_name'] as $serv_id){
+                $service_price = Services::find($serv_id);
+                $data_pkg['services_price'] = $service_price->price;
             }
+            
         }
-
-        $record = self::create($data);
+        $data_pkg['services_price'] = $data_pkg['services_price'];
+        $data_pkg['price'] = $data_pkg['services_price'] + $base_service_price->price;
+        $data_pkg['start'] = $data['start'];
+        $data_pkg['end'] = $data['end'];
+        $data_pkg['account_id'] = $data['account_id'];
+        $record = self::create($data_pkg);
 
         //log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
-        if (is_array($data['service_id']) && count($data['service_id'])) {
-            $services = Services::whereIn('id', $data['service_id'])->where(['account_id' => $account_id])->get()->getDictionary();
+        if (is_array($data['services_name']) && count($data['services_name'])) {
+            $services = Services::whereIn('id', $data['services_name'])->where(['account_id' => $account_id])->get()->getDictionary();
 
-            // Calculate New Service Prices
-            $services_calculation = [];
-            foreach ($data['service_id'] as $key => $service_id) {
-                if (array_key_exists($service_id, $services)) {
-                    $services_calculation[$key] = [
-                        'service_id' => $service_id,
-                        'service_price' => $data['service_price'][$key],
-                        'calculated_price' => 0.00,
-                    ];
-                }
-            }
-            $calculated_services = self::calculatePrices($services_calculation, $data['services_price'], $data['price']);
 
             foreach ($data['service_id'] as $key => $service_id) {
                 if (array_key_exists($service_id, $services)) {
