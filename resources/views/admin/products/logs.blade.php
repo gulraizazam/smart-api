@@ -69,7 +69,7 @@
                                         }
 
                                         if (isset($data['properties']['attributes']['child_product_id'])) {
-                                            $child_product_id = $data['properties']['attributes']['child_product_id'];
+                                            $child_product_id = $data['properties']['attributes']['child_product_id'] ?? '';
                                         }
                                     @endphp
                                     <tr>
@@ -80,7 +80,7 @@
                                                     {{ $properties['quantity'] }} quantity in
                                                     <strong>{{ $location_area }} {{ $location_name }}</strong>.
                                                 </td>
-                                                <td>{{ Carbon\Carbon::parse($data['created_at'])->format('d-M-Y G:i a') }}
+                                                <td>{{ Carbon\Carbon::parse($data['created_at'])->format('d-M-Y H:i:s a') }}
                                                 </td>
                                             @break
 
@@ -89,7 +89,7 @@
                                                     <strong>{{ $data['product_name'] }}</strong> product
                                                     <strong>{{ $location_area }} {{ $location_name }}</strong>.
                                                 </td>
-                                                <td>{{ Carbon\Carbon::parse($data['updated_at'])->format('d-M-Y G:i a') }}
+                                                <td>{{ Carbon\Carbon::parse($data['updated_at'])->format('d-M-Y H:i:s a') }}
                                                 </td>
                                             @break
 
@@ -102,7 +102,7 @@
                                                             <strong>{{ $from_location_area }} {{ $from_location_name }}</strong> sent
                                                             by <strong>{{ $data['created_by'] }}</strong>.
                                                     </td>
-                                                    <td>{{ Carbon\Carbon::parse($data['created_at'])->format('d-M-Y G:i a') }}
+                                                    <td>{{ Carbon\Carbon::parse($data['created_at'])->format('d-M-Y H:i:s a') }}
                                                     </td>
                                                 @else
                                                     <td><strong>{{ $data['created_by'] }}</strong> transferred
@@ -111,7 +111,7 @@
                                                         <strong>{{ $to_location_area }} {{ $to_location_name }}</strong> to
                                                         <strong>{{ $from_location_area }} {{ $from_location_name }}</strong>.
                                                     </td>
-                                                    <td>{{ Carbon\Carbon::parse($data['created_at'])->format('d-M-Y G:i a') }}
+                                                    <td>{{ Carbon\Carbon::parse($data['created_at'])->format('d-M-Y H:i:s a') }}
                                                     </td>
                                                 @endif
                                             @break
@@ -121,7 +121,7 @@
                                                     products in
                                                     <strong>{{ $data['product_name'] }}</strong> stock.
                                                 </td>
-                                                <td>{{ Carbon\Carbon::parse($data['updated_at'])->format('d-M-Y G:i a') }}
+                                                <td>{{ Carbon\Carbon::parse($data['updated_at'])->format('d-M-Y H:i:s a') }}
                                                 </td>
                                             @break
 
@@ -130,7 +130,7 @@
                                                     <strong>{{ $data['product_name'] }}</strong> to
                                                     {{ $properties['sale_price'] }}.
                                                 </td>
-                                                <td>{{ Carbon\Carbon::parse($data['updated_at'])->format('d-M-Y G:i a') }}
+                                                <td>{{ Carbon\Carbon::parse($data['updated_at'])->format('d-M-Y H:i:s a') }}
                                                 </td>
                                             @break
 
