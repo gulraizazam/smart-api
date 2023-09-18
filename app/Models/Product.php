@@ -35,9 +35,6 @@ class Product extends BaseModal
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            /* ->useLogName(self::$logName)
-            ->logOnly(self::$logAttributes)
-            ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName]) */
             ->dontSubmitEmptyLogs();
 
     }

@@ -339,10 +339,7 @@ class ProductsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
 
-
-
-                return ApiHelper::apiResponse($this->success, 'Success', true, $product);
-
+            return ApiHelper::apiResponse($this->success, 'Success', true, $product);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -520,7 +517,6 @@ class ProductsController extends Controller
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
             $products = Product::getAllRecordsDictionary(Auth::user()->account_id);
 
-            //dd($data, $data2, $ids);
             $records = [];
             $records2 = [];
             foreach ($data as $key => $log) {
@@ -548,8 +544,6 @@ class ProductsController extends Controller
                 $data['updated_at'] = $log[0]['updated_at'];
                 $records2[] = $data;
             }
-
-            //dd('records2', $records2, $records, array_merge($records, $records2));
 
             $final_records = array_merge($records, $records2);
             $records = collect($final_records)->map(function ($log) use ($id, $users, $brands, $centres, $warehouse, $products) {
@@ -588,7 +582,6 @@ class ProductsController extends Controller
                 return $log;
             })->sortByDesc('created_at');
 
-            //dd($records);
             return view('admin.products.logs', compact('records'));
         } catch (\Exception $e) {
             dd($e->getMessage());
