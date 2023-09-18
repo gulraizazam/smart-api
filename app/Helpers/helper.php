@@ -135,3 +135,15 @@ function getPatientInfo()
         $balance,
     ];
 }
+
+if (! function_exists('activityLog')) {
+    function activityLog($logName, $subjectModel, $type, $record, $message)
+    {
+        activity($logName)
+            ->performedOn($subjectModel)
+            ->causedBy(Auth::id())
+            ->setEvent($type)
+            ->withProperties(['attributes' => $record])
+            ->log($message);
+    }
+}
