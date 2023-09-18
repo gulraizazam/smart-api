@@ -361,3 +361,94 @@ function notParent(val) {
         $('.not-have-parent').hide();
     }
 }
+function SetFields()
+{
+   
+        
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route("admin.discounts.getDiscountServices"),
+            type: "GET",
+            data: {},
+            cache: false,
+            success: function (response) {
+    
+                let services = response.data.services;
+                let service_child_value = '';
+                let service_options = '<option value="">Select</option>';
+            
+                Object.values(services).forEach(function(value, index) {
+                    
+                    if (value.name == 'All Services') {
+                          service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                    } else {
+                        service_options += '<option disabled value="' + value.id + '">' + value.name + '</option>';
+                        Object.values(value.children).forEach(function (child, index) {
+                            service_child_value='\t&nbsp; \t&nbsp; \t&nbsp;'+child.name;
+                            service_options += '<option value="' + child.id + '">' + service_child_value + '</option>';
+                        });
+                    }
+                });
+                $("#base_service").html(service_options);
+                $("#services_sessions").html(service_options);
+                $('#base_service').select2();
+               
+                reInitSelect2(".select2", "");
+    
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+    
+                reInitValidation(EditValidation);
+            }
+        });
+  
+}
+var cloneCounter = 1;
+
+$('.discount_type_wrap.get_discount_type .add_new_discount_field').on('click', function(){
+
+    var cloneElements = $(this).parent().parent('.get_discount_type').children().html();
+    
+    // Replace names of input fields with unique names
+    cloneElements = cloneElements.replace('sessions[]', 'sessions[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('services_name[]', 'services_name[' + cloneCounter + ']');
+    cloneElements = cloneElements.replaceAll('disc_type[]', 'disc_type[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('configurable_amount[]', 'configurable_amount[' + cloneCounter + ']');
+    cloneElements = cloneElements.replace('add_new_discount_field', 'remove_discount');
+    cloneElements = cloneElements.replace('btn-primary', 'btn-danger');
+    cloneElements = cloneElements.replace('la-plus', 'la-minus');
+
+    $('.discount_wrap').append('<div class="fv-row col-12 discount_type_wrap get_discount_type mt-3"><div class="d-flex">'+cloneElements+'</div></div>');
+    
+    // Increment the counter for the next clone
+    cloneCounter++;
+});
+
+$(document).on('click', '.discount_type_wrap.get_discount_type .remove_discount', function(){
+    $(this).parent().parent('.get_discount_type').remove();
+});
+$(document).on('change', '.discount_type_wrap.get_discount_type .radio-inline .group_slug', function(){
+    var Elementindex = $(this).parents('.discount_type_wrap.get_discount_type').index();
+    if(!$('#modal_edit_discounts.show').length){
+        Elementindex = (parseInt(Elementindex)-1);
+    }
+    if($(this).is(':checked') && $(this).val() == "custom"){
+        $(this).parents('.discount_type_wrap.get_discount_type').append('<div class="fv-row col-md-5 mt-4 d-flex align-items-center pl-0" id="configurable_amount"><label class="required f-flex fw-bold fs-6 mb-2 pl-0 d-flex mr-4">Amount <span class="text text-danger ml-1">*</span></label><input type="number" min="0" max="99" id="add_configurable_amount" class="add_configurable_amount form-control"  name="configurable_amount['+Elementindex+']"></div>');
+    } else{
+        $(this).parents('.discount_type_wrap.get_discount_type').find('#configurable_amount').remove();
+    }
+});
+$(document).on("keyup", ".add_configurable_amount", function () {
+
+    
+    var val = parseInt(this.value);
+    if (val > 100 || val < 0) {
+        this.value = '';
+        toastr.error("Amount is not allowed greater than 100");
+    }
+
+
+})
