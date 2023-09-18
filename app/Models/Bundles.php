@@ -832,6 +832,7 @@ class Bundles extends BaseModal
         BundleHasServices::where('bundle_id',$record->id)->delete();
         
         $package_total_price=0;
+        $package_services_price = 0;
         for ($i = 0; $i < (int)$data['edit_sessions_buy']; $i++) {
 
             BundleHasServices::createRecord([
@@ -853,9 +854,10 @@ class Bundles extends BaseModal
                 'updated_by' => Auth::User()->id,
             ], 1);
             $package_total_price += $baseService->price;
-
+            $package_services_price =$baseService->price;
             
         }
+        $new_services_price = $package_services_price;
         $sessions = $data['edit_sessions'];
             $bulkRecords = [];
                 
@@ -885,6 +887,7 @@ class Bundles extends BaseModal
                         }
                         
                         $package_total_price+= $newprice;
+                        $new_services_price+=$service_price->price;
                         BundleHasServices::createRecord([
                             'bundle_id' => $record->id,
                             'service_id' =>$session['edit_services_name'],
@@ -907,7 +910,7 @@ class Bundles extends BaseModal
                         ], 1);
                     }
                 }
-                Bundles::whereId($record->id)->update(['price' => $package_total_price]);
+                Bundles::whereId($record->id)->update(['price' => $package_total_price,'services_price'=>$new_services_price]);
                
                 return $record;
     }
