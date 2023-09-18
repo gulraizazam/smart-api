@@ -794,7 +794,7 @@ class Bundles extends BaseModal
     public static function updateConfRecord($id, $request, $account_id)
     {
        
-       
+       dd($request->all());
         $old_data = (Bundles::find($id))->toArray();
 
         $data = $request->all();
@@ -833,7 +833,7 @@ class Bundles extends BaseModal
         
         $package_total_price=0;
         $package_services_price = 0;
-        for ($i = 0; $i < (int)$data['edit_sessions']; $i++) {
+        for ($i = 0; $i < (int)$data['edit_sessions_buy']; $i++) {
 
             BundleHasServices::createRecord([
                 'bundle_id' => $record->id,
