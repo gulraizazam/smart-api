@@ -584,7 +584,6 @@ class ProductsController extends Controller
 
             return view('admin.products.logs', compact('records'));
         } catch (\Exception $e) {
-            dd($e->getMessage());
             return ApiHelper::apiException($e);
         }
     }

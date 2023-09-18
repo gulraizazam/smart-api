@@ -52,7 +52,6 @@
                             </thead>
                             <tbody>
                                 @foreach ($records as $data)
-                                    {{-- @dd($records) --}}
                                     @php
                                         $location_name = $data['location'] != 'N/A' ? 'centre' : 'warehouse';
                                         $location_area = $data['location'] != 'N/A' ? $data['location'] : $data['warehouse'];
@@ -72,13 +71,10 @@
                                         if (isset($data['properties']['attributes']['child_product_id'])) {
                                             $child_product_id = $data['properties']['attributes']['child_product_id'];
                                         }
-                                        /* @dd($properties) */
                                     @endphp
                                     <tr>
-                                        {{-- @dd($records) --}}
                                         @switch($data['event'])
                                             @case('product_create')
-                                                {{-- @dd('product_create', $data) --}}
                                                 <td><strong>{{ $data['created_by'] }}</strong> created
                                                     <strong>{{ $data['product_name'] }}</strong> product with
                                                     {{ $properties['quantity'] }} quantity in
@@ -89,7 +85,6 @@
                                             @break
 
                                             @case('product_update')
-                                                {{-- @dd('product_transfer') --}}
                                                 <td><strong>{{ $data['updated_by'] }}</strong> updated
                                                     <strong>{{ $data['product_name'] }}</strong> product
                                                     <strong>{{ $location_area }} {{ $location_name }}</strong>.
@@ -99,7 +94,6 @@
                                             @break
 
                                             @case('product_transfer_create')
-                                                {{-- @dd('product_transfer') --}}
                                                 @if ($data['product_id'] == $child_product_id)
                                                     <td>
                                                         <strong>{{ $to_location_area }} {{ $to_location_name }}</strong>
@@ -141,13 +135,11 @@
                                             @break
 
                                             @default
-                                                @dd($data)
                                                 <td>Data not found</td>
                                         @endswitch
 
                                     </tr>
                                 @endforeach
-                                {{-- @dd($test) --}}
                             </tbody>
                         </table>
 
