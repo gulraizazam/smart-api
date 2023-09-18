@@ -97,15 +97,16 @@
         </div>
         <!--end::Modal dialog-->
     </div>
-    <div class="modal fade" id="modal_conf_bundles" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_details_bundles" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup mediam-modal" >
+        <div class="modal-dialog modal-dialog-centered form-popup" id="region-edit">
 
-            @include('admin.bundles.configurable')
+            @include('admin.bundles.detail')
 
         </div>
         <!--end::Modal dialog-->
     </div>
+
 
     <div class="modal fade" id="modal_edit_conf_bundles" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
