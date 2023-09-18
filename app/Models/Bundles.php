@@ -522,13 +522,16 @@ class Bundles extends BaseModal
             $data_pkg['services_price'] = 0.00;
             foreach($data['services_name'] as $serv_id){
                 $service_price = Services::find($serv_id);
-                $data_pkg['services_price'] = $service_price->price;
+                $data_pkg['services_price'] += $service_price->price;
             }
             
         }
+        $total_base_services_price =  $base_service_price->price * (int)$data['sessions_buy'];
+        $total_services_price= $total_base_services_price+$data_pkg['services_price'];
+        dd($total_services_price);
         $data_pkg['name'] = $data['name'];
         $data_pkg['services_price'] = $data_pkg['services_price'];
-        $data_pkg['price'] = $data_pkg['services_price'] + $base_service_price->price;
+        $data_pkg['price'] =  $total_services_price;
         $data_pkg['start'] = $data['start'];
         $data_pkg['end'] = $data['end'];
         $data_pkg['apply_discount'] = 0;
