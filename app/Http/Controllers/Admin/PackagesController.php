@@ -204,7 +204,6 @@ class PackagesController extends Controller
 
      
         $status = true;
-
         $service_data = Bundles::find($request->bundle_id);
         $find_package = Packages::where('random_id',$request->random_id)->first();
         if($find_package){
@@ -736,13 +735,14 @@ class PackagesController extends Controller
      */
     public function deletepackagesservice(Request $request)
     {
+       
         $status = PackageService::where([
             ['package_bundle_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
         if ($status) {
 
-            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false);
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false,['del'=>1]);
 
         } else {
 
@@ -771,7 +771,45 @@ class PackagesController extends Controller
             ]);
         }
     }
+    public function deleteconfpackagesservice(Request $request)
+    {
+       
+        $status = PackageService::where([
+            ['base_service_id', '=', $request->id],
+            ['is_consumed', '=', '1'],
+        ])->first();
+        if ($status) {
 
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false,['del'=>1]);
+
+        } else {
+
+            $packageService = PackageBundles::where('base_service_id',$request->id)->first();
+           
+            if ($request->package_total == '') {
+                $request->merge(['package_total' => 0]);
+            }
+            $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+
+            $total = $package_total - $packageService->tax_including_price;
+
+            PackageService::where('base_service_id', '=', $request->id)->delete();
+
+            PackageBundles::where('base_service_id',$request->id)->forcedelete();
+
+            if ($request->update_status == 1) {
+                if ($packageService->package_id) {
+                    $record = Packages::find($packageService->package_id);
+                    $record->update(['total_price' => $total, 'updated_at' => Filters::getCurrentTimeStamp()]);
+                }
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'total' => $total,
+                'id' => $request->id,
+            ]);
+        }
+    }
     /**
      * delete serive from packages
      *
