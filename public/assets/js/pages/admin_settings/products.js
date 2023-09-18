@@ -163,9 +163,10 @@ function editRow(url) {
 function setEditData(response) {
     let product = response.data.product;
     let product_detail = response.data.product_detail;
+    let quantity = response.data.quantity;
     let action = route('admin.products.update', { id: product.id, detail: product_detail.id });
     $("#modal_edit_products_form").attr("action", action);
-
+    
     /* Products */
     $("#edit_name").val(product.name);
     $("#edit_products_brand").val(product.brand_id).trigger('change');
@@ -193,7 +194,7 @@ function setEditData(response) {
     /* Product Details */
     $("#edit_purchase_price").val(product_detail.purchase_price);
     $("#edit_total_purchase_price").val(product_detail.total_purchase_price);
-    $("#edit_quantity").val(product_detail.quantity);
+    $("#edit_quantity").val(quantity.stock_quantity);
 }
 
 function applyFilters(datatable) {
