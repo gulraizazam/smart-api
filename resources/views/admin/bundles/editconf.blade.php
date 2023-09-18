@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_add_user_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder" id="model-title" >Add Configurable Package</h2>
+        <h2 class="fw-bolder" id="model-title" >Edit Configurable Package</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -23,8 +23,8 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_conf_bundles_form" method="post" action="{{route('admin.bundles.store')}}">
-            <div id="put_input">
+        <form id="modal_edit_conf_bundles_form" method="put">
+            <div id="editput_input">
             </div>
             <input type="hidden" name="package_type" value="configurable">
             <!--begin::Scroll-->
@@ -37,61 +37,55 @@
                         <div class="fv-row col-md-12">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span>
                             </label>
-                            <input type="text" id="bundles_name" name="name"
+                            <input type="text" id="edit_bundles_name" name="name"
                                    class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                        <div class="discount_wrap w-100"  id="configurable_fields">
-                            <div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">    
-                                <label class="fw-bold fs-6 pl-0 pr-4 pt-2">Buy</label>
-                                <select class="form-control form-control-solid mb-3" name="sessions_buy" >
+                        <div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3" id="buy_services_section" style="display:none">    
+                            <label class="fw-bold fs-6 pl-0 pr-4 pt-2">Buy</label>
+                            <select class="form-control form-control-solid mb-3" name="edit_sessions_buy" id="sessions_buy">
+                                <option value="">Select Session</option>
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                            </select>
+                            <label class="fw-bold fs-6 px-5 text-nowrap pt-2">Sessions of</label>
+                            <select class="form-control form-control-solid mb-3 select2" name="edit_base_service" id="edit_base_service">
+                                
+                            </select>
+                        </div>
+                        <div class="fv-row col-12 discount_type_wrap get_discount_type mt-3" id="get_services_section" style="display: none;">
+                        
+                            <div class="d-flex">
+                            <a class="btn p btn-danger px-3 mr-4 py-0  d-flex justify-content-center align-items-center remove_discount add_new_discount"><i class="la la-minus p-0 m-0"></i></a><label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
+                                <select class="form-control form-control-solid mb-0" name="edit_sessions[]">
                                     <option value="">Select Session</option>
                                     <option value="1">1</option>
                                     <option value="2">2</option>
                                     <option value="3">3</option>
-                                    <option value="4">4</option>
-                                    <option value="5">5</option>
                                 </select>
-                               
-                                <label class="fw-bold fs-6 px-5 text-nowrap pt-2">Sessions of</label>
-                                <select class="form-control form-control-solid mb-3 select2" name="base_service" id="add_base_service">
-                                    
+                                <label class="fw-bold fs-6 px-5 text-nowrap pt-2 mb-0">Sessions of</label>
+                                <select class="form-control form-control-solid mb-0 " name="edit_services_name[]" id="edit_get_services">
                                 </select>
-                            </div>
-                            <div class="fv-row col-12 discount_type_wrap get_discount_type mt-3">
-                                <div class="d-flex">
-                                    <a class="btn p btn-primary px-3 mr-4 py-0  d-flex justify-content-center align-items-center add_new_discount_field add_new_discount"><i class="la la-plus p-0 m-0"></i></a>
-                                    <label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
-                                    <select class="form-control form-control-solid mb-0" name="sessions[]">
-                                        <option value="">Select Session</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
-                                    </select>
-                                    <label class="fw-bold fs-6 px-5 text-nowrap pt-2 mb-0">Sessions of</label>
-                                    <select class="form-control form-control-solid mb-0 " name="services_name[]" id="services_sessions">
-                                    </select>
-                                    <div class="d-flex align-items-center ml-5">
-                                        <div class="radio-inline tax-radios mb-0 mr-3">
-                                            <label class="radio">
-                                                <input type="radio" class="group_slug" value="complimentory" name="disc_type[]">
-                                                <span class="mr-2"></span>
-                                                Complimentory
-                                            </label>
-                                        </div>
+                                <div class="d-flex align-items-center ml-5">
+                                    <div class="radio-inline tax-radios mb-0 mr-3">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug" value="complimentory" name="edit_disc_type[]">
+                                            <span class="mr-2"></span>
+                                            Complimentory
+                                        </label>
+                                    </div>
 
-                                        <div class="radio-inline tax-radios mb-0" id="custom">
-                                            <label class="radio">
-                                                <input type="radio" class="group_slug percentage" value="custom" name="disc_type[]">
-                                                <span class="mr-2"></span>
-                                                Percentage
-                                            </label>
-                                        </div>
+                                    <div class="radio-inline tax-radios mb-0" id="edit_custom">
+                                        <label class="radio">
+                                            <input type="radio" class="group_slug percentage" value="custom" name="edit_disc_type[]">
+                                            <span class="mr-2"></span>
+                                            Percentage
+                                        </label>
                                     </div>
                                 </div>
                             </div>
                         </div>
+                        <div id="tes_container">
                     </div>
                     
                     
