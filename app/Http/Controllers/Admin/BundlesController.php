@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\Filters;
-use App\Http\Controllers\Controller;
-use App\Models\BundleHasServices;
 use App\Models\Bundles;
+use App\Helpers\Filters;
 use App\Models\Services;
-use App\Models\TaxTreatmentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\HelperModule\ApiHelper;
+use App\Models\TaxTreatmentType;
+use App\Helpers\GeneralFunctions;
+use App\Models\BundleHasServices;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -231,7 +232,36 @@ class BundlesController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function editconf($id)
+    {
+        try {
+            if (! Gate::allows('packages_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            $bundle = Bundles::getData($id);
+           
+            if (! $bundle) {
+                return ApiHelper::apiResponse($this->success, 'No record found!', false);
+            }
+            $services = GeneralFunctions::ServicesTreeList();
+            $relationships = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+            ])->select('service_id')->get();
+            $base_services = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+                'base_service' =>1,
+            ])->get();
+            $get_services = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+                'get_service' =>1,
+            ])->get();
+           
 
+            return ApiHelper::apiResponse($this->success, 'Success', true, ['bundle' => $bundle, 'services' => $services, 'bundle_services' => $relationships, 'relationships' => $relationships,'base_service'=>$base_services,'get_services'=>$get_services]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
     /**
      * Update Package in storage.
      *
@@ -239,9 +269,19 @@ class BundlesController extends Controller
      */
     public function update(Request $request, $id)
     {
+        
         try {
             if (! Gate::allows('packages_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            if($request->package_type == "configurable"){
+                if ($request->start <= $request->end) {
+                    if (Bundles::updateConfRecord($id, $request, Auth::User()->account_id)) {
+                        return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                    }
+    
+                    return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                }
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
