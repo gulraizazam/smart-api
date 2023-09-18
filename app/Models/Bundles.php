@@ -786,7 +786,7 @@ class Bundles extends BaseModal
     }
     public static function updateConfRecord($id, $request, $account_id)
     {
-        dd($request->all());
+        
        
         $old_data = (Bundles::find($id))->toArray();
 
@@ -901,6 +901,7 @@ class Bundles extends BaseModal
                     }
                 }
                 Bundles::whereId($record->id)->update(['price' => $package_total_price]);
+                dd("done");
                 return $record;
     }
     /**
