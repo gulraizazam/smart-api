@@ -243,7 +243,7 @@ class BundlesController extends Controller
             if (! $bundle) {
                 return ApiHelper::apiResponse($this->success, 'No record found!', false);
             }
-            $services = Services::getServices();
+            $services = GeneralFunctions::ServicesTreeList();
             $relationships = BundleHasServices::where([
                 'bundle_id' => $bundle->id,
             ])->select('service_id')->get();
