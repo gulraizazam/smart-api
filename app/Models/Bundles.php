@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
 
 class Bundles extends BaseModal
 {
@@ -512,9 +513,9 @@ class Bundles extends BaseModal
     }
     public static function createConfigurableRecord($request, $account_id)
     {
-        $data = $request->all();
        
-
+        $data = $request->all();
+      
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['type'] = 'multiple';
@@ -536,13 +537,31 @@ class Bundles extends BaseModal
             }
             
         }
+        $data_pkg['name'] = $data['name'];
         $data_pkg['services_price'] = $data_pkg['services_price'];
         $data_pkg['price'] = $data_pkg['services_price'] + $base_service_price->price;
         $data_pkg['start'] = $data['start'];
         $data_pkg['end'] = $data['end'];
         $data_pkg['account_id'] = $data['account_id'];
         $record = self::create($data_pkg);
-
+        
+        BundleHasServices::createRecord([
+            'bundle_id' => $record->id,
+            'service_id' =>$data['base_service'],
+            'service_price' =>$base_service_price->price,
+            'calculated_price' => $base_service_price->price,
+            'end_node' => 1,
+        ], $record->id);
+        BundleServicesPriceHistory::createRecord([
+            'bundle_id' => $record->id,
+            'bundle_price' => $record->price,
+            'service_id' =>$data['base_service'],
+            //'service_price' => $data['service_price'][$key],
+            'service_price' =>$base_service_price->price,
+            'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
+            'created_by' => Auth::User()->id,
+            'updated_by' => Auth::User()->id,
+        ], 1);
         //log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
         $sessions = $data['sessions'];
@@ -553,10 +572,47 @@ class Bundles extends BaseModal
                 'session' => $value,
                 'service_name' =>$data['services_name'][$key],
                 'discount_amount' => isset($data['configurable_amount'][$key]) ?$data['configurable_amount'][$key]: 0,
+                'discount_type'=>$data['disc_type'][$key],
             ];
             array_push($bulk_record, $temp_array);
         }
-        
+       $package_total_price = $base_service_price->price;
+        foreach ($bulk_record as $key => $session) {
+           
+            for ($i = 0; $i < $session['session']; $i++) {
+                $service_price = Services::find($session['service_name']);
+                if( $session['discount_type'] == "complimentory"){
+                    $discounted_price = 0;
+                }else{
+                    $discounted_price = ($session['discount_amount']/100)*$service_price->price;
+                }
+                if($discounted_price == 0){
+                    $newprice=0;
+                }else{
+                    $newprice = $service_price->price - $discounted_price;
+                }
+                
+                $package_total_price+= $newprice;
+                BundleHasServices::createRecord([
+                    'bundle_id' => $record->id,
+                    'service_id' =>$session['service_name'],
+                    'service_price' =>  $newprice,
+                    'calculated_price' =>  $newprice,
+                    'end_node' => 1,
+                ], $record->id);
+                BundleServicesPriceHistory::createRecord([
+                    'bundle_id' => $record->id,
+                    'bundle_price' => $record->price,
+                    'service_id' =>$session['service_name'],
+                    //'service_price' => $data['service_price'][$key],
+                    'service_price' =>$service_price->price,
+                    'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
+                    'created_by' => Auth::User()->id,
+                    'updated_by' => Auth::User()->id,
+                ], 1);
+            }
+        }
+        Bundles::whereId($record->id)->update(['price' => $package_total_price]);
       
 
         return $record;
