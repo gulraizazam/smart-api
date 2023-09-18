@@ -14,6 +14,7 @@ use App\Models\Warehouse;
 use App\Models\OrderDetail;
 use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
+use App\Helpers\GeneralFunctions;
 use App\Models\TransferProduct;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -176,14 +177,12 @@ class OrdersController extends Controller
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $orders = Order::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, 'refund');
-
             $products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
             $all_products = array();
             foreach ($products as $product) {
                 $all_products[$product->id] = $product->name;
             }
-
 
             $records['data'] = $orders;
             $records['active_filters'] = $apply_filter;
@@ -269,10 +268,15 @@ class OrdersController extends Controller
             if (!Gate::allows('order_create')) {
                 return abort(401);
             }
+            $stock_check = GeneralFunctions::stockCheck($request->product_id); //dd($stock_check['status']);
+            if (!$stock_check['stock_available']) {
+                return collect(['status' => false, 'message' => 'This product stock not available.']);
+            }
+
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
-                    $total_price = OrderDetail::where('order_id', $order->id)->sum('sale_price_after_discount');
+                    OrderDetail::where('order_id', $order->id)->sum('sale_price_after_discount');
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
@@ -326,7 +330,7 @@ class OrdersController extends Controller
             if ($response->location_id != null) {
                 $from_id = $response->location_id;
                 $from_key = 'location_id';
-            } elseif($response->warehouse_id != null){
+            } elseif ($response->warehouse_id != null) {
                 $from_id = $response->warehouse_id;
                 $from_key = 'warehouse_id';
             } else {
@@ -356,6 +360,10 @@ class OrdersController extends Controller
     public function update(Request $request, $id)
     {
         try {
+            $stock_check = GeneralFunctions::stockCheck($request->product_id); //dd($stock_check['status']);
+            if (!$stock_check['stock_available']) {
+                return collect(['status' => false, 'message' => 'This product stock not available.']);
+            }
             $order = Order::updateRecord($request, Auth::user()->account_id, $id);
             if ($order) {
                 if (OrderDetail::updateRecord($order->id, $request, Auth::User()->account_id)) {

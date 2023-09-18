@@ -35,10 +35,13 @@ class Product extends BaseModal
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName(self::$logName)
-            ->logOnly(self::$logAttributes)
-            ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName])
             ->dontSubmitEmptyLogs();
+
+    }
+
+    public static function logAdd(){
+
+
     }
 
     public function productDetail()
@@ -54,7 +57,6 @@ class Product extends BaseModal
      */
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
-
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
@@ -150,6 +152,8 @@ class Product extends BaseModal
         $data['created_by'] = Auth::user()->id;
         $record = self::create($data);
 
+        $subjectModel = self::find($record->id);
+        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
         return $record;
     }
 
@@ -161,8 +165,6 @@ class Product extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id)
     {
-        $old_data = (self::find($id))->toArray();
-
         if (!is_array($request)) {
             $data = $request->all();
         } else {
@@ -175,14 +177,15 @@ class Product extends BaseModal
             'id' => $id,
             'account_id' => $account_id,
         ])->first();
-        if ($record->product_type == 'in_house_use') {
-            return null;
-        }
 
         if (!$record) {
             return null;
         }
         $record->update($data);
+
+        $subjectModel = self::find($id);
+        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
+
         return $record;
     }
 
@@ -192,7 +195,7 @@ class Product extends BaseModal
      * @param id
      * @return (mixed)
      */
-    public static function DeleteRecord($id)
+    public static function DeleteRecord($id, $data = null)
     {
         $product = self::getData($id);
         if (!$product) {
@@ -210,6 +213,9 @@ class Product extends BaseModal
             }
         }
         $record = $product->delete();
+
+        $subjectModel = $product;
+        activityLog(self::$logName, $subjectModel, $data['type'], $record, $data['message']);
 
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
@@ -256,7 +262,7 @@ class Product extends BaseModal
                 ['status', '=', '1'],
                 ['account_id', '=', $account_id],
                 [$request['from_key'], $request['from_id']]
-            ])->when($request->type == 'order', function ($q) {
+            ])->when(isset($request->type) && $request->type == 'order', function ($q) {
                 return $q->where(['product_type' => 'for_sale']);
             })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         }

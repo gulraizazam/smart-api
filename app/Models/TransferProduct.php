@@ -25,22 +25,9 @@ class TransferProduct extends BaseModal
 
     protected static $logName = 'transfer_product';
 
-    protected static $recordEvents = ['created', 'updated', 'deleted'];
-
-
-    // Customize the log description (optional)
-    protected static $logDescriptionForEvent = [
-        'created' => 'Product has been created',
-        'updated' => 'Product has been updated',
-        'deleted' => 'Product has been deleted',
-    ];
-
     public function getActivitylogOptions(): LogOptions
     {
         return LogOptions::defaults()
-            ->useLogName(self::$logName)
-            ->logOnly(self::$logAttributes)
-            ->setDescriptionForEvent(fn (string $eventName) => self::$logDescriptionForEvent[$eventName])
             ->dontSubmitEmptyLogs();
     }
 
@@ -162,7 +149,7 @@ class TransferProduct extends BaseModal
         $data = $request->all();
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::user()->id;
-        //dd($request->all());
+
         $record = null;
         $message = null;
         $parent_product_id = $request->product_id;
@@ -196,12 +183,14 @@ class TransferProduct extends BaseModal
         $data2['transfer_date'] = $request->transfer_date;
 
         $product_quantity = Stock::sumProductQuantity($parent_product_id);
-        //dd($request->quantity <= $product_quantity);
+
         if ($request->quantity <= $product_quantity) {
             $check_product = Product::where([$to_key => $to_value, 'parent_id' => $request->product_id])->first();
             if ($check_product) {
                 $product = $check_product;
             } else {
+                $data2['type'] = $request['type'];
+                $data2['message'] = $request['message'];
                 $product = Product::createRecord($data2, $account_id);
             }
             $data['child_product_id'] = $product->id;
@@ -209,8 +198,12 @@ class TransferProduct extends BaseModal
 
             $record = self::create($data);
 
+            $subjectModel = self::find($record->id);
+            activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
+
             $data2['transfer_id'] = $record->id;
-            //dd($data, $product, 'check_product', $check_product, $key, $from_value, $to_value);
+            $data2['type'] = $request['type'];
+            $data2['message'] = $request['message'];
         } else {
             $message = "Out of stock quantity product.";
         }
@@ -241,13 +234,6 @@ class TransferProduct extends BaseModal
         $record = null;
         $message = null;
         $parent_product_id = $request->product_id;
-        if ($request->product_type_option_from == 'in_warehouse') {
-            $from_key = "warehouse_id";
-            $from_value = $request->from_warehouse_id;
-        } else {
-            $from_key = "location_id";
-            $from_value = $request->from_location_id;
-        }
         if ($request->product_type_option_to == 'in_warehouse') {
             $to_key = "warehouse_id";
             $to_value = $request->to_warehouse_id;
@@ -275,7 +261,7 @@ class TransferProduct extends BaseModal
 
 
         $product_quantity = Stock::sumProductQuantity($parent_product_id);
-        //dd($request->quantity <= $product_quantity);
+
         if ($request->quantity <= $product_quantity) {
             $check_product = Product::where([$to_key => $to_value, 'id' => $request->child_product_id])->first();
 
@@ -287,12 +273,16 @@ class TransferProduct extends BaseModal
             $data['child_product_id'] = $product_update->id;
             $data2['child_product_id'] = $product_update->id;
             self::where(['id' => $id])->update($data);
-            //dd($data, $product, 'check_product', $check_product, $key, $from_value, $to_value);
         } else {
             $message = "Out of stock quantity product.";
         }
         $record = self::where(['id' => $id])->first();
+        $subjectModel = self::find($record->id);
+        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
+
         $data2['product_detail_id'] = $record->product_detail_id;
+        $data2['type'] = $request['type'];
+        $data2['message'] = $request['message'];
         return [
             'record' => $record,
             'data' => $data2,
@@ -316,7 +306,7 @@ class TransferProduct extends BaseModal
         if (self::isChildExists($id, Auth::User()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-        DB::transaction(function () use($transfer_product) {
+        DB::transaction(function () use ($transfer_product) {
             Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
             Stock::where(['transfer_id' => $transfer_product->id])->delete();
             $record = $transfer_product->delete();
@@ -339,8 +329,7 @@ class TransferProduct extends BaseModal
      */
     public static function isChildExists($id, $account_id)
     {
-        if (OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()
-        ) {
+        if (OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()) {
             return true;
         }
         return false;
