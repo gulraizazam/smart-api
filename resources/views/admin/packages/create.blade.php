@@ -129,13 +129,14 @@
                         <thead>
                         <tr>
                             <th>Service Name</th>
-                            <th>Service Price</th>
+                            <th>Regular Price</th>
                             <th>Discount Name</th>
-                            <th>Discount Type</th>
-                            <th>Discount Price</th>
+                            <th>Type</th>
+                            <th>Discount Value</th>
                             <th>Amount</th>
-                            <th>Tax %</th>
+                            <th>Tax </th>
                             <th>Total Amount</th>
+                            <!-- <th>Is Consumed</th> -->
                             <th>Action</th>
                         </tr>
                         </thead>

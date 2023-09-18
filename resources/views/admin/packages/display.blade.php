@@ -48,12 +48,12 @@
                             <thead>
                             <tr>
                                 <th>Service Name</th>
-                                <th>Service Price</th>
+                                <th>Regular Price</th>
                                 <th>Discount Name</th>
-                                <th>Discount Type</th>
-                                <th>Discount Price</th>
+                                <th>Type</th>
+                                <th>Discount Value</th>
                                 <th>Subtotal</th>
-                                <th>Tax %</th>
+                               
                                 <th>Tax Price</th>
                                 <th>Total</th>
                             </tr>
