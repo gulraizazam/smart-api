@@ -151,21 +151,33 @@ class BundlesController extends Controller
      */
     public function store(Request $request)
     {
+        
         try {
             if (! Gate::allows('packages_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if ($request->start <= $request->end) {
-                if (Bundles::createRecord($request, Auth::User()->account_id)) {
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            if($request->package_type == "configurable"){
+                if ($request->start <= $request->end) {
+                    if (Bundles::createConfigurableRecord($request, Auth::User()->account_id)) {
+                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    }
+    
+                    return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
                 }
-
-                return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            }else{
+                $validator = $this->verifyFields($request);
+                if ($validator->fails()) {
+                    return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                }
+                if ($request->start <= $request->end) {
+                    if (Bundles::createRecord($request, Auth::User()->account_id)) {
+                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    }
+    
+                    return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                }
             }
+            
 
             return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
         } catch (\Exception $e) {

@@ -510,7 +510,76 @@ class Bundles extends BaseModal
 
         return $record;
     }
+    public static function createConfigurableRecord($request, $account_id)
+    {
+        $data = $request->all();
 
+        // Set Account ID
+        $data['account_id'] = $account_id;
+        $data['type'] = 'multiple';
+
+        if (! isset($data['apply_discount'])) {
+            $data['apply_discount'] = 0;
+        } elseif ($data['apply_discount'] == '') {
+            $data['apply_discount'] = 0;
+        }
+
+        if (is_array($data['services_name']) && count($data['services_name'])) {
+            $data['total_services'] = count($data['services_name']);
+
+            $data['services_price'] = 0.00;
+            foreach ($data['service_price'] as $service_price) {
+                $data['services_price'] = $data['services_price'] + $service_price;
+            }
+        }
+
+        $record = self::create($data);
+
+        //log request for Create for Audit Trail
+        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+
+        if (is_array($data['service_id']) && count($data['service_id'])) {
+            $services = Services::whereIn('id', $data['service_id'])->where(['account_id' => $account_id])->get()->getDictionary();
+
+            // Calculate New Service Prices
+            $services_calculation = [];
+            foreach ($data['service_id'] as $key => $service_id) {
+                if (array_key_exists($service_id, $services)) {
+                    $services_calculation[$key] = [
+                        'service_id' => $service_id,
+                        'service_price' => $data['service_price'][$key],
+                        'calculated_price' => 0.00,
+                    ];
+                }
+            }
+            $calculated_services = self::calculatePrices($services_calculation, $data['services_price'], $data['price']);
+
+            foreach ($data['service_id'] as $key => $service_id) {
+                if (array_key_exists($service_id, $services)) {
+                    BundleHasServices::createRecord([
+                        'bundle_id' => $record->id,
+                        'service_id' => $service_id,
+                        'service_price' => $calculated_services[$key]['service_price'],
+                        'calculated_price' => $calculated_services[$key]['calculated_price'],
+                        'end_node' => $services[$service_id]->end_node,
+                    ], $record->id);
+
+                    BundleServicesPriceHistory::createRecord([
+                        'bundle_id' => $record->id,
+                        'bundle_price' => $record->price,
+                        'service_id' => $service_id,
+                        //'service_price' => $data['service_price'][$key],
+                        'service_price' => $calculated_services[$key]['calculated_price'],
+                        'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
+                        'created_by' => Auth::User()->id,
+                        'updated_by' => Auth::User()->id,
+                    ], $account_id);
+                }
+            }
+        }
+
+        return $record;
+    }
     /**
      * Delete Record
      *
