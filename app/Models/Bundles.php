@@ -793,7 +793,7 @@ class Bundles extends BaseModal
     }
     public static function updateConfRecord($id, $request, $account_id)
     {
-        
+        dd($request->all());
        
         $old_data = (Bundles::find($id))->toArray();
 
