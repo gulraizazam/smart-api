@@ -63,13 +63,14 @@
                                         $from_location_area = $data['from_location'] != 'N/A' ? $data['from_location'] : $data['from_warehouse'];
 
                                         $properties = null;
+                                        $child_product_id = null;
 
                                         if (isset($data['properties']['attributes'])) {
                                             $properties = $data['properties']['attributes'];
                                         }
 
                                         if (isset($data['properties']['attributes']['child_product_id'])) {
-                                            $child_product_id = $data['properties']['attributes']['child_product_id'] ?? '';
+                                            $child_product_id = $data['properties']['attributes']['child_product_id'];
                                         }
                                     @endphp
                                     <tr>
