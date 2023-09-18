@@ -901,7 +901,7 @@ class Bundles extends BaseModal
                     }
                 }
                 Bundles::whereId($record->id)->update(['price' => $package_total_price]);
-                dd("done");
+               
                 return $record;
     }
     /**
