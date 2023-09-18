@@ -186,6 +186,7 @@ function setDetailData(response) {
 }
 
 function setEditData(response) {
+    
     $('#model-title').html('Edit Package');
     let bundle = response.data.bundle;
     let bundle_services =response.data.bundle_services;
@@ -212,7 +213,7 @@ function setEditData(response) {
     calculateServicesTotal();
 }
 function setConfEditData(response) {
-   
+    $('#tes_container').empty();
     let bundle = response.data.bundle;
     let base_service_id = response.data.base_service[0].service_id;
     console.log(base_service_id);
