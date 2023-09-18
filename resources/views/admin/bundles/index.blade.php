@@ -47,10 +47,16 @@
                                 <a href="javascript:void(0);" class="btn btn-primary" id="create-btn" data-toggle="modal" data-target="#modal_bundles">
                                     <!--begin::Svg Icon | path: icons/duotune/arrows/arr075.svg-->
                                     <i class="la la-plus"></i>
-                                    Add New
+                                    Add Simple Package
                                 </a>
                         @endif
-
+                        @if(Gate::allows('packages_create'))
+                                <a href="javascript:void(0);" class="btn btn-primary ml-3" id="create-btn"  onclick="SetFields()" data-toggle="modal" data-target="#modal_conf_bundles">
+                                    
+                                    <i class="la la-plus"></i>
+                                    Add Configurable Package
+                                </a>
+                        @endif
                         <!--end::Button-->
                         </div>
                     </div>
@@ -82,7 +88,15 @@
         </div>
         <!--end::Modal dialog-->
     </div>
+    <div class="modal fade" id="modal_conf_bundles" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup mediam-modal" >
 
+            @include('admin.bundles.configurable')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
 
     <div class="modal fade" id="modal_details_bundles" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
