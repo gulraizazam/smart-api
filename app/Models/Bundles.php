@@ -545,34 +545,19 @@ class Bundles extends BaseModal
 
         //log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
-        if (is_array($data['services_name']) && count($data['services_name'])) {
-            $services = Services::whereIn('id', $data['services_name'])->where(['account_id' => $account_id])->get()->getDictionary();
-
-
-            foreach ($data['service_id'] as $key => $service_id) {
-                if (array_key_exists($service_id, $services)) {
-                    BundleHasServices::createRecord([
-                        'bundle_id' => $record->id,
-                        'service_id' => $service_id,
-                        'service_price' => $calculated_services[$key]['service_price'],
-                        'calculated_price' => $calculated_services[$key]['calculated_price'],
-                        'end_node' => $services[$service_id]->end_node,
-                    ], $record->id);
-
-                    BundleServicesPriceHistory::createRecord([
-                        'bundle_id' => $record->id,
-                        'bundle_price' => $record->price,
-                        'service_id' => $service_id,
-                        //'service_price' => $data['service_price'][$key],
-                        'service_price' => $calculated_services[$key]['calculated_price'],
-                        'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
-                        'created_by' => Auth::User()->id,
-                        'updated_by' => Auth::User()->id,
-                    ], $account_id);
-                }
-            }
+        $sessions = $data['sessions'];
+        $bulk_record=[];
+        foreach($sessions as $key => $value) {
+           
+            $temp_array = [
+                'session' => $value,
+                'service_name' =>$data['services_name'][$key],
+                'discount_amount' => isset($data['configurable_amount'][$key]) ?$data['configurable_amount'][$key]: 0,
+            ];
+            array_push($bulk_record, $temp_array);
         }
+        
+      
 
         return $record;
     }
