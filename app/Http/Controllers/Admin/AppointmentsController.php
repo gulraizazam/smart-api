@@ -821,8 +821,8 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
         if (hasFilter($filters, 'created_from')) {
-            $where[] = ['appointments.created_at', '>=', $request->created_from.' 00:00:00'];
-            $where[] = ['appointments.created_at', '<=',  $request->created_to.' 23:59:00'];
+            $where[] = ['appointments.created_at', '>=', $filters['created_from'].' 00:00:00'];
+            $where[] = ['appointments.created_at', '<=',  $filters['created_to'].' 23:59:00'];
             Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
             Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
@@ -831,6 +831,7 @@ class AppointmentsController extends Controller
             $where[] = [['users.phone' => $phone]];
             Filters::put(Auth::User()->id, $filename, 'phone', $phone);
         }
+       
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
         if (Gate::allows('appointments_consultancy')) {
