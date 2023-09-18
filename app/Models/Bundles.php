@@ -528,7 +528,7 @@ class Bundles extends BaseModal
         }
         $total_base_services_price =  $base_service_price->price * (int)$data['sessions_buy'];
         $total_services_price= $total_base_services_price+$data_pkg['services_price'];
-        dd($total_services_price);
+
         $data_pkg['name'] = $data['name'];
         $data_pkg['services_price'] = $data_pkg['services_price'];
         $data_pkg['price'] =  $total_services_price;
@@ -542,6 +542,7 @@ class Bundles extends BaseModal
         $record = self::create($data_pkg);
         $sessionCount = $data['sessions_buy'];
         $package_total_price = 0;
+        $package_services_price = 0;
         for ($i = 0; $i < $sessionCount; $i++) {
             BundleHasServices::createRecord([
                 'bundle_id' => $record->id,
@@ -562,7 +563,9 @@ class Bundles extends BaseModal
                 'updated_by' => Auth::User()->id,
             ], 1);
             $package_total_price += $base_service_price->price;
+            $package_services_price+= $base_service_price->price;
         }
+        $new_pkg_service_price = $package_services_price;
         //log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
         $sessions = $data['sessions'];
@@ -594,6 +597,7 @@ class Bundles extends BaseModal
                 }
                 
                 $package_total_price+= $newprice;
+                $new_pkg_service_price+=$service_price->price;
                 BundleHasServices::createRecord([
                     'bundle_id' => $record->id,
                     'service_id' =>$session['service_name'],
@@ -616,7 +620,7 @@ class Bundles extends BaseModal
                 ], 1);
             }
         }
-        Bundles::whereId($record->id)->update(['price' => $package_total_price]);
+        Bundles::whereId($record->id)->update(['price' => $package_total_price,'services_price'=>$new_pkg_service_price]);
       
 
         return $record;
