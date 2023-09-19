@@ -2255,59 +2255,6 @@ jQuery(document).ready(function () {
                     var total_amount = 0;
                     if (resposne.status) {
                         
-                        
-                        if(resposne.data.myarray.length >0){
-                            total_amount = parseInt(resposne.data.myarray[0].grand_total);
-                            jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
-                               
-                             
-                                var del_icon;
-                                //if(single_record_detail.net_amount > 0){
-                                    del_icon =  "<td>" +
-                                    "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
-                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
-                                    "</td>" ;
-                                // }else{
-                                //     del_icon="<td></td>";
-                                // }
-                                $('#plan_services').append("" +
-                                    "<tr id='table_1' class='HR_" + random_id + " HR_" +single_record_detail.record.id + "'>" +
-                                    "<td><a href='javascript:void(0)' onClick='toggle(" +single_record_detail.record.id + ")'>" +single_record_detail.service_name + "</a></td>" +
-                                    "<td>" +single_record_detail.service_price.toLocaleString() + "</td>" +
-                                    "<td>" +single_record_detail.discount_name + "</td>" +
-                                    "<td>" +single_record_detail.discount_type + "</td>" +
-                                    "<td>" +single_record_detail.discount_price + "</td>" +
-                                    "<td>" +single_record_detail.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                                    "<td>" +single_record_detail.record.tax_price + "</td>" +
-                                    "<td>" +single_record_detail.record.tax_including_price.toLocaleString() + "</td>" +
-                                    // "<td id='cc-"+single_record_detail.record.id+"'></td>" +
-                                    del_icon +
-                                    
-                                    "</tr>");
-                                    jQuery.each(single_record_detail.record_detail, function (i, record_detail) {
-                                        
-                                        if (record_detail.is_consumed == '0') {
-                                            consume = 'No';
-                                        } else {
-                                            consume = 'Yes';
-                                        }
-                                        // setTimeout(() => {
-                                        //     $("#cc-"+record_detail.package_bundle_id).text(consume);
-                                        // }, 400);
-                                        $('#plan_services').append(
-                                            "<tr class='inner_records_hr HR_" + single_record_detail.record.id 
-                                            + " " + single_record_detail.record.id + "'><td></td><td>" 
-                                            + record_detail.name + "</td><td>Amount : " 
-                                            + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " 
-                                            + record_detail.tax_price + "</td><td>Total Amount : " 
-                                            + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consumed:" + consume + "</td></tr>");
-                                    });
-                            });
-                           
-                            $("#package_total_1").val(total_amount ?? 0);
-                           
-                           
-                        }else{
                             $("#package_total_1").val(resposne.data.myarray.total ?? 0);
                                 $('#plan_services').append("" +
                                     "<tr id='table_1' class='HR_" + random_id + " HR_" +resposne.data.myarray.record.id + "'>" +
@@ -2333,7 +2280,7 @@ jQuery(document).ready(function () {
                                         $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                                     });
                            
-                        }
+                        
                         
 
                         
@@ -2530,48 +2477,7 @@ jQuery(document).ready(function () {
                     let total_amount;
                     let single_amount;
                     if (resposne.status) {
-                       
-                        if(resposne.data.myarray.length >0){
-                           
-                           
-                            total_amount = resposne.data.myarray[0].total.replace(',' , '');
-                           
-                            jQuery.each(resposne.data.myarray, function (i, single_record_detail) {
-                                var del_icon;
-                                //if(single_record_detail.net_amount > 0){
-                                    del_icon =  "<td>" +
-                                    "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +single_record_detail.record.id + "' />" +
-                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +single_record_detail.record.id + ")'>" + trashBtn() + "</button>" +
-                                    "</td>" ;
-                                // }else{
-                                //     del_icon="<td></td>";
-                                // }
-                                $('#edit_plan_services').append("" +
-                                    "<tr id='table_1' class='HR_" + random_id + " HR_" +single_record_detail.record.id + "'>" +
-                                    "<td><a href='javascript:void(0)' onClick='toggle(" +single_record_detail.record.id + ")'>" +single_record_detail.service_name + "</a></td>" +
-                                    "<td>" +single_record_detail.service_price.toLocaleString() + "</td>" +
-                                    "<td>" +single_record_detail.discount_name + "</td>" +
-                                    "<td>" +single_record_detail.discount_type + "</td>" +
-                                    "<td>" +single_record_detail.discount_price + "</td>" +
-                                    "<td>" +single_record_detail.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                                    "<td>" +single_record_detail.record.tax_percenatage + "</td>" +
-                                    "<td>" +single_record_detail.record.tax_including_price.toLocaleString() + "</td>" +
-                                     
-                                    del_icon +
-                                    "</tr>");
-                                    jQuery.each(single_record_detail.record_detail, function (i, record_detail) {
-                                        
-                                        if (record_detail.is_consumed == '0') {
-                                            consume = 'No';
-                                        } else {
-                                            consume = 'Yes';
-                                        }
-                                        $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + single_record_detail.record.id + " " + single_record_detail.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consumed: " + consume + "</td></tr>");
-                                    });
-                            });
-                            $("#edit_package_total_1").val(resposne.data.myarray[0].grand_total ?? 0);
-                        }else{
-
+                      
                         
                         $("#edit_package_total_1").val(resposne?.data?.myarray?.total ?? 0);
 
@@ -2599,7 +2505,7 @@ jQuery(document).ready(function () {
                             }
                             $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_percenatage + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
-                    }
+                    
                         edit_keyfunction_grandtotal();
                         // $('#edit_service_id').val('').change();
                         // $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
