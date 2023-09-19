@@ -39,14 +39,37 @@ class Product extends BaseModal
 
     }
 
-    public static function logAdd(){
-
-
-    }
-
     public function productDetail()
     {
-        return $this->hasOne(ProductDetail::class);
+        return $this->hasMany(ProductDetail::class, 'product_id');
+    }
+
+    public function stocks()
+    {
+        return $this->hasMany(Stock::class);
+    }
+
+    public function orderDetails()
+    {
+        return $this->hasMany(OrderDetail::class);
+    }
+
+    public function getAvailableStockAttribute()
+    {
+        $quantityIn = $this->stocks()->where(['stock_type' => 'in'])->sum('quantity');
+        $quantityOut = $this->stocks()->where(['stock_type' => 'out'])->sum('quantity');
+
+        return $quantityIn - $quantityOut;
+    }
+
+    public function getTotalQuantitySoldAttribute()
+    {
+        return $this->orderDetails()->sum('quantity');
+    }
+
+    public function getAveragePurchaseValueAttribute()
+    {
+        return $this->productDetail()->avg('purchase_price');
     }
 
     /**

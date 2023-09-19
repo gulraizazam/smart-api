@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Facades\LogBatch;
 use Illuminate\Support\Facades\Validator;
-use PhpParser\Node\Stmt\Break_;
 
 class ProductsController extends Controller
 {
