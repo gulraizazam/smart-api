@@ -31,7 +31,7 @@ class WarehouseController extends Controller
     /**
      * Display a listing of brand.
      *
-     * @return \Illuminate\Http\Response
+     * @return \never
      */
     public function index()
     {
