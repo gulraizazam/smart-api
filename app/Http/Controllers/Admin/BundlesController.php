@@ -158,6 +158,10 @@ class BundlesController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             if($request->package_type == "configurable"){
+                $validator = $this->verifyConfigurableFields($request);
+                if ($validator->fails()) {
+                    return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                }
                 if ($request->start <= $request->end) {
                     if (Bundles::createConfigurableRecord($request, Auth::User()->account_id)) {
                         return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
@@ -200,6 +204,26 @@ class BundlesController extends Controller
             'service_id' => 'required|array',
             //'tax_treatment_type_id' => 'required'
         ]);
+    }
+    protected function verifyConfigurableFields(Request $request)
+    {
+        $rules = [];
+        $sessions = $request->input('sessions');
+        foreach ($sessions as $key => $value) {
+            $rules["sessions.{$key}"] = 'required';
+            $rules["services_name.{$key}"] = 'required';
+            $rules["disc_type.{$key}"] = 'required';
+            
+        }
+        
+        return Validator::make($request->all(), [
+            'name' => 'required',
+           
+            'start' => 'required',
+            'end' => 'required',
+            'sessions_buy' => 'required',
+            'base_service' => 'required',
+        ] + $rules);
     }
 
     /**
