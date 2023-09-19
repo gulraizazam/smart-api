@@ -45,11 +45,11 @@
                     
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type <span class="text text-danger">*</span></label>
-                            <select id="add_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" onchange="SetFields()">
+                            <select id="add_amount_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" >
                                 <option value="">Select Amount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
-                                <option value="Configurable">Configurable</option>
+                                
                             </select>
                         </div>
                         <div class="fv-row col-md-6 mt-5">
@@ -72,54 +72,7 @@
                             </div>
 
                         </div>
-                        <div class="discount_wrap w-100" style="display: none;" id="configurable_fields">
-                            <div class="fv-row col-12 discount_type_wrap get_discount_type d-flex mt-3">    
-                                <label class="fw-bold fs-6 pl-0 pr-4 pt-2">Buy</label>
-                                <select class="form-control form-control-solid mb-3" name="sessions_buy">
-                                    <option value="">Select Session</option>
-                                    <option value="1">1</option>
-                                    <option value="2">2</option>
-                                    <option value="3">3</option>
-                                </select>
-                               
-                                <label class="fw-bold fs-6 px-5 text-nowrap pt-2">Sessions of</label>
-                                <select class="form-control form-control-solid mb-3 select2" name="base_service" id="base_service">
-                                    
-                                </select>
-                            </div>
-                            <div class="fv-row col-12 discount_type_wrap get_discount_type mt-3">
-                                <div class="d-flex">
-                                    <a class="btn p btn-primary px-3 mr-4 py-0  d-flex justify-content-center align-items-center add_new_discount_field add_new_discount"><i class="la la-plus p-0 m-0"></i></a>
-                                    <label class="fw-bold fs-6 pl-0 pr-4 pt-2 mb-0">Get</label>
-                                    <select class="form-control form-control-solid mb-0" name="sessions[]">
-                                        <option value="">Select Session</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                    </select>
-                                    <label class="fw-bold fs-6 px-5 text-nowrap pt-2 mb-0">Sessions of</label>
-                                    <select class="form-control form-control-solid mb-0 " name="services_name[]" id="services_sessions">
-                                    </select>
-                                    <div class="d-flex align-items-center ml-5">
-                                        <div class="radio-inline tax-radios mb-0 mr-3">
-                                            <label class="radio">
-                                                <input type="radio" class="group_slug" value="complimentory" name="disc_type[]">
-                                                <span class="mr-2"></span>
-                                                Complimentory
-                                            </label>
-                                        </div>
-
-                                        <div class="radio-inline tax-radios mb-0" id="custom">
-                                            <label class="radio">
-                                                <input type="radio" class="group_slug percentage" value="custom" name="disc_type[]">
-                                                <span class="mr-2"></span>
-                                                Percentage
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        
                         
                         <div class="fv-row col-md-12 mt-5" id="amount">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
@@ -148,30 +101,7 @@
                         </span>
 
                     </div>
-                    <!-- <div class="row">
-
-                        <div class="fv-row col-md-5 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre <span class="text text-danger">*</span></label>
-                            <select id="locations" onchange="getCentreServices($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
-                                <option value="">Select Centre</option>
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-5 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
-                            <select id="services" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
-                                <option value="">Select Services</option>
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-2 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0" style="opacity: 0;">Add <span class="text text-danger">*</span></label>
-                            <button type="submit" class="btn btn-primary spinner-button">
-                                <span class="indicator-label">Add</span>
-                            </button>
-                        </div>
-
-                    </div> -->
+                    
                 </div>
 
             </div>
