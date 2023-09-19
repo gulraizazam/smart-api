@@ -303,6 +303,10 @@ class BundlesController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             if($request->package_type == "configurable"){
+                $validator = $this->verifyConfigurableFields($request);
+                if ($validator->fails()) {
+                    return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                }
                 if ($request->start <= $request->end) {
                     if (Bundles::updateConfRecord($id, $request, Auth::User()->account_id)) {
                         return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
