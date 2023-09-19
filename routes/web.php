@@ -44,6 +44,7 @@ use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 
 use App\Http\Controllers\Admin\ResourceRotasController;
+use App\Http\Controllers\Admin\InventoryReportController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\TransferProductsController;
@@ -550,6 +551,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('order/refunds', [OrdersController::class, 'refund'])->name('order.refunds.index');
 
     Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
+    Route::get('reports/inventory_reports', [InventoryReportController::class, 'report'])->name('reports.inventory_report');
     Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
     Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
     Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');
@@ -570,8 +572,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
     //Route end for Operations reports
 
-    /////////////////Dashboard Stats//////
-
+    //////Dashboard Stats//////
     Route::get('dashboard/collection-by-centre', [DashboardReportsController::class, 'collectionByCentre'])->name('dashboard.collection_by_centre');
     Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
     Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
