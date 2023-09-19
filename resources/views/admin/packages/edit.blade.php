@@ -168,7 +168,7 @@
                             <th>Discount Value</th>
                             <th>Amount</th>
                             <th>Tax </th>
-                            <th>Amount.</th>
+                            <th>Total.</th>
                             <!-- <th>Is Consumed</th> -->
                             <th>Action</th>
                         </tr>
