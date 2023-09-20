@@ -31,7 +31,7 @@ class WarehouseController extends Controller
     /**
      * Display a listing of brand.
      *
-     * @return \Illuminate\Http\Response
+     * @return \never
      */
     public function index()
     {
@@ -61,21 +61,22 @@ class WarehouseController extends Controller
             if (isset($filters['delete'])) {
                 $ids = explode(',', $filters['delete']);
                 $warehouses = Warehouse::getBulkData($ids);
-                $is_child = false;
-                if ($warehouses) {
+
+                if (!$warehouses->isEmpty()) {
+                    $is_child = false;
                     foreach ($warehouses as $warehouse) {
                         if (!Warehouse::isChildExists($warehouse->id, Auth::User()->account_id)) {
                             $warehouse->delete();
                             $is_child = true;
                         }
                     }
-                }
-                if (!$is_child) {
-                    $records['status'] = false;
-                    $records['message'] = 'Child records exist, unable to delete resource!';
-                } else {
-                    $records['status'] = true;
-                    $records['message'] = 'Records has been deleted successfully!';
+                    if (!$is_child) {
+                        $records['status'] = false;
+                        $records['message'] = 'Child records exist, unable to delete resource!';
+                    } else {
+                        $records['status'] = true;
+                        $records['message'] = 'Records has been deleted successfully!';
+                    }
                 }
             }
 
