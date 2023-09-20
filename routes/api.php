@@ -227,6 +227,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('bundles/status', [BundlesController::class, 'status'])->name('bundles.status');
     Route::get('bundles/detail/{id}', [BundlesController::class, 'detail'])->name('bundles.detail');
     Route::resource('bundles', BundlesController::class)->except(['index', 'create', 'show']);
+    Route::get('bundles/editconf/{id}', [BundlesController::class,'editconf'])->name('bundles.editconf');
     //Packages Route End
 
     //Centre Target
