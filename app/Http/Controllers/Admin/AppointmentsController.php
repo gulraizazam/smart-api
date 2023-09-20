@@ -721,6 +721,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
+       
 
         $where = [];
         /*
@@ -819,16 +820,18 @@ class AppointmentsController extends Controller
             $where[] = [['appointments.consultancy_type' => $filters['consultancy_type']]];
             Filters::put(Auth::User()->id, $filename, 'consultancy_type', $filters['consultancy_type']);
         }
-        if (hasFilter($filters, 'created_at')) {
-            $where[] = ['appointments.created_at', '>=', $start_date_time];
-            $where[] = ['appointments.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
+        if (hasFilter($filters, 'created_from')) {
+            $where[] = ['appointments.created_at', '>=', $filters['created_from'].' 00:00:00'];
+            $where[] = ['appointments.created_at', '<=',  $filters['created_to'].' 23:59:00'];
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
         if (hasFilter($filters, 'phone')) {
             $phone = substr($filters['phone'], 1);
             $where[] = [['users.phone' => $phone]];
             Filters::put(Auth::User()->id, $filename, 'phone', $phone);
         }
+       
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
         if (Gate::allows('appointments_consultancy')) {
@@ -3927,6 +3930,7 @@ class AppointmentsController extends Controller
         } else {
             $package_access = 1;
         }
+       
         $cash = 0;
         if ($package_access == 1) {
             $price = $package_service->tax_including_price;
@@ -3935,13 +3939,14 @@ class AppointmentsController extends Controller
             $settleamount_1 = $price - $cash;
             $settleamount = min($settleamount_1, $balance);
         } else {
-            if ($service->price > ($package_bundle->net_amount - $balance_patient_in)) {
+            
+            if ( $package_service->price > ($package_bundle->net_amount - $balance_patient_in)) {
                 $price = $package_service->price;
                 $outstanding = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
                 $settleamount_1 = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
                 $settleamount = min($settleamount_1, $balance);
             } else {
-                $price = $service->price;
+                $price = $package_service->price;
                 $outstanding = intval($price) - $cash - intval($balance);
                 $settleamount_1 = $price - $cash;
                 $settleamount = min($settleamount_1, $balance);
@@ -4141,7 +4146,7 @@ class AppointmentsController extends Controller
                 $data_detail['discount_type'] = $packages->discount_type;
                 $data_detail['discount_price'] = $packages->discount_price;
                 $data_detail['discount_id'] = $packages->discount_id;
-                $data_detail['discount_name'] = $discount_info->name;
+                $data_detail['discount_name'] = $discount_info->name ?? '';
             }
             $data_detail['package_id'] = $request->package_id;
         }
