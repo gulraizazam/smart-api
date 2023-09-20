@@ -2111,6 +2111,9 @@ function deletePlan(id, type) {
                 if(resposne.data.del==1){
                     
                     $('#edit_consume' ).show();
+                    setTimeout(() => {
+                        $('#edit_consume' ).hide();
+                    }, 2000);
                 }else{
                     $('#' + type + 'wrongMessage').show();
                 }
@@ -2160,6 +2163,9 @@ function deleteConfPlan(id, type) {
                 if(resposne.data.del==1){
                     
                     $('#edit_consume' ).show();
+                    setTimeout(() => {
+                        $('#edit_consume' ).hide();
+                    }, 2000);
                 }else{
                     $('#' + type + 'wrongMessage').show();
                 }
