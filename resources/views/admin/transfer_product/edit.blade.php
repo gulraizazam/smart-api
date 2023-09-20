@@ -27,6 +27,7 @@
         <!--begin::Scroll-->
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_edit_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
+                    <input type="hidden" id="edit_product_id">
                     <input type="hidden" name="child_product_id" id="edit_child_product_id">
                     <input type="hidden" name="product_detail_id" id="edit_product_detail_id">
                     <div class="row mb-2">
