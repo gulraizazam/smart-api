@@ -1619,6 +1619,7 @@ function editDiscountValue($this) {
                 'discount_type': discount_type,
             },
             success: function (resposne) {
+               
                 if (resposne.status) {
                     $("#edit_net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
                     $("#edit_net_amount_1").prop("disabled", true, 'EditPackage');
@@ -2112,6 +2113,9 @@ function deletePlan(id, type) {
                 if(resposne.data.del==1){
                     
                     $('#edit_consume' ).show();
+                    setTimeout(() => {
+                        $('#edit_consume' ).hide();
+                    }, 2000);
                 }else{
                     $('#' + type + 'wrongMessage').show();
                 }
@@ -2161,6 +2165,9 @@ function deleteConfPlan(id, type) {
                 if(resposne.data.del==1){
                     
                     $('#edit_consume' ).show();
+                    setTimeout(() => {
+                        $('#edit_consume' ).hide();
+                    }, 2000);
                 }else{
                     $('#' + type + 'wrongMessage').show();
                 }
