@@ -58,21 +58,21 @@ class BrandsController extends Controller
             if (isset($filters['delete'])) {
                 $ids = explode(',', $filters['delete']);
                 $brands = Brand::getBulkData($ids);
-                $is_child = false;
-                if ($brands) {
+                if (!$brands->isEmpty()) {
+                    $is_child = false;
                     foreach ($brands as $brand) {
                         if (!Brand::isChildExists($brand->id, Auth::User()->account_id)) {
                             $brand->delete();
                             $is_child = true;
                         }
                     }
-                }
-                if (!$is_child) {
-                    $records['status'] = false;
-                    $records['message'] = 'Child records exist, unable to delete resource!';
-                } else {
-                    $records['status'] = true;
-                    $records['message'] = 'Records has been deleted successfully!';
+                    if (!$is_child) {
+                        $records['status'] = false;
+                        $records['message'] = 'Child records exist, unable to delete resource!';
+                    } else {
+                        $records['status'] = true;
+                        $records['message'] = 'Records has been deleted successfully!';
+                    }
                 }
             }
 
