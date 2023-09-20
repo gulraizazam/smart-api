@@ -1,17 +1,16 @@
 @extends('admin.layouts.master')
-@section('title', 'Orders')
+@section('title', 'Inventory Report')
 @section('content')
-
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-
-        @include('admin.partials.breadcrumb', ['module' => 'Orders', 'title' => 'Orders'])
-
+        @include('admin.partials.breadcrumb', [
+            'module' => 'Inventory Report',
+            'title' => 'Inventory Report',
+        ])
         <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
             <div class="container">
-
                 <!--begin::Card-->
                 <div class="card card-custom">
                     <div class="card-header py-3">
@@ -37,38 +36,31 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Orders</h3>
-                        </div>
-                        <div class="card-toolbar">
-                            <!--begin::Dropdown-->
-
-                            <div class="delete-records d-none">
-                                <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                <a id="delete-table-rows" href="javascript:void(0);"
-                                    class="btn btn-danger font-weight-bolder">
-                                    <i class="fa fa-trash-alt"></i>Delete
-                                </a>
-                            </div>
-
-                            @if (Gate::allows('order_create'))
-                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal"
-                                    data-target="#modal_create_order" onclick="formRest()">
-                                    <i class="la la-plus"></i>
-                                    Add New
-                                </a>
-                            @endif
-
-                            <!--end::Button-->
+                            <h3 class="card-label">Inventory Report</h3>
                         </div>
                     </div>
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                        @include('admin.orders.filters')
+                        @include('admin.reports.inventory.filters')
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
-                        <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
+                        <div style="width: 100%;" id="datatable_stock_report">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <th>id</th>
+                                    <th>Product</th>
+                                    <th>Purchase Quantity</th>
+                                    <th>Sale Quantity</th>
+                                    <th>Transfer Product Quantity</th>
+                                    <th>Current Stock Qty</th>
+                                    <th>Purchase Values</th>
+                                    <th>Current Stock Sell Value</th>
+                                </thead>
+                                <tbody id="stock_table_body"></tbody>
+                            </table>
+                        </div>
                         <!--end: Datatable-->
                     </div>
                 </div>
@@ -80,33 +72,8 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_create_order" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="paymment-mode-create">
-
-            @include('admin.orders.create')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-    <div class="modal fade" id="modal_edit_order" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="paymment-mode-edit">
-
-            @include('admin.orders.edit')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-
     @push('datatable-js')
-        <script src="{{ asset('assets/js/pages/admin_settings/orders.js') }}"></script>
-    @endpush
-
-    @push('js')
-        <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/orders.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/inventory_report.js') }}"></script>
     @endpush
 
 @endsection

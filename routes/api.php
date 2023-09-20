@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\InventoryReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
@@ -502,6 +503,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::patch('warehouse/active/{id}', [WarehouseController::class, 'active'])->name('warehouse.active');
     Route::post('warehouse/status', [WarehouseController::class, 'status'])->name('warehouse.status');
     Route::get('warehouse/sort', [WarehouseController::class, 'sortorder'])->name('warehouse.sort');
+    Route::post('reports/inventory_reports/result', [InventoryReportController::class, 'reportResult'])->name('reports.inventory_report_result');
+    Route::post('reports/inventory_reports/stock', [InventoryReportController::class, 'stockReport'])->name('reports.inventory_report_stock');
     /*Warehouseroutes*/
 
     /*Brand routes*/
