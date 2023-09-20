@@ -12,12 +12,14 @@ namespace App\Helpers;
 use Config;
 use App\Models\User;
 use App\Models\Leads;
+use App\Models\Stock;
 use App\Models\Patients;
 use App\Models\Services;
 use App\Models\Locations;
 use App\Models\Appointments;
 use App\Models\AppointmentLog;
 use Illuminate\Support\Carbon;
+use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -176,27 +178,26 @@ class GeneralFunctions
                     }
                 }
             }
-            if(Gate::allows('view_inactive_services')){
+            if (Gate::allows('view_inactive_services')) {
                 $services = Services::where('slug', '!=', 'all')
                     ->where(['parent_id' => 0])
                     ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                     ->orderBy('id', 'asc')
                     ->get();
-                }else{
-                    $services = Services::where('slug', '!=', 'all')
+            } else {
+                $services = Services::where('slug', '!=', 'all')
                     ->where(['parent_id' => 0])
                     ->where(['active' => 1])
                     ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                     ->orderBy('id', 'asc')
                     ->get();
-                }
+            }
             $mergedServices = [];
             foreach ($services as $service) {
-                if(Gate::allows('view_inactive_services')){
-                    $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number','asc')->get()->toArray();
-                }else{
-                    $children = Services::where(['parent_id' => $service->id,'active'=>1])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number','asc')->get()->toArray();
-                
+                if (Gate::allows('view_inactive_services')) {
+                    $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number', 'asc')->get()->toArray();
+                } else {
+                    $children = Services::where(['parent_id' => $service->id, 'active' => 1])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number', 'asc')->get()->toArray();
                 }
                 $mergedServices[] = $service->toArray();
                 foreach ($children as $child) {
@@ -1155,7 +1156,7 @@ class GeneralFunctions
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
                         $data['is_treatment'] = 1;
-                        $data['scheduled_date'] = $check_treatments->scheduled_date ;
+                        $data['scheduled_date'] = $check_treatments->scheduled_date;
                         array_push($patient_data, $data);
                     }
                 }
@@ -1165,6 +1166,19 @@ class GeneralFunctions
             return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
         });
         return $patient_data;
+    }
 
+
+    public static function stockCheck($id)
+    {
+        $count_product_in_quantity = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
+        $count_product_out_quantity = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
+        $stock_quantity = $count_product_in_quantity - $count_product_out_quantity;
+        $stock_available = ($stock_quantity > 0) ? true : false;
+
+        return [
+            'stock_quantity' => $stock_quantity,
+            'stock_available' => $stock_available,
+        ];
     }
 }
