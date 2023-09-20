@@ -93,8 +93,11 @@ class InventoryReportController extends Controller
             $where[] = ['created_at', '<=', $end_date_time];
         }
 
-        $products = Product::with('stocks', 'orderDetails', 'productDetail')->withSum('productDetail', 'quantity')->withSum('productDetail', 'total_purchase_price')->withSum('orderDetails', 'quantity')->withSum('orderDetails', 'sale_price')->where($where)->get();
+        $products = Product::withSum('productDetail', 'quantity')->withSum('productDetail', 'total_purchase_price')->withSum('transferProduct', 'quantity')->withSum('orderDetails', 'quantity')->withSum('orderDetails', 'sale_price')->where($where)->get();
         $products = collect($products)->map(function ($product) {
+            $product->transfer_product_sum_quantity = $product->transfer_product_sum_quantity == null ? 0 : $product->transfer_product_sum_quantity;
+            $product->order_details_sum_quantity = $product->order_details_sum_quantity == null ? 0 : $product->order_details_sum_quantity;
+            $product->order_details_sum_sale_price = $product->order_details_sum_sale_price == null ? 0 : $product->order_details_sum_sale_price;
             $product->available_stock = $product->getAvailableStockAttribute();
             return $product;
         });

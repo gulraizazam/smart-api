@@ -54,6 +54,11 @@ class Product extends BaseModal
         return $this->hasMany(OrderDetail::class);
     }
 
+    public function transferProduct()
+    {
+        return $this->hasMany(TransferProduct::class);
+    }
+
     public function getAvailableStockAttribute()
     {
         $quantityIn = $this->stocks()->where(['stock_type' => 'in'])->sum('quantity');
