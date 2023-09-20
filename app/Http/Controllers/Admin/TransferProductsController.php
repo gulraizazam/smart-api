@@ -12,10 +12,12 @@ use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
+use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Spatie\Activitylog\Facades\LogBatch;
 use Illuminate\Support\Facades\Validator;
 
 class TransferProductsController extends Controller
@@ -64,15 +66,15 @@ class TransferProductsController extends Controller
             if (isset($filters['delete'])) {
                 $ids = explode(',', $filters['delete']);
                 $transfer_products = TransferProduct::getBulkData($ids);
-                $is_child = false;
-                if ($transfer_products) {
+
+                if (!$transfer_products->isEmpty()) {
+                    $is_child = false;
                     foreach ($transfer_products as $transfer_product) {
                         if (!TransferProduct::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
-                            DB::transaction(function () use($transfer_product) {
+                            DB::transaction(function () use ($transfer_product) {
                                 Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
                                 Stock::where(['transfer_id' => $transfer_product->id])->delete();
                                 $transfer_product->delete();
-
                                 $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->get();
                                 foreach ($product_detail as $data) {
                                     $data->delete();
@@ -82,14 +84,15 @@ class TransferProductsController extends Controller
                             $is_child = true;
                         }
                     }
+                    if (!$is_child) {
+                        $records['status'] = false;
+                        $records['message'] = 'Child records exist, unable to delete resource!';
+                    } else {
+                        $records['status'] = true;
+                        $records['message'] = 'Records has been deleted successfully!';
+                    }
                 }
-                if (!$is_child) {
-                    $records['status'] = false;
-                    $records['message'] = 'Child records exist, unable to delete resource!';
-                } else {
-                    $records['status'] = true;
-                    $records['message'] = 'Records has been deleted successfully!';
-                }
+
             }
             // Get Total Records
             $iTotalRecords = TransferProduct::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
@@ -99,7 +102,6 @@ class TransferProductsController extends Controller
             $transfer_products = TransferProduct::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
-
 
             if ($transfer_products) {
                 $transfer_products = collect($transfer_products)->map(function ($transfer_product) {
@@ -174,11 +176,20 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            $stock_check = GeneralFunctions::stockCheck($request->product_id); //dd($stock_check['status']);
+            if (!$stock_check['stock_available']) {
+                return collect(['status' => false, 'message' => 'This product stock not available.']);
+            }
+            LogBatch::startBatch();
+            $request['type'] = 'product_transfer_create';
+            $request['message'] = 'Transfer Product create';
+
             $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
             if ($transfer_product['record']) {
                 $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['id']);
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                    LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
@@ -215,6 +226,7 @@ class TransferProductsController extends Controller
             }
             $data['product'] = TransferProduct::findOrFail($id);
             $data['product_details'] = ProductDetail::findOrFail($data['product']->product_detail_id);
+            $data['products'] = Product::getAllRecordsDictionary(Auth::user()->account_id);
             if (!$data['product']) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
@@ -240,11 +252,16 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            LogBatch::startBatch();
+            $request['type'] = 'product_transfer_update';
+            $request['message'] = 'Transfer Product update';
+
             $transfer_product = TransferProduct::updateRecord($id, $request, Auth::User()->account_id);
             $product_detail = ProductDetail::updateRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['product_detail_id']);
             if ($transfer_product) {
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                    LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
