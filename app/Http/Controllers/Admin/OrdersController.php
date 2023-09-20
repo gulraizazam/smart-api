@@ -93,7 +93,11 @@ class OrdersController extends Controller
             $products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
             //$products = Product::getAllRecordsDictionary(Auth::User()->account_id);
-
+            $orders = collect($orders)->map(function ($order) use($warehouse, $centres){
+                $order->order_have = ($order->location_id != null) ? ((array_key_exists($order->location_id, $centres)) ? $centres[$order->location_id]->name : 'N/A') : ((array_key_exists($order->warehouse_id, $warehouse)) ? $warehouse[$order->warehouse_id]->name : 'N/A');
+                return $order;
+            });
+           
             $records['data'] = $orders;
             $records['permissions'] = [
                 'manage' => Gate::allows('order_manage'),
