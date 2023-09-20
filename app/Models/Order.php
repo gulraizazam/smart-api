@@ -73,7 +73,7 @@ class Order extends BaseModal
 
         if ($search) {
             if (hasFilter($filters, 'order_id')) {
-                $where[][] = ['order_id' => $filters['order_id']];
+                $where[][] = ['id' => $filters['order_id']];
             }
             if (hasFilter($filters, 'patient_id')) {
                 $where[][] = ['patient_id' => $filters['patient_id']];

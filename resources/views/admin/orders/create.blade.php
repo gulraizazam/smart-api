@@ -38,7 +38,7 @@
                             <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>
                             <input class="form-control order_patient_search_id" placeholder="Patients Search" required>
 
-                            <input type="hidden" id="order_patient_search" name="patient_id"
+                            <input type="hidden" id="create_order_patient_search" name="patient_id"
                                 class="filter-field search_field">
                             <span onclick="addUsers()" class="croxcli"
                                 style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i
