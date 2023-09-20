@@ -6,12 +6,12 @@ var table_columns = [
         sortable: false,
         width: '80',
         title: 'Order ID'
-    }, {
+    },{
         field: 'patients.name',
         title: 'Patient',
         sortable: false,
         width: 'auto',
-    }, {
+    },{
         field: 'orders',
         title: 'Products',
         sortable: false,
@@ -19,20 +19,25 @@ var table_columns = [
         template: function (data) {
             return displayProducts(data.orders);
         }
-    }, {
+    },{
         field: 'orders.quantity',
         title: 'Quantity',
         sortable: false,
-        width: '80',
+        width: 'auto',
         template: function (data) {
             return sumProductsQuantity(data.orders);
         }
-    }, {
+    },{
+        field: 'order_have',
+        title: 'Location',
+        sortable: false,
+        width: 'auto',
+    },{
         field: 'total_price',
         title: 'Total Price',
         sortable: false,
-        width: '80',
-    }, {
+        width: 'auto',
+    },{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -138,7 +143,7 @@ function setEditData(response) {
     $("#modal_edit_order_form").attr("action", action);
 
     /* Order */
-    let location_option = order.from_location_id != null ? 'in_branch' : 'in_warehouse';
+    let location_option = order.location_id != null ? 'in_branch' : 'in_warehouse';
 
     if (location_option == 'in_branch') {
         $('.select_centre').show();
@@ -150,8 +155,8 @@ function setEditData(response) {
 
     $("#edit_order_patient_search").val(order.patient_id).trigger('change');
     $("#edit_order_type_option").val(location_option).trigger('change');
-    $('.order_patient_search_id').val(order.patient_name).trigger('change');
-    $('.order_patient_search_id').prop('disabled', true);
+    $('.edit_order_patient_search_id').val(order.patient_name).trigger('change');
+    $('.edit_order_patient_search_id').prop('disabled', true);
     $('#edit_order_patient').val(order.patient_id).trigger('change');
     $('#edit_old_product').val(orderDetail[0].product_id);
 
