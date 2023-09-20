@@ -32,7 +32,6 @@ var table_columns = [
 
 
 function actions(data) {
-
     let id = data.id;
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
@@ -103,7 +102,6 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
 
         let filters =  {
@@ -112,11 +110,9 @@ function applyFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function resetAllFilters(datatable) {
-
     $('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
@@ -125,7 +121,6 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {
