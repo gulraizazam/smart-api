@@ -66,8 +66,9 @@ class TransferProductsController extends Controller
             if (isset($filters['delete'])) {
                 $ids = explode(',', $filters['delete']);
                 $transfer_products = TransferProduct::getBulkData($ids);
-                $is_child = false;
-                if ($transfer_products) {
+
+                if (!$transfer_products->isEmpty()) {
+                    $is_child = false;
                     foreach ($transfer_products as $transfer_product) {
                         if (!TransferProduct::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
                             DB::transaction(function () use ($transfer_product) {
@@ -83,14 +84,15 @@ class TransferProductsController extends Controller
                             $is_child = true;
                         }
                     }
+                    if (!$is_child) {
+                        $records['status'] = false;
+                        $records['message'] = 'Child records exist, unable to delete resource!';
+                    } else {
+                        $records['status'] = true;
+                        $records['message'] = 'Records has been deleted successfully!';
+                    }
                 }
-                if (!$is_child) {
-                    $records['status'] = false;
-                    $records['message'] = 'Child records exist, unable to delete resource!';
-                } else {
-                    $records['status'] = true;
-                    $records['message'] = 'Records has been deleted successfully!';
-                }
+
             }
             // Get Total Records
             $iTotalRecords = TransferProduct::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
