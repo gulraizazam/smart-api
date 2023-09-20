@@ -126,13 +126,7 @@
                                 <option value="Percentage">Percentage</option>
                             </select>
                         </div>
-                        <div class="fv-row col-md-4 mt-5" id="edit_configurable_discount_type" style="display: none;">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <select id="edit_discount_type_configurable"  class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type_1">
-                                <option value="Configurable">Configurable</option>
-                                
-                            </select>
-                        </div>
+                        
                         <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
                             <input type="text" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
@@ -174,7 +168,7 @@
                             <th>Discount Value</th>
                             <th>Amount</th>
                             <th>Tax </th>
-                            <th>Amount.</th>
+                            <th>Total.</th>
                             <!-- <th>Is Consumed</th> -->
                             <th>Action</th>
                         </tr>
