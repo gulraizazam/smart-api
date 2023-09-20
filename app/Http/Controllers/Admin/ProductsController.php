@@ -22,7 +22,6 @@ use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Models\Activity;
 use Spatie\Activitylog\Facades\LogBatch;
 use Illuminate\Support\Facades\Validator;
-use PhpParser\Node\Stmt\Break_;
 
 class ProductsController extends Controller
 {
@@ -70,8 +69,8 @@ class ProductsController extends Controller
             if (isset($filters['delete'])) {
                 $ids = explode(',', $filters['delete']);
                 $products = Product::getBulkData($ids);
-                $is_child = false;
-                if ($products) {
+                if (!$products->isEmpty()) {
+                    $is_child = false;
                     foreach ($products as $product) {
                         if (!Product::isChildExists($product->id, Auth::User()->account_id)) {
                             ProductDetail::where(['product_id' => $product->id])->delete();
@@ -80,13 +79,13 @@ class ProductsController extends Controller
                             $is_child = true;
                         }
                     }
-                }
-                if (!$is_child) {
-                    $records['status'] = false;
-                    $records['message'] = 'Child records exist, unable to delete resource!';
-                } else {
-                    $records['status'] = true;
-                    $records['message'] = 'Records has been deleted successfully!';
+                    if (!$is_child) {
+                        $records['status'] = false;
+                        $records['message'] = 'Child records exist, unable to delete resource!';
+                    } else {
+                        $records['status'] = true;
+                        $records['message'] = 'Records has been deleted successfully!';
+                    }
                 }
             }
             // Get Total Records
