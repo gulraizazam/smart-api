@@ -62,7 +62,7 @@ function stockReport(response) {
 
     if (products.length === 0) {
         var row = '<tr>' +
-            '<td colspan="7">Data Not Found</td>' +
+            '<td colspan="8">Data Not Found</td>' +
             '</tr>';
         $('#stock_table_body').append(row);
     } else {
@@ -72,9 +72,10 @@ function stockReport(response) {
                 '<td>' + item.name + '</td>' +
                 '<td>' + item.product_detail_sum_quantity + '</td>' +
                 '<td>' + item.order_details_sum_quantity + '</td>' +
+                '<td>' + item.transfer_product_sum_quantity + '</td>' +
                 '<td>' + item.available_stock + '</td>' +
-                '<td>' + item.product_detail_sum_total_purchase_price + '</td>' +
-                '<td>' + item.order_details_sum_sale_price + '</td>' +
+                '<td> Rs ' + item.product_detail_sum_total_purchase_price + '</td>' +
+                '<td> Rs ' + item.order_details_sum_sale_price + '</td>' +
                 '</tr>';
             $('#stock_table_body').append(row);
         });
