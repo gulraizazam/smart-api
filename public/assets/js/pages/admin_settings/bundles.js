@@ -439,8 +439,8 @@ function notParent(val) {
     }
 }
 function SetFields()
-{
-   
+{       
+        $('#configurable_fields').find('.remove_discount.add_new_discount').parents('.discount_type_wrap').remove();
         
         $.ajax({
             headers: {
