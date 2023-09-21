@@ -6,12 +6,12 @@ var table_columns = [
         sortable: false,
         width: '80',
         title: 'Order ID'
-    },{
+    }, {
         field: 'patients.name',
         title: 'Patient',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'orders',
         title: 'Products',
         sortable: false,
@@ -19,7 +19,7 @@ var table_columns = [
         template: function (data) {
             return displayProducts(data.orders);
         }
-    },{
+    }, {
         field: 'orders.quantity',
         title: 'Quantity',
         sortable: false,
@@ -27,17 +27,17 @@ var table_columns = [
         template: function (data) {
             return sumProductsQuantity(data.orders);
         }
-    },{
+    }, {
         field: 'order_have',
         title: 'Location',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'total_price',
         title: 'Total Price',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -53,11 +53,19 @@ var table_columns = [
 function actions(data) {
     let id = data.id;
     let edit_url = route('admin.orders.edit', { id: id });
-    let refund_url = route('admin.orders.refund', { id: id });
+    let refund_url = route('admin.orders.refund.detail', { id: id });
     let delete_url = route('admin.orders.destroy', { id: id });
+
+    let invoice_url = route('admin.orders.invoiceDisplay', { id: id });
+
     if (permissions.refund) {
-        let actions = '<div class="dropdown dropdown-inline action-dots">\
-            <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+        let actions = '<div class="dropdown dropdown-inline action-dots">'
+
+        actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
+                            <span class="navi-icon"><i class="la la-file"></i></span>\
+                            <!--<span class="navi-text">Print Invoice</span>-->\
+                        </a>';
+        actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
             </a>\
             <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
@@ -117,6 +125,27 @@ function sumProductsQuantity(orders) {
     return quantitySum;
 }
 
+
+function createOrderInvoice(url) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: 'GET',
+        cache: false,
+        success: function (response) {
+            console.log(response);
+            $("#display_invoice").html(response)
+
+            $("#modal_display_invoice").modal("show");
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            toastr.error("Unable to process the request");
+        }
+    });
+
+}
 function editRow(url) {
     $.ajax({
         headers: {
@@ -158,11 +187,59 @@ function setEditData(response) {
     $('.edit_order_patient_search_id').val(order.patient_name).trigger('change');
     $('.edit_order_patient_search_id').prop('disabled', true);
     $('#edit_order_patient').val(order.patient_id).trigger('change');
-    $('#edit_old_product').val(orderDetail[0].product_id);
+    $('.edit_old_product').val(orderDetail[0].product_id);
 
     $('#edit_available_quantity').val(order.quantity);
     $('#edit_total_price').val(order.total_price);
     $('#edit_quantity').val(orderDetail[0].quantity);
+}
+
+
+function refundOrder(url) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            $("#modal_refund_order").modal("show");
+            setRefundOrderData(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+function setRefundOrderData(response) {
+    let order = response.data;
+    let orderDetail = order.orders;
+    let action = route('admin.orders.refund', { id: order.id });
+    $("#modal_order_refund_form").attr("action", action);
+
+    /* Order */
+    let location_option = order.location_id != null ? 'in_branch' : 'in_warehouse';
+
+    if (location_option == 'in_branch') {
+        $('.select_centre').show();
+        $("#refund_order_centre").val(order.location_id).trigger('change');
+    } else {
+        $('.select_warehouse').show();
+        $("#refund_order_warehouse").val(order.warehouse_id).trigger('change');
+    }
+
+    $("#refund_order_patient_search").val(order.patient_id).trigger('change');
+    $("#refund_order_type_option").val(location_option).trigger('change');
+    $('.refund_order_patient_search_id').val(order.patients.name).trigger('change');
+    $('.refund_order_patient_search_id').prop('disabled', true);
+    $('#refund_order_patient').val(order.patient_id).trigger('change');
+    $('.edit_old_product').val(orderDetail[0].product_id);
+
+    $('#refund_available_quantity').val(order.quantity);
+    $('#refund_total_price').val(order.total_price);
+    $('#refund_quantity').val(orderDetail[0].quantity);
 }
 
 function applyFilters(datatable) {
@@ -255,12 +332,17 @@ function setFilters(filter_values, active_filters) {
     $("#edit_order_centre").html(centre_options);
     $("#edit_order_warehouse").html(warehouse_options);
 
+    /* Refund Order values */
+    $("#refund_order_centre").html(centre_options);
+    $("#refund_order_warehouse").html(warehouse_options);
+    $("#refund_order_product").html(product);
+
     /* List Filters values */
     $("#search_centre_id").html(centre_options);
     $("#search_warehouse_id").html(warehouse_options);
 
     /* Active Filters */
-    $("#search_order_id").html(active_filters.order_id);
+    $("#search_order_id").val(active_filters.order_id);
     $("#search_patient_id").val(active_filters.patient_id);
     $("#search_product_id").val(active_filters.product_id);
     $("#search_location").html(active_filters.location);
@@ -282,6 +364,7 @@ function productSelect(product_id, id = null) {
             if (products.length) {
 
                 products.forEach(function (product) {
+                    console.log(product);
                     $("#" + id + "_available_quantity").val(product.quantity);
                     $("#" + id + "_price").val(product.sale_price);
                     $("#" + id + "_total_price").val(product.sale_price);
@@ -312,11 +395,13 @@ function productSearch(from_id, from_key, id = null, type = null) {
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        let oldProduct = $('#edit_old_product').val();
+                        let oldProduct = $('.edit_old_product').val();
 
-                        if(product.id == oldProduct){
+                        if (product.id == oldProduct) {
                             html += '<option value="' + product.id + '" selected>' + product.name + '</option>';
                             $('#edit_price').val(product.sale_price);
+                            $('#refund_price').val(product.sale_price);
+                            $("#refund_available_quantity").val(product.quantity);
                         } else {
                             html += '<option value="' + product.id + '">' + product.name + '</option>';
                         }
