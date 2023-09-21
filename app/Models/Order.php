@@ -19,14 +19,26 @@ class Order extends BaseModal
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false, $order_type = 'sale')
     {
         $where = self::general_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return self::where($where)->count();
+            return self::where($where)->when(($request['query'] != null), function ($q) use ($request) {
+                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
+                    $q->whereHas('orders', function ($q) use ($request) {
+                        $q->where(['product_id' => $request['query']['search']['product_id']]);
+                    });
+                });
+            })->where('order_type', $order_type)->count();
         } else {
-            return self::count();
+            return self::when(($request['query'] != null), function ($q) use ($request) {
+                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
+                    $q->whereHas('orders', function ($q) use ($request) {
+                        $q->where(['product_id' => $request['query']['search']['product_id']]);
+                    });
+                });
+            })->where('order_type', $order_type)->count();
         }
     }
 
@@ -42,9 +54,22 @@ class Order extends BaseModal
     {
         $where = self::general_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::with('patients', 'orders.product')->where($where)->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::with('patients', 'orders.product')->where($where)
+            ->when(($request['query'] != null), function ($q) use ($request) {
+                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
+                    $q->whereHas('orders', function ($q) use ($request) {
+                        $q->where(['product_id' => $request['query']['search']['product_id']]);
+                    });
+                });
+            })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         } else {
-            return self::with('patients', 'orders.product')->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::with('patients', 'orders.product')->when(($request['query'] != null), function ($q) use ($request) {
+                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
+                    $q->whereHas('orders', function ($q) use ($request) {
+                        $q->where(['product_id' => $request['query']['search']['product_id']]);
+                    });
+                });
+            })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         }
     }
 
@@ -57,7 +82,6 @@ class Order extends BaseModal
      */
     public static function general_filters($request, $account_id, $search = false, $filter_flag = false)
     {
-
         $where = [];
         $filters = getFilters($request->all());
         if (hasFilter($filters, 'created_at')) {
@@ -71,15 +95,12 @@ class Order extends BaseModal
             $end_date_time = null;
         }
 
-        if ($search) {
+        if ($filters) {
             if (hasFilter($filters, 'order_id')) {
                 $where[][] = ['id' => $filters['order_id']];
             }
             if (hasFilter($filters, 'patient_id')) {
                 $where[][] = ['patient_id' => $filters['patient_id']];
-            }
-            if (hasFilter($filters, 'product_id')) {
-                $where[][] = ['product_id' => $filters['product_id']];
             }
             if (hasFilter($filters, 'location_type')) {
                 if ($filters['location_type'] == 'branch') {
@@ -99,7 +120,6 @@ class Order extends BaseModal
                 $where[] = ['created_at', '<=', $end_date_time];
             }
         }
-
         return $where;
     }
 
@@ -149,6 +169,13 @@ class Order extends BaseModal
         if (!$order) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
+        if ($order->order_type == 'refund') {
+            $old_order = Order::where(['refund_order_id' => $order->id])->first();
+            $old_order->update([
+                'refund_order_id' => null,
+            ]);
+        }
+
         // Check if child records exists or not, If exist then disallow to delete it.
         if (self::isChildExists($id, Auth::User()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
@@ -167,6 +194,7 @@ class Order extends BaseModal
         }
         $record = $order->delete();
 
+
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
@@ -174,12 +202,9 @@ class Order extends BaseModal
     {
         $old_order = self::find($id);
         if ($old_order) {
-            $new_order['account_id'] = $old_order->account_id;
-            $new_order['patient_id'] = $old_order->patient_id;
-            $new_order['total_price'] = $old_order->total_price;
+            $new_order = $old_order->toArray();
             $new_order['order_type'] = 'refund';
-            $new_order['status'] = $old_order->status;
-            $new_order['created_by'] = $old_order->created_by;
+            $new_order['created_by'] = Auth::id();
             $refund = self::create($new_order);
             $old_order->refund_order_id = $refund->id;
             $old_order->save();
@@ -233,6 +258,11 @@ class Order extends BaseModal
     public function orders()
     {
         return $this->hasMany(OrderDetail::class, 'order_id');
+    }
+
+    public function orderDetail()
+    {
+        return $this->hasOne(OrderDetail::class, 'order_id');
     }
 
     public static function getRecord($id)

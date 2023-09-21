@@ -33,7 +33,7 @@
                 <div class="form-group">
                     <input type="hidden" id="edit_price" >
                     <input type="hidden" id="edit_product_type" name="product_type">
-                    <input type="hidden" id="edit_old_product" name="old_product">
+                    <input type="hidden" class="edit_old_product" name="old_product">
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>

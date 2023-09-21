@@ -37,7 +37,7 @@
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                    @include('admin.orders.filters')
+                    @include('admin.order_refunds.filters')
                     <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -50,16 +50,6 @@
             <!--end::Container-->
         </div>
         <!--end::Entry-->
-    </div>
-    <!--end::Content-->
-    <div class="modal fade" id="modal_display_refund_order" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup">
-
-            @include('admin.inventory_refunds.detail')
-
-        </div>
-        <!--end::Modal dialog-->
     </div>
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/refund.js')}}"></script>
