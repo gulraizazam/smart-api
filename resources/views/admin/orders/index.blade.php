@@ -100,6 +100,23 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_refund_order" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="paymment-mode-order-refund">
+
+            @include('admin.orders.refund')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_display_invoice" tabindex="-1" aria-hidden="true" style="z-index: 9999">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered big-modal" id="display_invoice">
+            {{--treatment invoice create here--}}
+        </div>
+    </div>
+
 
     @push('datatable-js')
         <script src="{{ asset('assets/js/pages/admin_settings/orders.js') }}"></script>
