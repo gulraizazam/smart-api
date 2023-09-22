@@ -61,7 +61,7 @@ class Order extends BaseModal
                             $q->where(['product_id' => $request['query']['search']['product_id']]);
                         });
                     });
-                })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+                })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
             return self::with('patients', 'orders.product')->when(($request['query'] != null), function ($q) use ($request) {
                 $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
@@ -69,7 +69,7 @@ class Order extends BaseModal
                         $q->where(['product_id' => $request['query']['search']['product_id']]);
                     });
                 });
-            })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
     }
 

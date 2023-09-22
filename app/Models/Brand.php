@@ -46,9 +46,9 @@ class Brand extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
     }
 
