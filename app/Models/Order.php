@@ -11,7 +11,7 @@ class Order extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id'];
+    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status'];
 
     /**
      * Get Total Records
@@ -25,7 +25,7 @@ class Order extends BaseModal
 
         if (count($where)) {
             return self::where($where)->when(($request['query'] != null), function ($q) use ($request) {
-                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
+                $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
                     $q->whereHas('orders', function ($q) use ($request) {
                         $q->where(['product_id' => $request['query']['search']['product_id']]);
                     });
@@ -33,7 +33,7 @@ class Order extends BaseModal
             })->where('order_type', $order_type)->count();
         } else {
             return self::when(($request['query'] != null), function ($q) use ($request) {
-                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
+                $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
                     $q->whereHas('orders', function ($q) use ($request) {
                         $q->where(['product_id' => $request['query']['search']['product_id']]);
                     });
@@ -55,16 +55,16 @@ class Order extends BaseModal
         $where = self::general_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return self::with('patients', 'orders.product')->where($where)
-            ->when(($request['query'] != null), function ($q) use ($request) {
-                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
-                    $q->whereHas('orders', function ($q) use ($request) {
-                        $q->where(['product_id' => $request['query']['search']['product_id']]);
+                ->when(($request['query'] != null), function ($q) use ($request) {
+                    $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
+                        $q->whereHas('orders', function ($q) use ($request) {
+                            $q->where(['product_id' => $request['query']['search']['product_id']]);
+                        });
                     });
-                });
-            })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+                })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         } else {
             return self::with('patients', 'orders.product')->when(($request['query'] != null), function ($q) use ($request) {
-                $q->when($request['query']['search']['product_id'] != null, function($q) use($request){
+                $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
                     $q->whereHas('orders', function ($q) use ($request) {
                         $q->where(['product_id' => $request['query']['search']['product_id']]);
                     });
