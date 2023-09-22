@@ -108,6 +108,20 @@
                                 class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
+                    <div class="row">
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span
+                                    class="text text-danger">*</span></label>
+                            <select id="edit_payment_mode"
+                                class="form-control form-control-solid mb-3 mb-lg-0 select2 select2-hidden-accessible"
+                                name="payment_mode">
+                                <option value="">Select Payment Mode</option>
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="bank_wire">Bank/Wire Transfer</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
             </div>
