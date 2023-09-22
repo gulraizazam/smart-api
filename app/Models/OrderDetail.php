@@ -39,8 +39,6 @@ class OrderDetail extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id)
     {
-        $old_data = (self::find($id))->toArray();
-
         $data = $request->all();
 
         // Set Account ID

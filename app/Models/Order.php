@@ -11,7 +11,7 @@ class Order extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'created_by', 'updated_by', 'account_id'];
+    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id'];
 
     /**
      * Get Total Records
@@ -136,6 +136,7 @@ class Order extends BaseModal
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::id();
         $data['total_price'] = $data['total_price'];
+        $data['status'] = 0;
         $record = self::create($data);
 
         return $record;
@@ -151,7 +152,7 @@ class Order extends BaseModal
             'id' => $id,
             'account_id' => $account_id,
         ])->first();
-
+        $data['status'] = 0;
         $record->update($data);
 
         return $record;
