@@ -31,7 +31,7 @@
                 data-kt-scroll-dependencies="#kt_modal_add_user_header"
                 data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
-                    <input type="hidden" id="add_price" >
+                    <input type="hidden" id="add_price">
                     <input type="hidden" id="add_product_type" name="product_type">
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
@@ -65,15 +65,15 @@
                             <div class="fv-row select_centre" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
                                 <select id="add_order_centre"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="location_id" onchange="productSearch(this.value, 'location_id', 'add', 'order')">
+                                    class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id"
+                                    onchange="productSearch(this.value, 'location_id', 'add', 'order')">
                                 </select>
                             </div>
                             <div class="fv-row select_warehouse" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
                                 <select id="add_order_warehouse"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'add', 'order')">
+                                    class="form-control form-control-solid mb-3 mb-lg-0 select2" name="warehouse_id"
+                                    onchange="productSearch(this.value, 'warehouse_id', 'add', 'order')">
                                 </select>
                             </div>
                         </div>
@@ -81,11 +81,10 @@
 
                     <div class="row mt-2">
                         <div class="fv-row col-md-6">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
-                                <select id="add_order_product"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="product_id" onchange="productSelect(this.value, 'add')">
-                                </select>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
+                            <select id="add_order_product" class="form-control form-control-solid mb-3 mb-lg-0 select2"
+                                name="product_id" onchange="productSelect(this.value, 'add')">
+                            </select>
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Available Quantity </label>
@@ -97,8 +96,9 @@
                     <div class="row mt-2">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price (per unit) </label>
-                                <input type="number" id="add_total_price"
-                                class="form-control form-control-lg form-control-solid mb-2" readonly name="total_price">
+                            <input type="number" id="add_total_price"
+                                class="form-control form-control-lg form-control-solid mb-2" readonly
+                                name="total_price">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Quantity <span
@@ -107,8 +107,24 @@
                                 class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
-                </div>
 
+                    <div class="row">
+                        <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span
+                                    class="text text-danger">*</span></label>
+                            <select id="create_payment_mode"
+                                class="form-control form-control-solid mb-3 mb-lg-0 select2 select2-hidden-accessible"
+                                name="payment_mode">
+                                <option value="">Select Payment Mode</option>
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="bank_wire">Bank/Wire Transfer</option>
+                            </select>
+                        </div>
+                    </div>
+
+
+                </div>
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->

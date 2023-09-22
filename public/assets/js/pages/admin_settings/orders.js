@@ -38,6 +38,24 @@ var table_columns = [
         sortable: false,
         width: 'auto',
     }, {
+        field: 'payment_mode',
+        title: 'Payment Status',
+        width: 80,
+        template: function (data) {
+            return '<span class="badge badge-success">' + data.payment_mode + '</span>';
+        }
+    }, {
+        field: 'status',
+        title: 'Status',
+        width: 80,
+        template: function (data) {
+            if (data.status == "pending") {
+                return '<span class="badge badge-warning">' + data.status + '</span>';
+            } else {
+                return '<span class="badge badge-primary">' + data.status + '</span>';
+            }
+        }
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -61,10 +79,15 @@ function actions(data) {
     if (permissions.refund) {
         let actions = '<div class="dropdown dropdown-inline action-dots">'
 
-        actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
+        if (data.status == "pending") {
+            actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
-                            <!--<span class="navi-text">Print Invoice</span>-->\
                         </a>';
+        } else {
+            actions += '<a title="View Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
+            <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
+                        </a>';
+        }
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
             </a>\
@@ -135,7 +158,6 @@ function createOrderInvoice(url) {
         type: 'GET',
         cache: false,
         success: function (response) {
-            console.log(response);
             $("#display_invoice").html(response)
 
             $("#modal_display_invoice").modal("show");
@@ -146,6 +168,7 @@ function createOrderInvoice(url) {
     });
 
 }
+
 function editRow(url) {
     $.ajax({
         headers: {
@@ -480,4 +503,12 @@ $(document).ready(function () {
         let location = selected.closest('optgroup').attr('value');
         $('#search_location_type').val(location);
     });
+
 });
+
+function openInNewTab(url) {
+    var win = window.open(url, '_blank');
+    win.focus();
+    $("#modal_display_invoice").modal("hide");
+    reInitTable();
+}
