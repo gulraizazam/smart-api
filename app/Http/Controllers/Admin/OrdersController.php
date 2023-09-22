@@ -97,6 +97,7 @@ class OrdersController extends Controller
 
             $orders = collect($orders)->map(function ($order) use ($warehouse, $centres) {
                 $order->order_have = ($order->location_id != null) ? ((array_key_exists($order->location_id, $centres)) ? $centres[$order->location_id]->name : 'N/A') : ((array_key_exists($order->warehouse_id, $warehouse)) ? $warehouse[$order->warehouse_id]->name : 'N/A');
+                $order->status = $order->status == 1 ? 'completed' : 'pending';
                 return $order;
             });
 
@@ -425,15 +426,15 @@ class OrdersController extends Controller
 
     public function displayInvoiceAppointment($id)
     {
-        if (! Gate::allows('order_manage')) {
+        if (!Gate::allows('order_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $invoice_info = Order::with('orderDetail')->where(['id' => $id])->first();
         $location_key = $invoice_info->location_id != null ? 'location_id' : 'warehouse_id';
         $location_value = $invoice_info->location_id != null ? $invoice_info->location_id : $invoice_info->warehouse_id;
-        if($invoice_info->location_id != null){
+        if ($invoice_info->location_id != null) {
             $location_info = Locations::find($invoice_info->location_id);
-        } else{
+        } else {
             $location_info = Warehouse::find($invoice_info->warehouse_id);
         }
 
@@ -447,15 +448,17 @@ class OrdersController extends Controller
 
     public function invoicePdf($id, $download = null)
     {
-        if (! Gate::allows('order_manage')) {
+        if (!Gate::allows('order_manage')) {
             return abort(401);
         }
         $invoice_info = Order::with('orderDetail')->where(['id' => $id])->first();
+        Order::where(['id' => $id])->update(['status' => 1]);
+
         $location_key = $invoice_info->location_id != null ? 'location_id' : 'warehouse_id';
         $location_value = $invoice_info->location_id != null ? $invoice_info->location_id : $invoice_info->warehouse_id;
-        if($invoice_info->location_id != null){
+        if ($invoice_info->location_id != null) {
             $location_info = Locations::find($invoice_info->location_id);
-        } else{
+        } else {
             $location_info = Warehouse::find($invoice_info->warehouse_id);
         }
 
@@ -464,14 +467,13 @@ class OrdersController extends Controller
         $account = Accounts::find($invoice_info->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
-            $content = view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'))->render();
-            $pdf = App::make('dompdf.wrapper');
-            $pdf->loadHTML($content);
-            if ($download) {
-                return $pdf->download('order-invoice-C-'.$invoice_info->patient_id.'.pdf');
-            }
+        $content = view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'))->render();
+        $pdf = App::make('dompdf.wrapper');
+        $pdf->loadHTML($content);
+        if ($download) {
+            return $pdf->download('order-invoice-C-' . $invoice_info->patient_id . '.pdf');
+        }
 
-            return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'));
-
+        return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'));
     }
 }
