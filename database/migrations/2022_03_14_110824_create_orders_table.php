@@ -21,6 +21,7 @@ class CreateOrdersTable extends Migration
             $table->float('total_price', 8, 2)->nullable();
             $table->integer('refund_order_id')->nullable();
             $table->enum('order_type', ['sale', 'refund', 'in_house_use']);
+            $table->enum('payment_mode', ['cash', 'card', 'bank_wire']);
             $table->tinyInteger('status')->default(1);
             $table->unsignedInteger('created_by');
             $table->unsignedInteger('updated_by')->nullable();
