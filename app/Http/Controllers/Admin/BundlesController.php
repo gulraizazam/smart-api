@@ -2,15 +2,16 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\Filters;
-use App\Http\Controllers\Controller;
-use App\Models\BundleHasServices;
 use App\Models\Bundles;
+use App\Helpers\Filters;
 use App\Models\Services;
-use App\Models\TaxTreatmentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use App\HelperModule\ApiHelper;
+use App\Models\TaxTreatmentType;
+use App\Helpers\GeneralFunctions;
+use App\Models\BundleHasServices;
+use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
@@ -151,21 +152,37 @@ class BundlesController extends Controller
      */
     public function store(Request $request)
     {
+        
         try {
             if (! Gate::allows('packages_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if ($request->start <= $request->end) {
-                if (Bundles::createRecord($request, Auth::User()->account_id)) {
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+            if($request->package_type == "configurable"){
+                $validator = $this->verifyConfigurableFields($request);
+                if ($validator->fails()) {
+                    return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
                 }
-
-                return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                if ($request->start <= $request->end) {
+                    if (Bundles::createConfigurableRecord($request, Auth::User()->account_id)) {
+                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    }
+    
+                    return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                }
+            }else{
+                $validator = $this->verifyFields($request);
+                if ($validator->fails()) {
+                    return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+                }
+                if ($request->start <= $request->end) {
+                    if (Bundles::createRecord($request, Auth::User()->account_id)) {
+                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    }
+    
+                    return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                }
             }
+            
 
             return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
         } catch (\Exception $e) {
@@ -187,6 +204,26 @@ class BundlesController extends Controller
             'service_id' => 'required|array',
             //'tax_treatment_type_id' => 'required'
         ]);
+    }
+    protected function verifyConfigurableFields(Request $request)
+    {
+        $rules = [];
+        $sessions = $request->input('sessions');
+        foreach ($sessions as $key => $value) {
+            $rules["sessions.{$key}"] = 'required';
+            $rules["services_name.{$key}"] = 'required';
+            $rules["disc_type.{$key}"] = 'required';
+            
+        }
+        
+        return Validator::make($request->all(), [
+            'name' => 'required',
+           
+            'start' => 'required',
+            'end' => 'required',
+            'sessions_buy' => 'required',
+            'base_service' => 'required',
+        ] + $rules);
     }
 
     /**
@@ -219,7 +256,40 @@ class BundlesController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function editconf($id)
+    {
+        try {
+            if (! Gate::allows('packages_edit')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            $bundle = Bundles::getData($id);
+           
+            if (! $bundle) {
+                return ApiHelper::apiResponse($this->success, 'No record found!', false);
+            }
+            $services = GeneralFunctions::ServicesTreeList();
+            $relationships = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+            ])->select('service_id')->get();
+            $base_services = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+                'base_service' =>1,
+            ])->get();
+            $get_services = BundleHasServices::where([
+                'bundle_id' => $bundle->id,
+                'get_service' =>1,
+            ])->get();
+            $bundle_services = collect(new Services());
+            if ($relationships->count()) {
+                $bundle_services = Services::whereIn('id', $relationships)->where(['account_id' => Auth::User()->account_id])->get()->getDictionary();
+            }
+            $tax_treatment_types = TaxTreatmentType::get();
 
+            return ApiHelper::apiResponse($this->success, 'Success', true, ['bundle' => $bundle, 'services' => $services, 'bundle_services' => $bundle_services, 'relationships' => $relationships,'base_service'=>$base_services,'get_services'=>$get_services,'tax_treatment_types' => $tax_treatment_types]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
     /**
      * Update Package in storage.
      *
@@ -227,9 +297,20 @@ class BundlesController extends Controller
      */
     public function update(Request $request, $id)
     {
+        
         try {
             if (! Gate::allows('packages_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+            if($request->package_type == "configurable"){
+               
+                if ($request->start <= $request->end) {
+                    if (Bundles::updateConfRecord($id, $request, Auth::User()->account_id)) {
+                        return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+                    }
+    
+                    return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+                }
             }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
