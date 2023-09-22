@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class BundleHasServices extends Model
 {
-    protected $fillable = ['bundle_id', 'service_id', 'service_price', 'calculated_price', 'end_node'];
+    protected $fillable = ['bundle_id', 'service_id', 'service_price', 'calculated_price', 'end_node','get_service','base_service'];
 
     protected static $_fillable = ['bundle_id', 'service_id', 'service_price', 'end_node'];
 
