@@ -97,29 +97,42 @@
                         </ul>
                         <br />
                         <div class="text-center">
-                            <a class="btn btn-success blue hidden-print margin-bottom-5" target="_blank"
-                                href="{{ route('admin.orders.invoice_pdf', [$invoice_info->id]) }}">Print Invoice
+                            <a class="btn btn-success blue hidden-print margin-bottom-5 btn-pdf"
+                                href="javascript:void(0);"
+                                onclick="openInNewTab('{{ route('admin.orders.invoice_pdf', [$invoice_info->id]) }}')">Print
+                                Invoice
                                 <i class="fa fa-print"></i>
                             </a>
 
-                            <a class="btn  btn-primary blue hidden-print margin-bottom-5" target="_blank"
-                                href="{{ route('admin.orders.invoice_pdf', [$invoice_info->id, 'download']) }}">Download
+                            <a class="btn btn-primary blue hidden-print margin-bottom-5 btn-pdf"
+                                href="javascript:void(0);"
+                                onclick="openInNewTab('{{ route('admin.orders.invoice_pdf', [$invoice_info->id, 'download']) }}')">Download
                                 <i class="fa fa-download"></i>
                             </a>
+
 
                         </div>
 
                     </div>
                 </div>
-
-
             </div>
-
         </div>
         <!--end::Scroll-->
-
-
     </div>
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
+
+@push('js')
+    <script>
+        $(document).ready(function() {
+            $(".btn-pdf").on("click", function(e) {
+                console.log("Button clicked!");
+                e.preventDefault();
+                var url = $(this).attr("href");
+                $("#modal_display_invoice").modal("hide");
+                window.open(url, "_blank");
+            });
+        });
+    </script>
+@endpush
