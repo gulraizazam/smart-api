@@ -166,7 +166,7 @@ function setEditData(response) {
     let quantity = response.data.quantity;
     let action = route('admin.products.update', { id: product.id, detail: product_detail.id });
     $("#modal_edit_products_form").attr("action", action);
-    
+
     /* Products */
     $("#edit_name").val(product.name);
     $("#edit_products_brand").val(product.brand_id).trigger('change');
