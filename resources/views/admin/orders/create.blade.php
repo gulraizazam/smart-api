@@ -36,7 +36,7 @@
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <input class="form-control order_patient_search_id" placeholder="Patients Search" required>
+                            <input class="form-control user_search" placeholder="Patients Search" required>
 
                             <input type="hidden" id="create_order_patient_search" name="patient_id"
                                 class="filter-field search_field">

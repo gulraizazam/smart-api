@@ -36,23 +36,21 @@ function setFilterData(response) {
 }
 
 function submitFilter() {
-        $.ajax({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            url: route('admin.reports.inventory_report_stock'),
-            type: "POST",
-            cache: false,
-            data: $("#search_inventory_report_form").serialize(),
-            success: function (response) {
-                console.log(response);
-                stockReport(response);
-            },
-            error: function (response, xhr, ajaxOptions, thrownError) {
-                console.log(response, xhr, ajaxOptions, thrownError);
-                toastr.error(response.message);
-            }
-        });
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.inventory_report_stock'),
+        type: "POST",
+        cache: false,
+        data: $("#search_inventory_report_form").serialize(),
+        success: function (response) {
+            stockReport(response);
+        },
+        error: function (response, xhr, ajaxOptions, thrownError) {
+            toastr.error(response.responseJSON.message);
+        }
+    });
 }
 
 function stockReport(response) {
@@ -68,7 +66,7 @@ function stockReport(response) {
     } else {
         $.each(products, function (index, item) {
             var row = '<tr>' +
-                '<td>' + item.id + '</td>' +
+                '<td>' + (index + 1) + '</td>' +
                 '<td>' + item.name + '</td>' +
                 '<td>' + item.product_detail_sum_quantity + '</td>' +
                 '<td>' + item.order_details_sum_quantity + '</td>' +

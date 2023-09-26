@@ -52,12 +52,13 @@ class InventoryReportController extends Controller
     public function stockReport(Request $request)
     {
         try {
+            if($request->report_type == null){
+                return ApiHelper::apiResponse($this->error, 'Report select please', false);
+            }
             if($request->has('report_type')){
                 if($request->report_type == 'stock_report'){
                     return $this->stockReportResult($request);
                 }
-            } else {
-                return ApiHelper::apiResponse($this->error, 'Report select please', true);
             }
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

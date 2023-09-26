@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use DateTime;
+use App\Helpers\ACL;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,7 +31,12 @@ class Order extends BaseModal
                         $q->where(['product_id' => $request['query']['search']['product_id']]);
                     });
                 });
-            })->where('order_type', $order_type)->count();
+            })
+            ->where(function ($query) {
+                $query->whereIn('location_id', ACL::getUserCentres())
+                    ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+            })
+            ->where('order_type', $order_type)->count();
         } else {
             return self::when(($request['query'] != null), function ($q) use ($request) {
                 $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
@@ -38,7 +44,12 @@ class Order extends BaseModal
                         $q->where(['product_id' => $request['query']['search']['product_id']]);
                     });
                 });
-            })->where('order_type', $order_type)->count();
+            })
+            ->where(function ($query) {
+                $query->whereIn('location_id', ACL::getUserCentres())
+                    ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+            })
+            ->where('order_type', $order_type)->count();
         }
     }
 
@@ -61,7 +72,12 @@ class Order extends BaseModal
                             $q->where(['product_id' => $request['query']['search']['product_id']]);
                         });
                     });
-                })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
+                })
+                ->where(function ($query) {
+                    $query->whereIn('location_id', ACL::getUserCentres())
+                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                })
+                ->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
             return self::with('patients', 'orders.product')->when(($request['query'] != null), function ($q) use ($request) {
                 $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
@@ -69,7 +85,12 @@ class Order extends BaseModal
                         $q->where(['product_id' => $request['query']['search']['product_id']]);
                     });
                 });
-            })->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
+            })
+            ->where(function ($query) {
+                $query->whereIn('location_id', ACL::getUserCentres())
+                    ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+            })
+            ->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
     }
 
@@ -152,7 +173,6 @@ class Order extends BaseModal
             'id' => $id,
             'account_id' => $account_id,
         ])->first();
-        $data['status'] = 0;
         $record->update($data);
 
         return $record;
