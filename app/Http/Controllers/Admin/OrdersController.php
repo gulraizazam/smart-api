@@ -260,11 +260,16 @@ class OrdersController extends Controller
             if (!Gate::allows('order_create')) {
                 return abort(401);
             }
-            $stock_check = GeneralFunctions::stockCheck($request->product_id); //dd($stock_check['status']);
-            if (!$stock_check['stock_available']) {
-                return collect(['status' => false, 'message' => 'This product stock not available.']);
+            if ($request->payment_mode == null) {
+                return ApiHelper::apiResponse($this->error, 'Payment method is required.', false);
             }
-
+            $stock_check = GeneralFunctions::stockCheck($request->product_id);
+            if (!$stock_check['stock_available']) {
+                return ApiHelper::apiResponse($this->error, 'Product quantity out of stock.', false);
+            }
+            if ($request->quantity <= 0) {
+                return ApiHelper::apiResponse($this->error, "Product quantity can't be 0.", false);
+            }
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {

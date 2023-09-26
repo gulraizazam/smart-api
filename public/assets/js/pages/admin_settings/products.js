@@ -442,6 +442,7 @@ $("#add_stock_purchase_price, add_stock_quantity").on('keyup', function () {
 });
 
 $(document).ready(function () {
+    $('.sale_price_message').hide();
     $('#add_product_type').on('change', function () {
         $('#select_option').show();
         if (this.value == 'in_house_use') {
@@ -461,6 +462,32 @@ $(document).ready(function () {
         } else {
             $('#select_centre').hide();
             $('#select_warehouse').hide();
+        }
+    });
+
+    $('#edit_product_type').on('change', function(){
+        if (this.value == 'in_house_use') {
+            $('#edit_sale_price_section').hide();
+            $('#edit_sale_price').val('');
+        } else {
+            $('#edit_sale_price_section').show();
+        }
+    });
+
+    $('#edit_product_type_option').on('change', function () {
+        if (this.value == 'in_warehouse') {
+            $('#edit_select_centre').hide();
+            $('#edit_select_warehouse').show();
+            $('#edit_product_centre').val('');
+        } else if (this.value == 'in_branch') {
+            $('#edit_select_centre').show();
+            $('#edit_select_warehouse').hide();
+            $('#edit_product_warehouse').val('');
+        } else {
+            $('#edit_select_centre').hide();
+            $('#edit_select_warehouse').hide();
+            $('#edit_product_centre').val('');
+            $('#edit_product_warehouse').val('');
         }
     });
 

@@ -178,6 +178,16 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            if ($request->purchase_price > $request->sale_price) {
+                return ApiHelper::apiResponse($this->error, 'Sale price greater then to purchase price.', false);
+            }
+            if ($request->product_type == 'for_sale' && $request->sale_price == null) {
+                return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
+            }
+            if ($request->location_id == null && $request->warehouse_id == null) {
+                $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
+                return ApiHelper::apiResponse($this->error, $err_message, false);
+            }
             LogBatch::startBatch();
             $request['type'] = 'product_create';
             $request['message'] = 'Product create';
@@ -252,6 +262,16 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
+            if ($request->purchase_price > $request->sale_price) {
+                return ApiHelper::apiResponse($this->error, 'Sale price write greater then to purchase price.', false);
+            }
+            if ($request->product_type == 'for_sale' && $request->sale_price == null) {
+                return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
+            }
+            if ($request->location_id == null && $request->warehouse_id == null) {
+                $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
+                return ApiHelper::apiResponse($this->error, $err_message, false);
+            }
             LogBatch::startBatch();
             $request['type'] = 'product_update';
             $request['message'] = 'Product update';
@@ -283,7 +303,7 @@ class ProductsController extends Controller
             }
             $product = Product::getData($id);;
             if ($product->product_type == 'in_house_use') {
-                return ApiHelper::apiResponse($this->success, 'This product for in house use. so do not add sale price!', false);
+                return ApiHelper::apiResponse($this->success, "Sale price can't be added against in-house product!", false);
             }
             LogBatch::startBatch();
             $request['type'] = 'product_sale_price_update';
@@ -448,6 +468,27 @@ class ProductsController extends Controller
         try {
             if (!Gate::allows('product_transfer')) {
                 return abort(401);
+            }
+            if ($request->product_type_option_to == 'in_warehouse') {
+                $to_key = "warehouse_id";
+                $to_value = $request->to_warehouse_id;
+            } else {
+                $to_key = "location_id";
+                $to_value = $request->to_location_id;
+            }
+
+            $product_check = Product::where([$to_key => $to_value])->first();
+            if ($product_check) {
+                return ApiHelper::apiResponse($this->error, "Please different location add.", false);
+            }
+            if ($request->quantity <= 0) {
+                return ApiHelper::apiResponse($this->error, "Transfer quantity can't be 0.", false);
+            }
+            if ($request->product_type_option_to == 'in_warehouse' && $request->to_warehouse_id == null) {
+                return collect(['status' => false, 'message' => 'Please select warehouse']);
+            }
+            if ($request->product_type_option_to == 'in_branch' && $request->to_location_id == null) {
+                return collect(['status' => false, 'message' => 'Please select any centre.']);
             }
             LogBatch::startBatch();
             $request['type'] = 'product_transfer_create';

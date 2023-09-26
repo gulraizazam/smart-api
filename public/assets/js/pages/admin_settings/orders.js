@@ -215,6 +215,7 @@ function setEditData(response) {
     $('#edit_available_quantity').val(order.quantity);
     $('#edit_total_price').val(order.total_price);
     $('#edit_quantity').val(orderDetail[0].quantity);
+    $("#edit_payment_mode").val(order.payment_mode).trigger('change');
 }
 
 
@@ -270,6 +271,7 @@ function applyFilters(datatable) {
         let filters = {
             delete: '',
             order_id: $('#search_order_id').val(),
+            patient_name: $(".order_patient_search_id").val(),
             patient_id: $("#order_patient_search").val(),
             product_id: $('#search_product_id').val(),
             location: $("#search_location").val(),
@@ -288,6 +290,7 @@ function resetAllFilters(datatable) {
         let filters = {
             delete: '',
             order_id: '',
+            patient_name: '',
             patient_id: '',
             location: '',
             location_type: '',
@@ -297,6 +300,7 @@ function resetAllFilters(datatable) {
             created_at: '',
             filter: 'filter_cancel',
         }
+        //$(".order_patient_search_id").val("")
         datatable.search(filters, 'search');
     });
 }
@@ -387,7 +391,6 @@ function productSelect(product_id, id = null) {
             if (products.length) {
 
                 products.forEach(function (product) {
-                    console.log(product);
                     $("#" + id + "_available_quantity").val(product.quantity);
                     $("#" + id + "_price").val(product.sale_price);
                     $("#" + id + "_total_price").val(product.sale_price);
