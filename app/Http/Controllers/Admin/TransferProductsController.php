@@ -176,9 +176,18 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            $stock_check = GeneralFunctions::stockCheck($request->product_id); //dd($stock_check['status']);
+            $stock_check = GeneralFunctions::stockCheck($request->product_id);
             if (!$stock_check['stock_available']) {
                 return collect(['status' => false, 'message' => 'This product stock not available.']);
+            }
+            if($request->quantity <= 0){
+                return collect(['status' => false, 'message' => 'Please add valid product quantity.']);
+            }
+            if($request->product_type_option_to == 'in_warehouse' && $request->to_warehouse_id == null){
+                return collect(['status' => false, 'message' => 'Please select warehouse']);
+            }
+            if($request->product_type_option_to == 'in_branch' && $request->to_location_id == null){
+                return collect(['status' => false, 'message' => 'Please select any centre.']);
             }
             LogBatch::startBatch();
             $request['type'] = 'product_transfer_create';
@@ -251,6 +260,32 @@ class TransferProductsController extends Controller
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+            }
+            if ($request->product_type_option_to == 'in_warehouse') {
+                $to_key = "warehouse_id";
+                $to_value = $request->to_warehouse_id;
+            } else {
+                $to_key = "location_id";
+                $to_value = $request->to_location_id;
+            }
+
+            $product_check = Product::where([$to_key => $to_value])->first();
+            if ($product_check) {
+                return ApiHelper::apiResponse($this->error, "Please different location add.", false);
+            }
+
+            $stock_check = GeneralFunctions::stockCheck($request->product_id);
+            if (!$stock_check['stock_available']) {
+                return collect(['status' => false, 'message' => 'This product stock not available.']);
+            }
+            if($request->quantity <= 0){
+                return collect(['status' => false, 'message' => 'Please add valid product quantity.']);
+            }
+            if($request->product_type_option_to == 'in_warehouse' && $request->to_warehouse_id == null){
+                return collect(['status' => false, 'message' => 'Please select warehouse']);
+            }
+            if($request->product_type_option_to == 'in_branch' && $request->to_location_id == null){
+                return collect(['status' => false, 'message' => 'Please select any centre.']);
             }
             LogBatch::startBatch();
             $request['type'] = 'product_transfer_update';

@@ -301,7 +301,7 @@ class Warehouse extends Model
      */
     public static function getAllRecordsDictionary($account_id)
     {
-        return self::where(['account_id' => $account_id])->get()->getDictionary();
+        return self::where(['account_id' => $account_id])->where(['active' => 1])->get()->getDictionary();
     }
 
     public static function activeRecord($id, $status)

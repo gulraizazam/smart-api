@@ -151,7 +151,7 @@ $(document).ready(function () {
 
     });
 
-    patientSearch();
+    patientSearch('user_search');
     leadSearch('lead_search_id')
 
     $(".package_id").select2({
@@ -1097,7 +1097,6 @@ function switchComplimentary($id) {
 function showException(error) {
     if (debug) {
         toastr.error(error);
-        console.log(error);
     }
 }
 
@@ -1299,7 +1298,6 @@ function productSearch(from_id, from_key, id = null, type = null) {
                 let html = '';
                 $("#" + id + "_transfer_product").html(html);
                 let products = response.data.products;
-                console.log('custom js file product', products);
                 if (products.length) {
                     let html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
@@ -1320,8 +1318,6 @@ function productSearch(from_id, from_key, id = null, type = null) {
 }
 
 function selectProduct(name, product_id, quantity, product_type, warehouse_id, location_id) {
-    //$("." + search_id).parent('div').find('.search_field').val(product_id).change();
-    console.log(name, product_id);
     $("#quantity").val(quantity);
 }
 
@@ -1360,7 +1356,7 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
         if ($(this).val() != '') {
             let form_type = $(this).parents("form").find('.form_type').val();
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(function () {                
+            debounceTimer = setTimeout(function () {
                 $.ajax({
                     type: "GET",
                     url: route('admin.leads.getlead.id'),
@@ -1368,7 +1364,6 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                     delay: 250,
                     data: { search: that },
                     success: function (response) {
-                        console.log('res', response);
                         let html = '';
                         let leads = response.data.leads;
                         let haveObjleads = Object.keys(leads).length;

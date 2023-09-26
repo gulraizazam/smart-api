@@ -167,6 +167,11 @@ class User extends Authenticatable
         return $this->hasMany('App\Models\UserHasLocations', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
+    public function user_has_warehouse()
+    {
+        return $this->hasMany('App\Models\UserHasWarehouse', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
+    }
+
     /**
      * Get the role has users.
      */

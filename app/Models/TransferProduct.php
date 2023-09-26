@@ -55,10 +55,18 @@ class TransferProduct extends BaseModal
         if (count($where)) {
             return self::where($where)->when($product_id != null, function ($q) use ($product_id) {
                 $q->whereIn('product_id', $product_id);
+            })
+            ->where(function ($query) {
+                $query->whereIn('from_location_id', ACL::getUserCentres())
+                    ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
             })->count();
         } else {
             return self::when($product_id != null, function ($q) use ($product_id) {
                 $q->whereIn('product_id', $product_id);
+            })
+            ->where(function ($query) {
+                $query->whereIn('from_location_id', ACL::getUserCentres())
+                    ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
             })->count();
         }
     }
@@ -84,11 +92,21 @@ class TransferProduct extends BaseModal
         if (count($where)) {
             return self::where($where)->when($product_id != null, function ($q) use ($product_id) {
                 return $q->whereIn('product_id', $product_id);
-            })->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            })
+            ->where(function ($query) {
+                $query->whereIn('from_location_id', ACL::getUserCentres())
+                    ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+            })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         } else {
             return self::when($product_id != null, function ($q) use ($product_id) {
                 return $q->whereIn('product_id', $product_id);
-            })->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+            })
+                ->where(function ($query) {
+                    $query->whereIn('from_location_id', ACL::getUserCentres())
+                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         }
     }
 
@@ -298,27 +316,34 @@ class TransferProduct extends BaseModal
      */
     public static function DeleteRecord($id)
     {
-        $transfer_product = self::getData($id);
-        if (!$transfer_product) {
-            return collect(['status' => false, 'message' => 'Resource not found.']);
-        }
-        // Check if child records exists or not, If exist then disallow to delete it.
-        if (self::isChildExists($id, Auth::User()->account_id)) {
-            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
-        }
-        DB::transaction(function () use ($transfer_product) {
-            Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
-            Stock::where(['transfer_id' => $transfer_product->id])->delete();
-            $record = $transfer_product->delete();
+        try {
+            DB::transaction(function () use ($id) {
+                $transfer_product = self::getData($id);
+                if (!$transfer_product) {
+                    return collect(['status' => false, 'message' => 'Resource not found.']);
+                }
+                // Check if child records exists or not, If exist then disallow to delete it.
+                if (self::isChildExists($id, Auth::User()->account_id)) {
+                    return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
+                }
 
-            $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->get();
-            foreach ($product_detail as $data) {
+                Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
+                Stock::where(['transfer_id' => $transfer_product->id])->delete();
+
+                $record = $transfer_product->delete();
+
+                $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->delete();
+                /* foreach ($product_detail as $data) {
                 $data->delete();
-            }
-            Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
-        });
+            } */
+                Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
+            });
 
-        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+            return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+        } catch (\Exception $e) {
+            // Handle the exception (e.g., log it or return an error response)
+            return collect(['status' => false, 'message' => $e->getMessage()]);
+        }
     }
 
     /**

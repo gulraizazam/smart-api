@@ -95,7 +95,7 @@
                         <div class="col-md-6">
                             <div class="fv-row">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
-                                <select id="transfer_transfer_product" class="form-control form-control-solid mb-3 mb-lg-0" name="product_id">
+                                <select id="transfer_transfer_product" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="product_id">
                                 </select>
                             </div>
                         </div>
@@ -111,7 +111,7 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Transfer Stock Quantity <span
                                     class="text text-danger">*</span></label>
                             <input type="number" id="transfer_quantity" name="quantity"
-                                class="form-control form-control-lg form-control-solid mb-2">
+                                class="form-control form-control-lg form-control-solid mb-2" min="1">
                         </div>
                     </div>
                     <div class="row mb-2">

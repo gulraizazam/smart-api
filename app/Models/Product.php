@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use DateTime;
+use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\LogOptions;
@@ -36,7 +37,6 @@ class Product extends BaseModal
     {
         return LogOptions::defaults()
             ->dontSubmitEmptyLogs();
-
     }
 
     public function productDetail()
@@ -88,7 +88,11 @@ class Product extends BaseModal
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return self::where($where)->count();
+            return self::where($where)
+                ->where(function ($query) {
+                    $query->whereIn('location_id', ACL::getUserCentres())
+                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                })->count();
         } else {
             return self::count();
         }
@@ -106,9 +110,18 @@ class Product extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
+            return self::where($where)
+                ->where(function ($query) {
+                    $query->whereIn('location_id', ACL::getUserCentres())
+                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         } else {
-            return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
+            return self::where(function ($query) {
+                $query->whereIn('location_id', ACL::getUserCentres())
+                    ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+            })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         }
     }
 

@@ -8,13 +8,14 @@
 
 namespace App\Helpers;
 
-use App\Models\Cities;
-use App\Models\DoctorHasLocations;
-use App\Models\Locations;
-use App\Models\Regions;
-use App\Models\User;
 use Auth;
 use Config;
+use App\Models\User;
+use App\Models\Cities;
+use App\Models\Regions;
+use App\Models\Locations;
+use App\Models\Warehouse;
+use App\Models\DoctorHasLocations;
 
 class ACL
 {
@@ -33,6 +34,20 @@ class ACL
             } else {
                 $locations = Auth::user()->user_has_locations()->pluck('location_id');
             }
+        }
+        if ($locations) {
+            return $locations->toArray();
+        }
+
+        return [];
+    }
+
+    public static function getUserWarehouse()
+    {
+        if (Auth::user()->id == 1) {
+            $locations = Warehouse::whereActive(1)->get()->pluck('id');
+        } else {
+                $locations = Auth::user()->user_has_locations()->pluck('location_id');
         }
         if ($locations) {
             return $locations->toArray();
