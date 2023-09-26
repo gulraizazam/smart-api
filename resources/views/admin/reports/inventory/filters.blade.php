@@ -5,7 +5,7 @@
         <div class="row mb-6">
             <div class="form-group col-md-3 " id="report_type_div">
                 {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
-                <select class="form-control" id="report_types" name="report_type" required>
+                <select class="form-control" id="report_types" name="report_type">
                     <option value="">Select Report</option>
                     <option value="stock_report">Stock Report</option>
                 </select>
