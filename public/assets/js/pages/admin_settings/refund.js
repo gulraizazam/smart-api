@@ -56,7 +56,7 @@ function actions(data) {
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
-        let detail = route('admin.orders.destroy', { id: id });
+        let detele = route('admin.orders.destroy', { id: id });
 
         let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -68,7 +68,7 @@ function actions(data) {
                     Choose an action: \
                     </li>';
         actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="deleteRow(`' + detail + '`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="deleteRow(`' + detele + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-trash"></i></span>\
                         <span class="navi-text">Delete</span>\
                         </a>\

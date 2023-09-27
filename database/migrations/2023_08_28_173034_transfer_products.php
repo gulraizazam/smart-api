@@ -17,7 +17,7 @@ class TransferProducts extends Migration
             $table->id();
             $table->foreignId('product_id');
             $table->foreignId('child_product_id');
-            $table->foreignId('product_detail_id')->nullable();
+            $table->integer('product_detail_id')->nullable();
 
             $table->unsignedInteger('from_location_id')->nullable();
             $table->foreignId('from_warehouse_id')->nullable();
@@ -32,7 +32,7 @@ class TransferProducts extends Migration
 
             $table->foreign('account_id')->references('id')->on('accounts');
             $table->foreign('product_id')->references('id')->on('products');
-            $table->foreign('product_detail_id')->references('id')->on('product_details');
+            //$table->foreign('product_detail_id')->references('id')->on('product_details');
             $table->foreign('child_product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('from_location_id')->references('id')->on('locations');
             $table->foreign('from_warehouse_id')->references('id')->on('warehouses');

@@ -330,12 +330,8 @@ class TransferProduct extends BaseModal
                 Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
                 Stock::where(['transfer_id' => $transfer_product->id])->delete();
 
-                $record = $transfer_product->delete();
-
-                $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->delete();
-                /* foreach ($product_detail as $data) {
-                $data->delete();
-            } */
+                $transfer_product->delete();
+                ProductDetail::where(['product_id' => $transfer_product->child_product_id])->delete();
                 Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
             });
 
@@ -423,7 +419,7 @@ class TransferProduct extends BaseModal
 
     public static function childLocation($id)
     {
-        $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
+        $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc');
         $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
         $transfer_product = TransferProduct::where(['id' => $id])->first();
         return ($transfer_product->to_location_id != null) ? ((array_key_exists($transfer_product->to_location_id, $centres)) ? $centres[$transfer_product->to_location_id]->name : 'N/A') : ((array_key_exists($transfer_product->to_warehouse_id, $warehouse)) ? $warehouse[$transfer_product->to_warehouse_id]->name : 'N/A');
