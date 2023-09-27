@@ -771,7 +771,7 @@ class UsersController extends Controller
                 if(in_array('all', $request->warehouse)){
                     $warehouse = Warehouse::where(['active' => 1])->get();
                 } else {
-                    $warehouse = Warehouse::where(['active' => 1])->whereIn($request->warehouse)->get();
+                    $warehouse = Warehouse::where(['active' => 1])->whereIn('id', $request->warehouse)->get();
                 }
                 $user_has_warehouse = [];
                 foreach ($warehouse as $data) {
