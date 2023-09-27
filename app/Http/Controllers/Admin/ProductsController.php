@@ -272,8 +272,10 @@ class ProductsController extends Controller
             if ($request->quantity <= 0) {
                 return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
             }
-            if ($request->purchase_price > $request->sale_price) {
-                return ApiHelper::apiResponse($this->error, 'Sale price write greater then to purchase price.', false);
+            if ($request->product_type == 'for_sale' && $request->sale_price != null) {
+                if ($request->purchase_price > $request->sale_price) {
+                    return ApiHelper::apiResponse($this->error, 'Sale price write greater then to purchase price.', false);
+                }
             }
             if ($request->product_type == 'for_sale' && $request->sale_price == null) {
                 return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
