@@ -32,7 +32,6 @@ class TransferProducts extends Migration
 
             $table->foreign('account_id')->references('id')->on('accounts');
             $table->foreign('product_id')->references('id')->on('products');
-            //$table->foreign('product_detail_id')->references('id')->on('product_details');
             $table->foreign('child_product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('from_location_id')->references('id')->on('locations');
             $table->foreign('from_warehouse_id')->references('id')->on('warehouses');
