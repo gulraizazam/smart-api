@@ -240,10 +240,12 @@ function setFilters(filter_values, active_filters) {
     let brands = filter_values.brands;
     let centres = filter_values.centres;
     let warehouses = filter_values.warehouse;
+    let status = filter_values.status;
 
     let brands_options = '<option value="">Select Brand</option>';
     let centre_options = '<option value="">Select Centre</option>';
     let warehouse_options = '<option value="">Select Warehouse</option>';
+    let status_options = '<option value="">Select Status</option>';
 
     Object.entries(brands).forEach(function (value, index) {
         brands_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
@@ -255,10 +257,15 @@ function setFilters(filter_values, active_filters) {
         warehouse_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
+    Object.entries(status).forEach(function (value, index) {
+        status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+    });
+
     /* List Filters values */
     $("#search_brand_id").html(brands_options);
     $("#search_centre_id").html(centre_options);
     $("#search_warehouse_id").html(warehouse_options);
+    $("#search_status").html(status_options);
 
     /* Add product values */
     $("#add_products_brand").html(brands_options);
