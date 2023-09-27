@@ -82,6 +82,9 @@ function actions(data) {
     return '';
 }
 
+$("#reset-filters").on("click", function () {
+    $("input").val('');
+});
 
 function sumProductsQuantity(orders) {
     let quantitySum = 0;
