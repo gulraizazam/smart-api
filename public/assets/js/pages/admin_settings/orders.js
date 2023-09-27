@@ -76,7 +76,6 @@ function actions(data) {
 
     let invoice_url = route('admin.orders.invoiceDisplay', { id: id });
 
-    if (permissions.refund) {
         let actions = '<div class="dropdown dropdown-inline action-dots">'
 
         if (data.status == "pending") {
@@ -125,8 +124,6 @@ function actions(data) {
         </div>';
 
         return actions;
-    }
-    return '';
 }
 function displayProducts(orders) {
     let productHtml = '';
@@ -449,6 +446,8 @@ function formRest() {
     $("#modal_create_order_form").find('.order_patient_search_id').attr('disabled', false);
     $('.select_centre').hide();
     $('.select_warehouse').hide();
+    reInitTable();
+    console.log('test');
 }
 
 $(document).ready(function () {
