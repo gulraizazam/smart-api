@@ -1181,4 +1181,13 @@ class GeneralFunctions
             'stock_available' => $stock_available,
         ];
     }
+
+    public static function stockC($id)
+    {
+        $count_product_in_quantity = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
+        $count_product_out_quantity = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
+        $stock_quantity = $count_product_in_quantity - $count_product_out_quantity;
+
+        return $stock_quantity;
+    }
 }

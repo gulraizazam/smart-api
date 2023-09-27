@@ -176,8 +176,8 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            $stock_check = GeneralFunctions::stockCheck($request->product_id);
-            if (!$stock_check['stock_available']) {
+            $stock_check = GeneralFunctions::stockC($request->product_id);
+            if ($stock_check < $request->quantity) {
                 return collect(['status' => false, 'message' => 'This product stock not available.']);
             }
             if($request->quantity <= 0){
@@ -188,6 +188,20 @@ class TransferProductsController extends Controller
             }
             if($request->product_type_option_to == 'in_branch' && $request->to_location_id == null){
                 return collect(['status' => false, 'message' => 'Please select any centre.']);
+            }
+
+            if ($request->product_type_option_to == 'in_warehouse') {
+                $from_value = $request->from_warehouse_id;
+                $to_value = $request->to_warehouse_id;
+                if($from_value == $to_value){
+                    return ApiHelper::apiResponse($this->error, "Please add different location.", false);
+                }
+            } else {
+                $from_value = $request->from_location_id;
+                $to_value = $request->to_location_id;
+                if($from_value == $to_value){
+                    return ApiHelper::apiResponse($this->error, "Please add different location.", false);
+                }
             }
             LogBatch::startBatch();
             $request['type'] = 'product_transfer_create';
@@ -261,21 +275,9 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if ($request->product_type_option_to == 'in_warehouse') {
-                $to_key = "warehouse_id";
-                $to_value = $request->to_warehouse_id;
-            } else {
-                $to_key = "location_id";
-                $to_value = $request->to_location_id;
-            }
 
-            $product_check = Product::where([$to_key => $to_value])->first();
-            if ($product_check) {
-                return ApiHelper::apiResponse($this->error, "Please different location add.", false);
-            }
-
-            $stock_check = GeneralFunctions::stockCheck($request->product_id);
-            if (!$stock_check['stock_available']) {
+            $stock_check = GeneralFunctions::stockC($request->product_id);
+            if ($stock_check < $request->quantity) {
                 return collect(['status' => false, 'message' => 'This product stock not available.']);
             }
             if($request->quantity <= 0){
