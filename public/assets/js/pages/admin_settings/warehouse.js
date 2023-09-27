@@ -121,7 +121,7 @@ function statuses(data, status_url, is_column_name_change = false) {
 
     let active = is_column_name_change == false ? data.active : data.status;
     let status = '';
-    
+
     if (active) {
         if (permissions.active) {
             status += '<span class="switch switch-icon">\
@@ -220,7 +220,7 @@ function setEditData(response) {
     let image = asset_url +'assets/media/new_logo.png';
     if (warehouse.image_src != null) {
         image = asset_url +'storage/warehouse_logo/'+ warehouse.image_src;
-    }console.log(warehouse.image_src)
+    }
     $("#edit_warehouse_image").css('background-image', "url(" + image + ")");
     $("#edit_warehouse_cities").val(warehouse.city_id).change();
     $("#modal_edit_warehouse_form").attr("action", action);
@@ -264,8 +264,8 @@ function setFilters(filter_values, active_filters) {
     let cities = filter_values.cities;
     let status = filter_values.status;
 
-    let city_options = '<option value="">Select A City</option>';
-    let status_options = '<option value="">All</option>';
+    let city_options = '<option value="" select>Select A City</option>';
+    let status_options = '<option value="" select>All</option>';
 
     Object.entries(status).forEach(function(value, index) {
         status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';

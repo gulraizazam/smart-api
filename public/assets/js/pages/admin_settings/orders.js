@@ -76,19 +76,18 @@ function actions(data) {
 
     let invoice_url = route('admin.orders.invoiceDisplay', { id: id });
 
-    if (permissions.refund) {
-        let actions = '<div class="dropdown dropdown-inline action-dots">'
+    let actions = '<div class="dropdown dropdown-inline action-dots">'
 
-        if (data.status == "pending") {
-            actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
+    if (data.status == "pending") {
+        actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                         </a>';
-        } else {
-            actions += '<a title="View Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
+    } else {
+        actions += '<a title="View Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                         </a>';
-        }
-        actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+    }
+    actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
             </a>\
             <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
@@ -96,37 +95,35 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-        if (permissions.edit) {
-            actions += '<li class="navi-item">\
+    if (permissions.edit) {
+        actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="editRow(`'+ edit_url + '`);" class="navi-link">\
                                 <span class="navi-icon"><i class="la la-pencil"></i></span>\
                                 <span class="navi-text">Edit</span>\
                             </a>\
                         </li>';
-        }
-        if (permissions.refund) {
-            actions += '<li class="navi-item">\
+    }
+    if (permissions.refund) {
+        actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="refundOrder(`' + refund_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-plus"></i></span>\
                             <span class="navi-text">Refund Order</span>\
                             </a>\
                         </li>';
-        }
-        if (permissions.delete) {
-            actions += '<li class="navi-item">\
+    }
+    if (permissions.delete) {
+        actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-trash"></i></span>\
                             <span class="navi-text">Delete</span>\
                             </a>\
                         </li>';
-        }
-        actions += '</ul>\
+    }
+    actions += '</ul>\
             </div>\
         </div>';
 
-        return actions;
-    }
-    return '';
+    return actions;
 }
 function displayProducts(orders) {
     let productHtml = '';
@@ -449,6 +446,7 @@ function formRest() {
     $("#modal_create_order_form").find('.order_patient_search_id').attr('disabled', false);
     $('.select_centre').hide();
     $('.select_warehouse').hide();
+    reInitTable();
 }
 
 $(document).ready(function () {
@@ -507,6 +505,10 @@ $(document).ready(function () {
         $('#search_location_type').val(location);
     });
 
+});
+
+$("#reset-filters").on("click", function () {
+    $("input").val('');
 });
 
 function openInNewTab(url) {
