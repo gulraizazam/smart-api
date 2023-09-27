@@ -52,8 +52,8 @@
                             @endif
 
                             @if (Gate::allows('product_create'))
-                                <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal"
-                                    data-target="#modal_add_products">
+                                <a href="javascript:void(0);" id='add_products_m' class="btn btn-primary"
+                                    data-toggle="modal" data-target="#modal_add_products">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>

@@ -178,11 +178,16 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if ($request->purchase_price > $request->sale_price) {
-                return ApiHelper::apiResponse($this->error, 'Sale price greater then to purchase price.', false);
-            }
+
             if ($request->product_type == 'for_sale' && $request->sale_price == null) {
-                return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
+                if ($request->sale_price == null) {
+                    return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
+                }
+            }
+            if ($request->product_type == 'for_sale' && $request->sale_price != null) {
+                if ($request->purchase_price > $request->sale_price) {
+                    return ApiHelper::apiResponse($this->error, 'Sale price greater then to purchase price.', false);
+                }
             }
             if ($request->location_id == null && $request->warehouse_id == null) {
                 $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
@@ -406,7 +411,7 @@ class ProductsController extends Controller
         $iTotalRecords = Stock::getTotalRecords($request, Auth::User()->account_id, $id);
         [$orderBy, $order] = getSortBy($request);
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-        $stock_data = Stock::with('product')->where('product_id', $id)->get();
+        $stock_data = Stock::with('product')->where('product_id', $id)->orderBy('id', 'desc')->get();
 
         $records['data'] = $stock_data;
         $records['meta'] = [

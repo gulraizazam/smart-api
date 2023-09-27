@@ -242,7 +242,7 @@ class WarehouseController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (!Gate::allows('locations_edit')) {
+        if (!Gate::allows('warehouse_edit')) {
             return abort(401);
         }
         $validator = $this->verifyFields($request);

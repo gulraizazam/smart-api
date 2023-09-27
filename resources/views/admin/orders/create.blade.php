@@ -6,7 +6,7 @@
         <h2 class="fw-bolder">Create Order</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
-        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close" onclick="formRest()">
             <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
             <span class="svg-icon svg-icon-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
