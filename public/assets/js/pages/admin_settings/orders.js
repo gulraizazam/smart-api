@@ -447,7 +447,6 @@ function formRest() {
     $('.select_centre').hide();
     $('.select_warehouse').hide();
     reInitTable();
-    console.log('test');
 }
 
 $(document).ready(function () {

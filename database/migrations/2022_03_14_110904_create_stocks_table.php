@@ -26,7 +26,6 @@ class CreateStocksTable extends Migration
 
             $table->foreign('product_id')->references('id')->on('products');
             $table->foreign('product_detail_id')->references('id')->on('product_details');
-            //$table->foreign('transfer_id')->references('id')->on('transfer_products');
             $table->foreign('order_id')->references('id')->on('orders');
         });
     }
