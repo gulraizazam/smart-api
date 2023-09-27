@@ -178,7 +178,9 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-
+            if ($request->quantity <= 0) {
+                return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
+            }
             if ($request->product_type == 'for_sale' && $request->sale_price == null) {
                 if ($request->sale_price == null) {
                     return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
@@ -266,6 +268,9 @@ class ProductsController extends Controller
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
+            }
+            if ($request->quantity <= 0) {
+                return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
             }
             if ($request->purchase_price > $request->sale_price) {
                 return ApiHelper::apiResponse($this->error, 'Sale price write greater then to purchase price.', false);
