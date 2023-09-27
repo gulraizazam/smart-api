@@ -56,18 +56,18 @@ class TransferProduct extends BaseModal
             return self::where($where)->when($product_id != null, function ($q) use ($product_id) {
                 $q->whereIn('product_id', $product_id);
             })
-            ->where(function ($query) {
-                $query->whereIn('from_location_id', ACL::getUserCentres())
-                    ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
-            })->count();
+                ->where(function ($query) {
+                    $query->whereIn('from_location_id', ACL::getUserCentres())
+                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                })->count();
         } else {
             return self::when($product_id != null, function ($q) use ($product_id) {
                 $q->whereIn('product_id', $product_id);
             })
-            ->where(function ($query) {
-                $query->whereIn('from_location_id', ACL::getUserCentres())
-                    ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
-            })->count();
+                ->where(function ($query) {
+                    $query->whereIn('from_location_id', ACL::getUserCentres())
+                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                })->count();
         }
     }
 
@@ -93,10 +93,10 @@ class TransferProduct extends BaseModal
             return self::where($where)->when($product_id != null, function ($q) use ($product_id) {
                 return $q->whereIn('product_id', $product_id);
             })
-            ->where(function ($query) {
-                $query->whereIn('from_location_id', ACL::getUserCentres())
-                    ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
-            })
+                ->where(function ($query) {
+                    $query->whereIn('from_location_id', ACL::getUserCentres())
+                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                })
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
         } else {
             return self::when($product_id != null, function ($q) use ($product_id) {
@@ -241,10 +241,10 @@ class TransferProduct extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id)
     {
-        $old_data = (self::find($id))->toArray();
-
         $data = $request->all();
         unset($data['_method']);
+        unset($data['type']);
+        unset($data['message']);
 
         $data['account_id'] = $account_id;
         $data['updated_by'] = Auth::user()->id;
@@ -282,14 +282,17 @@ class TransferProduct extends BaseModal
 
         if ($request->quantity <= $product_quantity) {
             $check_product = Product::where([$to_key => $to_value, 'id' => $request->child_product_id])->first();
+            $data2['type'] = $request['type'];
+            $data2['message'] = $request['message'];
 
             if ($check_product) {
                 $product_update = Product::updateRecord($request->child_product_id, $data2, $account_id);
             } else {
-                $product_update = Product::createRecord($request->child_product_id, $data2, $account_id);
+                $product_update = Product::createRecord($data2, $account_id);
             }
             $data['child_product_id'] = $product_update->id;
             $data2['child_product_id'] = $product_update->id;
+
             self::where(['id' => $id])->update($data);
         } else {
             $message = "Out of stock quantity product.";

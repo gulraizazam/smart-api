@@ -73,8 +73,8 @@ class ProductsController extends Controller
                     $is_child = false;
                     foreach ($products as $product) {
                         if (!Product::isChildExists($product->id, Auth::User()->account_id)) {
-                            ProductDetail::where(['product_id' => $product->id])->delete();
                             Stock::where(['product_id' => $product->id])->delete();
+                            ProductDetail::where(['product_id' => $product->id])->delete();
                             $product->delete();
                             $is_child = true;
                         }
@@ -482,17 +482,20 @@ class ProductsController extends Controller
                 return abort(401);
             }
             if ($request->product_type_option_to == 'in_warehouse') {
-                $to_key = "warehouse_id";
+                $from_value = $request->from_warehouse_id;
                 $to_value = $request->to_warehouse_id;
+                if($from_value == $to_value){
+                    return ApiHelper::apiResponse($this->error, "Please different location add.", false);
+                }
             } else {
-                $to_key = "location_id";
+                $from_value = $request->from_location_id;
                 $to_value = $request->to_location_id;
+                if($from_value == $to_value){
+                    return ApiHelper::apiResponse($this->error, "Please different location add.", false);
+                }
             }
 
-            $product_check = Product::where([$to_key => $to_value])->first();
-            if ($product_check) {
-                return ApiHelper::apiResponse($this->error, "Please different location add.", false);
-            }
+
             if ($request->quantity <= 0) {
                 return ApiHelper::apiResponse($this->error, "Transfer quantity can't be 0.", false);
             }
