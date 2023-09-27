@@ -69,8 +69,8 @@ function actions(data) {
     let stock_url = route('admin.products.stock', { id: id });
     let transfer_product_url = route('admin.products.transfer_product.get', { id: id });
     let log_url = route('admin.products.logs', { id: id });
-    if (permissions.edit || permissions.delete) {
-        let actions = '<div class="dropdown dropdown-inline action-dots">\
+
+    let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
             </a>\
@@ -79,66 +79,70 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
+    if (permissions.add_stock) {
         actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="addProductStock(`' + id + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-plus"></i></span>\
                         <span class="navi-text">Add Stock</span>\
                         </a>\
                      </li>';
+    }
+    if (permissions.sale_price) {
         actions += '<li class="navi-item">\
                      <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
                      <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
                      <span class="navi-text">Sale Price</span>\
                      </a>\
                   </li>';
-        if (permissions.edit) {
-            actions += '<li class="navi-item">\
+    }
+    if (permissions.edit) {
+        actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`'+ url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
-        }
-        if (permissions.transfer_product) {
-            actions += '<li class="navi-item">\
+    }
+    if (permissions.transfer_product) {
+        actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
                         <span class="navi-text">Transfer Product</span>\
                         </a>\
                      </li>';
-        }
+    }
+    if (permissions.stock_detail) {
         actions += '<li class="navi-item">\
                     <a href="'+ stock_url + '" class="navi-link">\
                         <span class="navi-icon"><i class="la la-archway"></i></span>\
                         <span class="navi-text">Stock</span>\
                     </a>\
                 </li>';
-        if (permissions.log) {
-            actions += '<li class="navi-item">\
+    }
+    if (permissions.log) {
+        actions += '<li class="navi-item">\
                                 <a href="' + log_url + '" class="navi-link">\
                                 <span class="navi-icon"><i class="la la-scroll"></i></span>\
                                 <span class="navi-text">Log</span>\
                                 </a>\
                              </li>';
-        }
+    }
 
-        if (permissions.delete) {
-            actions += '<li class="navi-item">\
+    if (permissions.delete) {
+        actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-trash"></i></span>\
                         <span class="navi-text">Delete</span>\
                         </a>\
                      </li>';
-        }
+    }
 
 
-        actions += '</ul>\
+    actions += '</ul>\
             </div>\
         </div>';
 
-        return actions;
-    }
-    return '';
+    return actions;
 }
 
 function editRow(url) {
@@ -441,6 +445,11 @@ $("#add_stock_purchase_price, add_stock_quantity").on('keyup', function () {
     getTotalPurchase('new');
 });
 
+$('#add_products_m').on('click', function () {
+    $('input').val('');
+    $('select').val('');
+});
+
 $(document).ready(function () {
     $('.sale_price_message').hide();
     $('#add_product_type').on('change', function () {
@@ -465,7 +474,7 @@ $(document).ready(function () {
         }
     });
 
-    $('#edit_product_type').on('change', function(){
+    $('#edit_product_type').on('change', function () {
         if (this.value == 'in_house_use') {
             $('#edit_sale_price_section').hide();
             $('#edit_sale_price').val('');
@@ -505,3 +514,4 @@ $(document).ready(function () {
     });
 
 })
+
