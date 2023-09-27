@@ -220,7 +220,7 @@ function setEditData(response) {
     let image = asset_url +'assets/media/new_logo.png';
     if (warehouse.image_src != null) {
         image = asset_url +'storage/warehouse_logo/'+ warehouse.image_src;
-    }console.log(warehouse.image_src)
+    }
     $("#edit_warehouse_image").css('background-image', "url(" + image + ")");
     $("#edit_warehouse_cities").val(warehouse.city_id).change();
     $("#modal_edit_warehouse_form").attr("action", action);

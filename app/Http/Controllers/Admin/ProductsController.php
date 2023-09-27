@@ -186,7 +186,7 @@ class ProductsController extends Controller
             }
             if ($request->product_type == 'for_sale' && $request->sale_price != null) {
                 if ($request->purchase_price > $request->sale_price) {
-                    return ApiHelper::apiResponse($this->error, 'Sale price greater then to purchase price.', false);
+                    return ApiHelper::apiResponse($this->error, 'sale price must be higher than the purchase price.', false);
                 }
             }
             if ($request->location_id == null && $request->warehouse_id == null) {
