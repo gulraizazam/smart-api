@@ -54,14 +54,14 @@
                             <div class="fv-row select_centre_from" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
                                 <select id="edit_product_centre_from"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
+                                    class="form-control form-control-solid mb-3 mb-lg-0"
                                     name="from_location_id" onchange="productSearch(this.value, 'location_id', 'edit', 'transfer')">
                                 </select>
                             </div>
                             <div class="fv-row select_warehouse_from" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
                                 <select id="edit_product_warehouse_from"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2"
+                                    class="form-control form-control-solid mb-3 mb-lg-0"
                                     name="from_warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'edit', 'transfer')">
                                 </select>
                             </div>
@@ -72,13 +72,13 @@
                             <div class="fv-row select_centre_to" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Centre To</label>
                                 <select id="edit_product_centre_to"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2" name="to_location_id">
+                                    class="form-control form-control-solid mb-3 mb-lg-0" name="to_location_id">
                                 </select>
                             </div>
                             <div class="fv-row select_warehouse_to" style="display: none">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse To</label>
                                 <select id="edit_product_warehouse_to"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2" name="to_warehouse_id">
+                                    class="form-control form-control-solid mb-3 mb-lg-0" name="to_warehouse_id">
                                 </select>
                             </div>
                         </div>
@@ -90,7 +90,7 @@
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
                                 <select id="edit_transfer_product"
                                     class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="product_id" {{-- onchange="productSelect(this.value, 'edit')" --}}
+                                    name="product_id" onchange="productSelect(this.value, 'edit')"
                                     >
                                 </select>
                             </div>

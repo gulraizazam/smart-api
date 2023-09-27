@@ -113,6 +113,14 @@ function setEditData(response) {
     let action = route('admin.transfer_product.update', { id: transferProduct.id, detail: transferProduct.product_detail_id });
     $("#modal_edit_transfer_products_form").attr("action", action);
 
+    $("#edit_product_type_option_from").attr("disabled", true);
+    $("#edit_product_type_option_to").attr("disabled", true);
+    $("#edit_product_centre_from").attr("disabled", true);
+    $("#edit_product_warehouse_from").attr("disabled", true);
+    $("#edit_product_centre_to").attr("disabled", true);
+    $("#edit_product_warehouse_to").attr("disabled", true);
+
+
     let location_from_option = transferProduct.from_location_id != null ? 'in_branch' : 'in_warehouse';
     let location_to_option = transferProduct.to_location_id != null ? 'in_branch' : 'in_warehouse';
     $("#edit_product_id").val(transferProduct.product_id);
@@ -280,8 +288,44 @@ function formRest() {
     $('.select_warehouse_to').hide();
 }
 
+$("#add_product_p").on("click", function(){
+    $('#add_transfer_date').val(moment().format('YYYY-MM-DD'));
+});
+
 $(document).ready(function () {
     $('#add_product_type_option_from').on('change', function () {
+        if (this.value == 'in_warehouse') {
+            $('.select_centre_from').hide();
+            $('.select_warehouse_from').show();
+            $('#add_product_centre_from').val('');
+        } else if (this.value == 'in_branch') {
+            $('.select_centre_from').show();
+            $('.select_warehouse_from').hide();
+            $('#add_product_warehouse_from').val('');
+        } else {
+            $('.select_centre_from').hide();
+            $('.select_warehouse_from').hide();
+            $('#add_product_warehouse_from').val('');
+            $('#add_product_centre_from').val('');
+        }
+    });
+    $('#add_product_type_option_to').on('change', function () {
+        if (this.value == 'in_warehouse') {
+            $('.select_centre_to').hide();
+            $('.select_warehouse_to').show();
+            $('#add_product_centre_to').val('');
+        } else if (this.value == 'in_branch') {
+            $('.select_centre_to').show();
+            $('#add_product_warehouse_to').val('');
+        } else {
+            $('.select_centre_to').hide();
+            $('.select_warehouse_to').hide();
+            $('#add_product_warehouse_to').val('');
+            $('#add_product_centre_to').val('');
+        }
+    });
+
+    $('#edit_product_type_option_from').on('change', function () {
         if (this.value == 'in_warehouse') {
             $('.select_centre_from').hide();
             $('.select_warehouse_from').show();
@@ -293,7 +337,7 @@ $(document).ready(function () {
             $('.select_warehouse_from').hide();
         }
     });
-    $('#add_product_type_option_to').on('change', function () {
+    $('#edit_product_type_option_to').on('change', function () {
         if (this.value == 'in_warehouse') {
             $('.select_centre_to').hide();
             $('.select_warehouse_to').show();
