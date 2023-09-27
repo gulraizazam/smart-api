@@ -53,7 +53,7 @@ class InventoryReportController extends Controller
     {
         try {
             if($request->report_type == null){
-                return ApiHelper::apiResponse($this->error, 'Report select please', false);
+                return ApiHelper::apiResponse($this->error, 'Please select report type', false);
             }
             if($request->has('report_type')){
                 if($request->report_type == 'stock_report'){

@@ -137,7 +137,7 @@ class OrdersController extends Controller
      */
     public function refund()
     {
-        if (!Gate::allows('refund_manage')) {
+        if (!Gate::allows('inventory_refund_manage')) {
             return abort(401);
         }
 
@@ -197,7 +197,7 @@ class OrdersController extends Controller
             $records['permissions'] = [
                 'manage' => Gate::allows('order_manage'),
                 'create' => Gate::allows('order_create'),
-                'refund' => Gate::allows('order_refund'),
+                'refund' => Gate::allows('inventory_refund'),
             ];
             $records['filter_values'] = [
                 'centres' => collect($centres)->pluck('name', 'id'),
@@ -482,3 +482,4 @@ class OrdersController extends Controller
         return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'));
     }
 }
+

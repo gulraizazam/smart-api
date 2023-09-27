@@ -875,7 +875,7 @@
                                     </ul>
                                 </div>
                             @endcan
-                            @can('refund_manage')
+                            @can('inventory_refund_manage')
                                 <div class="menu-submenu">
                                     <i class="menu-arrow"></i>
                                     <ul class="menu-subnav">
