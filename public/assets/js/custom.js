@@ -17,6 +17,7 @@ $('#created_at').datepicker({
         rightArrow: '<i class="la la-angle-right"></i>',
     },
 }).datepicker("setDate", new Date());
+
 $(document).ready(function () {
     $(document).on("change", ".select2", function () {
         if ($(this).val() != '') {
