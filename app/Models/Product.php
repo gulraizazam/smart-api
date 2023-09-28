@@ -222,6 +222,7 @@ class Product extends BaseModal
         if (!$record) {
             return null;
         }
+       
         $record->update($data);
 
         $subjectModel = self::find($id);
@@ -246,7 +247,7 @@ class Product extends BaseModal
         if (self::isChildExists($id, Auth::User()->account_id)) {
             return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
         }
-        
+
         ProductDetail::where('product_id', $id)->delete();
         Stock::where(['product_id' => $product->id])->delete();
 
