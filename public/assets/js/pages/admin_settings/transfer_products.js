@@ -315,6 +315,7 @@ $(document).ready(function () {
             $('.select_warehouse_to').show();
             $('#add_product_centre_to').val('');
         } else if (this.value == 'in_branch') {
+            $('.select_warehouse_to').hide();
             $('.select_centre_to').show();
             $('#add_product_warehouse_to').val('');
         } else {
