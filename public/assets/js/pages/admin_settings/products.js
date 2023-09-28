@@ -426,12 +426,17 @@ function transferProductSetData(response) {
     $('#transfer_total_stock').val(transferProduct.quantity);
     if (location_from_option == 'in_branch') {
         $('.select_centre_from').show();
+        $('.select_warehouse_from').hide();
         $("#transfer_product_centre_from").val(transferProduct.location_id).trigger('change');
         $("#transfer_product_centre_from").attr('disabled', 'true');
-    } else {
+    } else if (location_from_option == 'in_warehouse'){
         $('.select_warehouse_from').show();
+        $('.select_centre_from').hide();
         $("#transfer_product_warehouse_from").val(transferProduct.warehouse_id).trigger('change');
         $("#transfer_product_warehouse_from").attr('disabled', 'true');
+    } else {
+        $('.select_warehouse_from').hide();
+        $('.select_centre_from').hide();
     }
 
     $('#transfer_product_quantity').val(transferProduct.quantity);
