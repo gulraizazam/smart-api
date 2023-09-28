@@ -16,7 +16,7 @@ class TransferProducts extends Migration
         Schema::create('transfer_products', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id');
-            $table->foreignId('child_product_id');
+            $table->integer('child_product_id');
             $table->integer('product_detail_id')->nullable();
 
             $table->unsignedInteger('from_location_id')->nullable();
@@ -32,7 +32,6 @@ class TransferProducts extends Migration
 
             $table->foreign('account_id')->references('id')->on('accounts');
             $table->foreign('product_id')->references('id')->on('products');
-            $table->foreign('child_product_id')->references('id')->on('products')->onDelete('cascade');
             $table->foreign('from_location_id')->references('id')->on('locations');
             $table->foreign('from_warehouse_id')->references('id')->on('warehouses');
             $table->foreign('to_location_id')->references('id')->on('locations');

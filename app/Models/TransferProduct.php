@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -34,6 +35,21 @@ class TransferProduct extends BaseModal
     public function transferProductItem()
     {
         return $this->hasmany(TransferProductItems::class, 'transfer_product_id');
+    }
+
+    /* public function productDetail()
+    {
+        return $this->belongsTo(ProductDetail::class, 'product_detail_id');
+    } */
+
+    public function parentProduct()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+
+    public function childProduct()
+    {
+        return $this->belongsTo(Product::class, 'child_product_id');
     }
 
     /**
@@ -301,27 +317,39 @@ class TransferProduct extends BaseModal
      */
     public static function DeleteRecord($id)
     {
+        DB::beginTransaction();
         try {
-            DB::transaction(function () use ($id) {
-                $transfer_product = self::getData($id);
-                if (!$transfer_product) {
-                    return collect(['status' => false, 'message' => 'Resource not found.']);
-                }
-                // Check if child records exists or not, If exist then disallow to delete it.
-                if (self::isChildExists($id, Auth::User()->account_id)) {
-                    return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
-                }
+            //dd($id);
+            $transfer_product = self::getData($id);
+            if (!$transfer_product) {
+                return collect(['status' => false, 'message' => 'Resource not found.']);
+            }
+            // Check if child records exists or not, If exist then disallow to delete it.
+            if (self::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
+                return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
+            }
 
-                Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
-                Stock::where(['transfer_id' => $transfer_product->id])->delete();
+            Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
+            Stock::where(['transfer_id' => $transfer_product->id])->delete();
 
-                $transfer_product->delete();
-                ProductDetail::where(['product_id' => $transfer_product->child_product_id])->delete();
-                Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
-            });
+            ProductDetail::where('id', $transfer_product->product_detail_id)->delete();
+            //$transfer_product->productDetail()->delete();
 
-            return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+            $transfer = $transfer_product->delete();
+            $transfer_product->childProduct()->delete();
+            /* ProductDetail::where(['product_id' => $transfer_product->child_product_id])->delete();
+
+            Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
+            $transfer = TransferProduct::where(['id' => $id])->delete();
+
+
+            dd($transfer_product); */
+            DB::commit();
+            if ($transfer) {
+                return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+            }
         } catch (\Exception $e) {
+            DB::rollback();
             // Handle the exception (e.g., log it or return an error response)
             return collect(['status' => false, 'message' => $e->getMessage()]);
         }
