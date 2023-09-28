@@ -2,13 +2,10 @@ var table_url = route('admin.transfer_products.datatable');
 
 var table_columns = [
     {
-        field: 'id',
+        field: 'transfer_index',
         sortable: false,
         width: '40',
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
+        title: '#',
     }, {
         field: 'from',
         title: 'Transfer From',
