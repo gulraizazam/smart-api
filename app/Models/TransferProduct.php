@@ -363,7 +363,7 @@ class TransferProduct extends BaseModal
     {
         $order_detail = OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count();
         $product_details = TransferProduct::where(['product_id' => $id])->count();
-        if ($order_detail && $product_details) {
+        if ($order_detail || $product_details) {
             return true;
         }
         return false;
