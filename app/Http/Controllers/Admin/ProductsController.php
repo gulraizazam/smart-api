@@ -484,13 +484,13 @@ class ProductsController extends Controller
             if ($request->product_type_option_to == 'in_warehouse') {
                 $from_value = $request->from_warehouse_id;
                 $to_value = $request->to_warehouse_id;
-                if($from_value == $to_value){
+                if ($from_value == $to_value) {
                     return ApiHelper::apiResponse($this->error, "Please different location add.", false);
                 }
             } else {
                 $from_value = $request->from_location_id;
                 $to_value = $request->to_location_id;
-                if($from_value == $to_value){
+                if ($from_value == $to_value) {
                     return ApiHelper::apiResponse($this->error, "Please different location add.", false);
                 }
             }
