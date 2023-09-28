@@ -158,7 +158,7 @@ class ProductDetail extends BaseModal
         ]);
         Stock::where(['transfer_id' => $data['transfer_id'], 'stock_type' => 'out'])->update([
             'account_id' => $account_id,
-            'product_id' => $data['id'],
+            'product_id' => $data['parent_id'],
             'quantity' => $data['quantity'],
             'stock_type' => 'out',
         ]);

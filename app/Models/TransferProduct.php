@@ -97,7 +97,7 @@ class TransferProduct extends BaseModal
                     $query->whereIn('from_location_id', ACL::getUserCentres())
                         ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
                 })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
             return self::when($product_id != null, function ($q) use ($product_id) {
                 return $q->whereIn('product_id', $product_id);
@@ -106,7 +106,7 @@ class TransferProduct extends BaseModal
                     $query->whereIn('from_location_id', ACL::getUserCentres())
                         ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
                 })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id')->get();
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
     }
 
@@ -252,51 +252,33 @@ class TransferProduct extends BaseModal
         $record = null;
         $message = null;
         $parent_product_id = $request->product_id;
-        if ($request->product_type_option_to == 'in_warehouse') {
-            $to_key = "warehouse_id";
-            $to_value = $request->to_warehouse_id;
-        } else {
-            $to_key = "location_id";
-            $to_value = $request->to_location_id;
-        }
-        $product = Product::where(['id' => $request->product_id])->first();
 
-        unset($data['product_type_option_from']);
-        unset($data['product_type_option_to']);
-        $data2['id'] = $parent_product_id;
+        $product = Product::where(['id' => $data['child_product_id']])->first();
+
+        $data2['id'] = $product->id;
         $data2['name'] = $product->name;
         $data2['brand_id'] = $product->brand_id;
         $data2['sale_price'] = $product->sale_price;
         $data2['product_type'] = $product->product_type;
-        $data2['warehouse_id'] = $request->to_warehouse_id;
-        $data2['location_id'] = $request->to_location_id;
+        $data2['warehouse_id'] = $product->warehouse_id;
+        $data2['location_id'] = $product->location_id;
         $data2['quantity'] = $request->quantity;
         $data2['status'] = $product->status;
-        $data2['parent_id'] = $product->id;
+        $data2['parent_id'] = $parent_product_id;
         $data2['account_id'] = $account_id;
         $data2['transfer_date'] = $request->transfer_date;
         $data2['transfer_id'] = $id;
 
+        $data2['type'] = $request['type'];
+        $data2['message'] = $request['message'];
 
-        $product_quantity = Stock::sumProductQuantity($parent_product_id);
+        $product_update = Product::updateRecord($data['child_product_id'], $data2, $account_id);
 
-        if ($request->quantity <= $product_quantity) {
-            $check_product = Product::where([$to_key => $to_value, 'id' => $request->child_product_id])->first();
-            $data2['type'] = $request['type'];
-            $data2['message'] = $request['message'];
+        $data['child_product_id'] = $product_update->id;
+        $data2['child_product_id'] = $product_update->id;
 
-            if ($check_product) {
-                $product_update = Product::updateRecord($request->child_product_id, $data2, $account_id);
-            } else {
-                $product_update = Product::createRecord($data2, $account_id);
-            }
-            $data['child_product_id'] = $product_update->id;
-            $data2['child_product_id'] = $product_update->id;
+        self::where(['id' => $id])->update($data);
 
-            self::where(['id' => $id])->update($data);
-        } else {
-            $message = "Out of stock quantity product.";
-        }
         $record = self::where(['id' => $id])->first();
         $subjectModel = self::find($record->id);
         activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
