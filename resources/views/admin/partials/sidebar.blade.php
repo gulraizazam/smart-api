@@ -415,10 +415,10 @@
                         'admin.machine_types.index',
                         'admin.resources.index',
                         'admin.logs.index',
-
+                    
                         'admin.sms_templates.index',
                         'admin.centre_targets.index',
-
+                    
                         'admin.packagesadvances.index',
                         'admin.resourcerotas.calender-view',
                         'admin.invoices.index',
@@ -789,7 +789,7 @@
 
                             <a href="javascript:void(0);" class="menu-link menu-toggle">
                                 <span class="svg-icon menu-icon fa_icon">
-                                    <i class="la la-clock-o"></i>
+                                    <i class="la la-warehouse"></i>
                                 </span>
                                 <span class="menu-text">Inventory</span>
                                 <i class="menu-arrow"></i>
@@ -1008,19 +1008,20 @@
                         </div>
                     @endcan
                     {{-- @can('inventory_report') --}}
-                        <div class="menu-submenu">
-                            <i class="menu-arrow"></i>
-                            <ul class="menu-subnav">
-                                <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}" aria-haspopup="true">
-                                    <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
-                                        <i class="menu-bullet menu-bullet-dot">
-                                            <span></span>
-                                        </i>
-                                        <span class="menu-text">Inventory Report </span>
-                                    </a>
-                                </li>
-                            </ul>
-                        </div>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}"
+                                aria-haspopup="true">
+                                <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Inventory Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     {{-- @endcan --}}
                 </li>
 
