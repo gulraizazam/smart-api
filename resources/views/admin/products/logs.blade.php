@@ -106,6 +106,7 @@
                                                     <td>{{ Carbon\Carbon::parse($data['created_at'])->format('d-M-Y H:i:s a') }}
                                                     </td>
                                                 @else
+                                                @dd($data)
                                                     <td><strong>{{ $data['created_by'] }}</strong> transferred
                                                         {{ $properties['quantity'] }}
                                                         <strong>{{ $data['product_name'] }}</strong> products from

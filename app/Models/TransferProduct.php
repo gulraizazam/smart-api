@@ -319,7 +319,6 @@ class TransferProduct extends BaseModal
     {
         DB::beginTransaction();
         try {
-            //dd($id);
             $transfer_product = self::getData($id);
             $child_product_check = TransferProduct::where(['child_product_id' => $transfer_product->child_product_id])->count();
 
@@ -362,7 +361,9 @@ class TransferProduct extends BaseModal
      */
     public static function isChildExists($id, $account_id)
     {
-        if (OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()) {
+        $order_detail = OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count();
+        $product_details = TransferProduct::where(['product_id' => $id])->count();
+        if ($order_detail && $product_details) {
             return true;
         }
         return false;
