@@ -1008,7 +1008,7 @@ function displayData(response) {
 
 
         let service_options = noRecordFoundTable(9);
-        let total_grand =0;
+        
         if (packagebundles.length) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
@@ -1048,7 +1048,7 @@ function displayData(response) {
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
 
                 service_options += '</tr>';
-                total_grand+=packagebundle.tax_including_price;
+
 
                 Object.values(packageservices).forEach(function (packageservice) {
                     let consume = 'No';
@@ -1079,7 +1079,7 @@ function displayData(response) {
 
 
         $(".plan_history").html(history_options);
-        var totalam = Math.round(total_grand);
+        var totalam = Math.round(response.data.grand_total);
         $(".package_total_price").text(totalam);
         $("#user_name").text(package.user.name)
         $("#location_name").text(package.location.name)
