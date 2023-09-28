@@ -321,6 +321,8 @@ class TransferProduct extends BaseModal
         try {
             //dd($id);
             $transfer_product = self::getData($id);
+            $child_product_check = TransferProduct::where(['child_product_id' => $transfer_product->child_product_id])->count();
+
             if (!$transfer_product) {
                 return collect(['status' => false, 'message' => 'Resource not found.']);
             }
@@ -333,17 +335,12 @@ class TransferProduct extends BaseModal
             Stock::where(['transfer_id' => $transfer_product->id])->delete();
 
             ProductDetail::where('id', $transfer_product->product_detail_id)->delete();
-            //$transfer_product->productDetail()->delete();
-
             $transfer = $transfer_product->delete();
-            $transfer_product->childProduct()->delete();
-            /* ProductDetail::where(['product_id' => $transfer_product->child_product_id])->delete();
 
-            Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
-            $transfer = TransferProduct::where(['id' => $id])->delete();
+            if ($child_product_check == 1) {
+                $transfer_product->childProduct()->delete();
+            }
 
-
-            dd($transfer_product); */
             DB::commit();
             if ($transfer) {
                 return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
