@@ -331,7 +331,9 @@ class TransferProduct extends BaseModal
                 return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
             }
 
-            Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
+            if ($child_product_check == 1) {
+                Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
+            }
             Stock::where(['transfer_id' => $transfer_product->id])->delete();
 
             ProductDetail::where('id', $transfer_product->product_detail_id)->delete();
