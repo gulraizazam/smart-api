@@ -52,11 +52,11 @@ class InventoryReportController extends Controller
     public function stockReport(Request $request)
     {
         try {
-            if($request->report_type == null){
+            if ($request->report_type == null) {
                 return ApiHelper::apiResponse($this->error, 'Please select report type', false);
             }
-            if($request->has('report_type')){
-                if($request->report_type == 'stock_report'){
+            if ($request->has('report_type')) {
+                if ($request->report_type == 'stock_report') {
                     return $this->stockReportResult($request);
                 }
             }
@@ -94,7 +94,17 @@ class InventoryReportController extends Controller
             $where[] = ['created_at', '<=', $end_date_time];
         }
 
-        $products = Product::withSum('productDetail', 'quantity')->withSum('productDetail', 'total_purchase_price')->withSum('transferProduct', 'quantity')->withSum('orderDetails', 'quantity')->withSum('orderDetails', 'sale_price')->where($where)->get();
+        $products = Product::where(function ($query) {
+            $query->whereIn('location_id', ACL::getUserCentres())
+                ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+        })
+            ->withSum('productDetail', 'quantity')
+            ->withSum('productDetail', 'total_purchase_price')
+            ->withSum('transferProduct', 'quantity')
+            ->withSum('orderDetails', 'quantity')
+            ->withSum('orderDetails', 'sale_price')
+            ->where($where)->get();
+
         $products = collect($products)->map(function ($product) {
             $product->transfer_product_sum_quantity = $product->transfer_product_sum_quantity == null ? 0 : $product->transfer_product_sum_quantity;
             $product->order_details_sum_quantity = $product->order_details_sum_quantity == null ? 0 : $product->order_details_sum_quantity;
