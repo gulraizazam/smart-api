@@ -23,9 +23,9 @@ class Stock extends Model
     public static function getTotalRecords(Request $request, $account_id = false, $product_id = 0)
     {
         if ($product_id == 0) {
-            return self::where('product_id', $product_id)->count();
+            return self::where('product_id', $product_id)->orderBy('id', 'desc')->count();
         } else {
-            return self::count();
+            return self::orderBy('id', 'desc')->count();
         }
     }
 
