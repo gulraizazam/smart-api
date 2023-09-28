@@ -531,7 +531,7 @@ class ProductsController extends Controller
             if (!Gate::allows('product_log')) {
                 return abort(401);
             }
-            $products_logs = Activity::where(['subject_id' => $id])
+            $products_logs = Activity::where(['subject_id' => $id, 'log_name' => 'product'])
                 ->orWhere(['properties->attributes->product_id' => $id])
                 ->orWhere(['properties->attributes->child_product_id' => $id])
                 ->get()->toArray();
