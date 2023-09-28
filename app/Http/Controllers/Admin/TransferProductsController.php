@@ -104,7 +104,8 @@ class TransferProductsController extends Controller
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
 
             if ($transfer_products) {
-                $transfer_products = collect($transfer_products)->map(function ($transfer_product) {
+                $transfer_products = collect($transfer_products)->map(function ($transfer_product, $index) {
+                    $transfer_product->transfer_index = $index + 1;
                     $transfer_product_name = Product::where(['id' => $transfer_product->product_id])->select('name')->first();
                     $product_detail_quantity = ProductDetail::where(['id' => $transfer_product->product_detail_id])->first();
 
