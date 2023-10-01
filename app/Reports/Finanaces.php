@@ -2683,13 +2683,13 @@ class Finanaces
         if (!empty($data['service_id'])) {
             $where[] = [['appointments.service_id' => $data['service_id']]];
         }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations)
-        ->when(!empty($data['doctor_id']), function ($query) use ($data) {
+        dd($locations);
+        $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
                     return $query->where('user_id', $data['doctor_id']);
                 })
                 ->distinct('user_id')
                 ->pluck('user_id');
-        dd( $consultants);
+        
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
@@ -2807,14 +2807,12 @@ class Finanaces
             ->where($where)
             ->count();
         }
-        dd(collect($appointments_info)
-        ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
-        ->where('conversion_spend', '!=', "")->count());
+        
         array_push($converted_apts, collect($appointments_info)
         ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
         ->where('conversion_spend', '!=', "")->count());
         array_push($total_apts, $total_appointments);
-        dd($converted_apts);
+
         $maxConversion = collect($appointments_info)->filter(function ($appointment) {
             if ($appointment['conversion_spend'] > 0) {
                 return $appointment;

@@ -2804,14 +2804,14 @@ class DashboardReportsController extends Controller
         }else{
             $locations=$request->centre_id;
         }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations) 
-        ->when($request->doc_id != null, function ($query) use ($request) {
+        dd($locations);
+        $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         
         })
         ->distinct('user_id')
         ->pluck('user_id');
-        dd( $consultants->count());
+
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
             ->where([
@@ -2935,9 +2935,7 @@ class DashboardReportsController extends Controller
                 ->whereIn('appointments.doctor_id', $consultants)
                 ->count();
 
-            array_push($converted_apts, collect($appointments_info)
-            ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
-            ->where('conversion_spend', '!=', "")->count());
+            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
 
 
