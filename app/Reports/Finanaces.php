@@ -2690,7 +2690,7 @@ class Finanaces
         if (!empty($data['service_id'])) {
             $where[] = [['appointments.service_id' => $data['service_id']]];
         }
-        dd($locations);
+
         $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
                     return $query->where('user_id', $data['doctor_id']);
                 })
