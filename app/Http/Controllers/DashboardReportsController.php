@@ -2939,7 +2939,7 @@ class DashboardReportsController extends Controller
             ->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
 
-dd($converted_apts);
+// dd($converted_apts);
 
             $maxConversion = collect($appointments_info)->filter(function ($appointment) {
                 if ($appointment['conversion_spend'] > 0) {
