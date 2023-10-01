@@ -2669,7 +2669,14 @@ class Finanaces
         $sum_conversion_spend2 = 0;
 
         $data['location_id'] = ($data['location_id'][0] == null) ? 'all' : $data['location_id'];
-        $locations = $data['location_id'] == 'all' ? ACL::getUserCentres() : $data['location_id'];
+        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
+        if($data['location_id'] == 'all')
+        {
+            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
+        }else{
+            $locations=$data['location_id'];
+        }
+       // $locations = $data['location_id'] == 'all' ? ACL::getUserCentres() : $data['location_id'];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));

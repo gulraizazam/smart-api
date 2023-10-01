@@ -2800,12 +2800,12 @@ class DashboardReportsController extends Controller
         $periods = GeneralFunctions::GetPeriods();
         $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
         if($request->centre_id == 'all'){
-            $locations = ACL::getUserCentres();
-            //$locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
+            //$locations = ACL::getUserCentres()
+            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
         }else{
             $locations=$request->centre_id;
         }
-       
+        dd($locations);
         $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         
