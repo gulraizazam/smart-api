@@ -2558,7 +2558,9 @@ class DashboardReportsController extends Controller
         }else{
             $locations=[$request->centre_id];
         }
-        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+        
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations)
+         ->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         
         })

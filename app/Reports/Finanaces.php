@@ -25,6 +25,8 @@ use App\Models\DoctorHasLocations;
 use Illuminate\Support\Facades\DB;
 use App\Models\PabaoRecordPayments;
 use App\Helpers\Widgets\AppointmentEditWidget;
+use App\Models\User as ModelsUser;
+use Illuminate\Foundation\Auth\User as AuthUser;
 
 class Finanaces
 {
@@ -2683,13 +2685,13 @@ class Finanaces
         if (!empty($data['service_id'])) {
             $where[] = [['appointments.service_id' => $data['service_id']]];
         }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
                     return $query->where('user_id', $data['doctor_id']);
                 })
                 ->distinct('user_id')
                 ->pluck('user_id');
         
-
+        $consultants = ModelsUser::whereIn('id',$consultant)->where('active',1)->get();
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
             ->where([
