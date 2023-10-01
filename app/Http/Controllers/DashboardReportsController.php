@@ -2854,7 +2854,8 @@ class DashboardReportsController extends Controller
                         $periods[$period]['end_date']
                     ]);
                 })
-                ->get();
+                ->count();
+                dd( $converted_appointments);
 
             if (count($converted_appointments)) {
                 foreach ($converted_appointments as $appointment) {
@@ -2934,7 +2935,9 @@ class DashboardReportsController extends Controller
                 ->whereIn('appointments.doctor_id', $consultants)
                 ->count();
 
-            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
+            array_push($converted_apts, collect($appointments_info)
+            ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
+            ->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
 
 
