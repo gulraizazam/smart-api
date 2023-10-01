@@ -2584,7 +2584,7 @@ class DashboardReportsController extends Controller
                 'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                 'appointments.appointment_type_id' => 1
             ])
-            ->whereIn('appointments.doctor_id', $consultant)
+            //->whereIn('appointments.doctor_id', $consultant)
             ->whereIn('appointments.location_id', $locations)
             ->where('package_advances.cash_amount', '>', 0)
             ->select('appointments.*')
