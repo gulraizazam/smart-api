@@ -2603,7 +2603,7 @@ class DashboardReportsController extends Controller
             //         $periods[$period]['end_date']
             //     ]);
             // })
-            ->count();
+            ->get();
             //dd($converted_appointments);
 
         if (count($converted_appointments)) {
