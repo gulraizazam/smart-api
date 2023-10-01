@@ -2683,12 +2683,13 @@ class Finanaces
         if (!empty($data['service_id'])) {
             $where[] = [['appointments.service_id' => $data['service_id']]];
         }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
+        $consultants = DoctorHasLocations::whereIn('location_id', $locations)
+        ->when(!empty($data['doctor_id']), function ($query) use ($data) {
                     return $query->where('user_id', $data['doctor_id']);
                 })
                 ->distinct('user_id')
                 ->pluck('user_id');
-        
+        dd( $consultants);
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
