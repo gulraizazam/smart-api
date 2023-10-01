@@ -2800,12 +2800,10 @@ class DashboardReportsController extends Controller
         $periods = GeneralFunctions::GetPeriods();
         $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
         if($request->centre_id == 'all'){
-            //$locations = ACL::getUserCentres()
             $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
         }else{
             $locations=$request->centre_id;
         }
-
         $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         
@@ -2938,7 +2936,8 @@ class DashboardReportsController extends Controller
 
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
-           
+
+
 
             $maxConversion = collect($appointments_info)->filter(function ($appointment) {
                 if ($appointment['conversion_spend'] > 0) {
@@ -2998,7 +2997,6 @@ class DashboardReportsController extends Controller
             }
         }
 
-        dd($converted_apts);
 
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
             'labels' => $lables,
