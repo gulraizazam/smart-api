@@ -2806,7 +2806,9 @@ class Finanaces
             ->where($where)
             ->count();
         }
-        
+        dd(collect($appointments_info)
+        ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
+        ->where('conversion_spend', '!=', "")->count());
         array_push($converted_apts, collect($appointments_info)
         ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
         ->where('conversion_spend', '!=', "")->count());
