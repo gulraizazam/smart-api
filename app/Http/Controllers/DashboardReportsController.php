@@ -2584,22 +2584,25 @@ class DashboardReportsController extends Controller
                 'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
                 'appointments.appointment_type_id' => 1
             ])
-            //->whereIn('appointments.doctor_id', $consultant)
+            ->whereIn('appointments.doctor_id', $consultant)
             ->whereIn('appointments.location_id', $locations)
             ->where('package_advances.cash_amount', '>', 0)
             ->select('appointments.*')
-            ->when($period == 'today', function ($query) use ($periods, $period) {
-                $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
-            })
-            ->when($period == 'yesterday', function ($query) use ($periods, $period) {
-                $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
-            })
-            ->when($period != 'today' && $period != 'yesterday', function ($query) use ($periods, $period) {
-                $query->whereBetween('package_advances.created_at', [
-                    $periods[$period]['start_date'],
-                    $periods[$period]['end_date']
-                ]);
-            })
+            ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
+            ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
+            
+            // ->when($period == 'today', function ($query) use ($periods, $period) {
+            //     $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+            // })
+            // ->when($period == 'yesterday', function ($query) use ($periods, $period) {
+            //     $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
+            // })
+            // ->when($period != 'today' && $period != 'yesterday', function ($query) use ($periods, $period) {
+            //     $query->whereBetween('package_advances.created_at', [
+            //         $periods[$period]['start_date'],
+            //         $periods[$period]['end_date']
+            //     ]);
+            // })
             ->count();
             dd($converted_appointments);
 
