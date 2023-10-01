@@ -2812,7 +2812,7 @@ class DashboardReportsController extends Controller
         })
         ->distinct('user_id')
         ->pluck('user_id');
-dd( $consultants->count());
+
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
             ->where([
@@ -2938,7 +2938,7 @@ dd( $consultants->count());
 
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
-
+            dd(count($converted_apts));
 
 
             $maxConversion = collect($appointments_info)->filter(function ($appointment) {

@@ -2696,7 +2696,7 @@ class Finanaces
                 })
                 ->distinct('user_id')
                 ->pluck('user_id');
-        dd($consultants->count());
+       
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
@@ -2761,7 +2761,7 @@ class Finanaces
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
                         ->where('package_advances.created_at','>=',$start_date.' 00:00:00')
-            ->where('package_advances.created_at','<=',$end_date.' 23:59:59')
+                        ->where('package_advances.created_at','<=',$end_date.' 23:59:59')
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
@@ -2819,7 +2819,7 @@ class Finanaces
         ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
         ->where('conversion_spend', '!=', "")->count());
         array_push($total_apts, $total_appointments);
-
+        dd(count($converted_apts));
         $maxConversion = collect($appointments_info)->filter(function ($appointment) {
             if ($appointment['conversion_spend'] > 0) {
                 return $appointment;
