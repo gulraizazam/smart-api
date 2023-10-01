@@ -993,11 +993,11 @@
                                                                     onclick="initDoctorWiseConversion('thismonth');">This
                                                                     Month</a>
                                                             </li>
-                                                            <!-- <li class="lastmonth">
+                                                            <li class="lastmonth">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     onclick="initDoctorWiseConversion('lastmonth');">Last
                                                                     Month</a>
-                                                            </li> -->
+                                                            </li>
                                                         </ul>
                                                     </div>
                                                 </div>
