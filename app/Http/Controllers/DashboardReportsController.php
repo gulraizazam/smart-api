@@ -2604,7 +2604,7 @@ class DashboardReportsController extends Controller
             //     ]);
             // })
             ->count();
-            dd($converted_appointments);
+            //dd($converted_appointments);
 
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
