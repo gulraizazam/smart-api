@@ -2558,9 +2558,7 @@ class DashboardReportsController extends Controller
         }else{
             $locations=[$request->centre_id];
         }
-        
-        $consultant = DoctorHasLocations::whereIn('location_id', $locations)
-         ->when($request->doc_id != null, function ($query) use ($request) {
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         
         })
@@ -2936,10 +2934,12 @@ class DashboardReportsController extends Controller
                 ->whereIn('appointments.doctor_id', $consultants)
                 ->count();
 
-            array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
+            array_push($converted_apts, collect($appointments_info)
+            ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
+            ->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
 
-
+dd($converted_apts);
 
             $maxConversion = collect($appointments_info)->filter(function ($appointment) {
                 if ($appointment['conversion_spend'] > 0) {

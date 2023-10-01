@@ -2811,7 +2811,7 @@ class Finanaces
         ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
         ->where('conversion_spend', '!=', "")->count());
         array_push($total_apts, $total_appointments);
-
+        dd($converted_apts);
         $maxConversion = collect($appointments_info)->filter(function ($appointment) {
             if ($appointment['conversion_spend'] > 0) {
                 return $appointment;
