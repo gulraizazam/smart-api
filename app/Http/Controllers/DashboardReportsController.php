@@ -2938,8 +2938,7 @@ class DashboardReportsController extends Controller
 
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
-            dd($converted_apts);
-
+           
 
             $maxConversion = collect($appointments_info)->filter(function ($appointment) {
                 if ($appointment['conversion_spend'] > 0) {
@@ -2999,6 +2998,7 @@ class DashboardReportsController extends Controller
             }
         }
 
+        dd($converted_apts);
 
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
             'labels' => $lables,
