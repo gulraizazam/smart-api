@@ -2800,7 +2800,8 @@ class DashboardReportsController extends Controller
         $periods = GeneralFunctions::GetPeriods();
         $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
         if($request->centre_id == 'all'){
-            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
+            $locations = ACL::getUserCentres();
+            //$locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
         }else{
             $locations=$request->centre_id;
         }
