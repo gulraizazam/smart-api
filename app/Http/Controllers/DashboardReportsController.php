@@ -2953,7 +2953,7 @@ class DashboardReportsController extends Controller
                 foreach ($conversions as $conversion) {
                     $name = $conversion['service'];
                     $sum_conversion_spend += $conversion['conversion_spend'];
-                    $sum_conversion_total += 1;
+                    $sum_conversion_total++;
                     $sum_conversion_spend2 += $conversion['conversion_spend'];
                 }
                 $avg_by_category = ($sum_conversion_spend / count($conversions));
@@ -2974,7 +2974,9 @@ class DashboardReportsController extends Controller
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
                        // ->whereIn('appointments.doctor_id', $consultants)
-                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                       ->where('scheduled_date','>=',$periods[$period]['start_date'])
+                       ->where('scheduled_date','<=',$periods[$period]['end_date'])
+                        //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
                     $name = [$arrive_category['name']][0];
@@ -2984,7 +2986,9 @@ class DashboardReportsController extends Controller
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
                         //->whereIn('appointments.doctor_id', $consultants)
-                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->where('scheduled_date','>=',$periods[$period]['start_date'])
+                        ->where('scheduled_date','<=',$periods[$period]['end_date'])
+                        //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 }
 
