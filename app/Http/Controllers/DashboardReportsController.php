@@ -2938,7 +2938,7 @@ class DashboardReportsController extends Controller
 
             array_push($converted_apts, collect($appointments_info)->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
-            dd(count($converted_apts));
+            dd($converted_apts);
 
 
             $maxConversion = collect($appointments_info)->filter(function ($appointment) {
