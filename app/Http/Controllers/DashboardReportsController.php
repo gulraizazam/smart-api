@@ -2812,7 +2812,7 @@ class DashboardReportsController extends Controller
         })
         ->distinct('user_id')
         ->pluck('user_id');
-
+dd( $consultants->count());
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
             ->where([
