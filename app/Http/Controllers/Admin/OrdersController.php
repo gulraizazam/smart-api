@@ -114,7 +114,7 @@ class OrdersController extends Controller
             $records['permissions'] = [
                 'manage' => Gate::allows('order_manage'),
                 'edit' => Gate::allows('order_edit'),
-                'refund' => Gate::allows('refund_manage'),
+                'refund' => Gate::allows('order_refund_manage'),
                 'delete' => Gate::allows('order_destroy'),
             ];
             $records['active_filters'] = $filters;
