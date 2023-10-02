@@ -66,6 +66,15 @@ class OrdersController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
+            if (!empty($filters) && $filters['filter'] == "filter_cancel") {
+                if ($filters['location'] == null) {
+                    unset($filters['location']);
+                }
+                if ($filters['product_id'] == null) {
+                    unset($filters['product_id']);
+                }
+            }
+
             if (isset($apply_filter['delete'])) {
                 $ids = explode(',', $apply_filter['delete']);
                 $orders = Order::getBulkData($ids);
@@ -263,8 +272,8 @@ class OrdersController extends Controller
             if ($request->payment_mode == null) {
                 return ApiHelper::apiResponse($this->error, 'Payment method is required.', false);
             }
-            $stock_check = GeneralFunctions::stockCheck($request->product_id);
-            if (!$stock_check['stock_available']) {
+            $stock_check = GeneralFunctions::stockC($request->product_id);
+            if ($stock_check < $request->quantity) {
                 return ApiHelper::apiResponse($this->error, 'Product quantity out of stock.', false);
             }
             if ($request->quantity <= 0) {
@@ -357,9 +366,9 @@ class OrdersController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $stock_check = GeneralFunctions::stockCheck($request->product_id); //dd($stock_check['status']);
-            if (!$stock_check['stock_available']) {
-                return collect(['status' => false, 'message' => 'This product stock not available.']);
+            $stock_check = GeneralFunctions::stockC($request->product_id);
+            if ($stock_check < $request->quantity) {
+                return ApiHelper::apiResponse($this->error, 'Product quantity out of stock.', false);
             }
             $order = Order::updateRecord($request, Auth::user()->account_id, $id);
             if ($order) {
@@ -482,4 +491,3 @@ class OrdersController extends Controller
         return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'));
     }
 }
-
