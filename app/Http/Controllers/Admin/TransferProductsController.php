@@ -42,7 +42,7 @@ class TransferProductsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('product_manage')) {
+        if (!Gate::allows('transfer_product_manage')) {
             return abort(401);
         }
 
@@ -147,7 +147,7 @@ class TransferProductsController extends Controller
     public function create()
     {
         try {
-            if (!Gate::allows('product_create')) {
+            if (!Gate::allows('transfer_product_create')) {
                 return abort(401);
             }
 
@@ -170,7 +170,7 @@ class TransferProductsController extends Controller
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('product_create')) {
+            if (!Gate::allows('transfer_product_create')) {
                 return abort(401);
             }
             $validator = $this->verifyFields($request);
@@ -245,7 +245,7 @@ class TransferProductsController extends Controller
     public function edit($id)
     {
         try {
-            if (!Gate::allows('product_edit')) {
+            if (!Gate::allows('transfer_product_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $data['product'] = TransferProduct::findOrFail($id);
@@ -269,7 +269,7 @@ class TransferProductsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('product_edit')) {
+            if (!Gate::allows('transfer_product_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -318,7 +318,7 @@ class TransferProductsController extends Controller
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('product_destroy')) {
+            if (!Gate::allows('transfer_product_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = TransferProduct::DeleteRecord($id);

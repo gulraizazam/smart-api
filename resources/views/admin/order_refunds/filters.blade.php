@@ -19,7 +19,7 @@
         </div>
         <div class="fv-row col-md-3">
             <label>Patient Search </label>
-            <input class="form-control order_patient_search_id" placeholder="Patients Search">
+            <input class="form-control order_patient_search_id patient_search_id search_field" placeholder="Patients Search">
 
             <input type="hidden" id="order_patient_search" name="patient_id" class="filter-field search_field">
             <span onclick="addUsers()" class="croxcli"

@@ -299,9 +299,16 @@ class Warehouse extends Model
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    public static function getAllRecordsDictionary($account_id)
+    public static function getAllRecordsDictionary($account_id, $locationids = false)
     {
-        return self::where(['account_id' => $account_id])->where(['active' => 1])->get()->getDictionary();
+        if ($locationids && !is_array($locationids)) {
+            $locationids = [$locationids];
+        }
+        if ($locationids) {
+            return self::where(['account_id' => $account_id])->where(['active' => 1])->whereIn('id', $locationids)->get()->getDictionary();
+        } else {
+            return self::where(['account_id' => $account_id])->where(['active' => 1])->get()->getDictionary();
+        }
     }
 
     public static function activeRecord($id, $status)

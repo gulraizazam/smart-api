@@ -36,16 +36,16 @@
                                     class="text text-danger">*</span></label>
                             <select id="edit_product_type_option_from" class="form-control form-control mb-3 mb-lg-0" name="product_type_option_from">
                                 <option value="">Select Option</option>
-                                <option value="in_warehouse">In Warehouse</option>
-                                <option value="in_branch">In Branch</option>
+                                <option value="in_warehouse">Warehouse</option>
+                                <option value="in_branch">Branch</option>
                             </select>
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Transfer To <span class="text text-danger">*</span></label>
                             <select id="edit_product_type_option_to" class="form-control form-control mb-3 mb-lg-0" name="product_type_option_to">
                                 <option value="">Select Option</option>
-                                <option value="in_warehouse">In Warehouse</option>
-                                <option value="in_branch">In Branch</option>
+                                <option value="in_warehouse">Warehouse</option>
+                                <option value="in_branch">Branch</option>
                             </select>
                         </div>
                     </div>

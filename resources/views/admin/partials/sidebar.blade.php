@@ -415,10 +415,10 @@
                         'admin.machine_types.index',
                         'admin.resources.index',
                         'admin.logs.index',
-                    
+
                         'admin.sms_templates.index',
                         'admin.centre_targets.index',
-                    
+
                         'admin.packagesadvances.index',
                         'admin.resourcerotas.calender-view',
                         'admin.invoices.index',
@@ -1007,22 +1007,22 @@
                             </ul>
                         </div>
                     @endcan
-                    {{-- @can('inventory_report') --}}
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}"
-                                aria-haspopup="true">
-                                <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Inventory Report </span>
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                    {{-- @endcan --}}
+                    @can('inventory_report_manage')
+                        <div class="menu-submenu">
+                            <i class="menu-arrow"></i>
+                            <ul class="menu-subnav">
+                                <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}"
+                                    aria-haspopup="true">
+                                    <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
+                                        <i class="menu-bullet menu-bullet-dot">
+                                            <span></span>
+                                        </i>
+                                        <span class="menu-text">Inventory Report </span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    @endcan
                 </li>
 
 
