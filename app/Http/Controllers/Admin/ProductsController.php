@@ -64,21 +64,23 @@ class ProductsController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (!empty($filters) && $filters['filter'] == "filter_cancel") {
-                if ($filters['centre_id'] == null) {
-                    unset($filters['centre_id']);
-                }
-                if ($filters['warehouse_id'] == null) {
-                    unset($filters['warehouse_id']);
-                }
-                if ($filters['brand_id'] == null) {
-                    unset($filters['brand_id']);
-                }
-                if ($filters['status'] == null) {
-                    unset($filters['status']);
-                }
-                if ($filters['product_type'] == null) {
-                    unset($filters['product_type']);
+            if (!empty($filters)) {
+                if ($filters['filter'] == "filter_cancel") {
+                    if ($filters['centre_id'] == null) {
+                        unset($filters['centre_id']);
+                    }
+                    if ($filters['warehouse_id'] == null) {
+                        unset($filters['warehouse_id']);
+                    }
+                    if ($filters['brand_id'] == null) {
+                        unset($filters['brand_id']);
+                    }
+                    if ($filters['status'] == null) {
+                        unset($filters['status']);
+                    }
+                    if ($filters['product_type'] == null) {
+                        unset($filters['product_type']);
+                    }
                 }
             }
             if (isset($filters['delete'])) {
