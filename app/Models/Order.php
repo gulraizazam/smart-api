@@ -4,6 +4,7 @@ namespace App\Models;
 
 use DateTime;
 use App\Helpers\ACL;
+use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -128,6 +129,8 @@ class Order extends BaseModal
                     $where[][] = ['location_id' => $filters['location']];
                 } else if ($filters['location_type'] == 'warehouse') {
                     $where[][] = ['warehouse_id' => $filters['location']];
+                } else {
+                    Filters::forget(Auth::User()->id, 'location', 'name');
                 }
             }
             if (hasFilter($filters, 'created_by')) {

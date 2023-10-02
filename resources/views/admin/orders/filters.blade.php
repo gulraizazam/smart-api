@@ -19,7 +19,8 @@
         </div>
         <div class="fv-row col-md-3">
             <label>Patient Search </label>
-            <input class="form-control order_patient_search_id" placeholder="Patients Search">
+            <input class="form-control order_patient_search_id patient_search_id search_field"
+                placeholder="Patients Search">
 
             <input type="hidden" id="order_patient_search" name="patient_id" class="filter-field search_field">
             <span onclick="addUsers()" class="croxcli"
@@ -66,7 +67,10 @@
     </div>
     <div class="row">
         <div class="col-md-10">
-            @include('admin.partials.filter-buttons')
+            <div class="input-icon mb-0" style="width: 215px;">
+                <button class="btn btn-primary btn-primary--icon" id="apply-filters">Search</button>
+                <button class="btn btn-secondary btn-secondary--icon ml-3" id="reset-filters">Reset</button>
+            </div>
         </div>
     </div>
 </div>

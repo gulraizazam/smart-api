@@ -14,8 +14,6 @@ use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
@@ -66,6 +64,23 @@ class ProductsController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
+            if (!empty($filters) && $filters['filter'] == "filter_cancel") {
+                if ($filters['centre_id'] == null) {
+                    unset($filters['centre_id']);
+                }
+                if ($filters['warehouse_id'] == null) {
+                    unset($filters['warehouse_id']);
+                }
+                if ($filters['brand_id'] == null) {
+                    unset($filters['brand_id']);
+                }
+                if ($filters['status'] == null) {
+                    unset($filters['status']);
+                }
+                if ($filters['product_type'] == null) {
+                    unset($filters['product_type']);
+                }
+            }
             if (isset($filters['delete'])) {
                 $ids = explode(',', $filters['delete']);
                 $products = Product::getBulkData($ids);
@@ -96,7 +111,7 @@ class ProductsController extends Controller
             $products = Product::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
-            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
 
             if ($products) {
                 $products = collect($products)->map(function ($product) use ($brands, $centres, $warehouse) {
@@ -481,6 +496,9 @@ class ProductsController extends Controller
             if (!Gate::allows('product_transfer')) {
                 return abort(401);
             }
+            if ($request->to_warehouse_id == null || $request->to_location_id == null) {
+                return ApiHelper::apiResponse($this->error, "Please select any Branch/Warehouse.", false);
+            }
             if ($request->product_type_option_to == 'in_warehouse') {
                 $from_value = $request->from_warehouse_id;
                 $to_value = $request->to_warehouse_id;
@@ -568,7 +586,7 @@ class ProductsController extends Controller
 
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
-            $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
+            $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc');
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
             $products = Product::getAllRecordsDictionary(Auth::user()->account_id);
 
