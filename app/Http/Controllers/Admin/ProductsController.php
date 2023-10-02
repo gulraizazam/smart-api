@@ -65,7 +65,7 @@ class ProductsController extends Controller
             $apply_filter = checkFilters($filters, $filename);
 
             if (!empty($filters)) {
-                if ($filters['filter'] == "filter_cancel") {
+                if (isset($filters['filter']) == "filter_cancel") {
                     if ($filters['centre_id'] == null) {
                         unset($filters['centre_id']);
                     }
