@@ -3858,6 +3858,7 @@ class AppointmentsController extends Controller
             $bundleid[] = $bundleinfo->id;
         }
         $package = Packages::find($request->package_id_create);
+        dd($bundleinfo ,$package );
         if ($package == null) {
             return response()->json([
                 'status' => true,
