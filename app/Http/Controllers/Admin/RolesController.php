@@ -333,7 +333,7 @@ class RolesController extends Controller
             'sale_price' => 'Sale Price',
             'transfer' => 'Transfer',
             'inventory_refund_manage' => 'Inventory Refund',
-            'order_refund' => 'Order Refund',
+            'order_refund_manage' => 'Order Refund',
         ];
     }
 
