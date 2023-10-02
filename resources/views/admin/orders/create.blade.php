@@ -36,7 +36,7 @@
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <input class="form-control user_search" placeholder="Patients Search" required>
+                            <input class="form-control user_search patient_search_id search_field" placeholder="Patients Search" required>
 
                             <input type="hidden" id="create_order_patient_search" name="patient_id"
                                 class="filter-field search_field">
@@ -55,8 +55,8 @@
                             <select id="add_order_type_option" class="form-control form-control mb-3 mb-lg-0"
                                 name="product_type_option">
                                 <option value="">Select Option</option>
-                                <option value="in_warehouse">In Warehouse</option>
-                                <option value="in_branch">In Branch</option>
+                                <option value="in_warehouse">Warehouse</option>
+                                <option value="in_branch">Branch</option>
                             </select>
                         </div>
                     </div>
