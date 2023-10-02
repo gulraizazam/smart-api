@@ -370,6 +370,9 @@ class OrdersController extends Controller
             if ($stock_check < $request->quantity) {
                 return ApiHelper::apiResponse($this->error, 'Product quantity out of stock.', false);
             }
+            if ($request->quantity <= 0) {
+                return ApiHelper::apiResponse($this->error, "Product quantity can't be 0.", false);
+            }
             $order = Order::updateRecord($request, Auth::user()->account_id, $id);
             if ($order) {
                 if (OrderDetail::updateRecord($order->id, $request, Auth::User()->account_id)) {
