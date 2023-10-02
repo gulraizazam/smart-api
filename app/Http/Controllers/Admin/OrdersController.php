@@ -66,7 +66,7 @@ class OrdersController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (!empty($filters) && $filters['filter'] == "filter_cancel") {
+            if (!empty($filters) && isset($filters['filter']) == "filter_cancel") {
                 if ($filters['location'] == null) {
                     unset($filters['location']);
                 }
