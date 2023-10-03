@@ -342,7 +342,7 @@ function setFilters(filter_values, active_filters) {
         created_by += '<option value="' + value[0] + '">' + value[1].name + '</option>';
         updated_by += '<option value="' + value[0] + '">' + value[1].name + '</option>';
     });
-console.log(location, active_filters);
+
     $("#search_location").html(location);
     $("#search_product_id").html(product);
     $("#search_created_by").html(created_by);
@@ -438,28 +438,18 @@ function productSearch(from_id, from_key, id = null, type = null) {
     return false;
 }
 
-/* function formRest() {
-    $(".order_patient_search_id").val("");
-    $("#modal_create_order_form").find('form').trigger('reset');
-    $("#modal_create_order_form").find('.order_patient_search_id').empty();
-    $("#modal_create_order_form").find('.order_patient_search_id').attr('disabled', false);
-    $('.select_centre').hide();
-    $('.select_warehouse').hide();
-    reInitTable();
-} */
-
-$("#reset-filters").on('click', function(e){
+$("#reset-filters").on('click', function (e) {
     e.preventDefault();
-    /* $("#search_order_id").val("");
-    $('.patient_search_id').val(null).trigger('change');
-    $("#search_product_id").val("");
-    $("#search_location").val("").trigger('change');
-    $("#search_created_by").val("");
-    $("#date_range").val("");
-    $("#search_updated_by").val(""); */
     $("input").val("");
     $("select").val("");
+});
 
+$("#add_new_order").on('click', function () {
+    console.log("order");
+    $("input").val("");
+    $("select").val("");
+    $('.select_centre').hide();
+    $('.select_warehouse').hide();
 });
 
 $(document).ready(function () {
@@ -517,7 +507,7 @@ $(document).ready(function () {
         let location = selected.closest('optgroup').attr('value');
         $('#search_location_type').val(location);
     });
-console.log(selected, location);
+
 });
 
 $("#reset-filters").on("click", function () {
