@@ -393,7 +393,7 @@ class OrdersController extends Controller
     public function orderRefundDetail($id)
     {
         try {
-            if (!Gate::allows('refund_manage')) {
+            if (!Gate::allows('order_refund_manage')) {
                 return abort(401);
             }
             $response = Order::getRecord($id);
@@ -427,7 +427,7 @@ class OrdersController extends Controller
     public function orderRefund($id)
     {
         try {
-            if (!Gate::allows('refund_manage')) {
+            if (!Gate::allows('order_refund_manage')) {
                 return abort(401);
             }
             $order_refund = Order::refund($id);
