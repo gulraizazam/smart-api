@@ -103,7 +103,8 @@ class InventoryReportController extends Controller
             ->withSum('transferProduct', 'quantity')
             ->withSum('orderDetails', 'quantity')
             ->withSum('orderDetails', 'sale_price')
-            ->where($where)->get();
+            ->where($where)
+            ->where(['order_type' => 'sale'])->get();
 
         $products = collect($products)->map(function ($product) {
             $product->transfer_product_sum_quantity = $product->transfer_product_sum_quantity == null ? 0 : $product->transfer_product_sum_quantity;
