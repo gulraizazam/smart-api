@@ -15,7 +15,7 @@
 <div class="invoice-pdf">
     <div class="sn-table-head">
         <div class="print-logo">
-            <img src="{{ asset('assets/media/new_logo.png') }}" style="width: 235px;" alt=""/>
+            <img src="https://crm2.cutera.pk/assets/media/new_logo.png" style="width: 235px;" alt=""/>
         </div>
         <div class="print-time">
             <table class="dark-th-table table table-bordered">
