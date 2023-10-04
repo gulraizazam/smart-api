@@ -79,7 +79,7 @@ class SecondMessageOfAppointment extends Command
         $log_type = '2nd_sms';
         if ($appointments) {
             foreach ($appointments as $appointment) {
-                dd($appointment);
+               
                 $smsLog = SMSLogs::where([
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'log_type' => $log_type,
@@ -104,7 +104,7 @@ class SecondMessageOfAppointment extends Command
                 // dispatch($job);
 
 
-                $appointment = Appointments::find($appointment->appointment_id);
+               
 
 
             if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
