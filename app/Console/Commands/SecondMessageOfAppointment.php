@@ -72,7 +72,7 @@ class SecondMessageOfAppointment extends Command
 
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
             ->get();
-            dd($appointments);
+            
         $log_type = '2nd_sms';
         if ($appointments) {
             foreach ($appointments as $appointment) {
@@ -83,7 +83,7 @@ class SecondMessageOfAppointment extends Command
                     ->where('appointment_id', '=', $appointment->appointment_id)
                     ->whereDate('created_at', '=', $day)
                     ->select('id')->first();
-
+                    dd($smsLog);
                 if ($smsLog) {
                     continue;
                 }
