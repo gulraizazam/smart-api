@@ -48,10 +48,13 @@ class Product extends BaseModal
     {
         return $this->hasMany(Stock::class);
     }
-
+    public function order()
+    {
+        return $this->hasMany(Order::class)->with('orderDetail');
+    }
     public function orderDetails()
     {
-        return $this->hasMany(OrderDetail::class);
+        return $this->hasMany(OrderDetail::class)->with('order');
     }
 
     public function transferProduct()

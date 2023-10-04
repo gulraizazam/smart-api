@@ -100,7 +100,7 @@ class OrdersController extends Controller
 
             $orders = Order::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
-            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
@@ -414,7 +414,7 @@ class OrdersController extends Controller
             $data['from_key'] = $from_key;
 
             $records = [];
-            $orders = Order::with('patients', 'orders.product')->find($id);
+            $orders = Order::with('patients', 'orderDetail.product')->find($id);
 
             $records['data'] = $orders;
 
@@ -455,7 +455,7 @@ class OrdersController extends Controller
             $location_info = Warehouse::find($invoice_info->warehouse_id);
         }
 
-        $product = Product::find($invoice_info->orderDetail->product_id);
+        $product = Product::find($invoice_info->product_id);
         $patient = User::find($invoice_info->patient_id);
         $account = Accounts::find($invoice_info->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
@@ -479,7 +479,7 @@ class OrdersController extends Controller
             $location_info = Warehouse::find($invoice_info->warehouse_id);
         }
 
-        $product = Product::find($invoice_info->orderDetail->product_id);
+        $product = Product::find($invoice_info->product_id);
         $patient = User::find($invoice_info->patient_id);
         $account = Accounts::find($invoice_info->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
