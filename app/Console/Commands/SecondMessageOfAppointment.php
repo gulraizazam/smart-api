@@ -89,7 +89,7 @@ class SecondMessageOfAppointment extends Command
                     ->where('appointment_id', '=', $appointment->appointment_id)
                     ->whereDate('created_at', '=', $day)
                     ->select('id')->first();
-                    dd($smsLog);
+                   
                 if ($smsLog) {
                     continue;
                 }
@@ -123,7 +123,7 @@ class SecondMessageOfAppointment extends Command
                 $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms',$account->id); // 'second-sms' for Appointment SMS
                
             }
-            
+            dd($SMSTemplate);
             if (! $SMSTemplate) {
                 // SMS Promotion is disabled
                 return [
