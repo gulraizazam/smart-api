@@ -124,6 +124,7 @@ class SecondMessageOfAppointment extends Command
                
             }
             dd($SMSTemplate);
+            
             if (! $SMSTemplate) {
                 // SMS Promotion is disabled
                 return [
