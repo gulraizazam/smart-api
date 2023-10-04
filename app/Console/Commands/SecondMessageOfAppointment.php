@@ -123,8 +123,8 @@ class SecondMessageOfAppointment extends Command
                 $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms',$account->id); // 'second-sms' for Appointment SMS
                
             }
-            dd($SMSTemplate);
-            
+
+
             if (! $SMSTemplate) {
                 // SMS Promotion is disabled
                 return [
