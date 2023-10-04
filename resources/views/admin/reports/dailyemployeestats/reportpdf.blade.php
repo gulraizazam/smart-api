@@ -53,7 +53,7 @@
                     <table>
                         <tr>
                             <td >
-                                <img class="logo" src="https://crm2.cutera.pk/assets/media/new_logo.png" class="img-responsive" alt="" style="width: 235px;"/>
+                                <img class="logo" src="https://crm2.cutera.pk/public/assets/media/new_logo.png" class="img-responsive" alt="" style="width: 235px;"/>
                             </td>
                         </tr>
                     </table>
