@@ -17,7 +17,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            return displayProducts(data.orders);
+            return displayProducts(data.order_detail);
         }
     }, {
         field: 'orders.quantity',
@@ -25,7 +25,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            return sumProductsQuantity(data.orders);
+            return sumProductsQuantity(data.order_detail);
         }
     }, {
         field: 'order_have',
@@ -89,9 +89,7 @@ $("#reset-filters").on("click", function () {
 function sumProductsQuantity(orders) {
     let quantitySum = 0;
     if (orders != null) {
-        for (let order = 0; order < orders.length; order++) {
-            quantitySum = quantitySum + orders[order].quantity;
-        }
+            quantitySum = quantitySum + orders.quantity;
     }
     return quantitySum;
 }
@@ -99,9 +97,7 @@ function sumProductsQuantity(orders) {
 function displayProducts(orders) {
     let productHtml = '';
     if (orders != null) {
-        for (let order = 0; order < orders.length; order++) {
-            productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + orders[order].product.name + '</span><br/>';
-        }
+            productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + orders.product.name + '</span><br/>';
     }
     return productHtml;
 }
