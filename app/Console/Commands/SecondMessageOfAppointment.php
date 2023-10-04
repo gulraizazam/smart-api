@@ -107,7 +107,7 @@ class SecondMessageOfAppointment extends Command
 
 
             if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
-                dd($appointment);
+              
                 // SEND SMS for Appointment Booked
                 if ($appointment->consultancy_type == 'virtual') {
                     $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms',$account->id); // 'second-sms' for virtual consultancy SMS
@@ -118,8 +118,9 @@ class SecondMessageOfAppointment extends Command
                
                 // SEND SMS for Appointment Booked
                 $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms',$account->id); // 'second-sms' for Appointment SMS
-                dd($SMSTemplate);
+               
             }
+            dd($SMSTemplate);
             if (! $SMSTemplate) {
                 // SMS Promotion is disabled
                 return [
