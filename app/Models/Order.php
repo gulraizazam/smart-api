@@ -13,7 +13,7 @@ class Order extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status'];
+    protected $fillable = ['patient_id', 'product_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status'];
 
     /**
      * Get Total Records
@@ -26,27 +26,14 @@ class Order extends BaseModal
         $where = self::general_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return self::where($where)->when(($request['query'] != null), function ($q) use ($request) {
-                $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
-                    $q->whereHas('orders', function ($q) use ($request) {
-                        $q->where(['product_id' => $request['query']['search']['product_id']]);
-                    });
-                });
-            })
+            return self::where($where)
             ->where(function ($query) {
                 $query->whereIn('location_id', ACL::getUserCentres())
                     ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
             })
             ->where('order_type', $order_type)->count();
         } else {
-            return self::when(($request['query'] != null), function ($q) use ($request) {
-                $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
-                    $q->whereHas('orders', function ($q) use ($request) {
-                        $q->where(['product_id' => $request['query']['search']['product_id']]);
-                    });
-                });
-            })
-            ->where(function ($query) {
+            return self::where(function ($query) {
                 $query->whereIn('location_id', ACL::getUserCentres())
                     ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
             })
@@ -66,27 +53,14 @@ class Order extends BaseModal
     {
         $where = self::general_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::with('patients', 'orders.product')->where($where)
-                ->when(($request['query'] != null), function ($q) use ($request) {
-                    $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
-                        $q->whereHas('orders', function ($q) use ($request) {
-                            $q->where(['product_id' => $request['query']['search']['product_id']]);
-                        });
-                    });
-                })
+            return self::with('patients', 'orderDetail.product')->where($where)
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres())
                         ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
                 })
                 ->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
-            return self::with('patients', 'orders.product')->when(($request['query'] != null), function ($q) use ($request) {
-                $q->when($request['query']['search']['product_id'] != null, function ($q) use ($request) {
-                    $q->whereHas('orders', function ($q) use ($request) {
-                        $q->where(['product_id' => $request['query']['search']['product_id']]);
-                    });
-                });
-            })
+            return self::with('patients', 'orderDetail.product')
             ->where(function ($query) {
                 $query->whereIn('location_id', ACL::getUserCentres())
                     ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
@@ -123,6 +97,9 @@ class Order extends BaseModal
             }
             if (hasFilter($filters, 'patient_id')) {
                 $where[][] = ['patient_id' => $filters['patient_id']];
+            }
+            if (hasFilter($filters, 'product_id')) {
+                $where[][] = ['product_id' => $filters['product_id']];
             }
             if (hasFilter($filters, 'location_type')) {
                 if ($filters['location_type'] == 'branch') {
@@ -276,14 +253,6 @@ class Order extends BaseModal
         return $this->belongsTo(Patients::class, 'patient_id');
     }
 
-    /**
-     * Get the orders detail of order.
-     */
-    public function orders()
-    {
-        return $this->hasMany(OrderDetail::class, 'order_id');
-    }
-
     public function orderDetail()
     {
         return $this->hasOne(OrderDetail::class, 'order_id');
@@ -291,12 +260,12 @@ class Order extends BaseModal
 
     public static function getRecord($id)
     {
-        $record = self::with('orders')->where([
+        $record = self::with('orderDetail')->where([
             'id' => $id,
         ])->first();
         $patient = User::where(['id' => $record->patient_id])->first();
         $record->patient_name = $patient->name;
-        $record->quantity = Stock::sumProductQuantity($record->orders[0]->product_id);
+        $record->quantity = Stock::sumProductQuantity($record->orderDetail->product_id);
 
         return $record;
     }

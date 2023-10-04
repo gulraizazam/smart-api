@@ -498,7 +498,9 @@ class ProductsController extends Controller
             if (!Gate::allows('product_transfer')) {
                 return abort(401);
             }
-            if ($request->to_warehouse_id == null || $request->to_location_id == null) {
+            $to_location = $request->to_location_id != null ? $request->to_location_id : ($request->to_warehouse_id != null ? $request->to_warehouse_id : null);
+
+            if ($to_location == null) {
                 return ApiHelper::apiResponse($this->error, "Please select any Branch/Warehouse.", false);
             }
             if ($request->product_type_option_to == 'in_warehouse') {
