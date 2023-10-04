@@ -135,7 +135,7 @@ class SecondMessageOfAppointment extends Command
             $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
             $UserOperatorSettings = UserOperatorSettings::getRecord($account->id, $setting->data);
-
+dd($setting->data);
             if ($setting->data == 1) {
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
