@@ -69,11 +69,11 @@ function stockReport(response) {
                 '<td>' + (index + 1) + '</td>' +
                 '<td>' + item.name + '</td>' +
                 '<td>' + item.product_detail_sum_quantity + '</td>' +
-                '<td>' + item.order_details_sum_quantity + '</td>' +
+                '<td>' + item.order_quantity + '</td>' +
                 '<td>' + item.transfer_product_sum_quantity + '</td>' +
                 '<td>' + item.available_stock + '</td>' +
                 '<td> Rs ' + item.product_detail_sum_total_purchase_price + '</td>' +
-                '<td> Rs ' + item.order_details_sum_sale_price + '</td>' +
+                '<td> Rs ' + item.order_sale_price + '</td>' +
                 '</tr>';
             $('#stock_table_body').append(row);
         });

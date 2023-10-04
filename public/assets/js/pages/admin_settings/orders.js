@@ -17,7 +17,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            return displayProducts(data.orders);
+            return displayProducts(data.order_detail);
         }
     }, {
         field: 'orders.quantity',
@@ -25,7 +25,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            return sumProductsQuantity(data.orders);
+            return sumProductsQuantity(data.order_detail);
         }
     }, {
         field: 'order_have',
@@ -128,9 +128,7 @@ function actions(data) {
 function displayProducts(orders) {
     let productHtml = '';
     if (orders != null) {
-        for (let order = 0; order < orders.length; order++) {
-            productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + orders[order].product.name + '</span><br/>';
-        }
+        productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + orders.product.name + '</span><br/>';
     }
     return productHtml;
 }
@@ -138,9 +136,7 @@ function displayProducts(orders) {
 function sumProductsQuantity(orders) {
     let quantitySum = 0;
     if (orders != null) {
-        for (let order = 0; order < orders.length; order++) {
-            quantitySum += orders[order].quantity;
-        }
+            quantitySum += orders.quantity;
     }
     return quantitySum;
 }
@@ -236,7 +232,7 @@ function refundOrder(url) {
 
 function setRefundOrderData(response) {
     let order = response.data;
-    let orderDetail = order.orders;
+    let orderDetail = order.order_detail;
     let action = route('admin.orders.refund', { id: order.id });
     $("#modal_order_refund_form").attr("action", action);
 
@@ -256,11 +252,11 @@ function setRefundOrderData(response) {
     $('.refund_order_patient_search_id').val(order.patients.name).trigger('change');
     $('.refund_order_patient_search_id').prop('disabled', true);
     $('#refund_order_patient').val(order.patient_id).trigger('change');
-    $('.edit_old_product').val(orderDetail[0].product_id);
+    $('.edit_old_product').val(orderDetail.product_id);
 
     $('#refund_available_quantity').val(order.quantity);
     $('#refund_total_price').val(order.total_price);
-    $('#refund_quantity').val(orderDetail[0].quantity);
+    $('#refund_quantity').val(orderDetail.quantity);
 }
 
 function applyFilters(datatable) {
@@ -458,12 +454,16 @@ $(document).ready(function () {
         if (this.value == 'in_warehouse') {
             $('.select_centre').hide();
             $('.select_warehouse').show();
+            $("#add_order_centre").val("");
         } else if (this.value == 'in_branch') {
             $('.select_centre').show();
             $('.select_warehouse').hide();
+            $("#add_order_warehouse").val("");
         } else {
             $('.select_centre').hide();
             $('.select_warehouse').hide();
+            $("#add_order_centre").val("");
+            $("#add_order_warehouse").val("");
         }
     });
 

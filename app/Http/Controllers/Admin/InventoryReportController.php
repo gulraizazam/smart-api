@@ -2,16 +2,17 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\HelperModule\ApiHelper;
-use App\Helpers\ACL;
-use App\Models\Locations;
-use App\Models\Product;
-use App\Models\Warehouse;
 use DateTime;
+use App\Helpers\ACL;
+use App\Models\Order;
+use App\Models\Product;
+use App\Models\Locations;
+use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use App\HelperModule\ApiHelper;
+use Illuminate\Support\Collection;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Collection;
 
 class InventoryReportController extends Controller
 {
@@ -94,23 +95,29 @@ class InventoryReportController extends Controller
             $where[] = ['created_at', '<=', $end_date_time];
         }
 
-        $products = Product::where(function ($query) {
+        $products = Product::with('order')->where(function ($query) {
             $query->whereIn('location_id', ACL::getUserCentres())
                 ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
         })
             ->withSum('productDetail', 'quantity')
             ->withSum('productDetail', 'total_purchase_price')
             ->withSum('transferProduct', 'quantity')
-            ->withSum('orderDetails', 'quantity')
-            ->withSum('orderDetails', 'sale_price')
             ->where($where)
-            ->where(['order_type' => 'sale'])->get();
+            ->get();
 
         $products = collect($products)->map(function ($product) {
             $product->transfer_product_sum_quantity = $product->transfer_product_sum_quantity == null ? 0 : $product->transfer_product_sum_quantity;
-            $product->order_details_sum_quantity = $product->order_details_sum_quantity == null ? 0 : $product->order_details_sum_quantity;
-            $product->order_details_sum_sale_price = $product->order_details_sum_sale_price == null ? 0 : $product->order_details_sum_sale_price;
             $product->available_stock = $product->getAvailableStockAttribute();
+            $product->order_quantity = $product['order']->filter(function ($order) {
+                return $order['order_type'] === 'sale' && $order['refund_order_id'] == null;
+            })->sum(function ($order) {
+                return $order['orderDetail']['quantity'];
+            });
+            $product->order_sale_price = $product['order']->filter(function ($order) {
+                return $order['order_type'] === 'sale' && $order['refund_order_id'] == null;
+            })->sum(function ($order) {
+                return $order['orderDetail']['sale_price'];
+            });
             return $product;
         });
 

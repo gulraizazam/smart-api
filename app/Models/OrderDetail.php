@@ -11,6 +11,11 @@ class OrderDetail extends BaseModal
 
     protected $fillable = ['order_id', 'product_id', 'discount_id', 'quantity', 'sale_price', 'discount_price', 'sale_price_after_discount', 'order_type', 'reason', 'account_id'];
 
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
+
     /**
      * Create Record
      *

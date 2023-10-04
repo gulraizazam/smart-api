@@ -16,6 +16,7 @@ class CreateOrdersTable extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->id();
             $table->unsignedInteger('patient_id');
+            $table->foreignId('product_id');
             $table->unsignedInteger('location_id')->nullable();
             $table->foreignId('warehouse_id')->nullable();
             $table->float('total_price', 8, 2)->nullable();
@@ -32,6 +33,7 @@ class CreateOrdersTable extends Migration
             $table->foreign('patient_id')->references('id')->on('users');
             $table->foreign('location_id')->references('id')->on('locations');
             $table->foreign('warehouse_id')->references('id')->on('warehouses');
+            $table->foreign('product_id')->references('id')->on('products');
             $table->foreign('created_by')->references('id')->on('users');
             $table->foreign('updated_by')->references('id')->on('users');
         });
