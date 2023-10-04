@@ -72,6 +72,7 @@ class SecondMessageOfAppointment extends Command
 
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
             ->get();
+            dd($appointments);
         $log_type = '2nd_sms';
         if ($appointments) {
             foreach ($appointments as $appointment) {
