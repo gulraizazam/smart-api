@@ -139,7 +139,7 @@ class SecondMessageOfAppointment extends Command
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber( $appointment->phone)),
+                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'text' => $preparedText,
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
@@ -150,7 +150,7 @@ class SecondMessageOfAppointment extends Command
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                     'from' => $UserOperatorSettings->mask,
-                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber( $appointment->phone)),
+                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'text' => $preparedText,
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
