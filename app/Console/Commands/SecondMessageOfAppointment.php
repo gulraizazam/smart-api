@@ -79,7 +79,7 @@ class SecondMessageOfAppointment extends Command
         $log_type = '2nd_sms';
        
         if ($appointments) {
-            dd("here");
+            
             foreach ($appointments as $appointment) {
                
                 $smsLog = SMSLogs::where([
@@ -89,7 +89,7 @@ class SecondMessageOfAppointment extends Command
                     ->where('appointment_id', '=', $appointment->appointment_id)
                     ->whereDate('created_at', '=', $day)
                     ->select('id')->first();
-
+                    dd($smsLog);
                 if ($smsLog) {
                     continue;
                 }
@@ -181,7 +181,7 @@ class SecondMessageOfAppointment extends Command
 
             Log::info('Second sms sent finally ');
         }else{
-            dd("heee");
+           
            echo "no Apt found";
         }
     }
