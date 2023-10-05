@@ -216,7 +216,7 @@
         <table>
             <tr>
                 <td>
-                    <img class="img-responsive logo" src="{{ asset('assets/media/new_logo.png') }}" style="width:235px;"
+                    <img class="img-responsive logo" src="https://crm2.cutera.pk/public/assets/media/new_logo.png" style="width:235px;"
                         alt="" />
                     <p class="logo_caption">{{ $location_info->address }}.</p>
                     <p class="logo_caption logo_caption2">Phone. {{ $location_info->fdo_phone }} &nbsp; | &nbsp; Email.
