@@ -110,8 +110,8 @@
                                                     <td><strong>{{ $data['created_by'] }}</strong> transferred
                                                         {{ $properties['quantity'] }}
                                                         <strong>{{ $data['product_name'] }}</strong> products from
-                                                        <strong>{{ $to_location_area }} {{ $to_location_name }}</strong> to
-                                                        <strong>{{ $from_location_area }} {{ $from_location_name }}</strong>.
+                                                        <strong>{{ $from_location_area }} {{ $from_location_name }}</strong> to
+                                                        <strong>{{ $to_location_area }} {{ $to_location_name }}</strong>.
                                                     </td>
                                                     <td>{{ Carbon\Carbon::parse($data['created_at'])->setTimezone($timezone)->format('d-M-Y h:i:s a') }}
                                                     </td>
