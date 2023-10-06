@@ -162,6 +162,18 @@ class Warehouse extends Model
                 }
             }
         }
+        if (hasFilter($filters, 'status')) {
+            $where[][] = ['active' => $filters['status']];
+            Filters::put(Auth::User()->id, 'warehouse', 'active', $filters['status']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, 'warehouse', 'status');
+            } else {
+                if (Filters::get(Auth::User()->id, 'warehouse', 'status')) {
+                    $where[][] = ['active' => Filters::get(Auth::User()->id, 'warehouse', 'status')];
+                }
+            }
+        }
         if (hasFilter($filters, 'created_at')) {
             $where[] = ['created_at', '>=', $start_date_time];
             $where[] = ['created_at', '<=', $end_date_time];
