@@ -46,11 +46,12 @@
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
-                        <div style="width: 100%;" id="datatable_stock_report">
-                            <table class="table table-bordered">
+                        <div id="datatable_stock_report">
+                            <table class="table table-bordered" style="width:100%">
                                 <thead>
                                     <th>id</th>
                                     <th>Product</th>
+                                    <th>Location</th>
                                     <th>Purchase Quantity</th>
                                     <th>Sale Quantity</th>
                                     <th>Transfer Product Quantity</th>
@@ -59,6 +60,9 @@
                                     <th>Current Stock Sell Value</th>
                                 </thead>
                                 <tbody id="stock_table_body"></tbody>
+                            </table>
+                            <table class="table table-bordered" style="width:30%; float: right">
+                                <tbody id="stock_table_total"></tbody>
                             </table>
                         </div>
                         <!--end: Datatable-->
