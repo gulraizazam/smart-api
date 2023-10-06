@@ -247,7 +247,7 @@ function setFilters(filter_values, active_filters) {
     /* Active Filters */
     $("#search_name").val(active_filters.name);
     $("#search_location_from").val(active_filters.location_from);
-    $("#search_location_from").val(active_filters.location_to);
+    $("#search_location_to").val(active_filters.location_to);
     $("#search_transfer_from").val(active_filters.transfer_from);
     $("#search_transfer_to").val(active_filters.transfer_to);
     $("#date_range").val(active_filters.created_at);
@@ -353,12 +353,14 @@ $(document).ready(function () {
         var selected = $('select#search_transfer_from option:selected');
         let location = selected.closest('optgroup').attr('value');
         $('#search_location_from').val(location);
+        console.log(location)
     });
 
     $("#search_transfer_to").change(function () {
         let selected = $('select#search_transfer_to option:selected');
         let location = selected.closest('optgroup').attr('value');
         $('#search_location_to').val(location);
+        console.log(location)
     });
 
 })
