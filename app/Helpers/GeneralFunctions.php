@@ -965,7 +965,7 @@ class GeneralFunctions
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->pluck('appointments.id');
+            ->pluck('patient_id');
 
 
         $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
@@ -976,7 +976,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('appointment_id', $appointments)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -988,7 +988,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('appointment_id', $appointments)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -1000,12 +1000,12 @@ class GeneralFunctions
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('appointment_id', $appointments)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('package_advances.id', 'package_advances.patient_id', 'package_advances.created_at', 'package_advances.location_id')
-            ->whereIn('package_advances.appointment_id', $appointments)
+            ->whereIn('package_advances.patient_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
             ->groupBy('package_advances.patient_id')
