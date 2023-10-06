@@ -6,6 +6,7 @@ use DateTime;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -218,6 +219,15 @@ class Warehouse extends Model
 
         $record = self::create($data);
 
+        $role = Role::findByName('Super-Admin');
+        $user = RoleHasUsers::where('role_id', $role->id)->first();
+
+        $user_has_warehouse = [
+            'user_id' => $user->user_id,
+            'warehouse_id' => $record->id,
+        ];
+        UserHasWarehouse::createRecord($user_has_warehouse, $user->id);
+
         return $record;
     }
 
@@ -273,6 +283,11 @@ class Warehouse extends Model
         }
         if (!Warehouse::isChildExists($warehouse->id, Auth::User()->account_id)) {
             $warehouse->delete();
+
+            $role = Role::findByName('Super-Admin');
+            $user = RoleHasUsers::where('role_id', $role->id)->first();
+
+            UserHasWarehouse::where(['user_id' => $user->user_id, 'warehouse_id' => $warehouse->id])->delete();
         } else {
             return [
                 'status' => false,
