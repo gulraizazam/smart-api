@@ -1130,7 +1130,7 @@ class GeneralFunctions
         ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
 
         foreach ($plans_check as $data) {
-          
+          dd($data);
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
@@ -1168,7 +1168,7 @@ class GeneralFunctions
         usort($patient_data, function ($a, $b) {
             return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
         });
-        dd($patient_data);
+       
         return $patient_data;
 
     }
