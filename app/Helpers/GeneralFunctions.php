@@ -1074,6 +1074,7 @@ class GeneralFunctions
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
+            
             ->orderByDesc('appointments.id')
             ->pluck('appointments.id');
 
@@ -1085,7 +1086,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('appointment_id', [92023])
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -1096,7 +1097,7 @@ class GeneralFunctions
                 'is_tax' => '0',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('appointment_id',[92023])
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -1107,12 +1108,12 @@ class GeneralFunctions
                 'is_tax' => '1',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('appointment_id', [92023])
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('appointment_id', [92023])
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
