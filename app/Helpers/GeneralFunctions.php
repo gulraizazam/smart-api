@@ -1123,12 +1123,13 @@ class GeneralFunctions
             $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
             return $item;
         });
-        dd($plans_check->toArray());
+    
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)
         ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
 
         foreach ($plans_check as $data) {
+            dd($data);
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
