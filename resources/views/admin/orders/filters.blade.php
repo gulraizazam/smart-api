@@ -33,8 +33,7 @@
 
         <div class="col-md-3 mb-lg-0 mb-6">
             <label>Product:</label>
-            <select class="form-control filter-field select2" name="product_id" id="search_product_id">
-            </select>
+            <input class="form-control" id="search_product_id" name="product_id" placeholder="Product Search">
         </div>
         <div class="col-md-3 mb-lg-0 mb-6">
             <label>Location:</label>
