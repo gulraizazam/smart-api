@@ -1074,9 +1074,8 @@ class GeneralFunctions
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
-            
             ->orderByDesc('appointments.id')
-            ->pluck('appointments.id');
+            ->pluck('patient_id');
 
         $cash_received_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
@@ -1086,7 +1085,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('appointment_id', [92023])
+            ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -1097,7 +1096,7 @@ class GeneralFunctions
                 'is_tax' => '0',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('appointment_id',[92023])
+            ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -1108,12 +1107,12 @@ class GeneralFunctions
                 'is_tax' => '1',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('appointment_id', [92023])
+            ->whereIn('patient_id', $patient_ids)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
-            ->whereIn('appointment_id', [92023])
+            ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
@@ -1124,13 +1123,11 @@ class GeneralFunctions
             $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
             return $item;
         });
-    
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)
         ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
 
         foreach ($plans_check as $data) {
-          dd($data);
             $treatments = Appointments::where([
                 'appointment_type_id' => Config::get('constants.appointment_type_service'),
                 'patient_id' => $data['patient_id'],
@@ -1168,7 +1165,6 @@ class GeneralFunctions
         usort($patient_data, function ($a, $b) {
             return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
         });
-       
         return $patient_data;
 
     }
