@@ -1123,7 +1123,7 @@ class GeneralFunctions
             $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
             return $item;
         });
-        dd($plans_check);
+        dd($plans_check->toArray());
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)
         ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
