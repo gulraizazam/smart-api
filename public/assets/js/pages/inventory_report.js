@@ -55,19 +55,28 @@ function submitFilter() {
 
 function stockReport(response) {
     let products = response.data.products;
+    let row;
+    let totalRow;
     $("#datatable_stock_report").show();
     $('#stock_table_body').empty();
+    $('#stock_table_total').empty();
 
     if (products.length === 0) {
-        var row = '<tr>' +
+        row = '<tr>' +
             '<td colspan="8">Data Not Found</td>' +
             '</tr>';
         $('#stock_table_body').append(row);
     } else {
+        let purchaseTotal = 0;
+        let saleTotal = 0;
         $.each(products, function (index, item) {
-            var row = '<tr>' +
+            let locationArea = item.location_id != null ? 'Branch' : 'Warehouse';
+            purchaseTotal += item.product_detail_sum_total_purchase_price;
+            saleTotal += item.order_sale_price;
+            row = '<tr>' +
                 '<td>' + (index + 1) + '</td>' +
                 '<td>' + item.name + '</td>' +
+                '<td>' + item.location + ', <strong>(' + locationArea + ')</strong></td>' +
                 '<td>' + item.product_detail_sum_quantity + '</td>' +
                 '<td>' + item.order_quantity + '</td>' +
                 '<td>' + item.transfer_product_sum_quantity + '</td>' +
@@ -77,6 +86,15 @@ function stockReport(response) {
                 '</tr>';
             $('#stock_table_body').append(row);
         });
+        totalRow = '<tr>' +
+            '<th>Total Purchase</th>' +
+            '<td>' + purchaseTotal + '</td>' +
+            '</tr>' +
+            '<tr>' +
+            '<th>Total Sale</th>' +
+            '<td>' + saleTotal + '</td>' +
+            '</tr>';
+        $('#stock_table_total').append(totalRow);
     }
 }
 

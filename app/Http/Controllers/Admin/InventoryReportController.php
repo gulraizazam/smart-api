@@ -104,8 +104,10 @@ class InventoryReportController extends Controller
             ->withSum('transferProduct', 'quantity')
             ->where($where)
             ->get();
+        $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
+        $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
 
-        $products = collect($products)->map(function ($product) {
+        $products = collect($products)->map(function ($product) use($centres, $warehouse) {
             $product->transfer_product_sum_quantity = $product->transfer_product_sum_quantity == null ? 0 : $product->transfer_product_sum_quantity;
             $product->available_stock = $product->getAvailableStockAttribute();
             $product->order_quantity = $product['order']->filter(function ($order) {
@@ -118,6 +120,7 @@ class InventoryReportController extends Controller
             })->sum(function ($order) {
                 return $order['orderDetail']['sale_price'];
             });
+            $product->location = ($product->location_id != null) ? ((array_key_exists($product->location_id, $centres)) ? $centres[$product->location_id]->name : 'N/A') : ((array_key_exists($product->warehouse_id, $warehouse)) ? $warehouse[$product->warehouse_id]->name : 'N/A');
             return $product;
         });
 
