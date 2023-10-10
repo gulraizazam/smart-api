@@ -66,15 +66,6 @@ class OrdersController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (!empty($filters) && isset($filters['filter']) == "filter_cancel") {
-                if ($filters['location'] == null) {
-                    unset($filters['location']);
-                }
-                if ($filters['product_id'] == null) {
-                    unset($filters['product_id']);
-                }
-            }
-
             if (isset($apply_filter['delete'])) {
                 $ids = explode(',', $apply_filter['delete']);
                 $orders = Order::getBulkData($ids);
