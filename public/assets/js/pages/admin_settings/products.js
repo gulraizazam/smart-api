@@ -460,6 +460,9 @@ $("#add_stock_purchase_price, add_stock_quantity").on('keyup', function () {
 $('#add_products_m').on('click', function () {
     $('input').val('');
     $('select').val('');
+    $("#select_option").hide();
+    $("#select_centre").hide();
+    $("#select_warehouse").hide();
 });
 
 $(document).ready(function () {
