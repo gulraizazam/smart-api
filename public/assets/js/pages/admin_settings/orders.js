@@ -182,8 +182,7 @@ function editRow(url) {
 
 function setEditData(response) {
     let order = response.data.response;
-    let orderDetail = order.orders;
-    let products = response.data.products;
+    let orderDetail = order.order_detail;
     let action = route('admin.orders.update', { id: order.id });
     $("#modal_edit_order_form").attr("action", action);
 
@@ -203,11 +202,11 @@ function setEditData(response) {
     $('.edit_order_patient_search_id').val(order.patient_name).trigger('change');
     $('.edit_order_patient_search_id').prop('disabled', true);
     $('#edit_order_patient').val(order.patient_id).trigger('change');
-    $('.edit_old_product').val(orderDetail[0].product_id);
+    $('.edit_old_product').val(order.product_id);
 
     $('#edit_available_quantity').val(order.quantity);
     $('#edit_total_price').val(order.total_price);
-    $('#edit_quantity').val(orderDetail[0].quantity);
+    $('#edit_quantity').val(orderDetail.quantity);
     $("#edit_payment_mode").val(order.payment_mode).trigger('change');
 }
 
@@ -313,12 +312,20 @@ function setFilters(filter_values, active_filters) {
     /* Option Group */
     location += '<optgroup value="branch" label="Branches">';
     Object.entries(centres).forEach(function (value, index) {
-        location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+        if (active_filters.location_type == 'branch' && active_filters.location == value[0]) {
+            location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+        } else {
+            location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+        }
     });
     location += '</optgroup>';
     location += '<optgroup value="warehouse" label="Warehouse">';
     Object.entries(warehouses).forEach(function (value, index) {
-        location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+        if (active_filters.location_type == 'warehouse' && active_filters.location == value[0]) {
+            location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+        } else {
+            location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+        }
     });
     location += '</optgroup>';
     /* End Option Group */
@@ -364,7 +371,6 @@ function setFilters(filter_values, active_filters) {
     $("#search_order_id").val(active_filters.order_id);
     $("#search_patient_id").val(active_filters.patient_id);
     $("#search_product_id").val(active_filters.product_id);
-    $("#search_location").html(active_filters.location);
     $("#search_created_by").val(active_filters.created_by);
     $("#search_updated_by").val(active_filters.updated_by);
     $("#date_range").val(active_filters.created_at);
@@ -512,6 +518,12 @@ $(document).ready(function () {
 
 $("#reset-filters").on("click", function () {
     $("input").val('');
+});
+
+$("#add_new_order").on("click", function () {
+    $("input").val('');
+    $("select").val('');
+    $("#add_order_product").empty();
 });
 
 function openInNewTab(url) {

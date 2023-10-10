@@ -286,6 +286,8 @@ function formRest() {
 }
 
 $("#add_product_p").on("click", function(){
+    $("input").val('');
+    $("select").val('');
     $('#add_transfer_date').val(moment().format('YYYY-MM-DD'));
 });
 
