@@ -1086,6 +1086,7 @@ class GeneralFunctions
                 'is_refund' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
+            ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -1097,6 +1098,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
+            ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -1108,12 +1110,14 @@ class GeneralFunctions
                 'is_adjustment' => '0',
             ])
             ->whereIn('patient_id', $patient_ids)
+            ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
+            
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
             ->get();
