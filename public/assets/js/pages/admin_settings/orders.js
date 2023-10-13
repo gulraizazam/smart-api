@@ -136,11 +136,57 @@ function displayProducts(orders) {
 function sumProductsQuantity(orders) {
     let quantitySum = 0;
     if (orders != null) {
-            quantitySum += orders.quantity;
+        quantitySum += orders.quantity;
     }
     return quantitySum;
 }
 
+function addRow() {
+    if ($('#add_order_product').val() != '') {
+
+        let product_id = $('#add_order_product').find(':selected').attr('data-id');
+        let product_name = $('#add_order_product').find(':selected').attr('data-name');
+        let product_price = $('#add_order_product').find(':selected').attr('data-price');
+        console.log("1st " + product_id, product_name, product_price);
+        $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price));
+        calculateTotal();
+    }
+}
+
+function calculateTotal() {
+    let totalPrice = 0;
+    let total_products = 0;
+    $('.productPriceValue').each(function (index, value) {
+        totalPrice = totalPrice + parseFloat($(this).val());
+        total_products++;
+    });
+    $('#product_price').val(totalPrice);
+    $('#total_products').val(total_products);
+    $('#total_product_price').text(totalPrice);
+}
+
+function setProduct(id, product_id, product_name, price) {
+    console.log("2nd " + id);
+    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="product_price[]" value="' + price + '"> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
+}
+
+function deleteIcon(id) {
+    return '<a href="javascript:void(0);" onClick="deleteModel(' + id + ')" class="btn btn-icon btn-light btn-hover-danger btn-sm"> <span class="svg-icon svg-icon-md svg-icon-danger"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1"> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect x="0" y="0" width="24" height="24"></rect> <path d="M6,8 L6,20.5 C6,21.3284271 6.67157288,22 7.5,22 L16.5,22 C17.3284271,22 18,21.3284271 18,20.5 L18,8 L6,8 Z" fill="#000000" fill-rule="nonzero"></path> <path d="M14,4.5 L14,4 C14,3.44771525 13.5522847,3 13,3 L11,3 C10.4477153,3 10,3.44771525 10,4 L10,4.5 L5.5,4.5 C5.22385763,4.5 5,4.72385763 5,5 L5,5.5 C5,5.77614237 5.22385763,6 5.5,6 L18.5,6 C18.7761424,6 19,5.77614237 19,5.5 L19,5 C19,4.72385763 18.7761424,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"></path> </g> </svg> </span> </a>';
+}
+
+function deleteModel(id) {
+    $('.product_' + id).remove();
+    calculateTotal();
+}
+
+$('#create-btn').click(function () {
+    let action = route('admin.bundles.store');
+    $("#modal_bundles_form").attr("action", action);
+    $('#put_input').html('');
+    $('#model-title').html('Add Package');
+    $('.order_product').remove();
+    calculateServicesTotal();
+});
 
 function createOrderInvoice(url) {
     $.ajax({
@@ -308,26 +354,58 @@ function setFilters(filter_values, active_filters) {
     let product = '<option value="">Select Product</option>';
     let created_by = '<option value="">Select Created By</option>';
     let updated_by = '<option value="">Select Updated By</option>';
+    let centres_selected, warehouse_selected;
+    let locationId;
 
+    if (Object.keys(centres).length == 1 && Object.keys(warehouses).length == 0) {
+        centres_selected = "selected";
+    } else if (Object.keys(centres).length == 0 && Object.keys(warehouses).length == 1) {
+        warehouse_selected = "selected";
+    } else {
+        centres_selected = "";
+        warehouse_selected = "";
+    }
     /* Option Group */
-    location += '<optgroup value="branch" label="Branches">';
-    Object.entries(centres).forEach(function (value, index) {
-        if (active_filters.location_type == 'branch' && active_filters.location == value[0]) {
-            location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-        } else {
-            location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-        }
-    });
-    location += '</optgroup>';
-    location += '<optgroup value="warehouse" label="Warehouse">';
-    Object.entries(warehouses).forEach(function (value, index) {
-        if (active_filters.location_type == 'warehouse' && active_filters.location == value[0]) {
-            location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-        } else {
-            location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-        }
-    });
-    location += '</optgroup>';
+    if (Object.keys(centres).length > 0) {
+        location += '<optgroup value="branch" label="Branches">';
+        Object.entries(centres).forEach(function (value, index) {
+            if (active_filters.location_type == 'branch' && active_filters.location == value[0]) {
+                location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+            } else {
+
+                if (centres_selected == "selected") {
+                    location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+                    setTimeout(() => {
+                        $("#add_order_location").val(value[0]).trigger('change');
+                    }, 500);
+                } else {
+                    location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+                }
+            }
+        });
+        location += '</optgroup>';
+    }
+
+    if (Object.keys(warehouses).length > 0) {
+        location += '<optgroup value="warehouse" label="Warehouse">';
+        Object.entries(warehouses).forEach(function (value, index) {
+            if (active_filters.location_type == 'warehouse' && active_filters.location == value[0]) {
+                location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+            } else {
+
+                if (warehouse_selected == "selected") {
+                    location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+                    setTimeout(() => {
+                        $("#add_order_location").val(value[0]).trigger('change');
+                    }, 500);
+                } else {
+                    location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+                }
+
+            }
+        });
+        location += '</optgroup>';
+    }
     /* End Option Group */
 
     Object.entries(centres).forEach(function (value, index) {
@@ -351,8 +429,7 @@ function setFilters(filter_values, active_filters) {
     $("#search_created_by").html(created_by);
     $("#search_updated_by").html(updated_by);
     /* End Option Group */
-    $("#add_order_centre").html(centre_options);
-    $("#add_order_warehouse").html(warehouse_options);
+    $("#add_order_location").html(location);
 
     /* Edit Option*/
     $("#edit_order_centre").html(centre_options);
@@ -401,7 +478,9 @@ function productSelect(product_id, id = null) {
     });
 }
 
-function productSearch(from_id, from_key, id = null, type = null) {
+function productSearch(from_id, id = null, type = null) {
+    let from_key = $('#add_order_location_type').val();
+    let html = '';
     if (from_id != '') {
         $.ajax({
             type: "GET",
@@ -413,22 +492,12 @@ function productSearch(from_id, from_key, id = null, type = null) {
                 type: type
             },
             success: function (response) {
-                let html = '';
                 let products = response.data.products;
 
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        let oldProduct = $('.edit_old_product').val();
-
-                        if (product.id == oldProduct) {
-                            html += '<option value="' + product.id + '" selected>' + product.name + '</option>';
-                            $('#edit_price').val(product.sale_price);
-                            $('#refund_price').val(product.sale_price);
-                            $("#refund_available_quantity").val(product.quantity);
-                        } else {
-                            html += '<option value="' + product.id + '">' + product.name + '</option>';
-                        }
+                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name + '</option>';
                     });
                 } else {
                     html = '<option value="">No Product Found</option>';
@@ -436,6 +505,9 @@ function productSearch(from_id, from_key, id = null, type = null) {
                 $("#" + id + "_order_product").html(html);
             }
         });
+    } else {
+        html = '<option value="">No Product Found</option>';
+        $("#" + id + "_order_product").html(html);
     }
     return false;
 }
@@ -514,6 +586,13 @@ $(document).ready(function () {
         $('#search_location_type').val(location);
     });
 
+    $("#add_order_location").change(function () {
+        var selected = $('select#add_order_location option:selected');
+        let location = selected.closest('optgroup').attr('value');
+        let locationType = location == "branch" ? "location_id" : (location == "warehouse" ? "warehouse_id" : null);
+        $('#add_order_location_type').val(locationType);
+    });
+
 });
 
 $("#reset-filters").on("click", function () {
@@ -523,7 +602,6 @@ $("#reset-filters").on("click", function () {
 $("#add_new_order").on("click", function () {
     $("input").val('');
     $("select").val('');
-    $("#add_order_product").empty();
 });
 
 function openInNewTab(url) {

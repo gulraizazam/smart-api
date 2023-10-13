@@ -38,6 +38,8 @@ $(document).ready(function () {
         $("#modal_edit_transfer_products_form").find('form').trigger('reset');
         $("#modal_add_product_stock").find('form').trigger('reset');
         $("#modal_add_products_form").find('form').trigger('reset');
+        $("#modal_create_order_form").find('form').trigger('reset');
+        $("#add_order_product").empty();
     });
 
     $('.select2').select2();
