@@ -766,6 +766,7 @@ class UsersController extends Controller
                     UserHasLocations::updateRecord($user_has_locations, $user);
                 }
             }
+
             if ($request->get('warehouse') && is_array($request->get('warehouse'))) {
                 $user->user_has_warehouse()->delete();
                 if(in_array('all', $request->warehouse)){
@@ -782,6 +783,8 @@ class UsersController extends Controller
                     // Insert assigned centres to User
                     UserHasWarehouse::updateRecord($user_has_warehouse, $user->id);
                 }
+            } else {
+                $user->user_has_warehouse()->delete();
             }
         }
         session()->flash('success', 'Record has been updated successfully.');

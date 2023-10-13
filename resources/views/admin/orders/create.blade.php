@@ -6,7 +6,8 @@
         <h2 class="fw-bolder">Create Order</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
-        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close" onclick="formRest()">
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close"
+            onclick="formRest()">
             <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
             <span class="svg-icon svg-icon-1">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -33,10 +34,21 @@
                 <div class="form-group">
                     <input type="hidden" id="add_price">
                     <input type="hidden" id="add_product_type" name="product_type">
+                    <input type="hidden" id="add_order_location_type" name="location_type">
+
+                    <div class="row mt-2">
+                        <div class="fv-row col-md-12">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Location</label>
+                            <select class="form-control filter-field select2" name="location" id="add_order_location"
+                                onchange="productSearch(this.value, 'add', 'order')">
+                            </select>
+                        </div>
+                    </div>
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <input class="form-control user_search patient_search_id search_field" placeholder="Patients Search" required>
+                            <input class="form-control user_search patient_search_id search_field"
+                                placeholder="Patients Search" required>
 
                             <input type="hidden" id="create_order_patient_search" name="patient_id"
                                 class="filter-field search_field">
@@ -48,52 +60,24 @@
                             </div>
                         </div>
                     </div>
-                    <div class="row mt-2">
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Order From <span
-                                    class="text text-danger">*</span></label>
-                            <select id="add_order_type_option" class="form-control form-control mb-3 mb-lg-0"
-                                name="product_type_option">
-                                <option value="">Select Option</option>
-                                <option value="in_warehouse">Warehouse</option>
-                                <option value="in_branch">Branch</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row mt-2">
-                        <div class="col-md-6">
-                            <div class="fv-row select_centre" style="display: none">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
-                                <select id="add_order_centre"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id"
-                                    onchange="productSearch(this.value, 'location_id', 'add', 'order')">
-                                </select>
-                            </div>
-                            <div class="fv-row select_warehouse" style="display: none">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
-                                <select id="add_order_warehouse"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2" name="warehouse_id"
-                                    onchange="productSearch(this.value, 'warehouse_id', 'add', 'order')">
-                                </select>
-                            </div>
-                        </div>
-                    </div>
 
                     <div class="row mt-2">
-                        <div class="fv-row col-md-6">
+                        <div class="fv-row col-10">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
                             <select id="add_order_product" class="form-control form-control-solid mb-3 mb-lg-0 select2"
                                 name="product_id" onchange="productSelect(this.value, 'add')">
                             </select>
                         </div>
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Available Quantity </label>
-                            <input type="number" id="add_available_quantity"
-                                class="form-control form-control-lg form-control-solid mb-2" readonly>
+
+                        <div class="fv-row col-2">
+                            <button class="btn btn-primary btn-block btn-sm mt-8" type="button" onclick="addRow()"
+                                id="add_service_btn"><i class="la la-plus"></i>
+                                Add
+                            </button>
                         </div>
                     </div>
 
-                    <div class="row mt-2">
+                    {{-- <div class="row mt-2">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price (per unit) </label>
                             <input type="number" id="add_total_price"
@@ -106,7 +90,7 @@
                             <input type="number" id="add_quantity" name="quantity"
                                 class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                    </div>
+                    </div> --}}
 
                     <div class="row">
                         <div class="fv-row col-md-6 mt-5">
@@ -121,6 +105,32 @@
                                 <option value="bank_wire">Bank/Wire Transfer</option>
                             </select>
                         </div>
+                    </div>
+
+                    <div class="row mt-5">
+                        <div class="fv-row col-md-12">
+                            <table class="table table-bordered">
+                                <thead class="text-center">
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th>Sale Price</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product_list" class="text-center">
+                                </tbody>
+                            </table>
+
+                            <table class="table table-bordered" style="width:30%; float: right">
+                                <tbody>
+                                    <tr>
+                                        <th>Total Price</th>
+                                        <td id="total_product_price">0</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
                     </div>
 
 

@@ -17,6 +17,7 @@ use App\Models\Regions;
 use App\Models\Locations;
 use App\Models\Warehouse;
 use App\Models\DoctorHasLocations;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 
 class ACL
 {
