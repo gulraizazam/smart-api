@@ -92,8 +92,8 @@
                         </div>
                     </div> --}}
 
-                    <div class="row">
-                        <div class="fv-row col-md-6 mt-5">
+                    <div class="row mt-2">
+                        <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span
                                     class="text text-danger">*</span></label>
                             <select id="create_payment_mode"
