@@ -8,10 +8,10 @@ var AddOrderValidation = function () {
             form,
             {
                 fields: {
-                    product_id: {
+                    location: {
                         validators: {
                             notEmpty: {
-                                message: 'The Product id field is required'
+                                message: 'The Location field is required'
                             }
                         }
                     },
@@ -22,17 +22,10 @@ var AddOrderValidation = function () {
                             }
                         }
                     },
-                    quantity: {
+                    payment_mode: {
                         validators: {
                             notEmpty: {
-                                message: 'The Quantity field is required'
-                            }
-                        }
-                    },
-                    order_type_option: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Order Type field is required'
+                                message: 'The Payment method field is required'
                             }
                         }
                     }

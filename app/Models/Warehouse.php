@@ -333,8 +333,6 @@ class Warehouse extends Model
         }
         if ($locationids) {
             return self::where(['account_id' => $account_id])->where(['active' => 1])->whereIn('id', $locationids)->get()->getDictionary();
-        } else {
-            return self::where(['account_id' => $account_id])->where(['active' => 1])->get()->getDictionary();
         }
     }
 
