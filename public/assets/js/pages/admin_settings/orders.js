@@ -95,14 +95,14 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-    if (permissions.edit) {
+    /* if (permissions.edit) {
         actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="editRow(`'+ edit_url + '`);" class="navi-link">\
                                 <span class="navi-icon"><i class="la la-pencil"></i></span>\
                                 <span class="navi-text">Edit</span>\
                             </a>\
                         </li>';
-    }
+    } */
     if (permissions.refund) {
         actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="refundOrder(`' + refund_url + '`);" class="navi-link">\
