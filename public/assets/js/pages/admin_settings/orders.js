@@ -44,7 +44,7 @@ var table_columns = [
         template: function (data) {
             return '<span class="badge badge-success">' + data.payment_mode + '</span>';
         }
-    }, {
+    }, /* {
         field: 'status',
         title: 'Status',
         width: 80,
@@ -55,7 +55,7 @@ var table_columns = [
                 return '<span class="badge badge-primary">' + data.status + '</span>';
             }
         }
-    }, {
+    }, */ {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -128,7 +128,10 @@ function actions(data) {
 function displayProducts(orders) {
     let productHtml = '';
     if (orders != null) {
-        productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + orders.product.name + '</span><br/>';
+        orders.forEach(function (value, index) {
+            productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + value.product.name + '</span><br/>';
+        });
+
     }
     return productHtml;
 }
@@ -136,20 +139,45 @@ function displayProducts(orders) {
 function sumProductsQuantity(orders) {
     let quantitySum = 0;
     if (orders != null) {
-        quantitySum += orders.quantity;
+        orders.forEach(function (value, index) {
+            quantitySum += value.quantity;
+        });
     }
     return quantitySum;
 }
-
+var ProductStock = [];
 function addRow() {
     if ($('#add_order_product').val() != '') {
-
         let product_id = $('#add_order_product').find(':selected').attr('data-id');
         let product_name = $('#add_order_product').find(':selected').attr('data-name');
         let product_price = $('#add_order_product').find(':selected').attr('data-price');
-        console.log("1st " + product_id, product_name, product_price);
-        $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price));
-        calculateTotal();
+        let quantity = 0;
+        ProductStock.forEach(function (element) {
+            if (element == product_id) {
+                quantity++;
+            }
+        });
+
+        $.ajax({
+            type: "GET",
+            url: route('admin.transfer_products.get_products'),
+            dataType: 'json',
+            data: {
+                product_id: product_id,
+            },
+            success: function (response) {
+                let products = response.data.products;
+                if (products.length && (products[0].quantity - quantity) == 0) {
+                    toastr.error("Product quantity out of stock");
+                } else {
+                    $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price));
+                    calculateTotal();
+                    ProductStock.push(product_id);
+                }
+            }
+        });
+
+
     }
 }
 
@@ -162,11 +190,10 @@ function calculateTotal() {
     });
     $('#product_price').val(totalPrice);
     $('#total_products').val(total_products);
-    $('#total_product_price').text(totalPrice);
+    $('#total_product_price strong').text(totalPrice);
 }
 
 function setProduct(id, product_id, product_name, price) {
-    console.log("2nd " + id);
     return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="product_price[]" value="' + price + '"> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
 }
 
@@ -176,14 +203,13 @@ function deleteIcon(id) {
 
 function deleteModel(id) {
     $('.product_' + id).remove();
+    const valueToRemove = id;
+    const indexToRemove = ProductStock.indexOf(valueToRemove);
+    ProductStock.splice(indexToRemove, 1);
     calculateTotal();
 }
 
 $('#create-btn').click(function () {
-    let action = route('admin.bundles.store');
-    $("#modal_bundles_form").attr("action", action);
-    $('#put_input').html('');
-    $('#model-title').html('Add Package');
     $('.order_product').remove();
     calculateServicesTotal();
 });
@@ -355,32 +381,32 @@ function setFilters(filter_values, active_filters) {
     let created_by = '<option value="">Select Created By</option>';
     let updated_by = '<option value="">Select Updated By</option>';
     let centres_selected, warehouse_selected;
-    let locationId;
-
+    let targetGroup;
+    let defaultValue;
+    let FDM = '';
     if (Object.keys(centres).length == 1 && Object.keys(warehouses).length == 0) {
         centres_selected = "selected";
+        targetGroup = "branch";
+        FDM = "fdm_select";
     } else if (Object.keys(centres).length == 0 && Object.keys(warehouses).length == 1) {
         warehouse_selected = "selected";
+        targetGroup = "warehouse";
+        FDM = "";
     } else {
         centres_selected = "";
         warehouse_selected = "";
+        targetGroup = "";
+        FDM = "";
     }
     /* Option Group */
     if (Object.keys(centres).length > 0) {
         location += '<optgroup value="branch" label="Branches">';
         Object.entries(centres).forEach(function (value, index) {
-            if (active_filters.location_type == 'branch' && active_filters.location == value[0]) {
-                location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+            if (active_filters.location_type == 'branch' && active_filters.location == value[0] || centres_selected == "selected") {
+                location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
             } else {
-
-                if (centres_selected == "selected") {
-                    location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-                    setTimeout(() => {
-                        $("#add_order_location").val(value[0]).trigger('change');
-                    }, 500);
-                } else {
-                    location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-                }
+                location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+                defaultValue = value[0];
             }
         });
         location += '</optgroup>';
@@ -389,24 +415,14 @@ function setFilters(filter_values, active_filters) {
     if (Object.keys(warehouses).length > 0) {
         location += '<optgroup value="warehouse" label="Warehouse">';
         Object.entries(warehouses).forEach(function (value, index) {
-            if (active_filters.location_type == 'warehouse' && active_filters.location == value[0]) {
+            if (active_filters.location_type == 'warehouse' && active_filters.location == value[0] || warehouse_selected == "selected") {
                 location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
             } else {
-
-                if (warehouse_selected == "selected") {
-                    location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-                    setTimeout(() => {
-                        $("#add_order_location").val(value[0]).trigger('change');
-                    }, 500);
-                } else {
-                    location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-                }
-
+                location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
             }
         });
         location += '</optgroup>';
     }
-    /* End Option Group */
 
     Object.entries(centres).forEach(function (value, index) {
         centre_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
@@ -429,7 +445,9 @@ function setFilters(filter_values, active_filters) {
     $("#search_created_by").html(created_by);
     $("#search_updated_by").html(updated_by);
     /* End Option Group */
+
     $("#add_order_location").html(location);
+    $("#add_order_location").attr('role', FDM);
 
     /* Edit Option*/
     $("#edit_order_centre").html(centre_options);
@@ -518,14 +536,6 @@ $("#reset-filters").on('click', function (e) {
     $("select").val("");
 });
 
-$("#add_new_order").on('click', function () {
-    console.log("order");
-    $("input").val("");
-    $("select").val("");
-    $('.select_centre').hide();
-    $('.select_warehouse').hide();
-});
-
 $(document).ready(function () {
     patientSearch('order_patient_search_id');
     $('#add_order_type_option').on('change', function () {
@@ -593,18 +603,27 @@ $(document).ready(function () {
         $('#add_order_location_type').val(locationType);
     });
 
-});
+    /* setTimeout(function () {
+        var selected = $('select#add_order_location option:selected');
+        let location = selected.closest('optgroup').attr('value');
+        let locationType = location == "branch" ? "location_id" : (location == "warehouse" ? "warehouse_id" : null);
+        $('#add_order_location_type').val(locationType);
+    }, 500); */
 
-$("#reset-filters").on("click", function () {
-    $("input").val('');
+
 });
 
 $("#add_new_order").on("click", function () {
     $("input").val('');
-    $("select").val('');
+    $(".select2").val('').trigger("change");
+    $("#product_list").empty();
+    var FDMVal = $('#add_order_location[role="fdm_select"] optgroup option:first-child').val();
+    $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');
+    $('#total_product_price strong').text(0);
 });
 
-function openInNewTab(url) {
+function openInNewTab(id) {
+    let url = route('admin.orders.invoice_pdf', { id: id, download: 'download' });
     var win = window.open(url, '_blank');
     win.focus();
     $("#modal_display_invoice").modal("hide");

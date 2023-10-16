@@ -23,7 +23,7 @@
     </div>
     <!--end::Modal header-->
     <!--begin::Modal body-->
-    <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+    <div class="modal-body scroll-y mx-5 mx-xl-6 my-7">
         <!--begin::Form-->
         <form id="modal_create_order_form" method="post" action="{{ route('admin.orders.store') }}">
             <!--begin::Scroll-->
@@ -35,18 +35,21 @@
                     <input type="hidden" id="add_price">
                     <input type="hidden" id="add_product_type" name="product_type">
                     <input type="hidden" id="add_order_location_type" name="location_type">
+                    <input type="hidden" id="total_products">
 
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Location</label>
-                            <select class="form-control filter-field select2" name="location" id="add_order_location"
+                            <label class="fw-bold fs-6 mb-2 pl-0">Location <span
+                                    class="text text-danger">*</span></label>
+                            <select class="form-control select2" name="location_id" id="add_order_location"
                                 onchange="productSearch(this.value, 'add', 'order')">
                             </select>
                         </div>
                     </div>
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
-                            <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>
+                            <label class="fw-bold fs-6 mb-2 pl-0">Patient Search <span
+                                    class="text text-danger">*</span></label>
                             <input class="form-control user_search patient_search_id search_field"
                                 placeholder="Patients Search" required>
 
@@ -70,27 +73,36 @@
                         </div>
 
                         <div class="fv-row col-2">
-                            <button class="btn btn-primary btn-block btn-sm mt-8" type="button" onclick="addRow()"
+                            <button class="btn btn-primary btn-block mt-8" type="button" onclick="addRow()"
                                 id="add_service_btn"><i class="la la-plus"></i>
                                 Add
                             </button>
                         </div>
                     </div>
 
-                    {{-- <div class="row mt-2">
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Price (per unit) </label>
-                            <input type="number" id="add_total_price"
-                                class="form-control form-control-lg form-control-solid mb-2" readonly
-                                name="total_price">
+                    <div class="row mt-5">
+                        <div class="fv-row col-md-12">
+                            <table class="table table-bordered order_list_table">
+                                <thead class="text-left">
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th>Sale Price</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product_list" class="text-left">
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td></td>
+                                        <td id="total_product_price"><strong>0</strong></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Quantity <span
-                                    class="text text-danger">*</span></label>
-                            <input type="number" id="add_quantity" name="quantity"
-                                class="form-control form-control-lg form-control-solid mb-2">
-                        </div>
-                    </div> --}}
+
+                    </div>
 
                     <div class="row mt-2">
                         <div class="fv-row col-md-6">
@@ -107,31 +119,6 @@
                         </div>
                     </div>
 
-                    <div class="row mt-5">
-                        <div class="fv-row col-md-12">
-                            <table class="table table-bordered">
-                                <thead class="text-center">
-                                    <tr>
-                                        <th>Product Name</th>
-                                        <th>Sale Price</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="product_list" class="text-center">
-                                </tbody>
-                            </table>
-
-                            <table class="table table-bordered" style="width:30%; float: right">
-                                <tbody>
-                                    <tr>
-                                        <th>Total Price</th>
-                                        <td id="total_product_price">0</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                    </div>
 
 
                 </div>
@@ -143,7 +130,7 @@
                 <button type="reset" class="btn btn-light me-3 popup-close"
                     data-kt-users-modal-action="cancel">Cancel</button>
                 <button type="submit" class="btn btn-primary spinner-button" data-kt-users-modal-action="submit">
-                    <span class="indicator-label">Submit</span>
+                    <span class="indicator-label">Place Order</span>
                 </button>
             </div>
             <!--end::Actions-->

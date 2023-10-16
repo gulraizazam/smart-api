@@ -13,7 +13,7 @@ class Order extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['patient_id', 'product_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status'];
+    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status'];
 
     /**
      * Get Total Records
@@ -158,8 +158,10 @@ class Order extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::id();
-        $data['total_price'] = $data['total_price'];
-        $data['status'] = 0;
+        $data['total_price'] = array_sum($data['product_price']);
+        $data['status'] = 1;
+        /* dd($data);
+        unset($data[$key]); */
         $record = self::create($data);
 
         return $record;
@@ -277,7 +279,7 @@ class Order extends BaseModal
 
     public function orderDetail()
     {
-        return $this->hasOne(OrderDetail::class, 'order_id');
+        return $this->hasMany(OrderDetail::class, 'order_id')->with('product');
     }
 
     public static function getRecord($id)
