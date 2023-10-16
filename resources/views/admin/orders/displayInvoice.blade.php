@@ -72,17 +72,19 @@
                                     <th>Product Name</th>
                                     <th>Product Price</th>
                                     <th>Quantity</th>
-                                    <th>Total</th>
+                                    <th>Sub Total</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td>1</td>
-                                    <td>{{ $product->name }} </td>
-                                    <td>{{ $product->sale_price }}</td>
-                                    <td>{{ $invoice_info->orderDetail->quantity }}</td>
-                                    <td>{{ $invoice_info->total_price }}</td>
-                                </tr>
+                                @foreach ($invoice_info->orderDetail as $product)
+                                    <tr>
+                                        <td>{{ $loop->iteration }}</td>
+                                        <td>{{ $product->product->name }} </td>
+                                        <td>{{ $product->product->sale_price }}</td>
+                                        <td>{{ $product->quantity }}</td>
+                                        <td>{{ $product->product->sale_price * $product->quantity }}</td>
+                                    </tr>
+                                @endforeach
                             </tbody>
                         </table>
                     </div>
@@ -97,16 +99,16 @@
                         </ul>
                         <br />
                         <div class="text-center">
-                            <a class="btn btn-success blue hidden-print margin-bottom-5 btn-pdf"
+                            {{-- <a class="btn btn-success blue hidden-print margin-bottom-5 btn-pdf"
                                 href="javascript:void(0);"
-                                onclick="openInNewTab('{{ route('admin.orders.invoice_pdf', [$invoice_info->id]) }}')">Print
+                                onclick="openNewTab('{{ route('admin.orders.invoice_pdf', [$invoice_info->id]) }}')">Print
                                 Invoice
                                 <i class="fa fa-print"></i>
-                            </a>
+                            </a> --}}
 
                             <a class="btn btn-primary blue hidden-print margin-bottom-5 btn-pdf"
                                 href="javascript:void(0);"
-                                onclick="openInNewTab('{{ route('admin.orders.invoice_pdf', [$invoice_info->id, 'download']) }}')">Download
+                                onclick="openNewTab('{{ route('admin.orders.invoice_pdf', [$invoice_info->id, 'download']) }}')">Download
                                 <i class="fa fa-download"></i>
                             </a>
 
