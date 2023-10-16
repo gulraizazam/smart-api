@@ -8,13 +8,13 @@ var AddOrderValidation = function () {
             form,
             {
                 fields: {
-                    location: {
+                    /* location: {
                         validators: {
                             notEmpty: {
                                 message: 'The Location field is required'
                             }
                         }
-                    },
+                    }, */
                     patient_id: {
                         validators: {
                             notEmpty: {
@@ -47,6 +47,8 @@ var AddOrderValidation = function () {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
                 if (response.status) {
                     toastr.success(response.message);
+                    console.log(response);
+                    openInNewTab(response.data);
                     closePopup(modal_id);
                     reInitTable();
                 } else {

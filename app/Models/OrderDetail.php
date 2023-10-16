@@ -25,14 +25,21 @@ class OrderDetail extends BaseModal
     public static function createRecord($request, $account_id, $order_id)
     {
         $data = $request->all();
-        $data['account_id'] = $account_id;
-        $data['order_id'] = $order_id;
-        $data['sale_price'] = $data['total_price'];
-        $data['stock_type'] = 'out';
 
-        Stock::create($data);
+        $combinedData = array_combine($data['product_id'], $data['product_price']);
+        $products = array_count_values($data['product_id']);
+        //dd($products, $data, $combinedData, $product_id, $quantity, $combinedData[$product_id]);
+        foreach ($products as $product_id => $quantity) {
+            $data['product_id'] = $product_id;
+            $data['quantity'] = $quantity;
+            $data['account_id'] = $account_id;
+            $data['order_id'] = $order_id;
+            $data['sale_price'] = $combinedData[$product_id];
+            $data['stock_type'] = 'out';
 
-        self::create($data);
+            Stock::create($data);
+            self::create($data);
+        }
         return true;
     }
 
