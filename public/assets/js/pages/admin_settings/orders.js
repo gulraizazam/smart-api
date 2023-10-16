@@ -170,7 +170,6 @@ function addRow() {
             },
             success: function (response) {
                 let products = response.data.products;
-                console.log(products.length, products[0].quantity, quantity, ((products[0].quantity - quantity) == 0), ((products[0].quantity - quantity) < 0));
                 if (products.length && ((products[0].quantity - quantity) == 0) || ((products[0].quantity - quantity) < 0)) {
                     toastr.error("Product quantity out of stock");
                     $("#add_service_btn").removeAttr('disabled');
