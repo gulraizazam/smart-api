@@ -36,9 +36,10 @@ class Order extends BaseModal
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     $q->whereIn('product_id', $product_id);
                 })
-                ->where(function ($query) {
-                    $query->whereIn('location_id', ACL::getUserCentres())
-                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                ->when(($product_id != null), function ($q) use ($product_id) {
+                    return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                        $q->whereIn('id', $product_id);
+                    }]);
                 })
                 ->where('order_type', $order_type)->count();
         } else {
@@ -46,9 +47,11 @@ class Order extends BaseModal
                 $query->whereIn('location_id', ACL::getUserCentres())
                     ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
             })
-                ->when(($product_id != null), function ($q) use ($product_id) {
-                    $q->whereIn('product_id', $product_id);
-                })
+            ->when(($product_id != null), function ($q) use ($product_id) {
+                return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                    $q->whereIn('id', $product_id);
+                }]);
+            })
                 ->where('order_type', $order_type)->count();
         }
     }
@@ -70,11 +73,15 @@ class Order extends BaseModal
                 $product_id = Product::where('name', 'like', '%' . $request['query']['search']['product_id'] . '%')->pluck('id');
             }
         }
-
+//dd($product_id, $request['query']);
         if (count($where)) {
-            return self::with('patients', 'orderDetail.product')->where($where)
+            return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
-                    $q->whereIn('product_id', $product_id);
+                    return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                        $q->whereIn('id', $product_id);
+                    }]);
+                }, function ($q) {
+                    return $q->with('orderDetail.product');
                 })
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres())
@@ -82,9 +89,13 @@ class Order extends BaseModal
                 })
                 ->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
-            return self::with('patients', 'orderDetail.product')
+            return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
-                    $q->whereIn('product_id', $product_id);
+                    return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                        $q->whereIn('id', $product_id);
+                    }]);
+                }, function ($q) {
+                    return $q->with('orderDetail.product');
                 })
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres())
@@ -155,15 +166,16 @@ class Order extends BaseModal
     public static function createRecord($request, $account_id)
     {
         $data = $request->all();
+        $location_id = $data['location_id'];
         // Set Account ID
+        unset($data['location_id']);
+        $data[$data['location_type']] = $location_id;
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::id();
         $data['total_price'] = array_sum($data['product_price']);
         $data['status'] = 1;
-        /* dd($data);
-        unset($data[$key]); */
-        $record = self::create($data);
 
+        $record = self::create($data);
         return $record;
     }
 
