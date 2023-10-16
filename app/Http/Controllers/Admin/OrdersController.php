@@ -263,19 +263,11 @@ class OrdersController extends Controller
             if ($request->payment_mode == null) {
                 return ApiHelper::apiResponse($this->error, 'Payment method is required.', false);
             }
-            $stock_check = GeneralFunctions::stockC($request->product_id);
-            if ($stock_check < $request->quantity) {
-                return ApiHelper::apiResponse($this->error, 'Product quantity out of stock.', false);
-            }
-            if ($request->quantity <= 0) {
-                return ApiHelper::apiResponse($this->error, "Product quantity can't be 0.", false);
-            }
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
-                    OrderDetail::where('order_id', $order->id)->sum('sale_price_after_discount');
 
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
+                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.', true, $order->id);
                 }
             }
 
@@ -469,19 +461,20 @@ class OrdersController extends Controller
         } else {
             $location_info = Warehouse::find($invoice_info->warehouse_id);
         }
+        $product_id = $invoice_info->orderDetail->pluck('product_id');
 
-        $product = Product::find($invoice_info->product_id);
+        $products = Product::whereIn('id', $product_id)->get();
         $patient = User::find($invoice_info->patient_id);
         $account = Accounts::find($invoice_info->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
-        $content = view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'))->render();
+        $content = view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'products', 'company_phone_number', 'location_info', 'download'))->render();
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content);
         if ($download) {
             return $pdf->download('order-invoice-C-' . $invoice_info->patient_id . '.pdf');
         }
 
-        return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'product', 'company_phone_number', 'location_info', 'download'));
+        //return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'products', 'company_phone_number', 'location_info', 'download'));
     }
 }
