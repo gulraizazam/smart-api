@@ -263,6 +263,9 @@ class OrdersController extends Controller
             if ($request->payment_mode == null) {
                 return ApiHelper::apiResponse($this->error, 'Payment method is required.', false);
             }
+            if (!isset($request->product_id)) {
+                return ApiHelper::apiResponse($this->error, 'Please select any product', false);
+            }
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
