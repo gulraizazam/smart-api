@@ -341,7 +341,7 @@ class TransferProductsController extends Controller
         foreach ($products as $product) {
             $product->quantity = Stock::sumProductQuantity($product->id);
         }
-
+dd($products);
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
         ]);
