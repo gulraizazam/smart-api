@@ -167,7 +167,7 @@ function addRow() {
             },
             success: function (response) {
                 let products = response.data.products;
-                if (products.length && (products[0].quantity - quantity) == 0) {
+                if (products.length && (products[0].quantity - quantity) == 0 || (products[0].quantity - quantity) < 0) {
                     toastr.error("Product quantity out of stock");
                 } else {
                     $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price));
