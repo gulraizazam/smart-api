@@ -265,6 +265,14 @@ class OrdersController extends Controller
             }
             if (!isset($request->product_id)) {
                 return ApiHelper::apiResponse($this->error, 'Please select any product', false);
+            } else {
+                $products = array_count_values($request['product_id']);
+                foreach ($products as $product_id => $quantity) {
+                    $quantity_check = Stock::sumProductQuantity($product_id);
+                    if ($quantity_check < $quantity) {
+                        return ApiHelper::apiResponse($this->error, 'Product quantity out of stock', false);
+                    }
+                }
             }
             $order = Order::createRecord($request, Auth::User()->account_id);
             if ($order) {
