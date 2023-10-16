@@ -437,13 +437,14 @@ class OrdersController extends Controller
         } else {
             $location_info = Warehouse::find($invoice_info->warehouse_id);
         }
+        $product_id = $invoice_info->orderDetail->pluck('product_id');
 
-        $product = Product::find($invoice_info->product_id);
+        $products = Product::whereIn('id', $product_id)->get();
         $patient = User::find($invoice_info->patient_id);
         $account = Accounts::find($invoice_info->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
 
-        return view('admin.orders.displayInvoice', compact('invoice_info', 'patient', 'product', 'company_phone_number', 'location_info', 'account'));
+        return view('admin.orders.displayInvoice', compact('invoice_info', 'patient', 'products', 'company_phone_number', 'location_info', 'account'));
     }
 
     public function invoicePdf($id, $download = null)
@@ -452,7 +453,6 @@ class OrdersController extends Controller
             return abort(401);
         }
         $invoice_info = Order::with('orderDetail')->where(['id' => $id])->first();
-        Order::where(['id' => $id])->update(['status' => 1]);
 
         $location_key = $invoice_info->location_id != null ? 'location_id' : 'warehouse_id';
         $location_value = $invoice_info->location_id != null ? $invoice_info->location_id : $invoice_info->warehouse_id;
@@ -475,6 +475,6 @@ class OrdersController extends Controller
             return $pdf->download('order-invoice-C-' . $invoice_info->patient_id . '.pdf');
         }
 
-        //return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'products', 'company_phone_number', 'location_info', 'download'));
+        return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'products', 'company_phone_number', 'location_info', 'download'));
     }
 }

@@ -8,13 +8,13 @@ var AddOrderValidation = function () {
             form,
             {
                 fields: {
-                    /* location: {
+                    location_id: {
                         validators: {
                             notEmpty: {
                                 message: 'The Location field is required'
                             }
                         }
-                    }, */
+                    },
                     patient_id: {
                         validators: {
                             notEmpty: {
@@ -49,7 +49,7 @@ var AddOrderValidation = function () {
                     toastr.success(response.message);
 
                     openInNewTab(response.data);
-                    
+
                     closePopup(modal_id);
                     reInitTable();
                 } else {

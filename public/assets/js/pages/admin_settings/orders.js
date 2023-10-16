@@ -629,3 +629,10 @@ function openInNewTab(id) {
     $("#modal_display_invoice").modal("hide");
     reInitTable();
 }
+
+function openNewTab(url) {
+    var win = window.open(url, '_blank');
+    win.focus();
+    $("#modal_display_invoice").modal("hide");
+    reInitTable();
+}
