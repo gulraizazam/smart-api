@@ -129,7 +129,9 @@ function displayProducts(orders) {
     let productHtml = '';
     if (orders != null) {
         orders.forEach(function (value, index) {
-            productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + value.product.name + '</span><br/>';
+            if (value.product != null) {
+                productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + value.product.name + '</span><br/>';
+            }
         });
 
     }
@@ -394,7 +396,7 @@ function setFilters(filter_values, active_filters) {
     } else if (Object.keys(centres).length == 0 && Object.keys(warehouses).length == 1) {
         warehouse_selected = "selected";
         targetGroup = "warehouse";
-        FDM = "";
+        FDM = "fdm_select";
     } else {
         centres_selected = "";
         warehouse_selected = "";
