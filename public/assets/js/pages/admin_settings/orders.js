@@ -220,6 +220,10 @@ $('#create-btn').click(function () {
     calculateServicesTotal();
 });
 
+function orderSubmit(){
+    ProductStock.length = 0;
+}
+
 function createOrderInvoice(url) {
     $.ajax({
         headers: {

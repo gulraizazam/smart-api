@@ -129,7 +129,7 @@
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close"
                     data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button" data-kt-users-modal-action="submit">
+                <button type="submit" class="btn btn-primary spinner-button" data-kt-users-modal-action="submit" onclick="orderSubmit()">
                     <span class="indicator-label">Place Order</span>
                 </button>
             </div>
