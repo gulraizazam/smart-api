@@ -39,8 +39,6 @@ $(document).ready(function () {
         $("#modal_add_product_stock").find('form').trigger('reset');
         $("#modal_add_products_form").find('form').trigger('reset');
         $("#add_order_product").empty();
-        var FDMVal = $('#add_order_location[role="fdm_select"] optgroup option:first-child').val();
-        $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');
     });
 
     $('.select2').select2();
