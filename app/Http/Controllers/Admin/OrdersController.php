@@ -268,9 +268,10 @@ class OrdersController extends Controller
             } else {
                 $products = array_count_values($request['product_id']);
                 foreach ($products as $product_id => $quantity) {
+                    $product_name = Product::find($product_id);
                     $quantity_check = Stock::sumProductQuantity($product_id);
                     if ($quantity_check < $quantity) {
-                        return ApiHelper::apiResponse($this->error, 'Product quantity out of stock', false);
+                        return ApiHelper::apiResponse($this->error, $product_name->name . ' quantity is out of stock', false);
                     }
                 }
             }
