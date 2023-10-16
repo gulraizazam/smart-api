@@ -34,7 +34,7 @@ $(document).ready(function () {
         $(this).parents(".modal").modal("toggle");
         $("#modal_allocate_doctors_form").find("#services").empty();
         $("#modal_allocate_discounts_form").find("#services").empty();
-        //$("#modal_create_order_form").find('form').trigger('reset');
+        $("#modal_create_order_form").find('form').trigger('reset');
         $("#modal_edit_transfer_products_form").find('form').trigger('reset');
         $("#modal_add_product_stock").find('form').trigger('reset');
         $("#modal_add_products_form").find('form').trigger('reset');
