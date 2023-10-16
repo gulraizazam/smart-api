@@ -37,9 +37,9 @@ class Order extends BaseModal
                     $q->whereIn('product_id', $product_id);
                 })
                 ->when(($product_id != null), function ($q) use ($product_id) {
-                    return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                    return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
                         $q->whereIn('id', $product_id);
-                    }]);
+                    });
                 })
                 ->where('order_type', $order_type)->count();
         } else {
@@ -48,9 +48,9 @@ class Order extends BaseModal
                     ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
             })
             ->when(($product_id != null), function ($q) use ($product_id) {
-                return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
                     $q->whereIn('id', $product_id);
-                }]);
+                });
             })
                 ->where('order_type', $order_type)->count();
         }
@@ -73,13 +73,13 @@ class Order extends BaseModal
                 $product_id = Product::where('name', 'like', '%' . $request['query']['search']['product_id'] . '%')->pluck('id');
             }
         }
-//dd($product_id, $request['query']);
+
         if (count($where)) {
             return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
-                    return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                    return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
                         $q->whereIn('id', $product_id);
-                    }]);
+                    });
                 }, function ($q) {
                     return $q->with('orderDetail.product');
                 })
@@ -91,9 +91,9 @@ class Order extends BaseModal
         } else {
             return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
-                    return $q->with(['orderDetail.product' => function ($q) use ($product_id) {
+                    return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
                         $q->whereIn('id', $product_id);
-                    }]);
+                    });
                 }, function ($q) {
                     return $q->with('orderDetail.product');
                 })

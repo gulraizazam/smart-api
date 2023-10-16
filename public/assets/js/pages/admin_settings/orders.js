@@ -129,6 +129,7 @@ function displayProducts(orders) {
     let productHtml = '';
     if (orders != null) {
         orders.forEach(function (value, index) {
+            console.log(value);
             if (value.product != null) {
                 productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + value.product.name + '</span><br/>';
             }
