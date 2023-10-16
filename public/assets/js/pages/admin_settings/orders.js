@@ -620,7 +620,9 @@ $("#add_new_order").on("click", function () {
     $(".select2").val('').trigger("change");
     $("#product_list").empty();
     var FDMVal = $('#add_order_location[role="fdm_select"] optgroup option:first-child').val();
-    $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');
+    setTimeout(function () {
+        $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');
+    }, 600);
     $('#total_product_price strong').text(0);
 });
 
