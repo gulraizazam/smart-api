@@ -28,7 +28,6 @@ class OrderDetail extends BaseModal
 
         $combinedData = array_combine($data['product_id'], $data['product_price']);
         $products = array_count_values($data['product_id']);
-        //dd($products, $data, $combinedData, $product_id, $quantity, $combinedData[$product_id]);
         foreach ($products as $product_id => $quantity) {
             $data['product_id'] = $product_id;
             $data['quantity'] = $quantity;
