@@ -68,7 +68,7 @@
                         <div class="fv-row col-10">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
                             <select id="add_order_product" class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                name="product_id" onchange="productSelect(this.value, 'add')">
+                                onchange="productSelect(this.value, 'add')">
                             </select>
                         </div>
 
