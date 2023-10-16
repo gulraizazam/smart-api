@@ -40,6 +40,8 @@ $(document).ready(function () {
         $("#modal_add_products_form").find('form').trigger('reset');
         $("#modal_create_order_form").find('form').trigger('reset');
         $("#add_order_product").empty();
+        var FDMVal = $('#add_order_location[role="fdm_select"] optgroup option:first-child').val();
+        $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');
     });
 
     $('.select2').select2();
@@ -1390,7 +1392,7 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                         }
                     }
                 });
-            },500)
+            }, 500)
         } else {
             $(".suggesstion-box").hide();
         }

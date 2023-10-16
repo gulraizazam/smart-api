@@ -387,21 +387,17 @@ function setFilters(filter_values, active_filters) {
     let created_by = '<option value="">Select Created By</option>';
     let updated_by = '<option value="">Select Updated By</option>';
     let centres_selected, warehouse_selected;
-    let targetGroup;
-    let defaultValue;
     let FDM = '';
+
     if (Object.keys(centres).length == 1 && Object.keys(warehouses).length == 0) {
-        centres_selected = "selected";
-        targetGroup = "branch";
+        centres_selected = "selected"
         FDM = "fdm_select";
     } else if (Object.keys(centres).length == 0 && Object.keys(warehouses).length == 1) {
         warehouse_selected = "selected";
-        targetGroup = "warehouse";
         FDM = "fdm_select";
     } else {
         centres_selected = "";
         warehouse_selected = "";
-        targetGroup = "";
         FDM = "";
     }
     /* Option Group */
@@ -422,7 +418,7 @@ function setFilters(filter_values, active_filters) {
         location += '<optgroup value="warehouse" label="Warehouse">';
         Object.entries(warehouses).forEach(function (value, index) {
             if (active_filters.location_type == 'warehouse' && active_filters.location == value[0] || warehouse_selected == "selected") {
-                location += '<option value="' + value[0] + '" selected>&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
+                location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
             } else {
                 location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
             }
