@@ -158,6 +158,7 @@ function addRow() {
             }
         });
 
+        $("#add_service_btn").attr('disabled', 'disabled');
         $.ajax({
             type: "GET",
             url: route('admin.transfer_products.get_products'),
@@ -169,10 +170,12 @@ function addRow() {
                 let products = response.data.products;
                 if (products.length && (products[0].quantity - quantity) == 0 || (products[0].quantity - quantity) < 0) {
                     toastr.error("Product quantity out of stock");
+                    $("#add_service_btn").removeAttr('disabled');
                 } else {
                     $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price));
                     calculateTotal();
                     ProductStock.push(product_id);
+                    $("#add_service_btn").removeAttr('disabled');
                 }
             }
         });
