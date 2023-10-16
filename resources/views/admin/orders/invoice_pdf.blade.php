@@ -216,8 +216,8 @@
         <table>
             <tr>
                 <td>
-                    <img class="img-responsive logo" src="https://crm2.cutera.pk/public/assets/media/new_logo.png" style="width:235px;"
-                        alt="" />
+                    <img class="img-responsive logo" src="https://crm2.cutera.pk/public/assets/media/new_logo.png"
+                        style="width:235px;" alt="" />
                     <p class="logo_caption">{{ $location_info->address }}.</p>
                     <p class="logo_caption logo_caption2">Phone. {{ $location_info->fdo_phone }} &nbsp; | &nbsp; Email.
                         {{ $account->email }} &nbsp; | &nbsp; www.cuteraesthetics.com &nbsp; | &nbsp; NTN.
@@ -379,17 +379,19 @@
                 <th>Product Name</th>
                 <th>Product Price</th>
                 <th>Quantity</th>
-                <th>Total</th>
+                <th>Sub Total</th>
             </tr>
-            <tr>
-                <td>1</td>
-                <td>{{ $product->name }} </td>
-                <td>{{ $product->sale_price }}</td>
-                <td>{{ $invoice_info->orderDetail->quantity }}</td>
-                <td>{{ $invoice_info->total_price }}</td>
-            </tr>
+            @foreach ($invoice_info->orderDetail as $product)
+                <tr>
+                    <td>{{ $loop->iteration }}</td>
+                    <td>{{ $product->product->name }} </td>
+                    <td>{{ $product->product->sale_price }}</td>
+                    <td>{{ $product->quantity }}</td>
+                    <td>{{ $product->product->sale_price * $product->quantity }}</td>
+                </tr>
+            @endforeach
         </table>
-        <table class="grand-tax" style="display:none;">
+        <table class="grand-tax mb-3">
             <tbody>
                 <tr>
                     <td style="text-align: right;"><strong>Total:</strong> <?php echo number_format($invoice_info->total_price); ?>/-</td>
