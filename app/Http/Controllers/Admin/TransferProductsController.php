@@ -101,7 +101,7 @@ class TransferProductsController extends Controller
 
             $transfer_products = TransferProduct::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
-            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
 
             if ($transfer_products) {
                 $transfer_products = collect($transfer_products)->map(function ($transfer_product, $index) {
