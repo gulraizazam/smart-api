@@ -441,7 +441,7 @@ class TransferProduct extends BaseModal
     public static function parentLocation($id)
     {
         $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
-        $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+        $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
         $transfer_product = TransferProduct::where(['id' => $id])->first();
         return ($transfer_product->from_location_id != null) ? ((array_key_exists($transfer_product->from_location_id, $centres)) ? $centres[$transfer_product->from_location_id]->name : 'N/A') : ((array_key_exists($transfer_product->from_warehouse_id, $warehouse)) ? $warehouse[$transfer_product->from_warehouse_id]->name : 'N/A');
     }
