@@ -54,8 +54,8 @@ class SecondMessageOfAppointment extends Command
      */
     public function handle()
     {
-        $day = Carbon::now()->setTimezone('Asia/Karachi')->format('Y-m-d');
-        $tomorrow = Carbon::parse(Carbon::now())->addDay()->setTimezone('Asia/Karachi')->format('Y-m-d');
+        $day = Carbon::now()->format('Y-m-d');
+        $tomorrow = Carbon::parse(Carbon::now())->addDay()->format('Y-m-d');
 
         $where = [];
 
@@ -75,7 +75,7 @@ class SecondMessageOfAppointment extends Command
 
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
             ->get();
-            
+            dd($appointments);
         $log_type = '2nd_sms';
        
         if ($appointments) {
