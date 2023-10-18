@@ -116,7 +116,7 @@ class SecondMessageOfAppointment extends Command
                   
                     $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms',$account->id); // 'second-sms' for virtual consultancy SMS
                 } else {
-                    dd("here1");
+                    
                     $SMSTemplate = SMSTemplates::getBySlug('second-sms', $account->id); // 'second-sms' for Appointment SMS
                 }
             } else {
@@ -150,6 +150,7 @@ class SecondMessageOfAppointment extends Command
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
+                dd("here");
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
             } else {
                 $SMSObj = [
@@ -160,8 +161,10 @@ class SecondMessageOfAppointment extends Command
                     'text' => $preparedText,
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
+                dd("here1");
                 $response = JazzSMSAPI::SendSMS($SMSObj);
             }
+            dd("here333");
             $SMSLog = array_merge($SMSObj, $response);
             $SMSLog['appointment_id'] = $appointment->appointment_id;
             $SMSLog['created_by'] = 1;
