@@ -274,6 +274,8 @@ function refundOrder(url) {
     $("#refund_products_price").val('');
     $("#refund_product_list").empty();
     $('#refund_total_product_price strong').text(0);
+    refundProductId.length = 0;
+    refundProductPrice.length = 0;
 
     $.ajax({
         headers: {
