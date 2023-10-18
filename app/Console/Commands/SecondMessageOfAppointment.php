@@ -153,6 +153,7 @@ class SecondMessageOfAppointment extends Command
                 ];
                
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
+                logger(['Current Time' => date('Y-m-d H:i:s'),'response'=>$response]);
                 dd("ok");
             } else {
                 $SMSObj = [
