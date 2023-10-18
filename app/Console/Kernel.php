@@ -60,86 +60,86 @@ class Kernel extends ConsoleKernel
           * 2nd message one day before appointment at 8PM
           */
         $schedule->command('appointment:2nd-message-on-appointment-day')
-            ->dailyAt('19:50')->timezone($timeZone);
+            ->dailyAt('17:05')->timezone($timeZone);
 
         /*
          * 	3rd message 2 hours before appointment
          */
-        $schedule->command('appointment:3rd-message-before-appointment')
-            ->everyThirtyMinutes();
+        // $schedule->command('appointment:3rd-message-before-appointment')
+        //     ->everyThirtyMinutes();
 
         /*
          * Deliver SMS which failed to sent
          */
-        $schedule->command('appointment:deliver-not-sent-sms')
-            ->everyFifteenMinutes();
+        // $schedule->command('appointment:deliver-not-sent-sms')
+        //     ->everyFifteenMinutes();
 
         /*
          * Deliver SMS on time of booking
          */
-        $schedule->command('appointment:deliver-on-appointment-book')
-            ->withoutOverlapping()
-            ->everyMinute();
+        // $schedule->command('appointment:deliver-on-appointment-book')
+        //     ->withoutOverlapping()
+        //     ->everyMinute();
 
         /*
          * Handle heavy lifting of jobs
          */
-        $schedule->command('cms:handle-heavy-lifting')
-            ->withoutOverlapping()
-            ->everyMinute();
+        // $schedule->command('cms:handle-heavy-lifting')
+        //     ->withoutOverlapping()
+        //     ->everyMinute();
 
         /*
          * Run daily backup command
          */
-        $schedule->command('db:backup')
-            ->dailyAt('23:59')->timezone($timeZone);
+        // $schedule->command('db:backup')
+        //     ->dailyAt('23:59')->timezone($timeZone);
 
         /*
          * Run old daily backup remover command
          */
-        $schedule->command('db:backup-old-remove')
-            ->dailyAt('23:55')->timezone($timeZone);
+        // $schedule->command('db:backup-old-remove')
+        //     ->dailyAt('23:55')->timezone($timeZone);
 
         /*
          * Inactive all the discounts which has previous day equals to the end date of the discount
          */
 
-        $schedule->command('discounts:inactive')
-            ->dailyAt('01:00')->timezone($timeZone);
+        // $schedule->command('discounts:inactive')
+        //     ->dailyAt('01:00')->timezone($timeZone);
 
         /*
          * Inactive all the bundles which has previous day equals to the end date of the bundle
          */
 
-        $schedule->command('bundles:inactive')
-            ->dailyAt('01:00')->timezone($timeZone);
+        // $schedule->command('bundles:inactive')
+        //     ->dailyAt('01:00')->timezone($timeZone);
         /*
          * Take backup of DATABASE and APPLICATION both
          * */
 
-        $schedule->command('backup:run')
-            ->dailyAt('01:30')->timezone($timeZone);
+        // $schedule->command('backup:run')
+        //     ->dailyAt('01:30')->timezone($timeZone);
 
         /*
          * Moving backup from ROLES-PERMISSION MANAGER to BACKUPS
          * */
 
-        $schedule->command('move:backup')
-            ->dailyAt('02:30')->timezone($timeZone);
+        // $schedule->command('move:backup')
+        //     ->dailyAt('02:30')->timezone($timeZone);
 
         /*
          * Appointment and Treatment daily sate created
          * */
 
-        $schedule->command('appointments:daily-stats')
-            ->dailyAt('23:50')->timezone($timeZone);
+        // $schedule->command('appointments:daily-stats')
+        //     ->dailyAt('23:50')->timezone($timeZone);
 
         /*
          * Last 3 months actvities
          * */
 
-        $schedule->command('recent:activities')
-            ->weekly()->timezone($timeZone);
+        // $schedule->command('recent:activities')
+        //     ->weekly()->timezone($timeZone);
     }
 
     /**
