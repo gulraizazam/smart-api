@@ -99,7 +99,6 @@ var RefundOrderValidation = function () {
         });
         validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-console.log($(form).serialize());
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
