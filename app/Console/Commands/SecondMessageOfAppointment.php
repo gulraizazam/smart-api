@@ -125,7 +125,7 @@ class SecondMessageOfAppointment extends Command
                 $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms',$account->id); // 'second-sms' for Appointment SMS
                
             }
-dd($SMSTemplate);
+
 
             if (! $SMSTemplate) {
                 // SMS Promotion is disabled
@@ -140,7 +140,7 @@ dd($SMSTemplate);
             $setting = Settings::whereSlug('sys-current-sms-operator')->first();
 
             $UserOperatorSettings = UserOperatorSettings::getRecord($account->id, $setting->data);
-          
+            dd($setting);
             if ($setting->data == 1) {
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
