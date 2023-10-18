@@ -87,7 +87,12 @@ class Order extends BaseModal
                     $query->whereIn('location_id', ACL::getUserCentres())
                         ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
                 })
-                ->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
+                ->when($order_type != 'refund', function ($q) use ($order_type) {
+                    $q->whereNull('refund_order_id')->where('order_type', $order_type);
+                }, function ($q) use ($order_type) {
+                    $q->where('order_type', $order_type);
+                })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
             return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
@@ -101,7 +106,12 @@ class Order extends BaseModal
                     $query->whereIn('location_id', ACL::getUserCentres())
                         ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
                 })
-                ->whereNull('refund_order_id')->where('order_type', $order_type)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
+                ->when($order_type != 'refund', function ($q) use ($order_type) {
+                    $q->whereNull('refund_order_id')->where('order_type', $order_type);
+                }, function ($q) use ($order_type) {
+                    $q->where('order_type', $order_type);
+                })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
     }
 
@@ -207,10 +217,19 @@ class Order extends BaseModal
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         if ($order->order_type == 'refund') {
-            $old_order = Order::where(['refund_order_id' => $order->id])->first();
+            $old_order = Order::where(['id' => $order->refund_order_id])->first();//dd($old_order);
             $old_order->update([
                 'refund_order_id' => null,
+                'total_price' => $order->total_price,
             ]);
+            $old_detail_records = OrderDetail::where('order_id', $id)->get();
+            foreach ($old_detail_records as $data) {
+                $quantity = $data->quantity;
+                $order_detail = OrderDetail::where(['order_id' => $order->refund_order_id, 'product_id' => $data->product_id])->first();
+                $order_detail->update([
+                    'quantity' => $order_detail->quantity + $quantity,
+                ]);
+            }
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.

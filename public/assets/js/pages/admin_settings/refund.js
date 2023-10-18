@@ -89,7 +89,9 @@ $("#reset-filters").on("click", function () {
 function sumProductsQuantity(orders) {
     let quantitySum = 0;
     if (orders != null) {
-            quantitySum = quantitySum + orders.quantity;
+        orders.forEach(function (value, index) {
+            quantitySum += value.quantity;
+        });
     }
     return quantitySum;
 }
@@ -97,7 +99,12 @@ function sumProductsQuantity(orders) {
 function displayProducts(orders) {
     let productHtml = '';
     if (orders != null) {
-            productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + orders.product.name + '</span><br/>';
+        orders.forEach(function (value, index) {
+            if (value.product != null) {
+                productHtml += '<span style="margin-bottom: 3px;" class="badge badge-info">' + value.product.name + '</span><br/>';
+            }
+        });
+
     }
     return productHtml;
 }
