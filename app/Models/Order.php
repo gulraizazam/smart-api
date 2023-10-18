@@ -47,11 +47,11 @@ class Order extends BaseModal
                 $query->whereIn('location_id', ACL::getUserCentres())
                     ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
             })
-            ->when(($product_id != null), function ($q) use ($product_id) {
-                return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
-                    $q->whereIn('id', $product_id);
-                });
-            })
+                ->when(($product_id != null), function ($q) use ($product_id) {
+                    return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
+                        $q->whereIn('id', $product_id);
+                    });
+                })
                 ->where('order_type', $order_type)->count();
         }
     }
@@ -235,20 +235,47 @@ class Order extends BaseModal
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
-    public static function refund($id)
+    public static function refund($id, $request)
     {
         $old_order = self::find($id);
+        $refund_order = self::where("refund_order_id",  $old_order->id)->first();
+        $refund_product_price = isset($request->refund_product_price) ? array_sum(explode(",", $request->refund_product_price)) : 0;
+
         if ($old_order) {
             $new_order = $old_order->toArray();
             $new_order['order_type'] = 'refund';
-            $new_order['created_by'] = Auth::id();
-            $refund = self::create($new_order);
-            $old_order->refund_order_id = $refund->id;
-            $old_order->save();
+
+            if ($refund_order) {
+                $new_order['updated_by'] = Auth::id();
+                $new_order['total_price'] = $refund_order->total_price + $refund_product_price;
+                unset($new_order['id']);
+                unset($new_order['refund_order_id']);
+                $refund_order->update($new_order);
+
+                $old_order->update([
+                    'total_price' => $old_order->total_price - $refund_product_price,
+                ]);
+                $refund = $refund_order;
+            } else {
+                $new_order['created_by'] = Auth::id();
+                $new_order['refund_order_id'] = $old_order->id;
+                $new_order['total_price'] = $refund_product_price;
+                unset($new_order['id']);
+                $old_order->update([
+                    'total_price' => $old_order->total_price - $refund_product_price,
+                ]);
+
+                $refund = self::create($new_order);
+            }
+
+            if (!isset($request->product_id)) {
+                $old_order->update([
+                    'refund_order_id' => $refund->id,
+                ]);
+            }
 
             return $refund;
         }
-
         return false;
     }
 

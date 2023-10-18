@@ -44,18 +44,7 @@ var table_columns = [
         template: function (data) {
             return '<span class="badge badge-success">' + data.payment_mode + '</span>';
         }
-    }, /* {
-        field: 'status',
-        title: 'Status',
-        width: 80,
-        template: function (data) {
-            if (data.status == "pending") {
-                return '<span class="badge badge-warning">' + data.status + '</span>';
-            } else {
-                return '<span class="badge badge-primary">' + data.status + '</span>';
-            }
-        }
-    }, */ {
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -78,15 +67,10 @@ function actions(data) {
 
     let actions = '<div class="dropdown dropdown-inline action-dots">'
 
-    if (data.status == "pending") {
-        actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
-                            <span class="navi-icon"><i class="la la-file"></i></span>\
-                        </a>';
-    } else {
-        actions += '<a title="View Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
+    actions += '<a title="View Invoice" href="javascript:void(0);" onclick="createOrderInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                         </a>';
-    }
+
     actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
             </a>\
@@ -95,14 +79,6 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-    /* if (permissions.edit) {
-        actions += '<li class="navi-item">\
-                            <a href="javascript:void(0);" onclick="editRow(`'+ edit_url + '`);" class="navi-link">\
-                                <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                                <span class="navi-text">Edit</span>\
-                            </a>\
-                        </li>';
-    } */
     if (permissions.refund) {
         actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="refundOrder(`' + refund_url + '`);" class="navi-link">\
@@ -207,6 +183,7 @@ function deleteIcon(id) {
 }
 
 function deleteModel(id) {
+    alert(id)
     $('.product_' + id).remove();
     const valueToRemove = id;
     const indexToRemove = ProductStock.indexOf(valueToRemove);
@@ -214,13 +191,11 @@ function deleteModel(id) {
     calculateTotal();
 }
 
-$('#create-btn').click(function () {
-    $('.order_product').remove();
-    calculateServicesTotal();
-});
-
-function orderSubmit(){
+function orderSubmit() {
     ProductStock.length = 0;
+    refundProductId.length = 0;
+    refundProductPrice.length = 0;
+
 }
 
 function createOrderInvoice(url) {
@@ -293,6 +268,13 @@ function setEditData(response) {
 
 
 function refundOrder(url) {
+    $("input").val('');
+    $(".select2").val('').trigger("change");
+    $("#refund_products").val('');
+    $("#refund_products_price").val('');
+    $("#refund_product_list").empty();
+    $('#refund_total_product_price strong').text(0);
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -320,23 +302,58 @@ function setRefundOrderData(response) {
     let location_option = order.location_id != null ? 'in_branch' : 'in_warehouse';
 
     if (location_option == 'in_branch') {
-        $('.select_centre').show();
-        $("#refund_order_centre").val(order.location_id).trigger('change');
+        $('#refund_order_location').val(order.location_id).trigger('change');
     } else {
-        $('.select_warehouse').show();
-        $("#refund_order_warehouse").val(order.warehouse_id).trigger('change');
+        $("#refund_order_location").val(order.warehouse_id).trigger('change');
     }
+    $("#refund_order_location").prop('disabled', true);
 
     $("#refund_order_patient_search").val(order.patient_id).trigger('change');
-    $("#refund_order_type_option").val(location_option).trigger('change');
     $('.refund_order_patient_search_id').val(order.patients.name).trigger('change');
     $('.refund_order_patient_search_id').prop('disabled', true);
-    $('#refund_order_patient').val(order.patient_id).trigger('change');
-    $('.edit_old_product').val(orderDetail.product_id);
 
-    $('#refund_available_quantity').val(order.quantity);
-    $('#refund_total_price').val(order.total_price);
-    $('#refund_quantity').val(orderDetail.quantity);
+    let productList = "";
+    let loop = 0;
+    $("#refund_product_list").empty();
+
+    orderDetail.forEach(function (value, index) {
+        for (let i = 0; i < value.quantity; i++) {
+            let product = value.product;
+
+            productList += setProductRefund(loop, product.id, product.name, product.sale_price);
+            loop++;
+        }
+    });
+
+    $('#refund_product_list').append(productList);
+    $('#refund_total_product_price').text(order.total_price);
+    $('#refund_payment_mode').val(order.payment_mode).trigger("change");
+    $('#refund_payment_mode').prop("disabled", true);
+}
+
+
+function setProductRefund(id, product_id, product_name, price) {
+    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="product_price[]" value="' + price + '"> <input type="hidden" class="productPriceValue" value="' + price + '"><input type="hidden" class="productId" value="' + product_id + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + deleteIconRefund(id) + '</td></tr>';
+}
+
+function deleteIconRefund(id) {
+    return '<a href="javascript:void(0);" onClick="deleteModelRefund(' + id + ')" class="btn btn-icon btn-light btn-hover-danger btn-sm"> <span class="svg-icon svg-icon-md svg-icon-danger"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1"> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect x="0" y="0" width="24" height="24"></rect> <path d="M6,8 L6,20.5 C6,21.3284271 6.67157288,22 7.5,22 L16.5,22 C17.3284271,22 18,21.3284271 18,20.5 L18,8 L6,8 Z" fill="#000000" fill-rule="nonzero"></path> <path d="M14,4.5 L14,4 C14,3.44771525 13.5522847,3 13,3 L11,3 C10.4477153,3 10,3.44771525 10,4 L10,4.5 L5.5,4.5 C5.22385763,4.5 5,4.72385763 5,5 L5,5.5 C5,5.77614237 5.22385763,6 5.5,6 L18.5,6 C18.7761424,6 19,5.77614237 19,5.5 L19,5 C19,4.72385763 18.7761424,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"></path> </g> </svg> </span> </a>';
+}
+
+let refundProductId = [];
+let refundProductPrice = [];
+function deleteModelRefund(id) {
+    let totalPrice = $('#refund_total_product_price').text();
+    var price = $('.product_' + id).find('.productPriceValue').val();
+    var productId = $('.product_' + id).find('.productId').val();
+    refundProductId.push(productId);
+    refundProductPrice.push(price);
+
+    $('#refund_products').val(refundProductId);
+    $('#refund_products_price').val(refundProductPrice);
+    console.log(totalPrice, refundProductId);
+    $('.product_' + id).remove();
+    $('#refund_total_product_price').text(totalPrice - price);
 }
 
 function applyFilters(datatable) {
@@ -454,13 +471,9 @@ function setFilters(filter_values, active_filters) {
     $("#add_order_location").html(location);
     $("#add_order_location").attr('role', FDM);
 
-    /* Edit Option*/
-    $("#edit_order_centre").html(centre_options);
-    $("#edit_order_warehouse").html(warehouse_options);
-
     /* Refund Order values */
-    $("#refund_order_centre").html(centre_options);
-    $("#refund_order_warehouse").html(warehouse_options);
+    $("#refund_order_location").html(location);
+    $("#refund_order_location").attr('role', FDM);
     $("#refund_order_product").html(product);
 
     /* List Filters values */
@@ -543,57 +556,6 @@ $("#reset-filters").on('click', function (e) {
 
 $(document).ready(function () {
     patientSearch('order_patient_search_id');
-    $('#add_order_type_option').on('change', function () {
-        if (this.value == 'in_warehouse') {
-            $('.select_centre').hide();
-            $('.select_warehouse').show();
-            $("#add_order_centre").val("");
-        } else if (this.value == 'in_branch') {
-            $('.select_centre').show();
-            $('.select_warehouse').hide();
-            $("#add_order_warehouse").val("");
-        } else {
-            $('.select_centre').hide();
-            $('.select_warehouse').hide();
-            $("#add_order_centre").val("");
-            $("#add_order_warehouse").val("");
-        }
-    });
-
-    $('#edit_order_type_option').on('change', function () {
-        if (this.value == 'in_warehouse') {
-            $('.select_centre').hide();
-            $('.select_warehouse').show();
-        } else if (this.value == 'in_branch') {
-            $('.select_centre').show();
-            $('.select_warehouse').hide();
-        } else {
-            $('.select_centre').hide();
-            $('.select_warehouse').hide();
-        }
-    });
-
-    $("#add_quantity").on('keyup', function () {
-        if ($("#add_quantity").val() > 0) {
-            let total_price = $("#add_quantity").val() * $("#add_price").val();
-            $("#add_total_price").val(total_price);
-
-        } else {
-            $("#add_total_price").val(0);
-            $("#add_quantity").val();
-        }
-    });
-
-    $("#edit_quantity").on('keyup', function () {
-        if ($("#edit_quantity").val() > 0) {
-            let total_price = $("#edit_quantity").val() * $("#edit_price").val();
-            $("#edit_total_price").val(total_price);
-
-        } else {
-            $("#edit_total_price").val(0);
-            $("#edit_quantity").val();
-        }
-    });
 
     $("#search_location").change(function () {
         var selected = $('select#search_location option:selected');
@@ -607,14 +569,6 @@ $(document).ready(function () {
         let locationType = location == "branch" ? "location_id" : (location == "warehouse" ? "warehouse_id" : null);
         $('#add_order_location_type').val(locationType);
     });
-
-    /* setTimeout(function () {
-        var selected = $('select#add_order_location option:selected');
-        let location = selected.closest('optgroup').attr('value');
-        let locationType = location == "branch" ? "location_id" : (location == "warehouse" ? "warehouse_id" : null);
-        $('#add_order_location_type').val(locationType);
-    }, 500); */
-
 
 });
 
