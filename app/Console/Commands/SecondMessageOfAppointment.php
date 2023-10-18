@@ -54,8 +54,8 @@ class SecondMessageOfAppointment extends Command
      */
     public function handle()
     {
-        $day = Carbon::now()->setTimezone('Asia/Karachi')->format('Y-m-d');
-        $tomorrow = Carbon::parse(Carbon::now())->addDay()->setTimezone('Asia/Karachi')->format('Y-m-d');
+        $day = Carbon::now()->format('Y-m-d');
+        $tomorrow = Carbon::parse(Carbon::now())->addDay()->format('Y-m-d');
 
         $where = [];
 
@@ -75,7 +75,7 @@ class SecondMessageOfAppointment extends Command
 
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
             ->get();
-            dd($appointments);
+            
         $log_type = '2nd_sms';
        
         if ($appointments) {
@@ -113,12 +113,14 @@ class SecondMessageOfAppointment extends Command
               
                 // SEND SMS for Appointment Booked
                 if ($appointment->consultancy_type == 'virtual') {
+                    dd("here");
                     $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms',$account->id); // 'second-sms' for virtual consultancy SMS
                 } else {
+                    dd("here1");
                     $SMSTemplate = SMSTemplates::getBySlug('second-sms', $account->id); // 'second-sms' for Appointment SMS
                 }
             } else {
-               
+                dd("here2");
                 // SEND SMS for Appointment Booked
                 $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms',$account->id); // 'second-sms' for Appointment SMS
                
