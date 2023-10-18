@@ -105,6 +105,7 @@ var RefundOrderValidation = function () {
                     reInitTable();
                 } else {
                     toastr.error(response.message);
+                    $("#modal_refund_order").modal("hide");
                 }
             });
         });
