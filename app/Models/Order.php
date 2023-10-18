@@ -217,7 +217,7 @@ class Order extends BaseModal
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         if ($order->order_type == 'refund') {
-            $old_order = Order::where(['id' => $order->refund_order_id])->first();//dd($old_order);
+            $old_order = Order::where(['id' => $order->refund_order_id])->first();
             $old_order->update([
                 'refund_order_id' => null,
                 'total_price' => $order->total_price,
