@@ -113,19 +113,19 @@ class SecondMessageOfAppointment extends Command
               
                 // SEND SMS for Appointment Booked
                 if ($appointment->consultancy_type == 'virtual') {
-                    dd("here");
+                  
                     $SMSTemplate = SMSTemplates::getBySlug('virtual-second-sms',$account->id); // 'second-sms' for virtual consultancy SMS
                 } else {
                     dd("here1");
                     $SMSTemplate = SMSTemplates::getBySlug('second-sms', $account->id); // 'second-sms' for Appointment SMS
                 }
             } else {
-                dd("here2");
+                
                 // SEND SMS for Appointment Booked
                 $SMSTemplate = SMSTemplates::getBySlug('treatment-second-sms',$account->id); // 'second-sms' for Appointment SMS
                
             }
-
+dd($SMSTemplate);
 
             if (! $SMSTemplate) {
                 // SMS Promotion is disabled
