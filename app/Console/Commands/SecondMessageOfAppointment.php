@@ -92,7 +92,7 @@ class SecondMessageOfAppointment extends Command
                    
                 if ($smsLog) {
                     continue;
-                    
+
                 }
                 $account = Accounts::first();
                 /**
@@ -146,16 +146,15 @@ class SecondMessageOfAppointment extends Command
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-                    //'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                    'to' =>'923110022881',
+                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
+                    
                     'text' => $preparedText,
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
                
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
-                logger(['Current Time' => date('Y-m-d H:i:s'),'response'=>$response]);
-                dd("ok");
+                
             } else {
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
