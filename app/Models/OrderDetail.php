@@ -95,26 +95,40 @@ class OrderDetail extends BaseModal
         ])->get();
     }
 
-    public static function refund($id, $new_order_id)
+    public static function refund($id, $new_order_id, $request, $account_id)
     {
+        $data = $request->all();
 
-        $old_orders_detail = self::where('order_id', $id)->get();
-        foreach ($old_orders_detail as $order_detail) {
-            $new_order_detail = [];
-            $new_order_detail['account_id'] = $order_detail->account_id;
-            $new_order_detail['order_id'] = $new_order_id;
-            $new_order_detail['product_id'] = $order_detail->product_id;
-            $new_order_detail['discount_id'] = $order_detail->discount_id;
-            $new_order_detail['quantity'] = $order_detail->quantity;
-            $new_order_detail['sale_price'] = $order_detail->sale_price;
-            $new_order_detail['discount_price'] = $order_detail->discount_price;
-            $new_order_detail['sale_price_after_discount'] = $order_detail->sale_price_after_discount;
-            $new_order_detail['order_type'] = 'refund';
-            $new_order_detail['reason'] = $order_detail->reason;
-            $refund = self::create($new_order_detail);
-            $new_order_detail['stock_type'] = 'in';
-            $stock = Stock::create($new_order_detail);
+        $refund_product_id = isset($request->refund_product_id) ? explode(",", $request->refund_product_id) : [];
+        $refund_product_price = isset($request->refund_product_price) ? explode(",", $request->refund_product_price) : [];
+
+        $combinedData = array_combine($refund_product_id, $refund_product_price);
+        $refund_products = array_count_values($refund_product_id);
+
+        foreach ($refund_products as $product_id => $quantity) {
+            $data['product_id'] = $product_id;
+            $data['quantity'] = $quantity;
+            $data['account_id'] = $account_id;
+            $data['order_id'] = $new_order_id;
+            $data['sale_price'] = $combinedData[$product_id];
+            $data['stock_type'] = 'in';
+
+            $check_order_detail = self::where(['order_id' => $new_order_id, 'product_id' => $product_id])->first();
+
+            /* old product quantity update */
+            $old_orders_detail = self::where(['order_id' => $id, 'product_id' => $product_id])->first();//dd( $old_orders_detail->quantity - $quantity, $product_id);
+            $old_orders_detail->quantity = $old_orders_detail->quantity - $quantity;
+            $old_orders_detail->save();
+
+            Stock::create($data);
+            if ($check_order_detail) {
+                $data['quantity'] = $quantity + $check_order_detail->quantity;
+                $check_order_detail->update($data);
+            } else {
+                self::create($data);
+            }
         }
+        return true;
     }
 
     /** Get the patients of order.
