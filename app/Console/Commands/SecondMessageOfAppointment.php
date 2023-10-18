@@ -54,8 +54,8 @@ class SecondMessageOfAppointment extends Command
      */
     public function handle()
     {
-        $day = Carbon::now()->format('Y-m-d');
-        $tomorrow = Carbon::parse(Carbon::now())->addDay()->format('Y-m-d');
+        $day = Carbon::now()->setTimezone('Asia/Karachi')->format('Y-m-d');
+        $tomorrow = Carbon::parse(Carbon::now())->addDay()->setTimezone('Asia/Karachi')->format('Y-m-d');
 
         $where = [];
 
