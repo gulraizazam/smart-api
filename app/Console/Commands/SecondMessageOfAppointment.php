@@ -92,6 +92,7 @@ class SecondMessageOfAppointment extends Command
                    
                 if ($smsLog) {
                     continue;
+                    
                 }
                 $account = Accounts::first();
                 /**
