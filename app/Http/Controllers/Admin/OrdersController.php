@@ -183,7 +183,7 @@ class OrdersController extends Controller
 
             $orders = Order::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, 'refund');
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
-            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
