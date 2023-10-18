@@ -346,7 +346,7 @@ class OrdersController extends Controller
                 return abort(401);
             }
             if($request->refund_product_id == null){
-                return ApiHelper::apiResponse($this->error, 'You do not have any refunded products.', false);
+                return ApiHelper::apiResponse($this->error, 'You do not have refunded any product.', false);
             }
             $order_refund = Order::refund($id, $request);
             if ($order_refund) {

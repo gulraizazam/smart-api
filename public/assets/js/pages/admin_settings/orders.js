@@ -1,3 +1,7 @@
+var ProductStock = [];
+let refundProductId = [];
+let refundProductPrice = [];
+
 var table_url = route('admin.orders.datatable');
 
 var table_columns = [
@@ -123,7 +127,7 @@ function sumProductsQuantity(orders) {
     }
     return quantitySum;
 }
-var ProductStock = [];
+
 function addRow() {
     if ($('#add_order_product').val() != '') {
         let product_id = $('#add_order_product').find(':selected').attr('data-id');
@@ -183,7 +187,6 @@ function deleteIcon(id) {
 }
 
 function deleteModel(id) {
-    alert(id)
     $('.product_' + id).remove();
     const valueToRemove = id;
     const indexToRemove = ProductStock.indexOf(valueToRemove);
@@ -268,10 +271,12 @@ function setEditData(response) {
 
 
 function refundOrder(url) {
+    $("#product_list").empty();
     $("input").val('');
     $(".select2").val('').trigger("change");
     $("#refund_products").val('');
     $("#refund_products_price").val('');
+    $("#product_list").empty();
     $("#refund_product_list").empty();
     $('#refund_total_product_price strong').text(0);
     refundProductId.length = 0;
@@ -316,14 +321,12 @@ function setRefundOrderData(response) {
 
     let productList = "";
     let loop = 0;
-    $("#refund_product_list").empty();
 
     orderDetail.forEach(function (value, index) {
         for (let i = 0; i < value.quantity; i++) {
             let product = value.product;
-
-            productList += setProductRefund(loop, product.id, product.name, product.sale_price);
             loop++;
+            productList += setProductRefund(loop, product.id, product.name, product.sale_price);
         }
     });
 
@@ -335,25 +338,25 @@ function setRefundOrderData(response) {
 
 
 function setProductRefund(id, product_id, product_name, price) {
-    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="product_price[]" value="' + price + '"> <input type="hidden" class="productPriceValue" value="' + price + '"><input type="hidden" class="productId" value="' + product_id + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + deleteIconRefund(id) + '</td></tr>';
+    return '<tr id="refund_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="product_price[]" value="' + price + '"> <input type="hidden" class="productPriceValue" value="' + price + '"><input type="hidden" class="productId" value="' + product_id + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + deleteIconRefund(id) + '</td></tr>';
 }
 
 function deleteIconRefund(id) {
     return '<a href="javascript:void(0);" onClick="deleteModelRefund(' + id + ')" class="btn btn-icon btn-light btn-hover-danger btn-sm"> <span class="svg-icon svg-icon-md svg-icon-danger"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1"> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect x="0" y="0" width="24" height="24"></rect> <path d="M6,8 L6,20.5 C6,21.3284271 6.67157288,22 7.5,22 L16.5,22 C17.3284271,22 18,21.3284271 18,20.5 L18,8 L6,8 Z" fill="#000000" fill-rule="nonzero"></path> <path d="M14,4.5 L14,4 C14,3.44771525 13.5522847,3 13,3 L11,3 C10.4477153,3 10,3.44771525 10,4 L10,4.5 L5.5,4.5 C5.22385763,4.5 5,4.72385763 5,5 L5,5.5 C5,5.77614237 5.22385763,6 5.5,6 L18.5,6 C18.7761424,6 19,5.77614237 19,5.5 L19,5 C19,4.72385763 18.7761424,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"></path> </g> </svg> </span> </a>';
 }
 
-let refundProductId = [];
-let refundProductPrice = [];
 function deleteModelRefund(id) {
     let totalPrice = $('#refund_total_product_price').text();
     var price = $('.product_' + id).find('.productPriceValue').val();
     var productId = $('.product_' + id).find('.productId').val();
     refundProductId.push(productId);
     refundProductPrice.push(price);
+    console.log('id', id);
+    console.log('price', price);
 
     $('#refund_products').val(refundProductId);
     $('#refund_products_price').val(refundProductPrice);
-    console.log(totalPrice, refundProductId);
+
     $('.product_' + id).remove();
     $('#refund_total_product_price').text(totalPrice - price);
 }
@@ -578,6 +581,7 @@ $("#add_new_order").on("click", function () {
     $("input").val('');
     $(".select2").val('').trigger("change");
     $("#product_list").empty();
+    $("#refund_product_list").empty();
     var FDMVal = $('#add_order_location[role="fdm_select"] optgroup option:first-child').val();
     setTimeout(function () {
         $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');
