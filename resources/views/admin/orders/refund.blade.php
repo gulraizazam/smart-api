@@ -31,15 +31,25 @@
                 data-kt-scroll-dependencies="#kt_modal_add_user_header"
                 data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
-                    <input type="hidden" id="refund_price" >
-                    <input type="hidden" id="refund_product_type" name="product_type">
-                    <input type="hidden" class="edit_old_product" name="old_product">
+                    <input type="hidden" id="refund_products" name="refund_product_id">
+                    <input type="hidden" id="refund_products_price" name="refund_product_price">
+
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
-                            <label class="fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <input class="form-control refund_order_patient_search_id" placeholder="Patients Search">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Location <span
+                                    class="text text-danger">*</span></label>
+                            <select class="form-control" name="location_id" id="refund_order_location">
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="fv-row col-md-12">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Patient Search <span
+                                    class="text text-danger">*</span></label>
+                            <input class="form-control user_search patient_search_id search_field refund_order_patient_search_id"
+                                placeholder="Patients Search" required>
 
-                            <input type="hidden" id="refund_order_patient" name="patient_id"
+                            <input type="hidden" id="refund_order_patient_search" name="patient_id"
                                 class="filter-field search_field">
                             <span onclick="addUsers()" class="croxcli"
                                 style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i
@@ -49,65 +59,48 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="row mt-5">
+                        <div class="fv-row col-md-12">
+                            <table class="table table-bordered order_list_table">
+                                <thead class="text-left">
+                                    <tr>
+                                        <th>Product Name</th>
+                                        <th>Sale Price</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="refund_product_list" class="text-left">
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td></td>
+                                        <td id="refund_total_product_price"><strong>0</strong></td>
+                                        <td></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+
+                    </div>
+
                     <div class="row mt-2">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Order From <span
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span
                                     class="text text-danger">*</span></label>
-                            <select id="refund_order_type_option" class="form-control form-control mb-3 mb-lg-0"
-                                name="product_type_option" disabled>
-                                <option value="">Select Option</option>
-                                <option value="in_warehouse">Warehouse</option>
-                                <option value="in_branch">Branch</option>
+                            <select id="refund_payment_mode"
+                                class="form-control form-control-solid mb-3 mb-lg-0"
+                                name="payment_mode">
+                                <option value="">Select Payment Mode</option>
+                                <option value="cash">Cash</option>
+                                <option value="card">Card</option>
+                                <option value="bank_wire">Bank/Wire Transfer</option>
                             </select>
                         </div>
                     </div>
-                    <div class="row mt-2">
-                        <div class="col-md-6">
-                            <div class="fv-row select_centre" style="display: none">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
-                                <select id="refund_order_centre"
-                                    class="form-control form-control-solid mb-3 mb-lg-0" disabled
-                                    name="location_id" onchange="productSearch(this.value, 'location_id', 'refund', 'order')">
-                                </select>
-                            </div>
-                            <div class="fv-row select_warehouse" style="display: none">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
-                                <select id="refund_order_warehouse"
-                                    class="form-control form-control-solid mb-3 mb-lg-0" disabled
-                                    name="warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'refund', 'order')">
-                                </select>
-                            </div>
-                        </div>
-                    </div>
 
-                    <div class="row mt-2">
-                        <div class="fv-row col-md-6">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
-                                <select id="refund_order_product"
-                                    class="form-control form-control-solid mb-3 mb-lg-0"
-                                    name="product_id" onchange="productSelect(this.value, 'refund')" disabled>
-                                </select>
-                        </div>
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Available Quantity </label>
-                            <input type="number" id="refund_available_quantity"
-                                class="form-control form-control-lg form-control-solid mb-2" disabled>
-                        </div>
-                    </div>
 
-                    <div class="row mt-2">
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Price (per unit) </label>
-                                <input type="number" id="refund_total_price"
-                                class="form-control form-control-lg form-control-solid mb-2" readonly name="total_price">
-                        </div>
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Quantity <span
-                                    class="text text-danger">*</span></label>
-                            <input type="number" id="refund_quantity" name="quantity"
-                                class="form-control form-control-lg form-control-solid mb-2" readonly>
-                        </div>
-                    </div>
+
                 </div>
 
             </div>
@@ -117,8 +110,8 @@
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close"
                     data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button" data-kt-users-modal-action="submit">
-                    <span class="indicator-label">Submit</span>
+                <button type="submit" class="btn btn-primary spinner-button" data-kt-users-modal-action="submit" onclick="orderSubmit()">
+                    <span class="indicator-label">Update Order</span>
                 </button>
             </div>
             <!--end::Actions-->
@@ -128,3 +121,4 @@
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
+

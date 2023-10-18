@@ -321,95 +321,15 @@ class OrdersController extends Controller
         }
     }
 
-    public function edit($id)
-    {
-        try {
-            if (!Gate::allows('order_edit')) {
-                return abort(401);
-            }
-            $response = Order::getRecord($id);
-            if ($response->location_id != null) {
-                $from_id = $response->location_id;
-                $from_key = 'location_id';
-            } elseif ($response->warehouse_id != null) {
-                $from_id = $response->warehouse_id;
-                $from_key = 'warehouse_id';
-            } else {
-                $from_id = '';
-                $from_key = '';
-            }
-
-            $data = [];
-            $data['request_from'] = 'order';
-            $data['from_id'] = $from_id;
-            $data['from_key'] = $from_key;
-
-            $products = Product::getProductsAjax($data, Auth::User()->account_id);
-            foreach ($products as $product) {
-                $product->quantity = Stock::sumProductQuantity($product->id);
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Get Record', true, [
-                'response' => $response,
-                'products' => $products,
-            ]);
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
-    public function update(Request $request, $id)
-    {
-        try {
-            $stock_check = GeneralFunctions::stockC($request->product_id);
-            if ($stock_check < $request->quantity) {
-                return ApiHelper::apiResponse($this->error, 'Product quantity out of stock.', false);
-            }
-            if ($request->quantity <= 0) {
-                return ApiHelper::apiResponse($this->error, "Product quantity can't be 0.", false);
-            }
-            $order = Order::updateRecord($request, Auth::user()->account_id, $id);
-            if ($order) {
-                if (OrderDetail::updateRecord($order->id, $request, Auth::User()->account_id)) {
-                    $total_price = OrderDetail::priceCalculate($request);
-                    $order = Order::where(['id' => $order->id])->update([
-                        'total_price' => $total_price
-                    ]);
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
-                }
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
-        } catch (\Exception $e) {
-            return ApiHelper::apiException($e);
-        }
-    }
-
     public function orderRefundDetail($id)
     {
         try {
             if (!Gate::allows('order_refund_manage')) {
                 return abort(401);
             }
-            $response = Order::getRecord($id);
-            if ($response->location_id != null) {
-                $from_id = $response->location_id;
-                $from_key = 'location_id';
-            } elseif ($response->warehouse_id != null) {
-                $from_id = $response->warehouse_id;
-                $from_key = 'warehouse_id';
-            } else {
-                $from_id = '';
-                $from_key = '';
-            }
-
-            $data = [];
-            $data['request_from'] = 'order';
-            $data['from_id'] = $from_id;
-            $data['from_key'] = $from_key;
 
             $records = [];
-            $orders = Order::with('patients', 'orderDetail.product')->find($id);
+            $orders = Order::with('patients', 'orderDetail')->find($id);
 
             $records['data'] = $orders;
 
@@ -419,18 +339,23 @@ class OrdersController extends Controller
         }
     }
 
-    public function orderRefund($id)
+    public function orderRefund($id, Request $request)
     {
         try {
             if (!Gate::allows('order_refund_manage')) {
                 return abort(401);
             }
-            $order_refund = Order::refund($id);
+            if($request->refund_product_id == null){
+                return ApiHelper::apiResponse($this->error, 'You do not have any refunded products.', false);
+            }
+            $order_refund = Order::refund($id, $request);
             if ($order_refund) {
-                $order_detail_refund = OrderDetail::refund($id, $order_refund->id);
+                OrderDetail::refund($id, $order_refund->id, $request, Auth::User()->account_id);
+
+                return ApiHelper::apiResponse($this->success, 'Order has been refunded.');
             }
 
-            return ApiHelper::apiResponse($this->success, 'Order has been refunded.');
+            return ApiHelper::apiResponse($this->error, 'Something went wrong.', false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
