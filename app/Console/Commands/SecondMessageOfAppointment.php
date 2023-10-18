@@ -145,13 +145,15 @@ class SecondMessageOfAppointment extends Command
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
+                    //'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
+                    'to' =>'923110022881',
                     'text' => $preparedText,
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
-                dd("here");
+               
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
+                dd("ok");
             } else {
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
@@ -161,10 +163,10 @@ class SecondMessageOfAppointment extends Command
                     'text' => $preparedText,
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
-                dd("here1");
+                
                 $response = JazzSMSAPI::SendSMS($SMSObj);
             }
-            dd("here333");
+           
             $SMSLog = array_merge($SMSObj, $response);
             $SMSLog['appointment_id'] = $appointment->appointment_id;
             $SMSLog['created_by'] = 1;
