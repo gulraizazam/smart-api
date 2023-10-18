@@ -60,7 +60,7 @@ class Kernel extends ConsoleKernel
           * 2nd message one day before appointment at 8PM
           */
         $schedule->command('appointment:2nd-message-on-appointment-day')
-            ->dailyAt('17:39')->timezone($timeZone);
+            ->dailyAt('19:50')->timezone($timeZone);
 
         /*
          * 	3rd message 2 hours before appointment
@@ -77,9 +77,9 @@ class Kernel extends ConsoleKernel
         /*
          * Deliver SMS on time of booking
          */
-        // $schedule->command('appointment:deliver-on-appointment-book')
-        //     ->withoutOverlapping()
-        //     ->everyMinute();
+        $schedule->command('appointment:deliver-on-appointment-book')
+            ->withoutOverlapping()
+            ->everyMinute();
 
         /*
          * Handle heavy lifting of jobs
@@ -104,15 +104,15 @@ class Kernel extends ConsoleKernel
          * Inactive all the discounts which has previous day equals to the end date of the discount
          */
 
-        // $schedule->command('discounts:inactive')
-        //     ->dailyAt('01:00')->timezone($timeZone);
+        $schedule->command('discounts:inactive')
+            ->dailyAt('01:00')->timezone($timeZone);
 
         /*
          * Inactive all the bundles which has previous day equals to the end date of the bundle
          */
 
-        // $schedule->command('bundles:inactive')
-        //     ->dailyAt('01:00')->timezone($timeZone);
+        $schedule->command('bundles:inactive')
+            ->dailyAt('01:00')->timezone($timeZone);
         /*
          * Take backup of DATABASE and APPLICATION both
          * */
@@ -131,8 +131,8 @@ class Kernel extends ConsoleKernel
          * Appointment and Treatment daily sate created
          * */
 
-        // $schedule->command('appointments:daily-stats')
-        //     ->dailyAt('23:50')->timezone($timeZone);
+        $schedule->command('appointments:daily-stats')
+            ->dailyAt('23:50')->timezone($timeZone);
 
         /*
          * Last 3 months actvities
