@@ -60,7 +60,7 @@ class Kernel extends ConsoleKernel
           * 2nd message one day before appointment at 8PM
           */
         $schedule->command('appointment:2nd-message-on-appointment-day')
-            ->dailyAt('12:09')->timezone($timeZone);
+            ->dailyAt('12:16')->timezone($timeZone);
 
         /*
          * 	3rd message 2 hours before appointment
