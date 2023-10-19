@@ -152,7 +152,7 @@ class SecondMessageOfAppointment extends Command
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
-               dd($SMSObj);
+
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
                 
             } else {
