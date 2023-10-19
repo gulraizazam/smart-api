@@ -146,15 +146,15 @@ class SecondMessageOfAppointment extends Command
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
-                    'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                    
+                    //'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
+                    'to'=>'3110022881',
                     'text' => $preparedText,
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
                 ];
                
                 $response = TelenorSMSAPI::SendSMS($SMSObj);
-                
+                dd("ok");
             } else {
                 $SMSObj = [
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
