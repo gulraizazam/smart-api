@@ -177,11 +177,11 @@ class SecondMessageOfAppointment extends Command
             }
             SMSLogs::create($SMSLog);
 
-            return true;
+          
 
 
             }
-
+            return true;
             try {
                 Log::info(json_encode($appointment));
             } catch (\Exception $e) {
