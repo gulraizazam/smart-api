@@ -110,7 +110,7 @@ class SecondMessageOfAppointment extends Command
                
 
 
-            if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
+            if ($appointment->appointment_type_id ==1) {
               
                 // SEND SMS for Appointment Booked
                 if ($appointment->consultancy_type == 'virtual') {
