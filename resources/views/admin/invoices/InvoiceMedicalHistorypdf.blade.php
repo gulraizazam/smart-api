@@ -141,7 +141,7 @@
     @endif
     <table class="mt-0">
         <tr>
-            <td><img class="logo" src="{{asset('assets/media/new_logo.png')}}" style="width:255px; margin-top: -25px;" class="img-responsive" alt=""/></td>
+            <td><img class="logo" src="https://crm2.cutera.pk/public/assets/media/new_logo.png" style="width:255px; margin-top: -25px;" class="img-responsive" alt=""/></td>
             <td><h4 class="date">#{{$Invoiceinfo->id}}
                     / <?php echo \Carbon\Carbon::parse($Invoiceinfo->created_at)->format('F j,Y'); ?></h4></td>
         </tr>

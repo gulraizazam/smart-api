@@ -3899,76 +3899,87 @@ class AppointmentsController extends Controller
      * @return mixed
      */
 
-    public function getpackageprice(Request $request)
-    {
-        $appointmentinfo = Appointments::where('id', '=', $request->appointment_id_create)->first();
-        $balance_patient_in = PackageAdvances::where([
-            ['patient_id', '=', $appointmentinfo->patient_id],
-            ['package_id', '=', $request->package_id_create],
-            ['cash_flow', '=', 'in'],
-        ])->sum('cash_amount');
-        $balance_patient_out = PackageAdvances::where([
-            ['patient_id', '=', $appointmentinfo->patient_id],
-            ['package_id', '=', $request->package_id_create],
-            ['cash_flow', '=', 'out'],
-        ])->sum('cash_amount');
-        $balance = $balance_patient_in - $balance_patient_out;
-        $balance = ceil($balance);
-        $package_service = PackageService::find($request->package_service_id);
-        $package = Packages::find($request->package_id_create);
-        $package_bundle = PackageBundles::find($package_service->package_bundle_id);
-        $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)->where('type', '=', 'multiple')->first();
-        $service = Services::find($package_service->service_id);
-        if ($bundle) {
-            if ($balance_patient_in >= $bundle->price) {
-                $package_access = 1;
-            } elseif ($balance >= $service->price) {
-                $package_access = 1;
-            } else {
-                $package_access = 0;
-            }
-        } else {
-            $package_access = 1;
-        }
-       
-        $cash = 0;
-        if ($package_access == 1) {
-            $price = $package_service->tax_including_price;
-            $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
-            $remaining = 0;
-            $settleamount_1 = $price - $cash;
-            $settleamount = min($settleamount_1, $balance);
-        } else {
+     public function getpackageprice(Request $request)
+     {
+         $appointmentinfo = Appointments::where('id', '=', $request->appointment_id_create)->first();
+         $balance_patient_in = PackageAdvances::where([
+             ['patient_id', '=', $appointmentinfo->patient_id],
+             ['package_id', '=', $request->package_id_create],
+             ['cash_flow', '=', 'in'],
+         ])->sum('cash_amount');
+         $balance_patient_out = PackageAdvances::where([
+             ['patient_id', '=', $appointmentinfo->patient_id],
+             ['package_id', '=', $request->package_id_create],
+             ['cash_flow', '=', 'out'],
+         ])->sum('cash_amount');
+         $balance = $balance_patient_in - $balance_patient_out;
+         $balance = ceil($balance);
+         $package_service = PackageService::find($request->package_service_id);
+         $package = Packages::find($request->package_id_create);
+         $package_bundle = PackageBundles::find($package_service->package_bundle_id);
+        
+         $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)->where('type', '=', 'multiple')->first();
+         $service = Services::find($package_service->service_id);
+         if ($bundle) {
+             if ($balance_patient_in >= $bundle->price) {
+                 $package_access = 1;
+             } elseif ($balance >= $service->price) {
+                 $package_access = 1;
+             } else {
+                 $package_access = 0;
+             }
+         } else {
+             $package_access = 1;
+         }
+        
+         $cash = 0;
+         if ($package_access == 1) {
             
-            if ( $package_service->price > ($package_bundle->net_amount - $balance_patient_in)) {
-                $price = $package_service->price;
-                $outstanding = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
-                $settleamount_1 = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
-                $settleamount = min($settleamount_1, $balance);
-            } else {
-                $price = $package_service->price;
-                $outstanding = intval($price) - $cash - intval($balance);
-                $settleamount_1 = $price - $cash;
-                $settleamount = min($settleamount_1, $balance);
-            }
-            $remaining = $package_service->tax_including_price;
-        }
-        if ($outstanding < 0) {
-            $outstanding = 0;
-        }
-
-        return response()->json([
-            'status' => true,
-            'amount' => $package_service->tax_exclusive_price,
-            'tax_price' => $package_service->tax_price,
-            'serviceprice' => $price,
-            'outstanding' => $outstanding,
-            'settleamount' => round($settleamount, 2),
-            'balance' => round($balance, 2),
-            'remaining' => $remaining,
-            'package_service_id' => $request->package_id_create,
-        ]);
-    }
+             $price = $package_service->tax_including_price;
+             $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
+             $remaining = 0;
+             $settleamount_1 = $price - $cash;
+             $settleamount = min($settleamount_1, $balance);
+         } else {
+           
+             if ( $package_service->price > ($package_bundle->net_amount - $balance_patient_in)) {
+               
+                 $price = $package_service->price;
+                 
+                 if($price < $balance){
+                    $outstanding =0;
+                 }else{
+                   
+                    $outstanding = intval( $package_service->price - $balance) - $cash;
+                 }
+                 
+                 $settleamount_1 = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
+                 $settleamount = min($settleamount_1, $balance);
+             } else {
+               
+                 $price = $package_service->price;
+                 $outstanding = intval($price) - $cash - intval($balance);
+                 $settleamount_1 = $price - $cash;
+                 $settleamount = min($settleamount_1, $balance);
+             }
+             $remaining = $package_service->tax_including_price;
+         }
+         if ($outstanding < 0) {
+             $outstanding = 0;
+         }
+ 
+         return response()->json([
+             'status' => true,
+             'amount' => $package_service->tax_exclusive_price,
+             'tax_price' => $package_service->tax_price,
+             'serviceprice' => $price,
+             'outstanding' => $outstanding,
+             'settleamount' => round($settleamount, 2),
+             'balance' => round($balance, 2),
+             'remaining' => $remaining,
+             'package_service_id' => $request->package_id_create,
+         ]);
+     }
 
     /*
      * Get the package price against package id
