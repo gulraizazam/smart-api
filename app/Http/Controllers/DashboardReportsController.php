@@ -3044,6 +3044,7 @@ class DashboardReportsController extends Controller
     }
     public function loadFollowupReport(Request $request)
     {
+       
         if (isset($request->date_range) && $request->date_range) {
             $date_range = explode(' - ', $request->date_range);
             $start_date = date('Y-m-d', strtotime($date_range[0]));

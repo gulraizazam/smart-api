@@ -202,7 +202,7 @@ class PatientFollowupController extends Controller
                 }
                 
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
@@ -363,14 +363,14 @@ class PatientFollowupController extends Controller
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
 
-                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
 
 
                 }
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
@@ -520,7 +520,7 @@ class PatientFollowupController extends Controller
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts']==null&& ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                    if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts']==null&& ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                         $data['is_treatment'] = 1;
                         $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);
@@ -671,7 +671,7 @@ class PatientFollowupController extends Controller
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'));
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                    if (in_array($data['patient_id'], $plan_check_amount) && $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                         $data['is_treatment'] = 1;
                         $data['scheduled_date'] = $check_treatments->scheduled_date ;
                         array_push($patient_data, $data);

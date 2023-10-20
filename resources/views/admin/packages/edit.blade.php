@@ -41,7 +41,7 @@
         </div>
         <div id="edit_consume" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
-            Consumed Package Can not be deleted!
+            This package includes a service that is consumed and cannot be deleted.
         </div>
         <div id="edit_percentageMessage" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
