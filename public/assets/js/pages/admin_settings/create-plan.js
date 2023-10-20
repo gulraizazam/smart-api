@@ -1008,7 +1008,7 @@ function displayData(response) {
 
 
         let service_options = noRecordFoundTable(9);
-
+        
         if (packagebundles.length) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
