@@ -60,19 +60,19 @@ class Kernel extends ConsoleKernel
           * 2nd message one day before appointment at 8PM
           */
         $schedule->command('appointment:2nd-message-on-appointment-day')
-            ->dailyAt('19:50')->timezone($timeZone);
+            ->dailyAt('19:55')->timezone($timeZone);
 
         /*
          * 	3rd message 2 hours before appointment
          */
-        $schedule->command('appointment:3rd-message-before-appointment')
-            ->everyThirtyMinutes();
+        // $schedule->command('appointment:3rd-message-before-appointment')
+        //     ->everyThirtyMinutes();
 
         /*
          * Deliver SMS which failed to sent
          */
-        $schedule->command('appointment:deliver-not-sent-sms')
-            ->everyFifteenMinutes();
+        // $schedule->command('appointment:deliver-not-sent-sms')
+        //     ->everyFifteenMinutes();
 
         /*
          * Deliver SMS on time of booking
@@ -84,21 +84,21 @@ class Kernel extends ConsoleKernel
         /*
          * Handle heavy lifting of jobs
          */
-        $schedule->command('cms:handle-heavy-lifting')
-            ->withoutOverlapping()
-            ->everyMinute();
+        // $schedule->command('cms:handle-heavy-lifting')
+        //     ->withoutOverlapping()
+        //     ->everyMinute();
 
         /*
          * Run daily backup command
          */
-        $schedule->command('db:backup')
-            ->dailyAt('23:59')->timezone($timeZone);
+        // $schedule->command('db:backup')
+        //     ->dailyAt('23:59')->timezone($timeZone);
 
         /*
          * Run old daily backup remover command
          */
-        $schedule->command('db:backup-old-remove')
-            ->dailyAt('23:55')->timezone($timeZone);
+        // $schedule->command('db:backup-old-remove')
+        //     ->dailyAt('23:55')->timezone($timeZone);
 
         /*
          * Inactive all the discounts which has previous day equals to the end date of the discount
@@ -117,15 +117,15 @@ class Kernel extends ConsoleKernel
          * Take backup of DATABASE and APPLICATION both
          * */
 
-        $schedule->command('backup:run')
-            ->dailyAt('01:30')->timezone($timeZone);
+        // $schedule->command('backup:run')
+        //     ->dailyAt('01:30')->timezone($timeZone);
 
         /*
          * Moving backup from ROLES-PERMISSION MANAGER to BACKUPS
          * */
 
-        $schedule->command('move:backup')
-            ->dailyAt('02:30')->timezone($timeZone);
+        // $schedule->command('move:backup')
+        //     ->dailyAt('02:30')->timezone($timeZone);
 
         /*
          * Appointment and Treatment daily sate created
@@ -138,8 +138,8 @@ class Kernel extends ConsoleKernel
          * Last 3 months actvities
          * */
 
-        $schedule->command('recent:activities')
-            ->weekly()->timezone($timeZone);
+        // $schedule->command('recent:activities')
+        //     ->weekly()->timezone($timeZone);
     }
 
     /**

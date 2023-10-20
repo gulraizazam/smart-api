@@ -966,7 +966,7 @@ class GeneralFunctions
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->pluck('appointments.id');
+            ->pluck('patient_id');
 
 
         $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
@@ -977,7 +977,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('appointment_id', $appointments)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -989,7 +989,7 @@ class GeneralFunctions
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('appointment_id', $appointments)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -1001,12 +1001,12 @@ class GeneralFunctions
                 'is_adjustment' => '0',
 
             ])
-            ->whereIn('appointment_id', $appointments)
+            ->whereIn('patient_id', $appointments)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('package_advances.id', 'package_advances.patient_id', 'package_advances.created_at', 'package_advances.location_id')
-            ->whereIn('package_advances.appointment_id', $appointments)
+            ->whereIn('package_advances.patient_id', $appointments)
             ->whereIn('package_advances.location_id', $center_id)
             ->where($where)
             ->groupBy('package_advances.patient_id')
@@ -1042,12 +1042,12 @@ class GeneralFunctions
                 $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
                 $check_treatments = collect($treatments)->sortByDesc('id')->first();
                 $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 1;
                     array_push($is_treatment, $data);
                 }
             } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                     $data['is_treatment'] = 0;
                     array_push($not_treatment, $data);
                 }
@@ -1076,7 +1076,7 @@ class GeneralFunctions
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
             ->orderByDesc('appointments.id')
-            ->pluck('appointments.id');
+            ->pluck('patient_id');
 
         $cash_received_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
             ->where([
@@ -1086,7 +1086,8 @@ class GeneralFunctions
                 'is_adjustment' => '0',
                 'is_refund' => '0',
             ])
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->pluck('cash_receive', 'patient_id');
 
@@ -1097,7 +1098,8 @@ class GeneralFunctions
                 'is_tax' => '0',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->pluck('settle_amount', 'patient_id');
 
@@ -1108,13 +1110,15 @@ class GeneralFunctions
                 'is_tax' => '1',
                 'is_adjustment' => '0',
             ])
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('patient_id', $patient_ids)
+            ->whereIn('location_id', $center_id)
             ->groupBy('patient_id')
             ->pluck('settle_tax_amount', 'patient_id');
 
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
-            ->whereIn('appointment_id', $patient_ids)
+            ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
+            
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
             ->get();
@@ -1125,7 +1129,8 @@ class GeneralFunctions
             return $item;
         });
         $patient_data = [];
-        $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+        $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)
+        ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
 
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
@@ -1154,7 +1159,7 @@ class GeneralFunctions
                     ->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'))
                     ->get();
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 0) {
+                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                         $data['is_treatment'] = 1;
                         $data['scheduled_date'] = $check_treatments->scheduled_date;
                         array_push($patient_data, $data);
