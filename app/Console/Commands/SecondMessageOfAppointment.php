@@ -77,7 +77,7 @@ class SecondMessageOfAppointment extends Command
             ->get();
             
         $log_type = '2nd_sms';
-       
+        dd($appointments->count());
         if ($appointments) {
             
             foreach ($appointments as $appointment) {
@@ -109,7 +109,7 @@ class SecondMessageOfAppointment extends Command
 
                
 
-dd($appointment);
+
             if ($appointment->appointment_type_id ==1) {
               
                 // SEND SMS for Appointment Booked
