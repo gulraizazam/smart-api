@@ -109,7 +109,7 @@ class SecondMessageOfAppointment extends Command
 
                
 
-
+dd($appointment);
             if ($appointment->appointment_type_id ==1) {
               
                 // SEND SMS for Appointment Booked
@@ -167,7 +167,7 @@ class SecondMessageOfAppointment extends Command
                 
                 $response = JazzSMSAPI::SendSMS($SMSObj);
             }
-           dd("done");
+          
             $SMSLog = array_merge($SMSObj, $response);
             $SMSLog['appointment_id'] = $appointment->appointment_id;
             $SMSLog['created_by'] = 1;
