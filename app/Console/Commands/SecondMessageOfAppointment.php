@@ -73,15 +73,15 @@ class SecondMessageOfAppointment extends Command
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
 
-            ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
+            ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id')
             ->get();
             
         $log_type = '2nd_sms';
-        dd($appointments->count());
+        
         if ($appointments) {
             
             foreach ($appointments as $appointment) {
-               
+                dd($appointment);
                 $smsLog = SMSLogs::where([
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'log_type' => $log_type,
