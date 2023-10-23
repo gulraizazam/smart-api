@@ -81,7 +81,7 @@ class SecondMessageOfAppointment extends Command
         if ($appointments) {
             
             foreach ($appointments as $appointment) {
-                dd($appointment);
+            
                 $smsLog = SMSLogs::where([
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'log_type' => $log_type,
