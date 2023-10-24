@@ -656,7 +656,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
             'centre_id': centreID
         },
         success: function (response) {
-            
+
             $('#table-body').html("");
             dropDownList('centre', period, centreID = '');
             var TABLE_HTML = "";
@@ -782,16 +782,6 @@ function ConsultanciesByStatus(bar) {
             name: 'Walk-in',
             data: bar.data.walkin ?? []
         },],
-        noData: {
-            text: 'No Data',
-            align: 'center',
-            verticalAlign: 'top',
-            style: {
-                color: 'red',
-                fontSize: '14px',
-                fontFamily: undefined
-            }
-        },
         chart: {
             type: 'bar',
             height: 350,
@@ -833,7 +823,10 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
     CENTRE_ID = centre_id;
-    var doc_id = $(".doctorname").attr('data-id');
+    
+    $(".doctorname").attr('data-id', '0').text("All Doctor").addClass("active");
+
+    var doc_id = $(".doctorname").attr('data-id');console.log(doc_id)
     DOC_ID = doc_id;
     let converted = 0;
     let arrived = 0;
@@ -862,7 +855,9 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
+                var avg = ((converted / arrived) * 100).toFixed(2);
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
@@ -894,7 +889,9 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
+                var avg = ((converted / arrived) * 100).toFixed(2);
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 DoctorWiseConversion(response);
@@ -904,7 +901,7 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
             }
         });
     }
-    var TABLE_HTML = "";
+    var TABLE_HTML = "<li><a class='dropdown-item centre-item' data-id='0' onclick='LoadDocWiseConversion(" + 0 + ")'>All Doctors</a></li>";
     $.ajax({
         url: route('admin.getdoctors'),
         type: "GET",
@@ -953,7 +950,9 @@ function GetDoctors(centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
+                var avg = ((converted / arrived) * 100).toFixed(2);
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
@@ -982,7 +981,9 @@ function GetDoctors(centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
+                var avg = ((converted / arrived) * 100).toFixed(2);
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 DoctorWiseConversion(response);
@@ -992,7 +993,7 @@ function GetDoctors(centre_id, time = '') {
             }
         });
     }
-    var TABLE_HTML = "";
+    var TABLE_HTML = "<li><a class='dropdown-item centre-item' data-id='0' onclick='LoadDocWiseConversion(" + 0 + ")'>All Doctors</a></li>";
     $.ajax({
         url: route('admin.getdoctors'),
         type: "GET",
@@ -1043,8 +1044,10 @@ function LoadDocWiseConversion(doc_id,time = '') {
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
             });
+            var avg = ((converted / arrived) * 100).toFixed(2);
+            var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
         },
@@ -1063,22 +1066,12 @@ function DoctorWiseConversion(bar) {
     let lables = bar.data.labels;
     var options = {
         series: [{
-            name: 'Total Appointments',
+            name: 'Total Appointments ' + `(${bar.data.total_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.total_appointments
         }, {
-            name: 'Converted',
+            name: 'Converted ' + `(${bar.data.converted_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.converted_appointments
         }],
-        noData: {
-            text: 'No Data',
-            align: 'center',
-            verticalAlign: 'top',
-            style: {
-                color: 'red',
-                fontSize: '14px',
-                fontFamily: undefined
-            }
-        },
         chart: {
             type: 'bar',
             height: 350,
@@ -1123,25 +1116,15 @@ function AllDoctorWiseConversion(bar) {
     } else {
         modifiedData = lables;
     }
-    
+
     var options = {
         series: [{
-            name: 'Total Appointments',
+            name: 'Total Appointments ' + `(${bar.data.total_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.total_appointments
         }, {
-            name: 'Converted',
+            name: 'Converted ' + `(${bar.data.converted_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.converted_appointments
         }],
-        noData: {
-            text: 'No Data',
-            align: 'center',
-            verticalAlign: 'top',
-            style: {
-                color: 'red',
-                fontSize: '14px',
-                fontFamily: undefined
-            }
-        },
         chart: {
             type: 'bar',
             height: 350,
