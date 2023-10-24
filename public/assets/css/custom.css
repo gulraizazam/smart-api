@@ -1117,3 +1117,8 @@ input[type=number] {
 .order_list_table tbody tr td:last-child {
     text-align: center;
 }
+
+.ul-scroll {
+    height: 200px;
+    overflow-y: scroll;
+}

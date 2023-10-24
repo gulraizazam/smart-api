@@ -1073,16 +1073,16 @@ class DashboardReportsController extends Controller
             ];
             if ($locations) {
                 foreach ($locations as $counter => $location) {
-                    
+
                     $location_detail = Locations::find($location);
-                   
+
                     if ($counter == 0) {
                         $data[0] = [
                             'Task',
                             'Hours per Day',
                         ];
                     }
-                    
+
 
                     if ($today_records) {
                         foreach ($today_records as $todayRecord) {
@@ -2552,14 +2552,14 @@ class DashboardReportsController extends Controller
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
         $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
+        
         if($request->centre_id == 'all'){
             $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
         }else{
             $locations=[$request->centre_id];
         }
-        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null && $request->doc_id != 0, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
-        
         })
         ->distinct('user_id')
         ->pluck('user_id');
@@ -2633,7 +2633,7 @@ class DashboardReportsController extends Controller
                         ->where('cash_amount', '>', 0)
                         ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
                         ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
-                        
+
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
@@ -2671,9 +2671,9 @@ class DashboardReportsController extends Controller
                 }
             }
         }
-       
+
         foreach ($consultants as $doctor) {
-          
+
             array_push($lables, $doctor->name);
             $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
@@ -2805,7 +2805,7 @@ class DashboardReportsController extends Controller
         }
         $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
-        
+
         })
         ->distinct('user_id')
         ->pluck('user_id');
@@ -2887,9 +2887,9 @@ class DashboardReportsController extends Controller
                             ->where('cash_amount', '>', 0)
                             ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
                             ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
-                            
+
                             ->get();
-                            
+
                         if (count($packagesadvances) > 0) {
                             $first_advance = PackageAdvances::whereIn('id', $package_info)
                                 ->where('cash_amount', '>', 0)
@@ -3004,7 +3004,7 @@ class DashboardReportsController extends Controller
         if ($request->centre_id == 'all') {
 
             $consultant = DoctorHasLocations::distinct('user_id')
-            ->pluck('user_id'); 
+            ->pluck('user_id');
 
             $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
 
@@ -3044,7 +3044,7 @@ class DashboardReportsController extends Controller
     }
     public function loadFollowupReport(Request $request)
     {
-       
+
         if (isset($request->date_range) && $request->date_range) {
             $date_range = explode(' - ', $request->date_range);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
