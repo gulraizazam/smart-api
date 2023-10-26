@@ -26,7 +26,7 @@
                                             <option value="month" {{ request('type') == 'month' ? 'selected' : '' }}>This
                                                 Month</option>
                                             <!-- <option value="lastmonth"
-                                                {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
                                         </select>
                                     </div>
                                 </div>
@@ -43,14 +43,14 @@
                                                     viewBox="0 0 24 24" version="1.1">
                                                     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                                         <rect x="0" y="0" width="24" height="24" />
-                                                        <rect fill="#000000" opacity="0.3" x="13" y="4"
-                                                            width="3" height="16" rx="1.5" />
-                                                        <rect fill="#000000" x="8" y="9" width="3"
-                                                            height="11" rx="1.5" />
-                                                        <rect fill="#000000" x="18" y="11" width="3"
-                                                            height="9" rx="1.5" />
-                                                        <rect fill="#000000" x="3" y="13" width="3"
-                                                            height="7" rx="1.5" />
+                                                        <rect fill="#000000" opacity="0.3" x="13" y="4" width="3"
+                                                            height="16" rx="1.5" />
+                                                        <rect fill="#000000" x="8" y="9" width="3" height="11"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="18" y="11" width="3" height="9"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="3" y="13" width="3" height="7"
+                                                            rx="1.5" />
                                                     </g>
                                                 </svg>
                                                 <span class="dashboard-counter"
@@ -66,14 +66,14 @@
                                                     viewBox="0 0 24 24" version="1.1">
                                                     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                                         <rect x="0" y="0" width="24" height="24" />
-                                                        <rect fill="#000000" opacity="0.3" x="13" y="4"
-                                                            width="3" height="16" rx="1.5" />
-                                                        <rect fill="#000000" x="8" y="9" width="3"
-                                                            height="11" rx="1.5" />
-                                                        <rect fill="#000000" x="18" y="11"
-                                                            width="3" height="9" rx="1.5" />
-                                                        <rect fill="#000000" x="3" y="13"
-                                                            width="3" height="7" rx="1.5" />
+                                                        <rect fill="#000000" opacity="0.3" x="13" y="4" width="3"
+                                                            height="16" rx="1.5" />
+                                                        <rect fill="#000000" x="8" y="9" width="3" height="11"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="18" y="11" width="3" height="9"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="3" y="13" width="3" height="7"
+                                                            rx="1.5" />
                                                     </g>
                                                 </svg>
                                                 <span class="dashboard-counter"
@@ -200,10 +200,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#location_collection_4" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#location_collection_4" data-toggle="tab"
+                                                                        onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -221,38 +221,39 @@
                                 </div>
                             </div>
                         </div>
-                        @endif
-                        @if (\Illuminate\Support\Facades\Gate::allows('dashboard_unattended_report'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="unattended_payments">
+                    @endif
+                    @if (\Illuminate\Support\Facades\Gate::allows('dashboard_unattended_report'))
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;"
+                            id="unattended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
                                     <div class="card-body p-0">
-                                    <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
-                                        <span class="dashboard-counter text-uppercase">Unattended Payments</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report dashboard_unattended_report"
-                                                        href="{{ route('admin.reports.follow_up') }}" > View Report
-                                                        <i class="fa fa-angle-right"></i>
-                                                        </a>
-                                                    </div>
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report dashboard_unattended_report"
-                                                            href="{{ route('admin.follow_up.download') }}" > Download
-                                                            <i class="fa fa-angle-right"></i>
-                                                        </a>
+                                        <div
+                                            class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
+                                            <span class="dashboard-counter text-uppercase">Unattended Payments</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a class="form-control btndropdown btn_Report dashboard_unattended_report"
+                                                                href="{{ route('admin.reports.follow_up') }}"> View Report
+                                                                <i class="fa fa-angle-right"></i>
+                                                            </a>
+                                                        </div>
+                                                        <div class="btn-group">
+                                                            <a class="form-control btndropdown btn_Report dashboard_unattended_report"
+                                                                href="{{ route('admin.follow_up.download') }}"> Download
+                                                                <i class="fa fa-download ml-2"></i>
+                                                            </a>
 
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
-                                        </ul>
+                                                </li>
+                                            </ul>
 
-                                    </div>
-                                        <div class="card-spacer2 table_v_scroll" >
+                                        </div>
+                                        <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
                                                 <table class="table">
 
@@ -271,7 +272,8 @@
                                                     </tbody>
 
                                                 </table>
-                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended" >
+                                                <img src="{{ asset('assets/media/loader.gif') }}"
+                                                    class="loader-img-unattended">
                                             </div>
                                         </div>
 
@@ -279,7 +281,7 @@
                                 </div>
                             </div>
                         </div>
-                        @endif
+                    @endif
 
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
@@ -325,10 +327,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#location_revenue_3" data-toggle="tab"
-                                                                    onclick="initRevenueByCentre('lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#location_revenue_3" data-toggle="tab"
+                                                                        onclick="initRevenueByCentre('lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -349,33 +351,34 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_overdue_treatments'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="attended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                            style="min-height: 605px;overflow-y: hidden;">
+                                style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
-                                    <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
-                                        <span class="dashboard-counter text-uppercase">Overdue Treatments</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                    <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
-                                                        href="{{ route('admin.reports.follow_up') }}" > View Report
-                                                        <i class="fa fa-angle-right"></i>
-                                                        </a>
-                                                    </div>
+                                        <div
+                                            class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
+                                            <span class="dashboard-counter text-uppercase">Overdue Treatments</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
                                                         <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
-                                                        href="{{ route('admin.monthly_follow_up.download') }}"  > Download
-                                                            <i class="fa fa-angle-right"></i>
-                                                        </a>
+                                                            <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
+                                                                href="{{ route('admin.reports.follow_up') }}"> View Report
+                                                                <i class="fa fa-angle-right"></i>
+                                                            </a>
+                                                        </div>
+                                                        <div class="btn-group">
+                                                            <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
+                                                                href="{{ route('admin.monthly_follow_up.download') }}">
+                                                                Download
+                                                                <i class="fa fa-download ml-2"></i>
+                                                            </a>
 
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
-                                        </ul>
+                                                </li>
+                                            </ul>
 
-                                    </div>
+                                        </div>
                                         <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
                                                 <table class="table">
@@ -389,7 +392,8 @@
                                                     </thead>
                                                     <tbody id="patient-follow-up-one-month"></tbody>
                                                 </table>
-                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
+                                                <img src="{{ asset('assets/media/loader.gif') }}"
+                                                    class="loader-img-attended">
                                             </div>
                                         </div>
 
@@ -439,10 +443,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#service_revenue_3" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#service_revenue_3" data-toggle="tab"
+                                                                        onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -504,10 +508,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#service_revenue_3"data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#service_revenue_3"data-toggle="tab"
+                                                                        onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -570,10 +574,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                    onclick="initConsultancyByStatus('lastmonth','1');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                                        onclick="initConsultancyByStatus('lastmonth','1');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -637,10 +641,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                    onclick="initTreatmentByStatus('lastmonth','2');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                                        onclick="initTreatmentByStatus('lastmonth','2');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -673,7 +677,8 @@
                                                     @if (Auth::user()->hasRole('Administrator') ||
                                                             Auth::user()->hasRole('Super-Admin') ||
                                                             Auth::user()->hasRole('Head of Operations') ||
-                                                            Auth::user()->hasRole('Finance') ||  Auth::user()->hasRole('HRM'))
+                                                            Auth::user()->hasRole('Finance') ||
+                                                            Auth::user()->hasRole('HRM'))
                                                         @php
                                                             $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
                                                             $locations = \App\Helpers\ACL::getUserCentres();
@@ -751,7 +756,7 @@
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">
-                                                                {{ $centres ? $centres->name :'No Centre Assigned' }}
+                                                                {{ $centres ? $centres->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         </div>
@@ -759,47 +764,48 @@
                                                 </div>
                                             </li>
                                             @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a data-id=""
-                                                            class="btn form-control btndropdown btn_Report user_period"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> This Month
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="user_wise_list">
-                                                            <li class="yesterday">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
-                                                            </li>
-                                                            <li class="last7days">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('last7days', 'user');">Last
-                                                                    7
-                                                                    Days</a>
-                                                            </li>
-                                                            <li class="week">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('week', 'user');">This
-                                                                    Week</a>
-                                                            </li>
-                                                            <li class="thismonth">
-                                                                <a href="#user_wise_ul" data-toggle="tab" class="active" active
-                                                                    onclick="initUserWiseArrival('thismonth', 'user');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <li class="lastmonth">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('lastmonth', 'user');">Last
-                                                                    Month</a>
-                                                            </li>
-                                                        </ul>
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a data-id=""
+                                                                class="btn form-control btndropdown btn_Report user_period"
+                                                                href="javascript:;" data-toggle="dropdown"
+                                                                data-hover="dropdown" data-close-others="true"
+                                                                aria-expanded="false"> This Month
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
+                                                                id="user_wise_list">
+                                                                <li class="yesterday">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
+                                                                </li>
+                                                                <li class="last7days">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('last7days', 'user');">Last
+                                                                        7
+                                                                        Days</a>
+                                                                </li>
+                                                                <li class="week">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('week', 'user');">This
+                                                                        Week</a>
+                                                                </li>
+                                                                <li class="thismonth">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        class="active" active
+                                                                        onclick="initUserWiseArrival('thismonth', 'user');">This
+                                                                        Month</a>
+                                                                </li>
+                                                                <li class="lastmonth">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('lastmonth', 'user');">Last
+                                                                        Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
+                                                </li>
                                             @else
                                                 <li style="border-bottom: none;">
                                                     <div class="actions action-style p-3 mr-3">
@@ -829,7 +835,8 @@
                                                                         Week</a>
                                                                 </li>
                                                                 <li class="thismonth">
-                                                                    <a href="#centre_wise_ul" data-toggle="tab" class="active" active
+                                                                    <a href="#centre_wise_ul" data-toggle="tab"
+                                                                        class="active" active
                                                                         onclick="initCentreWiseArrival('thismonth', 'centre');">This
                                                                         Month</a>
                                                                 </li>
@@ -909,38 +916,40 @@
                                                                 Auth::user()->hasRole('Super-Admin') ||
                                                                 Auth::user()->hasRole('Head of Operations') ||
                                                                 Auth::user()->hasRole('Finance'))
-                                                            <a
-                                                                class="btn form-control btndropdown btn_Report doctorwiseconversion"
+                                                            <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false"
-                                                                data-id="all"> All Centres
+                                                                aria-expanded="false" data-id="all"> All Centres
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @else
                                                             <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false" data-id="{{ count($centres) > 0 ? $centres[0]->id :'' }}">
+                                                                aria-expanded="false"
+                                                                data-id="{{ count($centres) > 0 ? $centres[0]->id : '' }}">
                                                                 {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @endif
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll">
+                                                        <ul
+                                                            class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll">
                                                             @if (Auth::user()->hasRole('Administrator') ||
                                                                     Auth::user()->hasRole('Super-Admin') ||
                                                                     Auth::user()->hasRole('Head of Operations') ||
                                                                     Auth::user()->hasRole('Finance'))
                                                                 <li onclick="initDoctorWiseConversion('thismonth', 'all')">
-                                                                    <a class="dropdown-item doctor_wise_centre_id" data-period="thismonth"
-                                                                        data-id="all" >All
+                                                                    <a class="dropdown-item doctor_wise_centre_id"
+                                                                        data-period="thismonth" data-id="all">All
                                                                         Centres</a>
                                                                 </li>
                                                             @endif
                                                             @foreach ($centres as $centre)
-                                                                <li onclick="initDoctorWiseConversion('thismonth', {{ $centre->id }})">
-                                                                    <a class="dropdown-item doctor_wise_centre_id" data-period="thismonth"
-                                                                    data-id="{{ $centre->id }}">{{ $centre->name }}</a>
+                                                                <li
+                                                                    onclick="initDoctorWiseConversion('thismonth', {{ $centre->id }})">
+                                                                    <a class="dropdown-item doctor_wise_centre_id"
+                                                                        data-period="thismonth"
+                                                                        data-id="{{ $centre->id }}">{{ $centre->name }}</a>
                                                                 </li>
                                                             @endforeach
                                                         </ul>
@@ -957,7 +966,8 @@
                                                             aria-expanded="false" id="all_docs"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll" id="doc_nav">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll"
+                                                            id="doc_nav">
 
                                                         </ul>
                                                     </div>
@@ -984,7 +994,8 @@
                                                             </li>
                                                             <li class="last7days">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('last7days', 'centre');">Last 7
+                                                                    onclick="initDoctorWiseConversion('last7days', 'centre');">Last
+                                                                    7
                                                                     Days</a>
                                                             </li>
                                                             <li class="week">
@@ -999,10 +1010,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li class="lastmonth">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                        onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
