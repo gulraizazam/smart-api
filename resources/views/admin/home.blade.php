@@ -176,27 +176,27 @@
                                                             <li class="centre-item">
                                                                 <a class="active" href="#location_collection_1"
                                                                     data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('today', '', '','','','');">
+                                                                    onclick="initCollectionByCentre('today');">
                                                                     Today</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_2" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', 'yesterday', '','','','');">Yesterday</a>
+                                                                    onclick="initCollectionByCentre('yesterday');">Yesterday</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_3" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '', 'last7days','', '','');">Last
+                                                                    onclick="initCollectionByCentre('last7days');">Last
                                                                     7
                                                                     Days</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_3" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '','', 'week', '','');">This
+                                                                    onclick="initCollectionByCentre('week');">This
                                                                     Week</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_4" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '', '','', 'thismonth','');">This
+                                                                    onclick="initCollectionByCentre('thismonth');">This
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
@@ -423,23 +423,21 @@
                                                         <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="revenue_by_service_category_menu">
                                                             <li>
-                                                                <a class="active" href="#service_revenue_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('today', '', '', '','');">
-                                                                    Today</a>
+                                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                                    onclick="InitRevenueByServiceCategory('today');">Today</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_1" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
+                                                                    onclick="InitRevenueByServiceCategory('yesterday');">Yesterday</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', 'last7days', '','');">Last
+                                                                    onclick="InitRevenueByServiceCategory('last7days');">Last
                                                                     7 Days</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_3" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', '', 'thismonth','');">This
+                                                                    onclick="InitRevenueByServiceCategory('thismonth');">This
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
@@ -485,26 +483,26 @@
                                                             <li>
                                                                 <a class="active" href="#service_revenue_4"
                                                                     data-toggle="tab"
-                                                                    onclick="initRevenueByService('today', '', '','','','');">Today</a>
+                                                                    onclick="initRevenueByService('today');">Today</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_1" data-toggle="tab"
-                                                                    onclick="initRevenueByService('', 'yesterday', '','', '','');">Yesterday</a>
+                                                                    onclick="initRevenueByService('yesterday');">Yesterday</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', 'last7days','', '','');">Last
+                                                                    onclick="initRevenueByService('last7days');">Last
                                                                     7
                                                                     Days</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', '','week', '','');">This
+                                                                    onclick="initRevenueByService('week');">This
                                                                     Week</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_3"data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', '','', 'thismonth','');">This
+                                                                    onclick="initRevenueByService('thismonth');">This
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
@@ -1405,11 +1403,11 @@
                 });
                 google.setOnLoadCallback(function() {
                     var data = google.visualization.arrayToDataTable(pie);
-                    var options = {
+                    /* var options = {
                         colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-                    };
+                    }; */
                     var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
-                    chart.draw(data, options);
+                    chart.draw(data);
                 });
                 if (pie.length > 1) {
                     $("#collection-by-centre").css("height", "500px");

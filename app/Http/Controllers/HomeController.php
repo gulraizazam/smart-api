@@ -486,6 +486,19 @@ class HomeController extends Controller
             }
 
         }
+        $day = $request->type ?? 'today';
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+          // Step 2 and 3: Calculate the percentage for each slice
+          for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+          }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
@@ -592,7 +605,7 @@ class HomeController extends Controller
 
                 foreach ($todayRecords as $key => $todayRecord) {
                     $parent_services = Services::with('parent')->where('id', $todayRecord->service_id)->first();
-                   
+
                     $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
                     $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
 
@@ -759,6 +772,20 @@ class HomeController extends Controller
                 }
             }
         }
+
+$day = $request->type == null ? "today" : $request->type;
+$dataArray = $data[$day];
+
+$totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+          // Step 2 and 3: Calculate the percentage for each slice
+          for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+          }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -1536,7 +1563,7 @@ class HomeController extends Controller
             $todayRecords = $todayRecords->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                 ->groupBy('location_id')
                 ->get();
-               
+
             $total = 0;
             $data[0] = [
                 'Task',
@@ -1564,6 +1591,18 @@ class HomeController extends Controller
                     }
                 }
             }
+            $dataArray = $data;
+
+            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+          // Step 2 and 3: Calculate the percentage for each slice
+          for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+          }
+
+        $data = $dataArray;
 
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
@@ -1870,6 +1909,24 @@ class HomeController extends Controller
                 }
             }
         }
+
+        $day = $request->type == null ? "today" : $request->type;
+$dataArray = $data[$day];
+
+// Step 1: Calculate the total value
+$totalValue = 0;
+for ($i = 1; $i < count($dataArray); $i++) {
+  $totalValue += $dataArray[$i][1];
+}
+
+// Step 2 and 3: Calculate the percentage for each slice
+for ($i = 1; $i < count($dataArray); $i++) {
+  $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+  $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+}
+
+$data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -2273,7 +2330,7 @@ class HomeController extends Controller
         $locations = ACL::getUserCentres();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         [$start_date, $end_date] = $this->getDates($request);
-        
+
         $where[] = [
             'created_at',
             '>=',
