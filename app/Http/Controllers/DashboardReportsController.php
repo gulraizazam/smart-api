@@ -64,55 +64,79 @@ class DashboardReportsController extends Controller
         ];
         $location_information = ACL::getUserCentres();
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            if ($request->get('today') != '') {
+            switch ($request->type) {
+                case 'today':
                 [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
                 if (count($today_records)) {
                     foreach ($today_records as $record) {
                         $data['today'][] = $record;
                     }
                 }
-            }
-            if ($request->get('yesterday') != '') {
+                break;
+
+            case('yesterday'):
                 [$yesterdayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
                 if (count($yesterdayRecords)) {
                     foreach ($yesterdayRecords as $record) {
                         $data['yesterday'][] = $record;
                     }
                 }
-            }
-            if ($request->get('last7days') != '') {
+                break;
+            case('last7days'):
                 [$last7dayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
                 if (count($last7dayRecords)) {
                     foreach ($last7dayRecords as $record) {
                         $data['last7days'][] = $record;
                     }
                 }
-            }
-            if ($request->get('week') != '') {
+                break;
+            case('week'):
                 [$weekRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
                 if (count($weekRecords)) {
                     foreach ($weekRecords as $record) {
                         $data['week'][] = $record;
                     }
                 }
-            }
-            if ($request->get('thismonth') != '') {
+                break;
+            case('thismonth'):
                 [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
                         $data['thismonth'][] = $record;
                     }
                 }
-            }
-            if ($request->get('lastmonth') != '') {
+            break;
+            case('lastmonth'):
                 [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
                 if (count($thisMonthRecords)) {
                     foreach ($thisMonthRecords as $record) {
                         $data['lastmonth'][] = $record;
                     }
                 }
+            break;
+            default:
+                [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
+                if (count($today_records)) {
+                    foreach ($today_records as $record) {
+                        $data['today'][] = $record;
+                    }
+                }
+                break;
             }
         }
+        $day = $request->type ?? 'today';
+        $dataArray = $data[$day];
+
+          $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+          // Step 2 and 3: Calculate the percentage for each slice
+          for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+          }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
@@ -763,8 +787,9 @@ class DashboardReportsController extends Controller
                 'parent_id' => '0',
             ])->get();
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
-            if ($request->today) {
-                $today_records = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+            switch ($request->type){
+                case "today" :
+                    $today_records = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where(['invoices.invoice_status_id' => $invoicestatus->id])
                     ->whereIn('invoices.location_id', ACL::getUserCentres());
@@ -803,8 +828,9 @@ class DashboardReportsController extends Controller
                         $data['today'][] = $record;
                     }
                 }
-            }
-            if ($request->yesterday) {
+                    break;
+
+            case "yesterday":
                 $yesterdayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
@@ -845,8 +871,8 @@ class DashboardReportsController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-            }
-            if ($request->last7days) {
+            break;
+            case "last7days":
                 $last7_days_records = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
@@ -884,11 +910,11 @@ class DashboardReportsController extends Controller
                 }
                 if (count($last7days) > 0) {
                     foreach ($last7days as $record) {
-                        $data['week'][] = $record;
+                        $data['last7days'][] = $record;
                     }
                 }
-            }
-            if ($request->thismonth) {
+            break;
+            case "thismonth":
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
@@ -926,11 +952,11 @@ class DashboardReportsController extends Controller
                 }
                 if (count($thisMonth) > 0) {
                     foreach ($thisMonth as $record) {
-                        $data['month'][] = $record;
+                        $data['thismonth'][] = $record;
                     }
                 }
-            }
-            if ($request->lastmonth) {
+            break;
+            case "lastmonth":
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
@@ -971,8 +997,64 @@ class DashboardReportsController extends Controller
                         $data['lastmonth'][] = $record;
                     }
                 }
+            break;
+            default:
+            $today_records = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+            ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+            ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+            ->whereIn('invoices.location_id', ACL::getUserCentres());
+
+        if ($request->get('performance')) {
+            $today_records->where(['invoices.created_by' => Auth::User()->id]);
+        }
+        $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+            ->groupBy('invoice_details.service_id')
+            ->get();
+        $prepareData = [];
+        foreach ($today_records as $key => $todayRecord) {
+            $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+            $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+            $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+            if (array_key_exists($service_id, $prepareData)) {
+                $prepareData[$service_id]['total'] += $todayRecord->total_price;
+            } else {
+                $prepareData[$service_id] = [
+                    'id' => $service_id,
+                    'name' => $service_name,
+                    'total' => $todayRecord->total_price,
+                ];
             }
         }
+        $today[0] = ['Task', 'Hours per Day'];
+        foreach ($prepareData as $todayRecord) {
+            $today[$todayRecord['id']] = [
+                $todayRecord['name'],
+                $todayRecord['total'],
+            ];
+        }
+        if (count($today) > 0) {
+            foreach ($today as $record) {
+                $data['today'][] = $record;
+            }
+        }
+            break;
+            }
+        }
+
+        $day = $request->type == null ? "today" : $request->type;
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+          // Step 2 and 3: Calculate the percentage for each slice
+          for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+          }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -1074,7 +1156,6 @@ class DashboardReportsController extends Controller
             ];
             if ($locations) {
                 foreach ($locations as $counter => $location) {
-
                     $location_detail = Locations::find($location);
 
                     if ($counter == 0) {
@@ -1083,7 +1164,6 @@ class DashboardReportsController extends Controller
                             'Hours per Day',
                         ];
                     }
-
 
                     if ($today_records) {
                         foreach ($today_records as $todayRecord) {
@@ -1099,6 +1179,19 @@ class DashboardReportsController extends Controller
                     }
                 }
             }
+
+            $dataArray = $data;
+
+            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+          // Step 2 and 3: Calculate the percentage for each slice
+          for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+          }
+
+        $data = $dataArray;
 
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
@@ -1170,7 +1263,8 @@ class DashboardReportsController extends Controller
                 ['active', '=', '1'],
             ])->get();
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
-            if ($request->get('today')) {
+            switch ($request->type) {
+            case 'today':
                 $today_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where(['invoices.invoice_status_id' => $invoicestatus->id])
@@ -1209,8 +1303,8 @@ class DashboardReportsController extends Controller
                         $data['today'][] = $record;
                     }
                 }
-            }
-            if ($request->get('yesterday')) {
+            break;
+            case 'yesterday':
                 $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
@@ -1250,8 +1344,8 @@ class DashboardReportsController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-            }
-            if ($request->get('last7days')) {
+            break;
+            case 'last7days':
                 $last7_days_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
@@ -1291,8 +1385,8 @@ class DashboardReportsController extends Controller
                         $data['last7days'][] = $record;
                     }
                 }
-            }
-            if ($request->get('week')) {
+            break;
+            case 'week':
                 $last7_days_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
@@ -1332,8 +1426,8 @@ class DashboardReportsController extends Controller
                         $data['week'][] = $record;
                     }
                 }
-            }
-            if ($request->get('thismonth')) {
+            break;
+            case 'thismonth':
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
@@ -1371,11 +1465,11 @@ class DashboardReportsController extends Controller
                 }
                 if (count($thisMonth)) {
                     foreach ($thisMonth as $record) {
-                        $data['month'][] = $record;
+                        $data['thismonth'][] = $record;
                     }
                 }
-            }
-            if ($request->get('lastmonth')) {
+            break;
+            case 'lastmonth':
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
@@ -1416,8 +1510,66 @@ class DashboardReportsController extends Controller
                         $data['lastmonth'][] = $record;
                     }
                 }
+            break;
+            default:
+                $today_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+
+                if ($request->get('performance')) {
+                    $today_records->where(['invoices.created_by' => Auth::User()->id]);
+                }
+                $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                    ->groupBy('invoice_details.service_id')
+                    ->get();
+                if ($services) {
+                    $total = 0;
+                    foreach ($services as $service) {
+                        $today[0] = [
+                            'Task',
+                            'Hours per Day',
+                        ];
+                        if ($today_records) {
+                            foreach ($today_records as $todayRecord) {
+                                if ($todayRecord->service_id == $service->id) {
+                                    $today[$service->id] = [
+                                        $service->name,
+                                        $todayRecord->total_price,
+                                    ];
+                                    $colors[] = $service->color;
+
+                                    $total += $todayRecord->total_price;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (count($today)) {
+                    foreach ($today as $record) {
+                        $data['today'][] = $record;
+                    }
+                }
+            break;
             }
         }
+        $day = $request->type == null ? "today" : $request->type;
+$dataArray = $data[$day];
+
+// Step 1: Calculate the total value
+$totalValue = 0;
+for ($i = 1; $i < count($dataArray); $i++) {
+  $totalValue += $dataArray[$i][1];
+}
+
+// Step 2 and 3: Calculate the percentage for each slice
+for ($i = 1; $i < count($dataArray); $i++) {
+  $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+  $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+}
+
+$data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -2017,6 +2169,20 @@ class DashboardReportsController extends Controller
             }
         }
 
+$day = $request->period == null ? "today" : $request->period;
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+          // Step 2 and 3: Calculate the percentage for each slice
+          for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+          }
+
+        $data[$day] = $dataArray;
+
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
             'colors' => $colors,
@@ -2563,12 +2729,12 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
+        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
 
-        if ($request->centre_id == 'all') {
-            $locations = Locations::whereNotIn('name', $where_not)->where('active', 1)->pluck('id');
-        } else {
-            $locations = [$request->centre_id];
+        if($request->centre_id == 'all'){
+            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
+        }else{
+            $locations=[$request->centre_id];
         }
         $consultant = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null && $request->doc_id != 0, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
