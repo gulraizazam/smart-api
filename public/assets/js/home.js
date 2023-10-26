@@ -7,6 +7,8 @@ var DOC_ID;
 function initCollectionByCentre(today, yesterday, last7days, week, thismonth, lastmonth) {
     $("#collection_by_centre_menu .active").removeClass('active');
     $("#collection_by_centre_menu").parent().addClass('active');
+    $("#collectionbycenter .loader-img-attended").css('display', '');
+    $("#collectionbycenter #collection-by-centre").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -24,6 +26,8 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
         },
         cache: false,
         success: function (response) {
+            $("#collectionbycenter .loader-img-attended").css('display', 'none');
+            $("#collectionbycenter #collection-by-centre").css('display', '');
             if (today != '') {
                 var pie = response.data.pie.today;
                 let total = response.data.total;
@@ -71,7 +75,6 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
 }
 
 function collectionCentreChart(pie) {
-
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
     });
@@ -97,6 +100,8 @@ function collectionCentreChart(pie) {
 function initRevenueByCentre(period) {
     $("#revenue_by_centre_menu .active").removeClass('active');
     $("#revenue_by_centre_menu").parent().addClass('active');
+    $("#revenue_by_centre .loader-img-attended").css('display', '');
+    $("#revenue_by_centre #revenue-centre").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -110,6 +115,8 @@ function initRevenueByCentre(period) {
         },
         cache: false,
         success: function (response) {
+            $("#revenue_by_centre .loader-img-attended").css('display', 'none');
+            $("#revenue_by_centre #revenue-centre").css('display', '');
             if (period == "today") {
                 $(".revenue-centre-title").text('Today Income');
                 let total = response.data.total;
@@ -185,6 +192,8 @@ function revenueCentreChart(pie) {
 function initRevenueByService(today, yesterday, last7days, week, thismonth, lastmonth) {
     $("#revenue_by_service_menu .active").removeClass('active');
     $("#revenue_by_service_menu").parent().addClass('active');
+    $("#revenue_by_service .loader-img-attended").css('display', '');
+    $("#revenue_by_service #revenue-service").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -202,6 +211,8 @@ function initRevenueByService(today, yesterday, last7days, week, thismonth, last
             'lastmonth': lastmonth,
         },
         success: function (response) {
+            $("#revenue_by_service .loader-img-attended").css('display', 'none');
+            $("#revenue_by_service #revenue-service").css('display', '');
             let colors = response.data.colors;
             if (today != '') {
                 $(".service-title").text('Today Income');
@@ -395,6 +406,8 @@ function AppointmentByType(pie, colors) {
 function initConsultancyByStatus(period, type) {
     $("#appointment_by_status_menu .active").removeClass('active');
     $("#appointment_by_status_menu").parent().addClass('active');
+    $("#consultancy_status .loader-img-attended").css('display', '');
+    $("#consultancy_status #consultancy_by_status").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -405,7 +418,8 @@ function initConsultancyByStatus(period, type) {
         data: { 'period': period, 'type': type },
         cache: false,
         success: function (response) {
-
+            $("#consultancy_status .loader-img-attended").css('display', 'none');
+            $("#consultancy_status #consultancy_by_status").css('display', '');
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
@@ -441,6 +455,8 @@ function initConsultancyByStatus(period, type) {
 function initTreatmentByStatus(period, type) {
     $("#appointment_by_type_menu .active").removeClass('active');
     $("#appointment_by_type_menu").parent().addClass('active');
+    $("#treatment_status .loader-img-attended").css('display', '');
+    $("#treatment_status #treatment_by_status").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -451,6 +467,8 @@ function initTreatmentByStatus(period, type) {
         data: { 'period': period, 'type': type },
         cache: false,
         success: function (response) {
+            $("#treatment_status .loader-img-attended").css('display', 'none');
+            $("#treatment_status #treatment_by_status").css('display', '');
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
@@ -520,6 +538,8 @@ function ConsultancyByStatus(pie, colors) {
 function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, lastmonth) {
     $("#revenue_by_service_category_menu .active").removeClass('active');
     $("#revenue_by_service_category_menu").parent().addClass('active');
+    $("#revenue_by_service_category .loader-img-attended").css('display', '');
+    $("#revenue_by_service_category #revenue-service-category").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -536,6 +556,8 @@ function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, la
             'lastmonth': lastmonth,
         },
         success: function (response) {
+            $("#revenue_by_service_category .loader-img-attended").css('display', 'none');
+            $("#revenue_by_service_category #revenue-service-category").css('display', '');
             let colors = response.data.colors;
             if (today != '') {
                 var pie = response.data.pie.today;
@@ -763,7 +785,7 @@ function ConsultanciesByStatus(bar) {
             modifiedData = Data;
         }
     } else {
-        modifiedData = ['BHD KHI', 'Gulshan Johar', 'DHA KHI', 'JT LHR', 'Gulberg LHR', 'DHA LHR','Faisalabad'];
+        modifiedData = ['BHD KHI', 'Gulshan Johar', 'DHA KHI', 'JT LHR', 'Gulberg LHR', 'DHA LHR', 'Faisalabad'];
     }
     if (bar.data?.walkin != undefined) {
         for (var i = 0; i < bar.data.walkin.length; i++) {
@@ -823,7 +845,7 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
     SELECTED_MONTH = period;
     var centre_id = $(".doctorwiseconversion").attr('data-id');
     CENTRE_ID = centre_id;
-    
+
     $(".doctorname").attr('data-id', '0').text("All Doctor").addClass("active");
 
     var doc_id = $(".doctorname").attr('data-id');console.log(doc_id)
@@ -1010,7 +1032,7 @@ function GetDoctors(centre_id, time = '') {
     });
 }
 
-function LoadDocWiseConversion(doc_id,time = '') {
+function LoadDocWiseConversion(doc_id, time = '') {
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
@@ -1048,6 +1070,7 @@ function LoadDocWiseConversion(doc_id,time = '') {
             var avgValue = ((response.data.sum_val / converted)).toFixed(2);
             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
         },
@@ -1172,7 +1195,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             'arrived': arrived
         },
         success: function (response) {
-            $('.loader-img-unattended').css('display','none');
+            $('.loader-img-unattended').css('display', 'none');
             $('#patient-follow-up').html("");
             var TABLE_HTML = "";
             var balance = 0;
@@ -1184,9 +1207,9 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
 
                     let patient = patientData[i];
 
-                    balance = patient.cash_receive - patient.settle_amount_with_tax -patient.refunded_amounts;
-                    if(balance > 0){
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: "+(balance).toFixed(2)+"</td><td>" + formatDate(patient.created_at , 'MMM, DD yyyy ')+ "</td></tr>";
+                    balance = patient.cash_receive - patient.settle_amount_with_tax - patient.refunded_amounts;
+                    if (balance > 0) {
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: " + (balance).toFixed(2) + "</td><td>" + formatDate(patient.created_at, 'MMM, DD yyyy ') + "</td></tr>";
                     }
                 }
 
@@ -1213,7 +1236,7 @@ function initPatientFollowUpOneMonth() {
         cache: false,
         data: {},
         success: function (response) {
-            $('.loader-img-attended').css('display','none');
+            $('.loader-img-attended').css('display', 'none');
             $('#patient-follow-up-one-month').html("");
             var TABLE_HTML = "";
             var balance = 0;
@@ -1223,7 +1246,7 @@ function initPatientFollowUpOneMonth() {
                     let patient = patientData[i];
 
                     balance = patient.cash_receive - patient.settle_amount_with_tax;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>PKR: "+(balance).toFixed(2)+"</td><td>" + patient.scheduled_date + "</td></tr>";
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>PKR: " + (balance).toFixed(2) + "</td><td>" + patient.scheduled_date + "</td></tr>";
                 }
             } else {
                 TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
