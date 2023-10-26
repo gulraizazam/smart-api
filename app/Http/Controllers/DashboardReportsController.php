@@ -23,6 +23,7 @@ use App\Reports\dashboardreport;
 use App\Helpers\GeneralFunctions;
 use App\Models\DoctorHasLocations;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use App\Models\AppointmentStatuses;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AppointmentsDailyStats;
@@ -1092,7 +1093,7 @@ class DashboardReportsController extends Controller
                                     $todayRecord->total_price,
                                 ];
 
-                                $total += $todayRecord->total_price ;
+                                $total += $todayRecord->total_price;
                             }
                         }
                     }
@@ -2292,10 +2293,17 @@ class DashboardReportsController extends Controller
         $total_apts = [];
         $arrived_apts = [];
         $walkin_apts = [];
+        $center_name = [];
 
+        $role_id = Role::where(['name' => 'FDM'])->first()->id;
         $period = $request->period == '' ? 'thismonth' : $request->period;
-        $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id')->toArray();
+        $fdm_users = RoleHasUsers::where(['role_id' => $role_id])->pluck('user_id')->toArray();
         $center_id = $request->centre_id == 'All' ? ACL::getUserCentres() : [$request->centre_id];
+
+        foreach ($center_id as $data) {
+            $location = Locations::find($data);
+            array_push($center_name, $location->name);
+        }
 
         $periods = [
             'yesterday' => [
@@ -2329,12 +2337,16 @@ class DashboardReportsController extends Controller
             ->groupBy('centre_id')
             ->get()->toArray();
 
-        foreach ($stats as $stat) {
-            $centre = Locations::where(['id' => $stat['centre_id']])->first();
-            array_push($lables, $centre['name']);
-            array_push($total_apts, $stat['total']);
-            array_push($arrived_apts, (int) $stat['arrived']);
-            array_push($walkin_apts, (int) $stat['walkin']);
+        if (!empty($stats)) {
+            foreach ($stats as $stat) {
+                $centre = Locations::find($stat['centre_id']);
+                array_push($lables, $centre['name']);
+                array_push($total_apts, $stat['total']);
+                array_push($arrived_apts, (int) $stat['arrived']);
+                array_push($walkin_apts, (int) $stat['walkin']);
+            }
+        } else {
+            $lables = $center_name;
         }
 
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
@@ -2551,19 +2563,19 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
-        
-        if($request->centre_id == 'all'){
-            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
-        }else{
-            $locations=[$request->centre_id];
+        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
+
+        if ($request->centre_id == 'all') {
+            $locations = Locations::whereNotIn('name', $where_not)->where('active', 1)->pluck('id');
+        } else {
+            $locations = [$request->centre_id];
         }
-        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null && $request->doc_id != 0, function ($query) use ($request) {
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null && $request->doc_id != 0, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         })
-        ->distinct('user_id')
-        ->pluck('user_id');
-        $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+            ->distinct('user_id')
+            ->pluck('user_id');
+        $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
         // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
         //     ->join('users', 'resources.external_id', 'users.id')
         //     ->select('users.name', 'users.id')
@@ -2631,8 +2643,8 @@ class DashboardReportsController extends Controller
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
-                        ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
-                        ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
+                        ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+                        ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
 
                         ->get();
                     if (count($packagesadvances) > 0) {
@@ -2733,37 +2745,36 @@ class DashboardReportsController extends Controller
 
                 $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
-                if($request->doc_id){
+                if ($request->doc_id) {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    ->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
-                }else{
+                        ->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->count();
+                } else {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    //->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
+                        //->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->count();
                 }
-
             } else {
                 $name = [$arrive_category['name']][0];
                 $sum_conversion_total = 0;
                 $avg_valu = 0;
 
-                if($request->doc_id){
+                if ($request->doc_id) {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    ->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
-                }else{
+                        ->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->count();
+                } else {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    //->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
+                        //->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->count();
                 }
             }
 
@@ -2797,18 +2808,17 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
-        if($request->centre_id == 'all'){
-            $locations = Locations::whereNotIn('name' , $where_not)->where(['active' => 1])->pluck('id');
-        }else{
-            $locations=$request->centre_id;
+        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
+        if ($request->centre_id == 'all') {
+            $locations = Locations::whereNotIn('name', $where_not)->where(['active' => 1])->pluck('id');
+        } else {
+            $locations = $request->centre_id;
         }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+        $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
-
         })
-        ->distinct('user_id')
-        ->pluck('user_id');
+            ->distinct('user_id')
+            ->pluck('user_id');
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
@@ -2885,8 +2895,8 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                             ->where(['cash_flow' => "in"])
                             ->where('cash_amount', '>', 0)
-                            ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
-                            ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
+                            ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+                            ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
 
                             ->get();
 
@@ -2965,7 +2975,7 @@ class DashboardReportsController extends Controller
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
-                       // ->whereIn('appointments.doctor_id', $consultants)
+                        // ->whereIn('appointments.doctor_id', $consultants)
                         ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
@@ -3004,9 +3014,9 @@ class DashboardReportsController extends Controller
         if ($request->centre_id == 'all') {
 
             $consultant = DoctorHasLocations::distinct('user_id')
-            ->pluck('user_id');
+                ->pluck('user_id');
 
-            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+            $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
 
             // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
             //     ->join('users', 'resources.external_id', 'users.id')
@@ -3016,9 +3026,9 @@ class DashboardReportsController extends Controller
             //     ->get();
         } else {
             $consultant = DoctorHasLocations::where('location_id', $request->centre_id)
-            ->distinct('user_id')
-            ->pluck('user_id');
-            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+                ->distinct('user_id')
+                ->pluck('user_id');
+            $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
             // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
             //     ->join('users', 'resources.external_id', 'users.id')
             //     ->select('users.name', 'users.id')
@@ -3068,7 +3078,7 @@ class DashboardReportsController extends Controller
         } else {
             $where = [];
             if (isset($request->date_range) && $request->date_range) {
-                $where[] = ['package_advances.created_at', '>=', $start_date. ' 00:00:00'];
+                $where[] = ['package_advances.created_at', '>=', $start_date . ' 00:00:00'];
                 $where[] = ['package_advances.created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
