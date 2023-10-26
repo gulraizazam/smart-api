@@ -4,7 +4,7 @@ var CENTRE_ID;
 var SELECTED_MONTH;
 var DOC_ID;
 
-function initCollectionByCentre(today, yesterday, last7days, week, thismonth, lastmonth) {
+function initCollectionByCentre(type) {
     $("#collection_by_centre_menu .active").removeClass('active');
     $("#collection_by_centre_menu").parent().addClass('active');
     $("#collectionbycenter .loader-img-attended").css('display', '');
@@ -17,52 +17,47 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
         url: route('admin.dashboard.collection_by_centre'),
         type: 'GET',
         data: {
-            'today': today,
-            'yesterday': yesterday,
-            'last7days': last7days,
-            'week': week,
-            'thismonth': thismonth,
-            'lastmonth': lastmonth,
+            'type': type
         },
         cache: false,
         success: function (response) {
             $("#collectionbycenter .loader-img-attended").css('display', 'none');
             $("#collectionbycenter #collection-by-centre").css('display', '');
-            if (today != '') {
+            if (type == "today") {
                 var pie = response.data.pie.today;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("Today");
             }
-            if (yesterday != '') {
+            if (type == "yesterday") {
                 $(".pie-income-title").text('Yesterday Income');
                 var pie = response.data.pie.yesterday;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("Yesterday");
             }
-            if (last7days != '') {
+            if (type == "last7days") {
                 $(".pie-income-title").text('Weekly Income');
                 var pie = response.data.pie.last7days;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("Last 7 Days");
             }
-            if (week != '') {
+            if (type == "week") {
                 $(".pie-income-title").text('Weekly Income');
                 var pie = response.data.pie.week;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("This Week");
             }
-            if (thismonth != '') {
+            if (type == "thismonth") {
                 $(".pie-income-title").text('Monthly Income');
                 var pie = response.data.pie.thismonth;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("This Month");
             }
-            if (lastmonth != '') {
+            if (type == "lastmonth") {
                 $(".pie-income-title").text('Last Month Income');
                 var pie = response.data.pie.lastmonth;
                 let total = response.data.total;
@@ -80,14 +75,11 @@ function collectionCentreChart(pie) {
     });
 
     google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
-        var options = {
-            title: 'Collections',
-            colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-        };
-
+        // var options = {
+        //     title: 'Collections',
+        //     colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
+        // };
         var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
         chart.draw(data, options);
     });
@@ -189,7 +181,7 @@ function revenueCentreChart(pie) {
 
 }
 
-function initRevenueByService(today, yesterday, last7days, week, thismonth, lastmonth) {
+function initRevenueByService(type) {
     $("#revenue_by_service_menu .active").removeClass('active');
     $("#revenue_by_service_menu").parent().addClass('active');
     $("#revenue_by_service .loader-img-attended").css('display', '');
@@ -203,53 +195,48 @@ function initRevenueByService(today, yesterday, last7days, week, thismonth, last
         type: 'GET',
         cache: false,
         data: {
-            'today': today,
-            'yesterday': yesterday,
-            'last7days': last7days,
-            'week': week,
-            'thismonth': thismonth,
-            'lastmonth': lastmonth,
+            'type': type,
         },
         success: function (response) {
             $("#revenue_by_service .loader-img-attended").css('display', 'none');
             $("#revenue_by_service #revenue-service").css('display', '');
             let colors = response.data.colors;
-            if (today != '') {
+            if (type == "today") {
                 $(".service-title").text('Today Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Today");
                 var pie = response.data.pie.today;
             }
-            if (yesterday != '') {
+            if (type == "yesterday") {
                 $(".service-title").text('Yesterday Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Yesterday");
                 var pie = response.data.pie.yesterday;
             }
-            if (last7days != '') {
+            if (type == "last7days") {
                 $(".service-title").text('Weekly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Last 7 Days");
                 var pie = response.data.pie.last7days;
             }
-            if (week != '') {
+            if (type == "week") {
                 $(".service-title").text('Weekly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Week");
                 var pie = response.data.pie.week;
             }
-            if (thismonth != '') {
+            if (type == "thismonth") {
                 $(".service-title").text('Monthly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("This Month");
                 var pie = response.data.pie.month;
             }
-            if (lastmonth != '') {
+            if (type == "lastmonth") {
                 $(".service-title").text('Last Month Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
@@ -535,7 +522,7 @@ function ConsultancyByStatus(pie, colors) {
     }
 }
 
-function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, lastmonth) {
+function InitRevenueByServiceCategory(type) {
     $("#revenue_by_service_category_menu .active").removeClass('active');
     $("#revenue_by_service_category_menu").parent().addClass('active');
     $("#revenue_by_service_category .loader-img-attended").css('display', '');
@@ -549,33 +536,29 @@ function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, la
         type: 'GET',
         cache: false,
         data: {
-            'today': today,
-            'yesterday': yesterday,
-            'last7days': last7days,
-            'thismonth': thismonth,
-            'lastmonth': lastmonth,
+            'type': type,
         },
         success: function (response) {
             $("#revenue_by_service_category .loader-img-attended").css('display', 'none');
             $("#revenue_by_service_category #revenue-service-category").css('display', '');
             let colors = response.data.colors;
-            if (today != '') {
+            if (type == 'today') {
                 var pie = response.data.pie.today;
                 $(".revenue_by_service_category_dropdown").text("Today");
             }
-            if (yesterday != '') {
+            if (type == "yesterday") {
                 var pie = response.data.pie.yesterday;
                 $(".revenue_by_service_category_dropdown").text("Yesterday");
             }
-            if (last7days != '') {
+            if (type == "last7days") {
                 var pie = response.data.pie.week;
                 $(".revenue_by_service_category_dropdown").text("Last 7 Days");
             }
-            if (thismonth != '') {
+            if (type == "thismonth") {
                 var pie = response.data.pie.month;
                 $(".revenue_by_service_category_dropdown").text("This Month");
             }
-            if (lastmonth != '') {
+            if (type == "lastmonth") {
                 var pie = response.data.pie.lastmonth;
                 $(".revenue_by_service_category_dropdown").text("Last Month");
             }
@@ -847,7 +830,7 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
 
     $(".doctorname").attr('data-id', '0').text("All Doctor").addClass("active");
 
-    var doc_id = $(".doctorname").attr('data-id'); console.log(doc_id)
+    var doc_id = $(".doctorname").attr('data-id');
     DOC_ID = doc_id;
     let converted = 0;
     let arrived = 0;
