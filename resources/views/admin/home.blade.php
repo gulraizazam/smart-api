@@ -209,7 +209,7 @@
                                                 </div>
                                             </li>
                                         </ul>
-                                        <div class=" flex-column text-right d-none">
+                                        <div class="flex-column text-right d-none">
                                             <span
                                                 class="text-dark-75 font-weight-bolder font-size-h3 total-pie-chart"></span>
                                             <span class="text-muted font-weight-bold mt-2 pie-income-title">Weekly
@@ -217,6 +217,7 @@
                                         </div>
                                     </div>
                                     <div id="collection-by-centre"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
@@ -285,7 +286,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="revenue_by_centre">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -342,6 +343,7 @@
                                         </div>
                                     </div>
                                     <div id="revenue-centre"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
@@ -403,7 +405,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
                         <div class="col-lg-6 col-xxl-6 mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="revenue_by_service_category">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -457,12 +459,13 @@
                                         </div>
                                     </div>
                                     <div id="revenue-service-category"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended">
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="revenue_by_service">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -521,6 +524,7 @@
                                         </div>
                                     </div>
                                     <div id="revenue-service"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -528,7 +532,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="consultancy_status">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -587,6 +591,7 @@
                                         </div>
                                     </div>
                                     <div id="consultancy_by_status"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
@@ -594,7 +599,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="treatment_status">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -653,6 +658,7 @@
                                         </div>
                                     </div>
                                     <div id="treatment_by_status"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
@@ -1127,6 +1133,7 @@
                         },
                         cache: false,
                         success: function(response) {
+                            $("#collectionbycenter .loader-img-attended").css('display','none');
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
                             @endif
@@ -1160,6 +1167,7 @@
                         },
                         cache: false,
                         success: function(response) {
+                            $("#revenue_by_centre .loader-img-attended").css('display','none');
                             let pie = response.data.pie;
                             revenueCentreChart(pie);
                         },
@@ -1179,6 +1187,7 @@
                         },
                         cache: false,
                         success: function(response) {
+                            $("#revenue_by_service .loader-img-attended").css('display', 'none');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1213,7 +1222,7 @@
                         },
                         cache: false,
                         success: function(response) {
-
+                            $("#revenue_by_service_category .loader-img-attended").css('display', 'none');
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
                             @endif
@@ -1284,7 +1293,7 @@
                         },
                         cache: false,
                         success: function(response) {
-
+                            $("#consultancy_status .loader-img-attended").css('display', 'none');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1320,7 +1329,7 @@
                         },
                         cache: false,
                         success: function(response) {
-
+                            $("#treatment_status .loader-img-attended").css('display', 'none');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
