@@ -698,7 +698,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
                 let str = barLenght[i];
                 let wordToRemove = "CUTERA ";
                 let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                if (total != 0) {
+                if (total != 0 && !isNaN(total)) {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
             }
@@ -706,9 +706,8 @@ function initCentreWiseArrival(period, centreID, time = '') {
             arrived_t -= walkin_t;
             total_t -= walkin_t;
 
-            if ((centreID == "All" || centreID == "") && total_t != 0) {
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-
+            if (total_t != 0 && !isNaN(total_t)) {
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
             }
             jQuery('#table-body').append(TABLE_HTML);
             ConsultanciesByStatus(response);
@@ -848,7 +847,7 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
 
     $(".doctorname").attr('data-id', '0').text("All Doctor").addClass("active");
 
-    var doc_id = $(".doctorname").attr('data-id');console.log(doc_id)
+    var doc_id = $(".doctorname").attr('data-id'); console.log(doc_id)
     DOC_ID = doc_id;
     let converted = 0;
     let arrived = 0;
