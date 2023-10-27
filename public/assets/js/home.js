@@ -861,7 +861,7 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
                 });
                 var avg = ((converted / arrived) * 100).toFixed(2);
                 var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
@@ -894,8 +894,12 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
 
                 });
                 var avg = ((converted / arrived) * 100).toFixed(2);
-                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+                if (converted === 0) {
+                    avgValue = 0;
+                  } else {
+                    var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                  }
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 DoctorWiseConversion(response);
@@ -956,7 +960,7 @@ function GetDoctors(centre_id, time = '') {
                 });
                 var avg = ((converted / arrived) * 100).toFixed(2);
                 var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
@@ -986,8 +990,12 @@ function GetDoctors(centre_id, time = '') {
 
                 });
                 var avg = ((converted / arrived) * 100).toFixed(2);
-                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+                if (converted === 0) {
+                    avgValue = 0;
+                  } else {
+                    var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                  }
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 DoctorWiseConversion(response);
@@ -1049,10 +1057,13 @@ function LoadDocWiseConversion(doc_id, time = '') {
 
             });
             var avg = ((converted / arrived) * 100).toFixed(2);
-            var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+            if (converted === 0) {
+                avgValue = 0;
+              } else {
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+              }
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
         },
