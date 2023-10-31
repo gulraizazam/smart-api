@@ -488,9 +488,7 @@ class HomeController extends Controller
 
             $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
         }
-
         $data[$day] = $dataArray;
-
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
             'total' => number_format($total ?? 0, 2),
@@ -1589,7 +1587,6 @@ class HomeController extends Controller
             }
 
             $data = $dataArray;
-
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
                 'total' => number_format($total ?? 0, 2),
@@ -1896,13 +1893,11 @@ class HomeController extends Controller
         }
 
         $day = $request->type == null ? "today" : $request->type;
+
         $dataArray = $data[$day];
 
         // Step 1: Calculate the total value
-        $totalValue = 0;
-        for ($i = 1; $i < count($dataArray); $i++) {
-            $totalValue += $dataArray[$i][1];
-        }
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
         // Step 2 and 3: Calculate the percentage for each slice
         for ($i = 1; $i < count($dataArray); $i++) {
@@ -1912,6 +1907,7 @@ class HomeController extends Controller
         }
 
         $data[$day] = $dataArray;
+
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,

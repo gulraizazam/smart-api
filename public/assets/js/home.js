@@ -76,10 +76,6 @@ function collectionCentreChart(pie) {
 
     google.setOnLoadCallback(function () {
         var data = google.visualization.arrayToDataTable(pie);
-        // var options = {
-        //     title: 'Collections',
-        //     colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-        // };
         var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
         chart.draw(data, options);
     });
@@ -163,13 +159,7 @@ function revenueCentreChart(pie) {
     });
 
     google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
-        var options = {
-            title: 'Revenue',
-            colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-        };
 
         var chart = new google.visualization.PieChart(document.getElementById('revenue-centre'));
         chart.draw(data, options);
