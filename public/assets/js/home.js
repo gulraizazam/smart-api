@@ -689,9 +689,10 @@ function initCentreWiseArrival(period, centreID, time = '') {
             arrived_t -= walkin_t;
             total_t -= walkin_t;
 
-            if (total_t != 0 && !isNaN(total_t)) {
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
-            }
+            let percentage = ((arrived_t / total_t) * 100).toFixed(2);
+
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + (isNaN(arrived_t) ? 0 : arrived_t) + "/" + (isNaN(total_t) ? 0 : total_t) + "</td><td>" + (isNaN(walkin_t) ? 0 : walkin_t) + "</td><td>" + (isNaN(percentage) ? 0 : percentage) + "%</td></tr>";
+
             jQuery('#table-body').append(TABLE_HTML);
             ConsultanciesByStatus(response);
         },
