@@ -246,17 +246,14 @@
                                                                 href="{{ route('admin.follow_up.download') }}"> Download
                                                                 <i class="fa fa-download ml-2"></i>
                                                             </a>
-
                                                         </div>
                                                     </div>
                                                 </li>
                                             </ul>
-
                                         </div>
                                         <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
                                                 <table class="table">
-
                                                     <thead>
                                                         <tr>
                                                             <th class='table-cols'>ID</th>
@@ -267,16 +264,11 @@
                                                         </tr>
                                                     </thead>
 
-                                                    <tbody id="patient-follow-up">
-
-                                                    </tbody>
-
+                                                    <tbody id="patient-follow-up"></tbody>
                                                 </table>
-                                                <img src="{{ asset('assets/media/loader.gif') }}"
-                                                    class="loader-img-unattended">
+                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended">
                                             </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </div>

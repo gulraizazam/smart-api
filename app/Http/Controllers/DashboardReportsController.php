@@ -3220,7 +3220,6 @@ $day = $request->period == null ? "today" : $request->period;
     }
     public function loadFollowupReport(Request $request)
     {
-
         if (isset($request->date_range) && $request->date_range) {
             $date_range = explode(' - ', $request->date_range);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -3232,11 +3231,11 @@ $day = $request->period == null ? "today" : $request->period;
         if ($request->report_type == "monthly") {
             $where = [];
             if (isset($request->date_range) && $request->date_range) {
-                $where[] = ['appointments.scheduled_date', '>=', $start_date];
-                $where[] = ['appointments.scheduled_date', '<=', $end_date];
+                $where[] = ['created_at', '>=', $start_date . ' 00:00:00'];
+                $where[] = ['created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
-                $where[] = ['appointments.patient_id', '=', $request->patient_id,];
+                $where[] = ['patient_id', '=', $request->patient_id];
             }
             $data = $request->all();
             $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data, $where);
@@ -3244,11 +3243,11 @@ $day = $request->period == null ? "today" : $request->period;
         } else {
             $where = [];
             if (isset($request->date_range) && $request->date_range) {
-                $where[] = ['package_advances.created_at', '>=', $start_date . ' 00:00:00'];
-                $where[] = ['package_advances.created_at', '<=', $end_date . ' 23:59:00'];
+                $where[] = ['created_at', '>=', $start_date . ' 00:00:00'];
+                $where[] = ['created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
-                $where[] = ['package_advances.patient_id', '=', $request->patient_id];
+                $where[] = ['patient_id', '=', $request->patient_id];
             }
             $data = $request->all();
             $patient_data = GeneralFunctions::PatientFollowUpReport($data, $where);

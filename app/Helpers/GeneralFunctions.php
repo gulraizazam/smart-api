@@ -1118,7 +1118,7 @@ class GeneralFunctions
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
-            
+            ->where($where)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
             ->get();
@@ -1138,7 +1138,6 @@ class GeneralFunctions
                 'patient_id' => $data['patient_id'],
             ])
                 ->whereIn('location_id', $center_id)
-                ->where($where)
                 ->get();
 
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
