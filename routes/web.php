@@ -42,7 +42,6 @@ use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\CentreTargetsController;
-
 use App\Http\Controllers\Admin\ResourceRotasController;
 use App\Http\Controllers\Admin\InventoryReportController;
 use App\Http\Controllers\Admin\PackageAdvancesController;
@@ -101,10 +100,10 @@ Route::get('/daily-stats', function () {
     \Artisan::call('appointments:daily-stats');
 });
 Route::get('/get_deleted', function () {
-    $appointments = Appointments::onlyTrashed()->where('deleted_by',4)->get();
-    return view('deleted',get_defined_vars());
+    $appointments = Appointments::onlyTrashed()->where('deleted_by', 4)->get();
+    return view('deleted', get_defined_vars());
 });
-Route::get('getservices',function(){
+Route::get('getservices', function () {
 
     $services = Services::where('slug', '!=', 'all')
         ->where(['parent_id' => 0])
@@ -112,19 +111,19 @@ Route::get('getservices',function(){
         ->orderBy('id', 'asc')
         ->get();
 
-$mergedServices = [];
-foreach ($services as $service) {
+    $mergedServices = [];
+    foreach ($services as $service) {
 
         $children = Services::where(['parent_id' => $service->id])
 
-        ->orderBy('id', 'asc')->get()->toArray();
+            ->orderBy('id', 'asc')->get()->toArray();
 
-    $mergedServices[] = $service->toArray();
-    foreach ($children as $child) {
-        $mergedServices[] = $child;
+        $mergedServices[] = $service->toArray();
+        foreach ($children as $child) {
+            $mergedServices[] = $child;
+        }
     }
-}
-return view('deleted',compact('mergedServices'));
+    return view('deleted', compact('mergedServices'));
 });
 Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
 
@@ -169,7 +168,14 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
     Route::get('/home/my-revenue-by-service', [App\Http\Controllers\HomeController::class, 'myRevenueByService'])->name('home.myRevenueByService');
     Route::get('/home/getstats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.getstats');
-    Route::get('/home/getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
+
+
+    //  ----------------- Dashboard and  Home Routes ----------------- //
+
+    Route::prefix('home')->group(function () {
+        Route::get('getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
+    });
+
     Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
 
     Route::resource('permissions', PermissionsController::class)->middleware('permission:permissions_manage');
@@ -206,7 +212,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('locations/sort_get', [LocationsController::class, 'getSortOrder'])->name('locations.sort_get');
     Route::get('services/sort_get', [ServicesController::class, 'getSortOrder'])->name('services.sort_get');
     Route::resource('locations', LocationsController::class)->only('index');
-    Route::get('locations/getservices', [LocationsController::class,'getServices'])->name('locations.getservices');
+    Route::get('locations/getservices', [LocationsController::class, 'getServices'])->name('locations.getservices');
     // Payment Modes
     Route::get('payment_modes', [PaymentModesController::class, 'index'])->name('payment_modes.index');
     Route::get('payment_modes/sort', [PaymentModesController::class, 'sortOrder'])->name('payment_modes.sort');
@@ -598,15 +604,14 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
     Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
 
-        Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
-        Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
-        Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
-        Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');
-        Route::get('dashboard/follow-up-report-monthly', [DashboardReportsController::class, 'FollowUpReportMonthly'])->name('reports.follow_up_month');
-        Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'loadFollowUpReport'])->name('reports.patient_follow_up_report');
-        //Route::post('dashboard/patient_follow_up_report_monthly', [all_doctor_wise_conversion::class, 'LoadPatientFollowUpReportMonthly'])->name('reports.patient_follow_up_report_monthly');
-        Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
-        Route::get('dashboard/patient-follow-up/download', [PatientFollowupController::class, 'patientFollowUpDownload'])->name('follow_up.download');
-        Route::get('dashboard/patient-monthly-follow-up/download', [PatientFollowupController::class, 'patientMonthlyFollowUpDownload'])->name('monthly_follow_up.download');
-
-    });
+    Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
+    Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
+    Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
+    Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');
+    Route::get('dashboard/follow-up-report-monthly', [DashboardReportsController::class, 'FollowUpReportMonthly'])->name('reports.follow_up_month');
+    Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'loadFollowUpReport'])->name('reports.patient_follow_up_report');
+    //Route::post('dashboard/patient_follow_up_report_monthly', [all_doctor_wise_conversion::class, 'LoadPatientFollowUpReportMonthly'])->name('reports.patient_follow_up_report_monthly');
+    Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
+    Route::get('dashboard/patient-follow-up/download', [PatientFollowupController::class, 'patientFollowUpDownload'])->name('follow_up.download');
+    Route::get('dashboard/patient-monthly-follow-up/download', [PatientFollowupController::class, 'patientMonthlyFollowUpDownload'])->name('monthly_follow_up.download');
+});
