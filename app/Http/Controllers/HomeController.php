@@ -2,33 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Models\Activity;
-use App\Models\AppointmentLog;
-use App\Models\Appointments;
-use App\Models\AppointmentStatuses;
-use App\Models\AuditTrailActions;
-use App\Models\AuditTrails;
-use App\Models\AuditTrailTables;
-use App\Models\Invoices;
-use App\Models\InvoiceStatuses;
-use App\Models\Leads;
-use App\Models\Locations;
-use App\Models\PackageAdvances;
-use App\Models\Regions;
-use App\Models\Services;
 use App\Models\User;
+use App\Models\Leads;
+use App\Models\Regions;
+use App\Helpers\Filters;
+use App\Models\Activity;
+use App\Models\Invoices;
+use App\Models\Services;
+use App\Models\Locations;
+use App\Models\AuditTrails;
+use App\Models\Appointments;
+use Illuminate\Http\Request;
+use App\Models\AppointmentLog;
+use Illuminate\Support\Carbon;
+use App\HelperModule\ApiHelper;
+use App\Models\InvoiceStatuses;
+use App\Models\PackageAdvances;
+use App\Models\AuditTrailTables;
 use App\Models\UserHasLocations;
 use App\Reports\dashboardreport;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
+use App\Helpers\GeneralFunctions;
+use App\Models\AuditTrailActions;
 use Illuminate\Support\Facades\DB;
+use App\Models\AppointmentStatuses;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Config;
 
 class HomeController extends Controller
 {
@@ -115,28 +115,23 @@ class HomeController extends Controller
         $location_id = $this->getUserLocation();
         [$start_date, $end_date] = $this->getDates($request);
         $data = $this->recentActivities($data);
-        if (auth()->id() == 1) {
-            $data['location_id'] = [];
-        } else {
-            $data['location_id'] = ACL::getUserCentres();
-        }
+        $data['location_id'] = auth()->id() == 1 ? [] : ACL::getUserCentres();
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
-
         return view('admin.activity', $data);
     }
 
     public function datatable(Request $request)
     {
-        if (! Gate::allows('dashboard_upcomings')) {
+        if (!Gate::allows('dashboard_upcomings')) {
             return [];
         }
         $filter = $this->getTableFilter($request->all());
 
         $today = Carbon::now()->format('Y-m-d');
 
-        $todayTime = Carbon::now()->timezone('Asia/Karachi')->format('H:i').':00';
+        $todayTime = Carbon::now()->timezone('Asia/Karachi')->format('H:i') . ':00';
 
         if ($request->has('sort')) {
 
@@ -195,7 +190,6 @@ class HomeController extends Controller
             ];
 
             $countQuery->where($where);
-
         } elseif (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
@@ -261,7 +255,6 @@ class HomeController extends Controller
             ];
 
             $resultQuery->where($where);
-
         } elseif (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
@@ -289,7 +282,6 @@ class HomeController extends Controller
 
             $todayData = $todayResult->whereDate('scheduled_date', $today)
                 ->where('appointments.scheduled_time', '>=', $todayTime)->pluck('appointments.id')->toArray();
-
         }
 
         $Appointments = $resultQuery->orWhereIn('appointments.id', $todayData)->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
@@ -336,7 +328,7 @@ class HomeController extends Controller
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
                     'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
-                    'scheduled_date' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'scheduled_date' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
                     'region_id' => (array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A',
@@ -385,7 +377,7 @@ class HomeController extends Controller
     {
 
         $data['collection'] = 0;
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['collection'] = null;
 
             return $data;
@@ -484,19 +476,18 @@ class HomeController extends Controller
                     }
                     break;
             }
-
         }
         $day = $request->type ?? 'today';
         $dataArray = $data[$day];
 
         $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
-          // Step 2 and 3: Calculate the percentage for each slice
-          for ($i = 1; $i < count($dataArray); $i++) {
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
             $percentage = ($dataArray[$i][1] / $totalValue) * 100;
 
             $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
-          }
+        }
 
         $data[$day] = $dataArray;
 
@@ -566,7 +557,6 @@ class HomeController extends Controller
                     }
                     break;
             }
-
         }
 
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
@@ -773,17 +763,17 @@ class HomeController extends Controller
             }
         }
 
-$day = $request->type == null ? "today" : $request->type;
-$dataArray = $data[$day];
+        $day = $request->type == null ? "today" : $request->type;
+        $dataArray = $data[$day];
 
-$totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
-          // Step 2 and 3: Calculate the percentage for each slice
-          for ($i = 1; $i < count($dataArray); $i++) {
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
             $percentage = ($dataArray[$i][1] / $totalValue) * 100;
 
             $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
-          }
+        }
 
         $data[$day] = $dataArray;
 
@@ -830,9 +820,9 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                         foreach ($packagesadvances as $packagesadvance) {
                             if (
                                 $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
+                                $packagesadvance->is_adjustment == '0' &&
+                                $packagesadvance->is_tax == '0' &&
+                                $packagesadvance->is_cancel == '0'
                             ) {
                                 switch ($packagesadvance->cash_flow) {
                                     case 'in':
@@ -904,7 +894,6 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1264,7 +1253,6 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1386,7 +1374,6 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1432,9 +1419,9 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                         foreach ($packagesadvances as $packagesadvance) {
                             if (
                                 $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
+                                $packagesadvance->is_adjustment == '0' &&
+                                $packagesadvance->is_tax == '0' &&
+                                $packagesadvance->is_cancel == '0'
                             ) {
                                 switch ($packagesadvance->cash_flow) {
                                     case 'in':
@@ -1506,7 +1493,6 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1582,7 +1568,7 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                         foreach ($todayRecords as $todayRecord) {
                             if ($todayRecord->location_id == $location->id) {
                                 $data[] = [
-                                    $location->city->name.' - '.$location->name,
+                                    $location->city->name . ' - ' . $location->name,
                                     $todayRecord->total_price,
                                 ];
                                 $total += $todayRecord->total_price;
@@ -1595,14 +1581,14 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
             $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
-          // Step 2 and 3: Calculate the percentage for each slice
-          for ($i = 1; $i < count($dataArray); $i++) {
-            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+            // Step 2 and 3: Calculate the percentage for each slice
+            for ($i = 1; $i < count($dataArray); $i++) {
+                $percentage = ($dataArray[$i][1] / $totalValue) * 100;
 
-            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
-          }
+                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+            }
 
-        $data = $dataArray;
+            $data = $dataArray;
 
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
@@ -1654,7 +1640,7 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                         foreach ($todayRecords as $todayRecord) {
                             if ($todayRecord->location_id == $location->id) {
                                 $data[] = [
-                                    $location->city->name.' - '.$location->name,
+                                    $location->city->name . ' - ' . $location->name,
                                     $todayRecord->total_price,
                                 ];
                                 $total += $todayRecord->total_price;
@@ -1814,7 +1800,6 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
                         $data['yesterday'][] = $record;
                     }
                 }
-
             }
 
             if ($request->type == 'week') {
@@ -1911,22 +1896,22 @@ $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
         }
 
         $day = $request->type == null ? "today" : $request->type;
-$dataArray = $data[$day];
+        $dataArray = $data[$day];
 
-// Step 1: Calculate the total value
-$totalValue = 0;
-for ($i = 1; $i < count($dataArray); $i++) {
-  $totalValue += $dataArray[$i][1];
-}
+        // Step 1: Calculate the total value
+        $totalValue = 0;
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $totalValue += $dataArray[$i][1];
+        }
 
-// Step 2 and 3: Calculate the percentage for each slice
-for ($i = 1; $i < count($dataArray); $i++) {
-  $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
 
-  $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
-}
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
 
-$data[$day] = $dataArray;
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -2077,7 +2062,6 @@ $data[$day] = $dataArray;
                         $data['yesterday'][] = $record;
                     }
                 }
-
             }
 
             if ($request->type == 'week') {
@@ -2232,7 +2216,7 @@ $data[$day] = $dataArray;
     private function consultancies($data, $start_date, $end_date)
     {
 
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['all_consultancies'] = null;
             $data['done_consultancies'] = null;
 
@@ -2251,7 +2235,7 @@ $data[$day] = $dataArray;
     private function treatments($data, $start_date, $end_date)
     {
 
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['all_treatments'] = null;
             $data['done_treatments'] = null;
 
@@ -2273,7 +2257,7 @@ $data[$day] = $dataArray;
     private function leads($data, $location_id, $start, $end)
     {
 
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['leads'] = false;
             $data['totalLeads'] = false;
 
@@ -2283,12 +2267,12 @@ $data[$day] = $dataArray;
         $where[] = [
             'leads.created_at',
             '>=',
-            $start.' 00:00:00',
+            $start . ' 00:00:00',
         ];
         $where[] = [
             'leads.created_at',
             '<=',
-            $end.' 23:59:59',
+            $end . ' 23:59:59',
         ];
 
         $query = Leads::join('users', 'users.id', '=', 'leads.patient_id')
@@ -2322,7 +2306,7 @@ $data[$day] = $dataArray;
     private function salesByCentre(Request $request, $data)
     {
         $data['revenue'] = 0;
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['revenue'] = null;
 
             return $data;
@@ -2334,12 +2318,12 @@ $data[$day] = $dataArray;
         $where[] = [
             'created_at',
             '>=',
-            $start_date.' 00:00:00',
+            $start_date . ' 00:00:00',
         ];
         $where[] = [
             'created_at',
             '<=',
-            $end_date.' 23:59:59',
+            $end_date . ' 23:59:59',
         ];
         $todayRecords = \App\Models\Invoices::where($where)
             ->whereIn('location_id', ACL::getUserCentres())
@@ -2366,19 +2350,19 @@ $data[$day] = $dataArray;
 
     private function recentActivities($data)
     {
-
-        if (! Gate::allows('dashboard_recent_activities')) {
+        if (!Gate::allows('dashboard_recent_activities')) {
             return $data['recent_activities'] = [
                 'finance_log' => [],
                 'appointment_log' => [],
                 'unauthorized' => true,
             ];
         }
+
         $centres = ACL::getUserCentres();
-
         $center_names = Locations::whereIn('id', $centres)->pluck('name')->toArray();
-        $activities = Activity::whereIn('location', $center_names)->whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
-
+        $activities = Activity::with([
+            'plan' => fn ($q) => $q->select('id', 'name')
+        ])->whereIn('location', $center_names)->whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
         return $data['recent_activities'] = [
             'finance_log' => $activities,
         ];
@@ -2409,11 +2393,9 @@ $data[$day] = $dataArray;
             }
 
             return $query->get();
-
         } catch (\Exception $e) {
             return collect();
         }
-
     }
 
     private function viewLog()
@@ -2502,20 +2484,18 @@ $data[$day] = $dataArray;
                         break;
                 }
 
-                if (! isset($data[$audit_trail->id]['scheduled_date'])) {
+                if (!isset($data[$audit_trail->id]['scheduled_date'])) {
 
                     unset($data[$audit_trail->id]);
                 }
 
-                if (! isset($data[$audit_trail->id]['appointment_type_id'])) {
+                if (!isset($data[$audit_trail->id]['appointment_type_id'])) {
 
                     unset($data[$audit_trail->id]);
                 }
-
             }
         }
 
         return $data;
-
     }
 }
