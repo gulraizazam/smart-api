@@ -484,7 +484,7 @@ class HomeController extends Controller
 
         // Step 2 and 3: Calculate the percentage for each slice
         for ($i = 1; $i < count($dataArray); $i++) {
-            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
 
             $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
         }
@@ -768,7 +768,7 @@ class HomeController extends Controller
 
         // Step 2 and 3: Calculate the percentage for each slice
         for ($i = 1; $i < count($dataArray); $i++) {
-            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
 
             $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
         }
@@ -1581,7 +1581,7 @@ class HomeController extends Controller
 
             // Step 2 and 3: Calculate the percentage for each slice
             for ($i = 1; $i < count($dataArray); $i++) {
-                $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
 
                 $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
             }
@@ -1901,7 +1901,7 @@ class HomeController extends Controller
 
         // Step 2 and 3: Calculate the percentage for each slice
         for ($i = 1; $i < count($dataArray); $i++) {
-            $percentage = ($dataArray[$i][1] / $totalValue) * 100;
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
 
             $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
         }
