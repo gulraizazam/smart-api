@@ -38,6 +38,9 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
+                                        <input type="hidden" id="patient_id_url" value="{{ Request::get('patient_id') }}">
+                                        <input type="hidden" id="report_type_url" value="{{ Request::get('report_type') }}">
+
                                         <div class="form-group col-md-3 "
                                              id="report_type_div">
                                             {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
@@ -50,7 +53,7 @@
                                         </div>
                                         <div class="form-group col-md-2">
                                             <label>Patient Search:</label>
-                                            <input class="form-control filter-field appointment_patient_id" onchange="SetPatient()">
+                                            <input class="form-control filter-field appointment_patient_id">
                                             <input type="hidden" class="filter-field search_field" id="appointment_patient_id" value="">
                                             <input type="hidden" class="filter-field search_field" id="patient_id" value="">
 
