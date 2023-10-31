@@ -1,5 +1,17 @@
 jQuery(document).ready(function() {
     patientSearch('appointment_patient_id');
+    let patientId = $("#patient_id_url").val();
+    let reportType = $("#report_type_url").val();
+    $(".appointment_patient_id").val(patientId).trigger("keyup");
+    $("#report_types").val(reportType).trigger("change");
+
+    if(patientId !== ''){
+$("#date_range").val('');
+    }
+
+    setTimeout(function() {
+        $('.suggestion-list li:first').click();
+    }, 2000);
 })
 $('#date_range_arrival').daterangepicker({
     locale: {

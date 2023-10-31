@@ -202,7 +202,6 @@
 
             function SetPatient() {
                 $("#filter_patient_id").val($("#appoint_search_patient").val());
-
             }
 
             function SetLead() {
