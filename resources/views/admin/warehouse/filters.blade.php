@@ -27,7 +27,7 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Manager Phone:</label>
-            <input type="text" class="form-control filter-field" placeholder="Enter Manager Phone"
+            <input type="number" class="form-control filter-field" placeholder="Enter Manager Phone"
                 id="search_manager_phone" />
         </div>
         <div class="col-lg-3 mb-lg-0 mb-6 @if ($errors->has('date_range')) has-error @endif">
@@ -50,7 +50,7 @@
                 <option value="">Select</option>
             </select>
         </div>
-        
+
         @if (\Illuminate\Support\Facades\Gate::allows('view_inactive_warehouse'))
             <div class="col-lg-3 mb-lg-0 mb-6">
                 <label>Status:</label>

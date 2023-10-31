@@ -29,7 +29,7 @@
 
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>FDO Phone:</label>
-            <input type="text" class="form-control filter-field" placeholder="Enter FDO Phone" id="search_fdo_phone" />
+            <input type="number" class="form-control filter-field" placeholder="Enter FDO Phone" id="search_fdo_phone" />
         </div>
         @if(\Illuminate\Support\Facades\Gate::allows("view_inactive_centres"))
             <div class="col-lg-3 mb-lg-0 mb-6">
