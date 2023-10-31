@@ -1395,9 +1395,6 @@
                 });
                 google.setOnLoadCallback(function() {
                     var data = google.visualization.arrayToDataTable(pie);
-                    /* var options = {
-                        colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-                    }; */
                     var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
                     chart.draw(data);
                 });
@@ -1412,9 +1409,6 @@
                 });
                 google.setOnLoadCallback(function() {
                     var data = google.visualization.arrayToDataTable(centerRevenue);
-                    var options = {
-                        colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-                    };
                     var chart = new google.visualization.PieChart(document.getElementById('revenue-centre'));
                     chart.draw(data, options);
                 });
