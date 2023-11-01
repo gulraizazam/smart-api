@@ -288,7 +288,10 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
     // Package route start
     Route::get('plans/log/{id}/{type}', [PackagesController::class, 'packagelog'])->name('packages.log');
+    Route::get('view-package/{id}', [PackagesController::class, 'viewPackage'])->name('packages.view.package');
+
     Route::resource('packages', PackagesController::class)->only('index')->middleware('permission:plans_manage');
+
     // Package Route end
 
     // Non Refunds Route start
