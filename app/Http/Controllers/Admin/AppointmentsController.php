@@ -1641,7 +1641,7 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
-        
+       
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1865,6 +1865,8 @@ class AppointmentsController extends Controller
             // Send Promotion SMS
             $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
+            GeneralFunctions::saveActivityLogs('booked', 'Consultancy', $appointment_data);
+           
             /**
              * Dispatch Elastic Search Index
              */
@@ -4654,6 +4656,7 @@ class AppointmentsController extends Controller
         $message = 'Record has been created successfully.';
         $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
         GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
+        GeneralFunctions::saveActivityLogs('booked', 'Treatment', $appointment_data);
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,

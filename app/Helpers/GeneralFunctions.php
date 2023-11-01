@@ -20,6 +20,7 @@ use App\Models\Appointments;
 use App\Models\AppointmentLog;
 use Illuminate\Support\Carbon;
 use App\HelperModule\ApiHelper;
+use App\Models\Activity;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -726,7 +727,7 @@ class GeneralFunctions
             //
         }
     }
-
+    
     public static function getFDM($location_ids = null)
     {
         $fdo_ids = [];
@@ -1194,4 +1195,33 @@ class GeneralFunctions
 
         return $stock_quantity;
     }
+    public static function saveActivityLogs($action, $activityType, $data)
+    {
+
+        try {
+            $location = Locations::find($data['location_id']);
+            $service = Services::find($data['service_id']);
+            $patient = Patients::find($data['patient_id']);
+           
+            Activity::create([
+                'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
+                'action' => $action,
+                'appointment_type' => $activityType,
+                'activity_type' => $activityType,
+                'location' =>$location ? $location->name : '',
+                'centre_id' =>$location ? $location->id : NULL,
+                'service_id' =>$service ? $service->id :NULL,
+                'service' =>$service ? $service->name :NULL,
+                'patient_id' =>$patient ? $patient->id :NULL,
+                'patient' =>$patient ? $patient->name :NULL,
+               
+            ]);
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+   
+    
 }
