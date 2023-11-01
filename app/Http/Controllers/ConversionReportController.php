@@ -30,21 +30,7 @@ class ConversionReportController extends Controller
         return view('admin.reports.conversion', get_defined_vars());
     }
     
-    public function activity_logs(){    
-        $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
-        $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
-        $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
-        $select_All = ['' => 'All'];
-        $users = ($select_All + $employees->toArray() + $operators->toArray());
-        $operators->prepend('All', '');
-        $locations = Locations::getActiveSorted(ACL::getUserCentres());
-        if(Auth::user()->hasRole('FDM')){
-        }else{
-            $locations->prepend('All', '');
-        }
-        $locations_com = Locations::getActiveSorted(ACL::getUserCentres());    
-        return view('admin.reports.activity_logs', get_defined_vars());
-    }
+   
 
     public function LoadConversionReport(Request $request)
     {

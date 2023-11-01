@@ -119,6 +119,7 @@ class HomeController extends Controller
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+      
         return view('admin.activity', $data);
     }
 
@@ -2355,10 +2356,15 @@ class HomeController extends Controller
         }
 
         $centres = ACL::getUserCentres();
+        
         $center_names = Locations::whereIn('id', $centres)->pluck('name')->toArray();
         $activities = Activity::with([
             'plan' => fn ($q) => $q->select('id', 'name')
-        ])->whereIn('location', $center_names)->whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
+        ])->whereIn('location', $center_names)
+        ->whereIn('action', ['received','consumed'])
+        ->whereDate('created_at', Carbon::now()
+        ->format('Y-m-d'))->latest()->get();
+        
         return $data['recent_activities'] = [
             'finance_log' => $activities,
         ];
