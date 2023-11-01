@@ -11,12 +11,35 @@ class Activity extends Model
 
     protected $table = 'activities';
 
-    protected $fillable = ['planId', 'action', 'service', 'appointment_type', 'patient', 'created_by', 'invoice_id', 'amount'];
+    protected $guarded = [];
 
     public $timestamps = false;
 
     public function plan()
     {
         return $this->belongsTo(Plan::class, 'planId');
+    }
+
+    public function serviceR()
+    {
+        return $this->belongsTo(Services::class, 'service_id');
+    }
+    
+
+    public function centre()
+    {
+        return $this->belongsTo(Locations::class, 'centre_id');
+    }
+    
+
+    public function patientR()
+    {
+        return $this->belongsTo(Patients::class, 'patient_id');
+    }
+    
+    
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 }

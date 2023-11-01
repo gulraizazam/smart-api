@@ -850,6 +850,7 @@ class PackagesController extends Controller
             $data_package['created_at'] = Filters::getCurrentTimeStamp();
             $data_package['updated_at'] = Filters::getCurrentTimeStamp();
             $package = Packages::createRecord($data_package, $request);
+            
             /*End*/
             if ($request->cash_amount == '0') {
                 // Commit Transaction
@@ -876,6 +877,7 @@ class PackagesController extends Controller
                 /////Save activity////
                 $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
+                
                 $activity = new Activity();
                 $activity->action = 'received';
                 $activity->patient = $patient->name;
@@ -891,7 +893,7 @@ class PackagesController extends Controller
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
                 // Commit Transaction
                 DB::commit();
-
+                
                 return response()->json([
                     'status' => true,
                 ]);
