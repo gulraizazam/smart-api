@@ -969,7 +969,23 @@
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
                                         </i>
-                                        <span class="menu-text">Conversion Report </span>
+                                        <span class="menu-text">Conversion</span>
+                                    </a>
+                                </li>
+
+                            </ul>
+                        </div>
+                    @endcan
+                    @can('activity_logs_load')
+                        <div class="menu-submenu">
+                            <i class="menu-arrow"></i>
+                            <ul class="menu-subnav">
+                                <li class="menu-item {{ activeMenu('admin.reports.activity_logs') }}" aria-haspopup="true">
+                                    <a href="{{ route('admin.reports.activity_logs') }}" class="menu-link">
+                                        <i class="menu-bullet menu-bullet-dot">
+                                            <span></span>
+                                        </i>
+                                        <span class="menu-text">Activity Logs </span>
                                     </a>
                                 </li>
 

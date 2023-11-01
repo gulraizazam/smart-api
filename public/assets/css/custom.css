@@ -737,7 +737,16 @@ select2-container--default .select2-selection--single .select2-selection__render
 .select2-container.select2-container--default.select2-container--open {
     z-index: 111111;
 }
-
+.custom_timeline.timeline.timeline-6 .timeline-item .timeline-label{
+    width: 175px;
+}
+.custom_timeline.timeline.timeline-6:before {
+    left: 176px;
+    top: 4px;
+}
+.custom_timeline.timeline.timeline-6 .timeline-item{
+    margin-bottom: 2.1rem;
+}
 @media screen and (min-width: 1350px) {
     .horizontal-nav-bar-li p {
         font-size: 12px;
