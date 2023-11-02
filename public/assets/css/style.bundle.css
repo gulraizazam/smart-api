@@ -65923,6 +65923,7 @@ code {
     color: #7E8299;
     background-color: #ecf1f6 !important;
     border-radius: 0.42rem;
+    width: auto;
 }
 .datatable.datatable-default > .datatable-pager > .datatable-pager-info .datatable-pager-size .btn.dropdown-toggle .filter-option, .datatable.datatable-default > .datatable-pager > .datatable-pager-info .datatable-pager-size .btn.dropdown-toggle:after,
 .datatable.datatable-default > .datatable-pager > .datatable-pager-info .datatable-pager-size .btn.dropdown-toggle i {
