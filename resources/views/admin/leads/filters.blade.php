@@ -24,7 +24,7 @@
 
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Phone:</label>
-            <input type="text" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
+            <input type="number" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
         </div>
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>City:</label>

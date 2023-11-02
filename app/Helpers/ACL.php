@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Created by PhpStorm.
  * User: REDSignal
@@ -8,13 +9,15 @@
 
 namespace App\Helpers;
 
-use App\Models\Cities;
-use App\Models\DoctorHasLocations;
-use App\Models\Locations;
-use App\Models\Regions;
-use App\Models\User;
 use Auth;
 use Config;
+use App\Models\User;
+use App\Models\Cities;
+use App\Models\Regions;
+use App\Models\Locations;
+use App\Models\Warehouse;
+use App\Models\DoctorHasLocations;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 
 class ACL
 {
@@ -26,7 +29,7 @@ class ACL
     public static function getUserCentres()
     {
         if (Auth::user()->id == 1) {
-            $locations = Locations::whereActive(1)->where('name' ,'!=','All Centres')->get()->pluck('id');
+            $locations = Locations::whereActive(1)->where('name', '!=', 'All Centres')->get()->pluck('id');
         } else {
             if (Auth::user()->user_type_id == Config::get('constants.practitioner_id')) {
                 $locations = DoctorHasLocations::where('user_id', '=', Auth::user()->id)->groupBy('location_id')->get()->pluck('location_id');
@@ -34,6 +37,16 @@ class ACL
                 $locations = Auth::user()->user_has_locations()->pluck('location_id');
             }
         }
+        if ($locations) {
+            return $locations->toArray();
+        }
+
+        return [];
+    }
+
+    public static function getUserWarehouse()
+    {
+        $locations = Auth::user()->user_has_warehouse()->pluck('warehouse_id');
         if ($locations) {
             return $locations->toArray();
         }
@@ -83,7 +96,6 @@ class ACL
                     ->where('account_id', '=', Auth::User()->account_id)
                     ->get()->pluck('city_id');
             }
-
         }
 
         if ($cities) {

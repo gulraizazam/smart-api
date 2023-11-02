@@ -28,34 +28,63 @@
                 <div class="form-group">
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Brand</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Brand <span class="text text-danger">*</span></label>
                             <select id="add_products_brand" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="brand_id">
-
                             </select>
                         </div>
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price<small> (per unit)</small></label>
-                            <input type="text" id="sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Purchase Price<small> (per unit)</small> <span class="text text-danger">*</span></label>
+                            <input type="number" id="purchase_price" name="purchase_price" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Purchase Price<small> (per unit)</small></label>
-                            <input type="text" id="purchase_price" name="purchase_price" class="form-control form-control-lg form-control-solid mb-2">
+                        <div class="fv-row col-md-6" id="sale_price_section">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price<small> (per unit)</small></label>
+                            <input type="number" id="sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                     </div>
                     <div class="row">
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Quantity</label>
-                            <input type="text" id="quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Quantity <span class="text text-danger">*</span></label>
+                            <input type="number" id="quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Total Purchase Price</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Total Purchase Price <span class="text text-danger">*</span></label>
                             <input type="text" id="total_purchase_price" name="total_purchase_price" class="form-control form-control-lg form-control-solid mb-2" readonly="readonly">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0" >Product Type <span class="text text-danger">*</span></label>
+                            <select id="add_product_type" class="form-control form-control mb-3 mb-lg-0" name="product_type">
+                                <option value="">Select Product Type</option>
+                                <option value="in_house_use">In House Use</option>
+                                <option value="for_sale">For Sale</option>
+                            </select>
+                        </div>
+                        <div class="fv-row col-md-6" style="display: none" id="select_option">
+                            <label class="required fw-bold fs-6 mb-2 pl-0" >Select Option <span class="text text-danger">*</span></label>
+                            <select id="add_product_type_option" class="form-control form-control mb-3 mb-lg-0" name="product_type_option">
+                                <option value="">Select Option</option>
+                                <option value="in_warehouse">Warehouse</option>
+                                <option value="in_branch">Branch</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="fv-row col-md-6" style="display: none" id="select_centre">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre</label>
+                            <select id="add_product_centre" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
+                            </select>
+                        </div>
+                        <div class="fv-row col-md-6" style="display: none" id="select_warehouse">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse</label>
+                            <select id="add_product_warehouse" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="warehouse_id">
+                            </select>
                         </div>
                     </div>
                 </div>

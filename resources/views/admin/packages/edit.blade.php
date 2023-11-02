@@ -69,46 +69,43 @@
         </div>
 
         <form id="update_plane_form">
-
-            <input type="hidden" name="random_id_1" id="edit_random_id_1" class="form-control" >
+            <input type="hidden" name="random_id_1" id="edit_random_id_1" class="form-control">
             <input type="hidden" name="random_id" id="edit_random_id" class="form-control">
             <input type="hidden" name="slug" id="slug" class="form-control">
             <input type="hidden" id="edit_parent_id" name="parent_id">
             <input type="hidden" id="edit_location_id" name="location_id">
             <input type="hidden" name="slug_1" id="edit_slug_1" class="form-control">
-
-            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
+            <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}"
+                data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll"
+                data-kt-scroll-offset="300px">
                 <div class="form-group">
                     <div class="row">
-
                         <div class="fv-row col-md-3 mt-5 select2-search">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name</label>
                             <h3 id="edit-patient-name"></h3>
                         </div>
-
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Location</label>
                             <h3 id="edit-location-name"></h3>
                         </div>
-
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
-                            <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
+                            <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id" required>
                                 <option value="">Select Appointment</option>
                             </select>
-                        </div>    
+                            <small class="text-danger error-class"><b id='appointment_id' class="error-msg"></b></small>
+                        </div>
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="row">
-
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
                             <select id="edit_service_id" onchange="editServiceDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
                                 <option value="">Select Service</option>
                             </select>
+                            <small class="text-danger error-class"><b id='service_id' class="error-msg"></b></small>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
@@ -126,7 +123,7 @@
                                 <option value="Percentage">Percentage</option>
                             </select>
                         </div>
-                        
+
                         <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
                             <input type="text" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
@@ -136,7 +133,9 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
                             <div class="blockui input-spinner" style="display: none; background: transparent; box-shadow: none; position: absolute;margin-top: 28px;margin-left: 15%;">
                                 <span>Please wait...</span>
-                                <span><div class="spinner spinner-primary"></div></span>
+                                <span>
+                                    <div class="spinner spinner-primary"></div>
+                                </span>
                             </div>
                             <input type="text" readonly name="net_amount_1" class="form-control" id="edit_net_amount_1">
 
@@ -160,21 +159,25 @@
                     <table id="edit_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
 
                         <thead>
-                        <tr>
-                            <th>Service Name</th>
-                            <th>Regular Price</th>
-                            <th>Discount Name</th>
-                            <th>Type</th>
-                            <th>Discount Value</th>
-                            <th>Amount</th>
-                            <th>Tax </th>
-                            <th>Total.</th>
-                            <!-- <th>Is Consumed</th> -->
-                            <th>Action</th>
-                        </tr>
+                            <tr>
+                                <th>Service Name</th>
+                                <th>Regular Price</th>
+                                <th>Discount Name</th>
+                                <th>Type</th>
+                                <th>Discount Value</th>
+                                <th>Amount</th>
+                                <th>Tax </th>
+                                <th>Total.</th>
+                                <!-- <th>Is Consumed</th> -->
+                                <th>Action</th>
+                            </tr>
                         </thead>
 
-                        <tbody id="edit_plan_services"><tr class="text-center"><td colspan="8">No record found</td></tr></tbody>
+                        <tbody id="edit_plan_services">
+                            <tr class="text-center">
+                                <td colspan="8">No record found</td>
+                            </tr>
+                        </tbody>
 
                     </table>
                 </div>
@@ -188,10 +191,11 @@
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger"></span></label>
                             <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
                                 <option value="">Select Payment Mode</option>
                             </select>
+                            <small class="text-danger error-class"><b id='payment_mode_id' class="error-msg"></b></small>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
@@ -230,23 +234,23 @@
                 <table id="edit_plan_history" class="table table-bordered table-advance">
 
                     <thead>
-                    <tr>
-                        <th>Payment Mode</th>
-                        <th>Cash Flow</th>
-                        <th>Cash Amount</th>
-                        <th>Created At</th>
-                        <th>Action</th>
-                    </tr>
+                        <tr>
+                            <th>Payment Mode</th>
+                            <th>Cash Flow</th>
+                            <th>Cash Amount</th>
+                            <th>Created At</th>
+                            <th>Action</th>
+                        </tr>
                     </thead>
 
                     <tbody class="edit_plan_history">
-                    <tr>
-                        <td id="edit_payment_mode"></td>
-                        <td id="edit_cash_flow"></td>
-                        <td id="edit_cash_amount"></td>
-                        <td id="edit_Created_at"></td>
-                        <td id="edit_action"></td>
-                    </tr>
+                        <tr>
+                            <td id="edit_payment_mode"></td>
+                            <td id="edit_cash_flow"></td>
+                            <td id="edit_cash_amount"></td>
+                            <td id="edit_Created_at"></td>
+                            <td id="edit_action"></td>
+                        </tr>
                     </tbody>
 
                 </table>
@@ -257,6 +261,3 @@
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
-
-
-

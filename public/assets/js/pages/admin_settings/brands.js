@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: '40',
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -21,17 +21,17 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 'auto',
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
             return actions(data);
         }
-    }];
+    }
+];
 
 
 function actions(data) {
-
     let id = data.id;
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
@@ -102,7 +102,6 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
 
         let filters =  {
@@ -111,11 +110,9 @@ function applyFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function resetAllFilters(datatable) {
-
     $('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
@@ -124,7 +121,6 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {

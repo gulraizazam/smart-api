@@ -349,9 +349,9 @@ class Cities extends BaseModal
             $citiesids = [$citiesids];
         }
         if ($citiesids) {
-            return self::where(['account_id' => $account_id])->whereIn('id', $citiesids)->get()->getDictionary();
+            return self::where(['account_id' => $account_id,'active'=>1,'is_featured'=>1])->whereIn('id', $citiesids)->get()->getDictionary();
         } else {
-            return self::where(['account_id' => $account_id])->get()->getDictionary();
+            return self::where(['account_id' => $account_id,'active'=>1,'is_featured'=>1])->get()->getDictionary();
         }
     }
 
