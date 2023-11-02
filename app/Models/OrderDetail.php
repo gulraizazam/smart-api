@@ -9,7 +9,12 @@ class OrderDetail extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['account_id', 'order_id', 'product_id', 'discount_id', 'quantity', 'sale_price', 'discount_price', 'sale_price_after_discount', 'order_type', 'reason'];
+    protected $fillable = ['order_id', 'product_id', 'discount_id', 'quantity', 'sale_price', 'discount_price', 'sale_price_after_discount', 'order_type', 'reason', 'account_id'];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
 
     /**
      * Create Record
@@ -20,15 +25,20 @@ class OrderDetail extends BaseModal
     public static function createRecord($request, $account_id, $order_id)
     {
         $data = $request->all();
-        foreach ($data['data'] as $order) {
-            // Set Account ID and Order ID
-            $order['account_id'] = $account_id;
-            $order['order_id'] = $order_id;
-            $order['stock_type'] = 'out';
-            $stock = Stock::create($order);
-            $record = self::create($order);
-        }
 
+        $combinedData = array_combine($data['product_id'], $data['product_price']);
+        $products = array_count_values($data['product_id']);
+        foreach ($products as $product_id => $quantity) {
+            $data['product_id'] = $product_id;
+            $data['quantity'] = $quantity;
+            $data['account_id'] = $account_id;
+            $data['order_id'] = $order_id;
+            $data['sale_price'] = $combinedData[$product_id];
+            $data['stock_type'] = 'out';
+
+            Stock::create($data);
+            self::create($data);
+        }
         return true;
     }
 
@@ -40,26 +50,34 @@ class OrderDetail extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id)
     {
-        $old_data = (self::find($id))->toArray();
-
         $data = $request->all();
 
         // Set Account ID
         $data['account_id'] = $account_id;
 
         $record = self::where([
-            'id' => $id,
+            'order_id' => $id,
             'account_id' => $account_id,
         ])->first();
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
+        $stock = Stock::where([
+            'order_id' => $id,
+            'account_id' => $account_id,
+        ])->first();
+
+        $stock->update([
+            'account_id' => $account_id,
+            'product_id' => $data['product_id'],
+            'order_id' => $id,
+            'quantity' => $data['quantity'],
+            'stock_type' => 'out',
+        ]);
 
         $record->update($data);
-
         return $record;
-
     }
 
     /**
@@ -77,39 +95,60 @@ class OrderDetail extends BaseModal
         ])->get();
     }
 
-    public static function refund($id, $new_order_id)
+    public static function refund($id, $new_order_id, $request, $account_id)
     {
+        $data = $request->all();
 
-        $old_orders_detail = self::where('order_id', $id)->get();
-        foreach ($old_orders_detail as $order_detail) {
-            $new_order_detail = [];
-            $new_order_detail['account_id'] = $order_detail->account_id;
-            $new_order_detail['order_id'] = $new_order_id;
-            $new_order_detail['product_id'] = $order_detail->product_id;
-            $new_order_detail['discount_id'] = $order_detail->discount_id;
-            $new_order_detail['quantity'] = $order_detail->quantity;
-            $new_order_detail['sale_price'] = $order_detail->sale_price;
-            $new_order_detail['discount_price'] = $order_detail->discount_price;
-            $new_order_detail['sale_price_after_discount'] = $order_detail->sale_price_after_discount;
-            $new_order_detail['order_type'] = 'refund';
-            $new_order_detail['reason'] = $order_detail->reason;
-            $refund = self::create($new_order_detail);
-            $new_order_detail['stock_type'] = 'in';
-            $stock = Stock::create($new_order_detail);
+        $refund_product_id = isset($request->refund_product_id) ? explode(",", $request->refund_product_id) : [];
+        $refund_product_price = isset($request->refund_product_price) ? explode(",", $request->refund_product_price) : [];
+
+        $combinedData = array_combine($refund_product_id, $refund_product_price);
+        $refund_products = array_count_values($refund_product_id);
+
+        foreach ($refund_products as $product_id => $quantity) {
+            $data['product_id'] = $product_id;
+            $data['quantity'] = $quantity;
+            $data['account_id'] = $account_id;
+            $data['order_id'] = $new_order_id;
+            $data['sale_price'] = $combinedData[$product_id];
+            $data['stock_type'] = 'in';
+
+            $check_order_detail = self::where(['order_id' => $new_order_id, 'product_id' => $product_id])->first();
+
+            /* old product quantity update */
+            $old_orders_detail = self::where(['order_id' => $id, 'product_id' => $product_id])->first();//dd( $old_orders_detail->quantity - $quantity, $product_id);
+            $old_orders_detail->quantity = $old_orders_detail->quantity - $quantity;
+            $old_orders_detail->save();
+
+            Stock::create($data);
+            if ($check_order_detail) {
+                $data['quantity'] = $quantity + $check_order_detail->quantity;
+                $check_order_detail->update($data);
+            } else {
+                self::create($data);
+            }
         }
+        return true;
     }
 
-   /** Get the patients of order.
-    */
-   public function product()
-   {
-       return $this->belongsTo(Product::class, 'product_id');
-   }
+    /** Get the patients of order.
+     */
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
 
     /** Get the patients of order.
      */
     public function discount()
     {
         return $this->belongsTo(Discounts::class, 'discount_id');
+    }
+
+    public static function priceCalculate($request)
+    {
+        $product = Product::where(['id' => $request->product_id])->first();
+        $total_price = $product->sale_price * $request->quantity;
+        return $total_price;
     }
 }

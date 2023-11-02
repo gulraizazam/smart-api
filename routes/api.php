@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\InventoryReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
@@ -502,6 +503,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::patch('warehouse/active/{id}', [WarehouseController::class, 'active'])->name('warehouse.active');
     Route::post('warehouse/status', [WarehouseController::class, 'status'])->name('warehouse.status');
     Route::get('warehouse/sort', [WarehouseController::class, 'sortorder'])->name('warehouse.sort');
+    Route::post('reports/inventory_reports/result', [InventoryReportController::class, 'reportResult'])->name('reports.inventory_report_result');
+    Route::post('reports/inventory_reports/stock', [InventoryReportController::class, 'stockReport'])->name('reports.inventory_report_stock');
     /*Warehouseroutes*/
 
     /*Brand routes*/
@@ -539,13 +542,17 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('orders/refund/datatable', [OrdersController::class, 'refunddatatable'])->name('orders.refund.datatable');
     Route::get('orders/getproducts', [OrdersController::class, 'getProducts'])->name('orders.getproducts');
     Route::get('orders/getdiscounts', [OrdersController::class, 'getDiscounts'])->name('orders.getdiscounts');
+    Route::get('orders/displayInvoice/{id}', [OrdersController::class, 'displayInvoiceAppointment'])->name('orders.invoiceDisplay');
+    Route::get('invoices/pdf/{id}/{download?}', [OrdersController::class, 'invoicePdf'])->name('orders.invoice_pdf');
 
     Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
     Route::get('orders/{id}/edit', [OrdersController::class, 'edit'])->name('orders.edit');
     Route::post('orders/update/{id}', [OrdersController::class, 'update'])->name('orders.update');
 
+
     Route::get('orders/refund/{id}/detail', [OrdersController::class, 'orderRefundDetail'])->name('orders.refund.detail');
     Route::post('orders/{id}/refund', [OrdersController::class, 'orderRefund'])->name('orders.refund');
+    //Route::delete('orders/refund/{id}', [OrdersController::class, 'orderRefundDestroy'])->name('orders.refund.destroy');
     Route::delete('orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
 
     /*Order routes*/

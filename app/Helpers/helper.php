@@ -2,6 +2,7 @@
 
 use App\Helpers\Filters;
 use App\Models\PackageAdvances;
+use Illuminate\Support\Facades\Auth;
 
 function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null)
 {
@@ -18,7 +19,7 @@ function getSortBy($request, $orderBy = 'name', $order = 'asc', $prefix = null)
     return [$orderBy, $order];
 }
 
-function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 20)
+function getPaginationElement($request, $iTotalRecords, $defaultPerPage = 30)
 {
 
     $iDisplayLength = intval($request->pagination['perpage'] ?? $defaultPerPage);
@@ -133,4 +134,16 @@ function getPatientInfo()
         $total_cash_out,
         $balance,
     ];
+}
+
+if (! function_exists('activityLog')) {
+    function activityLog($logName, $subjectModel, $type, $record, $message)
+    {
+        activity($logName)
+            ->performedOn($subjectModel)
+            ->causedBy(Auth::id())
+            ->setEvent($type)
+            ->withProperties(['attributes' => $record])
+            ->log($message);
+    }
 }
