@@ -4656,7 +4656,7 @@ class AppointmentsController extends Controller
         $message = 'Record has been created successfully.';
         $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
         GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
-        GeneralFunctions::saveActivityLogs('booked', 'Treatment', $appointment_data);
+        //GeneralFunctions::saveActivityLogs('booked', 'Treatment', $appointment_data);
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
