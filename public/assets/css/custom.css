@@ -738,10 +738,10 @@ select2-container--default .select2-selection--single .select2-selection__render
     z-index: 111111;
 }
 .custom_timeline.timeline.timeline-6 .timeline-item .timeline-label{
-    width: 175px;
+    width: 121px;
 }
 .custom_timeline.timeline.timeline-6:before {
-    left: 176px;
+    left: 122px;
     top: 4px;
 }
 .custom_timeline.timeline.timeline-6 .timeline-item{
