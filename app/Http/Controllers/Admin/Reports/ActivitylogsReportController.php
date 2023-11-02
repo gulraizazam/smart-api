@@ -55,7 +55,7 @@ class ActivitylogsReportController extends Controller
         ->whereHas('patientR')
         ->whereHas('user')
         ->with(['serviceR', 'centre' , 'patientR','user'])
-        ->whereBetween('created_at', [$request->startDate, $request->endDate])
+        ->whereBetween('created_at', [$request->startDate. ' 00:00:00', $request->endDate.' 23:59:00'])
         ->when($isServicePresent,function($query) use ($request){
             $query->where('service_id',$request->service_id);
         })
