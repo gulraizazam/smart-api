@@ -301,6 +301,7 @@ function addUsers() {
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
+    $('.croxcli').hide();
 }
 
 function addLeads() {
@@ -920,6 +921,8 @@ function resetFilters() {
         $(".select-all-checkboxes").prop("checked", false)
         $(".delete-records").addClass("d-none");
     }
+
+    $('.croxcli').hide()
 }
 
 function advanceFilters() {
