@@ -587,15 +587,11 @@ function setEditData(response) {
 
         $(".display_plans").html(service_options);
 
-
-
         $(".plan_history").html(history_options);
 
         $(".package_total_price").text(package.total_price);
         $("#user_name").text(package?.user?.name)
         $("#location_name").text(package?.location?.name)
-
-
     } catch (error) {
         showException(error);
     }

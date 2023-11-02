@@ -307,3 +307,7 @@ jQuery(document).ready( function () {
     $("#date_range").val("");
 })
 
+function searchPatient() {
+    $('#search_patient_id').val($('.patient_id').val());
+    $('.patient_id').val()?$('.croxcli').show():$('.croxcli').hide();
+}

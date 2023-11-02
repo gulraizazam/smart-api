@@ -26,7 +26,7 @@
                                             <option value="month" {{ request('type') == 'month' ? 'selected' : '' }}>This
                                                 Month</option>
                                             <!-- <option value="lastmonth"
-                                                {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
                                         </select>
                                     </div>
                                 </div>
@@ -43,14 +43,14 @@
                                                     viewBox="0 0 24 24" version="1.1">
                                                     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                                         <rect x="0" y="0" width="24" height="24" />
-                                                        <rect fill="#000000" opacity="0.3" x="13" y="4"
-                                                            width="3" height="16" rx="1.5" />
-                                                        <rect fill="#000000" x="8" y="9" width="3"
-                                                            height="11" rx="1.5" />
-                                                        <rect fill="#000000" x="18" y="11" width="3"
-                                                            height="9" rx="1.5" />
-                                                        <rect fill="#000000" x="3" y="13" width="3"
-                                                            height="7" rx="1.5" />
+                                                        <rect fill="#000000" opacity="0.3" x="13" y="4" width="3"
+                                                            height="16" rx="1.5" />
+                                                        <rect fill="#000000" x="8" y="9" width="3" height="11"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="18" y="11" width="3" height="9"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="3" y="13" width="3" height="7"
+                                                            rx="1.5" />
                                                     </g>
                                                 </svg>
                                                 <span class="dashboard-counter"
@@ -66,14 +66,14 @@
                                                     viewBox="0 0 24 24" version="1.1">
                                                     <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
                                                         <rect x="0" y="0" width="24" height="24" />
-                                                        <rect fill="#000000" opacity="0.3" x="13" y="4"
-                                                            width="3" height="16" rx="1.5" />
-                                                        <rect fill="#000000" x="8" y="9" width="3"
-                                                            height="11" rx="1.5" />
-                                                        <rect fill="#000000" x="18" y="11"
-                                                            width="3" height="9" rx="1.5" />
-                                                        <rect fill="#000000" x="3" y="13"
-                                                            width="3" height="7" rx="1.5" />
+                                                        <rect fill="#000000" opacity="0.3" x="13" y="4" width="3"
+                                                            height="16" rx="1.5" />
+                                                        <rect fill="#000000" x="8" y="9" width="3" height="11"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="18" y="11" width="3" height="9"
+                                                            rx="1.5" />
+                                                        <rect fill="#000000" x="3" y="13" width="3" height="7"
+                                                            rx="1.5" />
                                                     </g>
                                                 </svg>
                                                 <span class="dashboard-counter"
@@ -176,40 +176,40 @@
                                                             <li class="centre-item">
                                                                 <a class="active" href="#location_collection_1"
                                                                     data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('today', '', '','','','');">
+                                                                    onclick="initCollectionByCentre('today');">
                                                                     Today</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_2" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', 'yesterday', '','','','');">Yesterday</a>
+                                                                    onclick="initCollectionByCentre('yesterday');">Yesterday</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_3" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '', 'last7days','', '','');">Last
+                                                                    onclick="initCollectionByCentre('last7days');">Last
                                                                     7
                                                                     Days</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_3" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '','', 'week', '','');">This
+                                                                    onclick="initCollectionByCentre('week');">This
                                                                     Week</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#location_collection_4" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '', '','', 'thismonth','');">This
+                                                                    onclick="initCollectionByCentre('thismonth');">This
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#location_collection_4" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#location_collection_4" data-toggle="tab"
+                                                                        onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
                                             </li>
                                         </ul>
-                                        <div class=" flex-column text-right d-none">
+                                        <div class="flex-column text-right d-none">
                                             <span
                                                 class="text-dark-75 font-weight-bolder font-size-h3 total-pie-chart"></span>
                                             <span class="text-muted font-weight-bold mt-2 pie-income-title">Weekly
@@ -217,44 +217,43 @@
                                         </div>
                                     </div>
                                     <div id="collection-by-centre"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
-                        @endif
-                        @if (\Illuminate\Support\Facades\Gate::allows('dashboard_unattended_report'))
-                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="unattended_payments">
+                    @endif
+                    @if (\Illuminate\Support\Facades\Gate::allows('dashboard_unattended_report'))
+                        <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;"
+                            id="unattended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
                                     <div class="card-body p-0">
-                                    <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
-                                        <span class="dashboard-counter text-uppercase">Unattended Payments</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report dashboard_unattended_report"
-                                                        href="{{ route('admin.reports.follow_up') }}" > View Report
-                                                        <i class="fa fa-angle-right"></i>
-                                                        </a>
+                                        <div
+                                            class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
+                                            <span class="dashboard-counter text-uppercase">Unattended Payments</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a class="form-control btndropdown btn_Report dashboard_unattended_report"
+                                                                href="{{ route('admin.reports.follow_up') }}"> View Report
+                                                                <i class="fa fa-angle-right"></i>
+                                                            </a>
+                                                        </div>
+                                                        <div class="btn-group">
+                                                            <a class="form-control btndropdown btn_Report dashboard_unattended_report"
+                                                                href="{{ route('admin.follow_up.download') }}"> Download
+                                                                <i class="fa fa-download ml-2"></i>
+                                                            </a>
+                                                        </div>
                                                     </div>
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report dashboard_unattended_report"
-                                                            href="{{ route('admin.follow_up.download') }}" > Download
-                                                            <i class="fa fa-angle-right"></i>
-                                                        </a>
-                                                        
-                                                    </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                        
-                                    </div>
-                                        <div class="card-spacer2 table_v_scroll" >
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
                                                 <table class="table">
-                                                
                                                     <thead>
                                                         <tr>
                                                             <th class='table-cols'>ID</th>
@@ -264,26 +263,22 @@
                                                             <th class='table-cols'>Conversion Date</th>
                                                         </tr>
                                                     </thead>
-                                                    
-                                                    <tbody id="patient-follow-up">
-                                                   
-                                                    </tbody>
-                                                    
+
+                                                    <tbody id="patient-follow-up"></tbody>
                                                 </table>
-                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended" >
+                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended">
                                             </div>
                                         </div>
-                                        
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        @endif
-                   
+                    @endif
+
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="revenue_by_centre">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -324,10 +319,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#location_revenue_3" data-toggle="tab"
-                                                                    onclick="initRevenueByCentre('lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#location_revenue_3" data-toggle="tab"
+                                                                        onclick="initRevenueByCentre('lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -340,6 +335,7 @@
                                         </div>
                                     </div>
                                     <div id="revenue-centre"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
@@ -347,33 +343,34 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_overdue_treatments'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="attended_payments">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                            style="min-height: 605px;overflow-y: hidden;">
+                                style="min-height: 605px;overflow-y: hidden;">
                                 <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                                     <div class="card-body p-0">
-                                    <div
-                                        class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
-                                        <span class="dashboard-counter text-uppercase">Overdue Treatments</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center">
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                    <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
-                                                        href="{{ route('admin.reports.follow_up') }}" > View Report
-                                                        <i class="fa fa-angle-right"></i>
-                                                        </a>
-                                                    </div>
+                                        <div
+                                            class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1 wrap_unattended_payment">
+                                            <span class="dashboard-counter text-uppercase">Overdue Treatments</span>
+                                            <ul class="nav nav-tabs d-flex align-items-center">
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
                                                         <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
-                                                        href="{{ route('admin.monthly_follow_up.download') }}"  > Download
-                                                            <i class="fa fa-angle-right"></i>
-                                                        </a>
-                                                        
+                                                            <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
+                                                                href="{{ route('admin.reports.follow_up') }}"> View Report
+                                                                <i class="fa fa-angle-right"></i>
+                                                            </a>
+                                                        </div>
+                                                        <div class="btn-group">
+                                                            <a class="form-control btndropdown btn_Report dashboard_overdue_treatments"
+                                                                href="{{ route('admin.monthly_follow_up.download') }}">
+                                                                Download
+                                                                <i class="fa fa-download ml-2"></i>
+                                                            </a>
+
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                        
-                                    </div>
+                                                </li>
+                                            </ul>
+
+                                        </div>
                                         <div class="card-spacer2 table_v_scroll">
                                             <div class='table-responsive'>
                                                 <table class="table">
@@ -387,10 +384,11 @@
                                                     </thead>
                                                     <tbody id="patient-follow-up-one-month"></tbody>
                                                 </table>
-                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
+                                                <img src="{{ asset('assets/media/loader.gif') }}"
+                                                    class="loader-img-attended">
                                             </div>
                                         </div>
-                                       
+
                                     </div>
                                 </div>
                             </div>
@@ -399,7 +397,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
                         <div class="col-lg-6 col-xxl-6 mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="revenue_by_service_category">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -417,30 +415,28 @@
                                                         <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="revenue_by_service_category_menu">
                                                             <li>
-                                                                <a class="active" href="#service_revenue_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('today', '', '', '','');">
-                                                                    Today</a>
+                                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                                    onclick="InitRevenueByServiceCategory('today');">Today</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_1" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', 'yesterday', '', '','');">Yesterday</a>
+                                                                    onclick="InitRevenueByServiceCategory('yesterday');">Yesterday</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', 'last7days', '','');">Last
+                                                                    onclick="InitRevenueByServiceCategory('last7days');">Last
                                                                     7 Days</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_3" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', '', 'thismonth','');">This
+                                                                    onclick="InitRevenueByServiceCategory('thismonth');">This
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#service_revenue_3" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#service_revenue_3" data-toggle="tab"
+                                                                        onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -453,12 +449,13 @@
                                         </div>
                                     </div>
                                     <div id="revenue-service-category"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended">
                                 </div>
                             </div>
                         </div>
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style mt-6">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="revenue_by_service">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -478,33 +475,33 @@
                                                             <li>
                                                                 <a class="active" href="#service_revenue_4"
                                                                     data-toggle="tab"
-                                                                    onclick="initRevenueByService('today', '', '','','','');">Today</a>
+                                                                    onclick="initRevenueByService('today');">Today</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_1" data-toggle="tab"
-                                                                    onclick="initRevenueByService('', 'yesterday', '','', '','');">Yesterday</a>
+                                                                    onclick="initRevenueByService('yesterday');">Yesterday</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', 'last7days','', '','');">Last
+                                                                    onclick="initRevenueByService('last7days');">Last
                                                                     7
                                                                     Days</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', '','week', '','');">This
+                                                                    onclick="initRevenueByService('week');">This
                                                                     Week</a>
                                                             </li>
                                                             <li>
                                                                 <a href="#service_revenue_3"data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', '','', 'thismonth','');">This
+                                                                    onclick="initRevenueByService('thismonth');">This
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#service_revenue_3"data-toggle="tab"
-                                                                    onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#service_revenue_3"data-toggle="tab"
+                                                                        onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -517,6 +514,7 @@
                                         </div>
                                     </div>
                                     <div id="revenue-service"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -524,7 +522,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="consultancy_status">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -566,10 +564,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                    onclick="initConsultancyByStatus('lastmonth','1');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                                        onclick="initConsultancyByStatus('lastmonth','1');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -583,6 +581,7 @@
                                         </div>
                                     </div>
                                     <div id="consultancy_by_status"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
@@ -590,7 +589,7 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;">
+                                style="min-height: 605px;" id="treatment_status">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -632,10 +631,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                    onclick="initTreatmentByStatus('lastmonth','2');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                                        onclick="initTreatmentByStatus('lastmonth','2');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -649,6 +648,7 @@
                                         </div>
                                     </div>
                                     <div id="treatment_by_status"></div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
                                 </div>
                             </div>
                         </div>
@@ -667,7 +667,8 @@
                                                     @if (Auth::user()->hasRole('Administrator') ||
                                                             Auth::user()->hasRole('Super-Admin') ||
                                                             Auth::user()->hasRole('Head of Operations') ||
-                                                            Auth::user()->hasRole('Finance') ||  Auth::user()->hasRole('HRM'))
+                                                            Auth::user()->hasRole('Finance') ||
+                                                            Auth::user()->hasRole('HRM'))
                                                         @php
                                                             $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
                                                             $locations = \App\Helpers\ACL::getUserCentres();
@@ -745,7 +746,7 @@
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">
-                                                                {{ $centres ? $centres->name :'No Centre Assigned' }}
+                                                                {{ $centres ? $centres->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         </div>
@@ -753,47 +754,48 @@
                                                 </div>
                                             </li>
                                             @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                            <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a data-id=""
-                                                            class="btn form-control btndropdown btn_Report user_period"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> This Month
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="user_wise_list">
-                                                            <li class="yesterday">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
-                                                            </li>
-                                                            <li class="last7days">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('last7days', 'user');">Last
-                                                                    7
-                                                                    Days</a>
-                                                            </li>
-                                                            <li class="week">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('week', 'user');">This
-                                                                    Week</a>
-                                                            </li>
-                                                            <li class="thismonth">
-                                                                <a href="#user_wise_ul" data-toggle="tab" class="active" active
-                                                                    onclick="initUserWiseArrival('thismonth', 'user');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <li class="lastmonth">
-                                                                <a href="#user_wise_ul" data-toggle="tab"
-                                                                    onclick="initUserWiseArrival('lastmonth', 'user');">Last
-                                                                    Month</a>
-                                                            </li>
-                                                        </ul>
+                                                <li style="border-bottom: none;">
+                                                    <div class="actions action-style p-3 mr-3">
+                                                        <div class="btn-group">
+                                                            <a data-id=""
+                                                                class="btn form-control btndropdown btn_Report user_period"
+                                                                href="javascript:;" data-toggle="dropdown"
+                                                                data-hover="dropdown" data-close-others="true"
+                                                                aria-expanded="false"> This Month
+                                                                <i class="fa fa-angle-down"></i>
+                                                            </a>
+                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
+                                                                id="user_wise_list">
+                                                                <li class="yesterday">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
+                                                                </li>
+                                                                <li class="last7days">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('last7days', 'user');">Last
+                                                                        7
+                                                                        Days</a>
+                                                                </li>
+                                                                <li class="week">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('week', 'user');">This
+                                                                        Week</a>
+                                                                </li>
+                                                                <li class="thismonth">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        class="active" active
+                                                                        onclick="initUserWiseArrival('thismonth', 'user');">This
+                                                                        Month</a>
+                                                                </li>
+                                                                <li class="lastmonth">
+                                                                    <a href="#user_wise_ul" data-toggle="tab"
+                                                                        onclick="initUserWiseArrival('lastmonth', 'user');">Last
+                                                                        Month</a>
+                                                                </li>
+                                                            </ul>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            </li>
+                                                </li>
                                             @else
                                                 <li style="border-bottom: none;">
                                                     <div class="actions action-style p-3 mr-3">
@@ -823,7 +825,8 @@
                                                                         Week</a>
                                                                 </li>
                                                                 <li class="thismonth">
-                                                                    <a href="#centre_wise_ul" data-toggle="tab" class="active" active
+                                                                    <a href="#centre_wise_ul" data-toggle="tab"
+                                                                        class="active" active
                                                                         onclick="initCentreWiseArrival('thismonth', 'centre');">This
                                                                         Month</a>
                                                                 </li>
@@ -903,39 +906,40 @@
                                                                 Auth::user()->hasRole('Super-Admin') ||
                                                                 Auth::user()->hasRole('Head of Operations') ||
                                                                 Auth::user()->hasRole('Finance'))
-                                                            <a data-id="all"
-                                                                class="btn form-control btndropdown btn_Report doctorwiseconversion"
+                                                            <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false"> All Centres
+                                                                aria-expanded="false" data-id="all"> All Centres
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @else
                                                             <a class="btn form-control btndropdown btn_Report doctorwiseconversion"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false" data-id="{{ count($centres) > 0 ? $centres[0]->id :'' }}">
+                                                                aria-expanded="false"
+                                                                data-id="{{ count($centres) > 0 ? $centres[0]->id : '' }}">
                                                                 {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
                                                         @endif
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect">
+                                                        <ul
+                                                            class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll">
                                                             @if (Auth::user()->hasRole('Administrator') ||
                                                                     Auth::user()->hasRole('Super-Admin') ||
                                                                     Auth::user()->hasRole('Head of Operations') ||
                                                                     Auth::user()->hasRole('Finance'))
-                                                                <li>
-                                                                    <a class="dropdown-item" data-period="thismonth"
-                                                                        data-id="all" onclick="GetDoctors('all')">All
+                                                                <li onclick="initDoctorWiseConversion('thismonth', 'all')">
+                                                                    <a class="dropdown-item doctor_wise_centre_id"
+                                                                        data-period="thismonth" data-id="all">All
                                                                         Centres</a>
                                                                 </li>
                                                             @endif
                                                             @foreach ($centres as $centre)
-                                                                <li>
-                                                                    <a class="dropdown-item centre-item"
-                                                                        data-period="yesterday"
-                                                                        data-id="{{ $centre->id }}"
-                                                                        onclick="GetDoctors({{ $centre->id }})">{{ $centre->name }}</a>
+                                                                <li
+                                                                    onclick="initDoctorWiseConversion('thismonth', {{ $centre->id }})">
+                                                                    <a class="dropdown-item doctor_wise_centre_id"
+                                                                        data-period="thismonth"
+                                                                        data-id="{{ $centre->id }}">{{ $centre->name }}</a>
                                                                 </li>
                                                             @endforeach
                                                         </ul>
@@ -952,7 +956,8 @@
                                                             aria-expanded="false" id="all_docs"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
                                                         </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect" id="doc_nav">
+                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll"
+                                                            id="doc_nav">
 
                                                         </ul>
                                                     </div>
@@ -971,33 +976,34 @@
                                                             id="doctor_wise_list">
                                                             <li class="today">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('today');">Today</a>
+                                                                    onclick="initDoctorWiseConversion('today', 'centre');">Today</a>
                                                             </li>
                                                             <li class="yesterday">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('yesterday');">Yesterday</a>
+                                                                    onclick="initDoctorWiseConversion('yesterday', 'centre');">Yesterday</a>
                                                             </li>
                                                             <li class="last7days">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('last7days');">Last 7
+                                                                    onclick="initDoctorWiseConversion('last7days', 'centre');">Last
+                                                                    7
                                                                     Days</a>
                                                             </li>
                                                             <li class="week">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('week');">This
+                                                                    onclick="initDoctorWiseConversion('week', 'centre');">This
                                                                     Week</a>
                                                             </li>
                                                             <li class="thismonth">
                                                                 <a href="#doctor_wise_conversion" data-toggle="tab"
                                                                     class="active" active
-                                                                    onclick="initDoctorWiseConversion('thismonth');">This
+                                                                    onclick="initDoctorWiseConversion('thismonth', 'centre');">This
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li class="lastmonth">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('lastmonth');">Last
-                                                                    Month</a>
-                                                            </li> -->
+                                                                    <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                        onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
+                                                                        Month</a>
+                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -1039,7 +1045,7 @@
                             </div>
                         </div>
                     @endif
-                   
+
                 </div>
             </div>
         </div>
@@ -1082,91 +1088,19 @@
                         $("#activitydiv").html(response);
                     },
                 });
-                
+
                 @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initUserWiseArrival('thismonth', '', 'firsttime');
-                    initDoctorWiseConversion('thismonth', 'firsttime');
+                    initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
-
                     initCentreWiseArrival('thismonth', '', 'firsttime');
-                @endif
-                @if (Auth::user()->hasRole('Administrator') ||
-                        Auth::user()->hasRole('Super-Admin') ||
-                        Auth::user()->hasRole('Head of Operations') ||
-                        Auth::user()->hasRole('Finance'))
-                    GetAllDoctors(centre_id);
-               
-                @else
-                    $('.loader-imgs').css('display', "none");
-                    GetDoctors(centre_id, 'firsttime');
+                    initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
                 @endif
 
             });
 
-            function GetAllDoctors(centre_id) {
-                var all = "all";
-                var TABLE_HTML = "";
-                $.ajax({
-                    url: route('admin.getdoctors'),
-                    type: "GET",
-                    data: {
-                        'centre_id': centre_id
-                    },
-                    cache: false,
-                    success: function(response) {
-                        jQuery('#doc_nav').html("");
-                        jQuery.each(response.doctors, function(index, doctor) {
-
-                            TABLE_HTML += " <li><a class='dropdown-item centre-item'  data-id=" + doctor
-                                .id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name +
-                                "</a></li>";
-                        });
-                        jQuery('#doc_nav').append(TABLE_HTML);
-                    },
-                });
-                let converted = 0;
-                let arrived = 0;
-                let avg_sum = 0;
-                $.ajax({
-                    url: route('admin.dashboard.all_doctor_wise_conversion'),
-                    type: 'GET',
-                    cache: false,
-                    data: {
-                        'period': 'thismonth',
-                        'centre_id': centre_id
-                    },
-                    success: function(response) {
-                        
-                        $('.loader-imgs').css('display', "none");
-                        var categories = response.data.categories
-
-                        jQuery('#categories-table-body').html("");
-                        var TABLE_HTML = "";
-                        jQuery.each(categories, function(index, category) {
-                            arrived += category.total_arrival;
-                            converted += category.total_conversion;
-                            avg_sum += category.avg;
-                            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category
-                                .service + "</td><td>" + category.total_conversion + "/" + category
-                                .total_arrival + "</td><td>" + ((category.total_conversion / category
-                                    .total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg)
-                                .toFixed(2) + "</td></tr>";
-
-                        });
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" +
-                            converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) +
-                            "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
-
-                        jQuery('#categories-table-body').append(TABLE_HTML);
-                        AllDoctorWiseConversion(response);
-                    },
-                    error: function(xhr, ajaxOptions, thrownError) {
-                        errorMessage(xhr);
-                    }
-                });
-            }
             var collection_by_center = false;
             var revenue_by_center = false;
             var revenue_by_service = false;
@@ -1189,6 +1123,7 @@
                         },
                         cache: false,
                         success: function(response) {
+                            $("#collectionbycenter .loader-img-attended").css('display','none');
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
                             @endif
@@ -1222,6 +1157,7 @@
                         },
                         cache: false,
                         success: function(response) {
+                            $("#revenue_by_centre .loader-img-attended").css('display','none');
                             let pie = response.data.pie;
                             revenueCentreChart(pie);
                         },
@@ -1241,6 +1177,7 @@
                         },
                         cache: false,
                         success: function(response) {
+                            $("#revenue_by_service .loader-img-attended").css('display', 'none');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1275,7 +1212,7 @@
                         },
                         cache: false,
                         success: function(response) {
-
+                            $("#revenue_by_service_category .loader-img-attended").css('display', 'none');
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
                             @endif
@@ -1346,7 +1283,7 @@
                         },
                         cache: false,
                         success: function(response) {
-
+                            $("#consultancy_status .loader-img-attended").css('display', 'none');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1382,7 +1319,7 @@
                         },
                         cache: false,
                         success: function(response) {
-
+                            $("#treatment_status .loader-img-attended").css('display', 'none');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1458,11 +1395,8 @@
                 });
                 google.setOnLoadCallback(function() {
                     var data = google.visualization.arrayToDataTable(pie);
-                    var options = {
-                        colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-                    };
                     var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
-                    chart.draw(data, options);
+                    chart.draw(data);
                 });
                 if (pie.length > 1) {
                     $("#collection-by-centre").css("height", "500px");
@@ -1475,9 +1409,6 @@
                 });
                 google.setOnLoadCallback(function() {
                     var data = google.visualization.arrayToDataTable(centerRevenue);
-                    var options = {
-                        colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-                    };
                     var chart = new google.visualization.PieChart(document.getElementById('revenue-centre'));
                     chart.draw(data, options);
                 });
@@ -1598,6 +1529,24 @@
                 var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
                 chart.render();
             }
+
+            $(document).on('click', '.planIdText', function () {
+                $('.planIdText').tooltip();
+                var planId = $(this).text();
+                var tempInput = $('<input>');
+                $('body').append(tempInput);
+                tempInput.val(planId).select();
+                document.execCommand('copy');
+                tempInput.remove();
+
+                // Show a tooltip to indicate that the plan ID has been copied
+                $(this).attr('data-original-title', 'Copied! '+ planId).tooltip('show');
+                setTimeout(() => {
+                    $(this).attr('data-original-title', 'Click to copy');
+                }, 5000);
+            });
+
+            
         </script>
     @endpush
 @endsection

@@ -12,12 +12,15 @@ namespace App\Helpers;
 use Config;
 use App\Models\User;
 use App\Models\Leads;
+use App\Models\Stock;
 use App\Models\Patients;
 use App\Models\Services;
 use App\Models\Locations;
 use App\Models\Appointments;
 use App\Models\AppointmentLog;
 use Illuminate\Support\Carbon;
+use App\HelperModule\ApiHelper;
+use App\Models\Activity;
 use App\Models\PackageAdvances;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -176,27 +179,26 @@ class GeneralFunctions
                     }
                 }
             }
-            if(Gate::allows('view_inactive_services')){
+            if (Gate::allows('view_inactive_services')) {
                 $services = Services::where('slug', '!=', 'all')
                     ->where(['parent_id' => 0])
                     ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                     ->orderBy('id', 'asc')
                     ->get();
-                }else{
-                    $services = Services::where('slug', '!=', 'all')
+            } else {
+                $services = Services::where('slug', '!=', 'all')
                     ->where(['parent_id' => 0])
                     ->where(['active' => 1])
                     ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                     ->orderBy('id', 'asc')
                     ->get();
-                }
+            }
             $mergedServices = [];
             foreach ($services as $service) {
-                if(Gate::allows('view_inactive_services')){
-                    $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number','asc')->get()->toArray();
-                }else{
-                    $children = Services::where(['parent_id' => $service->id,'active'=>1])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number','asc')->get()->toArray();
-                
+                if (Gate::allows('view_inactive_services')) {
+                    $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number', 'asc')->get()->toArray();
+                } else {
+                    $children = Services::where(['parent_id' => $service->id, 'active' => 1])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number', 'asc')->get()->toArray();
                 }
                 $mergedServices[] = $service->toArray();
                 foreach ($children as $child) {
@@ -725,7 +727,7 @@ class GeneralFunctions
             //
         }
     }
-
+    
     public static function getFDM($location_ids = null)
     {
         $fdo_ids = [];
@@ -1117,7 +1119,7 @@ class GeneralFunctions
         $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
             ->whereIn('patient_id', $patient_ids)
             ->whereIn('location_id', $center_id)
-            
+            ->where($where)
             ->groupBy('patient_id')
             ->orderBy('patient_id', 'DESC')
             ->get();
@@ -1137,7 +1139,6 @@ class GeneralFunctions
                 'patient_id' => $data['patient_id'],
             ])
                 ->whereIn('location_id', $center_id)
-                ->where($where)
                 ->get();
 
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
@@ -1160,7 +1161,7 @@ class GeneralFunctions
                 if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
                     if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
                         $data['is_treatment'] = 1;
-                        $data['scheduled_date'] = $check_treatments->scheduled_date ;
+                        $data['scheduled_date'] = $check_treatments->scheduled_date;
                         array_push($patient_data, $data);
                     }
                 }
@@ -1170,6 +1171,57 @@ class GeneralFunctions
             return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
         });
         return $patient_data;
-
     }
+
+
+    public static function stockCheck($id)
+    {
+        $count_product_in_quantity = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
+        $count_product_out_quantity = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
+        $stock_quantity = $count_product_in_quantity - $count_product_out_quantity;
+        $stock_available = ($stock_quantity > 0) ? true : false;
+
+        return [
+            'stock_quantity' => $stock_quantity,
+            'stock_available' => $stock_available,
+        ];
+    }
+
+    public static function stockC($id)
+    {
+        $count_product_in_quantity = Stock::where('stock_type', 'in')->where('product_id', $id)->sum('quantity');
+        $count_product_out_quantity = Stock::where('stock_type', 'out')->where('product_id', $id)->sum('quantity');
+        $stock_quantity = $count_product_in_quantity - $count_product_out_quantity;
+
+        return $stock_quantity;
+    }
+    public static function saveActivityLogs($action, $activityType, $data)
+    {
+
+        try {
+            $location = Locations::find($data['location_id']);
+            $service = Services::find($data['service_id']);
+            $patient = Patients::find($data['patient_id']);
+           
+            Activity::create([
+                'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
+                'action' => $action,
+                'appointment_type' => $activityType,
+                'activity_type' => $activityType,
+                'location' =>$location ? $location->name : '',
+                'centre_id' =>$location ? $location->id : NULL,
+                'service_id' =>$service ? $service->id :NULL,
+                'service' =>$service ? $service->name :NULL,
+                'patient_id' =>$patient ? $patient->id :NULL,
+                'patient' =>$patient ? $patient->name :NULL,
+               
+            ]);
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+   
+    
 }

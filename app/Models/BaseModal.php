@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Auth;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Model;
 
 class BaseModal extends Model
@@ -15,7 +15,6 @@ class BaseModal extends Model
      */
     public static function getData($id)
     {
-
         return self::where([
             ['id', '=', $id],
             ['account_id', '=', Auth::user()->account_id],

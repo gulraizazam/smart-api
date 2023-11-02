@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Config;
 use App\Helpers\Widgets\LocationsWidget;
+use App\Models\UserHasWarehouse;
+use App\Models\Warehouse;
 use Illuminate\Contracts\Encryption\DecryptException;
 
 class UsersController extends Controller
@@ -476,11 +478,13 @@ class UsersController extends Controller
         $roles = Role::where('name', '!=', 'Super-Admin')->get();
         $roles_commissions = Role::where('name', '!=', 'Super-Admin')->get();
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+        $warehouse = Warehouse::where(['active' => 1])->get();
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'roles' => $roles,
             'roles_commissions' => $roles_commissions,
             'locations' => $locations,
+            'warehouse' => $warehouse,
             'user' => $user,
         ]);
     }
@@ -531,6 +535,22 @@ class UsersController extends Controller
                     ];
                     // Insert assigned centres to User
                     UserHasLocations::createRecord($user_has_locations, $user->id);
+                }
+            }
+            if ($request->get('warehouse') && is_array($request->get('warehouse'))) {
+                if(in_array('all', $request->warehouse)){
+                    $warehouse = Warehouse::where(['active' => 1])->get();
+                } else {
+                    $warehouse = Warehouse::where(['active' => 1])->whereIn($request->warehouse)->get();
+                }
+                $user_has_warehouse = [];
+                foreach ($warehouse as $data) {
+                    $user_has_warehouse = [
+                        'user_id' => $user->id,
+                        'warehouse_id' => $data->id,
+                    ];
+                    // Insert assigned centres to User
+                    UserHasWarehouse::createRecord($user_has_warehouse, $user->id);
                 }
             }
         }
@@ -661,7 +681,14 @@ class UsersController extends Controller
         } else {
             $user_has_locations = [];
         }
+
+        $user_has_warehouse = $user->user_has_warehouse->pluck('warehouse_id');
+        if($user_has_warehouse->isEmpty()){
+            $user_has_warehouse = [];
+        }
+
         $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+        $warehouse = Warehouse::where(['active' => 1])->get();
         $user_roles = $user->user_roles()->pluck('id');
         if ($user_roles) {
             $user_roles = $user_roles->toArray();
@@ -673,8 +700,10 @@ class UsersController extends Controller
             'roles' => $roles,
             'user' => $user,
             'locations' => $locations,
+            'warehouse' => $warehouse,
             'roles_commissions' => $roles_commissions,
             'user_has_locations' => $user_has_locations,
+            'user_has_warehouse' => $user_has_warehouse,
             'user_roles' => $user_roles,
         ]);
     }
@@ -736,6 +765,26 @@ class UsersController extends Controller
                     // Insert assigned centres to User
                     UserHasLocations::updateRecord($user_has_locations, $user);
                 }
+            }
+
+            if ($request->get('warehouse') && is_array($request->get('warehouse'))) {
+                $user->user_has_warehouse()->delete();
+                if(in_array('all', $request->warehouse)){
+                    $warehouse = Warehouse::where(['active' => 1])->get();
+                } else {
+                    $warehouse = Warehouse::where(['active' => 1])->whereIn('id', $request->warehouse)->get();
+                }
+                $user_has_warehouse = [];
+                foreach ($warehouse as $data) {
+                    $user_has_warehouse = [
+                        'user_id' => $user->id,
+                        'warehouse_id' => $data->id,
+                    ];
+                    // Insert assigned centres to User
+                    UserHasWarehouse::updateRecord($user_has_warehouse, $user->id);
+                }
+            } else {
+                $user->user_has_warehouse()->delete();
             }
         }
         session()->flash('success', 'Record has been updated successfully.');

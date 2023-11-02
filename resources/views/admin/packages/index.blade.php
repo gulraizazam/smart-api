@@ -1,18 +1,19 @@
 @extends('admin.layouts.master')
 @section('title', 'Plans')
 @section('content')
-<style>
-    .form-control:disabled, .form-control[readonly] {
-    background-color: #F3F6F9 !important;
-    opacity: 1;
-}
-</style>
+    <style>
+        .form-control:disabled,
+        .form-control[readonly] {
+            background-color: #F3F6F9 !important;
+            opacity: 1;
+        }
+    </style>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Plans List', 'title' => 'Plans'])
+        @include('admin.partials.breadcrumb', ['module' => 'Plans List', 'title' => 'Plans'])
 
-    <!--begin::Entry-->
+        <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
             <div class="container">
@@ -29,7 +30,9 @@
                                             <rect x="0" y="0" width="24" height="24" />
                                             <rect fill="#000000" opacity="0.3" x="12" y="4" width="3" height="13" rx="1.5" />
                                             <rect fill="#000000" opacity="0.3" x="7" y="9" width="3" height="8" rx="1.5" />
-                                            <path d="M5,19 L20,19 C20.5522847,19 21,19.4477153 21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 C4.55228475,3 5,3.44771525 5,4 L5,19 Z" fill="#000000" fill-rule="nonzero" />
+                                            <path
+                                                d="M5,19 L20,19 C20.5522847,19 21,19.4477153 21,20 C21,20.5522847 20.5522847,21 20,21 L4,21 C3.44771525,21 3,20.5522847 3,20 L3,4 C3,3.44771525 3.44771525,3 4,3 C4.55228475,3 5,3.44771525 5,4 L5,19 Z"
+                                                fill="#000000" fill-rule="nonzero" />
                                             <rect fill="#000000" opacity="0.3" x="17" y="11" width="3" height="6" rx="1.5" />
                                         </g>
                                     </svg>
@@ -41,7 +44,7 @@
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('plans_destroy'))
+                            @if (Gate::allows('plans_destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -50,14 +53,15 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('plans_create'))
-                                <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_plan">
+                            @if (Gate::allows('plans_create'))
+                                <a href="javascript:void(0);" onclick="createPlan('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal"
+                                    data-target="#modal_add_plan">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
                             @endif
 
-                        <!--end::Button-->
+                            <!--end::Button-->
                         </div>
 
                     </div>
@@ -141,28 +145,27 @@
     </div>
 
     @push('js')
-        <script src="{{asset('assets/js/pages/admin_settings/create-plan.js')}}"></script>
-        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js')}}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
 
         <script>
             function getUserCentre() {
                 $.ajax({
-                    url: '{{route('admin.users.get_centers')}}',
+                    url: '{{ route('admin.users.get_centers') }}',
                     type: 'GET',
                     dataType: 'json',
-                    success: function (response) {
+                    success: function(response) {
                         if (response.status) {
                             $("#search_location_id").val(response.data.center).change();
                             $("#add_plan_location_id").val(response.data.center).change();
                         }
                     },
-                    error: function () {
+                    error: function() {
 
                     }
                 });
             }
         </script>
-
     @endpush
 
 @endsection

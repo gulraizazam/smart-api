@@ -1091,6 +1091,7 @@ class Finanaces
      */
     public static function generalrevenuereportdetail($data, $account_id)
     {
+        
         $where = [];
 
         if (isset($data['date_range']) && $data['date_range']) {
@@ -2669,6 +2670,7 @@ class Finanaces
         $sum_conversion_spend2 = 0;
 
         $data['location_id'] = ($data['location_id'][0] == null) ? 'all' : $data['location_id'];
+       
         $locations = $data['location_id'] == 'all' ? ACL::getUserCentres() : $data['location_id'];
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
