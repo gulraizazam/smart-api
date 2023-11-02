@@ -75,12 +75,19 @@
                                                     {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                                 </div>
                                             </div>
-                                           
+                                            <div class="form-group col-md-2 sn-select @if($errors->has('activity_type')) has-error @endif">
+                                                {!! Form::label('activity_type', 'Activity', ['class' => 'control-label']) !!}
+                                                <select class="form-control select2" id="activity_type" name="activity_type">
+                                                    <option value="all">All Logs</option>
+                                                    <option value="Consultancy">Consultancy Logs</option>
+                                                </select>
+                                                <span id="service_id_handler"></span>
+                                            </div>
                                             <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
                                                     id="service_id_E">
-                                                {!! Form::label('service_id', 'Activity', ['class' => 'control-label']) !!}
+                                                {!! Form::label('service_id', 'Service', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="service_id" name="service_id">
-                                                    <option value="all">All Logs</option>
+                                                    <option value="all">All Services</option>
                                                     @foreach($services as $key=> $service)
                                                         <option value="{{$service}}">{{$key}}</option>
                                                     @endforeach
@@ -182,9 +189,10 @@
                         location_id_com: $('#location_id_com').val(),
                         service_id: $('#service_id').val(),
                         user_id: $('#doctor_id').val(),
+                        activity_type: $('#activity_type').val(),
                     },
                     success: function(response){
-                      console.log(response);
+
                         $('#content').html(response);
                         
                         hideSpinner();
