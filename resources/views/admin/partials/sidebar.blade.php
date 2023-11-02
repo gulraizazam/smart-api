@@ -969,14 +969,14 @@
                                         <i class="menu-bullet menu-bullet-dot">
                                             <span></span>
                                         </i>
-                                        <span class="menu-text">Conversion</span>
+                                        <span class="menu-text">Conversion Report</span>
                                     </a>
                                 </li>
 
                             </ul>
                         </div>
                     @endcan
-                    @can('activity_logs_load')
+                    @can('appointment_reports_manage')
                         <div class="menu-submenu">
                             <i class="menu-arrow"></i>
                             <ul class="menu-subnav">
