@@ -1529,6 +1529,24 @@
                 var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
                 chart.render();
             }
+
+            $(document).on('click', '.planIdText', function () {
+                $('.planIdText').tooltip();
+                var planId = $(this).text();
+                var tempInput = $('<input>');
+                $('body').append(tempInput);
+                tempInput.val(planId).select();
+                document.execCommand('copy');
+                tempInput.remove();
+
+                // Show a tooltip to indicate that the plan ID has been copied
+                $(this).attr('data-original-title', 'Copied! '+ planId).tooltip('show');
+                setTimeout(() => {
+                    $(this).attr('data-original-title', 'Click to copy');
+                }, 5000);
+            });
+
+            
         </script>
     @endpush
 @endsection
