@@ -73,15 +73,15 @@ class SecondMessageOfAppointment extends Command
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
 
-            ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
+            ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id')
             ->get();
             
         $log_type = '2nd_sms';
-       
+        
         if ($appointments) {
             
             foreach ($appointments as $appointment) {
-               
+            
                 $smsLog = SMSLogs::where([
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
                     'log_type' => $log_type,
@@ -110,7 +110,7 @@ class SecondMessageOfAppointment extends Command
                
 
 
-            if ($appointment->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
+            if ($appointment->appointment_type_id ==1) {
               
                 // SEND SMS for Appointment Booked
                 if ($appointment->consultancy_type == 'virtual') {
@@ -147,7 +147,7 @@ class SecondMessageOfAppointment extends Command
                     'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
                     'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
                     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($appointment->phone)),
-                    
+                   
                     'text' => $preparedText,
                     'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
                     'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
@@ -167,7 +167,7 @@ class SecondMessageOfAppointment extends Command
                 
                 $response = JazzSMSAPI::SendSMS($SMSObj);
             }
-           
+          
             $SMSLog = array_merge($SMSObj, $response);
             $SMSLog['appointment_id'] = $appointment->appointment_id;
             $SMSLog['created_by'] = 1;
