@@ -75,7 +75,7 @@
                                                     {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                                 </div>
                                             </div>
-                                            <div class="form-group col-md-2 sn-select @if($errors->has('activity_type')) has-error @endif">
+                                            <div class="form-group col sn-select @if($errors->has('activity_type')) has-error @endif">
                                                 {!! Form::label('activity_type', 'Activity', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="activity_type" name="activity_type">
                                                     <option value="all">All Logs</option>
@@ -83,7 +83,7 @@
                                                 </select>
                                                 <span id="service_id_handler"></span>
                                             </div>
-                                            <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
+                                            <div class="form-group col sn-select @if($errors->has('service_id')) has-error @endif"
                                                     id="service_id_E">
                                                 {!! Form::label('service_id', 'Service', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="service_id" name="service_id">
@@ -94,11 +94,11 @@
                                                 </select>
                                                 <span id="service_id_handler"></span>
                                             </div>
-                                            <div class="form-group col-md-3 @if($errors->has('discount_id')) has-error @endif" id="discount"
+                                            <div class="form-group col @if($errors->has('discount_id')) has-error @endif" id="discount"
                                                     style="display: none;">
                                             </div>
 
-                                            <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
+                                            <div class="form-group col sn-select @if($errors->has('location_id')) has-error @endif"
                                                     id="location_id_E">
                                                    
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
@@ -108,13 +108,13 @@
                                            
                                            
                                             
-                                            <div class="form-group col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif"
+                                            <div class="form-group col- sn-select @if($errors->has('doctor_id')) has-error @endif"
                                                     id="doctors_id">
                                                 {!! Form::label('doctor_id', 'User', ['class' => 'control-label']) !!}
                                                 {!! Form::select('doctor_id', $operators, null, ['id' => 'doctor_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
                                                 <span id="doctor_id_handler"></span>
                                             </div>
-                                            <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
+                                            <div class="form-group col sn-select @if($errors->has('group_id')) has-error @endif">
                                                 {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                                 <a href="javascript:void(0);" onclick="loadReport($(this));" id="load_report"
                                                     class="btn btn-success spinner-button">Load Report</a>

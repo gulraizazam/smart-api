@@ -454,6 +454,7 @@ class RolesController extends Controller
             'center_performance_stats_by_service_type' => 'Staff Revenue by Service Type',
             'compliance_reports' => 'Compliance Report',
             'rescheduled_count_report' => 'Appointment Rescheduled Count Report',
+            'activity_report' => 'Appointment Activity Logs Report',
         ];
     }
 
