@@ -29,6 +29,8 @@ class ConversionReportController extends Controller
 
         return view('admin.reports.conversion', get_defined_vars());
     }
+    
+   
 
     public function LoadConversionReport(Request $request)
     {

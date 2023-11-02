@@ -17,6 +17,7 @@ $('#created_at').datepicker({
         rightArrow: '<i class="la la-angle-right"></i>',
     },
 }).datepicker("setDate", new Date());
+
 $(document).ready(function () {
     $(document).on("change", ".select2", function () {
         if ($(this).val() != '') {
@@ -29,10 +30,17 @@ $(document).ready(function () {
     });
 
     $(document).on("click", ".popup-close", function () {
+        reInitTable();
         $(this).parents(".modal").modal("toggle");
         $("#modal_allocate_doctors_form").find("#services").empty();
         $("#modal_allocate_discounts_form").find("#services").empty();
+        $("#modal_create_order_form").find('form').trigger('reset');
+        $("#modal_edit_transfer_products_form").find('form').trigger('reset');
+        $("#modal_add_product_stock").find('form').trigger('reset');
+        $("#modal_add_products_form").find('form').trigger('reset');
+        $("#add_order_product").empty();
     });
+
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
         todayHighlight: true,
@@ -147,7 +155,7 @@ $(document).ready(function () {
 
     });
 
-    patientSearch();
+    patientSearch('user_search');
     leadSearch('lead_search_id')
 
     $(".package_id").select2({
@@ -293,6 +301,7 @@ function addUsers() {
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
+    $('.croxcli').hide();
 }
 
 function addLeads() {
@@ -584,9 +593,13 @@ function reInitTable(page = null) {
             if (typeof datatable !== 'undefined') {
                 machineTypesFilters();
             }
+        } else if (page == "warehouse") {
+            if (typeof datatable !== 'undefined') {
+                warehouseFilters();
+            }
         } else {
             datatable.reload();
-            /* $('#kt_datatable').KTDatatable('reload'); */
+            //$('#kt_datatable').KTDatatable('reload');
         }
 
     }, 400);
@@ -876,6 +889,20 @@ function machineTypesFilters() {
     datatable.search(filters, 'search');
 }
 
+function warehouseFilters() {
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        manager_name: $("#search_manager_name").val(),
+        manager_phone: $("#search_manager_phone").val(),
+        status: $("#search_status").val(),
+        city: $("#search_city").val(),
+        created_at: $('#date_range').val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+
 function reloadTable(table_class) {
     patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
 }
@@ -894,6 +921,8 @@ function resetFilters() {
         $(".select-all-checkboxes").prop("checked", false)
         $(".delete-records").addClass("d-none");
     }
+
+    $('.croxcli').hide()
 }
 
 function advanceFilters() {
@@ -1075,7 +1104,6 @@ function switchComplimentary($id) {
 function showException(error) {
     if (debug) {
         toastr.error(error);
-        console.log(error);
     }
 }
 
@@ -1126,14 +1154,14 @@ function makeArray(object) {
 }
 
 function phoneClip(data) {
-    if(data.phone == "***********"){
+    if (data.phone == "***********") {
         return '<a  href="javascript:void(0);" class="clipboard">' + data.phone + '</a>';
-    
-    }else{
+
+    } else {
         return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="' + data.phone + '" data-original-title="Click to Copy" aria-describedby="tooltip' + data.id + '">' + data.phone + '</a>';
-    
+
     }
-   
+
 }
 
 function makePhoneNumber(phoneNo, permission, type = 0) {
@@ -1262,6 +1290,44 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
     return false;
 }
 
+function productSearch(from_id, from_key, id = null, type = null) {
+    if (from_id != '') {
+        $.ajax({
+            type: "GET",
+            url: route('admin.transfer_products.get_products'),
+            dataType: 'json',
+            data: {
+                from_key: from_key,
+                from_id: from_id,
+                type: type,
+            },
+            success: function (response) {
+                let html = '';
+                $("#" + id + "_transfer_product").html(html);
+                let products = response.data.products;
+                if (products.length) {
+                    let html = '<option value="">Select Product</option>';
+                    products.forEach(function (product) {
+                        let oldProduct = $('#' + id + '_product_id').val();
+
+                        if (product.id == oldProduct) {
+                            html += '<option value="' + product.id + '" selected>' + product.name + '</option>';
+                        } else {
+                            html += '<option value="' + product.id + '">' + product.name + '</option>';
+                        }
+                    });
+                    $("#" + id + "_transfer_product").html(html);
+                }
+            }
+        });
+    }
+    return false;
+}
+
+function selectProduct(name, product_id, quantity, product_type, warehouse_id, location_id) {
+    $("#quantity").val(quantity);
+}
+
 function selectUser(name, user_id, search_id, flag = 1) {
     $("." + search_id).parent('div').find('.search_field').val(user_id).change();
     $("#add_patient_id").val(user_id);
@@ -1297,7 +1363,7 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
         if ($(this).val() != '') {
             let form_type = $(this).parents("form").find('.form_type').val();
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(function () {                
+            debounceTimer = setTimeout(function () {
                 $.ajax({
                     type: "GET",
                     url: route('admin.leads.getlead.id'),
@@ -1305,7 +1371,6 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                     delay: 250,
                     data: { search: that },
                     success: function (response) {
-                        console.log('res', response);
                         let html = '';
                         let leads = response.data.leads;
                         let haveObjleads = Object.keys(leads).length;
@@ -1327,13 +1392,14 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                         }
                     }
                 });
-            },500)
+            }, 500)
         } else {
             $(".suggesstion-box").hide();
         }
     });
     return false;
 }
+
 
 function selectLead(name, lead_id, search_id, flag = 1) {
     $("." + search_id).parent('div').find('.search_field').val(lead_id).change();

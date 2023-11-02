@@ -1,5 +1,17 @@
 jQuery(document).ready(function() {
     patientSearch('appointment_patient_id');
+    let patientId = $("#patient_id_url").val();
+    let reportType = $("#report_type_url").val();
+    $(".appointment_patient_id").val(patientId).trigger("keyup");
+    $("#report_types").val(reportType).trigger("change");
+
+    if(patientId !== ''){
+$("#date_range").val('');
+    }
+
+    setTimeout(function() {
+        $('.suggestion-list li:first').click();
+    }, 2000);
 })
 $('#date_range_arrival').daterangepicker({
     locale: {
@@ -9,7 +21,7 @@ $('#date_range_arrival').daterangepicker({
         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
         'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
         'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
-        'This Month': [moment().startOf('month'), moment().subtract(1, 'days')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
         'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
         'This Year': [moment().startOf('year'), moment().endOf('year')],
         'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
