@@ -1202,7 +1202,7 @@ class GeneralFunctions
             $location = Locations::find($data['location_id']);
             $service = Services::find($data['service_id']);
             $patient = Patients::find($data['patient_id']);
-           
+         
             Activity::create([
                 'created_by' => auth()->id(),
                 'user_id' => auth()->id(),
@@ -1215,6 +1215,8 @@ class GeneralFunctions
                 'service' =>$service ? $service->name :NULL,
                 'patient_id' =>$patient ? $patient->id :NULL,
                 'patient' =>$patient ? $patient->name :NULL,
+                'created_at' =>Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' =>Carbon::now()->format('Y-m-d H:i:s'),
                
             ]);
             return true;
