@@ -16,10 +16,8 @@ class ActivitylogsReportController extends Controller
     public function index(){
         $services = Services::where(['parent_id' => 0])->where('slug', '!=', 'all')->pluck('id', 'name');
         $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
-        $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
         $select_All = ['' => 'All'];
-        $users = ($select_All + $employees->toArray() + $operators->toArray());
-        $operators->prepend('All', '');
+        $operators = ($select_All + $employees->toArray() );
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         if(!Auth::user()->hasRole('FDM')){
             $locations->prepend('All', '');
@@ -38,6 +36,7 @@ class ActivitylogsReportController extends Controller
         $isServicePresent = false;
         $isUserPresent = false;
         $isLocationPresent = false;
+        $isActivityTypePresent = false;
         if ($request->has('service_id') && $request->service_id !== 'all') {
             $isServicePresent = true;
         }
@@ -47,6 +46,9 @@ class ActivitylogsReportController extends Controller
         
         if ($request->has('location_id')  && $request->location_id) {
             $isLocationPresent = true;
+        }
+        if ($request->has('activity_type')  && $request->activity_type!== 'all') {
+            $isActivityTypePresent = true;
         }
         $activities = Activity::whereHas('serviceR')
         ->whereHas('centre')
@@ -63,6 +65,9 @@ class ActivitylogsReportController extends Controller
         ->when( $isLocationPresent,function($query) use ($request){
             $query->where('centre_id',$request->location_id);
         })
+        ->when($isActivityTypePresent,function($query) use ($request){
+            $query->where('activity_type',$request->activity_type);
+        })
         ->get();
        
         $data=[];
@@ -70,28 +75,24 @@ class ActivitylogsReportController extends Controller
         foreach($activities as $activity)
         {
             $action = $activity->action;
-           
-            $user = User::find($activity->user_id);
-            $patient = User::find($activity->patient_id);
-            $location = Locations::find($activity->centre_id);
             switch ($action) {
                 case 'booked':
                     {
-                        $data[$i]['colorClass']= $colorClasses[rand(0,3)];
+                        $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
                         $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->created_at;
                     }
                     break;
                 case 'received':
                     {
-                        $data[$i]['colorClass']= $colorClasses[rand(0,3)];
+                        $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
                         $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->created_at;
                     }
                     break;
                 case 'consumed':
                     {
-                        $data[$i]['colorClass']= $colorClasses[rand(0,3)];
+                        $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
                         $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->created_at;
                     }
@@ -104,6 +105,7 @@ class ActivitylogsReportController extends Controller
             $i++;
             
         }
+
         return view('admin.reports.activity_logs.activities', get_defined_vars());
     }
 }

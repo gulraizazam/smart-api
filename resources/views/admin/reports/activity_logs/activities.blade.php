@@ -1,6 +1,6 @@
 <div class="col-12 pb-0">
     <div class="timeline custom_timeline timeline-6 mt-3">
-        @foreach($data as $activity)
+        @forelse($data as $activity)
 
         <div class="timeline-item align-items-start">
             <div class="timeline-label font-weight-bolder text-dark-75 font-size-sm">
@@ -13,6 +13,8 @@
             {!!$activity['message']!!}
             </div>
         </div>
-        @endforeach
+        @empty
+        <div class="no_data text-center pb-3 text-danger font-weight-bold">No Activity Logs</div>
+        @endforelse
     </div>
 </div>
