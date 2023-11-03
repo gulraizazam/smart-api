@@ -68,7 +68,7 @@ class ActivitylogsReportController extends Controller
         ->when($isActivityTypePresent,function($query) use ($request){
             $query->where('activity_type',$request->activity_type);
         })
-        ->get();
+        ->latest()->get();
        
         $data=[];
         $i = 0;

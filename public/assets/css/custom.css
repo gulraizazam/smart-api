@@ -747,6 +747,10 @@ select2-container--default .select2-selection--single .select2-selection__render
 .custom_timeline.timeline.timeline-6 .timeline-item{
     margin-bottom: 2.1rem;
 }
+.custom_timeline .no_data {
+    position: relative;
+    background: #fff;
+}
 @media screen and (min-width: 1350px) {
     .horizontal-nav-bar-li p {
         font-size: 12px;
