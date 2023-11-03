@@ -31,11 +31,18 @@ class PatientFollowupController extends Controller
     }
     public function patientFollowUp(Request $request)
     {
+        
         $where = [];
+        $whereAppointment = [];
         $where[] = [
             'package_advances.created_at',
             '>=',
             Carbon::now()->subDays(30)->format('Y-m-d'),
+        ];
+        $whereAppointment[] = [
+            'appointments.scheduled_date',
+            '>=',
+            Carbon::now()->subMonths(3)->format('Y-m-d'),
         ];
         // $where[] = [
         //     'package_advances.created_at',
@@ -59,6 +66,7 @@ class PatientFollowupController extends Controller
                 $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
                     ->on('appointments.created_at', '=', 'latest_appointments.created_at');
             })
+            ->where( $whereAppointment)
             ->orderByDesc('appointments.id')
             ->pluck('patient_id');
 
