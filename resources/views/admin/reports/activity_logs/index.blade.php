@@ -98,7 +98,7 @@
                                                     style="display: none;">
                                             </div>
 
-                                            <div class="form-group mb-0 col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
+                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
                                                     id="location_id_E">
                                                    
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
