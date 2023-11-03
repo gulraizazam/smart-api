@@ -404,14 +404,19 @@ class RefundsController extends Controller
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        $rules = [
             'refund_amount' => ['required', 'numeric', 'regex:/^[0-9]+$/'],
             'refund_note' => 'required',
-            'package_id' =>'required',
-            'payment_mode_id' =>'required',
-
-            
-        ]);
+            'package_id' => 'required',
+            'payment_mode_id' => 'required',
+            'created_at' => ['required', 'date', 'date_format:Y-m-d'],
+        ];
+        $customMessages = [
+            'created_at.required' => 'The created at field is required.',
+            'created_at.date_format' => 'The Date field format is incorrect.',
+        ];
+    
+        return Validator::make($request->all(), $rules, $customMessages);
     }
 
     /**
