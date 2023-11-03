@@ -1051,36 +1051,36 @@ function setSmsLogs(response) {
 
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function () {
-        if ($("#appoint_search_phone").val().length >= 10 && $("#appoint_search_phone").val().length < 13) {
-            let filters = {
-                delete: '',
-                patient_id: $("#appointment_patient_id").val(),
-                phone: $("#appoint_search_phone").val(),
-                date_from: $("#appoint_search_start").val(),
-                date_to: $("#appoint_appoint_end").val(),
-                appointment_type_id: $("#appoint_search_type").val(),
-                service_id: $("#appoint_search_service").val(),
-                region_id: $("#appoint_search_region").val(),
-                city_id: $("#appoint_search_city").val(),
-                location_id: $("#appoint_search_centre").val(),
-                doctor_id: $("#appoint_search_doctor").val(),
-                appointment_status_id: $("#appoint_search_status").val(),
-                consultancy_type: $("#appoint_search_consultancy_type").val(),
-                created_from: $("#appoint_search_created_from").val(),
-                created_to: $("#appoint_search_created_to").val(),
-                created_by: $("#appoint_search_created_by").val(),
-                converted_by: $("#appoint_search_rescheduled_by").val(),
-                updated_by: $("#appoint_search_updated_by").val(),
-                filter: 'filter',
-            }
-            if ($("#appoint_search_service").val() == 13) {
-                resetFilters(datatable);
-            }
-            else {
-                datatable.search(filters, 'search');
-            }
-        } else {
+        if ($("#appoint_search_phone").val() !== "" && ($("#appoint_search_phone").val().length < 10 || $("#appoint_search_phone").val().length > 13)) {
             toastr.error("Please enter valid phone number");
+            return;
+        }
+        let filters = {
+            delete: '',
+            patient_id: $("#appointment_patient_id").val(),
+            phone: $("#appoint_search_phone").val(),
+            date_from: $("#appoint_search_start").val(),
+            date_to: $("#appoint_appoint_end").val(),
+            appointment_type_id: $("#appoint_search_type").val(),
+            service_id: $("#appoint_search_service").val(),
+            region_id: $("#appoint_search_region").val(),
+            city_id: $("#appoint_search_city").val(),
+            location_id: $("#appoint_search_centre").val(),
+            doctor_id: $("#appoint_search_doctor").val(),
+            appointment_status_id: $("#appoint_search_status").val(),
+            consultancy_type: $("#appoint_search_consultancy_type").val(),
+            created_from: $("#appoint_search_created_from").val(),
+            created_to: $("#appoint_search_created_to").val(),
+            created_by: $("#appoint_search_created_by").val(),
+            converted_by: $("#appoint_search_rescheduled_by").val(),
+            updated_by: $("#appoint_search_updated_by").val(),
+            filter: 'filter',
+        }
+        if ($("#appoint_search_service").val() == 13) {
+            resetFilters(datatable);
+        }
+        else {
+            datatable.search(filters, 'search');
         }
 
     });

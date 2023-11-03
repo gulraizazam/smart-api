@@ -1215,6 +1215,7 @@ class GeneralFunctions
                 'service' =>$service ? $service->name :NULL,
                 'patient_id' =>$patient ? $patient->id :NULL,
                 'patient' =>$patient ? $patient->name :NULL,
+                'schedule_date' =>$data['scheduled_date'],
                 'created_at' =>Carbon::now()->format('Y-m-d H:i:s'),
                 'updated_at' =>Carbon::now()->format('Y-m-d H:i:s'),
                
