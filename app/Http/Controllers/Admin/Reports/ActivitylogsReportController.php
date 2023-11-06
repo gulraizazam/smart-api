@@ -80,21 +80,21 @@ class ActivitylogsReportController extends Controller
                     {
                         $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->created_at;
+                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
                     }
                     break;
                 case 'received':
                     {
                         $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->created_at;
+                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
                     }
                     break;
                 case 'consumed':
                     {
                         $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->created_at;
+                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
                     }
                     break;
                 default:
