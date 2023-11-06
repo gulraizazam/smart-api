@@ -100,14 +100,14 @@
 
                                             <div class="form-group mb-0 col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                                     id="location_id_E">
-                                                   
+
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
-                                                {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!} 
+                                                {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
-                                           
-                                           
-                                            
+
+
+
                                             <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif"
                                                     id="doctors_id">
                                                 {!! Form::label('doctor_id', 'User', ['class' => 'control-label']) !!}
@@ -133,7 +133,7 @@
                                 </div>
                             </div>
                             <div class="row" id="content">
-                               
+
                             </div>
                         </div>
                     </div>
@@ -169,11 +169,11 @@
                 endDate  : moment()
             });
             var loadReport = function (that) {
-               
+
                 // if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
                 //     return false;
                 // }
-               
+
                 showSpinner();
                 $.ajax({
                     headers: {
@@ -193,7 +193,7 @@
                     success: function(response){
 
                         $('#content').html(response);
-                        
+
                         hideSpinner();
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
@@ -202,7 +202,7 @@
                     }
                 });
             }
-           
+
             function getCenters(that) {
                 $.ajax({
                     headers: {
@@ -230,7 +230,7 @@
             }
 
             $(document).ready(function(){
-               
+
                 loadReport();
             });
         </script>
