@@ -1197,7 +1197,7 @@ class GeneralFunctions
     }
     public static function saveActivityLogs($action, $activityType, $data,$appointment_id)
     {
-        
+
         try {
             $location = Locations::find($data['location_id']);
             $service = Services::find($data['service_id']);
