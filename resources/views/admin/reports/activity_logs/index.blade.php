@@ -72,7 +72,7 @@
                                             <div class="form-group mb-0 col sn-select @if($errors->has('date_range')) has-error @endif" style="min-width:200px;">
                                                 {!! Form::label('date_range', 'Date Range*', ['class' => 'control-label']) !!}
                                                 <div class="input-group">
-                                                    {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
+                                                    {!! Form::text('date_range', null, ['id' => 'activity_date_range', 'class' => 'form-control']) !!}
                                                 </div>
                                             </div>
                                             <div class="form-group mb-0 col sn-select @if($errors->has('activity_type')) has-error @endif">
@@ -83,7 +83,7 @@
                                                 </select>
                                                 <span id="service_id_handler"></span>
                                             </div>
-                                            <div class="form-group mb-0 col sn-select @if($errors->has('service_id')) has-error @endif"
+                                            <!-- <div class="form-group mb-0 col sn-select @if($errors->has('service_id')) has-error @endif"
                                                     id="service_id_E">
                                                 {!! Form::label('service_id', 'Service', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="service_id" name="service_id">
@@ -93,8 +93,8 @@
                                                     @endforeach
                                                 </select>
                                                 <span id="service_id_handler"></span>
-                                            </div>
-                                            <div class="form-group col @if($errors->has('discount_id')) has-error @endif" id="discount"
+                                            </div> -->
+                                            <div class="form-group col-md-2 @if($errors->has('discount_id')) has-error @endif" id="discount"
                                                     style="display: none;">
                                             </div>
 
@@ -153,7 +153,7 @@
             $("#location_id_com").on('change',function(){
                 $("#location_id_com-report").val($("#location_id_com").val());
             });
-            $('#date_range').daterangepicker({
+            $('#activity_date_range').daterangepicker({
                 locale: {
                 },
                 ranges   : {
@@ -166,7 +166,7 @@
                     'This Year'  : [moment().startOf('year'), moment().endOf('year')],
                     'Last Year'  : [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
                 },
-                startDate: moment().subtract(29, 'days'),
+                startDate: moment(),
                 endDate  : moment()
             });
             var loadReport = function (that) {
@@ -183,11 +183,11 @@
                     url: route('admin.reports.load_activity_report'),
                     type: "POST",
                     data: {
-                        startDate: $('#date_range').data('daterangepicker').startDate.format('YYYY-MM-DD'),
-                        endDate: $('#date_range').data('daterangepicker').endDate.format('YYYY-MM-DD'),
+                        startDate: $('#activity_date_range').data('daterangepicker').startDate.format('YYYY-MM-DD'),
+                        endDate: $('#activity_date_range').data('daterangepicker').endDate.format('YYYY-MM-DD'),
                         location_id: $('#location_id').val(),
                         location_id_com: $('#location_id_com').val(),
-                        service_id: $('#service_id').val(),
+                        //service_id: $('#service_id').val(),
                         user_id: $('#doctor_id').val(),
                         activity_type: $('#activity_type').val(),
                     },
