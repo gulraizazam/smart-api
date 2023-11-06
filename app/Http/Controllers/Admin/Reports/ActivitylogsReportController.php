@@ -40,6 +40,8 @@ class ActivitylogsReportController extends Controller
         $isUserPresent = false;
         $isLocationPresent = false;
         $isActivityTypePresent = false;
+        $startDate = $request->startDate;
+        $endDate = $request->endDate;
         if ($request->has('service_id') && $request->service_id !== 'all') {
             $isServicePresent = true;
         }
@@ -135,7 +137,7 @@ class ActivitylogsReportController extends Controller
 
         $activities = [];
         foreach ($appointments as $appointment) {
-           
+
             if($appointment->first_scheduled_date == $appointment->scheduled_date){
                 $action = 'booked';
             }else{
