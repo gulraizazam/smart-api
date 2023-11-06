@@ -125,7 +125,7 @@ class ActivitylogsReportController extends Controller
         $startDate = '2023-11-01 00:00:00';
         $endDate = '2023-11-05 23:59:59';
 
-        $appointments = Appointments::select('id','location_id', 'service_id', 'patient_id', 'scheduled_date','created_at','updated_at','first_scheduled_date')
+        $appointments = Appointments::select('id','location_id', 'service_id', 'patient_id', 'scheduled_date','created_at','updated_at','first_scheduled_date','created_by')
             ->where('appointment_type_id', 1)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with(['location', 'service', 'patient'])
@@ -148,8 +148,8 @@ class ActivitylogsReportController extends Controller
             $patient = $appointment->patient;
 
             $activity = [
-                'created_by' => auth()->id(),
-                'user_id' => auth()->id(),
+                'created_by' => $appointment->created_by,
+                'user_id' =>$appointment->created_by,
                 'action' => $action,
                 'appointment_type' => $activityType,
                 'appointment_id' => $appointment->id,
