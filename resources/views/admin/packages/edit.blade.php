@@ -21,8 +21,6 @@
     <!--end::Modal header-->
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
-
-
         <div id="edit_duplicateErr" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
             Duplicate record found, please select another one.
@@ -122,11 +120,13 @@
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
                             </select>
+                            <small class="text-danger error-class"><b id='discount_type_error' class="error-msg"></b></small>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="text" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
+                            <input type="number" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
+                            <small class="text-danger error-class"><b id='discount_payment_error' class="error-msg"></b></small>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
@@ -148,16 +148,13 @@
                                 </button>
                             </div>
                         </div>
-
                     </div>
-
                 </div>
 
                 <hr>
 
                 <div class="table-responsive add_center_target_table">
                     <table id="edit_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
-
                         <thead>
                             <tr>
                                 <th>Service Name</th>
@@ -178,13 +175,11 @@
                                 <td colspan="8">No record found</td>
                             </tr>
                         </tbody>
-
                     </table>
                 </div>
 
                 <div class="form-group">
                     <div class="row">
-
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
                             <input type="text" id="edit_package_total_1" readonly class="form-control" name="package_total_1" value="0">
@@ -192,7 +187,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger"></span></label>
-                            <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                            <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id" onchange="checkpaymentMode()">
                                 <option value="">Select Payment Mode</option>
                             </select>
                             <small class="text-danger error-class"><b id='payment_mode_id' class="error-msg"></b></small>
@@ -200,21 +195,17 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="text" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount">
+                            <input type="number" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount" disabled>
+                            <small class="text-danger error-class"><b id='cash_amount_error' class="error-msg"></b></small>
                         </div>
-
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
                             <input type="text" readonly min="0" name="total_price" value="0" class="form-control" id="edit_grand_total_1">
                         </div>
-
                     </div>
-
                 </div>
-
                 <hr>
-
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->
