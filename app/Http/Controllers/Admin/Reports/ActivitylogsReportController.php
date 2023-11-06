@@ -125,7 +125,7 @@ class ActivitylogsReportController extends Controller
         $startDate = now()->startOfMonth()->day(1);
         $endDate = now()->startOfMonth()->day(5)->endOfDay();
 
-        $appointments = Appointments::select('location_id', 'service_id', 'patient_id', 'scheduled_date','created_at','updated_at','first_scheduled_date')
+        $appointments = Appointments::select('id','location_id', 'service_id', 'patient_id', 'scheduled_date','created_at','updated_at','first_scheduled_date')
             ->where('appointment_type_id', 1)
             ->whereBetween('created_at', [$startDate, $endDate])
             ->with(['location', 'service', 'patient'])
@@ -152,6 +152,7 @@ class ActivitylogsReportController extends Controller
                 'user_id' => auth()->id(),
                 'action' => $action,
                 'appointment_type' => $activityType,
+                'appointment_id' => $appointment->id,
                 'activity_type' => $activityType,
                 'location' => $location ? $location->name : '',
                 'centre_id' => $location ? $location->id : null,
