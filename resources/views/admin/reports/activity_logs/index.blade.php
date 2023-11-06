@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-@section('title', 'Conversion')
+@section('title', 'Activity Logs')
 @section('content')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
@@ -69,13 +69,13 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                            <div class="form-group col-md-3 sn-select @if($errors->has('date_range')) has-error @endif">
+                                            <div class="form-group mb-0 col-md-3 sn-select @if($errors->has('date_range')) has-error @endif">
                                                 {!! Form::label('date_range', 'Date Range*', ['class' => 'control-label']) !!}
                                                 <div class="input-group">
                                                     {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
                                                 </div>
                                             </div>
-                                            <div class="form-group col sn-select @if($errors->has('activity_type')) has-error @endif">
+                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('activity_type')) has-error @endif">
                                                 {!! Form::label('activity_type', 'Activity', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="activity_type" name="activity_type">
                                                     <option value="all">All Logs</option>
@@ -83,7 +83,7 @@
                                                 </select>
                                                 <span id="service_id_handler"></span>
                                             </div>
-                                            <div class="form-group col sn-select @if($errors->has('service_id')) has-error @endif"
+                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
                                                     id="service_id_E">
                                                 {!! Form::label('service_id', 'Service', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="service_id" name="service_id">
@@ -94,28 +94,27 @@
                                                 </select>
                                                 <span id="service_id_handler"></span>
                                             </div>
-                                            <div class="form-group col @if($errors->has('discount_id')) has-error @endif" id="discount"
+                                            <div class="form-group col-md-2 @if($errors->has('discount_id')) has-error @endif" id="discount"
                                                     style="display: none;">
                                             </div>
 
-                                            <div class="form-group col sn-select @if($errors->has('location_id')) has-error @endif"
+                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
                                                     id="location_id_E">
-                                                   
+
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
-                                                {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!} 
+                                                {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
-                                           
-                                           
-                                            
-                                            <div class="form-group col- sn-select @if($errors->has('doctor_id')) has-error @endif"
+
+
+
+                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif"
                                                     id="doctors_id">
                                                 {!! Form::label('doctor_id', 'User', ['class' => 'control-label']) !!}
                                                 {!! Form::select('doctor_id', $operators, null, ['id' => 'doctor_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
                                                 <span id="doctor_id_handler"></span>
                                             </div>
-                                            <div class="form-group col sn-select @if($errors->has('group_id')) has-error @endif">
-                                                {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
+                                            <div class="form-group mt-5 col sn-select @if($errors->has('group_id')) has-error @endif">
                                                 <a href="javascript:void(0);" onclick="loadReport($(this));" id="load_report"
                                                     class="btn btn-success spinner-button">Load Report</a>
                                             </div>
@@ -134,7 +133,7 @@
                                 </div>
                             </div>
                             <div class="row" id="content">
-                               
+
                             </div>
                         </div>
                     </div>
@@ -170,11 +169,11 @@
                 endDate  : moment()
             });
             var loadReport = function (that) {
-               
+
                 // if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
                 //     return false;
                 // }
-               
+
                 showSpinner();
                 $.ajax({
                     headers: {
@@ -194,7 +193,7 @@
                     success: function(response){
 
                         $('#content').html(response);
-                        
+
                         hideSpinner();
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
@@ -203,7 +202,7 @@
                     }
                 });
             }
-           
+
             function getCenters(that) {
                 $.ajax({
                     headers: {
@@ -231,7 +230,7 @@
             }
 
             $(document).ready(function(){
-               
+
                 loadReport();
             });
         </script>
