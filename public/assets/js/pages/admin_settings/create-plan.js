@@ -1598,8 +1598,8 @@ function editDiscountValue($this) {
     //inputSpinner(true, 'EditPackage')
     hideMessages();
 
-    if ($("#edit_discount_value_1").val() < 0 ) {
-        $("#edit_discount_value_1").val( $("#edit_discount_value_1").val)
+    if ($("#edit_discount_value_1").val() < 0) {
+        $("#edit_discount_value_1").val('');
     } else {
         var service_id = $('#edit_service_id').val();//Basicailly it is bundle id
         var discount_id = $('#edit_discount_id').val();
@@ -2439,7 +2439,7 @@ jQuery(document).ready(function () {
 
     $("#edit_cash_amount_1").keyup(function () {
         if ($("#edit_cash_amount_1").val() < 0 ) {
-            $("#edit_cash_amount_1").val($("#edit_cash_amount_1").val());
+            $("#edit_cash_amount_1").val('');
         } else {
             edit_keyfunction_grandtotal();
         }
