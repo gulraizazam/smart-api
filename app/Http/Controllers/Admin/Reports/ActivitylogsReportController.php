@@ -122,8 +122,8 @@ class ActivitylogsReportController extends Controller
     }
     public function InsertLogs()
     {
-        $startDate = now()->startOfMonth()->day(1);
-        $endDate = now()->startOfMonth()->day(5)->endOfDay();
+        $startDate = '2023-11-01 00:00:00';
+        $endDate = '2023-11-05 23:59:59';
 
         $appointments = Appointments::select('id','location_id', 'service_id', 'patient_id', 'scheduled_date','created_at','updated_at','first_scheduled_date')
             ->where('appointment_type_id', 1)
