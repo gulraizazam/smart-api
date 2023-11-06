@@ -26,7 +26,7 @@
                                             <option value="month" {{ request('type') == 'month' ? 'selected' : '' }}>This
                                                 Month</option>
                                             <!-- <option value="lastmonth"
-                                                    {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                                                    {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
                                         </select>
                                     </div>
                                 </div>
@@ -200,10 +200,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                    <a href="#location_collection_4" data-toggle="tab"
-                                                                        onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
-                                                                        Month</a>
-                                                                </li> -->
+                                                                                                    <a href="#location_collection_4" data-toggle="tab"
+                                                                                                        onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
+                                                                                                        Month</a>
+                                                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -217,7 +217,8 @@
                                         </div>
                                     </div>
                                     <div id="collection-by-centre"></div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
+                                    <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -266,7 +267,8 @@
 
                                                     <tbody id="patient-follow-up"></tbody>
                                                 </table>
-                                                <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-unattended">
+                                                <img src="{{ asset('assets/media/loader.gif') }}"
+                                                    class="custom_loader loader-img-unattended">
                                             </div>
                                         </div>
                                     </div>
@@ -274,7 +276,6 @@
                             </div>
                         </div>
                     @endif
-
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
@@ -319,10 +320,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                    <a href="#location_revenue_3" data-toggle="tab"
-                                                                        onclick="initRevenueByCentre('lastmonth');">Last
-                                                                        Month</a>
-                                                                </li> -->
+                                                                                                    <a href="#location_revenue_3" data-toggle="tab"
+                                                                                                        onclick="initRevenueByCentre('lastmonth');">Last
+                                                                                                        Month</a>
+                                                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -335,7 +336,8 @@
                                         </div>
                                     </div>
                                     <div id="revenue-centre"></div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
+                                    <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -385,7 +387,7 @@
                                                     <tbody id="patient-follow-up-one-month"></tbody>
                                                 </table>
                                                 <img src="{{ asset('assets/media/loader.gif') }}"
-                                                    class="loader-img-attended">
+                                                    class="custom_loader loader-img-attended">
                                             </div>
                                         </div>
 
@@ -415,7 +417,8 @@
                                                         <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
                                                             id="revenue_by_service_category_menu">
                                                             <li>
-                                                                <a class="active" href="#service_revenue_4" data-toggle="tab"
+                                                                <a class="active" href="#service_revenue_4"
+                                                                    data-toggle="tab"
                                                                     onclick="InitRevenueByServiceCategory('today');">Today</a>
                                                             </li>
                                                             <li>
@@ -433,10 +436,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                    <a href="#service_revenue_3" data-toggle="tab"
-                                                                        onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
-                                                                        Month</a>
-                                                                </li> -->
+                                                                                                    <a href="#service_revenue_3" data-toggle="tab"
+                                                                                                        onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
+                                                                                                        Month</a>
+                                                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -449,7 +452,8 @@
                                         </div>
                                     </div>
                                     <div id="revenue-service-category"></div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended">
+                                    <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -498,10 +502,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                    <a href="#service_revenue_3"data-toggle="tab"
-                                                                        onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
-                                                                        Month</a>
-                                                                </li> -->
+                                                                                                    <a href="#service_revenue_3"data-toggle="tab"
+                                                                                                        onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
+                                                                                                        Month</a>
+                                                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -514,7 +518,8 @@
                                         </div>
                                     </div>
                                     <div id="revenue-service"></div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended">
+                                    <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -564,10 +569,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                        onclick="initConsultancyByStatus('lastmonth','1');">Last
-                                                                        Month</a>
-                                                                </li> -->
+                                                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                                                                        onclick="initConsultancyByStatus('lastmonth','1');">Last
+                                                                                                        Month</a>
+                                                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -581,7 +586,8 @@
                                         </div>
                                     </div>
                                     <div id="consultancy_by_status"></div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
+                                    <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -631,10 +637,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li>
-                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                        onclick="initTreatmentByStatus('lastmonth','2');">Last
-                                                                        Month</a>
-                                                                </li> -->
+                                                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
+                                                                                                        onclick="initTreatmentByStatus('lastmonth','2');">Last
+                                                                                                        Month</a>
+                                                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -648,7 +654,8 @@
                                         </div>
                                     </div>
                                     <div id="treatment_by_status"></div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img-attended" >
+                                    <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                 </div>
                             </div>
                         </div>
@@ -1000,10 +1007,10 @@
                                                                     Month</a>
                                                             </li>
                                                             <!-- <li class="lastmonth">
-                                                                    <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                        onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
-                                                                        Month</a>
-                                                                </li> -->
+                                                                                                    <a href="#doctor_wise_conversion" data-toggle="tab"
+                                                                                                        onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
+                                                                                                        Month</a>
+                                                                                                </li> -->
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -1021,7 +1028,7 @@
                                     <div class="row pt-7">
 
                                         <div class="col-7">
-                                            <img src="{{ asset('assets/media/loader.gif') }}" class="loader-imgs">
+                                            {{-- <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended"> --}}
                                             <div id="doc_wise_conversion"></div>
                                         </div>
                                         <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
@@ -1123,7 +1130,7 @@
                         },
                         cache: false,
                         success: function(response) {
-                            $("#collectionbycenter .loader-img-attended").css('display','none');
+                            $("#collectionbycenter .loader-img-attended").css('display', 'none');
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
                             @endif
@@ -1141,6 +1148,7 @@
                             @endif
                             collectionCentreChart(pie);
                         },
+
                         error: function(xhr, ajaxOptions, thrownError) {
                             errorMessage(xhr);
                         }
@@ -1157,9 +1165,10 @@
                         },
                         cache: false,
                         success: function(response) {
-                            $("#revenue_by_centre .loader-img-attended").css('display','none');
+                            $("#revenue_by_centre .loader-img-attended").css('display', 'none');
                             let pie = response.data.pie;
                             revenueCentreChart(pie);
+
                         },
                         error: function(xhr, ajaxOptions, thrownError) {
                             errorMessage(xhr);
@@ -1403,16 +1412,16 @@
                 }
             }
 
-            function revenueCentreChart(centerRevenue) {
+            function revenueCentreChart(pie) {
                 google.load('visualization', '1', {
                     packages: ['corechart', 'bar', 'line']
                 });
                 google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(centerRevenue);
+                    var data = google.visualization.arrayToDataTable(pie);
                     var chart = new google.visualization.PieChart(document.getElementById('revenue-centre'));
-                    chart.draw(data, options);
+                    chart.draw(data);
                 });
-                if (centerRevenue.length > 1) {
+                if (pie.length > 1) {
                     $("#revenue-centre").css("height", "500px");
                 }
             }
@@ -1440,11 +1449,8 @@
                 });
                 google.setOnLoadCallback(function() {
                     var data = google.visualization.arrayToDataTable(pie);
-                    var options = {
-                        colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-                    };
                     var chart = new google.visualization.PieChart(document.getElementById('revenue-service-category'));
-                    chart.draw(data, options);
+                    chart.draw(data);
                 });
                 if (pie.length > 1) {
                     $("#revenue-service-category").css("height", "500px");
@@ -1457,12 +1463,9 @@
                 });
                 google.setOnLoadCallback(function() {
                     var data = google.visualization.arrayToDataTable(service);
-                    var options = {
-                        colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-                    };
                     var chart = new google.visualization.PieChart(document.getElementById(
                         'revenue-service-collection'));
-                    chart.draw(data, options);
+                    chart.draw(data);
                 });
                 if (typeof service !== 'undefined' && service.length > 1) {
                     $("#revenue-service-collection").css("height", "500px");
