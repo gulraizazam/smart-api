@@ -65,7 +65,7 @@
                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="mt-2 mb-7">
+                        <div class="mt-2 mb-0">
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
