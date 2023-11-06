@@ -2397,8 +2397,12 @@ class PackagesController extends Controller
     }
     public function updateRefund(Request $request)
     {
+       
+        $validator = $this->verifyFields($request);
 
-
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+        }
         $latest_refund = PackageAdvances::where(
             [
                 ["package_id", '=', $request['package_id']],
@@ -2497,7 +2501,22 @@ class PackagesController extends Controller
         $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id']]);
         return ApiHelper::apiResponse($this->success, 'Record updated', true, []);
     }
-
+    protected function verifyFields(Request $request)
+    {
+        $rules = [
+            'refund_amount' => ['required', 'numeric', 'regex:/^[0-9]+$/'],
+            'refund_note' => 'required',
+            'package_id' => 'required',
+            'payment_mode_id' => 'required',
+            'created_at' => ['required', 'date', 'date_format:Y-m-d'],
+        ];
+        $customMessages = [
+            'created_at.required' => 'The created at field is required.',
+            'created_at.date_format' => 'The Date field format is incorrect.',
+        ];
+    
+        return Validator::make($request->all(), $rules, $customMessages);
+    }
     public function viewPackage($id)
     {
         $url = route('admin.packages.edit', $id);
