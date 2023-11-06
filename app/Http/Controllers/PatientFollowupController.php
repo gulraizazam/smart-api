@@ -185,36 +185,28 @@ class PatientFollowupController extends Controller
 
             ])->first();
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
-            $data['patient_id'] = $patient->id;
-            $data['name'] = $patient->name;
-            $data['phone'] = $patient->phone;
-            $data['settle_amount_with_tax'] = ($data['settle_amount'] + $data['settle_tax_amount']  + $data['settle__adjustment_amounts']);
-
-           if($conversion_date){
-            $data['created_at'] = Carbon::parse($conversion_date->created_at)->format('Y-m-d');
-           }else{
-            $data['created_at'] = Carbon::parse($data['created_at'])->format('Y-m-d');
-           }
-
-            if (count($treatments) > 0) {
-                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
-                $check_treatments = collect($treatments)->sortByDesc('id')->first();
-                $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-
-                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts']==null&& ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
-                    $data['is_treatment'] = 1;
-                    array_push($is_treatment, $data);
-
-
-                }
-
-            } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
-                    $data['is_treatment'] = 0;
-                    array_push($not_treatment, $data);
+            if($patient){
+                $data['patient_id'] = $patient->id;
+                $data['name'] = $patient->name;
+                $data['phone'] = $patient->phone;
+                $data['settle_amount_with_tax'] = ($data['settle_amount'] + $data['settle_tax_amount']  + $data['settle__adjustment_amounts']);
+                $data['created_at'] =$conversion_date? Carbon::parse($conversion_date->created_at)->format('Y-m-d'):Carbon::parse($data['created_at'])->format('Y-m-d');   
+                if (count($treatments) > 0) {
+                    $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
+                    $check_treatments = collect($treatments)->sortByDesc('id')->first();
+                    $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
+                    if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(2)->format('Y-m-d') && $future_treatments->isEmpty() && $data['cash_setteled_amounts']==null&& ($data['cash_receive'] - $data['settle_amount_with_tax']) > 1) {
+                        $data['is_treatment'] = 1;
+                        array_push($is_treatment, $data);
+                    }    
+                } else {
+                    if (in_array($data['patient_id'], $plan_check_no_treatment)&& $data['cash_setteled_amounts']==null && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
+                        $data['is_treatment'] = 0;
+                        array_push($not_treatment, $data);
+                    }
                 }
             }
-
+        
         }
         $patient_data = array_merge($is_treatment, $not_treatment);
         usort($patient_data, function ($a, $b) {
@@ -667,6 +659,7 @@ class PatientFollowupController extends Controller
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->get();
             $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
+           if($patient){
             $data['patient_id'] = $patient->id;
             $data['name'] = Str::limit($patient->name,16,$end="...");
             $data['phone'] = $patient->phone;
@@ -684,7 +677,7 @@ class PatientFollowupController extends Controller
                     }
                 }
             }
-
+           }
         }
         usort($patient_data, function ($a, $b) {
             return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
