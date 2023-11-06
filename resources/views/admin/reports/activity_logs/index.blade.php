@@ -69,13 +69,13 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                            <div class="form-group mb-0 col-md-3 sn-select @if($errors->has('date_range')) has-error @endif">
+                                            <div class="form-group mb-0 col sn-select @if($errors->has('date_range')) has-error @endif" style="min-width:200px;">
                                                 {!! Form::label('date_range', 'Date Range*', ['class' => 'control-label']) !!}
                                                 <div class="input-group">
-                                                    {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control']) !!}
+                                                    {!! Form::text('date_range', null, ['id' => 'activity_date_range', 'class' => 'form-control']) !!}
                                                 </div>
                                             </div>
-                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('activity_type')) has-error @endif">
+                                            <div class="form-group mb-0 col sn-select @if($errors->has('activity_type')) has-error @endif">
                                                 {!! Form::label('activity_type', 'Activity', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="activity_type" name="activity_type">
                                                     <option value="all">All Logs</option>
@@ -83,7 +83,7 @@
                                                 </select>
                                                 <span id="service_id_handler"></span>
                                             </div>
-                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
+                                            <!-- <div class="form-group mb-0 col sn-select @if($errors->has('service_id')) has-error @endif"
                                                     id="service_id_E">
                                                 {!! Form::label('service_id', 'Service', ['class' => 'control-label']) !!}
                                                 <select class="form-control select2" id="service_id" name="service_id">
@@ -93,12 +93,12 @@
                                                     @endforeach
                                                 </select>
                                                 <span id="service_id_handler"></span>
-                                            </div>
+                                            </div> -->
                                             <div class="form-group col-md-2 @if($errors->has('discount_id')) has-error @endif" id="discount"
                                                     style="display: none;">
                                             </div>
 
-                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
+                                            <div class="form-group mb-0 col sn-select @if($errors->has('location_id')) has-error @endif"
                                                     id="location_id_E">
 
                                                 {!! Form::label('location_id', 'Centres', ['class' => 'control-label']) !!}
@@ -108,15 +108,16 @@
 
 
 
-                                            <div class="form-group mb-0 col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif"
+                                            <div class="form-group mb-0 col sn-select @if($errors->has('doctor_id')) has-error @endif"
                                                     id="doctors_id">
                                                 {!! Form::label('doctor_id', 'User', ['class' => 'control-label']) !!}
                                                 {!! Form::select('doctor_id', $operators, null, ['id' => 'doctor_id', 'style' => 'width: 100%;', 'class' => 'form-control select2']) !!}
                                                 <span id="doctor_id_handler"></span>
                                             </div>
                                             <div class="form-group mt-5 col sn-select @if($errors->has('group_id')) has-error @endif">
+                                                <label for="#" class="control-label" style="color:transparent;">-</label>
                                                 <a href="javascript:void(0);" onclick="loadReport($(this));" id="load_report"
-                                                    class="btn btn-success spinner-button">Load Report</a>
+                                                    style="white-space: nowrap;" class="d-table btn btn-success spinner-button">Load Report</a>
                                             </div>
                                         <hr>
                                         <div class="clear clearfix" style="margin-bottom: 15px;"></div>
@@ -152,7 +153,7 @@
             $("#location_id_com").on('change',function(){
                 $("#location_id_com-report").val($("#location_id_com").val());
             });
-            $('#date_range').daterangepicker({
+            $('#activity_date_range').daterangepicker({
                 locale: {
                 },
                 ranges   : {
@@ -165,7 +166,7 @@
                     'This Year'  : [moment().startOf('year'), moment().endOf('year')],
                     'Last Year'  : [moment().subtract(1, 'year').startOf('month'), moment().subtract(1, 'year').endOf('year')],
                 },
-                startDate: moment().subtract(29, 'days'),
+                startDate: moment(),
                 endDate  : moment()
             });
             var loadReport = function (that) {
@@ -182,11 +183,11 @@
                     url: route('admin.reports.load_activity_report'),
                     type: "POST",
                     data: {
-                        startDate: $('#date_range').data('daterangepicker').startDate.format('YYYY-MM-DD'),
-                        endDate: $('#date_range').data('daterangepicker').endDate.format('YYYY-MM-DD'),
+                        startDate: $('#activity_date_range').data('daterangepicker').startDate.format('YYYY-MM-DD'),
+                        endDate: $('#activity_date_range').data('daterangepicker').endDate.format('YYYY-MM-DD'),
                         location_id: $('#location_id').val(),
                         location_id_com: $('#location_id_com').val(),
-                        service_id: $('#service_id').val(),
+                        //service_id: $('#service_id').val(),
                         user_id: $('#doctor_id').val(),
                         activity_type: $('#activity_type').val(),
                     },

@@ -1,3 +1,21 @@
+
+    <div class="col-md-8"></div>
+    <div class="col-md-4">
+        <table class="dark-th-table table table-bordered">
+            <tbody>
+                <tr>
+                    <th width="25%">Duration</th>
+                    <td>From {{$startDate}} to {{$endDate}}</td>
+                </tr>
+                <tr>
+                    <th>Total</th>
+                    <td>{{$data ? count($data) : 0}} Records</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
 <div class="col-12 pb-0">
     <div class="timeline custom_timeline timeline-6 mt-3">
         @forelse($data as $activity)

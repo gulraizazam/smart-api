@@ -1195,9 +1195,9 @@ class GeneralFunctions
 
         return $stock_quantity;
     }
-    public static function saveActivityLogs($action, $activityType, $data)
+    public static function saveActivityLogs($action, $activityType, $data,$appointment_id)
     {
-
+        
         try {
             $location = Locations::find($data['location_id']);
             $service = Services::find($data['service_id']);
@@ -1208,6 +1208,7 @@ class GeneralFunctions
                 'user_id' => auth()->id(),
                 'action' => $action,
                 'appointment_type' => $activityType,
+                'appointment_id'=>$appointment_id,
                 'activity_type' => $activityType,
                 'location' =>$location ? $location->name : '',
                 'centre_id' =>$location ? $location->id : NULL,
