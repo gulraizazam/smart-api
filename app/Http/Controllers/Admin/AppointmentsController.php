@@ -1865,7 +1865,7 @@ class AppointmentsController extends Controller
             // Send Promotion SMS
             $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
-            GeneralFunctions::saveActivityLogs('booked', 'Consultancy', $appointment_data);
+            GeneralFunctions::saveActivityLogs('booked', 'Consultancy', $appointment_data,$appointment->id);
            
             /**
              * Dispatch Elastic Search Index
@@ -2672,6 +2672,7 @@ class AppointmentsController extends Controller
                     'appointment_id' => $appointment->id,
                 ])
             );
+            
 
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {
@@ -5667,7 +5668,7 @@ class AppointmentsController extends Controller
                 if ($appointment->isDirty('scheduled_date')) {
                     $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
                 }
-
+                Activity::where('appointment_id',$request->appointment_id)->update(['action'=>'rescheduled','created_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date]);
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
 
