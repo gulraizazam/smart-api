@@ -105,9 +105,9 @@
                                                 {!! Form::select('location_id', $locations, (Auth::user()->hasRole('FDM')) ? array_keys($locations->toArray()) : null, [ 'id' => 'location_id', 'style' => 'width: 100%;', 'class' => 'form-control select2 sn-select']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
-                                           
-                                           
-                                            
+
+
+
                                             <div class="form-group mb-0 col sn-select @if($errors->has('doctor_id')) has-error @endif"
                                                     id="doctors_id">
                                                 {!! Form::label('doctor_id', 'User', ['class' => 'control-label']) !!}
