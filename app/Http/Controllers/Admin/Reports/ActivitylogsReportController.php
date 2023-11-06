@@ -21,17 +21,17 @@ class ActivitylogsReportController extends Controller
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
         if(!Auth::user()->hasRole('FDM')){
             $locations->prepend('All', '');
-            
+
         }
         $locations_com = Locations::getActiveSorted(ACL::getUserCentres());
 
-       
+
         return view('admin.reports.activity_logs.index', get_defined_vars());
-        
+
     }
     public function fetchActivityReport(Request $request)
     {
-        
+
         $colorClasses=['text-warning', 'text-success','text-primary','text-danger'];
         $isServicePresent = false;
         $isUserPresent = false;
@@ -43,7 +43,7 @@ class ActivitylogsReportController extends Controller
         if ($request->has('user_id')  && $request->user_id) {
             $isUserPresent = true;
         }
-        
+
         if ($request->has('location_id')  && $request->location_id) {
             $isLocationPresent = true;
         }
@@ -69,7 +69,7 @@ class ActivitylogsReportController extends Controller
             $query->where('activity_type',$request->activity_type);
         })
         ->latest()->get();
-       
+
         $data=[];
         $i = 0;
         foreach($activities as $activity)
@@ -98,12 +98,12 @@ class ActivitylogsReportController extends Controller
                     }
                     break;
                 default:
-                   
+
                     break;
 
             }
             $i++;
-            
+
         }
 
         return view('admin.reports.activity_logs.activities', get_defined_vars());
