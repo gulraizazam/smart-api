@@ -5,10 +5,13 @@ namespace App\Http\Controllers\Admin\Reports;
 use App\Helpers\ACL;
 use App\Http\Controllers\Controller;
 use App\Models\Activity;
+use App\Models\Appointments;
 use App\Models\Locations;
+use App\Models\Patients;
 use App\Models\Services;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class ActivitylogsReportController extends Controller
@@ -97,6 +100,13 @@ class ActivitylogsReportController extends Controller
                         $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
                     }
                     break;
+                case 'rescheduled':
+                    {
+                        $data[$i]['colorClass']= $colorClasses[$i%4];
+                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
+                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $activity->user->name.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activity->activity_type.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
+                    }
+                    break;
                 default:
 
                     break;
@@ -107,5 +117,55 @@ class ActivitylogsReportController extends Controller
         }
 
         return view('admin.reports.activity_logs.activities', get_defined_vars());
+    }
+    public function InsertLogs()
+    {
+        $startDate = now()->startOfMonth()->day(1);
+        $endDate = now()->startOfMonth()->day(5)->endOfDay();
+
+        $appointments = Appointments::select('location_id', 'service_id', 'patient_id', 'scheduled_date','created_at','updated_at','first_scheduled_date')
+            ->where('appointment_type_id', 1)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->with(['location', 'service', 'patient'])
+            ->get();
+
+
+        $action = 'booked';
+        $activityType = 'Consultancy';
+
+        $activities = [];
+        foreach ($appointments as $appointment) {
+           
+            if($appointment->first_scheduled_date == $appointment->scheduled_date){
+                $action = 'booked';
+            }else{
+                $action = 'rescheduled';
+            }
+            $location = $appointment->location;
+            $service = $appointment->service;
+            $patient = $appointment->patient;
+
+            $activity = [
+                'created_by' => auth()->id(),
+                'user_id' => auth()->id(),
+                'action' => $action,
+                'appointment_type' => $activityType,
+                'activity_type' => $activityType,
+                'location' => $location ? $location->name : '',
+                'centre_id' => $location ? $location->id : null,
+                'service_id' => $service ? $service->id : null,
+                'service' => $service ? $service->name : null,
+                'patient_id' => $patient ? $patient->id : null,
+                'patient' => $patient ? $patient->name : null,
+                'schedule_date' => $appointment->scheduled_date,
+                'created_at' => $appointment->created_at,
+                'updated_at' => $appointment->updated_at,
+            ];
+
+            $activities[] = $activity;
+        }
+
+        Activity::insert($activities);
+        return true;
     }
 }
