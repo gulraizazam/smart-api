@@ -2560,10 +2560,14 @@ class AppointmentsController extends Controller
             $appointment_data['region_id'] = $city_info->region_id;
             $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
             if ($appointment->scheduled_date != $request->scheduled_date) {
+                
                 $appointment_data['converted_by'] = Auth::user()->id;
+                Activity::where('appointment_id',$id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date]);
+               
             }
             if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
                 $appointment_data['converted_by'] = Auth::user()->id;
+                
             }
             if ((string) $appointment->city_id !== $request->city_id || (string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id || (string) $patient->gender !== $request->gender) {
                 $appointment_data['updated_by'] = Auth::user()->id;
