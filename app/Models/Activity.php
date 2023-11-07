@@ -42,4 +42,13 @@ class Activity extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+    
+    public function rescheduleBy()
+    {
+        return $this->belongsTo(User::class, 'rescheduled_by');
+    }
+    public function deleteBy()
+    {
+        return $this->belongsTo(User::class, 'deleted_by');
+    }
 }
