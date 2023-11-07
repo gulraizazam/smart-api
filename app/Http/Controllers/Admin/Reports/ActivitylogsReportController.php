@@ -12,7 +12,7 @@ use App\Models\Services;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-
+use Illuminate\Support\Facades\Auth;
 
 class ActivitylogsReportController extends Controller
 {
