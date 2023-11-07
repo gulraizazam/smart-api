@@ -2560,10 +2560,14 @@ class AppointmentsController extends Controller
             $appointment_data['region_id'] = $city_info->region_id;
             $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
             if ($appointment->scheduled_date != $request->scheduled_date) {
+                
                 $appointment_data['converted_by'] = Auth::user()->id;
+                Activity::where('appointment_id',$id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date]);
+               
             }
             if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
                 $appointment_data['converted_by'] = Auth::user()->id;
+                
             }
             if ((string) $appointment->city_id !== $request->city_id || (string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id || (string) $patient->gender !== $request->gender) {
                 $appointment_data['updated_by'] = Auth::user()->id;
@@ -2864,6 +2868,7 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $response = Appointments::DeleteRecord($id, Auth::User()->account_id);
+        Activity::where('appointment_id',$id)->update(['deleted_by'=>Auth::id(),'action'=>'deleted','deleted_date'=>Carbon::now()->format('Y-m-d')]);
         /**
          * Work need on destory
          */
@@ -5668,7 +5673,7 @@ class AppointmentsController extends Controller
                 if ($appointment->isDirty('scheduled_date')) {
                     $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
                 }
-                Activity::where('appointment_id',$request->appointment_id)->update(['action'=>'rescheduled','created_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date]);
+                Activity::where('appointment_id',$request->appointment_id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date]);
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
 
