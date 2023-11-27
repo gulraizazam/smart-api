@@ -218,7 +218,7 @@ img.loader-imgs {
 
 #unattended_payments .wrap_unattended_payment {
     position: sticky;
-    z-index: 1111;
+    z-index: 1;
     background: #fff;
     top: 0px;
 }
@@ -230,7 +230,7 @@ img.loader-imgs {
 
 #attended_payments .wrap_unattended_payment {
     position: sticky;
-    z-index: 1111;
+    z-index: 1;
     background: #fff;
     top: 0px;
 }
