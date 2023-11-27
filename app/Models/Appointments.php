@@ -557,7 +557,7 @@ class Appointments extends Model
         if (self::isChildExists($id, $account_id)) {
             return [
                 'status' => false,
-                'message' => 'Child records exist, unable to delete appointment',
+                'message' => "Consultation or Treatment can't be deleted when invoice generated.",
             ];
         }
         $appointment->whereId($id)->update(['deleted_by' => Auth::id()]);
