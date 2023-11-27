@@ -167,7 +167,7 @@ class Refunds extends Model
             $amount_after_refund = $consumed_amount_with_tax + $package_is_refunded_amount;
             $amount_left = $package_cash_receive - $amount_after_refund;
             $find_doc = Appointments::where('id',$packageinformation->appointment_id)->first();
-            if($amount_left > 0){
+            
                 
                 $data_adjustment['cash_flow'] = 'out';
                 $data_adjustment['cash_amount'] = $amount_left;
@@ -185,24 +185,25 @@ class Refunds extends Model
                 $data_adjustment['created_at'] = $custom_created_at;
                 $data_adjustment['updated_at'] = $custom_created_at;
                 $record = self::create($data_adjustment);
-                $dataInvoice['total_price'] = $amount_left;
-                $dataInvoice['account_id'] = Auth::User()->account_id;
-                $dataInvoice['patient_id'] = $packageinformation->patient_id;
-                $dataInvoice['appointment_id'] = $packageinformation->appointment_id;
-                $dataInvoice['invoice_status_id'] = 3;
-                $dataInvoice['created_by'] = Auth::User()->id;
-                $dataInvoice['location_id'] =$packageinformation->location_id;
-                $dataInvoice['doctor_id'] =$find_doc->doctor_id;
-                $dataInvoice['active'] = 1;
-                $dataInvoice['is_exclusive'] = 0;
-                $create_invoice =  Invoices::create($dataInvoice);
-               $dataInvoiceDetail['qty'] = 1;
-               $dataInvoiceDetail['service_id'] =$services->id;
-               $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
-               InvoiceDetails::create($dataInvoiceDetail);
+                if($amount_left > 0){
+                    $dataInvoice['total_price'] = $amount_left;
+                    $dataInvoice['account_id'] = Auth::User()->account_id;
+                    $dataInvoice['patient_id'] = $packageinformation->patient_id;
+                    $dataInvoice['appointment_id'] = $packageinformation->appointment_id;
+                    $dataInvoice['invoice_status_id'] = 3;
+                    $dataInvoice['created_by'] = Auth::User()->id;
+                    $dataInvoice['location_id'] =$packageinformation->location_id;
+                    $dataInvoice['doctor_id'] =$find_doc->doctor_id;
+                    $dataInvoice['active'] = 1;
+                    $dataInvoice['is_exclusive'] = 0;
+                    $create_invoice =  Invoices::create($dataInvoice);
+                    $dataInvoiceDetail['qty'] = 1;
+                    $dataInvoiceDetail['service_id'] =$services->id;
+                    $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
+                    InvoiceDetails::create($dataInvoiceDetail);
+                }
             }
-        }
-        return $record;
+            return $record;
     }
 
     /**
