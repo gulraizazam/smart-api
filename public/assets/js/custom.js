@@ -298,10 +298,10 @@ function customDatePicker() {
 
 function addUsers() {
     $(".suggesstion-box").hide();
+    $(".croxcli").hide();
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
-    $('.croxcli').hide();
 }
 
 function addLeads() {
@@ -1239,6 +1239,7 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                             });
                             $(".suggestion-list").html(html);
                             $(".suggesstion-box").show();
+                            $(".croxcli").show();
                         } else {
                             $(".suggesstion-box").hide();
                         }
@@ -1247,8 +1248,10 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
             }, 500);
         } else {
             $(".suggesstion-box").hide();
+            $(".croxcli").hide();
         }
     });
+    $(".croxcli").hide();
     return false;
 }
 function patientSearchRefund(search_id = 'patient_id', flag = 1) {
