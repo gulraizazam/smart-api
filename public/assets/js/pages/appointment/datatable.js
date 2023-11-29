@@ -813,32 +813,32 @@ function setEditData(response) {
         let setting = response.data.setting;
         let genders = response.data.genders;
 
-        let type_option = '<option value="">All</option>';
+        let type_option = '';
         Object.entries(consultancy_types).forEach(function (consultancy_type) {
             type_option += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
         });
 
-        let service_option = '<option value="">All</option>';
+        let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
             service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
         });
 
-        let city_option = '<option value="">All</option>';
+        let city_option = '<option value="">Select a City</option>';
         Object.entries(cities).forEach(function (city) {
             city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });
 
-        let location_option = '<option value="">All</option>';
+        let location_option = '<option value="">Select a Location</option>';
         Object.entries(locations).forEach(function (location) {
             location_option += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
 
-        let doctor_option = '<option value="">All</option>';
+        let doctor_option = '<option value="">Select a Doctor</option>';
         Object.entries(doctors).forEach(function (doctor) {
             doctor_option += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
         });
 
-        let gender_option = '<option value="">All</option>';
+        let gender_option = '<option value="">Select a Gender</option>';
         Object.entries(genders).forEach(function (gender) {
             gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
@@ -899,32 +899,32 @@ function setTreatmentEditData(response) {
         let genders = response.data.genders;
 
 
-        let service_option = '<option value="">All</option>';
+        let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
             service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
         });
 
-        let city_option = '<option value="">All</option>';
+        let city_option = '<option value="">Select a City</option>';
         Object.entries(cities).forEach(function (city) {
             city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });
 
-        let location_option = '<option value="">All</option>';
+        let location_option = '<option value="">Select a Location</option>';
         Object.entries(locations).forEach(function (location) {
             location_option += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
 
-        let doctor_option = '<option value="">All</option>';
+        let doctor_option = '<option value="">Select a Doctor</option>';
         Object.entries(doctors).forEach(function (doctor) {
             doctor_option += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
         });
 
-        let gender_option = '<option value="">All</option>';
+        let gender_option = '<option value="">Select a Gender</option>';
         Object.entries(genders).forEach(function (gender) {
             gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
 
-        let machine_option = '<option value="">All</option>';
+        let machine_option = '<option value="">Select a Machine</option>';
         Object.entries(machines).forEach(function (machine) {
             machine_option += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
         });
