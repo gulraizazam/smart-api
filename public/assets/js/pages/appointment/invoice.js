@@ -171,7 +171,7 @@ $(document).ready(function () {
             $(this).attr("disabled", false);
             hideSpinner();
             return;
-        } else if($('#cash').val() < 0){
+        } else if ($('#cash').val() < 0) {
             toastr.warning("Amount can not be negative value")
             status = false;
             $(this).attr("disabled", false);
@@ -254,16 +254,16 @@ $(document).ready(function () {
                 success: function (resposne) {
                     if (resposne.status == false) {
                         toastr.error("Invoice can not be generated in past and future dates!");
-                    } else if(resposne.status) {
+                    } else if (resposne.status) {
                         let invoice_id = resposne.data.invoice_id;
                         $('#successMessage').show();
                         toastr.success("Invoice successfully created");
                         reInitTable('consultancy');
                         closeAllPopup('.modal-dialog')
                         $("#consultancy-invoice-create").remove();
-                       // window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
-                        displayInvoice(route('admin.appointments.InvoiceDisplay', {id: invoice_id}), invoice_id);
-                    }else {
+                        // window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
+                        displayInvoice(route('admin.appointments.InvoiceDisplay', { id: invoice_id }), invoice_id);
+                    } else {
                         $('#wrongMessage').show();
                         toastr.error(" Something Went Wrong!");
                     }
@@ -290,7 +290,7 @@ $(document).ready(function () {
 
 
     /*Start Treatment*/
-    $(document).on('change', '#package_id_create',  function () {
+    $(document).on('change', '#package_id_create', function () {
 
         $('#price_create').text('0');
         $('.price_create').val('0');
@@ -342,7 +342,7 @@ $(document).ready(function () {
                 //             }
                 //             $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
                 //             jQuery.each(resposne.packageservices, function (i, packageservices) {
-                                
+
                 //                 if (packageservices.package_bundle_id == packagebundles.id) {
 
                 //                     if (packageservices.is_consumed == '0') {
@@ -394,7 +394,7 @@ $(document).ready(function () {
                             } else {
                                 var discountprice = packagebundles.discount_price;
                             }
-                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString()+ "</td></tr>");
+                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + discounttype + "</td><td>" + discountprice + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_percenatage + "</td><td>" + packagebundles.tax_including_price.toLocaleString() + "</td></tr>");
 
                             jQuery.each(resposne.packageservices, function (i, packageservices) {
 
@@ -421,14 +421,13 @@ $(document).ready(function () {
                 }
             });
         }
-       
+
     });
 
     $('#package_id_create').change();
 
     /*Invoice Save and also package advances*/
     $(document).on("click", "#treatment_savepackageinformation", function () {
-
         $(this).attr("disabled", true);
 
         showSpinner();
@@ -453,12 +452,12 @@ $(document).ready(function () {
         var checked_treatment = $('#checked_treatment').val();
         var created_at = $('#created_at').val();
         var tax_treatment_type_id = $('#tax_treatment_type_id').val();
-        var  remaining = $('#remaining').val();
+        var remaining = $('#remaining').val();
         var status_checked_treatment = true;
 
-        if(checked_treatment == 0){
+        if (checked_treatment == 0) {
             var exclusive_or_bundle = $('#checked_bundle_id').val();
-            if(exclusive_or_bundle == 0){
+            if (exclusive_or_bundle == 0) {
                 //if treatment belongs to plan but not select to I set that varibale
                 var status_checked_treatment = false;
             }
@@ -467,31 +466,34 @@ $(document).ready(function () {
         }
 
         var status = true;
-
         if (cash > 0) {
-            if(package_mode_id=='' || package_mode_id== '0') {
+            if (package_mode_id == '' || package_mode_id == '0') {
                 status = false;
             }
         }
-        if(status_checked_treatment){
 
-            if(status){
-                console.log( settle, outstand)
+        if (status_checked_treatment) {
+            if (status) {
+                console.log(settle, outstand)
                 if (appointment_id && price && balance && cash && settle && outstand) {
-                    if(appointment_id_consultancy =="" && package_service_id==""){
+                    if (appointment_id_consultancy == "" && package_service_id == "") {
                         $("#noconsultancy").show();
-                    }else{
-                        if(outstand > 0){
+                        $(this).attr("disabled", false);
+                        hideSpinner();
+                    } else {
+                        if (outstand > 0) {
                             $('#outstandingbalance').show();
-                        }else{
+                            $(this).attr("disabled", false);
+                            hideSpinner();
+                        } else {
                             $.ajax({
                                 type: 'get',
                                 url: route('admin.appointments.saveinvoice'),
                                 data: {
                                     'appointment_id': appointment_id,
                                     'package_id': package_id,
-                                    'amount_create':amount_create,
-                                    'tax_create':tax_create,
+                                    'amount_create': amount_create,
+                                    'tax_create': tax_create,
                                     'price': price,
                                     'balance': balance,
                                     'cash': cash,
@@ -499,12 +501,12 @@ $(document).ready(function () {
                                     'outstand': outstand,
                                     'package_service_id': package_service_id,
                                     'package_mode_id': package_mode_id,
-                                    'checked_treatment':checked_treatment,
-                                    'exclusive_or_bundle':exclusive_or_bundle,
-                                    'created_at':created_at,
-                                    'appointment_id_consultancy':appointment_id_consultancy,
-                                    'tax_treatment_type_id':tax_treatment_type_id,
-                                    'remaining':remaining
+                                    'checked_treatment': checked_treatment,
+                                    'exclusive_or_bundle': exclusive_or_bundle,
+                                    'created_at': created_at,
+                                    'appointment_id_consultancy': appointment_id_consultancy,
+                                    'tax_treatment_type_id': tax_treatment_type_id,
+                                    'remaining': remaining
                                 },
                                 success: function (resposne) {
                                     if (resposne.status) {
@@ -514,12 +516,12 @@ $(document).ready(function () {
                                         reInitTable('treatment');
                                         closeAllPopup('.modal-dialog')
                                         $("#treatment-invoice-create").remove();
-                                        window.location.href =  route('admin.invoices.invoice_pdf',[invoice_id, 'download']);
+                                        window.location.href = route('admin.invoices.invoice_pdf', [invoice_id, 'download']);
                                     } else {
-                                        if(resposne.data.setteled==1){
+                                        if (resposne.data.setteled == 1) {
 
                                             $('#setteledMessage').show();
-                                        }else{
+                                        } else {
                                             $('#wrongMessage').show();
                                             toastr.error(" Something Went Wrong!")
                                         }
@@ -571,8 +573,8 @@ $(document).ready(function () {
         }
         var price_orignal = $('#orignal_price_h').val();
         var location_id = $('#location_id_tax').val();
-        var is_exclusive =  $('#is_exclusive').val();
-        var tax_treatment_type_id =  $('#tax_treatment_type_id').val();
+        var is_exclusive = $('#is_exclusive').val();
+        var tax_treatment_type_id = $('#tax_treatment_type_id').val();
         if (price_orignal) {
             $.ajax({
                 type: 'get',
@@ -581,7 +583,7 @@ $(document).ready(function () {
                     'price_orignal': price_orignal,
                     'location_id': location_id,
                     'is_exclusive': is_exclusive,
-                    'tax_treatment_type_id':tax_treatment_type_id,
+                    'tax_treatment_type_id': tax_treatment_type_id,
                 },
                 success: function (resposne) {
                     if (resposne.status) {
@@ -673,9 +675,9 @@ function keyfunction_custom(type = '') {
                                 $('#outstanding_cash').val(response.outstanding);
 
                                 if (response.outstanding == '0') {
-                                    $("#"+type+"addinvoice").show();
+                                    $("#" + type + "addinvoice").show();
                                 } else {
-                                    $("#"+type+"addinvoice").hide();
+                                    $("#" + type + "addinvoice").hide();
                                 }
 
                             } else {
@@ -699,10 +701,10 @@ function keyfunction_cash(type = '') {
 
     var price = $('.tax_amt').val();
     /*tax amt. amount*/
-   // var balance = $('.balance').val();
+    // var balance = $('.balance').val();
     var cash = $('#cash').val();
-   // var settleamount = $('.settle').val();
-   // var outstanding = $('.outstand').val();
+    // var settleamount = $('.settle').val();
+    // var outstanding = $('.outstand').val();
     var amount_type = $('#amount_type').val();
 
     if (cash == 0 || cash == '') {
@@ -722,7 +724,7 @@ function keyfunction_cash(type = '') {
             //$(".settle_create").val(settle_cash);
         }
         $("#outstand").text(outstand_cash);
-       // $(".outstand").val(outstand_cash);
+        // $(".outstand").val(outstand_cash);
     }
 
     if (price && balance && cash) {
@@ -750,15 +752,15 @@ function keyfunction_cash(type = '') {
                         $(".settle_create").val(resposne.settleamount);
                     }
 
-                   /* if (resposne.outstdanding == '0') {
-                        $("#"+type+"addinvoice").show();
-                    } else {
-                        $("#"+type+"addinvoice").hide();
-                    }
-
-                    if ((cash == 0 || cash == '') && amount_type == 0) {
-                        $('#addinvoice').show();
-                    }*/
+                    /* if (resposne.outstdanding == '0') {
+                         $("#"+type+"addinvoice").show();
+                     } else {
+                         $("#"+type+"addinvoice").hide();
+                     }
+ 
+                     if ((cash == 0 || cash == '') && amount_type == 0) {
+                         $('#addinvoice').show();
+                     }*/
                 }
             },
         });
@@ -808,9 +810,9 @@ function keyfunction(type = '') {
                     $("#outstand_create").text(resposne.outstdanding);
                     $(".outstand_create").val(resposne.outstdanding);
                     if (resposne.outstdanding == '0') {
-                        $("#"+type+"addinvoice").show();
+                        $("#" + type + "addinvoice").show();
                     } else {
-                        $("#"+type+"addinvoice").hide();
+                        $("#" + type + "addinvoice").hide();
                     }
                 }
             },
@@ -854,9 +856,9 @@ function calculateInvoice(id, type = '') {
                 $('#package_service_id').val(id);
 
                 if (resposne.outstanding == '0') {
-                    $("#"+type+"addinvoice").show();
+                    $("#" + type + "addinvoice").show();
                 } else {
-                    $("#"+type+"addinvoice").hide();
+                    $("#" + type + "addinvoice").hide();
                 }
 
             } else {
@@ -875,9 +877,9 @@ function toggle(id) {
 
 function triggerDate($class) {
 
-    $("." + $class ).trigger("click");
+    $("." + $class).trigger("click");
 
-    $(".custom_field").click(function(){
+    $(".custom_field").click(function () {
         $('.custom_field').datepicker("show");
     });
 
