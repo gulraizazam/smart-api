@@ -562,7 +562,7 @@ class Appointments extends Model
         }
         $appointment->whereId($id)->update(['deleted_by' => Auth::id()]);
         $appointment->delete();
-
+        Activity::where('appointment_id',$id)->update(['deleted_by'=>Auth::id(),'action'=>'deleted','deleted_date'=>Carbon::now()->format('Y-m-d'),'updated_at'=>Carbon::now()]);
         //log request for delete for audit trail
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
