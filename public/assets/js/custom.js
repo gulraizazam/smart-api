@@ -4,6 +4,15 @@ $(document).keydown(function (event) {
         $('.modal').modal('hide');
     }
 });
+$(document).ready(function(){
+  // Click event handler for the document
+  $(document).on('click', function(e){
+    if(!$(e.target).closest('.dropdown-menu').length) {
+      $('.dropdown-menu').removeClass('show');
+      $('.dropdown-menu').hide();
+    }
+  });
+});
 
 let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 
