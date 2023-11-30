@@ -23,6 +23,20 @@ var RefundValidation = function () {
                             }
                         }
                     },
+                    refund_amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Amount field is required'
+                            }
+                        }
+                    },
+                    payment_mode_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The payment mode field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
