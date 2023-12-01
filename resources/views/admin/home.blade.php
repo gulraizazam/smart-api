@@ -661,7 +661,7 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_staff_wise_arrival'))
-                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="staff_wise_arrival">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -884,15 +884,17 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                     </div>
                                 </div>
                             </div>
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_doctor_wise_conversion'))
-                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="doctor_wise_conversion_section">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 800px;">
+                                style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -1026,13 +1028,10 @@
                                     </div>
 
                                     <div class="row pt-7">
-
                                         <div class="col-7">
-                                            {{-- <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended"> --}}
                                             <div id="doc_wise_conversion"></div>
                                         </div>
                                         <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
-
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
@@ -1047,6 +1046,7 @@
                                                 </table>
                                             </div>
                                         </div>
+                                        <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
                                     </div>
                                 </div>
                             </div>
@@ -1549,7 +1549,7 @@
                 }, 5000);
             });
 
-            
+
         </script>
     @endpush
 @endsection
