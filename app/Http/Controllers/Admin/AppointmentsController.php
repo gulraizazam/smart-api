@@ -721,7 +721,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
-       
+
 
         $where = [];
         /*
@@ -760,7 +760,7 @@ class AppointmentsController extends Controller
             $where[] = [
                 'users.phone',
                 'like',
-                '%'.GeneralFunctions::cleanNumber($filters['phone']).'%',
+                '%'.$filters['phone'].'%',
             ];
             Filters::put(Auth::User()->id, $filename, 'phone', $filters['phone']);
         }
@@ -826,12 +826,12 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
             Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
-        if (hasFilter($filters, 'phone')) {
-            $phone = substr($filters['phone'], 1);
-            $where[] = [['users.phone' => $phone]];
-            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
-        }
-       
+//        if (hasFilter($filters, 'phone')) {
+//            $phone = substr($filters['phone'], 1);
+//            $where[] = [['users.phone' => $phone]];
+//            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
+//        }
+
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
         if (Gate::allows('appointments_consultancy')) {
@@ -1002,7 +1002,7 @@ class AppointmentsController extends Controller
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
-                    'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
+                    'phone' => $appointment->phone,
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
@@ -1109,7 +1109,7 @@ class AppointmentsController extends Controller
             $where[] = [
                 'users.phone',
                 'like',
-                '%'.GeneralFunctions::cleanNumber($filters['phone']).'%',
+                '%'.$filters['phone'].'%',
             ];
             Filters::put(Auth::User()->id, $filename, 'phone', $filters['phone']);
         }
@@ -1141,11 +1141,11 @@ class AppointmentsController extends Controller
             $where[] = [['city_id' => $filters['city_id']]];
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
-        if (hasFilter($filters, 'phone')) {
-            $phone = substr($filters['phone'], 1);
-            $where[] = [['users.phone' => $phone]];
-            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
-        }
+//        if (hasFilter($filters, 'phone')) {
+//            $phone = substr($filters['phone'], 1);
+//            $where[] = [['users.phone' => $phone]];
+//            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
+//        }
         if (hasFilter($filters, 'service_id')) {
             $service_id = GeneralFunctions::getServiceId($filters['service_id']);
             $service_check = Services::find($service_id);
@@ -1364,7 +1364,7 @@ class AppointmentsController extends Controller
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
-                    'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
+                    'phone' => $appointment->phone,
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'apt_scheduled_date' => $appointment->scheduled_date,
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
@@ -1641,7 +1641,7 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
-       
+
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1771,7 +1771,7 @@ class AppointmentsController extends Controller
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
                 } else {
-                    
+
                     $appointment_data['patient_id'] = $patient->id;
                     Patients::where(['id' => $patient->id])->update([
                         'name' => $appointment_data['name'],
@@ -1791,8 +1791,8 @@ class AppointmentsController extends Controller
                 $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
                 $lead_service->update(['status' => 1]);
             }
-           
-            
+
+
             // Set Lead ID for Appointment
             $appointment_data['patient_id'] = $patient->id;
             $appointment_data['lead_id'] = $lead->id;
@@ -1866,7 +1866,7 @@ class AppointmentsController extends Controller
             $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
             GeneralFunctions::saveActivityLogs('booked', 'Consultancy', $appointment_data,$appointment->id);
-           
+
             /**
              * Dispatch Elastic Search Index
              */
@@ -2560,14 +2560,14 @@ class AppointmentsController extends Controller
             $appointment_data['region_id'] = $city_info->region_id;
             $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
             if ($appointment->scheduled_date != $request->scheduled_date) {
-                
+
                 $appointment_data['converted_by'] = Auth::user()->id;
                 Activity::where('appointment_id',$id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
-               
+
             }
             if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
                 $appointment_data['converted_by'] = Auth::user()->id;
-                
+
             }
             if ((string) $appointment->city_id !== $request->city_id || (string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id || (string) $patient->gender !== $request->gender) {
                 $appointment_data['updated_by'] = Auth::user()->id;
@@ -2676,7 +2676,7 @@ class AppointmentsController extends Controller
                     'appointment_id' => $appointment->id,
                 ])
             );
-            
+
 
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {
@@ -2868,7 +2868,7 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $response = Appointments::DeleteRecord($id, Auth::User()->account_id);
-       
+
         /**
          * Work need on destory
          */
@@ -3861,7 +3861,7 @@ class AppointmentsController extends Controller
             ])
             ->select('bundles.id')
             ->get();
-            
+
         foreach ($bundleinfo as $bundleinfo) {
             $bundleid[] = $bundleinfo->id;
         }
@@ -3875,22 +3875,22 @@ class AppointmentsController extends Controller
         }
         $packagebundles = PackageBundles::leftJoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
             ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
-            
+
             ->where('package_bundles.package_id', '=', $package->id)
             ->whereIn('package_bundles.bundle_id', $bundleid)
             ->select('package_bundles.*', 'discounts.name as discountname', 'bundles.name as bundlename')
-           
-            ->get(); 
-           
-            
+
+            ->get();
+
+
         $packageservices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
             ->where([
                 ['package_services.package_id', '=', $package->id],
                 ['package_services.service_id', '=', $appointmentinfo->service_id],
-                
+
             ])
             ->select('package_services.*', 'services.name as servicename')
-            
+
             ->get();
 
         return response()->json([
@@ -3925,7 +3925,7 @@ class AppointmentsController extends Controller
          $package_service = PackageService::find($request->package_service_id);
          $package = Packages::find($request->package_id_create);
          $package_bundle = PackageBundles::find($package_service->package_bundle_id);
-        
+
          $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)->where('type', '=', 'multiple')->first();
          $service = Services::find($package_service->service_id);
          if ($bundle) {
@@ -3939,32 +3939,32 @@ class AppointmentsController extends Controller
          } else {
              $package_access = 1;
          }
-        
+
          $cash = 0;
          if ($package_access == 1) {
-            
+
              $price = $package_service->tax_including_price;
              $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
              $remaining = 0;
              $settleamount_1 = $price - $cash;
              $settleamount = min($settleamount_1, $balance);
          } else {
-           
+
              if ( $package_service->price > ($package_bundle->net_amount - $balance_patient_in)) {
-               
+
                  $price = $package_service->price;
-                 
+
                  if($price < $balance){
                     $outstanding =0;
                  }else{
-                   
+
                     $outstanding = intval( $package_service->price - $balance) - $cash;
                  }
-                 
+
                  $settleamount_1 = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
                  $settleamount = min($settleamount_1, $balance);
              } else {
-               
+
                  $price = $package_service->price;
                  $outstanding = intval($price) - $cash - intval($balance);
                  $settleamount_1 = $price - $cash;
@@ -3975,7 +3975,7 @@ class AppointmentsController extends Controller
          if ($outstanding < 0) {
              $outstanding = 0;
          }
- 
+
          return response()->json([
              'status' => true,
              'amount' => $package_service->tax_exclusive_price,
@@ -4070,7 +4070,7 @@ class AppointmentsController extends Controller
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
-        
+
         if (isset($request->appointment_id_consultancy)) {
             // Now we need to work our tag appointment for upselling
             $tag_appoint = explode('.', $request->appointment_id_consultancy);
@@ -5643,7 +5643,7 @@ class AppointmentsController extends Controller
 
     public function updateSchedule(Request $request)
     {
-       
+
         $data = [];
         $appointment = Appointments::find($request->appointment_id);
         if ($appointment) {
