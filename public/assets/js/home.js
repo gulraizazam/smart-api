@@ -624,6 +624,9 @@ function CollectionByServiceCategory(service, colors) {
 }
 
 function initCentreWiseArrival(period, centreID, time = '') {
+    $("#staff_wise_arrival .loader-img-attended").css('display', '');
+    $("#staff_wise_arrival #centre_wise_arrival").css('display', 'none');
+    $("#staff_wise_arrival #centre_wise_arrival_02").css('display', 'none');
     if (time != 'firsttime') {
         central_wise_arrival_chart.destroy();
     }
@@ -645,6 +648,9 @@ function initCentreWiseArrival(period, centreID, time = '') {
             'centre_id': centreID
         },
         success: function (response) {
+            $("#staff_wise_arrival .loader-img-attended").css('display', 'none');
+            $("#staff_wise_arrival #centre_wise_arrival").css('display', '');
+            $("#staff_wise_arrival #centre_wise_arrival_02").css('display', '');
 
             $('#table-body').html("");
             dropDownList('centre', period, centreID = '');
@@ -687,6 +693,10 @@ function initCentreWiseArrival(period, centreID, time = '') {
 }
 
 function initUserWiseArrival(period, userID, time = '') {
+    $("#staff_wise_arrival .loader-img-attended").css('display', '');
+    $("#staff_wise_arrival #centre_wise_arrival").css('display', 'none');
+    $("#staff_wise_arrival #centre_wise_arrival_02").css('display', 'none');
+
     if (time != 'firsttime') {
         central_wise_arrival_chart.destroy();
     }
@@ -709,6 +719,10 @@ function initUserWiseArrival(period, userID, time = '') {
             'user_id': userID
         },
         success: function (response) {
+            $("#staff_wise_arrival .loader-img-attended").css('display', 'none');
+            $("#staff_wise_arrival #centre_wise_arrival").css('display', '');
+            $("#staff_wise_arrival #centre_wise_arrival_02").css('display', '');
+
             jQuery('#table-body').html("");
             dropDownList('user', period);
             var TABLE_HTML = "";
@@ -798,6 +812,10 @@ function ConsultanciesByStatus(bar) {
 }
 
 function initDoctorWiseConversion(period, centre_id, time = '') {
+    $("#doctor_wise_conversion_section .loader-img-attended").css('display', '');
+    $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', 'none');
+    $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', 'none');
+
     dropDownList('doctor', period);
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
@@ -833,6 +851,10 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
                 'centre_id': centre_id
             },
             success: function (response) {
+                $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
+                $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
+                $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
+
                 $('.loader-imgs').css('display', "none");
                 var categories = response.data.categories
                 jQuery('#categories-table-body').html("");
@@ -867,6 +889,10 @@ function initDoctorWiseConversion(period, centre_id, time = '') {
                 'doc_id': check_doc_id
             },
             success: function (response) {
+                $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
+                $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
+                $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
+
                 $('.loader-imgs').css('display', "none");
                 var categories = response.data.categories;
                 jQuery('#categories-table-body').html("");
@@ -1008,6 +1034,10 @@ function GetDoctors(centre_id, time = '') {
 }
 
 function LoadDocWiseConversion(doc_id, time = '') {
+    $("#doctor_wise_conversion_section .loader-img-attended").css('display', '');
+    $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', 'none');
+    $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', 'none');
+
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
@@ -1030,6 +1060,10 @@ function LoadDocWiseConversion(doc_id, time = '') {
             'centre_id': centre_id
         },
         success: function (response) {
+            $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
+            $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
+            $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
+            
             $("#doc_wise_conversion").html("");
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
