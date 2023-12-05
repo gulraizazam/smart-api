@@ -9,9 +9,9 @@
 
         <div class="col-lg-2 mb-lg-0 mb-6" id="patient_id">
             <label>Patient Search:</label>
-            <input style="width: 110%;" class="form-control filter-field search_patient"  placeholder="Patients Search">
+            <input style="width: 110%;" class="form-control filter-field search_patient index_search_patient"  placeholder="Patients Search">
             <input type="hidden" class="filter-field search_field" id="search_patient_id">
-            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:3px;"><i class="fa fa-times" aria-hidden="true"></i></span>
+            <span class="index_search_patient_croxcli" style="display: none; position:absolute; padding-left: 0% !important; top:37px; right:3px;"><i class="fa fa-times" aria-hidden="true"></i></span>
             <div class="suggesstion-box" style="display: none;">
                 <ul class="suggestion-list"></ul>
             </div>
