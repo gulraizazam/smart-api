@@ -5,11 +5,12 @@ $(document).keydown(function (event) {
     }
 });
 $(document).ready(function(){
-  // Click event handler for the document
   $(document).on('click', function(e){
     if(!$(e.target).closest('.dropdown-menu').length) {
-      $('.dropdown-menu').removeClass('show');
-      $('.dropdown-menu').hide();
+      $('.dropdown-menu[x-placement="top-end"]').removeClass('show');
+      $('.dropdown-menu[x-placement="top-end"]').hide();
+      $('.dropdown-menu[x-placement="bottom-end"]').removeClass('show');
+      $('.dropdown-menu[x-placement="bottom-end"]').hide();
     }
   });
 });
