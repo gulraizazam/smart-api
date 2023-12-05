@@ -850,7 +850,7 @@ class PackagesController extends Controller
             $data_package['created_at'] = Filters::getCurrentTimeStamp();
             $data_package['updated_at'] = Filters::getCurrentTimeStamp();
             $package = Packages::createRecord($data_package, $request);
-            
+
             /*End*/
             if ($request->cash_amount == '0') {
                 // Commit Transaction
@@ -877,7 +877,7 @@ class PackagesController extends Controller
                 /////Save activity////
                 $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
-                
+
                 $activity = new Activity();
                 $activity->action = 'received';
                 $activity->patient = $patient->name;
@@ -893,7 +893,7 @@ class PackagesController extends Controller
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
                 // Commit Transaction
                 DB::commit();
-                
+
                 return response()->json([
                     'status' => true,
                 ]);
@@ -1125,14 +1125,10 @@ class PackagesController extends Controller
     {
 
         $filename = 'packages';
-
         $filters = getFilters($request->all());
-
         $apply_filter = checkFilters($filters, $filename);
-
         $records = [];
         $records['data'] = [];
-
         if (hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $packages = Packages::getBulkData($ids);
@@ -1168,7 +1164,8 @@ class PackagesController extends Controller
         $records = $this->getFiltersData($records);
         if ($packages) {
             foreach ($packages as $package) {
-                $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+                // $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+                $packageservices_price = PackageBundles::where('package_id', '=', $package->id)->sum('tax_including_price');
                 $session_count = count(PackageService::where('package_id', '=', $package->id)->get());
                 /*We discuss in future what happen next*/
                 $cash_receive = PackageAdvances::where([
@@ -1501,8 +1498,7 @@ class PackagesController extends Controller
         $package_total = str_replace(',', '', $request->total);
 
         $total_with_refunded = $package_total + $refunded + $setteled;
-
-        $grand_total = number_format(($total_with_refunded - $package_advances_cash_amount) - $request->cash_amount);
+        $grand_total = number_format(round(($total_with_refunded - $package_advances_cash_amount)) - $request->cash_amount);
         $package_id = Packages::whereId($package->id)->first();
         $package_id->update(['total_price' => $request->total, 'updated_at' => Filters::getCurrentTimeStamp()]);
 
@@ -2397,7 +2393,7 @@ class PackagesController extends Controller
     }
     public function updateRefund(Request $request)
     {
-       
+
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
@@ -2514,7 +2510,7 @@ class PackagesController extends Controller
             'created_at.required' => 'The created at field is required.',
             'created_at.date_format' => 'The Date field format is incorrect.',
         ];
-    
+
         return Validator::make($request->all(), $rules, $customMessages);
     }
     public function viewPackage($id)
