@@ -301,7 +301,7 @@
                 @if (Gate::allows('refunds_manage'))
                     <li class="menu-item {{ activeMenu('admin.refunds.index') }}" aria-haspopup="true">
                         <a href="{{ route('admin.refunds.index') }}" class="menu-link">
-                            <span class="svg-icon menu-icon"><i class="font-icon la la-cog"></i></span>
+                            <span class="svg-icon menu-icon"><i class="font-icon la la-refresh"></i></span>
                             <span class="menu-text"> Refunds </span>
                         </a>
                     </li>

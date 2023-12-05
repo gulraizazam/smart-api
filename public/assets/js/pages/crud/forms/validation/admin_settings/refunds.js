@@ -8,6 +8,27 @@ var RefundValidation = function () {
             form,
             {
                 fields: {
+                    plan: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The plan field is required'
+                            }
+                        }
+                    },
+                    refund_amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The refund amount field is required'
+                            }
+                        }
+                    },
+                    payment_mode_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The payment mode field is required'
+                            }
+                        }
+                    },
                     refund_note: {
                         validators: {
                             notEmpty: {

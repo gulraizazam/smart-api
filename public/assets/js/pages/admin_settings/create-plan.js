@@ -510,6 +510,7 @@ function refund(url) {
         type: "GET",
         cache: false,
         success: function (response) {
+           
             refundData(response);
 
         },
