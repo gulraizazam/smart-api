@@ -146,7 +146,7 @@
                                 @else
                                     <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img">
                                     <div class="text-center">
-                                        <span>No Activity Found</span>
+                                        <span style="color: #000;text-align:center;font-size: 12px;padding: 80px 0px 0px;font-family: Arial;">No Activity Found</span>
                                     </div>
                                 @endif
                             </div>

@@ -1227,7 +1227,7 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
                 }
 
             } else {
-                TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
+                TABLE_HTML = "<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>";
             }
 
             $('#patient-follow-up').append(TABLE_HTML);
@@ -1263,7 +1263,7 @@ function initPatientFollowUpOneMonth() {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'><a href='" + routeValue + "'>" + patient.patient_id + "</a></td><td>" + patient.name + "</td><td>PKR: " + (balance).toFixed(2) + "</td><td>" + patient.scheduled_date + "</td></tr>";
                 }
             } else {
-                TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
+                TABLE_HTML = "<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>";
             }
 
             $('#patient-follow-up-one-month').append(TABLE_HTML);
