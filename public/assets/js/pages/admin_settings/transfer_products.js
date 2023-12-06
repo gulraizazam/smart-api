@@ -31,16 +31,6 @@ var table_columns = [
         title: 'Transfer Date',
         width: 'auto',
         sortable: false,
-    }, {
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 80,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
     }];
 
 
@@ -182,7 +172,6 @@ function resetAllFilters(datatable) {
 function setFilters(filter_values, active_filters) {
     let centres = filter_values.centres;
     let warehouses = filter_values.warehouse;
-
     let centre_options = '<option value="">Select Centre</option>';
     let warehouse_options = '<option value="">Select Warehouse</option>';
     let transferFrom = '<option value="">Select Transfer From</option>';
@@ -263,6 +252,7 @@ function productSelect(product_id, id = null) {
             product_id: product_id,
         },
         success: function (response) {
+            console.log(response);
             let products = response.data.products;
             if (products.length) {
 
@@ -274,7 +264,45 @@ function productSelect(product_id, id = null) {
         }
     });
 }
+function productSelectTransfer(product_id, id = null) {
+  var warehouse_id;
+  var location_id;
+    if($("#add_product_type_option_from").val() == 'in_warehouse'){
+        warehouse_id = $("#add_product_warehouse_from").val();
+      
+        
+    }else{
+        location_id = $("#add_product_centre_from").val();
+       
+    }
 
+    $.ajax({
+        type: "GET",
+        url: route('admin.transfer_products.get_products'),
+        dataType: 'json',
+        data: {
+            product_id: product_id,
+            location_id:location_id,
+            warehouse_id:warehouse_id,
+        },
+        success: function (response) {
+            console.log(response);
+            let products = response.data.products;
+            
+            $("#add_total_stock").val(products.quantity);
+            
+            let warehouse_options = '<option value="">Select Warehouse</option>';
+            var warehousesArray = response.data.warehouses;
+            console.log('warehousesArray', warehousesArray);
+            for(var i = 0; i < warehousesArray.length; i++){
+                warehouse_options += '<option value="' + warehousesArray[i].id + '">' + warehousesArray[i].name + '</option>';
+            }
+            
+            $("#add_product_warehouse_to").html(warehouse_options).select2();
+            
+        }
+    });
+}
 function formRest() {
     $("#add_product_type_option_from").val("");
     $("#add_product_type_option_to").val("");
@@ -297,10 +325,12 @@ $(document).ready(function () {
             $('.select_centre_from').hide();
             $('.select_warehouse_from').show();
             $('#add_product_centre_from').val('');
+            $("#to_branch").show();
         } else if (this.value == 'in_branch') {
             $('.select_centre_from').show();
             $('.select_warehouse_from').hide();
             $('#add_product_warehouse_from').val('');
+            $("#to_branch").hide();
         } else {
             $('.select_centre_from').hide();
             $('.select_warehouse_from').hide();

@@ -134,7 +134,8 @@ class Brand extends BaseModal
         }
         // Check if child records exists or not, If exist then disallow to delete it.
         if (self::isChildExists($id, Auth::User()->account_id)) {
-            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
+            $brand->update(['status'=>0]);
+            return collect(['status' => false, 'message' => 'Brand Deactived Successfully!']);
         }
         $record = $brand->delete();
 
@@ -163,6 +164,20 @@ class Brand extends BaseModal
      */
     public static function getAllRecordsDictionary($account_id)
     {
-        return self::where(['account_id' => $account_id])->get()->getDictionary();
+        return self::where(['account_id' => $account_id,'status'=>1])->get()->getDictionary();
     }
+    public static function activeRecord($id, $status = 1)
+    {
+        $brand = self::getData($id);
+
+        if (!$brand) {
+
+            return false;
+        }
+
+        $record = $brand->update(['status' => $status]);
+
+        return $record;
+    }
+
 }

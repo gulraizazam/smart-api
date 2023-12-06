@@ -40,25 +40,25 @@
                             </select>
                         </div>
 
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Manager Name <span class="text text-danger">*</span></label>
+                        <!-- <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Manager Name </label>
                             <input type="text" id="add_manager_name" name="manager_name" class="form-control form-control-lg form-control-solid" />
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Manager Phone <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Manager Phone </label>
                             <input type="text" id="add_manager_phone" name="manager_phone" class="form-control form-control-lg form-control-solid mb-2" />
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Google Map <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Google Map</label>
                             <input type="text" id="add_google_map" name="google_map" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
 
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Address <span class="text text-danger">*</span></label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0 mt-5">Address</label>
                             <input type="text" id="add_address" name="address" class="form-control form-control-lg form-control-solid mb-2">
-                        </div>
+                        </div> -->
                     </div>
                     {{-- <div class="row">
                         <div class="fv-row col-md-6">

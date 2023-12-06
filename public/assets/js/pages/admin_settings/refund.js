@@ -5,7 +5,7 @@ var table_columns = [
         field: 'id',
         sortable: false,
         width: '80',
-        title: 'Order ID'
+        title: 'ID'
     }, {
         field: 'patients.name',
         title: 'Patient',
@@ -17,7 +17,8 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            return displayProducts(data.order_detail);
+           
+            return displayProducts(data.orderrefunddetails);
         }
     }, {
         field: 'orders.quantity',
@@ -25,7 +26,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            return sumProductsQuantity(data.order_detail);
+            return data.quantity;
         }
     }, {
         field: 'order_have',
@@ -37,16 +38,6 @@ var table_columns = [
         title: 'Total Price',
         sortable: false,
         width: 'auto',
-    }, {
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 80,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
     }
 ];
 

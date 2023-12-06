@@ -49,7 +49,7 @@
                                 name="product_type_option_to">
                                 <option value="">Select Option</option>
                                 <option value="in_warehouse">Warehouse</option>
-                                <option value="in_branch">Branch</option>
+                                <option value="in_branch" id="to_branch">Branch</option>
                             </select>
                         </div>
                     </div>
@@ -94,7 +94,7 @@
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
                                 <select id="add_transfer_product"
                                     class="form-control form-control-solid mb-3 mb-lg-0 select2"
-                                    name="product_id" onchange="productSelect(this.value, 'add')">
+                                    name="product_id" onchange="productSelectTransfer(this.value, 'add')">
                                 </select>
                             </div>
                         </div>

@@ -2,14 +2,6 @@ var table_url = route('admin.products.datatable');
 
 var table_columns = [
     {
-        field: 'id',
-        sortable: false,
-        width: '40',
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    }, {
         field: 'name',
         title: 'Name',
         width: 'auto',
@@ -63,11 +55,12 @@ var table_columns = [
 
 function actions(data) {
     let id = data.id;
-    let url = route('admin.products.edit', { id: id });
-    let delete_url = route('admin.products.destroy', { id: id });
+    let inventory_id = data.inventory_id;
     let edit_sale_price_url = route('admin.products.edit-sale-price', { id: id });
+    let url = route('admin.products.edit', { id: id });
     let stock_url = route('admin.products.stock', { id: id });
-    let transfer_product_url = route('admin.products.transfer_product.get', { id: id });
+    let inventories_url = route('admin.products.inventory', { id: id });
+    let transfer_product_url = route('admin.products.transfer_product.get', { id: inventory_id });
     let log_url = route('admin.products.logs', { id: id });
 
     let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -79,70 +72,65 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-    if (permissions.add_stock) {
-        actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="addProductStock(`' + id + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-plus"></i></span>\
-                        <span class="navi-text">Add Stock</span>\
-                        </a>\
-                     </li>';
-    }
-    if (permissions.sale_price) {
-        actions += '<li class="navi-item">\
-                     <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
-                     <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
-                     <span class="navi-text">Sale Price</span>\
-                     </a>\
-                  </li>';
-    }
-    if (permissions.edit) {
-        actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+ url + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                            <span class="navi-text">Edit</span>\
-                        </a>\
-                    </li>';
-    }
-    if (permissions.transfer_product) {
-        actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
-                        <span class="navi-text">Transfer Product</span>\
-                        </a>\
-                     </li>';
-    }
-    if (permissions.stock_detail) {
-        actions += '<li class="navi-item">\
-                    <a href="'+ stock_url + '" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-archway"></i></span>\
-                        <span class="navi-text">Stock</span>\
-                    </a>\
-                </li>';
-    }
-    if (permissions.log) {
-        actions += '<li class="navi-item">\
-                                <a href="' + log_url + '" class="navi-link">\
-                                <span class="navi-icon"><i class="la la-scroll"></i></span>\
-                                <span class="navi-text">Log</span>\
-                                </a>\
-                             </li>';
-    }
+                        // if (permissions.add_stock) {
+                            actions += '<li class="navi-item">\
+                                                <a href="'+ inventories_url + '" class="navi-link">\
+                                                <span class="navi-icon"><i class="la la-archway"></i></span>\
+                                                <span class="navi-text">Inventories</span>\
+                                            </a>\
+                                         </li>';
+                        //}
+                        if (permissions.add_stock) {
+                            actions += '<li class="navi-item">\
+                                            <a href="javascript:void(0);" onclick="addProductStock(`' + id + '`,`'+inventory_id+'`);" class="navi-link">\
+                                            <span class="navi-icon"><i class="la la-plus"></i></span>\
+                                            <span class="navi-text">Add Stock</span>\
+                                            </a>\
+                                        </li>';
+                        }
+                        if (permissions.sale_price) {
+                            actions += '<li class="navi-item">\
+                                        <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
+                                        <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
+                                        <span class="navi-text">Sale Price</span>\
+                                        </a>\
+                                    </li>';
+                        }
+                        
+                        if (permissions.transfer_product) {
+                            actions += '<li class="navi-item">\
+                                            <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
+                                            <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
+                                            <span class="navi-text">Transfer Product</span>\
+                                            </a>\
+                                        </li>';
+                        }
+                        if (permissions.stock_detail) {
+                            actions += '<li class="navi-item">\
+                                        <a href="'+ stock_url + '" class="navi-link">\
+                                            <span class="navi-icon"><i class="la la-archway"></i></span>\
+                                            <span class="navi-text">Stock Logs</span>\
+                                        </a>\
+                                    </li>';
+                        }
+                        if (permissions.edit) {
+                            actions += '<li class="navi-item">\
+                                            <a href="javascript:void(0);" onclick="editRow(`'+ url + '`);" class="navi-link">\
+                                                <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                                                <span class="navi-text">Edit</span>\
+                                            </a>\
+                                        </li>';
+                        }
+                        
 
-    if (permissions.delete) {
-        actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-trash"></i></span>\
-                        <span class="navi-text">Delete</span>\
-                        </a>\
-                     </li>';
-    }
+                        
 
 
-    actions += '</ul>\
-            </div>\
-        </div>';
+                        actions += '</ul>\
+                                </div>\
+                            </div>';
 
-    return actions;
+                        return actions;
 }
 
 function editRow(url) {
@@ -184,16 +172,16 @@ function setEditData(response) {
     } else if (product.product_type == 'for_sale') {
         $('#edit_sale_price_section').show();
     }
-    if (product.warehouse_id != null) {
-        $('#edit_product_type_option').val('in_warehouse').trigger('change');
-        $('#edit_select_warehouse').show();
-        $('#edit_select_centre').hide();
-    }
-    if (product.location_id != null) {
-        $('#edit_product_type_option').val('in_branch').trigger('change');
-        $('#edit_select_centre').show();
-        $('#edit_select_warehouse').hide();
-    }
+    // if (product.warehouse_id != null) {
+    //     $('#edit_product_type_option').val('in_warehouse').trigger('change');
+    //     $('#edit_select_warehouse').show();
+    //     $('#edit_select_centre').hide();
+    // }
+    // if (product.location_id != null) {
+    //     $('#edit_product_type_option').val('in_branch').trigger('change');
+    //     $('#edit_select_centre').show();
+    //     $('#edit_select_warehouse').hide();
+    // }
 
     /* Product Details */
     $("#edit_purchase_price").val(product_detail.purchase_price);
@@ -356,10 +344,12 @@ function statusesProduct(data, status_url, is_column_name_change = false) {
     return status;
 }
 
-function addProductStock(id) {
+function addProductStock(id,inventory_id) {
+    console.log(inventory_id);
     let action = route('admin.products.add-stock', { id: id });
     $("#modal_add_product_stock_form").attr("action", action);
     $("#modal_add_product_stock").modal("show");
+    $("#inventory_id").val(inventory_id);
 }
 
 function getTotalPurchase(type) {
@@ -410,19 +400,20 @@ function transferProductRow(url) {
 }
 /* Transfer Product Set Data */
 function transferProductSetData(response) {
+    
     let transferProduct = response.data.product;
-
+    console.log(transferProduct);
     $("#transfer_product_id").val(transferProduct.id);
-    $("#transfer_transfer_product").attr('disabled', 'true');
+   // $("#transfer_transfer_product").attr('disabled', 'true');
     $("#transfer_location_id_from").val(transferProduct.location_id);
     $("#transfer_warehouse_id_from").val(transferProduct.warehouse_id);
 
     let location_from_option = transferProduct.location_id != null ? 'in_branch' : 'in_warehouse';
 
     $("#transfer_product_type_option_from").val(location_from_option).trigger('change');
-    $("#transfer_product_type_option_from").attr('disabled', 'true');
-
-    $('#transfer_transfer_product').select2().val(transferProduct.id).trigger('change');
+    //$("#transfer_product_type_option_from").attr('disabled', 'true');
+    
+    $('#transfer_transfer_product').val(transferProduct.name);
     $('#transfer_total_stock').val(transferProduct.quantity);
     if (location_from_option == 'in_branch') {
         $('.select_centre_from').show();
@@ -433,7 +424,7 @@ function transferProductSetData(response) {
         $('.select_warehouse_from').show();
         $('.select_centre_from').hide();
         $("#transfer_product_warehouse_from").val(transferProduct.warehouse_id).trigger('change');
-        $("#transfer_product_warehouse_from").attr('disabled', 'true');
+        // $("#transfer_product_warehouse_from").attr('disabled', 'true');
     } else {
         $('.select_warehouse_from').hide();
         $('.select_centre_from').hide();
@@ -466,54 +457,54 @@ $('#add_products_m').on('click', function () {
 });
 
 $(document).ready(function () {
-    $('.sale_price_message').hide();
-    $('#add_product_type').on('change', function () {
-        $('#select_option').show();
-        if (this.value == 'in_house_use') {
-            $('#sale_price_section').hide();
-            $('#sale_price').val('');
-        } else {
-            $('#sale_price_section').show();
-        }
-    });
-    $('#add_product_type_option').on('change', function () {
-        if (this.value == 'in_warehouse') {
-            $('#select_centre').hide();
-            $('#select_warehouse').show();
-        } else if (this.value == 'in_branch') {
-            $('#select_centre').show();
-            $('#select_warehouse').hide();
-        } else {
-            $('#select_centre').hide();
-            $('#select_warehouse').hide();
-        }
-    });
+    // $('.sale_price_message').hide();
+    // $('#add_product_type').on('change', function () {
+    //     $('#select_option').show();
+    //     if (this.value == 'in_house_use') {
+    //         $('#sale_price_section').hide();
+    //         $('#sale_price').val('');
+    //     } else {
+    //         $('#sale_price_section').show();
+    //     }
+    // });
+    // $('#add_product_type_option').on('change', function () {
+    //     if (this.value == 'in_warehouse') {
+    //         $('#select_centre').hide();
+    //         $('#select_warehouse').show();
+    //     } else if (this.value == 'in_branch') {
+    //         $('#select_centre').show();
+    //         $('#select_warehouse').hide();
+    //     } else {
+    //         $('#select_centre').hide();
+    //         $('#select_warehouse').hide();
+    //     }
+    // });
 
-    $('#edit_product_type').on('change', function () {
-        if (this.value == 'in_house_use') {
-            $('#edit_sale_price_section').hide();
-            $('#edit_sale_price').val('');
-        } else {
-            $('#edit_sale_price_section').show();
-        }
-    });
+    // $('#edit_product_type').on('change', function () {
+    //     if (this.value == 'in_house_use') {
+    //         $('#edit_sale_price_section').hide();
+    //         $('#edit_sale_price').val('');
+    //     } else {
+    //         $('#edit_sale_price_section').show();
+    //     }
+    // });
 
-    $('#edit_product_type_option').on('change', function () {
-        if (this.value == 'in_warehouse') {
-            $('#edit_select_centre').hide();
-            $('#edit_select_warehouse').show();
-            $('#edit_product_centre').val('');
-        } else if (this.value == 'in_branch') {
-            $('#edit_select_centre').show();
-            $('#edit_select_warehouse').hide();
-            $('#edit_product_warehouse').val('');
-        } else {
-            $('#edit_select_centre').hide();
-            $('#edit_select_warehouse').hide();
-            $('#edit_product_centre').val('');
-            $('#edit_product_warehouse').val('');
-        }
-    });
+    // $('#edit_product_type_option').on('change', function () {
+    //     if (this.value == 'in_warehouse') {
+    //         $('#edit_select_centre').hide();
+    //         $('#edit_select_warehouse').show();
+    //         $('#edit_product_centre').val('');
+    //     } else if (this.value == 'in_branch') {
+    //         $('#edit_select_centre').show();
+    //         $('#edit_select_warehouse').hide();
+    //         $('#edit_product_warehouse').val('');
+    //     } else {
+    //         $('#edit_select_centre').hide();
+    //         $('#edit_select_warehouse').hide();
+    //         $('#edit_product_centre').val('');
+    //         $('#edit_product_warehouse').val('');
+    //     }
+    // });
 
     $('#transfer_product_type_option_to').on('change', function () {
         if (this.value == 'in_warehouse') {
@@ -529,4 +520,3 @@ $(document).ready(function () {
     });
 
 })
-

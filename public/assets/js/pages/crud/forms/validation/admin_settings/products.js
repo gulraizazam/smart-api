@@ -50,13 +50,14 @@ var AddUserValidation = function () {
                             }
                         }
                     },
-                    product_type_option: {
+                    warehouse_id:{
                         validators: {
                             notEmpty: {
-                                message: 'The Product Type Option field is required'
+                                message: 'The Warehouse field is required'
                             }
                         }
-                    },
+                    }
+                   
                 },
 
                 plugins: {

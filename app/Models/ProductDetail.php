@@ -53,6 +53,8 @@ class ProductDetail extends BaseModal
     {
         $data = $request->all();
 
+       
+        
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['product_id'] = $product_id;
@@ -68,7 +70,7 @@ class ProductDetail extends BaseModal
 
         $data['product_detail_id'] = $record->id;
         Stock::create($data);
-
+       
         $subjectModel = self::find($record->id);
         activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
 
@@ -121,22 +123,16 @@ class ProductDetail extends BaseModal
         ])->orderBy('id', 'desc')->first();
     }
 
-    public static function createRecordTransferProduct($data, $account_id, $product_id)
+    public static function createRecordTransferProduct($data, $account_id)
     {
         Stock::create([
             'account_id' => $account_id,
-            'transfer_id' => $data['transfer_id'],
+            //'transfer_id' => $data['transfer_id'],
             'product_id' => $data['child_product_id'],
             'quantity' => $data['quantity'],
             'stock_type' => 'in',
         ]);
-        Stock::create([
-            'account_id' => $account_id,
-            'transfer_id' => $data['transfer_id'],
-            'product_id' => $data['id'],
-            'quantity' => $data['quantity'],
-            'stock_type' => 'out',
-        ]);
+       
         $record = self::create([
             'product_id' => $data['child_product_id'],
             'account_id' => $account_id,
