@@ -15,6 +15,7 @@ use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\Inventory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Facades\LogBatch;
@@ -100,6 +101,7 @@ class TransferProductsController extends Controller
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $transfer_products = TransferProduct::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+           
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
 
@@ -112,7 +114,7 @@ class TransferProductsController extends Controller
                     $transfer_product->from = TransferProduct::parentLocation($transfer_product->id);
                     $transfer_product->to = TransferProduct::childLocation($transfer_product->id);
                     $transfer_product->name = $transfer_product_name->name;
-                    $transfer_product->quantity = $product_detail_quantity->quantity;
+                    $transfer_product->quantity = $product_detail_quantity->quantity ?? 0;
                     $transfer_product->transfer_date = $transfer_product->transfer_date;
                     return $transfer_product;
                 });
@@ -169,6 +171,7 @@ class TransferProductsController extends Controller
      */
     public function store(Request $request)
     {
+     
         try {
             if (!Gate::allows('transfer_product_create')) {
                 return abort(401);
@@ -177,7 +180,9 @@ class TransferProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            $stock_check = GeneralFunctions::stockC($request->product_id);
+           
+            $stock_check = GeneralFunctions::inventoryCheck($request);
+            
             if ($stock_check < $request->quantity) {
                 return collect(['status' => false, 'message' => 'This product stock not available.']);
             }
@@ -210,9 +215,50 @@ class TransferProductsController extends Controller
 
             $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
             if ($transfer_product['record']) {
-                $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['id']);
+                $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id);
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
+                     $product_type = Product::find($request->product_id);
+                    if($request->from_warehouse_id){
+                        $minus_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->from_warehouse_id)->first();
+                        if($request->to_warehouse_id){
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->first();
+                        }else{
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->first();
+                       
+                        }
+                        
+                    }else{
+                        if($request->to_warehouse_id){
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->first();
+                        }else{
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->first();
+                        }
+                        $minus_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->from_location_id)->first();
+                       
+                    }
+                    $updated_quantity = $minus_inventory->quantity - $request->quantity;
+                   
+                    $minus_inventory->update(['quantity'=>$updated_quantity]);
+                    if($update_inventory){
+                      
+                        $latest_updated_quantity = $update_inventory->quantity + $request->quantity;
+
+                        $update_inventory->update(['quantity'=>$latest_updated_quantity]);
+                    }else{
+                       
+                        $inventory = new Inventory();
+                        $inventory->product_id = $request->product_id;
+                        if($request->to_warehouse_id){
+                            $inventory->warehouse_id = $request->to_warehouse_id;
+                        }else{
+                            $inventory->location_id = $request->to_location_id;
+                        }
+                        $inventory->quantity = $request->quantity;
+                        $inventory->is_saleable = $product_type->product_type == 'for_sale' ? 1 : 0;
+                        $inventory->save();
+
+                    }
                     LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
@@ -337,13 +383,35 @@ class TransferProductsController extends Controller
      */
     public function getProducts(Request $request)
     {
+      
+        
         $products = Product::getProductsAjax($request, Auth::User()->account_id);
-        foreach ($products as $product) {
-            $product->quantity = Stock::sumProductQuantity($product->id);
-        }
+      
+        // foreach ($products as $product) {
+        //     $product->quantity = Stock::sumProductQuantity($product->id);
+        // }
 
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
         ]);
+    }
+    public function getTransferProducts(Request $request)
+    {
+       
+         
+        $products = Product::getTransferProductsAjax($request, Auth::User()->account_id);
+        if($request->location_id){
+            $warehouseId = TransferProduct::where(['product_id'=>$request->product_id,'to_location_id'=>$request->location_id])->pluck('from_warehouse_id')->toArray();
+            $warehouses = Warehouse::whereIn('id',$warehouseId)->get();
+            
+        }else{
+            $warehouses = Warehouse::get();
+           
+        }
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'products' => $products,
+            'warehouses' =>$warehouses,
+        ]);
+       
     }
 }
