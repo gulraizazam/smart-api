@@ -1307,7 +1307,7 @@ function productSearch(from_id, from_key, id = null, type = null) {
     if (from_id != '') {
         $.ajax({
             type: "GET",
-            url: route('admin.transfer_products.get_products'),
+            url: route('admin.transfer_products.fetch_products'),
             dataType: 'json',
             data: {
                 from_key: from_key,

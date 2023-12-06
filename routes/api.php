@@ -513,6 +513,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('brands/{id}/edit', [BrandsController::class, 'edit'])->name('brands.edit');
     Route::put('brands/{id}', [BrandsController::class, 'update'])->name('brands.update');
     Route::delete('brands/{id}', [BrandsController::class, 'destroy'])->name('brands.destroy');
+    Route::post('brands/status', [BrandsController::class, 'status'])->name('brands.status');
     /*Brand routes*/
 
     /*Product routes*/
@@ -523,6 +524,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('products/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
     Route::get('products/{id}/saleprice', [ProductsController::class, 'editSalePrice'])->name('products.edit-sale-price');
     Route::post('products/stock-detail/{id}', [ProductsController::class, 'productStockDetail'])->name('products.stock-detail');
+    Route::post('products/inventory-detail/{id}', [ProductsController::class, 'productInventoryDetail'])->name('products.inventories');
     Route::put('products/{id}/{detail}', [ProductsController::class, 'update'])->name('products.update');
     Route::post('products/{id}/updatesaleprice', [ProductsController::class, 'updateSalePrice'])->name('products.update-sale-price');
     Route::post('products/{id}/addstock', [ProductsController::class, 'addStock'])->name('products.add-stock');
@@ -533,7 +535,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     /* Transfer Product */
     Route::post('transfer-product/datatable', [TransferProductsController::class, 'datatable'])->name('transfer_products.datatable');
-    Route::get('transfer-product/get-products', [TransferProductsController::class, 'getProducts'])->name('transfer_products.get_products');
+    Route::get('transfer-product/get-products', [TransferProductsController::class, 'getTransferProducts'])->name('transfer_products.get_products');
+    Route::get('transfer-product/fetch-products', [TransferProductsController::class, 'getProducts'])->name('transfer_products.fetch_products');
     Route::resource('transfer_product', TransferProductsController::class)->except('index');
     /* Transfer Product Route */
 

@@ -1,11 +1,11 @@
 @extends('admin.layouts.master')
-@section('title', 'Transfer Product')
+@section('title', 'Products Inventories')
 @section('content')
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Transfer Product', 'title' => 'Transfer Product'])
+    @include('admin.partials.breadcrumb', ['module' => 'Product Inventories', 'title' => 'Product Inventories'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,34 +31,11 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Transfer Product</h3>
-                        </div>
-                        <div class="card-toolbar">
-                            <!--begin::Dropdown-->
-                                @if(Gate::allows('brand_destroy'))
-                                <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                        <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
-                                @endif
-
-                                @if(Gate::allows('product_create'))
-                                    <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_products"  id="add_product_p">
-                                        <i class="la la-plus"></i>
-                                        Add New
-                                    </a>
-                                @endif
-
-                        <!--end::Button-->
+                            <h3 class="card-label">Products Inventories</h3>
                         </div>
                     </div>
 
                     <div class="card-body">
-                        <!--begin::Search Form-->
-                    @include('admin.transfer_product.filters')
-                    <!--end::Search Form-->
 
                         <!--begin: Datatable-->
                         <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
@@ -72,34 +49,22 @@
         <!--end::Entry-->
     </div>
     <!--end::Content-->
-
-    <div class="modal fade" id="modal_add_products" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="paymment-mode-create">
-
-            @include('admin.transfer_product.create')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-
-
-    <div class="modal fade" id="modal_edit_transfer_products" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_edit_inventory" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
-
-            @include('admin.transfer_product.edit')
-
+            @include('admin.products.editinventory')
         </div>
         <!--end::Modal dialog-->
     </div>
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/transfer_products.js')}}"></script>
+        <script>
+            var inventory_id = "{{request('id')}}";
+        </script>
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/transfer_products.js')}}"></script>
+    <script src="{{asset('assets/js/pages/admin_settings/inventories.js')}}"></script>
     @endpush
 
 @endsection
