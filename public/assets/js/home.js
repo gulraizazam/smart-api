@@ -380,8 +380,8 @@ function AppointmentByType(pie, colors) {
 function initConsultancyByStatus(period, type) {
     $("#appointment_by_status_menu .active").removeClass('active');
     $("#appointment_by_status_menu").parent().addClass('active');
-    $("#consultancy_status .loader-img-attended").css('display', '');
-    $("#consultancy_status #consultancy_by_status").css('display', 'none');
+    $("#consultancy_status1 .loader-img-attended").css('display', '');
+    $("#consultancy_status1 #consultancy_by_status").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -392,8 +392,8 @@ function initConsultancyByStatus(period, type) {
         data: { 'period': period, 'type': type },
         cache: false,
         success: function (response) {
-            $("#consultancy_status .loader-img-attended").css('display', 'none');
-            $("#consultancy_status #consultancy_by_status").css('display', '');
+            $("#consultancy_status1 .loader-img-attended").css('display', 'none');
+            $("#consultancy_status1 #consultancy_by_status").css('display', '');
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
@@ -429,8 +429,8 @@ function initConsultancyByStatus(period, type) {
 function initTreatmentByStatus(period, type) {
     $("#appointment_by_type_menu .active").removeClass('active');
     $("#appointment_by_type_menu").parent().addClass('active');
-    $("#treatment_status .loader-img-attended").css('display', '');
-    $("#treatment_status #treatment_by_status").css('display', 'none');
+    $("#treatment_status1 .loader-img-attended").css('display', '');
+    $("#treatment_status1 #treatment_by_status").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -441,8 +441,8 @@ function initTreatmentByStatus(period, type) {
         data: { 'period': period, 'type': type },
         cache: false,
         success: function (response) {
-            $("#treatment_status .loader-img-attended").css('display', 'none');
-            $("#treatment_status #treatment_by_status").css('display', '');
+            $("#treatment_status1 .loader-img-attended").css('display', 'none');
+            $("#treatment_status1 #treatment_by_status").css('display', '');
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;

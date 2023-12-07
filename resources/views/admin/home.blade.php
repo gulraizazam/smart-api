@@ -913,7 +913,7 @@
                 }
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.10) && ! revenue_by_center) {
                     revenue_by_center = true;
-                    initRevenueByCentre($('#revenue_centre').val());                        
+                    initRevenueByCentre($('#revenue_centre').val());
                 }
 
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.15) && ! revenue_by_service_category) {
@@ -926,7 +926,7 @@
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.20) && ! revenue_by_service) {
                     revenue_by_service = true;
                     @if (!auth()->user()->hasRole('CSR'))
-                    initRevenueByService($('#revenue_service').val());                        
+                    initRevenueByService($('#revenue_service').val());
                     @endif
                 }
 
