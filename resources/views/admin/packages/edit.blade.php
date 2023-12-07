@@ -91,7 +91,7 @@
                             <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id" required>
                                 <option value="">Select Appointment</option>
                             </select>
-                            <small class="text-danger error-class"><b id='appointment_id' class="error-msg"></b></small>
+                            <small class="text-danger error-class"><b id='edit_appointment_id_error' class="error-msg"></b></small>
                         </div>
                     </div>
                 </div>
@@ -115,7 +115,7 @@
 
                         <div class="fv-row col-md-4 mt-5" id="select_edit_discount_type">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <select id="edit_discount_type" onchange="changeDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                            <select id="edit_discount_type" onchange="changeDiscount($(this),'edit');" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
                                 <option value="">Select Discount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
@@ -125,7 +125,7 @@
 
                         <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="number" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
+                            <input type="number" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1" min="0" oninput="validity.valid||(value='');" disabled>
                             <small class="text-danger error-class"><b id='discount_payment_error' class="error-msg"></b></small>
                         </div>
 
@@ -195,7 +195,7 @@
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="number" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount" disabled>
+                            <input type="number" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount" disabled oninput="validity.valid||(value='');" disabled>
                             <small class="text-danger error-class"><b id='cash_amount_error' class="error-msg"></b></small>
                         </div>
 

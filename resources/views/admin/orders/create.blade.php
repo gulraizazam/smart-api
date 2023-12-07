@@ -87,6 +87,8 @@
                                     <tr>
                                         <th>Product Name</th>
                                         <th>Sale Price</th>
+                                        <th>Quantity</th>
+                                        <th>SubTotal</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
@@ -95,7 +97,10 @@
                                 <tfoot>
                                     <tr>
                                         <td></td>
+                                        <td></td>
+                                        <td></td>
                                         <td id="total_product_price"><strong>0</strong></td>
+                                        
                                         <td></td>
                                     </tr>
                                 </tfoot>
@@ -112,9 +117,9 @@
                                 class="form-control form-control-solid mb-3 mb-lg-0 select2 select2-hidden-accessible"
                                 name="payment_mode">
                                 <option value="">Select Payment Mode</option>
-                                <option value="cash">Cash</option>
-                                <option value="card">Card</option>
-                                <option value="bank_wire">Bank/Wire Transfer</option>
+                                <option value="1">Cash</option>
+                                <option value="2">Card</option>
+                                <option value="3">Bank/Wire Transfer</option>
                             </select>
                         </div>
                     </div>

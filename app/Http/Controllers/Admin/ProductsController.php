@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Brand;
 use App\Models\Stock;
 use App\Models\Product;
+
 use App\Models\Locations;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
@@ -15,6 +16,9 @@ use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
 use App\Http\Controllers\Controller;
+use App\Models\Inventory;
+use App\Models\Purchase;
+use App\Models\PurchaseDetail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Models\Activity;
@@ -57,6 +61,7 @@ class ProductsController extends Controller
      */
     public function datatable(Request $request)
     {
+        
         try {
             $records = [];
             $records['data'] = [];
@@ -111,13 +116,14 @@ class ProductsController extends Controller
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $products = Product::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
+           
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
 
             if ($products) {
                 $products = collect($products)->map(function ($product) use ($brands, $centres, $warehouse) {
-                    $product->quantity = Stock::sumProductQuantity($product->id);
+                    //$product->quantity = Stock::sumProductQuantity($product->id);
                     $product->brand_id = (array_key_exists($product->brand_id, $brands)) ? $brands[$product->brand_id]->name : 'N/A';
                     $product->sale_price = $product->sale_price ?? 'N/A';
                     $product->product_type = ucwords(str_replace("_", " ", $product->product_type));
@@ -198,6 +204,12 @@ class ProductsController extends Controller
             if ($request->quantity <= 0) {
                 return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
             }
+            if ($request->purchase_price && $request->purchase_price  < 0) {
+                return ApiHelper::apiResponse($this->error, "Purchase price must be greater than 0", false);
+            }
+            if ($request->sale_price && $request->sale_price  < 0) {
+                return ApiHelper::apiResponse($this->error, "Sale price must be greater than 0", false);
+            }
             if ($request->product_type == 'for_sale' && $request->sale_price == null) {
                 if ($request->sale_price == null) {
                     return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
@@ -241,6 +253,7 @@ class ProductsController extends Controller
             'name' => 'required',
             'brand_id' => 'required',
             'purchase_price' => 'required',
+            
         ]);
     }
 
@@ -282,35 +295,19 @@ class ProductsController extends Controller
             if (!Gate::allows('product_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $validator = $this->verifyFields($request);
-            if ($validator->fails()) {
-                return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
-            }
-            if ($request->quantity <= 0) {
-                return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
-            }
-            if ($request->product_type == 'for_sale' && $request->sale_price != null) {
-                if ($request->purchase_price > $request->sale_price) {
-                    return ApiHelper::apiResponse($this->error, 'Sale price write greater then to purchase price.', false);
-                }
-            }
-            if ($request->product_type == 'for_sale' && $request->sale_price == null) {
-                return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
-            }
-            if ($request->location_id == null && $request->warehouse_id == null) {
-                $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
-                return ApiHelper::apiResponse($this->error, $err_message, false);
-            }
+           
+            
+           
             LogBatch::startBatch();
             $request['type'] = 'product_update';
             $request['message'] = 'Product update';
 
             $product = Product::updateRecord($id, $request, Auth::User()->account_id);
             if ($product) {
-                if (ProductDetail::updateRecord($detail, $request, Auth::User()->account_id, $id)) {
+              
                     LogBatch::endBatch();
                     return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
-                }
+                
             }
 
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
@@ -326,14 +323,25 @@ class ProductsController extends Controller
      */
     public function updateSalePrice(Request $request, $id)
     {
+
         try {
             if (!Gate::allows('product_sale_price')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            $product = Product::getData($id);;
+            $product = Product::getData($id);
+            if ($request->sale_price && $request->sale_price  < 0) {
+                return ApiHelper::apiResponse($this->error, "Sale price must be greater than 0", false);
+            }
             if ($product->product_type == 'in_house_use') {
                 return ApiHelper::apiResponse($this->success, "Sale price can't be added against in-house product!", false);
             }
+          
+            if($product->purchase_price > $request->sale_price)
+            {
+               
+                return ApiHelper::apiResponse($this->success, "Sale price must be equal or greater than purchase price!", false);
+            }
+           
             LogBatch::startBatch();
             $request['type'] = 'product_sale_price_update';
             $request['message'] = 'Product sale price update';
@@ -400,6 +408,8 @@ class ProductsController extends Controller
      */
     public function addStock(Request $request, $id)
     {
+       
+      
         try {
             if (!Gate::allows('product_add_stock')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
@@ -407,8 +417,31 @@ class ProductsController extends Controller
             LogBatch::startBatch();
             $request['type'] = 'stock_add';
             $request['message'] = 'Stock add';
-
+            if ($request->purchase_price && $request->purchase_price  < 0) {
+                return ApiHelper::apiResponse($this->error, "Purchase price must be greater than 0", false);
+            }
+            if ($request->quantity && $request->quantity  < 0) {
+                return ApiHelper::apiResponse($this->error, "Quantity must be greater than 0", false);
+            }
             if (ProductDetail::createRecord($request, Auth::User()->account_id, $id)) {
+                $inventory = Inventory::where('product_id',$id)->where('id',$request->inventory_id)->first();
+
+                $latest_quantity = $inventory->quantity + $request->quantity;
+                $inventory->update(['quantity' =>$latest_quantity]);
+                $purchase = new Purchase();
+                $purchase->items =  $request->quantity;
+                $purchase->account_id =  Auth::User()->account_id;
+                $purchase->total_price =  $request->quantity;
+                $purchase->items =  $request->total_purchase_price;
+                $purchase->save();
+                $purchase_detail = new PurchaseDetail();
+                $purchase_detail->product_id =  $id;
+                $purchase->account_id =  Auth::User()->account_id;
+                $purchase_detail->purchase_id =  $purchase->id;
+                $purchase_detail->purchase_price =  $request->purchase_price;
+                $purchase_detail->total_purchase_price =  $request->total_purchase_price;
+                $purchase_detail->quantity =  $request->quantity;
+                $purchase_detail->save();
                 LogBatch::endBatch();
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
@@ -426,7 +459,11 @@ class ProductsController extends Controller
         }
         return view('admin.products.stock_detail', compact('id'));
     }
-
+    public function productInventory($id)
+    {
+        return view('admin.products.inventories', compact('id'));
+    }
+    
     public function productStockDetail(Request $request, $id)
     {
         if (!Gate::allows('product_stock_detail')) {
@@ -449,7 +486,28 @@ class ProductsController extends Controller
 
         return ApiHelper::apiDataTable($records);
     }
+    public function productInventoryDetail(Request $request, $id)
+    {
+        if (!Gate::allows('product_stock_detail')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
+        $iTotalRecords = Inventory::getTotalRecords($request, Auth::User()->account_id, $id);
+        [$orderBy, $order] = getSortBy($request);
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
+        $inventory_data = Inventory::with('product','warehouse','centre')->where('product_id', $id)->orderBy('id', 'desc')->get();
 
+        $records['data'] = $inventory_data;
+        $records['meta'] = [
+            'field' => $orderBy,
+            'page' => $page,
+            'pages' => $pages,
+            'perpage' => $iDisplayLength,
+            'total' => $iTotalRecords,
+            'sort' => $order,
+        ];
+
+        return ApiHelper::apiDataTable($records);
+    }
     /**
      * Inactive Record from storage.
      *
@@ -475,10 +533,14 @@ class ProductsController extends Controller
             if (!Gate::allows('product_transfer')) {
                 return abort(401);
             }
-            $product = Product::findOrFail($id);
-            if ($product) {
-                $product->quantity = Stock::sumProductQuantity($id);
-            }
+            $product = Product::join('inventories','products.id','inventories.product_id')
+            ->select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity')
+            ->where('inventories.id',$id)->first();
+            
+            // if ($product) {
+            //     $product->quantity = Stock::sumProductQuantity($id);
+            // }
+            
             $centres = Locations::whereIn('id', ACL::getUserCentres())->pluck('name', 'id');
             $warehouse = Warehouse::whereActive(1)->pluck('name', 'id');
 
@@ -494,6 +556,14 @@ class ProductsController extends Controller
 
     public function transferProduct(Request $request)
     {
+        $validator = Validator::make($request->all(), [
+            'quantity' => ['required', 'numeric', 'min:0'],
+        ]);
+        
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->error, "Quantity can not be less than 0", false);
+        }
+        
         try {
             if (!Gate::allows('product_transfer')) {
                 return abort(401);
@@ -530,13 +600,58 @@ class ProductsController extends Controller
             LogBatch::startBatch();
             $request['type'] = 'product_transfer_create';
             $request['message'] = 'Product transfer';
-
+           
             $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
+         
             if ($transfer_product['record']) {
-                $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id, $transfer_product['data']['id']);
+                $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id);
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
                     LogBatch::endBatch();
+                    $product_type = Product::find($request->product_id);
+                
+                    if($request->from_warehouse_id){
+                       
+                        $minus_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->from_warehouse_id)->first();
+                        if($request->to_warehouse_id){
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->first();
+                        }else{
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->first();
+                       
+                        }
+                        
+                    }else{
+                        if($request->to_warehouse_id){
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->first();
+                        }else{
+                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->first();
+                        }
+                        $minus_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->from_location_id)->first();
+                       
+                    }
+                    $updated_quantity = $minus_inventory->quantity - $request->quantity;
+                   
+                    $minus_inventory->update(['quantity'=>$updated_quantity]);
+                    if($update_inventory){
+                      
+                        $latest_updated_quantity = $update_inventory->quantity + $request->quantity;
+
+                        $update_inventory->update(['quantity'=>$latest_updated_quantity]);
+                    }else{
+                       
+                        $inventory = new Inventory();
+                        $inventory->product_id = $request->product_id;
+                        if($request->to_warehouse_id){
+                            $inventory->warehouse_id = $request->to_warehouse_id;
+                        }else{
+                            $inventory->location_id = $request->to_location_id;
+                        }
+                        $inventory->quantity = $request->quantity;
+                        $inventory->is_saleable = $product_type->product_type == 'for_sale' ? 1 : 0;
+                        $inventory->save();
+
+                    }
+                   
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
@@ -663,5 +778,13 @@ class ProductsController extends Controller
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
+    }
+
+    public function editInventory($id)
+    {
+        $inventory = Inventory::with('product','centre','warehouse')->whereId($id)->first();
+        $warehouses = Warehouse::where('active',1)->get();
+        $locations = Locations::where('active',1)->get();
+       return response()->json(['status'=>1,'inventory'=>$inventory,'warehouse'=>$warehouses,'locations'=>$locations]);
     }
 }

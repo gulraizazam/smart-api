@@ -56,22 +56,25 @@
                         <select onchange="getServices('add');" id="add_plan_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id_1">
                             <option value="">Select Centre</option>
                         </select>
+                        <small class="text-danger ml-1 mt-1"><b id="add_plan_location_id_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                        <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient" placeholder="Patient Search">
+                        <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient plan_search_patient" placeholder="Patient Search">
                         <input type="hidden" class="filter-field search_field" id="add_patient_id">
-                        <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times"
+                        <span class="plan_search_patient_croxcli" style="display: none; padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times"
                                 aria-hidden="true"></i></span>
                         <div class="suggesstion-box" style="display: none;">
                             <ul class="suggestion-list"></ul>
                         </div>
+                        <small class="text-danger ml-1 mt-1"><b id="add_patient_id_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-4 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
                         <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id_1">
                             <option value="">Select Appointment</option>
                         </select>
+                        <small class="text-danger ml-1 mt-1"><b id="add_appointment_id_error" class="create-plan-error"></b></small>
                     </div>
                 </div>
             </div>
@@ -82,6 +85,7 @@
                         <select id="add_service_id" onchange="getServiceDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id_1">
                             <option value="">Select Service</option>
                         </select>
+                        <small class="text-danger ml-1 mt-1"><b id="add_service_id_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-4 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Discounts <span class="text text-danger"></span></label>
@@ -96,11 +100,13 @@
                             <option value="Fixed">Fixed</option>
                             <option value="Percentage">Percentage</option>
                         </select>
+                        <small class="text-danger ml-1 mt-1"><b id="add_discount_type_error" class="create-plan-error"></b></small>
                     </div>
 
                     <div class="fv-row col-md-4 mt-5" id="discount_value_div">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                        <input type="text" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled>
+                        <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled min="0" oninput="validity.valid||(value='');">
+                        <small class="text-danger ml-1 mt-1"><b id="add_discount_value_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-4 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
@@ -155,7 +161,8 @@
                     </div>
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                        <input type="text" min="0" id="cash_amount_1" class="form-control" placeholder="Enter Amount" value="0" name="cash_amount" value="0">
+                        <input type="number" id="cash_amount_1" class="form-control" placeholder="Enter Amount" name="cash_amount" disabled min="0" oninput="validity.valid||(value='');">
+                        <small class="text-danger ml-1 mt-1"><b id="cash_amount_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>

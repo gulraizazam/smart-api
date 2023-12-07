@@ -21,6 +21,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
+            
             return displayProducts(data.order_detail);
         }
     }, {
@@ -29,7 +30,8 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            return sumProductsQuantity(data.order_detail);
+           
+            return data.quantity;
         }
     }, {
         field: 'order_have',
@@ -46,9 +48,33 @@ var table_columns = [
         title: 'Payment Status',
         width: 80,
         template: function (data) {
-            return '<span class="badge badge-success">' + data.payment_mode + '</span>';
+            if(data.payment_mode==1)
+            {
+                payment_mode_name = 'Cash';
+            }else if(data.payment_mode==2)
+            {
+                payment_mode_name = 'Card';
+            }else{
+                payment_mode_name = 'Bank Transfer';
+            }
+            return '<span class="badge badge-success">' + payment_mode_name + '</span>';
         }
-    }, {
+    },{
+        field: 'is_refunded',
+        title: 'Is Refunded',
+        width: 80,
+        template: function (data) {
+            if(data.is_refunded==1)
+            {
+                return '<span class="badge badge-success">Yes</span>';
+            }else{
+                return '<span class="badge badge-warning">No</span>';
+            }
+           
+        }
+    }
+    
+    ,{
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -91,14 +117,7 @@ function actions(data) {
                             </a>\
                         </li>';
     }
-    if (permissions.delete) {
-        actions += '<li class="navi-item">\
-                            <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-trash"></i></span>\
-                            <span class="navi-text">Delete</span>\
-                            </a>\
-                        </li>';
-    }
+   
     actions += '</ul>\
             </div>\
         </div>';
@@ -149,15 +168,23 @@ function addRow() {
                 product_id: product_id,
             },
             success: function (response) {
+                
                 let products = response.data.products;
-                if (products.length && ((products[0].quantity - quantity) == 0) || ((products[0].quantity - quantity) < 0)) {
+                
+                if (products.quantity - quantity == 0 || products.quantity - quantity < 0) {
                     toastr.error("Product quantity out of stock");
                     $("#add_service_btn").removeAttr('disabled');
                 } else {
-                    $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price));
-                    calculateTotal();
-                    ProductStock.push(product_id);
-                    $("#add_service_btn").removeAttr('disabled');
+                   
+                    if (ProductStock.includes(product_id)) {
+                        toastr.error("Product already add in list.");
+                        $("#add_service_btn").removeAttr('disabled');
+                    } else {
+                        $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price, products.quantity));
+                        calculateTotal($(this));
+                        ProductStock.push(product_id);
+                        $("#add_service_btn").removeAttr('disabled');
+                    }
                 }
             }
         });
@@ -166,21 +193,28 @@ function addRow() {
     }
 }
 
-function calculateTotal() {
+function calculateTotal(data) {
     let totalPrice = 0;
-    let total_products = 0;
-    $('.productPriceValue').each(function (index, value) {
-        totalPrice = totalPrice + parseFloat($(this).val());
-        total_products++;
+    var quantity = data.closest("tr").find('input[name="quantity[]"]').val();
+    var price = data.closest("tr").find('.productPriceValue').val();
+
+    data.closest("tr").find('.sub-total').empty();
+    data.closest("tr").find('.sub-total').text(quantity * price);
+    $('tr .sub-total').each(function () {
+        var subtotal = parseFloat($(this).text()); // Get the subtotal value and convert to a number
+        totalPrice += subtotal; // Add the subtotal to the total
+        console.log(totalPrice, subtotal, $(this).text());
     });
-    $('#product_price').val(totalPrice);
-    $('#total_products').val(total_products);
+
+    $('#product_price').val(price);
     $('#total_product_price strong').text(totalPrice);
+    $('#refund_total_product_price').text(totalPrice);
 }
 
-function setProduct(id, product_id, product_name, price) {
-    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="product_price[]" value="' + price + '"> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
+function setProduct(id, product_id, product_name, price, stock) {
+    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td class="sub-total">' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
 }
+
 
 function deleteIcon(id) {
     return '<a href="javascript:void(0);" onClick="deleteModel(' + id + ')" class="btn btn-icon btn-light btn-hover-danger btn-sm"> <span class="svg-icon svg-icon-md svg-icon-danger"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1"> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect x="0" y="0" width="24" height="24"></rect> <path d="M6,8 L6,20.5 C6,21.3284271 6.67157288,22 7.5,22 L16.5,22 C17.3284271,22 18,21.3284271 18,20.5 L18,8 L6,8 Z" fill="#000000" fill-rule="nonzero"></path> <path d="M14,4.5 L14,4 C14,3.44771525 13.5522847,3 13,3 L11,3 C10.4477153,3 10,3.44771525 10,4 L10,4.5 L5.5,4.5 C5.22385763,4.5 5,4.72385763 5,5 L5,5.5 C5,5.77614237 5.22385763,6 5.5,6 L18.5,6 C18.7761424,6 19,5.77614237 19,5.5 L19,5 C19,4.72385763 18.7761424,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"></path> </g> </svg> </span> </a>';
@@ -188,17 +222,16 @@ function deleteIcon(id) {
 
 function deleteModel(id) {
     $('.product_' + id).remove();
+    calculateTotal($(this));
     const valueToRemove = id;
     const indexToRemove = ProductStock.indexOf(valueToRemove);
     ProductStock.splice(indexToRemove, 1);
-    calculateTotal();
 }
 
 function orderSubmit() {
     ProductStock.length = 0;
     refundProductId.length = 0;
     refundProductPrice.length = 0;
-
 }
 
 function createOrderInvoice(url) {
@@ -290,8 +323,15 @@ function refundOrder(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-            $("#modal_refund_order").modal("show");
-            setRefundOrderData(response);
+          
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+                $("#modal_refund_order").modal("show");
+                setRefundOrderData(response);
+                
+            }
+            
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -300,7 +340,9 @@ function refundOrder(url) {
 }
 
 function setRefundOrderData(response) {
+    
     let order = response.data;
+    
     let orderDetail = order.order_detail;
     let action = route('admin.orders.refund', { id: order.id });
     $("#modal_order_refund_form").attr("action", action);
@@ -310,6 +352,7 @@ function setRefundOrderData(response) {
 
     if (location_option == 'in_branch') {
         $('#refund_order_location').val(order.location_id).trigger('change');
+        $('#refund_location_id').val(order.location_id);
     } else {
         $("#refund_order_location").val(order.warehouse_id).trigger('change');
     }
@@ -323,11 +366,14 @@ function setRefundOrderData(response) {
     let loop = 0;
 
     orderDetail.forEach(function (value, index) {
-        for (let i = 0; i < value.quantity; i++) {
-            let product = value.product;
-            loop++;
-            productList += setProductRefund(loop, product.id, product.name, product.sale_price);
+        console.log('value',value);
+        let product = value.product;
+        loop++;
+        if(value.quantity > 0){
+            productList += setProductRefund(loop, product.id, product.name, product.sale_price, value.quantity);
+       
         }
+        
     });
 
     $('#refund_product_list').append(productList);
@@ -337,9 +383,28 @@ function setRefundOrderData(response) {
 }
 
 
-function setProductRefund(id, product_id, product_name, price) {
-    return '<tr id="refund_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="product_price[]" value="' + price + '"> <input type="hidden" class="productPriceValue" value="' + price + '"><input type="hidden" class="productId" value="' + product_id + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + deleteIconRefund(id) + '</td></tr>';
+function setProductRefund(id, product_id, product_name, price, stock) {
+    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="0" /> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td>' + stock + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="0"/><span class="plus">+</span></div></td><td class="sub-total">0</td></tr>';
 }
+$('body').on('keyup', ".quantity_input", function () {
+   
+    var $input = $(this).parent().find('.quantity_input');
+    var input2 = $(this).closest("tr").find('.product_quantity_input');
+    var stock = $(this).closest("tr").find('input[name="stock[]"]').val();
+    var count = parseInt($input.val()); 
+    if (stock >= count) {
+        $input.val(count);
+        $input.change();
+        input2.val(count).change();
+        calculateTotal($(this));
+       
+    } else {
+        toastr.error("Product quantity out of stock.");
+    }
+    return false;
+});
+
+
 
 function deleteIconRefund(id) {
     return '<a href="javascript:void(0);" onClick="deleteModelRefund(' + id + ')" class="btn btn-icon btn-light btn-hover-danger btn-sm"> <span class="svg-icon svg-icon-md svg-icon-danger"> <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1"> <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd"> <rect x="0" y="0" width="24" height="24"></rect> <path d="M6,8 L6,20.5 C6,21.3284271 6.67157288,22 7.5,22 L16.5,22 C17.3284271,22 18,21.3284271 18,20.5 L18,8 L6,8 Z" fill="#000000" fill-rule="nonzero"></path> <path d="M14,4.5 L14,4 C14,3.44771525 13.5522847,3 13,3 L11,3 C10.4477153,3 10,3.44771525 10,4 L10,4.5 L5.5,4.5 C5.22385763,4.5 5,4.72385763 5,5 L5,5.5 C5,5.77614237 5.22385763,6 5.5,6 L18.5,6 C18.7761424,6 19,5.77614237 19,5.5 L19,5 C19,4.72385763 18.7761424,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"></path> </g> </svg> </span> </a>';
@@ -351,8 +416,7 @@ function deleteModelRefund(id) {
     var productId = $('.product_' + id).find('.productId').val();
     refundProductId.push(productId);
     refundProductPrice.push(price);
-    console.log('id', id);
-    console.log('price', price);
+ 
 
     $('#refund_products').val(refundProductId);
     $('#refund_products_price').val(refundProductPrice);
@@ -401,12 +465,10 @@ function resetAllFilters(datatable) {
 
 function setFilters(filter_values, active_filters) {
     let centres = filter_values.centres;
-    let warehouses = filter_values.warehouse;
     let users = filter_values.users;
     let products = filter_values.products;
 
     let centre_options = '<option value="">Select Centre</option>';
-    let warehouse_options = '<option value="">Select Warehouse</option>';
     let location = '<option value="">Select Product Location</option>';
     let product = '<option value="">Select Product</option>';
     let created_by = '<option value="">Select Created By</option>';
@@ -417,12 +479,9 @@ function setFilters(filter_values, active_filters) {
     if (Object.keys(centres).length == 1 && Object.keys(warehouses).length == 0) {
         centres_selected = "selected"
         FDM = "fdm_select";
-    } else if (Object.keys(centres).length == 0 && Object.keys(warehouses).length == 1) {
-        warehouse_selected = "selected";
-        FDM = "fdm_select";
+    
     } else {
         centres_selected = "";
-        warehouse_selected = "";
         FDM = "";
     }
     /* Option Group */
@@ -439,25 +498,12 @@ function setFilters(filter_values, active_filters) {
         location += '</optgroup>';
     }
 
-    if (Object.keys(warehouses).length > 0) {
-        location += '<optgroup value="warehouse" label="Warehouse">';
-        Object.entries(warehouses).forEach(function (value, index) {
-            if (active_filters.location_type == 'warehouse' && active_filters.location == value[0] || warehouse_selected == "selected") {
-                location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-            } else {
-                location += '<option value="' + value[0] + '">&nbsp;&nbsp;&nbsp; ' + value[1] + '</option>';
-            }
-        });
-        location += '</optgroup>';
-    }
+   
 
     Object.entries(centres).forEach(function (value, index) {
         centre_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
-    Object.entries(warehouses).forEach(function (value, index) {
-        warehouse_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-    });
-
+   
     Object.entries(products).forEach(function (value, index) {
         product += '<option value="' + value[0] + '">' + value[1].name + '</option>';
     });
@@ -483,7 +529,7 @@ function setFilters(filter_values, active_filters) {
 
     /* List Filters values */
     $("#search_centre_id").html(centre_options);
-    $("#search_warehouse_id").html(warehouse_options);
+    
 
     /* Active Filters */
     $("#search_order_id").val(active_filters.order_id);
@@ -503,18 +549,19 @@ function productSelect(product_id, id = null) {
             product_id: product_id,
         },
         success: function (response) {
-            let products = response.data.products;
-            if (products.length) {
+            console.log('productSelect',response);
+            let product = response.data.products;
+            //if (products.length) {
 
-                products.forEach(function (product) {
+                //products.forEach(function (product) {
                     $("#" + id + "_available_quantity").val(product.quantity);
                     $("#" + id + "_price").val(product.sale_price);
                     $("#" + id + "_total_price").val(product.sale_price);
                     $("#" + id + "_quantity").val(1);
                     $("#" + id + "_product_type").val(product.product_type);
-                });
+                //});
 
-            }
+            //}
         }
     });
 }
@@ -525,7 +572,7 @@ function productSearch(from_id, id = null, type = null) {
     if (from_id != '') {
         $.ajax({
             type: "GET",
-            url: route('admin.transfer_products.get_products'),
+            url: route('admin.transfer_products.fetch_products'),
             dataType: 'json',
             data: {
                 from_key: from_key,
@@ -573,6 +620,33 @@ $(document).ready(function () {
         let location = selected.closest('optgroup').attr('value');
         let locationType = location == "branch" ? "location_id" : (location == "warehouse" ? "warehouse_id" : null);
         $('#add_order_location_type').val(locationType);
+    });
+    $(document).on("click", ".minus", function () {
+        var $input = $(this).parent().find('.quantity_input');
+        var input2 = $(this).closest("tr").find('.product_quantity_input');
+        var count = parseInt($input.val()) - 1;
+        count = count < 0 ? 0 : count;
+        $input.val(count);
+        $input.change();
+        input2.val(count).change();
+        calculateTotal($(this));
+        return false;
+    });
+    $(document).on('click', '.plus', function () {
+        var $input = $(this).parent().find('.quantity_input');
+        var input2 = $(this).closest("tr").find('.product_quantity_input');
+        var stock = $(this).closest("tr").find('input[name="stock[]"]').val();
+        var count = parseInt($input.val()) + 1; console.log(stock);
+        if (stock >= count) {
+            $input.val(count);
+            $input.change();
+            input2.val(count).change();
+            calculateTotal($(this));
+            console.log($input.val(count), stock, count, ProductStock);
+        } else {
+            toastr.error("Product quantity out of stock.");
+        }
+        return false;
     });
 
 });

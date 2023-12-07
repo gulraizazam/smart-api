@@ -26,7 +26,7 @@
             <!--begin::Scroll-->
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_add_user_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
-                   
+                <input type="hidden" name="inventory_id" id="inventory_id">
                     <div class="row">
                         <div class="fv-row col-md-4">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Quantity</label>
