@@ -91,13 +91,13 @@ class Product extends BaseModal
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return self::where($where)
+            return self::join('inventories','products.id','inventories.product_id')->where($where)
                 ->where(function ($query) {
                     $query->whereIn('location_id', ACL::getUserCentres())
                         ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
                 })->count();
         } else {
-            return self::count();
+            return self::join('inventories','products.id','inventories.product_id')->count();
         }
     }
 
@@ -113,18 +113,22 @@ class Product extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::where($where)
+            return self::join('inventories','products.id','inventories.product_id')
+            ->select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
+            ->where($where)
                 ->where(function ($query) {
-                    $query->whereIn('location_id', ACL::getUserCentres())
-                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                    $query->whereIn('inventories.location_id', ACL::getUserCentres())
+                        ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
                 })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
         } else {
-            return self::where(function ($query) {
-                $query->whereIn('location_id', ACL::getUserCentres())
-                    ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+            return self::join('inventories','products.id','inventories.product_id')
+            ->select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
+            ->where(function ($query) {
+                $query->whereIn('inventories.location_id', ACL::getUserCentres())
+                    ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
             })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
         }
     }
 
@@ -170,8 +174,8 @@ class Product extends BaseModal
                 $where[][] = ['active' => $filters['status']];
             }
             if (hasFilter($filters, 'created_at')) {
-                $where[] = ['created_at', '>=', $start_date_time];
-                $where[] = ['created_at', '<=', $end_date_time];
+                $where[] = ['products.created_at', '>=', $start_date_time];
+                $where[] = ['products.created_at', '<=', $end_date_time];
             }
         }
 
@@ -191,14 +195,30 @@ class Product extends BaseModal
         } else {
             $data = $request;
         }
+       
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::user()->id;
-        $record = self::create($data);
+        $product = new Product();
+        $product->name =  $data['name'];
+        $product->account_id =  $data['account_id'];
+        $product->brand_id =  $data['brand_id'];
+        $product->sale_price =  $data['sale_price'];
+        $product->purchase_price =  $data['purchase_price'];
+        $product->product_type =  $data['product_type'];
+        $product->save();
 
-        $subjectModel = self::find($record->id);
-        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
-        return $record;
+        $inventory = new Inventory();
+        $inventory->product_id =  $product->id;
+        $inventory->warehouse_id =  $data['warehouse_id'];
+        $inventory->is_saleable =  $product->product_type == 'in_house_use' ? 1 :0;
+        $inventory->quantity =  $data['quantity'];
+        $inventory->save();
+
+
+         $subjectModel = self::find($product->id);
+         activityLog(self::$logName, $subjectModel, $request['type'], $product, $request['message']);
+         return $product;
     }
 
     /**
@@ -282,32 +302,48 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            return self::where([
-                ['status', '=', '1'],
-                ['account_id', '=', $account_id],
+            return self::join('inventories','products.id','inventories.product_id')->where([
+                ['products.status', '=', '1'],
+                ['products.account_id', '=', $account_id],
                 [$request->from_key, $request->from_id]
             ])->when($request->type == 'order', function ($q) {
                 return $q->where(['product_type' => 'for_sale']);
-            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+            })->select('products.id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         } else if (isset($request->product_id)) {
-            return self::where([
-                ['status', '=', '1'],
-                ['account_id', '=', $account_id],
-                ['id', $request->product_id],
+            return self::join('inventories','products.id','inventories.product_id')->where([
+                ['products.status', '=', '1'],
+                ['products.account_id', '=', $account_id],
+                ['products.id', $request->product_id],
             ])->when($request->type == 'order', function ($q) {
-                return $q->where(['product_type' => 'for_sale']);
+                return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
             })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         } else if ($request['request_from'] == 'order') {
-            return self::where([
-                ['status', '=', '1'],
-                ['account_id', '=', $account_id],
+            return self::join('inventories','products.id','inventories.product_id')->where([
+                ['products.status', '=', '1'],
+                ['products.account_id', '=', $account_id],
                 [$request['from_key'], $request['from_id']]
             ])->when(isset($request->type) && $request->type == 'order', function ($q) {
-                return $q->where(['product_type' => 'for_sale']);
+                return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
             })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
         }
     }
+    public static function  getTransferProductsAjax($request, $account_id)
+    {
+       if($request->location_id){
+            $inventory = Inventory::where([
+                'location_id' => $request->location_id,'product_id' => $request->product_id])
+               ->first();
+            
+       }else{
+        $inventory = Inventory::where([
+            'warehouse_id' => $request->warehouse_id,'product_id' => $request->product_id])
+           ->first();
+       }
+       
+        return $inventory;
 
+
+    }
     /**
      * Get All Records
      *

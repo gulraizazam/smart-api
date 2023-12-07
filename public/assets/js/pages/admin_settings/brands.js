@@ -16,6 +16,15 @@ var table_columns = [
         title: 'Name',
         width: 'auto',
         sortable: false,
+    }, {
+        field: 'status',
+        title: 'status',
+        width: 80,
+        sortable: false,
+        template: function (data) {
+            let status_url = route('admin.brands.status');
+            return statusesBrand(data, status_url, true);
+        }
     },
     {
         field: 'actions',
@@ -73,7 +82,35 @@ function actions(data) {
     }
     return '';
 }
+function statusesBrand(data, status_url, is_column_name_change = false) {
 
+    let id = data.id;
+
+    let active = is_column_name_change == false ? data.active : data.status;
+    let status = '';
+
+    if (active) {
+        
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+       
+
+    } else {
+
+        status += '<span class="switch switch-icon">\
+        <label>\
+            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
+            <span></span>\
+        </label>\
+        </span>';
+    }
+
+    return status;
+}
 function editRow(url) {
     $.ajax({
         headers: {

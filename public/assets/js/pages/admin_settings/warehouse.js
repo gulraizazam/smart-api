@@ -2,39 +2,31 @@
 var table_url = route('admin.warehouse.datatable');
 
 var table_columns = [
-    {
-        field: 'id',
-        sortable: false,
-        width: '30',
-        title: renderCheckbox(),
-        template: function (data) {
-            return childCheckbox(data);
-        }
-    },
+   
     {
         field: 'name',
         title: 'Name',
         width: '80',
         sortable: false,
     },
-    {
-        field: 'manager_name',
-        title: 'Manager Name',
-        width: '80',
-        sortable: false,
-    },
-    {
-        field: 'manager_phone',
-        title: 'Manager Phone',
-        width: '80',
-        sortable: false,
-    },
-    {
-        field: 'address',
-        title: 'Address',
-        width: '80',
-        sortable: false,
-    },
+    // {
+    //     field: 'manager_name',
+    //     title: 'Manager Name',
+    //     width: '80',
+    //     sortable: false,
+    // },
+    // {
+    //     field: 'manager_phone',
+    //     title: 'Manager Phone',
+    //     width: '80',
+    //     sortable: false,
+    // },
+    // {
+    //     field: 'address',
+    //     title: 'Address',
+    //     width: '80',
+    //     sortable: false,
+    // },
     {
         field: 'city',
         title: 'City',

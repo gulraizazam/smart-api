@@ -561,6 +561,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('order/refunds', [OrdersController::class, 'refund'])->name('order.refunds.index');
 
     Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
+    Route::get('products/inventory/{id}', [ProductsController::class, 'productInventory'])->name('products.inventory');
+    Route::get('inventory/edit/{id}', [ProductsController::class, 'editInventory'])->name('inventory.edit');
     Route::get('reports/inventory_reports', [InventoryReportController::class, 'report'])->name('reports.inventory_report');
 
     Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');

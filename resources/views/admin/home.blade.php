@@ -2,19 +2,30 @@
 @section('title', 'Dashboard')
 @section('content')
     <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
+
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb')
         <div class="d-flex flex-column-fluid">
             <div class="container">
+                <div class="row mx-0 mb-6 mt-0 pr-0">
+                    <div class="col-3 ml-auto pr-0">
+                        <select class="form-control custom_dropdown float-right" id="global_date_filter" aria-label="Select example">
+                            <option value="today">Today</option>
+                            <option value="yesterday">Yesterday</option>
+                            <option value="last7days">Last 7 Days</option>
+                            <option value="week">This Week</option>
+                            <option value="thismonth">This Month</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-lg-6 col-xxl-6">
                         <div class="card card-custom bg-gray-100 card-stretch gutter-b">
                             <div class="card-header border-0 bg-danger py-5">
                                 <h3 class="card-title font-weight-bolder text-white">Stats</h3>
                                 <div class="card-toolbar">
-                                    <div class="dropdown dropdown-inline">
-                                        <select class="form-control" name="type" onchange="changeDate();"
-                                            id="recordfilter">
+                                    <div class="dropdown date_action_dropdown dropdown-inline">
+                                        <select class="form-control" name="type" onchange="changeDate();" id="recordfilter">
                                             <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
                                             </option>
                                             <option value="yesterday"
@@ -23,7 +34,7 @@
                                                 {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                             <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
                                                 Week</option>
-                                            <option value="month" {{ request('type') == 'month' ? 'selected' : '' }}>This
+                                            <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
                                                 Month</option>
                                             <!-- <option value="lastmonth"
                                                                                     {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
@@ -146,7 +157,8 @@
                                 @else
                                     <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img">
                                     <div class="text-center">
-                                        <span>No Activity Found</span>
+                                        {{-- <span>No Activity Found</span> --}}
+                                        <span style="color: #000;text-align:center;font-size: 12px;padding: 80px 0px 0px;font-family: Arial;">No Activity Found</span>
                                     </div>
                                 @endif
                             </div>
@@ -162,50 +174,21 @@
                                         <span class="dashboard-counter text-uppercase">Collection by Centre</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report collection_by_centre_dropdown"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Today
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="collection_by_centre_menu">
-                                                            <li class="centre-item">
-                                                                <a class="active" href="#location_collection_1"
-                                                                    data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('today');">
-                                                                    Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_collection_2" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('yesterday');">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_collection_3" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('last7days');">Last
-                                                                    7
-                                                                    Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_collection_3" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('week');">This
-                                                                    Week</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_collection_4" data-toggle="tab"
-                                                                    onclick="initCollectionByCentre('thismonth');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <!-- <li>
-                                                                                                    <a href="#location_collection_4" data-toggle="tab"
-                                                                                                        onclick="initCollectionByCentre('', '', '','','','lastmonth');">Last
-                                                                                                        Month</a>
-                                                                                                </li> -->
-                                                        </ul>
-                                                    </div>
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                    <select id="collection_centre" class="form-control collection_centre" name="type">
+                                                        <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                        </option>
+                                                        <option value="yesterday"
+                                                            {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                        <option value="last7days"
+                                                            {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                        <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                            Week</option>
+                                                        <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                            Month</option>
+                                                        <!-- <option value="lastmonth"
+                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    </select>
                                                 </div>
                                             </li>
                                         </ul>
@@ -286,46 +269,21 @@
                                         <span class="dashboard-counter text-uppercase">Revenue by Centre</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report revenue_by_centre_dropdown"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Today
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="revenue_by_centre_menu">
-                                                            <li>
-                                                                <a class="active" href="#location_revenue_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="initRevenueByCentre('today');">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_revenue_1" data-toggle="tab"
-                                                                    onclick="initRevenueByCentre('yesterday');">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByCentre('last7days');">Last 7
-                                                                    Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByCentre('week');">This Week</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#location_revenue_3" data-toggle="tab"
-                                                                    onclick="initRevenueByCentre('thismonth');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <!-- <li>
-                                                                                                    <a href="#location_revenue_3" data-toggle="tab"
-                                                                                                        onclick="initRevenueByCentre('lastmonth');">Last
-                                                                                                        Month</a>
-                                                                                                </li> -->
-                                                        </ul>
-                                                    </div>
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                    <select id="revenue_centre" class="form-control" name="type">
+                                                        <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                        </option>
+                                                        <option value="yesterday"
+                                                            {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                        <option value="last7days"
+                                                            {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                        <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                            Week</option>
+                                                        <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                            Month</option>
+                                                        <!-- <option value="lastmonth"
+                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    </select>
                                                 </div>
                                             </li>
                                         </ul>
@@ -406,42 +364,21 @@
                                         <span class="dashboard-counter text-uppercase">Revenue by Service Category</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown  btn_Report revenue_by_service_category_dropdown"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Today
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="revenue_by_service_category_menu">
-                                                            <li>
-                                                                <a class="active" href="#service_revenue_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('today');">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_1" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('yesterday');">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('last7days');">Last
-                                                                    7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_3" data-toggle="tab"
-                                                                    onclick="InitRevenueByServiceCategory('thismonth');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <!-- <li>
-                                                                                                    <a href="#service_revenue_3" data-toggle="tab"
-                                                                                                        onclick="InitRevenueByServiceCategory('', '', '','', 'lastmonth');">Last
-                                                                                                        Month</a>
-                                                                                                </li> -->
-                                                        </ul>
-                                                    </div>
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                <select id="revenue_service_cate" class="form-control" name="type">
+                                                    <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                    </option>
+                                                    <option value="yesterday"
+                                                        {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                    <option value="last7days"
+                                                        {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                    <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                        Week</option>
+                                                    <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                        Month</option>
+                                                    <!-- <option value="lastmonth"
+                                                        {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                </select>
                                                 </div>
                                             </li>
                                         </ul>
@@ -466,48 +403,21 @@
                                         <span class="dashboard-counter text-uppercase">Revenue by Service</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown  btn_Report revenue_by_service_dropdown"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Today
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="revenue_by_service_menu">
-                                                            <li>
-                                                                <a class="active" href="#service_revenue_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="initRevenueByService('today');">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_1" data-toggle="tab"
-                                                                    onclick="initRevenueByService('yesterday');">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByService('last7days');">Last
-                                                                    7
-                                                                    Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_2" data-toggle="tab"
-                                                                    onclick="initRevenueByService('week');">This
-                                                                    Week</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#service_revenue_3"data-toggle="tab"
-                                                                    onclick="initRevenueByService('thismonth');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <!-- <li>
-                                                                                                    <a href="#service_revenue_3"data-toggle="tab"
-                                                                                                        onclick="initRevenueByService('', '', '','','', 'lastmonth');">Last
-                                                                                                        Month</a>
-                                                                                                </li> -->
-                                                        </ul>
-                                                    </div>
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                    <select id="revenue_service" class="form-control" name="type">
+                                                        <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                        </option>
+                                                        <option value="yesterday"
+                                                            {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                        <option value="last7days"
+                                                            {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                        <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                            Week</option>
+                                                        <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                            Month</option>
+                                                        <!-- <option value="lastmonth"
+                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    </select>
                                                 </div>
                                             </li>
                                         </ul>
@@ -527,54 +437,28 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;" id="consultancy_status">
+                                style="min-height: 605px;" id="consultancy_status1">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                         <span class="dashboard-counter text-uppercase">Consultancy by Status</span>
                                         <ul class="nav nav-tabs d-flex align-items-center">
                                             <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown  btn_Report appointment_by_status_dropdown"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Today
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="appointment_by_status_menu">
-                                                            <li>
-                                                                <a class="active" href="#appointment_by_status_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="initConsultancyByStatus('today','1');">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                                    onclick="initConsultancyByStatus('yesterday','1');">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                                    onclick="initConsultancyByStatus('last7days','1');">Last
-                                                                    7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                                    onclick="initConsultancyByStatus('week','1');">This
-                                                                    Week</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                    onclick="initConsultancyByStatus('thismonth','1');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <!-- <li>
-                                                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                                                        onclick="initConsultancyByStatus('lastmonth','1');">Last
-                                                                                                        Month</a>
-                                                                                                </li> -->
-                                                        </ul>
-                                                    </div>
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                    <select id="consultancy_status" class="form-control" name="type">
+                                                        <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                        </option>
+                                                        <option value="yesterday"
+                                                            {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                        <option value="last7days"
+                                                            {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                        <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                            Week</option>
+                                                        <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                            Month</option>
+                                                        <!-- <option value="lastmonth"
+                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    </select>
                                                 </div>
                                             </li>
                                         </ul>
@@ -595,54 +479,28 @@
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
                         <div class="col-lg-6 col-xxl-6 custom_tabs_style">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 605px;" id="treatment_status">
+                                style="min-height: 605px;" id="treatment_status1">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                         <span class="dashboard-counter text-uppercase">Treatment by Status</span>
                                         <ul class="nav nav-tabs d-flex align-items-center custom_hover_effect">
                                             <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="form-control btndropdown btn_Report appointment_by_type_dropdown"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> Today
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right"
-                                                            id="appointment_by_type_menu">
-                                                            <li>
-                                                                <a class="active" href="#appointment_by_status_4"
-                                                                    data-toggle="tab"
-                                                                    onclick="initTreatmentByStatus('today','2');">Today</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_1" data-toggle="tab"
-                                                                    onclick="initTreatmentByStatus('yesterday','2');">Yesterday</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                                    onclick="initTreatmentByStatus('last7days','2');">Last
-                                                                    7 Days</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_2" data-toggle="tab"
-                                                                    onclick="initTreatmentByStatus('week','2');">This
-                                                                    Week</a>
-                                                            </li>
-                                                            <li>
-                                                                <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                    onclick="initTreatmentByStatus('thismonth','2');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <!-- <li>
-                                                                                                    <a href="#appointment_by_status_3" data-toggle="tab"
-                                                                                                        onclick="initTreatmentByStatus('lastmonth','2');">Last
-                                                                                                        Month</a>
-                                                                                                </li> -->
-                                                        </ul>
-                                                    </div>
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                    <select id="treatment_status" class="form-control" name="type">
+                                                        <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                        </option>
+                                                        <option value="yesterday"
+                                                            {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                        <option value="last7days"
+                                                            {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                        <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                            Week</option>
+                                                        <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                            Month</option>
+                                                        <!-- <option value="lastmonth"
+                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    </select>
                                                 </div>
                                             </li>
                                         </ul>
@@ -661,7 +519,7 @@
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_staff_wise_arrival'))
-                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="staff_wise_arrival">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
                                 style="min-height: 605px;">
                                 <div class="card-body p-0">
@@ -685,27 +543,23 @@
                                                                 ->get();
                                                         @endphp
                                                         <div class="btn-group">
-                                                            <a data-id=""
+                                                            {{-- <a data-id=""
                                                                 class="btn form-control btndropdown btn_Report centre_name arrivalbtn"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false"> All Centres
                                                                 <i class="fa fa-angle-down"></i>
-                                                            </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right centre_name_ul">
-                                                                <li onclick="initCentreWiseArrival('thismonth', '')">
-                                                                    <a class="dropdown-item" data-period="thismonth"
-                                                                        data-id="">All</a>
-                                                                </li>
+                                                            </a> --}}
+                                                            <select class="dropdown-menu dropdown-menu-right centre_name_ul" id="centervise_center">
+                                                                <option data-period="thismonth"
+                                                                        value="All">All Centres</a>
+                                                                </option>
                                                                 @foreach ($centres as $centre)
-                                                                    <li
-                                                                        onclick="initCentreWiseArrival('thismonth', {{ $centre->id }})">
-                                                                        <a class="dropdown-item centre-item"
-                                                                            data-period="thismonth"
-                                                                            data-id="{{ $centre->id }}">{{ $centre->name }}</a>
-                                                                    </li>
+                                                                    <option  data-period="thismonth"
+                                                                            value="{{ $centre->id }}">{{ $centre->name }}
+                                                                    </option>
                                                                 @endforeach
-                                                            </ul>
+                                                            </select>
                                                         </div>
                                                     @elseif(Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
                                                         @php
@@ -716,28 +570,26 @@
 
                                                         @endphp
                                                         <div class="btn-group">
-                                                            <a data-id="All"
+                                                             {{-- <a data-id="All"
                                                                 class="btn form-control btndropdown btn_Report centre_name arrivalbtn"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">All
                                                                 <i class="fa fa-angle-down"></i>
-                                                            </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right">
-                                                                <li onclick="initUserWiseArrival('thismonth', 'All')">
-                                                                    <a class="dropdown-item centre-item"
-                                                                        data-id="">All</a>
-                                                                </li>
+                                                            </a> --}}
+                                                               <select class="dropdown-menu dropdown-menu-right" id="userwise_arrival">
+                                                                <option onclick="initUserWiseArrival('thismonth', 'All')"
+                                                                        value="">All
+                                                                </option>
                                                                 @foreach ($csr_users as $user)
-                                                                    <li
-                                                                        onclick="initUserWiseArrival('thismonth', {{ $user->id }})">
-                                                                        <a class="dropdown-item user-item"
-                                                                            data-id="{{ $user->id }}"
+                                                                    <option
+                                                                        onclick="initUserWiseArrival('thismonth', {{ $user->id }})"
+                                                                            value="{{ $user->id }}"
                                                                             data-period="thismonth">{{ $user->name }}</a>
-                                                                    </li>
+                                                                    </option>
                                                                 @endforeach
 
-                                                            </ul>
+                                                            </select>
                                                         </div>
                                                     @else
                                                         @php
@@ -748,102 +600,56 @@
                                                                 ->first();
                                                         @endphp
                                                         <div class="btn-group">
-                                                            <a data-id=""
+                                                             <select name="" id="centervise_center">
+                                                                <option value=""
                                                                 class="btn form-control btndropdown btn_Report centre_name arrivalbtn"
                                                                 href="javascript:;" data-toggle="dropdown"
                                                                 data-hover="dropdown" data-close-others="true"
                                                                 aria-expanded="false">
                                                                 {{ $centres ? $centres->name : 'No Centre Assigned' }}
-                                                                <i class="fa fa-angle-down"></i>
-                                                            </a>
+                                                                </option>
+                                                            </select>
+
                                                         </div>
                                                     @endif
                                                 </div>
                                             </li>
                                             @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
-                                                <li style="border-bottom: none;">
-                                                    <div class="actions action-style p-3 mr-3">
-                                                        <div class="btn-group">
-                                                            <a data-id=""
-                                                                class="btn form-control btndropdown btn_Report user_period"
-                                                                href="javascript:;" data-toggle="dropdown"
-                                                                data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false"> This Month
-                                                                <i class="fa fa-angle-down"></i>
-                                                            </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                                id="user_wise_list">
-                                                                <li class="yesterday">
-                                                                    <a href="#user_wise_ul" data-toggle="tab"
-                                                                        onclick="initUserWiseArrival('yesterday', 'user');">Yesterday</a>
-                                                                </li>
-                                                                <li class="last7days">
-                                                                    <a href="#user_wise_ul" data-toggle="tab"
-                                                                        onclick="initUserWiseArrival('last7days', 'user');">Last
-                                                                        7
-                                                                        Days</a>
-                                                                </li>
-                                                                <li class="week">
-                                                                    <a href="#user_wise_ul" data-toggle="tab"
-                                                                        onclick="initUserWiseArrival('week', 'user');">This
-                                                                        Week</a>
-                                                                </li>
-                                                                <li class="thismonth">
-                                                                    <a href="#user_wise_ul" data-toggle="tab"
-                                                                        class="active" active
-                                                                        onclick="initUserWiseArrival('thismonth', 'user');">This
-                                                                        Month</a>
-                                                                </li>
-                                                                <li class="lastmonth">
-                                                                    <a href="#user_wise_ul" data-toggle="tab"
-                                                                        onclick="initUserWiseArrival('lastmonth', 'user');">Last
-                                                                        Month</a>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
-                                                    </div>
-                                                </li>
+                                            <li style="border-bottom: none;">
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                    <select id="center_wise_arrival" class="form-control" name="type">
+                                                        <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                        </option>
+                                                        <option value="yesterday"
+                                                            {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                        <option value="last7days"
+                                                            {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                        <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                            Week</option>
+                                                        <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                            Month</option>
+                                                        <!-- <option value="lastmonth"
+                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    </select>
+                                                </div>
+                                            </li>
                                             @else
                                                 <li style="border-bottom: none;">
-                                                    <div class="actions action-style p-3 mr-3">
-                                                        <div class="btn-group">
-                                                            <a data-id=""
-                                                                class="btn form-control btndropdown btn_Report centre_period"
-                                                                href="javascript:;" data-toggle="dropdown"
-                                                                data-hover="dropdown" data-close-others="true"
-                                                                aria-expanded="false"> This Month
-                                                                <i class="fa fa-angle-down"></i>
-                                                            </a>
-                                                            <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                                id="centre_wise_list">
-                                                                <li class="yesterday">
-                                                                    <a href="#centre_wise_ul" data-toggle="tab"
-                                                                        onclick="initCentreWiseArrival('yesterday', 'centre');">Yesterday</a>
-                                                                </li>
-                                                                <li class="last7days">
-                                                                    <a href="#centre_wise_ul" data-toggle="tab"
-                                                                        onclick="initCentreWiseArrival('last7days', 'centre');">Last
-                                                                        7
-                                                                        Days</a>
-                                                                </li>
-                                                                <li class="week">
-                                                                    <a href="#centre_wise_ul" data-toggle="tab"
-                                                                        onclick="initCentreWiseArrival('week', 'centre');">This
-                                                                        Week</a>
-                                                                </li>
-                                                                <li class="thismonth">
-                                                                    <a href="#centre_wise_ul" data-toggle="tab"
-                                                                        class="active" active
-                                                                        onclick="initCentreWiseArrival('thismonth', 'centre');">This
-                                                                        Month</a>
-                                                                </li>
-                                                                <li class="lastmonth">
-                                                                    <a href="#centre_wise_ul" data-toggle="tab"
-                                                                        onclick="initCentreWiseArrival('lastmonth', 'centre');">Last
-                                                                        Month</a>
-                                                                </li>
-                                                            </ul>
-                                                        </div>
+                                                    <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                        <select id="initCentreWiseArrival" class="form-control" name="type">
+                                                            <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                            </option>
+                                                            <option value="yesterday"
+                                                                {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                            <option value="last7days"
+                                                                {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                            <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                                Week</option>
+                                                            <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                                Month</option>
+                                                            <!-- <option value="lastmonth"
+                                                                {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                        </select>
                                                     </div>
                                                 </li>
                                             @endif
@@ -884,20 +690,22 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <img src="{{ asset('assets/media/loader.gif') }}"
+                                        class="custom_loader loader-img-attended">
                                     </div>
                                 </div>
                             </div>
                         </div>
                     @endif
                     @if (\Illuminate\Support\Facades\Gate::allows('dashboard_doctor_wise_conversion'))
-                        <div class="col-lg-12 col-xxl-12 custom_tabs_style">
+                        <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="doctor_wise_conversion_section">
                             <div class="card card-custom card-stretch card-stretch-half gutter-b"
-                                style="min-height: 800px;">
+                                style="min-height: 605px;">
                                 <div class="card-body p-0">
                                     <div
                                         class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                         <span class="dashboard-counter text-uppercase">Doctor Wise Conversion</span>
-                                        <ul class="nav nav-tabs d-flex align-items-center doc_wise_arrival_ul">
+                                        <ul class="nav nav-tabs d-flex align-items-center  doc_wise_arrival_ul">
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     @php
@@ -909,7 +717,7 @@
                                                             ->get();
                                                     @endphp
                                                     <div class="btn-group">
-                                                        @if (Auth::user()->hasRole('Administrator') ||
+                                                        {{-- @if (Auth::user()->hasRole('Administrator') ||
                                                                 Auth::user()->hasRole('Super-Admin') ||
                                                                 Auth::user()->hasRole('Head of Operations') ||
                                                                 Auth::user()->hasRole('Finance'))
@@ -928,91 +736,66 @@
                                                                 {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
                                                                 <i class="fa fa-angle-down"></i>
                                                             </a>
-                                                        @endif
-                                                        <ul
-                                                            class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll">
+                                                        @endif --}}
+                                                        <select
+                                                            class="form-control btndropdown btn_Report doctorwiseconversion selectcenter"
+                                                            data-placeholder="Select Centre"
+                                                            data-dropdown-css-class="select2-dropdown">
                                                             @if (Auth::user()->hasRole('Administrator') ||
                                                                     Auth::user()->hasRole('Super-Admin') ||
                                                                     Auth::user()->hasRole('Head of Operations') ||
                                                                     Auth::user()->hasRole('Finance'))
-                                                                <li onclick="initDoctorWiseConversion('thismonth', 'all')">
-                                                                    <a class="dropdown-item doctor_wise_centre_id"
-                                                                        data-period="thismonth" data-id="all">All
-                                                                        Centres</a>
-                                                                </li>
+                                                                <option value="all" data-period="thismonth"
+                                                                    {{-- onclick="changeCenterDoct('thismonth', 'all')" --}}>
+                                                                    {{-- <a class="dropdown-item doctor_wise_centre_id"
+                                                                         data-id="all"></a> --}}
+                                                                    All
+                                                                    Centres
+                                                                </option>
                                                             @endif
                                                             @foreach ($centres as $centre)
-                                                                <li
-                                                                    onclick="initDoctorWiseConversion('thismonth', {{ $centre->id }})">
-                                                                    <a class="dropdown-item doctor_wise_centre_id"
-                                                                        data-period="thismonth"
-                                                                        data-id="{{ $centre->id }}">{{ $centre->name }}</a>
-                                                                </li>
+                                                                <option value="{{ $centre->id }}"
+                                                                    data-period="thismonth">
+                                                                    {{-- <a class="dropdown-item doctor_wise_centre_id"
+                                                                        data-id="{{ $centre->id }}"></a> --}}
+                                                                    {{ $centre->name }}
+                                                                </option>
                                                             @endforeach
-                                                        </ul>
+                                                        </select>
                                                     </div>
                                                 </div>
                                             </li>
                                             <li style="border-bottom: none;">
                                                 <div class="actions action-style p-3 mr-3">
                                                     <div class="btn-group">
-                                                        <a data-id="all-docs"
+                                                        {{-- <a data-id="all-docs"
                                                             class="btn form-control btndropdown btn_Report doctorname"
                                                             href="javascript:;" data-toggle="dropdown"
                                                             data-hover="dropdown" data-close-others="true"
                                                             aria-expanded="false" id="all_docs"> All Doctors
                                                             <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect ul-scroll"
-                                                            id="doc_nav">
-
-                                                        </ul>
+                                                        </a> --}}
+                                                    <select class="form-control btndropdown btn_Report doctorname" data-dropdown-css-class="select2-dropdown" id="doc_nav">
+                                                    </select>
                                                     </div>
                                                 </div>
                                             </li>
                                             <li style="border-bottom: none;">
-                                                <div class="actions action-style p-3 mr-3">
-                                                    <div class="btn-group">
-                                                        <a class="btn form-control btndropdown btn_Report doctor_period"
-                                                            href="javascript:;" data-toggle="dropdown"
-                                                            data-hover="dropdown" data-close-others="true"
-                                                            aria-expanded="false"> This Month
-                                                            <i class="fa fa-angle-down"></i>
-                                                        </a>
-                                                        <ul class="dropdown-menu dropdown-menu-right custom_hover_effect"
-                                                            id="doctor_wise_list">
-                                                            <li class="today">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('today', 'centre');">Today</a>
-                                                            </li>
-                                                            <li class="yesterday">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('yesterday', 'centre');">Yesterday</a>
-                                                            </li>
-                                                            <li class="last7days">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('last7days', 'centre');">Last
-                                                                    7
-                                                                    Days</a>
-                                                            </li>
-                                                            <li class="week">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    onclick="initDoctorWiseConversion('week', 'centre');">This
-                                                                    Week</a>
-                                                            </li>
-                                                            <li class="thismonth">
-                                                                <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                    class="active" active
-                                                                    onclick="initDoctorWiseConversion('thismonth', 'centre');">This
-                                                                    Month</a>
-                                                            </li>
-                                                            <!-- <li class="lastmonth">
-                                                                                                    <a href="#doctor_wise_conversion" data-toggle="tab"
-                                                                                                        onclick="initDoctorWiseConversion('lastmonth', 'centre');">Last
-                                                                                                        Month</a>
-                                                                                                </li> -->
-                                                        </ul>
-                                                    </div>
+                                                <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                    <select id="dr_wise_con" class="form-control" name="type">
+                                                        <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
+                                                        </option>
+                                                        <option value="yesterday"
+                                                            {{ request('type') == 'yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                        <option value="last7days"
+                                                            {{ request('type') == 'last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                        <option value="week" {{ request('type') == 'week' ? 'selected' : '' }}>This
+                                                            Week</option>
+                                                        <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
+                                                            Month</option>
+                                                        <!-- <option value="lastmonth"
+                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                    </select>
                                                 </div>
                                             </li>
                                         </ul>
@@ -1026,13 +809,10 @@
                                     </div>
 
                                     <div class="row pt-7">
-
                                         <div class="col-7">
-                                            {{-- <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended"> --}}
                                             <div id="doc_wise_conversion"></div>
                                         </div>
                                         <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
-
                                             <div class='table-responsive'>
                                                 <table class='table'>
                                                     <thead>
@@ -1047,6 +827,7 @@
                                                 </table>
                                             </div>
                                         </div>
+                                        <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
                                     </div>
                                 </div>
                             </div>
@@ -1057,12 +838,13 @@
             </div>
         </div>
     </div>
-    <script src="{{ asset('assets/js/home.js') }}"></script>
+
     @push('datatable-js')
         <script src="{{ asset('assets/js/pages/crud/forms/validation/appointment/validation.js') }}"></script>
         <script src="{{ asset('assets/js/pages/dashboard/datatable.js') }}"></script>
         <script src="{{ asset('assets/js/jsapi.js') }}"></script>
         <script src="{{ asset('assets/js/pie.js') }}"></script>
+        <script src="{{ asset('assets/js/home.js') }}"></script>
         <script>
             jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function() {
                 var dataID = jQuery(this).attr('data-id');
@@ -1096,14 +878,19 @@
                     },
                 });
 
-                @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead')){
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    initUserWiseArrival('thismonth', '', 'firsttime');
-                    initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
+                    initUserWiseArrival('today', '', 'firsttime');
+                    @if (!auth()->user()->hasRole('CSR'))
+                    initDoctorWiseConversion('today', centre_id, 'firsttime');
+                    @endif
+                }
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    initCentreWiseArrival('thismonth', '', 'firsttime');
-                    initDoctorWiseConversion('thismonth', centre_id, 'firsttime');
+                    initCentreWiseArrival('today', '', 'firsttime');
+                    @if (!auth()->user()->hasRole('CSR'))
+                    initDoctorWiseConversion('today', centre_id, 'firsttime');
+                    @endif
                 @endif
 
             });
@@ -1119,133 +906,31 @@
             var patient_follow_up = false;
             var patient_follow_up_one_month = false;
             $(window).scroll(function() {
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
-                    collection_by_center) {
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && ! collection_by_center) {
                     collection_by_center = true;
-                    $.ajax({
-                        url: route('admin.home.collectionByCentre'),
-                        type: "GET",
-                        data: {
-                            'type': '{{ request('type') }}'
-                        },
-                        cache: false,
-                        success: function(response) {
-                            $("#collectionbycenter .loader-img-attended").css('display', 'none');
-                            @if (request('type') == 'today')
-                                var pie = response.data.pie.today;
-                            @endif
-                            @if (request('type') == 'yesterday')
-                                var pie = response.data.pie.yesterday;
-                            @endif
-                            @if (request('type') == 'week')
-                                var pie = response.data.pie.week;
-                            @endif
-                            @if (request('type') == 'month')
-                                var pie = response.data.pie.month;
-                            @endif
-                            @if (request('type') == '')
-                                var pie = response.data.pie.today;
-                            @endif
-                            collectionCentreChart(pie);
-                        },
-
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            errorMessage(xhr);
-                        }
-                    });
+                    var currentVal = $('#collection_centre').val();
+                    initCollectionByCentre($('#collection_centre').val());
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.10) && !
-                    revenue_by_center) {
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.10) && ! revenue_by_center) {
                     revenue_by_center = true;
-                    $.ajax({
-                        url: route('admin.home.revenueByCentre'),
-                        type: "GET",
-                        data: {
-                            'type': '{{ request('type') }}'
-                        },
-                        cache: false,
-                        success: function(response) {
-                            $("#revenue_by_centre .loader-img-attended").css('display', 'none');
-                            let pie = response.data.pie;
-                            revenueCentreChart(pie);
+                    initRevenueByCentre($('#revenue_centre').val());
+                }
 
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            errorMessage(xhr);
-                        }
-                    });
-                }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.15) && !
-                    revenue_by_service) {
-                    revenue_by_service = true;
-                    $.ajax({
-                        url: route('admin.home.revenueByService'),
-                        type: "GET",
-                        data: {
-                            'type': '{{ request('type') }}'
-                        },
-                        cache: false,
-                        success: function(response) {
-                            $("#revenue_by_service .loader-img-attended").css('display', 'none');
-                            let colors = response.data.colors;
-                            @if (request('type') == 'today')
-                                var pie = response.data.pie.today;
-                            @endif
-                            @if (request('type') == 'yesterday')
-                                var pie = response.data.pie.yesterday;
-                            @endif
-                            @if (request('type') == 'week')
-                                var pie = response.data.pie.week;
-                            @endif
-                            @if (request('type') == 'month')
-                                var pie = response.data.pie.month;
-                            @endif
-                            @if (request('type') == '')
-                                var pie = response.data.pie.today;
-                            @endif
-                            revenueByService(pie, colors);
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            errorMessage(xhr);
-                        }
-                    });
-                }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.20) && !
-                    revenue_by_service_category) {
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.15) && ! revenue_by_service_category) {
                     revenue_by_service_category = true;
-                    $.ajax({
-                        url: route('admin.home.RevenueByServiceCategory'),
-                        type: "GET",
-                        data: {
-                            'type': '{{ request('type') }}'
-                        },
-                        cache: false,
-                        success: function(response) {
-                            $("#revenue_by_service_category .loader-img-attended").css('display', 'none');
-                            @if (request('type') == 'today')
-                                var pie = response.data.pie.today;
-                            @endif
-                            @if (request('type') == 'yesterday')
-                                var pie = response.data.pie.yesterday;
-                            @endif
-                            @if (request('type') == 'week')
-                                var pie = response.data.pie.week;
-                            @endif
-                            @if (request('type') == 'month')
-                                var pie = response.data.pie.month;
-                            @endif
-                            @if (request('type') == '')
-                                var pie = response.data.pie.today;
-                            @endif
-                            RevenueByServiceCategory(pie);
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            errorMessage(xhr);
-                        }
-                    });
+                    @if (!auth()->user()->hasRole('CSR'))
+                        InitRevenueByServiceCategory($('#revenue_service_cate').val());
+                    @endif
                 }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.24) && !
-                    collection_by_service_category) {
+
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.20) && ! revenue_by_service) {
+                    revenue_by_service = true;
+                    @if (!auth()->user()->hasRole('CSR'))
+                    initRevenueByService($('#revenue_service').val());
+                    @endif
+                }
+
+                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.24) && !  collection_by_service_category) {
                     collection_by_service_category = true;
                     $.ajax({
                         url: route('admin.home.CollectionByServiceCategory'),
@@ -1267,7 +952,7 @@
                             @if (request('type') == 'week')
                                 var pie = response.data.pie.week;
                             @endif
-                            @if (request('type') == 'month')
+                            @if (request('type') == 'thismonth')
                                 var pie = response.data.pie.month;
                             @endif
                             @if (request('type') == '')
@@ -1280,6 +965,7 @@
                         }
                     });
                 }
+
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
                     consultancy_by_status) {
                     consultancy_by_status = true;
@@ -1287,12 +973,14 @@
                         url: route('admin.dashboard.appointment_by_status'),
                         type: "GET",
                         data: {
-                            'period': '{{ request('type') }}',
+                            // 'period': '{{ request('type') }}',
+                            'period':$('#consultancy_status').val(),
                             'type': '1'
                         },
                         cache: false,
                         success: function(response) {
-                            $("#consultancy_status .loader-img-attended").css('display', 'none');
+                            $("#consultancy_status1 .loader-img-attended").css('display', 'none');
+                            $("#consultancy_status1 #consultancy_by_status").css('display', '');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1303,19 +991,23 @@
                             @if (request('type') == 'week')
                                 var pie = response.data.pie.week;
                             @endif
-                            @if (request('type') == 'month')
+                            @if (request('type') == 'thismonth')
                                 var pie = response.data.pie.month;
                             @endif
                             @if (request('type') == '')
                                 var pie = response.data.pie.today;
                             @endif
-                            ConsultancyByStatus(pie, colors);
+                            setTimeout(() => {
+                                ConsultancyByStatus(pie, colors);
+                            }, 500);
+
                         },
                         error: function(xhr, ajaxOptions, thrownError) {
                             errorMessage(xhr);
                         }
                     });
                 }
+
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
                     treatment_by_status) {
                     treatment_by_status = true;
@@ -1323,12 +1015,14 @@
                         url: route('admin.dashboard.appointment_by_status'),
                         type: "GET",
                         data: {
-                            'period': '{{ request('type') }}',
+                            // 'period': '{{ request('type') }}',
+                            'period':$('#treatment_status').val(),
                             'type': '2'
                         },
                         cache: false,
                         success: function(response) {
-                            $("#treatment_status .loader-img-attended").css('display', 'none');
+                            $("#treatment_status1 .loader-img-attended").css('display', 'none');
+                            $("#treatment_status1 #treatment_by_status").css('display', '');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1339,24 +1033,28 @@
                             @if (request('type') == 'week')
                                 var pie = response.data.pie.week;
                             @endif
-                            @if (request('type') == 'month')
+                            @if (request('type') == 'thismonth')
                                 var pie = response.data.pie.month;
                             @endif
                             @if (request('type') == '')
                                 var pie = response.data.pie.today;
                             @endif
-                            TreatmentByStatus(pie, colors);
+                            setTimeout(() => {
+                                TreatmentByStatus(pie, colors);
+                            }, 500);
                         },
                         error: function(xhr, ajaxOptions, thrownError) {
                             errorMessage(xhr);
                         }
                     });
                 }
+
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     patient_follow_up) {
                     patient_follow_up = true;
                     initPatientFollowUp('thismonth', '');
                 }
+
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
                     patient_follow_up_one_month) {
                     patient_follow_up_one_month = true;
@@ -1443,19 +1141,20 @@
                 }
             }
 
-            function RevenueByServiceCategory(pie) {
-                google.load('visualization', '1', {
-                    packages: ['corechart', 'bar', 'line']
-                });
-                google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(pie);
-                    var chart = new google.visualization.PieChart(document.getElementById('revenue-service-category'));
-                    chart.draw(data);
-                });
-                if (pie.length > 1) {
-                    $("#revenue-service-category").css("height", "500px");
-                }
-            }
+            // function RevenueByServiceCategory(pie) {
+            //     console.log('here',pie);
+            //     google.load('visualization', '1', {
+            //         packages: ['corechart', 'bar', 'line']
+            //     });
+            //     google.setOnLoadCallback(function() {
+            //         var data = google.visualization.arrayToDataTable(pie);
+            //         var chart = new google.visualization.PieChart(document.getElementById('revenue-service-category'));
+            //         chart.draw(data);
+            //     });
+            //     if (pie && pie.length > 1) {
+            //         $("#revenue-service-category").css("height", "500px");
+            //     }
+            // }
 
             function CollectionByServiceCategory(service) {
                 google.load('visualization', '1', {
@@ -1549,7 +1248,7 @@
                 }, 5000);
             });
 
-            
+
         </script>
     @endpush
 @endsection

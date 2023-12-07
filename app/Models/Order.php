@@ -13,7 +13,7 @@ class Order extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status'];
+    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status','quantity'];
 
     /**
      * Get Total Records
@@ -44,8 +44,8 @@ class Order extends BaseModal
                 ->where('order_type', $order_type)->count();
         } else {
             return self::where(function ($query) {
-                $query->whereIn('location_id', ACL::getUserCentres())
-                    ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                $query->whereIn('location_id', ACL::getUserCentres());
+                    
             })
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
@@ -75,6 +75,7 @@ class Order extends BaseModal
         }
 
         if (count($where)) {
+            
             return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
@@ -84,16 +85,12 @@ class Order extends BaseModal
                     return $q->with('orderDetail.product');
                 })
                 ->where(function ($query) {
-                    $query->whereIn('location_id', ACL::getUserCentres())
-                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                    $query->whereIn('location_id', ACL::getUserCentres());
                 })
-                ->when($order_type != 'refund', function ($q) use ($order_type) {
-                    $q->whereNull('refund_order_id')->where('order_type', $order_type);
-                }, function ($q) use ($order_type) {
-                    $q->where('order_type', $order_type);
-                })
+               
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
+           
             return self::with('patients')->where($where)
                 ->when(($product_id != null), function ($q) use ($product_id) {
                     return $q->with('orderDetail.product')->whereHas('orderDetail.product', function ($q) use ($product_id) {
@@ -103,14 +100,9 @@ class Order extends BaseModal
                     return $q->with('orderDetail.product');
                 })
                 ->where(function ($query) {
-                    $query->whereIn('location_id', ACL::getUserCentres())
-                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
+                    $query->whereIn('location_id', ACL::getUserCentres());
                 })
-                ->when($order_type != 'refund', function ($q) use ($order_type) {
-                    $q->whereNull('refund_order_id')->where('order_type', $order_type);
-                }, function ($q) use ($order_type) {
-                    $q->where('order_type', $order_type);
-                })
+               
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
     }
@@ -173,19 +165,42 @@ class Order extends BaseModal
      * @param  \Illuminate\Http\Request  $request
      * @return (mixed)
      */
-    public static function createRecord($request, $account_id)
+    public static function createRecord($request, $account_id,$products)
     {
         $data = $request->all();
+        
+        $productTotals = [];
+        // Iterate through the arrays
+        for ($i = 0; $i < count($data['product_id']); $i++) {
+            $productId = $data['product_id'][$i];
+            $productPrice = floatval($data['product_price'][$i]);
+            $quantity = intval($data['quantity'][$i]);
+            // Calculate the total for this product
+            $total = $productPrice * $quantity;
+            // Store the total in the result array, using the product ID as the key
+            $productTotals[$productId] = $total;
+        }
+       
         $location_id = $data['location_id'];
         // Set Account ID
         unset($data['location_id']);
         $data[$data['location_type']] = $location_id;
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::id();
-        $data['total_price'] = array_sum($data['product_price']);
+        $data['total_price'] = array_sum($productTotals);
         $data['status'] = 1;
-
-        $record = self::create($data);
+       
+        $record = new Order();
+        $record->account_id = $account_id;
+        $record->patient_id = $data['patient_id'];
+        $record->total_price = $data['total_price'];
+        $record->created_by = Auth::id();
+        $record->location_id = $data['location_id'];
+        $record->payment_mode = $data['payment_mode'];
+       $record->quantity = array_sum($products);
+        $record->save();
+        //$record = self::create($data);
+        
         return $record;
     }
 
@@ -213,6 +228,7 @@ class Order extends BaseModal
     public static function DeleteRecord($id)
     {
         $order = self::getData($id);
+        
         if (!$order) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
@@ -229,6 +245,7 @@ class Order extends BaseModal
                 $order_detail->update([
                     'quantity' => $order_detail->quantity + $quantity,
                 ]);
+               
             }
         }
 
@@ -239,8 +256,14 @@ class Order extends BaseModal
         $detail_records = OrderDetail::where('order_id', $id)->get();
         if (!$detail_records->isEmpty()) {
             foreach ($detail_records as $detail_record) {
+                $inventory = Inventory::where('product_id', $detail_record->product_id)
+                ->where('location_id',$order->location_id)->first();
+                $updated_quantity = $inventory->quantity+$detail_record->quantity;
+                $inventory->update(['quantity'=>$updated_quantity]);
                 $detail_record->delete();
+                
             }
+           
         }
         $stock_records = Stock::where('order_id', $id)->get();
         if (!$stock_records->isEmpty()) {
@@ -248,6 +271,8 @@ class Order extends BaseModal
                 $stock_record->delete();
             }
         }
+       
+       
         $record = $order->delete();
 
 
@@ -256,38 +281,47 @@ class Order extends BaseModal
 
     public static function refund($id, $request)
     {
-        $old_order = self::find($id);
+        $old_order = self::withSum('orderDetail', 'quantity')->find($id);
         $refund_order = self::where("refund_order_id",  $old_order->id)->first();
-        $refund_product_price = isset($request->refund_product_price) ? array_sum(explode(",", $request->refund_product_price)) : 0;
-
+        $productTotals = [];
+        // Iterate through the arrays
+        for ($i = 0; $i < count($request['product_id']); $i++) {
+            $productId = $request['product_id'][$i];
+            $productPrice = floatval($request['product_price'][$i]);
+            $quantity = intval($request['quantity'][$i]);
+            // Calculate the total for this product
+            $total = $productPrice * $quantity;
+            // Store the total in the result array, using the product ID as the key
+            $productTotals[$productId] = $total;
+        }
         if ($old_order) {
             $new_order = $old_order->toArray();
             $new_order['order_type'] = 'refund';
 
             if ($refund_order) {
                 $new_order['updated_by'] = Auth::id();
-                $new_order['total_price'] = $refund_order->total_price + $refund_product_price;
+                $new_order['total_price'] = $refund_order->total_price + array_sum($productTotals);
                 unset($new_order['id']);
                 unset($new_order['refund_order_id']);
                 $refund_order->update($new_order);
 
                 $old_order->update([
-                    'total_price' => $old_order->total_price - $refund_product_price,
+                    'total_price' => $old_order->total_price - array_sum($productTotals),
                 ]);
                 $refund = $refund_order;
             } else {
                 $new_order['created_by'] = Auth::id();
                 $new_order['refund_order_id'] = $old_order->id;
-                $new_order['total_price'] = $refund_product_price;
+                $new_order['total_price'] = array_sum($productTotals);
                 unset($new_order['id']);
                 $old_order->update([
-                    'total_price' => $old_order->total_price - $refund_product_price,
+                    'total_price' => $old_order->total_price - array_sum($productTotals),
                 ]);
 
                 $refund = self::create($new_order);
             }
 
-            if (!isset($request->product_id)) {
+            if ($old_order->order_detail_sum_quantity == array_sum($request->quantity)) {
                 $old_order->update([
                     'refund_order_id' => $refund->id,
                 ]);

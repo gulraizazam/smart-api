@@ -47,11 +47,7 @@
             <select class="form-control filter-field select2" name="created_by" id="search_created_by">
             </select>
         </div>
-        <div class="col-md-3 mb-lg-0 mb-6">
-            <label>Updated By:</label>
-            <select class="form-control filter-field select2" name="updated_by" id="search_updated_by">
-            </select>
-        </div>
+       
         <div class="col-lg-3 mb-lg-0 mb-6 @if ($errors->has('date_range')) has-error @endif">
             {!! Form::label('date_range', 'Created at:', ['class' => 'control-label']) !!}
             <div class="input-group">
