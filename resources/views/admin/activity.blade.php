@@ -76,6 +76,7 @@
                 </div>
             @else
                 <div class="text-center">
+                    {{-- <span>No Activity Found</span> --}}
                     <span style="color: #000;text-align:center;font-size: 12px;padding: 50px 0px 0px;font-family: Arial; display:block;">No Activity Found</span>
                 </div>
             @endif
