@@ -913,7 +913,7 @@
                 }
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.10) && ! revenue_by_center) {
                     revenue_by_center = true;
-                    initRevenueByCentre($('#revenue_centre').val());                        
+                    initRevenueByCentre($('#revenue_centre').val());
                 }
 
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.15) && ! revenue_by_service_category) {
@@ -926,7 +926,7 @@
                 if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.20) && ! revenue_by_service) {
                     revenue_by_service = true;
                     @if (!auth()->user()->hasRole('CSR'))
-                    initRevenueByService($('#revenue_service').val());                        
+                    initRevenueByService($('#revenue_service').val());
                     @endif
                 }
 
@@ -980,6 +980,7 @@
                         cache: false,
                         success: function(response) {
                             $("#consultancy_status .loader-img-attended").css('display', 'none');
+                            $("#consultancy_status #consultancy_by_status").css('display', '');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -996,7 +997,10 @@
                             @if (request('type') == '')
                                 var pie = response.data.pie.today;
                             @endif
-                            ConsultancyByStatus(pie, colors);
+                            setTimeout(() => {
+                                ConsultancyByStatus(pie, colors);
+                            }, 1500);
+
                         },
                         error: function(xhr, ajaxOptions, thrownError) {
                             errorMessage(xhr);
@@ -1034,7 +1038,9 @@
                             @if (request('type') == '')
                                 var pie = response.data.pie.today;
                             @endif
-                            TreatmentByStatus(pie, colors);
+                            setTimeout(() => {
+                                TreatmentByStatus(pie, colors);
+                            }, 1500);
                         },
                         error: function(xhr, ajaxOptions, thrownError) {
                             errorMessage(xhr);
