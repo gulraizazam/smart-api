@@ -218,7 +218,7 @@ img.loader-imgs {
 
 #unattended_payments .wrap_unattended_payment {
     position: sticky;
-    z-index: 1111;
+    z-index: 1;
     background: #fff;
     top: 0px;
 }
@@ -230,7 +230,7 @@ img.loader-imgs {
 
 #attended_payments .wrap_unattended_payment {
     position: sticky;
-    z-index: 1111;
+    z-index: 1;
     background: #fff;
     top: 0px;
 }
@@ -241,4 +241,19 @@ img.loader-imgs {
     top: 50%;
     transform: translate(-50%, -50%);
     left: 50%;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow:after,
+.select2-container--default .select2-selection--multiple .select2-selection__arrow:after
+{
+    font-size: 9px;
+    color: #000;
+    font-weight: 900;
+}
+.select2-container--default .select2-selection--single .select2-selection__arrow,
+.select2-container--default .select2-selection--multiple .select2-selection__arrow{
+    margin-right: 5px;
+}
+select.form-control{
+ height: 36px;
 }

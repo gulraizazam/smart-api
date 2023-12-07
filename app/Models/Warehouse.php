@@ -289,9 +289,10 @@ class Warehouse extends Model
 
             UserHasWarehouse::where(['user_id' => $user->user_id, 'warehouse_id' => $warehouse->id])->delete();
         } else {
+            $warehouse->update(['active'=>0]);
             return [
                 'status' => false,
-                'message' => 'Child records exist, unable to delete resource!',
+                'message' => 'Warehouse Deactivated Successfully!',
             ];
         }
 
@@ -309,11 +310,8 @@ class Warehouse extends Model
      */
     public static function isChildExists($id, $account_id)
     {
-        if (
-            Product::where(['warehouse_id' => $id, 'account_id' => $account_id])->count() ||
-            Order::where(['warehouse_id' => $id, 'account_id' => $account_id])->count() ||
-            TransferProduct::where(['from_warehouse_id' => $id, 'account_id' => $account_id])->where(['to_warehouse_id' => $id, 'account_id' => $account_id])->count()
-        ) {
+        $isChildExist = Inventory::where(['warehouse_id' => $id])->count();
+        if ($isChildExist > 0) {
             return true;
         }
 
