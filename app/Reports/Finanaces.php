@@ -2671,6 +2671,8 @@ class Finanaces
 
         $data['location_id'] = ($data['location_id'][0] == null) ? 'all' : $data['location_id'];
 
+        $locations = $data['location_id'] == 'all' ? ACL::getUserCentres() : $data['location_id'];
+
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -2684,6 +2686,7 @@ class Finanaces
         if (!empty($data['service_id'])) {
             $where[] = [['appointments.service_id' => $data['service_id']]];
         }
+
 
         $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
             return $query->where('user_id', $data['doctor_id']);
