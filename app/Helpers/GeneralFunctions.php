@@ -407,7 +407,7 @@ class GeneralFunctions
     {
         $where = [];
         if ($total >= 0 && $id == null) {
-            try{
+            try {
                 $filename = 'services';
                 if (isset($request)) {
                     $filters = getFilters($request->all());
@@ -473,7 +473,7 @@ class GeneralFunctions
                                     $mergedServices[] = $child;
                                 }
                             }
-    
+
                             return $mergedServices;
                         } else {
                             $children = Services::where('active', $filters['status'])->where(
@@ -481,7 +481,7 @@ class GeneralFunctions
                                 'like',
                                 '%' . $filters['name'] . '%'
                             )->get();
-    
+
                             return $children;
                         }
                     }
@@ -515,7 +515,7 @@ class GeneralFunctions
                                     $mergedServices[] = $child;
                                 }
                             }
-    
+
                             return $mergedServices;
                         } else {
                             $children = Services::where('active', $filters['status'])->where(
@@ -523,7 +523,7 @@ class GeneralFunctions
                                 'like',
                                 '%' . $filters['name'] . '%'
                             )->get();
-    
+
                             return $children;
                         }
                     }
@@ -546,7 +546,7 @@ class GeneralFunctions
                                 $mergedServices[] = $child;
                             }
                         }
-    
+
                         return $mergedServices;
                     }
                     if (hasFilter($filters, 'status') && $filters['status'] == 0) {
@@ -567,7 +567,7 @@ class GeneralFunctions
                                 $mergedServices[] = $child;
                             }
                         }
-    
+
                         return $mergedServices;
                     }
                     if (hasFilter($filters, 'name')) {
@@ -587,7 +587,7 @@ class GeneralFunctions
                                 $mergedServices[] = $service->toArray();
                             }
                         }
-    
+
                         return $mergedServices;
                     }
                 }
@@ -599,19 +599,17 @@ class GeneralFunctions
                     ->when(isset($where) && count($where) > 0, fn ($q) => $q->where($where));
                 $services = $query->get()->toArray();
                 $allserviceslug = Services::where(['slug' => 'all'])->first();
-                if($allserviceslug){
+                if ($allserviceslug) {
                     $allserviceslug = $allserviceslug->toArray();
                 }
                 array_unshift($services, $allserviceslug);
-    
+
                 return $services;
-            }catch(\Exception $e)
-            {
+            } catch (\Exception $e) {
                 return false;
             }
-           
         } else {
-            try{
+            try {
                 $query = Services::with(['children' => function ($q) {
                     $q->orderBy('name');
                 }])
@@ -620,13 +618,11 @@ class GeneralFunctions
                 $services[] = $query->first()->toArray();
                 $allserviceslug = Services::where(['slug' => 'all'])->first()->toArray();
                 array_unshift($services, $allserviceslug);
-    
+
                 return $services;
-            }catch(\Exception $e)
-            {
+            } catch (\Exception $e) {
                 return false;
             }
-            
         }
     }
 
@@ -1147,7 +1143,7 @@ class GeneralFunctions
         });
         $patient_data = [];
         $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)
-        ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
+            ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
 
         foreach ($plans_check as $data) {
             $treatments = Appointments::where([
@@ -1204,15 +1200,12 @@ class GeneralFunctions
     }
     public static function inventoryCheck($request)
     {
-      if($request->from_location_id)
-      {
-        $count_product_in_quantity = Inventory::where(['product_id'=>$request->product_id,'location_id'=>$request->from_location_id])->first();
-       
-      }else{
-        $count_product_in_quantity = Inventory::where(['product_id'=>$request->product_id,'warehouse_id'=>$request->from_warehouse_id])->first();
-       
-      }
-        
+        if ($request->from_location_id) {
+            $count_product_in_quantity = Inventory::where(['product_id' => $request->product_id, 'location_id' => $request->from_location_id])->first();
+        } else {
+            $count_product_in_quantity = Inventory::where(['product_id' => $request->product_id, 'warehouse_id' => $request->from_warehouse_id])->first();
+        }
+
         return $count_product_in_quantity->quantity;
     }
     public static function stockC($id)
@@ -1223,9 +1216,9 @@ class GeneralFunctions
 
         return $stock_quantity;
     }
-    public static function saveActivityLogs($action, $activityType, $data,$appointment_id)
+    public static function saveActivityLogs($action, $activityType, $data, $appointment_id)
     {
-        
+
         try {
             $location = Locations::find($data['location_id']);
             $service = Services::find($data['service_id']);
@@ -1236,17 +1229,17 @@ class GeneralFunctions
                 'user_id' => auth()->id(),
                 'action' => $action,
                 'appointment_type' => $activityType,
-                'appointment_id'=>$appointment_id,
+                'appointment_id' => $appointment_id,
                 'activity_type' => $activityType,
-                'location' =>$location ? $location->name : '',
-                'centre_id' =>$location ? $location->id : NULL,
-                'service_id' =>$service ? $service->id :NULL,
-                'service' =>$service ? $service->name :NULL,
-                'patient_id' =>$patient ? $patient->id :NULL,
-                'patient' =>$patient ? $patient->name :NULL,
-                'schedule_date' =>$data['scheduled_date'],
-                'created_at' =>Carbon::now()->format('Y-m-d H:i:s'),
-                'updated_at' =>Carbon::now()->format('Y-m-d H:i:s'),
+                'location' => $location ? $location->name : '',
+                'centre_id' => $location ? $location->id : NULL,
+                'service_id' => $service ? $service->id : NULL,
+                'service' => $service ? $service->name : NULL,
+                'patient_id' => $patient ? $patient->id : NULL,
+                'patient' => $patient ? $patient->name : NULL,
+                'schedule_date' => $data['scheduled_date'],
+                'created_at' => Carbon::now()->format('Y-m-d H:i:s'),
+                'updated_at' => Carbon::now()->format('Y-m-d H:i:s'),
 
             ]);
             return true;
@@ -1254,6 +1247,4 @@ class GeneralFunctions
             return false;
         }
     }
-
-
 }
