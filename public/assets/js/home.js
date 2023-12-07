@@ -421,7 +421,7 @@ function initConsultancyByStatus(period, type) {
             }
             setTimeout(() => {
                 ConsultancyByStatus(pie, colors);
-            }, 1500);
+            }, 500);
         },
     });
 }
@@ -471,7 +471,7 @@ function initTreatmentByStatus(period, type) {
 
             setTimeout(() => {
                 TreatmentByStatus(pie, colors);
-            }, 1500);
+            }, 500);
         },
 
     });
