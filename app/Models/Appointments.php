@@ -557,12 +557,12 @@ class Appointments extends Model
         if (self::isChildExists($id, $account_id)) {
             return [
                 'status' => false,
-                'message' => 'Child records exist, unable to delete appointment',
+                'message' => "Consultation or Treatment can't be deleted when invoice generated.",
             ];
         }
         $appointment->whereId($id)->update(['deleted_by' => Auth::id()]);
         $appointment->delete();
-
+        Activity::where('appointment_id',$id)->update(['deleted_by'=>Auth::id(),'action'=>'deleted','deleted_date'=>Carbon::now()->format('Y-m-d'),'updated_at'=>Carbon::now()]);
         //log request for delete for audit trail
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 

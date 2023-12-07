@@ -183,10 +183,7 @@ class WarehouseController extends Controller
     {
         return Validator::make($request->all(), [
             'name' => 'required',
-            'manager_name' => 'required',
-            'manager_phone' => 'required',
-            'address' => 'required',
-            'google_map' => 'required',
+           
             'city_id' => 'required',
             /*'ntn' => ['required', 'regex:/^([0-9]|\.|\+|\*|\-|\_|\#)*$/'],
             'stn' => ['required', 'regex:/^([0-9]|\.|\+|\*|\-|\_|\#)*$/'],*/

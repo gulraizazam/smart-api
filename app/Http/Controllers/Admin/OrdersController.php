@@ -20,6 +20,9 @@ use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\App;
 use App\Http\Controllers\Controller;
+use App\Models\Inventory;
+use App\Models\OrderRefund;
+use App\Models\OrderRefundDetail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -86,17 +89,18 @@ class OrdersController extends Controller
 
             // Get Total Records
             $iTotalRecords = Order::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
+           
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
             $orders = Order::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
-            $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $products = Product::getAllRecordsDictionary(Auth::User()->account_id);
 
-            $orders = collect($orders)->map(function ($order) use ($warehouse, $centres) {
-                $order->order_have = ($order->location_id != null) ? ((array_key_exists($order->location_id, $centres)) ? $centres[$order->location_id]->name : 'N/A') : ((array_key_exists($order->warehouse_id, $warehouse)) ? $warehouse[$order->warehouse_id]->name : 'N/A');
+            $orders = collect($orders)->map(function ($order) use ($centres) {
+                $order->order_have = ($order->location_id != null && array_key_exists($order->location_id, $centres))? $centres[$order->location_id]->name: 'N/A';
+
                 $order->status = $order->status == 1 ? 'completed' : 'pending';
                 return $order;
             });
@@ -111,7 +115,6 @@ class OrdersController extends Controller
             $records['active_filters'] = $filters;
             $records['filter_values'] = [
                 'centres' => collect($centres)->pluck('name', 'id'),
-                'warehouse' => collect($warehouse)->pluck('name', 'id'),
                 'users' => $users,
                 'products' => $products,
             ];
@@ -160,10 +163,10 @@ class OrdersController extends Controller
 
             if (isset($apply_filter['delete'])) {
                 $ids = explode(',', $apply_filter['delete']);
-                $orders = Order::getBulkData($ids);
+                $orders = OrderRefund::getBulkData($ids);
                 if ($orders) {
                     foreach ($orders as $order) {
-                        $detail_records = OrderDetail::where('order_id', $order->id)->get();
+                        $detail_records = OrderRefundDetail::where('order_refund_id', $order->id)->get();
                         if (!$detail_records->isEmpty()) {
                             foreach ($detail_records as $detail_record) {
                                 $detail_record->delete();
@@ -177,11 +180,12 @@ class OrdersController extends Controller
             }
 
             // Get Total Records
-            $iTotalRecords = Order::getTotalRecords($request, Auth::User()->account_id, $apply_filter, 'refund');
+            $iTotalRecords = OrderRefund::getTotalRecords($request, Auth::User()->account_id, $apply_filter, 'refund');
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $orders = Order::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, 'refund');
+            $orders = OrderRefund::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter, 'refund');
+
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
             $users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
@@ -256,6 +260,8 @@ class OrdersController extends Controller
      */
     public function store(Request $request)
     {
+      
+       
         try {
             if (!Gate::allows('order_create')) {
                 return abort(401);
@@ -266,17 +272,24 @@ class OrdersController extends Controller
             if (!isset($request->product_id)) {
                 return ApiHelper::apiResponse($this->error, 'Please select any product', false);
             } else {
-                $products = array_count_values($request['product_id']);
+                $products = array_combine($request['product_id'], $request['quantity']);
+               
                 foreach ($products as $product_id => $quantity) {
-                    $product_name = Product::find($product_id);
+                    if( $quantity <= 0){
+                        return ApiHelper::apiResponse($this->error,'Quantity must be greater than 0', false);
+                    }
+                    $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
                     $quantity_check = Stock::sumProductQuantity($product_id);
-                    if ($quantity_check < $quantity) {
+                  
+                    if ($product_name->quantity < $quantity) {
                         return ApiHelper::apiResponse($this->error, $product_name->name . ' quantity is out of stock', false);
                     }
                 }
             }
-            $order = Order::createRecord($request, Auth::User()->account_id);
+           
+            $order = Order::createRecord($request, Auth::User()->account_id,$products);
             if ($order) {
+               
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.', true, $order->id);
@@ -327,7 +340,11 @@ class OrdersController extends Controller
             if (!Gate::allows('order_refund_manage')) {
                 return abort(401);
             }
-
+            $check_refund = Order::whereId($id)->first();
+            if($check_refund->is_refunded==1)
+            {
+                return ApiHelper::apiResponse($this->success, 'This Order is already refunded!', false);
+            }
             $records = [];
             $orders = Order::with('patients', 'orderDetail')->find($id);
 
@@ -341,16 +358,22 @@ class OrdersController extends Controller
 
     public function orderRefund($id, Request $request)
     {
+      
+        $check_refund = Order::where('id',$id)->first();
+        if($check_refund->is_refunded==1){
+            return ApiHelper::apiResponse($this->success, 'This Order is already refunded!', false);
+        }
         try {
             if (!Gate::allows('order_refund_manage')) {
                 return abort(401);
             }
-            if($request->refund_product_id == null){
+            if(array_sum($request->quantity) == 0){
                 return ApiHelper::apiResponse($this->error, 'You do not have refunded any product.', false);
             }
-            $order_refund = Order::refund($id, $request);
+            $order_refund = OrderRefund::refund($id, $request);
+         
             if ($order_refund) {
-                OrderDetail::refund($id, $order_refund->id, $request, Auth::User()->account_id);
+                OrderRefundDetail::refund($check_refund->location_id,$id, $order_refund->id, $request, Auth::User()->account_id);
 
                 return ApiHelper::apiResponse($this->success, 'Order has been refunded.');
             }

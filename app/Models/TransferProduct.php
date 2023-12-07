@@ -180,13 +180,16 @@ class TransferProduct extends BaseModal
      */
     public static function createRecord($request, $account_id)
     {
+       
         $data = $request->all();
+        
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::user()->id;
 
         $record = null;
         $message = null;
         $parent_product_id = $request->product_id;
+       
         if ($request->product_type_option_from == 'in_warehouse') {
             $from_key = "warehouse_id";
             $from_value = $request->from_warehouse_id;
@@ -201,31 +204,20 @@ class TransferProduct extends BaseModal
             $to_key = "location_id";
             $to_value = $request->to_location_id;
         }
-        $product = Product::where(['id' => $parent_product_id, $from_key => $from_value])->first();
-
-        $data2['id'] = $parent_product_id;
-        $data2['name'] = $product->name;
-        $data2['brand_id'] = $product->brand_id;
-        $data2['sale_price'] = $product->sale_price;
-        $data2['product_type'] = $product->product_type;
-        $data2['warehouse_id'] = $request->to_warehouse_id;
-        $data2['location_id'] = $request->to_location_id;
-        $data2['quantity'] = $request->quantity;
-        $data2['status'] = $product->status;
-        $data2['parent_id'] = $product->id;
-        $data2['account_id'] = $account_id;
-        $data2['transfer_date'] = $request->transfer_date;
+        $product = Product::where(['id' => $parent_product_id])->first();
+       
+        
 
         $product_quantity = Stock::sumProductQuantity($parent_product_id);
 
         if ($request->quantity <= $product_quantity) {
-            $check_product = Product::where([$to_key => $to_value, 'parent_id' => $request->product_id])->first();
+            $check_product = Product::where(['id' => $request->product_id])->first();
             if ($check_product) {
                 $product = $check_product;
             } else {
                 $data2['type'] = $request['type'];
                 $data2['message'] = $request['message'];
-                $product = Product::createRecord($data2, $account_id);
+                //$product = Product::createRecord($data2, $account_id);
             }
             $data['child_product_id'] = $product->id;
             $data2['child_product_id'] = $product->id;
@@ -238,6 +230,7 @@ class TransferProduct extends BaseModal
             $data2['transfer_id'] = $record->id;
             $data2['type'] = $request['type'];
             $data2['message'] = $request['message'];
+            $data2['quantity'] = $data['quantity'];
         } else {
             $message = "Out of stock quantity product.";
         }
@@ -433,7 +426,8 @@ class TransferProduct extends BaseModal
     public static function childLocation($id)
     {
         $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc');
-        $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id);
+        $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
+       
         $transfer_product = TransferProduct::where(['id' => $id])->first();
         return ($transfer_product->to_location_id != null) ? ((array_key_exists($transfer_product->to_location_id, $centres)) ? $centres[$transfer_product->to_location_id]->name : 'N/A') : ((array_key_exists($transfer_product->to_warehouse_id, $warehouse)) ? $warehouse[$transfer_product->to_warehouse_id]->name : 'N/A');
     }

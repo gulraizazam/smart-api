@@ -27,7 +27,7 @@ class OrderDetail extends BaseModal
         $data = $request->all();
 
         $combinedData = array_combine($data['product_id'], $data['product_price']);
-        $products = array_count_values($data['product_id']);
+        $products = array_combine($data['product_id'], $data['quantity']);
         foreach ($products as $product_id => $quantity) {
             $data['product_id'] = $product_id;
             $data['quantity'] = $quantity;
@@ -36,7 +36,9 @@ class OrderDetail extends BaseModal
             $data['sale_price'] = $combinedData[$product_id];
             $data['stock_type'] = 'out';
 
-            Stock::create($data);
+           $inventory = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
+           $updated_quantity = $inventory->quantity-$quantity;
+           $inventory ->update(['quantity'=>$updated_quantity]);
             self::create($data);
         }
         return true;
@@ -99,33 +101,32 @@ class OrderDetail extends BaseModal
     {
         $data = $request->all();
 
-        $refund_product_id = isset($request->refund_product_id) ? explode(",", $request->refund_product_id) : [];
-        $refund_product_price = isset($request->refund_product_price) ? explode(",", $request->refund_product_price) : [];
-
-        $combinedData = array_combine($refund_product_id, $refund_product_price);
-        $refund_products = array_count_values($refund_product_id);
+        $combinedData = array_combine($data['product_id'], $data['product_price']);
+        $refund_products = array_combine($data['product_id'], $data['quantity']);
 
         foreach ($refund_products as $product_id => $quantity) {
-            $data['product_id'] = $product_id;
-            $data['quantity'] = $quantity;
-            $data['account_id'] = $account_id;
-            $data['order_id'] = $new_order_id;
-            $data['sale_price'] = $combinedData[$product_id];
-            $data['stock_type'] = 'in';
+            if($quantity > 0){
+                $data['product_id'] = $product_id;
+                $data['quantity'] = $quantity;
+                $data['account_id'] = $account_id;
+                $data['order_id'] = $new_order_id;
+                $data['sale_price'] = $combinedData[$product_id];
+                $data['stock_type'] = 'in';
 
-            $check_order_detail = self::where(['order_id' => $new_order_id, 'product_id' => $product_id])->first();
+                $check_order_detail = self::where(['order_id' => $new_order_id, 'product_id' => $product_id])->first();
 
-            /* old product quantity update */
-            $old_orders_detail = self::where(['order_id' => $id, 'product_id' => $product_id])->first();//dd( $old_orders_detail->quantity - $quantity, $product_id);
-            $old_orders_detail->quantity = $old_orders_detail->quantity - $quantity;
-            $old_orders_detail->save();
+                /* old product quantity update */
+                $old_orders_detail = self::where(['order_id' => $id, 'product_id' => $product_id])->first();
+                $old_orders_detail->quantity = $old_orders_detail->quantity - $quantity;
+                $old_orders_detail->save();
 
-            Stock::create($data);
-            if ($check_order_detail) {
-                $data['quantity'] = $quantity + $check_order_detail->quantity;
-                $check_order_detail->update($data);
-            } else {
-                self::create($data);
+                Stock::create($data);
+                if ($check_order_detail) {
+                    $data['quantity'] = $quantity + $check_order_detail->quantity;
+                    $check_order_detail->update($data);
+                } else {
+                    self::create($data);
+                }
             }
         }
         return true;

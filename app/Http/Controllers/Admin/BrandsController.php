@@ -211,4 +211,16 @@ class BrandsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function status(Request $request)
+    {
+        if (!Gate::allows('product_active')) {
+            return abort(401);
+        }
+
+        $response = Brand::activeRecord($request->id, $request->status);
+        if ($response) {
+            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+        }
+        return ApiHelper::apiResponse($this->success, 'Brand not found.', false);
+    }
 }

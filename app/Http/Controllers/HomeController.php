@@ -119,7 +119,7 @@ class HomeController extends Controller
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
-      
+
         return view('admin.activity', $data);
     }
 
@@ -403,6 +403,10 @@ class HomeController extends Controller
                 $data['todaycollection'][] = $total;
                 break;
             case 'month':
+                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
+                $data['todaycollection'][] = $total;
+                break;
+            case 'thismonth':
                 [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
                 $data['todaycollection'][] = $total;
                 break;
@@ -2185,6 +2189,10 @@ class HomeController extends Controller
                 $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
                 break;
+            case 'thismonth':
+                $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
+                break;
             case 'lastmonth':
                 $start_date = Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d');
                 $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
@@ -2305,31 +2313,27 @@ class HomeController extends Controller
         $data['revenue'] = 0;
         if (!Gate::allows('dashboard_states')) {
             $data['revenue'] = null;
-
             return $data;
         }
+
         $locations = ACL::getUserCentres();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         [$start_date, $end_date] = $this->getDates($request);
+        $where[] = ['created_at', '>=', $start_date . ' 00:00:00',];
+        $where[] = ['created_at', '<=', $end_date . ' 23:59:59'];
 
-        $where[] = [
-            'created_at',
-            '>=',
-            $start_date . ' 00:00:00',
-        ];
-        $where[] = [
-            'created_at',
-            '<=',
-            $end_date . ' 23:59:59',
-        ];
         $todayRecords = \App\Models\Invoices::where($where)
             ->whereIn('location_id', ACL::getUserCentres())
             ->where('invoice_status_id', '=', $invoicestatus->id);
+
+
         if ($request->get('performance') == '1') {
             $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
         }
+
         $todayRecords = $todayRecords->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
             ->groupBy('location_id')->get();
+
         if ($locations) {
             foreach ($locations as $location) {
                 if ($todayRecords) {
@@ -2356,15 +2360,15 @@ class HomeController extends Controller
         }
 
         $centres = ACL::getUserCentres();
-        
+
         $center_names = Locations::whereIn('id', $centres)->pluck('name')->toArray();
         $activities = Activity::with([
             'plan' => fn ($q) => $q->select('id', 'name')
         ])->whereIn('location', $center_names)
-        ->whereIn('action', ['received','consumed'])
-        ->whereDate('created_at', Carbon::now()
-        ->format('Y-m-d'))->latest()->get();
-        
+            ->whereIn('action', ['received', 'consumed'])
+            ->whereDate('created_at', Carbon::now()
+                ->format('Y-m-d'))->latest()->get();
+
         return $data['recent_activities'] = [
             'finance_log' => $activities,
         ];

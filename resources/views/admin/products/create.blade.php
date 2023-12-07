@@ -60,33 +60,19 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0" >Product Type <span class="text text-danger">*</span></label>
-                            <select id="add_product_type" class="form-control form-control mb-3 mb-lg-0" name="product_type">
+                            <select id="add_product_type" class="form-control mb-3 mb-lg-0" name="product_type">
                                 <option value="">Select Product Type</option>
                                 <option value="in_house_use">In House Use</option>
                                 <option value="for_sale">For Sale</option>
                             </select>
                         </div>
-                        <div class="fv-row col-md-6" style="display: none" id="select_option">
-                            <label class="required fw-bold fs-6 mb-2 pl-0" >Select Option <span class="text text-danger">*</span></label>
-                            <select id="add_product_type_option" class="form-control form-control mb-3 mb-lg-0" name="product_type_option">
-                                <option value="">Select Option</option>
-                                <option value="in_warehouse">Warehouse</option>
-                                <option value="in_branch">Branch</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="fv-row col-md-6" style="display: none" id="select_centre">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre</label>
-                            <select id="add_product_centre" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
-                            </select>
-                        </div>
-                        <div class="fv-row col-md-6" style="display: none" id="select_warehouse">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse</label>
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse  <span class="text text-danger">*</span></label>
                             <select id="add_product_warehouse" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="warehouse_id">
                             </select>
                         </div>
                     </div>
+                   
                 </div>
 
             </div>

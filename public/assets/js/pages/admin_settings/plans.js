@@ -1,5 +1,5 @@
 
-$(document).ready( function () {
+$(document).ready(function () {
 
     $("#add_patient_id").on("select2:select", function (e) {
         getAppointments();
@@ -8,7 +8,6 @@ $(document).ready( function () {
 
     /*save data for both predefined discounts and keyup trigger*/
     $("#AddPackage").click(function () {
-
         showSpinner();
 
         $('#wrongMessage').hide();
@@ -55,7 +54,7 @@ $(document).ready( function () {
                 'package_bundles[]': []
             };
 
-            $(".package_bundles").each(function() {
+            $(".package_bundles").each(function () {
                 formData['package_bundles[]'].push($(this).val());
             });
 
@@ -64,7 +63,7 @@ $(document).ready( function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                    let  consume = 'NO';
+                    let consume = 'NO';
                     if (resposne.status == '1') {
 
                         $('#table_1').append("" +
@@ -78,7 +77,7 @@ $(document).ready( function () {
                             "<td>" + resposne.myarray.record.tax_percenatage + "</td>" +
                             "<td>" + resposne.myarray.record.tax_including_price.toLocaleString() + "</td>" +
                             "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.myarray.record.id +"' />" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.myarray.record.id + "' />" +
                             "<button class='btn btn-xs btn-danger' onClick='deleteModel(" + resposne.myarray.record.id + ")'>Delete</button>" +
                             "</td>" +
                             "</tr>");
@@ -115,7 +114,7 @@ $(document).ready( function () {
             });
         } else {
             hideSpinnerRestForm();
-           // toastr.error('Please fill out the required fields.')
+            // toastr.error('Please fill out the required fields.')
             $('#inputfieldMessage').show();
             $(this).attr("disabled", false);
         }
@@ -135,56 +134,56 @@ var table_columns = [
         template: function (data) {
             return childCheckbox(data);
         }
-    },{
+    }, {
         field: 'patient_id',
         title: 'Patient ID',
         sortable: false,
         width: 300,
-    },{
+    }, {
         field: 'name',
         title: 'Patient',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'name',
         title: 'Plans',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'location_id',
         title: 'Centres',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'session_count',
         title: 'Session count',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'total',
         title: 'Total',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'cash_receive',
         title: 'Cash receive',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'settle_amount',
         title: 'Settle Amount',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'refund',
         title: 'Refund',
         sortable: false,
         width: 'auto',
-    },{
+    }, {
         field: 'created_at',
         title: 'Created at',
         width: 'auto',
-    },{
+    }, {
         field: 'status',
         title: 'Status',
         sortable: false,
@@ -193,7 +192,7 @@ var table_columns = [
             let status_url = route('admin.packages.status');
             return statuses(data, status_url);
         }
-    },{
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -211,11 +210,11 @@ function actions(data) {
         let id = data.id;
 
 
-        let edit_url = route('admin.packages.edit', {id: id});
-        let display_url = route('admin.packages.display', {id: id});
-        let delete_url = route('admin.packages.destroy', {id: id});
-        let sms_log_url = route('admin.packages.sms_logs', {id: id});
-        let log_url = route('admin.packages.log', {id: id, type:  'web'});
+        let edit_url = route('admin.packages.edit', { id: id });
+        let display_url = route('admin.packages.display', { id: id });
+        let delete_url = route('admin.packages.destroy', { id: id });
+        let sms_log_url = route('admin.packages.sms_logs', { id: id });
+        let log_url = route('admin.packages.log', { id: id, type: 'web' });
 
         if (permissions.create || permissions.log || permissions.sms_log || permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -257,7 +256,7 @@ function actions(data) {
 
             if (permissions.log) {
                 actions += '<li class="navi-item">\
-                        <a href="'+log_url+'" class="navi-link">\
+                        <a href="'+ log_url + '" class="navi-link">\
                         <span class="navi-icon"><i class="la la-file"></i></span>\
                         <span class="navi-text">Log</span>\
                         </a>\
@@ -317,8 +316,8 @@ function setPlanData(response) {
     let location_options = '<option value="">Select Centre</option>';
 
     if (locations) {
-        Object.entries(locations).forEach( function(location) {
-            location_options += '<option value="'+location[0]+'">'+location[1]+'</option>';
+        Object.entries(locations).forEach(function (location) {
+            location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
     }
 
@@ -327,8 +326,8 @@ function setPlanData(response) {
     let discount_options = '<option value="">Select Discount</option>';
 
     if (discounts) {
-        Object.values(discounts).forEach( function(discount) {
-            discount_options += '<option value="'+discount.id+'">'+discount.name+'</option>';
+        Object.values(discounts).forEach(function (discount) {
+            discount_options += '<option value="' + discount.id + '">' + discount.name + '</option>';
         });
     }
 
@@ -337,9 +336,9 @@ function setPlanData(response) {
     let discount_type_options = '<option value="">Select Discount Type</option>';
 
     if (discount_types) {
-        Object.entries(discount_types).forEach( function(discount_type) {
+        Object.entries(discount_types).forEach(function (discount_type) {
             console.log(discount_type)
-            discount_type_options += '<option value="'+discount_type[0]+'">'+discount_type[1]+'</option>';
+            discount_type_options += '<option value="' + discount_type[0] + '">' + discount_type[1] + '</option>';
         });
     }
 
@@ -390,7 +389,7 @@ function setServices(response) {
         let service_options = '<option value=""> Select Service </option>';
 
         Object.values(services).forEach(function (value) {
-            service_options += '<option value="'+value.id+'"> '+value.name+' </option>';
+            service_options += '<option value="' + value.id + '"> ' + value.name + ' </option>';
         });
 
         $("#add_service_id").html(service_options);
@@ -401,7 +400,6 @@ function setServices(response) {
 }
 
 function getAppointments() {
-
     let location = $("#add_location_id").val();
     let patient = $("#add_patient_id").val();
 
@@ -447,7 +445,7 @@ function setAppointments(response) {
         if (appointments.length) {
 
             Object.values(appointments).forEach(function (value) {
-                appointment_options += '<option value="'+value.id+'"> '+value.name+' </option>';
+                appointment_options += '<option value="' + value.id + '"> ' + value.name + ' </option>';
             });
 
             $("#add_appointment_id").html(appointment_options);
@@ -461,7 +459,7 @@ function setAppointments(response) {
 
 function editRow(url) {
 
-   $("#modal_edit_plan").modal("show");
+    $("#modal_edit_plan").modal("show");
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -476,7 +474,7 @@ function editRow(url) {
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
-           // reInitValidation(Validation);
+            // reInitValidation(Validation);
         }
     });
 
@@ -507,12 +505,12 @@ function setEditData(response) {
             history_options = noRecordFoundTable(4);
             Object.values(packageadvances).forEach(function (packageadvance) {
 
-                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
                     history_options += '<tr>';
-                        history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
-                        history_options += '<td>'+packageadvance.cash_flow+'</td>';
-                        history_options += '<td>'+packageadvance.package_refund_price+'</td>';
-                        history_options += '<td>'+packageadvance.created_at_formated+'</td>';
+                    history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
+                    history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    history_options += '<td>' + packageadvance.package_refund_price + '</td>';
+                    history_options += '<td>' + packageadvance.created_at_formated + '</td>';
                     history_options += '<tr>';
                 }
             });
@@ -521,67 +519,67 @@ function setEditData(response) {
 
         let service_options = noRecordFoundTable(9);
 
-        if(packagebundles.length) {
+        if (packagebundles.length) {
             service_options = noRecordFoundTable(9);
             Object.values(packagebundles).forEach(function (packagebundle) {
                 service_options += '<tr>';
-                service_options += '<td><a href="javascript:void(0);" onclick="toggle('+packagebundle.id+')">'+packagebundle.bundle.name+'</a></td>';
-                service_options += '<td>'+packagebundle.service_price.toFixed(2)+'</td>';
+                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
+                service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>';
-                        if(packagebundle.discount_id == null) {
-                            service_options += '-';
-                        } else if(packagebundle.discount_name) {
-                            service_options += packagebundle.discount_name;
+                if (packagebundle.discount_id == null) {
+                    service_options += '-';
+                } else if (packagebundle.discount_name) {
+                    service_options += packagebundle.discount_name;
+                } else {
+                    service_options += packagebundle.discount.name;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>';
+                if (packagebundle.discount_type == null) {
+                    service_options += '-';
+                } else {
+                    service_options += packagebundle.discount_type;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>';
+
+                if (packagebundle.discount_price == null) {
+                    service_options += '0.00';
+                } else {
+                    service_options += packagebundle.discount_price;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
+                service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
+                service_options += '<td>' + packagebundle.tax_price + '</td>';
+                service_options += '<td>' + packagebundle.tax_including_price + '</td>';
+
+                service_options += '</tr>';
+
+
+                Object.values(packageservices).forEach(function (packageservice) {
+                    let consume = 'NO';
+                    if (packageservice.package_bundle_id == packagebundle.id) {
+                        if (packageservice.is_consumed == '0') {
+                            consume = 'NO';
                         } else {
-                            service_options += packagebundle.discount.name;
+                            consume = 'YES';
                         }
-                        service_options += '</td>';
 
-                        service_options += '<td>';
-                        if (packagebundle.discount_type == null) {
-                            service_options +=  '-';
-                        } else {
-                            service_options +=  packagebundle.discount_type;
-                        }
-                        service_options += '</td>';
-
-                    service_options += '<td>';
-
-                    if (packagebundle.discount_price == null) {
-                        service_options += '0.00';
-                    } else {
-                        service_options += packagebundle.discount_price;
+                        service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
+                        service_options += '<td></td>';
+                        service_options += '<td>' + packageservice.service.name + '</td>';
+                        service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
+                        service_options += '<td>Tax % : ' + packageservice.tax_percenatage + '</td>';
+                        service_options += '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>';
+                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '</tr>';
                     }
-                    service_options += '</td>';
 
-                    service_options += '<td>'+packagebundle.tax_exclusive_net_amount+'</td>';
-                    service_options +=  '<td>'+packagebundle.tax_percenatage+'</td>';
-                    service_options +=  '<td>'+packagebundle.tax_price+'</td>';
-                    service_options +=  '<td>'+packagebundle.tax_including_price+'</td>';
-
-                    service_options += '</tr>';
-
-
-                    Object.values(packageservices).forEach(function (packageservice) {
-                        let consume = 'NO';
-                        if(packageservice.package_bundle_id == packagebundle.id ) {
-                            if (packageservice.is_consumed == '0') {
-                                consume = 'NO';
-                            } else {
-                                consume = 'YES';
-                            }
-
-                            service_options += '<tr class="'+packagebundle.id+'" style="display: none">';
-                            service_options += '<td></td>';
-                            service_options += '<td>'+packageservice.service.name+'</td>';
-                            service_options += '<td>Amount : '+packageservice.tax_exclusive_price+'</td>';
-                            service_options += '<td>Tax % : '+packageservice.tax_percenatage+'</td>';
-                            service_options += '<td>Tax Amt. : '+packageservice.tax_including_price+'</td>';
-                            service_options += '<td colspan="4">Is Consumed : '+consume+'</td>';
-                            service_options += '</tr>';
-                        }
-
-                    });
+                });
             });
         }
 
@@ -686,15 +684,15 @@ function displayData(response) {
 
         if (packageadvances.length) {
 
-             history_options = noRecordFoundTable(4);
+            history_options = noRecordFoundTable(4);
             Object.values(packageadvances).forEach(function (packageadvance) {
 
-                if(packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
                     history_options += '<tr>';
-                    history_options += '<td>'+packageadvance.paymentmode.name+'</td>';
-                    history_options += '<td>'+packageadvance.cash_flow+'</td>';
-                    history_options += '<td>'+packageadvance.package_refund_price+'</td>';
-                    history_options += '<td>'+packageadvance.created_at_formated+'</td>';
+                    history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
+                    history_options += '<td>' + packageadvance.cash_flow + '</td>';
+                    history_options += '<td>' + packageadvance.package_refund_price + '</td>';
+                    history_options += '<td>' + packageadvance.created_at_formated + '</td>';
                     history_options += '<tr>';
                 }
             });
@@ -703,67 +701,67 @@ function displayData(response) {
 
         let service_options = noRecordFoundTable(9);
 
-        if(packagebundles.length) {
+        if (packagebundles.length) {
             service_options = noRecordFoundTable(9);
             Object.values(packagebundles).forEach(function (packagebundle) {
                 service_options += '<tr>';
-                service_options += '<td><a href="javascript:void(0);" onclick="toggle('+packagebundle.id+')">'+packagebundle.bundle.name+'</a></td>';
-                service_options += '<td>'+packagebundle.service_price.toFixed(2)+'</td>';
+                service_options += '<td><a href="javascript:void(0);" onclick="toggle(' + packagebundle.id + ')">' + packagebundle.bundle.name + '</a></td>';
+                service_options += '<td>' + packagebundle.service_price.toFixed(2) + '</td>';
                 service_options += '<td>';
-                        if(packagebundle.discount_id == null) {
-                            service_options += '-';
-                        } else if(packagebundle.discount_name) {
-                            service_options += packagebundle.discount_name;
+                if (packagebundle.discount_id == null) {
+                    service_options += '-';
+                } else if (packagebundle.discount_name) {
+                    service_options += packagebundle.discount_name;
+                } else {
+                    service_options += packagebundle.discount.name;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>';
+                if (packagebundle.discount_type == null) {
+                    service_options += '-';
+                } else {
+                    service_options += packagebundle.discount_type;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>';
+
+                if (packagebundle.discount_price == null) {
+                    service_options += '0.00';
+                } else {
+                    service_options += packagebundle.discount_price;
+                }
+                service_options += '</td>';
+
+                service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
+                service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
+                service_options += '<td>' + packagebundle.tax_price + '</td>';
+                service_options += '<td>' + packagebundle.tax_including_price + '</td>';
+
+                service_options += '</tr>';
+
+
+                Object.values(packageservices).forEach(function (packageservice) {
+                    let consume = 'NO';
+                    if (packageservice.package_bundle_id == packagebundle.id) {
+                        if (packageservice.is_consumed == '0') {
+                            consume = 'NO';
                         } else {
-                            service_options += packagebundle.discount.name;
+                            consume = 'YES';
                         }
-                        service_options += '</td>';
 
-                        service_options += '<td>';
-                        if (packagebundle.discount_type == null) {
-                            service_options +=  '-';
-                        } else {
-                            service_options +=  packagebundle.discount_type;
-                        }
-                        service_options += '</td>';
-
-                    service_options += '<td>';
-
-                    if (packagebundle.discount_price == null) {
-                        service_options += '0.00';
-                    } else {
-                        service_options += packagebundle.discount_price;
+                        service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
+                        service_options += '<td></td>';
+                        service_options += '<td>' + packageservice.service.name + '</td>';
+                        service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
+                        service_options += '<td>Tax % : ' + packageservice.tax_percenatage + '</td>';
+                        service_options += '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>';
+                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '</tr>';
                     }
-                    service_options += '</td>';
 
-                    service_options += '<td>'+packagebundle.tax_exclusive_net_amount+'</td>';
-                    service_options +=  '<td>'+packagebundle.tax_percenatage+'</td>';
-                    service_options +=  '<td>'+packagebundle.tax_price+'</td>';
-                    service_options +=  '<td>'+packagebundle.tax_including_price+'</td>';
-
-                    service_options += '</tr>';
-
-
-                    Object.values(packageservices).forEach(function (packageservice) {
-                        let consume = 'NO';
-                        if(packageservice.package_bundle_id == packagebundle.id ) {
-                            if (packageservice.is_consumed == '0') {
-                                consume = 'NO';
-                            } else {
-                                consume = 'YES';
-                            }
-
-                            service_options += '<tr class="'+packagebundle.id+'" style="display: none">';
-                            service_options += '<td></td>';
-                            service_options += '<td>'+packageservice.service.name+'</td>';
-                            service_options += '<td>Amount : '+packageservice.tax_exclusive_price+'</td>';
-                            service_options += '<td>Tax % : '+packageservice.tax_percenatage+'</td>';
-                            service_options += '<td>Tax Amt. : '+packageservice.tax_including_price+'</td>';
-                            service_options += '<td colspan="4">Is Consumed : '+consume+'</td>';
-                            service_options += '</tr>';
-                        }
-
-                    });
+                });
             });
         }
 
@@ -786,9 +784,9 @@ function displayData(response) {
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#apply-filters').on('click', function () {
 
-        let filters =  {
+        let filters = {
             delete: '',
             id: $("#search_id").val(),
             patient_id: $("#search_patient_id").val(),
@@ -812,8 +810,8 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $('#reset-filters').on('click', function() {
-        let filters =  {
+    $('#reset-filters').on('click', function () {
+        let filters = {
             delete: '',
             id: '',
             patient_id: '',
@@ -877,7 +875,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_id").val(active_filters.id);
 
         if (active_filters.patient_name !== 'undefined' && active_filters.patient_name != 'undefined') {
-            $("#search_patient_id").html('<option value="'+active_filters.patient_id+'">'+active_filters.patient_name+'</option>');
+            $("#search_patient_id").html('<option value="' + active_filters.patient_id + '">' + active_filters.patient_name + '</option>');
             $("#search_patient_id").val(active_filters.patient_id);
         }
 

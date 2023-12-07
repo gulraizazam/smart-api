@@ -9,7 +9,32 @@
 .font-icon:hover {
     color: #3699FF;
 }
-
+.number>span {
+    cursor: pointer;
+}
+.number {
+    margin: 0px 4px;
+    display: flex;
+}
+.minus,
+.plus {
+    background: #f2f2f2;
+    border-radius: 4px;
+    padding: 3px 5px;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    user-select: none;
+}
+.quantity_input {
+    width: 70px;
+    text-align: center;
+    font-size: 18px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0px 1px;
+}
 .user-popup {
     z-index: 105;
     position: fixed;
