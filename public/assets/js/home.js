@@ -419,10 +419,10 @@ function initConsultancyByStatus(period, type) {
                 var pie = response.data.pie.lastmonth;
                 $(".appointment_by_status_dropdown").text("Last Month");
             }
-            ConsultancyByStatus(pie, colors);
-
+            setTimeout(() => {
+                ConsultancyByStatus(pie, colors);
+            }, 1500);
         },
-
     });
 }
 
@@ -468,8 +468,10 @@ function initTreatmentByStatus(period, type) {
                 var pie = response.data.pie.lastmonth;
                 $(".appointment_by_type_dropdown").text("Last Month");
             }
-            TreatmentByStatus(pie, colors);
 
+            setTimeout(() => {
+                TreatmentByStatus(pie, colors);
+            }, 1500);
         },
 
     });
