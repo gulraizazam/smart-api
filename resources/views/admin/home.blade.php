@@ -979,8 +979,8 @@
                         },
                         cache: false,
                         success: function(response) {
-                            $("#consultancy_status .loader-img-attended").css('display', 'none');
-                            $("#consultancy_status #consultancy_by_status").css('display', '');
+                            $("#consultancy_status1 .loader-img-attended").css('display', 'none');
+                            $("#consultancy_status1 #consultancy_by_status").css('display', '');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
@@ -1021,7 +1021,8 @@
                         },
                         cache: false,
                         success: function(response) {
-                            $("#treatment_status .loader-img-attended").css('display', 'none');
+                            $("#treatment_status1 .loader-img-attended").css('display', 'none');
+                            $("#treatment_status1 #treatment_by_status").css('display', '');
                             let colors = response.data.colors;
                             @if (request('type') == 'today')
                                 var pie = response.data.pie.today;
