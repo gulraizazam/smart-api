@@ -820,7 +820,9 @@ function changeCenterDoct(period, center_id) {
 }
 
 function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = true) {
-
+    $("#doctor_wise_conversion_section .loader-img-attended").css('display', '');
+    $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', 'none');
+    $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', 'none');
     dropDownList('doctor', period);
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
@@ -839,7 +841,6 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
     let avg_sum = 0;
     $('.arrivalbtn').text();
     $("#categories-table-body").html("");
-    console.log('nochangeDr', nochangeDr);
     if (nochangeDr) {
         var TABLE_HTML = "<option value='all-docs'>All Doctors</option>";
         $.ajax({
@@ -848,7 +849,6 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
             data: { 'centre_id': centre_id },
             cache: false,
             success: function (response) {
-                console.log('response', response);
                 jQuery('#doc_nav').html("");
                 jQuery.each(response.doctors, function (index, doctor) {
                     TABLE_HTML += " <option value=" + doctor.id + " >" + doctor.name + "</option>";
@@ -859,7 +859,6 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
     }
 
     if (centre_id == 'all' && doc_id == 'all-docs') {
-        console.log('period33', $('#dr_wise_con').val());
         $.ajax({
             url: route('admin.dashboard.all_doctor_wise_conversion'),
             type: 'GET',
@@ -903,7 +902,6 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
             data: { 'centre_id': centre_id },
             cache: false,
             success: function (response) {
-                console.log('response', response);
                 jQuery('#doc_nav').html("");
                 jQuery.each(response.doctors, function (index, doctor) {
                     TABLE_HTML += " <option value=" + doctor.id + " >" + doctor.name + "</option>";
@@ -914,7 +912,6 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
     } else {
 
         var check_doc_id = doc_id == 'all-docs' ? '' : doc_id;
-        console.log('period 2', $('#dr_wise_con').val(), centre_id, check_doc_id);
 
         $.ajax({
             url: route('admin.dashboard.doctor_wise_conversion'),
@@ -951,7 +948,6 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
-                console.log("response test", response);
                 DoctorWiseConversion(response);
             },
             error: function (xhr, ajaxOptions, thrownError) {
@@ -1072,7 +1068,6 @@ function LoadDocWiseConversion(doc_id, time = '') {
     let converted = 0;
     let arrived = 0;
     let avg_sum = 0;
-    console.log('period1', $('#dr_wise_con').val());
     $.ajax({
         url: route('admin.dashboard.doctor_wise_conversion'),
         type: 'GET',
@@ -1123,7 +1118,6 @@ function DoctorWiseConversion(bar) {
     const warning = '#FFA800';
     const danger = '#F64E60';
     let lables = bar.data.labels;
-    console.log("lables", lables);
     var options = {
         series: [{
             name: 'Total Appointments ' + `(${bar.data.total_appointments.reduce((a, b) => a + b, 0)})`,
