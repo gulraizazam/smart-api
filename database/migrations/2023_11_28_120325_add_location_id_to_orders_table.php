@@ -27,15 +27,13 @@ class AddLocationIdToOrdersTable extends Migration
               if (!Schema::hasColumn('orders', 'updated_by')) {
                 $table->unsignedBigInteger('updated_by')->nullable()->before('created_at');
               }
-              if (!Schema::hasColumn('orders', 'updated_by')) {
-                $table->unsignedBigInteger('updated_by')->nullable()->before('created_at');
-              }
+
               if (!Schema::hasColumn('orders', 'quantity')) {
                 $table->string('quantity')->default(0)->before('created_at');
               }
             });
           }
-        
+
     }
 
     /**
@@ -59,9 +57,7 @@ class AddLocationIdToOrdersTable extends Migration
               if (Schema::hasColumn('orders', 'updated_by')) {
                 $table->dropColumn('updated_by');
               }
-              if (Schema::hasColumn('orders', 'updated_by')) {
-                $table->dropColumn('updated_by');
-              }
+
               if (Schema::hasColumn('orders', 'quantity')) {
                 $table->dropColumn('quantity');
               }
