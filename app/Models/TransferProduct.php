@@ -11,12 +11,11 @@ use Illuminate\Support\Facades\DB;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class TransferProduct extends BaseModal
 {
-    use LogsActivity, HasFactory;
+    use HasFactory;
 
     protected $fillable = ['product_id', 'child_product_id', 'product_detail_id', 'account_id', 'from_location_id', 'to_location_id', 'from_warehouse_id', 'to_warehouse_id', 'quantity', 'transfer_date', 'created_by', 'updated_by'];
 
