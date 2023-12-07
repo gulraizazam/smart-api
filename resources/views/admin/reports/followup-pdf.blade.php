@@ -61,7 +61,8 @@
                                              id="locations">
                                             {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="location_id" name="service_id">
-                                                @if(Auth::user()->hasRole('FDM'))
+                                                @isset($locations)
+                                                @if(Auth::user()->hasRole('FDM'))         
                                                 @foreach($locations as $location)
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach
@@ -71,6 +72,8 @@
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach
                                                 @endif
+                                                @endisset
+
                                             </select>
                                             <span id="location_id_handler"></span>
                                         </div>
