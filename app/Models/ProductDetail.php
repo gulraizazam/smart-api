@@ -5,13 +5,12 @@ namespace App\Models;
 
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class ProductDetail extends BaseModal
 {
-    use LogsActivity, HasFactory;
+    use  HasFactory;
 
     protected $fillable = ['account_id', 'product_id', 'purchase_price', 'total_purchase_price', 'quantity'];
 

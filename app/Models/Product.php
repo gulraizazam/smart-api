@@ -8,12 +8,11 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
-use Spatie\Activitylog\Traits\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class Product extends BaseModal
 {
-    use LogsActivity, HasFactory;
+    use  HasFactory;
 
     protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by'];
 
