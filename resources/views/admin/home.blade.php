@@ -999,7 +999,7 @@
                             @endif
                             setTimeout(() => {
                                 ConsultancyByStatus(pie, colors);
-                            }, 1500);
+                            }, 500);
 
                         },
                         error: function(xhr, ajaxOptions, thrownError) {
@@ -1041,7 +1041,7 @@
                             @endif
                             setTimeout(() => {
                                 TreatmentByStatus(pie, colors);
-                            }, 1500);
+                            }, 500);
                         },
                         error: function(xhr, ajaxOptions, thrownError) {
                             errorMessage(xhr);
