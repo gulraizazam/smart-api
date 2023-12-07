@@ -2775,10 +2775,7 @@ class DashboardReportsController extends Controller
 
     public function DoctoreWiseConversion(Request $request)
     {
-        $where = [];
-        $total_apts = [];
-        $converted_apts = [];
-        $lables = [];
+        $where = $total_apts = $converted_apts = $lables = [];
         $appointments = array();
         $total = 0;
         $appointments_info = array();
@@ -2793,7 +2790,7 @@ class DashboardReportsController extends Controller
         } else {
             $locations = [$request->centre_id];
         }
-        $consultant = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null && $request->doc_id != 0 && $request->doc_id != "All Doctors", function ($query) use ($request) {
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null && $request->doc_id != 0 && $request->doc_id != "all-docs", function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         })
             ->distinct('user_id')
