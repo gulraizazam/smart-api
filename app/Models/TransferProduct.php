@@ -8,7 +8,7 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Models\ProductDetail;
 use Illuminate\Support\Facades\DB;
-use Spatie\Activitylog\LogOptions;
+
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -25,11 +25,7 @@ class TransferProduct extends BaseModal
 
     protected static $logName = 'transfer_product';
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->dontSubmitEmptyLogs();
-    }
+    
 
     public function transferProductItem()
     {
@@ -224,8 +220,7 @@ class TransferProduct extends BaseModal
             $record = self::create($data);
 
             $subjectModel = self::find($record->id);
-            activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
-
+           
             $data2['transfer_id'] = $record->id;
             $data2['type'] = $request['type'];
             $data2['message'] = $request['message'];
@@ -289,8 +284,7 @@ class TransferProduct extends BaseModal
 
         $record = self::where(['id' => $id])->first();
         $subjectModel = self::find($record->id);
-        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
-
+       
         $data2['product_detail_id'] = $record->product_detail_id;
         $data2['type'] = $request['type'];
         $data2['message'] = $request['message'];
