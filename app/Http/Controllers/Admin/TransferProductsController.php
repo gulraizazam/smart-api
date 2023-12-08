@@ -18,7 +18,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Inventory;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
-use Spatie\Activitylog\Facades\LogBatch;
+
 use Illuminate\Support\Facades\Validator;
 
 class TransferProductsController extends Controller
@@ -209,7 +209,7 @@ class TransferProductsController extends Controller
                     return ApiHelper::apiResponse($this->error, "Please add different location.", false);
                 }
             }
-            LogBatch::startBatch();
+         
             $request['type'] = 'product_transfer_create';
             $request['message'] = 'Transfer Product create';
 
@@ -259,7 +259,7 @@ class TransferProductsController extends Controller
                         $inventory->save();
 
                     }
-                    LogBatch::endBatch();
+                 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
@@ -336,7 +336,7 @@ class TransferProductsController extends Controller
             if($request->product_type_option_to == 'in_branch' && $request->to_location_id == null){
                 return collect(['status' => false, 'message' => 'Please select any centre.']);
             }
-            LogBatch::startBatch();
+           
             $request['type'] = 'product_transfer_update';
             $request['message'] = 'Transfer Product update';
 
@@ -345,7 +345,7 @@ class TransferProductsController extends Controller
             if ($transfer_product) {
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
-                    LogBatch::endBatch();
+                  
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
