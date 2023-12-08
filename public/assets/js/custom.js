@@ -4,15 +4,15 @@ $(document).keydown(function (event) {
         $('.modal').modal('hide');
     }
 });
-$(document).ready(function(){
-  $(document).on('click', function(e){
-    if(!$(e.target).closest('.dropdown-menu').length) {
-      $('.dropdown-menu[x-placement="top-end"]').removeClass('show');
-      $('.dropdown-menu[x-placement="top-end"]').hide();
-      $('.dropdown-menu[x-placement="bottom-end"]').removeClass('show');
-      $('.dropdown-menu[x-placement="bottom-end"]').hide();
-    }
-  });
+$(document).ready(function () {
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.dropdown-menu').length) {
+            $('.dropdown-menu[x-placement="top-end"]').removeClass('show');
+            $('.dropdown-menu[x-placement="top-end"]').hide();
+            $('.dropdown-menu[x-placement="bottom-end"]').removeClass('show');
+            $('.dropdown-menu[x-placement="bottom-end"]').hide();
+        }
+    });
 });
 
 let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
@@ -29,182 +29,24 @@ $('#created_at').datepicker({
 }).datepicker("setDate", new Date());
 
 $(document).ready(function () {
-    $('#global_date_filter').on('change', function () {
-
-        var currentVal = $(this).val();
-        $('.date_action_dropdown').find('select').val(currentVal).trigger('change');
-        // if (currentVal == 'month') {
-        //     initCollectionByCentre('', '', '', '', 'thismonth', '');
-        //     setTimeout(() => {
-        //         initRevenueByCentre('thismonth');
-        //         InitRevenueByServiceCategory('', '', '', 'thismonth', '');
-        //     }, 1500);
-
-        //     setTimeout(() => {
-        //         initRevenueByService('', '', '', '', 'thismonth', '');
-        //         initConsultancyByStatus('thismonth', '1');
-        //     }, 3000);
-
-        //     setTimeout(() => {
-        //         initTreatmentByStatus('thismonth', '2');
-        //         initDoctorWiseConversion('thismonth');
-        //     }, 4500);
-
-        //     setTimeout(() => {
-        //         initUserWiseArrival('thismonth', 'user');
-        //         initCentreWiseArrival('thismonth', 'centre');
-        //     }, 6000);
-        // } else if (currentVal == 'yesterday') {
-        //     initCollectionByCentre('', 'yesterday', '', '', '', '');
-        //     setTimeout(() => {
-        //         initRevenueByCentre('yesterday');
-        //         initRevenueByService('', 'yesterday', '', '', '', '');
-        //     }, 1500);
-
-        //     setTimeout(() => {
-        //         InitRevenueByServiceCategory('', 'yesterday', '', '', '');
-        //         initDoctorWiseConversion('yesterday');
-        //     }, 3000);
-
-        //     setTimeout(() => {
-        //         initTreatmentByStatus('yesterday', '2');
-        //         initConsultancyByStatus('yesterday', '1');
-        //     }, 4500);
-
-        //     setTimeout(() => {
-        //         initUserWiseArrival('yesterday', 'user');
-        //         initCentreWiseArrival('yesterday', 'centre');
-        //     }, 6000);
-
-        // } else if (currentVal == 'last7days') {
-        //     initCollectionByCentre('', '', 'last7days', '', '', '');
-
-        //     setTimeout(() => {
-        //         initRevenueByCentre('last7days');
-        //         InitRevenueByServiceCategory('', '', 'last7days', '', '');
-        //     }, 1500);
-
-        //     setTimeout(() => {
-        //         initRevenueByService('', '', 'last7days', '', '', '');
-        //         initConsultancyByStatus('last7days', '1');
-        //     }, 3000);
-
-        //     setTimeout(() => {
-        //         initTreatmentByStatus('last7days', '2');
-        //         initDoctorWiseConversion('last7days');
-        //     }, 4500);
-
-        //     setTimeout(() => {
-        //         initUserWiseArrival('last7days', 'user');
-        //         initCentreWiseArrival('last7days', 'centre');
-        //     }, 6000);
-        // } else if (currentVal == 'week') {
-        //     initCollectionByCentre('', '', '', 'week', '', '');
-        //     setTimeout(() => {
-        //         initRevenueByCentre('week');
-        //         initRevenueByService('', '', '', 'week', '', '');
-        //     }, 1500);
-
-        //     setTimeout(() => {
-        //         initConsultancyByStatus('week', '1');
-        //         initTreatmentByStatus('week', '2');
-        //     }, 3000);
-
-        //     setTimeout(() => {
-        //         initDoctorWiseConversion('week');
-        //         initUserWiseArrival('week', 'user');
-        //     }, 4500);
-
-        //     setTimeout(() => {
-        //         initCentreWiseArrival('week', 'centre');
-        //         InitRevenueByServiceCategory('', '', '', 'week', '');
-        //     }, 6000);
-        // } else {
-        //     initCollectionByCentre('today', '', '', '', '', '');
-        //     setTimeout(() => {
-        //         initRevenueByCentre('today');
-        //         InitRevenueByServiceCategory('today', '', '', '', '');
-        //     }, 1500);
-
-        //     setTimeout(() => {
-        //         initRevenueByService('today', '', '', '', '', '');
-        //         initConsultancyByStatus('today', '1');
-        //     }, 3000);
-
-        //     setTimeout(() => {
-        //         initTreatmentByStatus('today', '2');
-        //         initDoctorWiseConversion('today');
-        //     }, 4500);
-
-        //     setTimeout(() => {
-        //         initUserWiseArrival('today', 'user');
-        //         initCentreWiseArrival('today', 'centre');
-        //     }, 6000);
-        // }
-    });
-
     $('#collection_centre').on('change', function () {
         var currentVal = $(this).val();
         initCollectionByCentre(currentVal);
-        // if (currentVal == 'month') {
-        //     initCollectionByCentre('thismonth');
-        // } else if (currentVal == 'yesterday') {
-        //     initCollectionByCentre('yesterday');
-        // } else if (currentVal == 'last7days') {
-        //     initCollectionByCentre('last7days');
-        // } else if (currentVal == 'week') {
-        //     initCollectionByCentre('week');
-        // } else {
-        //     initCollectionByCentre('today');
-        // }
     });
 
     $('#revenue_centre').on('change', function () {
         var currentVal = $(this).val();
         initRevenueByCentre(currentVal);
-        // if (currentVal == 'month') {
-        //     initRevenueByCentre('thismonth');
-        // } else if (currentVal == 'yesterday') {
-        //     initRevenueByCentre('yesterday');
-        // } else if (currentVal == 'last7days') {
-        //     initRevenueByCentre('last7days');
-        // } else if (currentVal == 'week') {
-        //     initRevenueByCentre('week');
-        // } else {
-        //     initRevenueByCentre('today');
-        // }
     });
 
     $('#revenue_service_cate').on('change', function () {
         var currentVal = $(this).val();
         InitRevenueByServiceCategory(currentVal);
-        // if (currentVal == 'month') {
-        //     InitRevenueByServiceCategory('thismonth');
-        // } else if (currentVal == 'yesterday') {
-        //     InitRevenueByServiceCategory('yesterday');
-        // } else if (currentVal == 'last7days') {
-        //     InitRevenueByServiceCategory('last7days');
-        // } else if (currentVal == 'week') {
-        //     InitRevenueByServiceCategory('week');
-        // } else {
-        //     InitRevenueByServiceCategory('today');
-        // }
     });
 
     $('#revenue_service').on('change', function () {
         var currentVal = $(this).val();
         initRevenueByService(currentVal);
-        // if (currentVal == 'month') {
-        //     initRevenueByService('thismonth');
-        // } else if (currentVal == 'yesterday') {
-        //     initRevenueByService('yesterday');
-        // } else if (currentVal == 'last7days') {
-        //     initRevenueByService('last7days');
-        // } else if (currentVal == 'week') {
-        //     initRevenueByService('week');
-        // } else {
-        //     initRevenueByService('today');
-        // }
     });
 
     $('#consultancy_status').on('change', function () {
