@@ -3,7 +3,7 @@
 namespace App\Models;
 
 
-use Spatie\Activitylog\LogOptions;
+
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,11 +30,7 @@ class ProductDetail extends BaseModal
         'deleted' => 'Product has been deleted',
     ];
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->dontSubmitEmptyLogs();
-    }
+   
 
 
     public function product()
@@ -71,8 +67,7 @@ class ProductDetail extends BaseModal
         Stock::create($data);
        
         $subjectModel = self::find($record->id);
-        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
-
+        
         return $record;
     }
 
@@ -103,7 +98,7 @@ class ProductDetail extends BaseModal
         $record->update($data);
 
         $subjectModel = self::find($id);
-        activityLog(self::$logName, $subjectModel, $request['type'], $record, $request['message']);
+        
         return $record;
     }
 
@@ -139,7 +134,7 @@ class ProductDetail extends BaseModal
         ]);
 
         $subjectModel = self::find($record->id);
-        activityLog(self::$logName, $subjectModel, $data['type'], $record, $data['message']);
+        
         return $record;
     }
 
