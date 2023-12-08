@@ -6,7 +6,6 @@ use DateTime;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
-use Spatie\Activitylog\LogOptions;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
@@ -32,11 +31,7 @@ class Product extends BaseModal
         'deleted' => 'Product has been deleted',
     ];
 
-    public function getActivitylogOptions(): LogOptions
-    {
-        return LogOptions::defaults()
-            ->dontSubmitEmptyLogs();
-    }
+   
 
     public function productDetail()
     {
@@ -216,7 +211,7 @@ class Product extends BaseModal
 
 
          $subjectModel = self::find($product->id);
-         activityLog(self::$logName, $subjectModel, $request['type'], $product, $request['message']);
+        
          return $product;
     }
 
@@ -248,7 +243,7 @@ class Product extends BaseModal
         $record->update($data);
 
         $subjectModel = self::find($id);
-        activityLog(self::$logName, $subjectModel, $data['type'], $record, $data['message']);
+       
 
         return $record;
     }
@@ -274,8 +269,7 @@ class Product extends BaseModal
         $record = $product->delete();
 
         $subjectModel = $product;
-        activityLog(self::$logName, $subjectModel, $data['type'], $record, $data['message']);
-
+       
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
     }
 
