@@ -8,41 +8,41 @@ var table_columns = [
         title: 'ID',
         width: 60,
         sortable: false,
-    },{
+    }, {
         field: 'name',
         title: 'Patient',
         width: 100,
-    },{
+    }, {
         field: 'phone',
         title: 'Phone',
         width: 100,
         template: function (data) {
             return phoneClip(data);
         }
-    },{
+    }, {
         field: 'scheduled_date',
         title: 'Scheduled',
         width: 'auto',
         template: function (data) {
             if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
-                return '<span>'+data.scheduled_date+'</span>';
+                return '<span>' + data.scheduled_date + '</span>';
             } else {
                 return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
             }
         }
-    },{
+    }, {
         field: 'service_id',
         title: 'Service',
         width: 'auto',
-    },{
+    }, {
         field: 'appointment_type_id',
         title: 'Type',
         width: 100,
-    },{
+    }, {
         field: 'doctor_id',
         title: 'Doctor',
         width: 'auto',
-    },{
+    }, {
         field: 'appointment_status_id',
         title: 'Status',
         width: 100,
@@ -55,44 +55,44 @@ var table_columns = [
                 /*if (unscheduled_appointment_status && (appointment_status == unscheduled_appointment_status.id)) {
                     return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
                 } else {*/
-                    return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
                 //}
             } else {
-                return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
+                return '<span class="badge badge-dark">' + data.appointment_status_id + '</span>';
             }
         }
-    },{
+    }, {
         field: 'location_id',
         title: 'Centre',
         width: 'auto',
-    },{
+    }, {
         field: 'city_id',
         title: 'City',
         width: 'auto',
-    },{
+    }, {
         field: 'region_id',
         title: 'Region',
         width: 'auto',
-    },{
+    }, {
         field: 'consultancy_type',
         title: 'Consultancy Type',
         width: 90,
-    },{
+    }, {
         field: 'created_at',
         title: 'Created At',
         width: 'auto',
         template: function (data) {
             return formatDate(data.created_at);
         }
-    },{
+    }, {
         field: 'created_by',
         title: 'Created By',
         width: 'auto',
-    },{
+    }, {
         field: 'updated_by',
         title: 'Updated By',
         width: 'auto',
-    },{
+    }, {
         field: 'converted_by',
         title: 'Rescheduled By',
         width: 'auto',
@@ -111,14 +111,14 @@ function editStatus(id) {
         // },
         url: route('admin.appointments.showappointmentstatus'),
         type: "GET",
-        data: {id: id},
+        data: { id: id },
         cache: false,
-        success: function(response) {
+        success: function (response) {
             if (response.status) {
                 setStatusData(response, id);
             }
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
@@ -140,14 +140,14 @@ function setStatusData(response, id) {
         let base_status_option = '<option value="">Select Status</option>';
         if (base_appointment_statuses) {
             Object.entries(base_appointment_statuses).forEach(function (base_status) {
-                base_status_option += '<option value="'+base_status[0]+'">'+base_status[1]+'</option>';
+                base_status_option += '<option value="' + base_status[0] + '">' + base_status[1] + '</option>';
             });
         }
 
         let appoint_status_option = '<option value="">Select Child Status</option>';
         if (appointment_statuses) {
             Object.entries(appointment_statuses).forEach(function (appointment_status) {
-                appoint_status_option += '<option value="'+appointment_status[0]+'">'+appointment_status[1]+'</option>';
+                appoint_status_option += '<option value="' + appointment_status[0] + '">' + appointment_status[1] + '</option>';
             });
         }
 
@@ -176,7 +176,7 @@ function setStatusData(response, id) {
                 $("#reason").val(appointments?.reason);
             }
         } else {
-            if(base_appointments[appointments.appointment_status.parent_id].is_comment == 0
+            if (base_appointments[appointments.appointment_status.parent_id].is_comment == 0
                 && appointments?.appointment_status?.is_comment == 0) {
                 $("#appointment_reason").hide();
             } else {
@@ -206,16 +206,16 @@ function editSchedule(id) {
         },
         url: route('admin.appointments.get_schedule'),
         type: "GET",
-        data: {id: id},
+        data: { id: id },
         cache: false,
-        success: function(response) {
+        success: function (response) {
             if (response.status) {
                 let appointment = response.data.appointment;
                 $("#schedule_date").val(appointment?.scheduled_date);
                 $("#schedule_time").val(appointment?.scheduled_time);
             }
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
@@ -230,10 +230,11 @@ function setTotal(meta) {
 
 function changeDate() {
     var period = $("#recordfilter").val();
+    $('.date_action_dropdown').find('select').val(period).trigger('change');
     $.ajax({
         url: route('admin.home.getstats'),
         type: "GET",
-        data: {'type': period},
+        data: { 'type': period },
         cache: false,
         success: function (response) {
             var collection = response.data.todaycollection;
@@ -242,10 +243,10 @@ function changeDate() {
             let urlconsultant = route('admin.consultancy.index') + "?type=1&from=" + response.data.start_date + "&to=" + response.data.end_date;
             let urltreatment = route('admin.treatment.index') + "?type=2&from=" + response.data.start_date + "&to=" + response.data.end_date;
             $("#allrevenue").text('PKR: ' + sales);
-            $("#allconsult").text(response.data.done_consultancies+'/'+response.data.all_consultancies);
+            $("#allconsult").text(response.data.done_consultancies + '/' + response.data.all_consultancies);
             $("#allconsultantdate").attr("href", urlconsultant);
-            $("#alltreat").text(response.data.done_treatments+'/'+response.data.all_treatments);
-            $("#allleads").text('PKR: ' +collection);
+            $("#alltreat").text(response.data.done_treatments + '/' + response.data.all_treatments);
+            $("#allleads").text('PKR: ' + collection);
             $("#alltreatmentdate").attr("href", urltreatment);
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -305,7 +306,7 @@ var AppointScheduleValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -321,13 +322,13 @@ var AppointScheduleValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             Validation();
         }
     };
 }();
 
-jQuery(document).ready(function() {
+jQuery(document).ready(function () {
 
     AppointScheduleValidation.init();
 });
@@ -346,7 +347,7 @@ let loadChildStatuses = function (appointmentStatusId) {
     statusValidate.addField('reason', extraValidate);
     statusValidate.removeField('appointment_status_id', '');
     statusValidate.removeField('reason', '');
-    if(appointmentStatusId != '') {
+    if (appointmentStatusId != '') {
         resetDropdowns();
         $("input[type=submit]").attr('disabled', true);
         $.ajax({
@@ -359,8 +360,8 @@ let loadChildStatuses = function (appointmentStatusId) {
                 appointment_status_id: appointmentStatusId
             },
             cache: false,
-            success: function(response) {
-                if(response.status) {
+            success: function (response) {
+                if (response.status) {
                     if (response.data.dropdown) {
                         setChildStatusData(response);
                         $('.appointment_status_id').show();
@@ -374,10 +375,10 @@ let loadChildStatuses = function (appointmentStatusId) {
                 } else {
                     resetDropdowns();
                 }
-                if(parseInt(response.count) > 1) {
+                if (parseInt(response.count) > 1) {
                     $('.appointment_status_id').show();
                 }
-                if(response.status && response.data.appointment_status.is_comment == '1') {
+                if (response.status && response.data.appointment_status.is_comment == '1') {
                     $('.reason').show();
                     statusValidate.addField('reason', extraValidate);
                 } else {
@@ -400,16 +401,16 @@ let loadChildStatuses = function (appointmentStatusId) {
 function setChildStatusData(response) {
 
     let dropdowns = response.data.dropdown;
-    let  child_options = '<option value="">Select Child Status</option>';
+    let child_options = '<option value="">Select Child Status</option>';
     if (dropdowns) {
         Object.entries(dropdowns).forEach(function (dropdown) {
-            child_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+            child_options += '<option value="' + dropdown[0] + '">' + dropdown[1] + '</option>';
         });
     }
     $('#appointment_status_id').html(child_options);
 }
 
-var resetDropdowns = function() {
+var resetDropdowns = function () {
     resetReason();
     resetChildStatuses();
 }
@@ -429,7 +430,7 @@ let statusListener = function (appointmentStatusId) {
 
     statusValidate.addField('reason', extraValidate);
     statusValidate.removeField('reason', '');
-    if(appointmentStatusId != '') {
+    if (appointmentStatusId != '') {
         $("input[type=submit]").attr('disabled', true);
         $.ajax({
             headers: {
@@ -442,8 +443,8 @@ let statusListener = function (appointmentStatusId) {
                 base_appointment_status_id: $('#base_appointment_status_id').val()
             },
             cache: false,
-            success: function(response) {
-                if(response.status && (response.data.appointment_status.is_comment == '1' || response.data.base_appointment_status.is_comment == '1')) {
+            success: function (response) {
+                if (response.status && (response.data.appointment_status.is_comment == '1' || response.data.base_appointment_status.is_comment == '1')) {
                     $('.reason').show();
                     statusValidate.addField('reason', extraValidate);
                 } else {
