@@ -7,24 +7,13 @@
         @include('admin.partials.breadcrumb')
         <div class="d-flex flex-column-fluid">
             <div class="container">
-                <div class="row mx-0 mb-6 mt-0 pr-0">
-                    <div class="col-3 ml-auto pr-0">
-                        <select class="form-control custom_dropdown float-right" id="global_date_filter" aria-label="Select example">
-                            <option value="today">Today</option>
-                            <option value="yesterday">Yesterday</option>
-                            <option value="last7days">Last 7 Days</option>
-                            <option value="week">This Week</option>
-                            <option value="thismonth">This Month</option>
-                        </select>
-                    </div>
-                </div>
                 <div class="row">
                     <div class="col-lg-6 col-xxl-6">
                         <div class="card card-custom bg-gray-100 card-stretch gutter-b">
                             <div class="card-header border-0 bg-danger py-5">
                                 <h3 class="card-title font-weight-bolder text-white">Stats</h3>
                                 <div class="card-toolbar">
-                                    <div class="dropdown date_action_dropdown dropdown-inline">
+                                    <div class="dropdown  dropdown-inline">
                                         <select class="form-control" name="type" onchange="changeDate();" id="recordfilter">
                                             <option value="today" {{ request('type') == 'today' ? 'selected' : '' }}>Today
                                             </option>
@@ -36,8 +25,6 @@
                                                 Week</option>
                                             <option value="thismonth" {{ request('type') == 'thismonth' ? 'selected' : '' }}>This
                                                 Month</option>
-                                            <!-- <option value="lastmonth"
-                                                                                    {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
                                         </select>
                                     </div>
                                 </div>
