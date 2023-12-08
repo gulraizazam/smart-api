@@ -22,7 +22,6 @@ use App\Models\PurchaseDetail;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Spatie\Activitylog\Models\Activity;
-use Spatie\Activitylog\Facades\LogBatch;
 use Illuminate\Support\Facades\Validator;
 
 class ProductsController extends Controller
@@ -224,14 +223,14 @@ class ProductsController extends Controller
                 $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
                 return ApiHelper::apiResponse($this->error, $err_message, false);
             }
-            LogBatch::startBatch();
+           
             $request['type'] = 'product_create';
             $request['message'] = 'Product create';
 
             $product = Product::createRecord($request, Auth::User()->account_id);
             if ($product) {
                 if (ProductDetail::createRecord($request, Auth::User()->account_id, $product->id)) {
-                    LogBatch::endBatch();
+                  
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
             }
@@ -298,14 +297,14 @@ class ProductsController extends Controller
            
             
            
-            LogBatch::startBatch();
+   
             $request['type'] = 'product_update';
             $request['message'] = 'Product update';
 
             $product = Product::updateRecord($id, $request, Auth::User()->account_id);
             if ($product) {
               
-                    LogBatch::endBatch();
+              
                     return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
                 
             }
@@ -342,12 +341,12 @@ class ProductsController extends Controller
                 return ApiHelper::apiResponse($this->success, "Sale price must be equal or greater than purchase price!", false);
             }
            
-            LogBatch::startBatch();
+           
             $request['type'] = 'product_sale_price_update';
             $request['message'] = 'Product sale price update';
 
             $product = Product::updateRecord($id, $request, Auth::User()->account_id);
-            LogBatch::endBatch();
+           
             if ($product) {
                 return ApiHelper::apiResponse($this->success, 'Record has been update successfully.');
             }
@@ -369,12 +368,12 @@ class ProductsController extends Controller
             if (!Gate::allows('product_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            LogBatch::startBatch();
+          
             $data['type'] = 'product_delete';
             $data['message'] = 'Product delete';
             $response = Product::DeleteRecord($id, $data);
 
-            LogBatch::endBatch();
+            
 
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
         } catch (\Exception $e) {
@@ -414,7 +413,7 @@ class ProductsController extends Controller
             if (!Gate::allows('product_add_stock')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            LogBatch::startBatch();
+         
             $request['type'] = 'stock_add';
             $request['message'] = 'Stock add';
             if ($request->purchase_price && $request->purchase_price  < 0) {
@@ -442,7 +441,7 @@ class ProductsController extends Controller
                 $purchase_detail->total_purchase_price =  $request->total_purchase_price;
                 $purchase_detail->quantity =  $request->quantity;
                 $purchase_detail->save();
-                LogBatch::endBatch();
+         
                 return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
             }
 
@@ -597,7 +596,7 @@ class ProductsController extends Controller
             if ($request->product_type_option_to == 'in_branch' && $request->to_location_id == null) {
                 return collect(['status' => false, 'message' => 'Please select any centre.']);
             }
-            LogBatch::startBatch();
+            
             $request['type'] = 'product_transfer_create';
             $request['message'] = 'Product transfer';
            
@@ -607,7 +606,7 @@ class ProductsController extends Controller
                 $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id);
                 if ($product_detail) {
                     TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
-                    LogBatch::endBatch();
+                    
                     $product_type = Product::find($request->product_id);
                 
                     if($request->from_warehouse_id){
