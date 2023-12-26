@@ -173,8 +173,21 @@ class DiscountWidget
                 'slug' => 'region',
                 'account_id' => $account_id,
                 'region_id' => $singleLocation->region_id,
-            ])->select('id')->first()->id,
+            ])->select('id')->first() ? Locations::where([
+                'slug' => 'region',
+                'account_id' => $account_id,
+                'region_id' => $singleLocation->region_id,
+            ])->select('id')->first()->id : null,
         ])->get();
+
+        // $regionLocation = DiscountHasLocations::whereHas('location', function ($query) use ($account_id, $singleLocation) {
+        //     $query->where([
+        //         'slug' => 'region',
+        //         'account_id' => $account_id,
+        //         'region_id' => $singleLocation->region_id,
+        //     ]);
+        // })->get();
+
 
         if ($regionlocation->count()) {
             //      Find All Services
