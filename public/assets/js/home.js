@@ -1330,7 +1330,7 @@ $(document).ready(function () {
     $('#userwise_arrival').select2();
     $('#userwise_arrival').on('change', function () {
         var selectedValue = $(this).val();
-        var period = 'thismonth';
+        var period = $('#center_wise_arrival').val();
         initUserWiseArrival(period, selectedValue, '')
     });
 
