@@ -538,8 +538,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <!-- <option value="lastmonth"
-                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option>
                                             </select>
                                         </div>
                                     </li>
@@ -555,8 +554,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <!-- <option value="lastmonth"
-                                                                {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
+                                                {{-- <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option> --}}
                                             </select>
                                         </div>
                                     </li>
