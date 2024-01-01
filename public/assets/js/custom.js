@@ -89,6 +89,8 @@ $(document).ready(function () {
             initUserWiseArrival('last7days', 'user');
         } else if (currentVal == 'week') {
             initUserWiseArrival('week', 'user');
+        } else if (currentVal == 'lastmonth') {
+            initUserWiseArrival('lastmonth', 'user');
         } else {
             initUserWiseArrival('today', 'user');
         }
