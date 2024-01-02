@@ -98,7 +98,9 @@ $(document).ready(function () {
 
     $('#initCentreWiseArrival').on('change', function () {
         var currentVal = $(this).val();
-        if (currentVal == 'thismonth') {
+        if (currentVal == 'lastmonth') {
+            initCentreWiseArrival('lastmonth', 'centre');
+        } else if (currentVal == 'thismonth') {
             initCentreWiseArrival('thismonth', 'centre');
         } else if (currentVal == 'yesterday') {
             initCentreWiseArrival('yesterday', 'centre');
