@@ -571,7 +571,7 @@
                                 </div>
                                 <div class="col-5 centre_wise_arrival_wrap">
                                     <div class="row" id="centre_wise_arrival_02">
-                                        <div class='table-responsive'>
+                                        <div class='table-responsive' style="overflow-y: scroll; height: 475px;">
                                             <table class='table'>
                                                 <thead>
                                                     @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') ||
@@ -683,7 +683,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option>
+                                                {{-- <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option> --}}
                                             </select>
                                         </div>
                                     </li>
@@ -700,7 +700,7 @@
                                     <div id="doc_wise_conversion"></div>
                                 </div>
                                 <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
-                                    <div class='table-responsive'>
+                                    <div class='table-responsive' style="overflow-y: scroll; height: 475px;">
                                         <table class='table'>
                                             <thead>
                                                 <tr>
