@@ -382,7 +382,7 @@ class GeneralFunctions
             }
             $query = Services::with('children')
                 ->where(['parent_id' => 0])
-                ->where('slug', '!=', 'all')
+                //->where('slug', '!=', 'all')
                 ->when(isset($where) && count($where) > 0, fn ($q) => $q->where($where));
             $services = $query->get();
             $mergedServices = [];
