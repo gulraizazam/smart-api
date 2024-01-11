@@ -4759,7 +4759,7 @@ class AppointmentsController extends Controller
 
     public function getScheduledServiceAppointments(Request $request)
     {
-       
+
         $location_id = $request->location_id;
         $doctor_id = $request->doctor_id;
         $machine_id = $request->machine_id;
@@ -4769,12 +4769,12 @@ class AppointmentsController extends Controller
         $end = $request->end;
         $minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
         if ($request->has('start') && $request->has('end')) {
-          
+
             $doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->location_id, $request->doctor_id, $request->start, $request->end);
         } else {
             $doctor_rotas = collect();
         }
-      
+
         if ($appointments) {
             $data = [];
             if ($request->doctor_id != '') {
@@ -4948,20 +4948,30 @@ class AppointmentsController extends Controller
      */
     public function loadEndServiceByBaseService(Request $request)
     {
-        
+
         if ($request->service_id) {
-            $services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
-           
+            $child_services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
             $resource = Resources::whereId($request->resource_id)->first();
-            $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)->pluck('service_id');
-        
-            $available_services = array_filter($services, function ($service, $id) use ($machine_services) {
-                return in_array($id, $machine_services->toArray()); // Convert collection to array
-            }, ARRAY_FILTER_USE_BOTH);
-        
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'services' => $available_services,
-            ]);
+            $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+            ->where('service_id',$request->service_id)
+            ->first();
+            if($machine_services){
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'services' => $child_services,
+                ]);
+            }else{
+
+                $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+                ->whereIn('service_id',array_keys($child_services))
+                ->pluck('service_id');
+
+                $available_services = array_filter($child_services, function ($service, $id) use ($machine_services) {
+                    return in_array($id, $machine_services->toArray()); // Convert collection to array
+                }, ARRAY_FILTER_USE_BOTH);
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'services' => $available_services,
+                ]);
+            }
         }
 
         return ApiHelper::apiResponse($this->success, 'Record not found', false);
