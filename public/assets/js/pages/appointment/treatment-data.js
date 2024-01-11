@@ -214,6 +214,8 @@ function loadCalendar() {
 
 
 var loadEndServices = function (baseServiceId) {
+     resource_id = $("#treatment_resource_id").val();
+    
     if(baseServiceId != '') {
         $.ajax({
             headers: {
@@ -222,7 +224,8 @@ var loadEndServices = function (baseServiceId) {
             url: route('admin.appointments.load_node_service'),
             type: 'POST',
             data: {
-                service_id: baseServiceId
+                service_id: baseServiceId,
+                resource_id:resource_id
             },
             cache: false,
             success: function(response) {
