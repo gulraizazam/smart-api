@@ -4950,18 +4950,28 @@ class AppointmentsController extends Controller
     {
         
         if ($request->service_id) {
-            $services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
-           
+            $child_services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
             $resource = Resources::whereId($request->resource_id)->first();
-            $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)->pluck('service_id');
-        
-            $available_services = array_filter($services, function ($service, $id) use ($machine_services) {
-                return in_array($id, $machine_services->toArray()); // Convert collection to array
-            }, ARRAY_FILTER_USE_BOTH);
-        
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'services' => $available_services,
-            ]);
+            $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+            ->where('service_id',$request->service_id)
+            ->first(); 
+            if($machine_services){
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'services' => $child_services,
+                ]);
+            }else{
+            
+                $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+                ->whereIn('service_id',array_keys($child_services))
+                ->pluck('service_id'); 
+    
+                $available_services = array_filter($child_services, function ($service, $id) use ($machine_services) {
+                    return in_array($id, $machine_services->toArray()); // Convert collection to array
+                }, ARRAY_FILTER_USE_BOTH);
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'services' => $available_services,
+                ]);
+            }
         }
 
         return ApiHelper::apiResponse($this->success, 'Record not found', false);
