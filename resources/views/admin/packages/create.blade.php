@@ -69,6 +69,12 @@
                         </div>
                         <small class="text-danger ml-1 mt-1"><b id="add_patient_id_error" class="create-plan-error"></b></small>
                     </div>
+                    <div class="fv-row col-md-2 mt-5">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Membership </label>
+                        <input type="text" id="patient_membership" class="form-control form-control-solid mb-3 mb-lg-0" disabled placeholder="No data">
+                            
+                        
+                    </div>
                     <div class="fv-row col-md-4 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
                         <select id="add_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id_1">

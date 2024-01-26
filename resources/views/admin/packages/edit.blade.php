@@ -78,14 +78,19 @@
                 data-kt-scroll-offset="300px">
                 <div class="form-group">
                     <div class="row">
-                        <div class="fv-row col-md-3 mt-5 select2-search">
+                        <div class="fv-row col-md-2 mt-5 select2-search">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name</label>
                             <h3 id="edit-patient-name"></h3>
+                        </div>
+                        <div class="fv-row col-md-2 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Membership </label>
+                            <h4 id="edit-membership-name" style="font-size:15px"></h4>
                         </div>
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Location</label>
                             <h3 id="edit-location-name"></h3>
                         </div>
+                       
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
                             <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id" required>
@@ -93,6 +98,7 @@
                             </select>
                             <small class="text-danger error-class"><b id='edit_appointment_id_error' class="error-msg"></b></small>
                         </div>
+                       
                     </div>
                 </div>
 
