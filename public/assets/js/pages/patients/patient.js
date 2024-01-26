@@ -85,6 +85,7 @@ function actions(data) {
     let delete_url = route('admin.patients.destroy', {id: id});
     let view_url = route('admin.patients.preview', {id: id});
     let assign_membership_url = route('admin.patients.preview', {id: id});
+    let cancel_url = route('admin.memberships.cancel', {id: id});
     if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -102,6 +103,12 @@ function actions(data) {
                             <span class="navi-text">Assign Membership</span>\
                         </a>\
                     </li>';
+                    actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="cancelMembership(`' + cancel_url + '`);" class="navi-link">\
+                    <span class="navi-icon"><i class="la la-cross"></i></span>\
+                    <span class="navi-text">Cancel Membership</span>\
+                    </a>\
+                </li>';
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`'+url+'`, `'+id+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
@@ -166,6 +173,52 @@ function assignMembership(url,id)
     $("#modal_edit_memberships_form").attr("action", route('admin.patients.assignmembership', {id: id}));
 
 }
+function cancelMembership(url) {
+   
+    swal.fire({
+        title: 'Are you sure you want to cancel?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, Cancel!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+       
+        if (result.value) {
+            
+                sendCancelMembershipRequest(url)
+            
+        }
+    });
+}
+function sendCancelMembershipRequest(route) {
+  
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route,
+        type: 'post',
+        cache: false,
+        success: function (response) {
+            console.log(response);
+            if (response.status) {
+                toastr.success(response.message);
+
+                reInitTable();
+            } else {
+                toastr.error(response.message);
+            }
+        },
+        error: function (xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
+
 function setEditData(response) {
 
     let genders = response.data.gender;

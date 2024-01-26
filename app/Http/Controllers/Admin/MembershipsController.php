@@ -72,6 +72,7 @@ class MembershipsController extends Controller
             ];
             if ($memberships->count()) {
                 foreach ($memberships as $membership) {
+                    $patient=User::whereId($membership->patient_id)->first();
                     $records['data'][] = [
                         'id' => $membership->id,
                         'code' => $membership->code,
@@ -79,7 +80,7 @@ class MembershipsController extends Controller
                         'start_date' => $membership->start_date,
                         'end_date' => $membership->end_date,
                         'membership_type_id' => $membership->membershipType->name ?? 'N/A',
-                        'patient' => $membership->membershipType->name ?? 'N/A',
+                        'patient' => $patient ?$patient->name : 'N/A',
                         'created_at' => Carbon::parse($membership->created_at)->format('F j,Y h:i A'),
                     ];
 
@@ -163,6 +164,11 @@ class MembershipsController extends Controller
         return ApiHelper::apiResponse($this->error, 'You can not change status of this membership', false);
 
     }
+    public function cancelMembership(Request $request)
+    {
+        Membership::where('patient_id',$request->id)->delete();
+        return ApiHelper::apiResponse($this->success, 'Membership cancelled Successfully');
+    }
     public function edit($id)
     {
         if (! Gate::allows('memberships_edit')) {
@@ -219,6 +225,7 @@ class MembershipsController extends Controller
     public function uploadMemberships(Request $request)
     {
         
+        
         if (!Gate::allows('memberships_import')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -235,7 +242,7 @@ class MembershipsController extends Controller
             $collections = (new FastExcel)->import($file);
             $rows = [];
             foreach ($collections as $collection) {
-               
+              
                 $data = [];
                 foreach ($collection as $key => $value) {
                     $convertedKey = strtolower(str_replace(' ', '_', trim($key)));
@@ -243,9 +250,9 @@ class MembershipsController extends Controller
                 }
                 $rows[] = $data;
             }
+            
             foreach ($rows as $row) {
                 if (strlen($row['code'])) {
-                    
                     $all_codes_list[] = $row['code'];
                 }
             }
