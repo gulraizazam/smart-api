@@ -1,11 +1,11 @@
 @extends('admin.layouts.master')
-@section('title', 'Patients')
+@section('title', 'Memberships')
 @section('content')
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Patients List', 'title' => 'Patients'])
+    @include('admin.partials.breadcrumb', ['module' => 'Memberships List', 'title' => 'Memberships'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,27 +31,28 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Patients</h3>
+                           
 
                         </div>
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('patients_destroy'))
-                                <div class="delete-records d-none">
-                                    <span>Selected Rows: <span class="checkbox-count"></span></span>
-                                    <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
-                                        <i class="fa fa-trash-alt"></i>Delete
-                                    </a>
-                                </div>&nbsp;&nbsp;&nbsp;
+                            
+                            @if(Gate::allows('memberships_import'))
+                                <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_memberships" class="btn btn-primary pull-right margin-r-5">
+                                    <i class="fa fa-upload"></i>
+                                    <span class="hidden-xs"> Import </span>
+                                </a>
                             @endif
-
-                            {{-- @if(Gate::allows('patients_create'))
-                                <a href="javascript:void(0);" onclick="createPatient('{{ route('admin.patients.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_patients">
+                            &nbsp;&nbsp;
+                          
+                            &nbsp;&nbsp;
+                            @if(Gate::allows('memberships_create'))
+                                <a href="javascript:void(0);" id="create_memberships" onclick="createMembership('{{ route('admin.memberships.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_memberships">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
-                            @endif --}}
+                            @endif
 
                         <!--end::Button-->
                         </div>
@@ -60,7 +61,7 @@
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                        @include('admin.patients.filters')
+                        @include('admin.memberships.filters')
                         <!--end::Search Form-->
 
                         <!--begin: Datatable-->
@@ -76,53 +77,70 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_patients" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="patients_add">
 
-            @include('admin.patients.create')
+
+    <div class="modal fade" id="modal_add_memberships" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="memberships_add">
+
+            @include('admin.memberships.create')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
-    <div class="modal fade" id="modal_edit_patients" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="edit_patients">
-
-            @include('admin.patients.edit')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div> 
     <div class="modal fade" id="modal_edit_memberships" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="edit_memberships">
 
-            @include('admin.patients.assignmembership')
+            @include('admin.memberships.edit')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
-    <div class="modal fade" id="modal_import_leads" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_import_memberships" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="import_leads">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="import_memberships">
 
-            @include('admin.leads.import')
+            @include('admin.memberships.import')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
     @push('js')
+        <script src="{{asset('assets/js/jquery.inputmask.bundle.min.js')}}"></script>
+        <script src="{{asset('assets/js/jquery.copy-to-clipboard.js')}}"></script>
 
-        <script src="{{asset('assets/js/pages/crud/forms/validation/patients/patient.js')}}"></script>
-
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/memberships.js')}}"></script>
+        <script src="{{asset('assets/js/search-phone.js')}}"></script>
     @endpush
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/patients/patient.js')}}"></script>
+       
+        <script src="{{asset('assets/js/pages/admin_settings/memberships.js')}}"></script>
+
+        <script>
+            jQuery(document).ready( function () {
+                
+                @if(request('from') != '' && request('to') != '')
+                    setTimeout( function () {
+                        $("#date_range").val("{{request('from')}}");
+                        //$("#search_created_from").val("{{request('from')}}");
+                        //$("#search_created_to").val("{{request('to')}}");
+                        $("#apply-filters").click();
+
+                    }, 800);
+                @endif
+            });
+           
+           
+            
+        
+                
+            
+        </script>
     @endpush
 
 @endsection

@@ -51,6 +51,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Models\Membership;
 use Illuminate\Support\Facades\Log;
 
 class PackagesController extends Controller
@@ -1447,8 +1448,16 @@ class PackagesController extends Controller
             $data = (object) $data;
 
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
-
-            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->first();
+            if($checkMembership)
+            {
+                if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
+                    $checkMembership->is_expired = ' - Expired';
+                }else{
+                    $checkMembership->is_expired = '';
+                }
+            }
+                return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
                 'packagebundles' => $packagebundles,
@@ -1463,6 +1472,7 @@ class PackagesController extends Controller
                 'appointmentArray' => $appointmentArray,
                 'discount_type' => config('constants.amount_types'),
                 'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
+                'membership'=>$checkMembership ? $checkMembership->membershipType->name .' - '.$checkMembership->code . $checkMembership->is_expired:'No membership'
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -1687,7 +1697,15 @@ class PackagesController extends Controller
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
-
+        $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->first();
+        if($checkMembership)
+        {
+            if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
+                $checkMembership->is_expired = ' - Expired';
+            }else{
+                $checkMembership->is_expired = '';
+            }
+        }
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'package' => $package,
             'packagebundles' => $packagebundles,
@@ -1697,6 +1715,7 @@ class PackagesController extends Controller
             'discount' => $discount,
             'paymentmodes' => $paymentmodes,
             'grand_total' => $grand_total,
+            'membership'=>$checkMembership ? $checkMembership->membershipType->name .' - '.$checkMembership->code . $checkMembership->is_expired:'No membership'
         ]);
     }
 
@@ -1869,9 +1888,18 @@ class PackagesController extends Controller
     public function getappointmentinfo(Request $request)
     {
         $appointmentArray = PlanAppointmentCalculation::tagAppointments($request);
-
-        return ApiHelper::apiResponse($this->success, 'Recode found', true, [
+        $checkMembership = Membership::with('membershiptype')->where('patient_id',$request->patient_id)->first();
+        if($checkMembership)
+        {
+            if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
+                $checkMembership->is_expired = ' - Expired';
+            }else{
+                $checkMembership->is_expired = '';
+            }
+        }
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
+            'membership'=>$checkMembership ? $checkMembership->membershipType->name .' - '.$checkMembership->code . $checkMembership->is_expired:'No membership'
         ]);
     }
 
@@ -2515,7 +2543,9 @@ class PackagesController extends Controller
     }
     public function viewPackage($id)
     {
+    
         $url = route('admin.packages.edit', $id);
+       
         return view('admin.packages.details', get_defined_vars());
     }
 }

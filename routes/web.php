@@ -54,6 +54,8 @@ use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\Reports\FinanceReportController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
+use App\Http\Controllers\Admin\MembershipsController;
+use App\Http\Controllers\Admin\MembershipTypesController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Reports\OperationsReportController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
@@ -344,7 +346,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     //Lead Import
     Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
     Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
-
+    Route::post('memberships/upload', [MembershipsController::class, 'uploadMemberships'])->name('memberships.upload');
     Route::resource('leads', LeadsController::class)->only('index');
     Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
     // Load and Save Lead Statuses
@@ -624,4 +626,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('dashboard/patient-monthly-follow-up/download', [PatientFollowupController::class, 'patientMonthlyFollowUpDownload'])->name('monthly_follow_up.download');
     /////Activity Logs Script
     Route::get('activitylogs', [ActivitylogsReportController::class, 'InsertLogs']);
+
+    ///////////Memberships routes/////
+    Route::resource('membershiptypes',MembershipTypesController::class)->only('index');
+    Route::resource('memberships',MembershipsController::class)->only('index');
 });
