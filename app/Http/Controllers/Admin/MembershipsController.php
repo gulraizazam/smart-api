@@ -218,17 +218,24 @@ class MembershipsController extends Controller
     }
     public function uploadMemberships(Request $request)
     {
+        
         if (!Gate::allows('memberships_import')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
+         $validator = \Validator::make($request->all(), [
+            'memberships_file' => ['required', 'mimes:xls,xlsx'],
+        ]);
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+        }
         try {
             $all_codes_list = [];
-            $new_codes_list = [];
             $check_memberships = [];
             $file = $request->file('memberships_file');
             $collections = (new FastExcel)->import($file);
             $rows = [];
             foreach ($collections as $collection) {
+               
                 $data = [];
                 foreach ($collection as $key => $value) {
                     $convertedKey = strtolower(str_replace(' ', '_', trim($key)));
