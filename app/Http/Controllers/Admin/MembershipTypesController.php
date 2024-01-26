@@ -185,8 +185,10 @@ class MembershipTypesController extends Controller
         if (! $record) {
             return null;
         }
-
-        $record->update($data);
+        $record->update([
+            'name'=>$data['name'],
+            'period'=>$data['period']
+        ]);
         if ($record) {
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {

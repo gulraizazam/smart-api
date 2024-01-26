@@ -605,6 +605,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
     Route::post('patient/assignmembership', [PatientsController::class, 'assignMembership'])->name('patients.assignmembership');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
+    Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
+
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

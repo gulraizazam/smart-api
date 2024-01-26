@@ -1448,7 +1448,7 @@ class PackagesController extends Controller
             $data = (object) $data;
 
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
-            $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->first();
+            $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->where('active',1)->first();
             if($checkMembership)
             {
                 if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
@@ -1697,7 +1697,7 @@ class PackagesController extends Controller
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
-        $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->first();
+        $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->where('active',1)->first();
         if($checkMembership)
         {
             if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
@@ -1888,7 +1888,7 @@ class PackagesController extends Controller
     public function getappointmentinfo(Request $request)
     {
         $appointmentArray = PlanAppointmentCalculation::tagAppointments($request);
-        $checkMembership = Membership::with('membershiptype')->where('patient_id',$request->patient_id)->first();
+        $checkMembership = Membership::with('membershiptype')->where('patient_id',$request->patient_id)->where('active',1)->first();
         if($checkMembership)
         {
             if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
