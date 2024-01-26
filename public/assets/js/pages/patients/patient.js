@@ -81,11 +81,10 @@ var table_columns = [
 function actions(data) {
 
     let id = data.id;
-
     let url = route('admin.patients.edit', {id: id});
     let delete_url = route('admin.patients.destroy', {id: id});
     let view_url = route('admin.patients.preview', {id: id});
-
+    let assign_membership_url = route('admin.patients.preview', {id: id});
     if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -97,6 +96,12 @@ function actions(data) {
                         Choose an action: \
                         </li>';
         if (permissions.edit) {
+            actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="assignMembership(`'+assign_membership_url+'`, `'+id+'`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Assign Membership</span>\
+                        </a>\
+                    </li>';
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`'+url+'`, `'+id+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
@@ -137,9 +142,9 @@ function editRow(url, id) {
     $("#modal_edit_patients_form").attr("action", route('admin.patients.update', {id: id}));
 
     $.ajax({
-        // headers: {
-        //     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        // },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
         url: url,
         type: "GET",
         cache: false,
@@ -155,18 +160,26 @@ function editRow(url, id) {
 
 
 }
+function assignMembership(url,id)
+{
+    $("#modal_edit_memberships").modal("show");
+    $("#modal_edit_memberships_form").attr("action", route('admin.patients.assignmembership', {id: id}));
 
+}
 function setEditData(response) {
 
     let genders = response.data.gender;
     let patient = response.data.patient;
+   
     let gender_option = '<option value="">All</option>';
 
     Object.entries(genders).forEach(function (gender) {
         gender_option += '<option value="'+gender[0]+'">'+gender[1]+'</option>';
     });
+    
 
     $("#edit_gender_id").html(gender_option);
+  
     $("#edit_name").val(patient.name);
     $("#edit_email").val(patient.email);
     $("#edit_old_phone").val(patient.phone);
