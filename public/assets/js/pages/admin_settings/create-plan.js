@@ -587,6 +587,8 @@ function setEditData(response) {
         let patient = package.user;
         let location = package.location;
         let history_options = noRecordFoundTable(5);
+        let membership = response.data.membership;
+      
         if (packageadvances.length) {
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
@@ -729,6 +731,7 @@ function setEditData(response) {
 
 
         $("#edit_appointment_id").html(appointment_options);
+        $("#edit-membership-name").text(membership);
         $("#edit_service_id").html(serviceOptions);
 
         appointmentCheck(package);
@@ -979,6 +982,7 @@ function displayData(response) {
         let package = response.data.package;
         let packagebundles = response.data.packagebundles;
         let packageservices = response.data.packageservices;
+        let membership = response.data.membership;
 
         $("#package_pdf").attr("href", route('admin.packages.package_pdf', package.id))
 
@@ -1076,7 +1080,7 @@ function displayData(response) {
         }
 
         $(".display_plans").html(service_options);
-
+        $("#membership_name").text(membership);
 
 
         $(".plan_history").html(history_options);
@@ -1340,6 +1344,7 @@ function setServices(response) {
 
 function getAppointments(patient) {
 
+   
     let location = $("#add_plan_location_id").val();
 
     if (location != '' && patient != '') {
@@ -1359,8 +1364,6 @@ function getAppointments(patient) {
             type: "GET",
             cache: false,
             success: function (response) {
-                //  $("#modal_edit_regions").modal("show");
-
                 setAppointments(response);
 
             },
@@ -1380,7 +1383,8 @@ function setAppointments(response) {
 
         let appointments = response.data.appointments;
         let appointment_options = '';
-
+        let membership = response.data.membership;
+        
         if (appointments.length) {
 
             Object.values(appointments).forEach(function (value) {
@@ -1390,7 +1394,8 @@ function setAppointments(response) {
             $("#add_appointment_id").html(appointment_options);
 
         }
-
+        $("#patient_membership").val(membership);
+        $("#patient_membership").attr('disabled',true);
     } catch (error) {
         showException(error);
     }

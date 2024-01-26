@@ -395,7 +395,10 @@
                         Gate::allows('invoices_manage') ||
                         Gate::allows('pabao_records_manage') ||
                         Gate::allows('machineType_manage') ||
-                        Gate::allows('towns_manage'))
+                        Gate::allows('towns_manage') ||
+                        Gate::allows('memberships_manage') ||
+                        Gate::allows('membershiptypes_manage'))
+                        
                     <li class="menu-item menu-item-submenu {{ openMenu([
                         'admin.settings.index',
                         'admin.user_operator_settings.index',
@@ -431,6 +434,8 @@
                         'admin.custom_forms.edit',
                         'admin.custom_form_feedbacks.preview_form',
                         'admin.custom_form_feedbacks.fill_form',
+                        'admin.memberships.index',
+                        'admin.membershiptypes.index',
                     ]) }}"
                         aria-haspopup="true" data-menu-toggle="hover">
 
@@ -458,7 +463,36 @@
                                 </ul>
                             </div>
                         @endcan
+                        @can('memberships_manage')
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{ activeMenu('admin.membershiptypes.index') }}" aria-haspopup="true">
+                                        <a href="{{ route('admin.membershiptypes.index') }}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Membership Types</span>
+                                        </a>
+                                    </li>
 
+                                </ul>
+                            </div>
+                            <div class="menu-submenu">
+                                <i class="menu-arrow"></i>
+                                <ul class="menu-subnav">
+                                    <li class="menu-item {{ activeMenu('admin.memberships.index') }}" aria-haspopup="true">
+                                        <a href="{{ route('admin.memberships.index') }}" class="menu-link">
+                                            <i class="menu-bullet menu-bullet-dot">
+                                                <span></span>
+                                            </i>
+                                            <span class="menu-text">Memberships</span>
+                                        </a>
+                                    </li>
+
+                                </ul>
+                            </div>
+                        @endcan
                         @can('user_operator_settings_manage')
                             <div class="menu-submenu">
                                 <i class="menu-arrow"></i>
