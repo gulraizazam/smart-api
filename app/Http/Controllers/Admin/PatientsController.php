@@ -1462,15 +1462,16 @@ class PatientsController extends Controller
     }
     public function assignMembership(Request $request)
     {
-        $checkMembership = Membership::with('membershipType')->where('code',$request->membership_code)
-       
+        $checkPatientMembership = Membership::where('patient_id',$request->id)->first();
+        if($checkPatientMembership){
+            return ApiHelper::apiResponse($this->error, 'A membership is already assigned to this patient');
+        }
+        $checkMembership = Membership::with('membershipType')
+        ->where('code',$request->membership_code)
         ->where('memberships.active',1)
         ->where('patient_id',null)
         ->first();
-       
-        
         if($checkMembership){
-
             $checkMembership->update(
                 [
                     'patient_id'=>$request->id,
