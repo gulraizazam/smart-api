@@ -16,16 +16,16 @@ class CreateMembershipsTable extends Migration
         Schema::create('memberships', function (Blueprint $table) {
             $table->id();
             $table->string('code',45);
-            $table->foreignId('membership_type_id')->constrained('membership_types');
+            $table->unsignedBigInteger('membership_type_id');
             $table->date('start_date')->nullable();
             $table->date('end_date')->nullable();
-            $table->foreignId('patient_id')->nullable()->constrained('users');
+            $table->unsignedBigInteger('patient_id')->nullable();
             $table->boolean('active')->default(1);
-            $table->foreignId('created_by')->constrained('users');
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
-            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->softDeletes();
-            $table->foreignId('deleted_by')->nullable()->constrained('users');
+            $table->unsignedBigInteger('deleted_by')->nullable();
         });
     }
 

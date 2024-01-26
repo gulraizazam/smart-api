@@ -18,11 +18,11 @@ class CreateMembershipTypesTable extends Migration
             $table->string('name',45);
             $table->unsignedSmallInteger('period');
             $table->boolean('active')->default(1);
-            $table->foreignId('created_by')->constrained('users');
+            $table->unsignedBigInteger('created_by');
             $table->timestamps();
-            $table->foreignId('updated_by')->nullable()->constrained('users');
+            $table->unsignedBigInteger('updated_by')->nullable();
             $table->softDeletes();
-            $table->foreignId('deleted_by')->nullable()->constrained('users');
+            $table->unsignedBigInteger('deleted_by')->nullable();
             $table->index('name');
         });
     }
