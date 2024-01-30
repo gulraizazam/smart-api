@@ -15,21 +15,20 @@ use Illuminate\Support\Facades\DB;
 
 class MembershipType extends Model
 {
-    use HasFactory,SoftDeletes;
-    protected $fillable = ['name', 'status','period', 'created_by', 'updated_by', 'deleted_by','active'];
+    use HasFactory, SoftDeletes;
+    protected $fillable = ['name', 'status', 'period', 'amount', 'created_by', 'updated_by', 'deleted_by', 'active'];
     protected $table = 'membership_types';
 
     public function createdBy()
     {
-        return $this->belongsTo(User::class,'created_by');
+        return $this->belongsTo(User::class, 'created_by');
     }
     public function updatedBy()
     {
-        return $this->belongsTo(User::class,'updated_by');
+        return $this->belongsTo(User::class, 'updated_by');
     }
     public function deletedBy()
     {
-        return $this->belongsTo(User::class,'deleted_by');
+        return $this->belongsTo(User::class, 'deleted_by');
     }
-    
 }

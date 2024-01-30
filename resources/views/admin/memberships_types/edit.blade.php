@@ -41,6 +41,13 @@
 
 
                     </div>
+                    <div class="row">
+
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0"> Amount <span class="text text-danger">*</span></label>
+                            <input type="number" id="edit_membership_amount" name="amount" class="form-control form-control-lg form-control-solid mb-2">
+                        </div>
+                    </div>
                 </div>
 
             </div>
