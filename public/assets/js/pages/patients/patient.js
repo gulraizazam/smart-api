@@ -34,10 +34,9 @@ var table_columns = [
 
             if (data.membership == null) {
                 return 'No Membership';
-            } else {
-
-                return (data.membership.code);
             }
+            return data.membership.code + ' - ' + (data.membership.active === 1 ? 'Active' : 'Inactive');
+
 
         }
     }, {

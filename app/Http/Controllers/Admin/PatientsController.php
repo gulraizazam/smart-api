@@ -267,7 +267,7 @@ class PatientsController extends Controller
         }
 
         $patient = Patients::getData($id);
-  
+
         if (!$patient) {
             return ApiHelper::apiResponse($this->success, 'Patient not found.', false);
         }
@@ -275,7 +275,7 @@ class PatientsController extends Controller
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'patient' => $patient,
             'gender' => config('constants.gender_array'),
-          
+
         ]);
     }
 
@@ -287,7 +287,7 @@ class PatientsController extends Controller
      */
     public function update(Request $request, $id)
     {
-       
+
         if (!Gate::allows('patients_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -314,7 +314,7 @@ class PatientsController extends Controller
 
             Appointments::where('patient_id', '=', $id)->update(['name' => $data['name']]);
             Leads::where(['phone' => $old_phone])->update(['name' => $data['name'], 'phone' => $data['phone'], 'gender' => $data['gender']]);
-            
+
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         }
 
@@ -1462,27 +1462,26 @@ class PatientsController extends Controller
     }
     public function assignMembership(Request $request)
     {
-        $checkPatientMembership = Membership::where('patient_id',$request->id)->first();
-        if($checkPatientMembership){
+        $checkPatientMembership = Membership::where('patient_id', $request->id)->first();
+        if ($checkPatientMembership) {
             return ApiHelper::apiResponse($this->error, 'A membership is already assigned to this patient');
         }
         $checkMembership = Membership::with('membershipType')
-        ->where('code',$request->membership_code)
-        ->where('memberships.active',1)
-        ->where('patient_id',null)
-        ->first();
-        if($checkMembership){
+            ->where('code', $request->membership_code)
+            ->where('memberships.active', 1)
+            ->where('patient_id', null)
+            ->first();
+        if ($checkMembership) {
             $checkMembership->update(
                 [
-                    'patient_id'=>$request->id,
-                    'start_date'=>Carbon::now()->format('Y-m-d'),
-                    'end_date' =>Carbon::now()->addDays($checkMembership->membershipType->period)->format('Y-m-d')
+                    'patient_id' => $request->id,
+                    'start_date' => Carbon::now()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->addDays($checkMembership->membershipType->period)->format('Y-m-d')
                 ]
             );
             return ApiHelper::apiResponse($this->success, 'Membership assigned successfully');
-        }else{
+        } else {
             return ApiHelper::apiResponse($this->error, 'Membership is inactive or already assigned to a patient');
         }
-        
     }
 }

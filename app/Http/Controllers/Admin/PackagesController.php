@@ -1448,16 +1448,15 @@ class PackagesController extends Controller
             $data = (object) $data;
 
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
-            $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->where('active',1)->first();
-            if($checkMembership)
-            {
-                if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
-                    $checkMembership->is_expired = ' - Expired';
-                }else{
-                    $checkMembership->is_expired = '';
-                }
+            $checkMembership = Membership::with('membershiptype')->where('patient_id', $package->patient_id)->first();
+            if ($checkMembership && $checkMembership->end_date < now()->format('Y-m-d')) {
+                $checkMembership->is_expired = ' - Expired';
             }
-                return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            if ($checkMembership) {
+                $checkMembership->is_active = ($checkMembership && $checkMembership->active == 1) ? ' - Active' : ' - Inactive';
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
                 'packagebundles' => $packagebundles,
@@ -1472,7 +1471,7 @@ class PackagesController extends Controller
                 'appointmentArray' => $appointmentArray,
                 'discount_type' => config('constants.amount_types'),
                 'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
-                'membership'=>$checkMembership ? $checkMembership->membershipType->name .' - '.$checkMembership->code . $checkMembership->is_expired:'No membership'
+                'membership' => $checkMembership ? "{$checkMembership->membershipType->name} - {$checkMembership->code}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -1697,15 +1696,15 @@ class PackagesController extends Controller
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
-        $checkMembership = Membership::with('membershiptype')->where('patient_id',$package->patient_id)->where('active',1)->first();
-        if($checkMembership)
-        {
-            if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
-                $checkMembership->is_expired = ' - Expired';
-            }else{
-                $checkMembership->is_expired = '';
-            }
+        $checkMembership = Membership::with('membershiptype')->where('patient_id', $package->patient_id)->first();
+        if ($checkMembership && $checkMembership->end_date < now()->format('Y-m-d')) {
+            $checkMembership->is_expired = ' - Expired';
         }
+        if ($checkMembership) {
+            $checkMembership->is_active = ($checkMembership && $checkMembership->active == 1) ? ' - Active' : ' - Inactive';
+        }
+
+
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'package' => $package,
             'packagebundles' => $packagebundles,
@@ -1715,7 +1714,7 @@ class PackagesController extends Controller
             'discount' => $discount,
             'paymentmodes' => $paymentmodes,
             'grand_total' => $grand_total,
-            'membership'=>$checkMembership ? $checkMembership->membershipType->name .' - '.$checkMembership->code . $checkMembership->is_expired:'No membership'
+            'membership' => $checkMembership ? "{$checkMembership->membershipType->name} - {$checkMembership->code}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
         ]);
     }
 
@@ -1888,18 +1887,19 @@ class PackagesController extends Controller
     public function getappointmentinfo(Request $request)
     {
         $appointmentArray = PlanAppointmentCalculation::tagAppointments($request);
-        $checkMembership = Membership::with('membershiptype')->where('patient_id',$request->patient_id)->where('active',1)->first();
-        if($checkMembership)
-        {
-            if($checkMembership->end_date < Carbon::now()->format('Y-m-d')){
-                $checkMembership->is_expired = ' - Expired';
-            }else{
-                $checkMembership->is_expired = '';
-            }
+        $checkMembership = Membership::with('membershiptype')->where('patient_id', $request->patient_id)->first();
+
+        if ($checkMembership && $checkMembership->end_date < now()->format('Y-m-d')) {
+            $checkMembership->is_expired = ' - Expired';
+        } else {
+            $checkMembership->is_expired = '';
         }
+
+        $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
-            'membership'=>$checkMembership ? $checkMembership->membershipType->name .' - '.$checkMembership->code . $checkMembership->is_expired:'No membership'
+            'membership' => $checkMembership ? "{$checkMembership->membershipType->name} - {$checkMembership->code}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
         ]);
     }
 
@@ -2543,9 +2543,9 @@ class PackagesController extends Controller
     }
     public function viewPackage($id)
     {
-    
+
         $url = route('admin.packages.edit', $id);
-       
+
         return view('admin.packages.details', get_defined_vars());
     }
 }
