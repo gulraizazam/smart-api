@@ -22,6 +22,13 @@ var AddMembershipValidation = function () {
                             }
                         }
                     },
+                    amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The amount field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
@@ -36,7 +43,7 @@ var AddMembershipValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -52,7 +59,7 @@ var AddMembershipValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             AddValidation();
         }
     };
@@ -81,6 +88,13 @@ var EditUserValidation = function () {
                             }
                         }
                     },
+                    amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The amount field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
@@ -95,7 +109,7 @@ var EditUserValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -111,13 +125,13 @@ var EditUserValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             EditValidation();
         }
     };
 }();
 
-jQuery(document).ready(function() {
+jQuery(document).ready(function () {
     AddMembershipValidation.init();
     EditUserValidation.init();
 });
