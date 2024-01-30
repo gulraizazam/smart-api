@@ -1767,15 +1767,16 @@ class AppointmentsController extends Controller
                 }
             } else {
                 $lead = Leads::whereId($request->lead_id)->first();
-                    $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                $appointment_data['email'] = $lead->email;
+                $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
                 } else {
-
                     $appointment_data['patient_id'] = $patient->id;
                     Patients::where(['id' => $patient->id])->update([
                         'name' => $appointment_data['name'],
+                        'email' => $appointment_data['email'],
                         'gender' => $appointment_data['gender'],
                         'referred_by' => $appointment_data['referred_by'] ?? null,
                     ]);
