@@ -212,8 +212,16 @@ class MembershipTypesController extends Controller
         $membershipType = MembershipType::find($id);
 
         if ($membershipType) {
-            $membershipType->delete();
-            return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully');
+
+            $find_membership = Membership::where('membership_type_id', $id)->first();
+            if ($find_membership) {
+                $membershipType->update(['active' => 0]);
+                Membership::where('membership_type_id', $id)->update(['active' => 0]);
+                return ApiHelper::apiResponse($this->error, 'Record has been deactivated successfully');
+            } else {
+                $membershipType->delete();
+                return ApiHelper::apiResponse($this->error, 'Record has been deleted successfully');
+            }
         }
         return ApiHelper::apiResponse($this->success, 'Resource not found', false);
     }
