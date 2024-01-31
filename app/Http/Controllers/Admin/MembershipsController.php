@@ -32,8 +32,6 @@ class MembershipsController extends Controller
 
     public function index()
     {
-
-
         if (!Gate::allows('memberships_manage')) {
             return abort(401);
         }
