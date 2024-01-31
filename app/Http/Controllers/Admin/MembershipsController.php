@@ -36,12 +36,12 @@ class MembershipsController extends Controller
      */
     public function index()
     {
-        if (! Gate::allows('memberships_manage')) {
+        if (!Gate::allows('memberships_manage')) {
             return abort(401);
         }
         return view('admin.memberships.index');
     }
-      /**
+    /**
      * Display a listing of Lead_statuse.
      *
      * @param \Illuminate\Http\Request
@@ -50,7 +50,7 @@ class MembershipsController extends Controller
     public function datatable(Request $request)
     {
         try {
-           
+
             $filename = 'memberships';
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
@@ -62,17 +62,17 @@ class MembershipsController extends Controller
             $iTotalRecords = $this->getTotalRecords($request, Auth::User()->account_id, $apply_filter);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
             $memberships = $this->getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
-            $Users = User::getAllRecords(Auth::User()->account_id)->pluck('name','id');
-           $membershipType = MembershipType::where(['active'=>1])->pluck('name','id');
+            $Users = User::getAllRecords(Auth::User()->account_id)->pluck('name', 'id');
+            $membershipType = MembershipType::where(['active' => 1])->pluck('name', 'id');
             $records['active_filters'] = $apply_filter;
             $records['filter_values'] = [
                 'status' => config('constants.status'),
-                'users'=>$Users,
-                'membershipType'=>$membershipType
+                'users' => $Users,
+                'membershipType' => $membershipType
             ];
             if ($memberships->count()) {
                 foreach ($memberships as $membership) {
-                    $patient=User::whereId($membership->patient_id)->first();
+                    $patient = User::whereId($membership->patient_id)->first();
                     $records['data'][] = [
                         'id' => $membership->id,
                         'code' => $membership->code,
@@ -80,10 +80,9 @@ class MembershipsController extends Controller
                         'start_date' => $membership->start_date,
                         'end_date' => $membership->end_date,
                         'membership_type_id' => $membership->membershipType->name ?? 'N/A',
-                        'patient' => $patient ?$patient->name : 'N/A',
+                        'patient' => $patient ? $patient->name : 'N/A',
                         'created_at' => Carbon::parse($membership->created_at)->format('F j,Y h:i A'),
                     ];
-
                 }
                 $records['permissions'] = [
                     'edit' => Gate::allows('memberships_edit'),
@@ -107,7 +106,7 @@ class MembershipsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
-   
+
     public function create()
     {
         if (!Gate::allows('memberships_create')) {
@@ -117,13 +116,13 @@ class MembershipsController extends Controller
             ['active', '=', '1'],
         ])->get()->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'membershipType' =>$membershipType,
-           
+            'membershipType' => $membershipType,
+
         ]);
     }
     public function store(Request $request)
     {
-        if (! Gate::allows('memberships_create')) {
+        if (!Gate::allows('memberships_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $validator = $this->verifyFields($request);
@@ -132,7 +131,7 @@ class MembershipsController extends Controller
         }
         $data = $request->all();
         $data['account_id'] = Auth::user()->account_id;
-        $data['created_by'] =Auth::id();
+        $data['created_by'] = Auth::id();
         $record = Membership::create($data);
         if ($record) {
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
@@ -143,47 +142,46 @@ class MembershipsController extends Controller
     protected function verifyFields(Request $request)
     {
         return $validator = \Validator::make($request->all(), [
-            'code' => ['required',Rule::unique('memberships', 'code') ],
+            'code' => ['required', Rule::unique('memberships', 'code')],
             'membership_type_id' => 'required|exists:membership_types,id',
-          
+
         ]);
     }
     public function status(Request $request)
     {
-        if (! Gate::allows('memberships_active')) {
+        if (!Gate::allows('memberships_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        if($request->status=="0"){
+        if ($request->status == "0") {
             $response = $this->InactiveRecord($request->id, $request->status);
-        }else{
+        } else {
             $response = $this->activeRecord($request->id, $request->status);
         }
         if ($response) {
             return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
         }
         return ApiHelper::apiResponse($this->error, 'You can not change status of this membership', false);
-
     }
     public function cancelMembership(Request $request)
     {
-        Membership::where('patient_id',$request->id)->delete();
+        Membership::where('patient_id', $request->id)->delete();
         return ApiHelper::apiResponse($this->success, 'Membership cancelled Successfully');
     }
     public function edit($id)
     {
-        if (! Gate::allows('memberships_edit')) {
+        if (!Gate::allows('memberships_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $membership = Membership::find($id);
-        $membershipType = MembershipType::where(['active'=>1])->pluck('name','id');
+        $membershipType = MembershipType::where(['active' => 1])->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'membership' => $membership,
-            'membershipType'=>$membershipType
+            'membershipType' => $membershipType
         ]);
     }
     public function update(Request $request, $id)
     {
-        if (! Gate::allows('memberships_edit')) {
+        if (!Gate::allows('memberships_edit')) {
             return abort(401);
         }
         $validator = $this->verifyFields($request);
@@ -193,16 +191,16 @@ class MembershipsController extends Controller
         $data = $request->all();
         $data['account_id'] = Auth::user()->account_id;
         $data['updated_by'] = Auth::id();
-       
+
         $record = Membership::where([
             'id' => $id,
         ])->first();
-        if (! $record) {
+        if (!$record) {
             return null;
         }
 
         $record->update($data);
-       
+
         if ($record) {
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {
@@ -211,25 +209,25 @@ class MembershipsController extends Controller
     }
     public function destroy($id)
     {
-        if (! Gate::allows('memberships_destroy')) {
+        if (!Gate::allows('memberships_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $membership = Membership::find($id);
 
         if ($membership) {
             $membership->delete();
-            return ApiHelper::apiResponse($this->success, 'Record deleted Successfully');
+            return ApiHelper::apiResponse($this->error, 'Record has been deleted Successfully');
         }
         return ApiHelper::apiResponse($this->error, 'Data not found', false);
     }
     public function uploadMemberships(Request $request)
     {
-        
-        
+
+
         if (!Gate::allows('memberships_import')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-         $validator = \Validator::make($request->all(), [
+        $validator = \Validator::make($request->all(), [
             'memberships_file' => ['required', 'mimes:xls,xlsx'],
         ]);
         if ($validator->fails()) {
@@ -242,7 +240,7 @@ class MembershipsController extends Controller
             $collections = (new FastExcel)->import($file);
             $rows = [];
             foreach ($collections as $collection) {
-              
+
                 $data = [];
                 foreach ($collection as $key => $value) {
                     $convertedKey = strtolower(str_replace(' ', '_', trim($key)));
@@ -250,7 +248,7 @@ class MembershipsController extends Controller
                 }
                 $rows[] = $data;
             }
-            
+
             foreach ($rows as $row) {
                 if (strlen($row['code'])) {
                     $all_codes_list[] = $row['code'];
@@ -262,25 +260,23 @@ class MembershipsController extends Controller
                     ->orderBy('id', 'desc')->get()->unique('code')
                     ->pluck('code');
                 if ($check_memberships) {
-                    $new_codes_list= array_diff($all_codes_list, $check_memberships->toArray());
+                    $new_codes_list = array_diff($all_codes_list, $check_memberships->toArray());
                     $check_memberships = $check_memberships->toArray();
                 }
             }
             foreach ($rows as $row) {
-                $membership_type__id = MembershipType::where([ 'name' => $row['membership_type']])->first()->id ?? null;
-                if( $membership_type__id){
+                $membership_type__id = MembershipType::where(['name' => $row['membership_type']])->first()->id ?? null;
+                if ($membership_type__id) {
                     $membership_data = [
                         'code' => $row['code'],
                         'membership_type_id' => $membership_type__id,
-                        'created_by' =>Auth::id(),
+                        'created_by' => Auth::id(),
                     ];
-                    
+
                     $membership = Membership::orderBy('id', 'desc')->updateOrCreate([
                         'code' => $row['code'],
                     ], $membership_data);
                 }
-                
-
             };
             return ApiHelper::apiResponse($this->success, 'Memberships has been imported');
         } catch (\Exception $e) {
@@ -290,7 +286,7 @@ class MembershipsController extends Controller
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
-       
+
         if (count($where)) {
             if (\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
                 return count(DB::table('memberships')
@@ -298,28 +294,27 @@ class MembershipsController extends Controller
                     ->get());
             } else {
                 return count(DB::table('memberships')
-                   
+
                     ->where($where)
                     ->where('memberships.active', 1)
-                    
+
                     ->get());
             }
-        }
-        else {
+        } else {
             return Membership::count();
         }
     }
     public static function membershiptype_filters($request, $account_id, $apply_filter)
     {
         $filters = getFilters($request->all());
-     
+
         $where = [];
-        
+
         if (hasFilter($filters, 'code')) {
             $where[] = [
                 'memberships.code',
                 'like',
-                '%'.$filters['code'].'%',
+                '%' . $filters['code'] . '%',
             ];
             Filters::put(Auth::User()->id, 'memberships', 'code', $filters['code']);
         } else {
@@ -330,13 +325,13 @@ class MembershipsController extends Controller
                     $where[] = [
                         'memberships.code',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'memberships', 'code').'%',
+                        '%' . Filters::get(Auth::User()->id, 'memberships', 'code') . '%',
                     ];
                 }
             }
         }
-       
-       
+
+
         if (hasFilter($filters, 'membership_type_id')) {
             $where[] = [
                 'memberships.membership_type_id',
@@ -444,8 +439,6 @@ class MembershipsController extends Controller
                     ->get();
             }
         }
-       
-       
     }
     public static function activeRecord($id, $status)
     {
@@ -453,27 +446,25 @@ class MembershipsController extends Controller
         $membership = Membership::find($id);
         $checkMembershipType = MembershipType::whereId($membership->membership_type_id)->first();
 
-        if (! $membership) {
+        if (!$membership) {
             return false;
         }
-        if($checkMembershipType->active==0){
+        if ($checkMembershipType->active == 0) {
             return false;
         }
         $record = $membership->update(['active' => $status]);
 
 
         return $record;
-
     }
     public static function InactiveRecord($id)
     {
-        $membership= Membership::find($id);
-        if (! $membership) {
+        $membership = Membership::find($id);
+        if (!$membership) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $membership->update(['active' => 0]);
-        
+
         return $record;
     }
-    
 }
