@@ -35,9 +35,9 @@ var table_columns = [
             if (data.membership == null) {
                 return 'No Membership';
             }
-            return data.membership.code + ' - ' + (data.membership.active === 1 ? 'Active' : 'Inactive');
-
-
+            var end_date = moment(data.membership.end_date);
+            var isExpired = end_date.isBefore(moment());
+            return data.membership.code + ' - ' + (isExpired ? 'Expired' : (data.membership.active === 1 ? 'Active' : 'Inactive'));
         }
     }, {
         field: 'phone',
