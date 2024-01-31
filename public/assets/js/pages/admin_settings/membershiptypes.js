@@ -13,7 +13,7 @@ var table_columns = [
         width: 'auto',
     }, {
         field: 'amount',
-        title: 'Amount',
+        title: 'Price',
         sortable: false,
         width: 'auto',
     }, {
