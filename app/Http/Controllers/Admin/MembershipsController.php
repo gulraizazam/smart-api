@@ -37,6 +37,7 @@ class MembershipsController extends Controller
     public function index()
     {
         if (!Gate::allows('memberships_manage')) {
+        if (!Gate::allows('memberships_manage')) {
             return abort(401);
         }
         return view('admin.memberships.index');
@@ -52,8 +53,6 @@ class MembershipsController extends Controller
         try {
 
             $filename = 'memberships';
-            $filters = getFilters($request->all());
-            $apply_filter = checkFilters($filters, $filename);
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
             $records = [];
@@ -189,22 +188,14 @@ class MembershipsController extends Controller
             return ApiHelper::apiResponse($this->success, $validator->messages()->first());
         }
         $data = $request->all();
-        $data['account_id'] = Auth::user()->account_id;
         $data['updated_by'] = Auth::id();
 
-        $record = Membership::where([
-            'id' => $id,
-        ])->first();
-        if (!$record) {
-            return null;
-        }
-
-        $record->update($data);
-
+        $record = Membership::find($id);
         if ($record) {
+            $record->update($data);
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {
-            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
+            return ApiHelper::apiResponse($this->error, 'Something went wrong, please try again later.', false);
         }
     }
     public function destroy($id)
@@ -218,7 +209,7 @@ class MembershipsController extends Controller
             $membership->delete();
             return ApiHelper::apiResponse($this->error, 'Record has been deleted Successfully');
         }
-        return ApiHelper::apiResponse($this->error, 'Data not found', false);
+        return ApiHelper::apiResponse($this->error, 'Membership not found', false);
     }
     public function uploadMemberships(Request $request)
     {
