@@ -33,9 +33,14 @@
                         <strong style="font-size:18px;display: block;" id="user_name"></strong>
                     </div>
                     <div class="form-group col-md-4">
+                        <label style="font-size: 14px;">Membership</label>
+                        <strong style="font-size:18px;display: block;" id="membership_name"></strong>
+                    </div>
+                    <div class="form-group col-md-4">
                         <label style="font-size: 14px;">Centre</label>
                         <strong style="font-size:18px;display: block;" id="location_name"></strong>
                     </div>
+                   
                 </div>
             </div>
 

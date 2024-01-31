@@ -45,6 +45,8 @@ use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
+use App\Http\Controllers\Admin\MembershipsController;
+use App\Http\Controllers\Admin\MembershipTypesController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
@@ -596,6 +598,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Route start for plans in appointment module*/
     Route::get('appointmentplans/{appointment_id}', [AppointmentsPlansController::class, 'create'])->name('appointmentplans.create');
     /*Route end for plans in appointment module*/
+    Route::resource('membershiptypes', MembershipTypesController::class)->except('index');
+    Route::post('membershiptypes/datatable', [MembershipTypesController::class, 'datatable'])->name('membershiptypes.datatable');
+    Route::post('membershiptypes/status', [MembershipTypesController::class, 'status'])->name('membershiptypes.status');
+    Route::resource('memberships', MembershipsController::class)->except('index');
+    Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
+    Route::post('patient/assignmembership', [PatientsController::class, 'assignMembership'])->name('patients.assignmembership');
+    Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
+    Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
 
 });
 

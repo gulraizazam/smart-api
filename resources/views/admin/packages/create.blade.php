@@ -47,8 +47,7 @@
         <input type="hidden" name="slug_1" id="slug_1" class="form-control">
         <input type="hidden" id="client_id" class="form-control">
         <input type="hidden" name="patient_id_1" id="parent_id_1" class="form-control">
-        <div class="d-flex flex-column scroll-y me-n7 pe-7" id="modal_appointment_plan_section" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}"
-            data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+        <div class="d-flex flex-column scroll-y me-n7 pe-7" id="modal_appointment_plan_section" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
             <div class="form-group">
                 <div class="row">
                     <div class="fv-row col-md-3 mt-5">
@@ -62,12 +61,17 @@
                         <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
                         <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient plan_search_patient" placeholder="Patient Search">
                         <input type="hidden" class="filter-field search_field" id="add_patient_id">
-                        <span class="plan_search_patient_croxcli" style="display: none; padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times"
-                                aria-hidden="true"></i></span>
+                        <span class="plan_search_patient_croxcli" style="display: none; padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
                         <div class="suggesstion-box" style="display: none;">
                             <ul class="suggestion-list"></ul>
                         </div>
                         <small class="text-danger ml-1 mt-1"><b id="add_patient_id_error" class="create-plan-error"></b></small>
+                    </div>
+                    <div class="fv-row col-md-2 mt-5">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Membership </label>
+                        <input type="text" id="patient_membership" class="form-control form-control-solid mb-3 mb-lg-0" disabled placeholder="No data">
+
+
                     </div>
                     <div class="fv-row col-md-4 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
@@ -105,7 +109,7 @@
 
                     <div class="fv-row col-md-4 mt-5" id="discount_value_div">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                        <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled min="0" oninput="validity.valid||(value='');">
+                        <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled min="0" oninput="validity.valid||(value='');" step=".001">
                         <small class="text-danger ml-1 mt-1"><b id="add_discount_value_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-4 mt-5">

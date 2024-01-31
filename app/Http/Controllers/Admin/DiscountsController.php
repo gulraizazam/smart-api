@@ -42,7 +42,7 @@ class DiscountsController extends Controller
      */
     public function index()
     {
-        if (! Gate::allows('discounts_manage')) {
+        if (!Gate::allows('discounts_manage')) {
             return abort(401);
         }
 
@@ -56,7 +56,7 @@ class DiscountsController extends Controller
      */
     public function create()
     {
-        if (! Gate::allows('discounts_create')) {
+        if (!Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -67,7 +67,6 @@ class DiscountsController extends Controller
                 'discount_groups' => config('constants.discount_groups'),
                 'amount_types' => config('constants.amount_types'),
             ]);
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -80,18 +79,18 @@ class DiscountsController extends Controller
      */
     public function store(Request $request)
     {
-        
-        if (! Gate::allows('discounts_create')) {
+
+        if (!Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         try {
-            if($request->type =="Configurable"){
+            if ($request->type == "Configurable") {
                 $validator = $this->verifyConfigurableFields($request);
-            }else{
+            } else {
                 $validator = $this->verifyFields($request);
             }
-            
+
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
@@ -107,11 +106,10 @@ class DiscountsController extends Controller
             }
 
             if ($request->start <= $request->end) {
-                if($request->type =="Configurable"){
-                    if(Discounts::createConfigurableDiscount($data)){
+                if ($request->type == "Configurable") {
+                    if (Discounts::createConfigurableDiscount($data)) {
                         return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                     }
-                   
                 }
                 if (Discounts::createDiscount($data)) {
 
@@ -119,11 +117,9 @@ class DiscountsController extends Controller
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
-
             }
 
             return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -151,9 +147,8 @@ class DiscountsController extends Controller
             $rules["sessions.{$key}"] = 'required';
             $rules["services_name.{$key}"] = 'required';
             $rules["disc_type.{$key}"] = 'required';
-            
         }
-        
+
         return Validator::make($request->all(), [
             'name' => 'required',
             'type' => 'required',
@@ -223,7 +218,7 @@ class DiscountsController extends Controller
                 }
             }
 
-            $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby('created_at','desc')->get();
+            $Discounts = $query->limit($iDisplayLength)->offset($iDisplayStart)->orderby('created_at', 'desc')->get();
 
             $records = $this->getFiltersData($records, $filename);
 
@@ -251,7 +246,6 @@ class DiscountsController extends Controller
             ];
 
             return ApiHelper::apiDataTable($records);
-
         } catch (Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -287,7 +281,7 @@ class DiscountsController extends Controller
             $where[] = [
                 'name',
                 'like',
-                '%'.$filters['name'].'%',
+                '%' . $filters['name'] . '%',
             ];
             Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
         } else {
@@ -298,7 +292,7 @@ class DiscountsController extends Controller
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, $filename, 'name').'%',
+                        '%' . Filters::get(Auth::User()->id, $filename, 'name') . '%',
                     ];
                 }
             }
@@ -308,7 +302,7 @@ class DiscountsController extends Controller
             $where[] = [
                 'type',
                 'like',
-                '%'.$filters['type'].'%',
+                '%' . $filters['type'] . '%',
             ];
             Filters::put(Auth::User()->id, $filename, 'type', $filters['type']);
         } else {
@@ -319,7 +313,7 @@ class DiscountsController extends Controller
                     $where[] = [
                         'type',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, $filename, 'type').'%',
+                        '%' . Filters::get(Auth::User()->id, $filename, 'type') . '%',
                     ];
                 }
             }
@@ -329,7 +323,7 @@ class DiscountsController extends Controller
             $where[] = [
                 'amount',
                 'like',
-                '%'.$filters['amount'].'%',
+                '%' . $filters['amount'] . '%',
             ];
             Filters::put(Auth::User()->id, $filename, 'amount', $filters['amount']);
         } else {
@@ -340,7 +334,7 @@ class DiscountsController extends Controller
                     $where[] = [
                         'amount',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, $filename, 'amount').'%',
+                        '%' . Filters::get(Auth::User()->id, $filename, 'amount') . '%',
                     ];
                 }
             }
@@ -371,9 +365,9 @@ class DiscountsController extends Controller
             $where[] = [
                 'created_at',
                 '>=',
-                $filters['created_from'].' 00:00:00',
+                $filters['created_from'] . ' 00:00:00',
             ];
-            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'].' 00:00:00');
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from'] . ' 00:00:00');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_from');
@@ -392,9 +386,9 @@ class DiscountsController extends Controller
             $where[] = [
                 'created_at',
                 '<=',
-                $filters['created_to'].' 23:59:59',
+                $filters['created_to'] . ' 23:59:59',
             ];
-            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'].' 23:59:59');
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to'] . ' 23:59:59');
         } else {
             if ($apply_filter) {
                 Filters::forget(Auth::User()->id, $filename, 'created_to');
@@ -497,7 +491,6 @@ class DiscountsController extends Controller
         ];
 
         return $records;
-
     }
 
     /**
@@ -508,7 +501,7 @@ class DiscountsController extends Controller
      */
     public function edit($id)
     {
-        if (! Gate::allows('discounts_edit')) {
+        if (!Gate::allows('discounts_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -519,18 +512,17 @@ class DiscountsController extends Controller
             if ($discount == null) {
 
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
-
             } else {
 
                 $discountServices = explode(',', $discount->service_id);
 
-                if (! $discountServices) {
+                if (!$discountServices) {
 
                     $discountServices = [];
                 }
                 /* Create Nodes with Parents */
                 $Services = ServiceWidget::generateServiceArrayDiscount($id, Auth::User()->account_id);
-                
+
                 $locations = Locations::getActiveSorted();
 
                 if ($discount) {
@@ -566,8 +558,8 @@ class DiscountsController extends Controller
      */
     public function update(Request $request, $id)
     {
-       
-        if (! Gate::allows('discounts_edit')) {
+
+        if (!Gate::allows('discounts_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -589,24 +581,20 @@ class DiscountsController extends Controller
         }
 
         if ($request->start <= $request->end) {
-            if($request->type =="Configurable"){
-                if(Discounts::updateConfigurableDiscount($data,$id)){
+            if ($request->type == "Configurable") {
+                if (Discounts::updateConfigurableDiscount($data, $id)) {
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
-               
             }
             if (Discounts::updateDiscount($data, $id)) {
 
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
-
             }
 
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
-
         }
 
         return ApiHelper::apiResponse($this->success, 'Date range invalid, Kindly define again', false);
-
     }
 
     /**
@@ -616,7 +604,7 @@ class DiscountsController extends Controller
      */
     public function status(Request $request)
     {
-        if (! Gate::allows('discounts_active')) {
+        if (!Gate::allows('discounts_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -633,7 +621,6 @@ class DiscountsController extends Controller
             }
 
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -647,19 +634,21 @@ class DiscountsController extends Controller
      */
     public function destroy($id)
     {
-        if (! Gate::allows('discounts_destroy')) {
+        if (!Gate::allows('discounts_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         try {
 
             $record = Discounts::deleteRecord($id);
-
-            return ApiHelper::apiResponse($this->success, $record);
+            if ($record) {
+                return ApiHelper::apiResponse($this->success, $record);
+            } else {
+                return ApiHelper::apiResponse($this->success, $record);
+            }
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
-
     }
 
     /**
@@ -669,7 +658,7 @@ class DiscountsController extends Controller
      */
     public function displayDlocation($id)
     {
-        if (! Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -678,18 +667,16 @@ class DiscountsController extends Controller
             $discount = Discounts::find($id);
 
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
-           
-                $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
-                
+
+            $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
+
             return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
                 'discount' => $discount,
                 'location' => $location,
                 'discount_has_location' => $discount_has_location,
             ]);
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
-
         }
     }
 
@@ -700,7 +687,7 @@ class DiscountsController extends Controller
      */
     public function getDservices(Request $request)
     {
-        if (! Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $discount_info = Discounts::find($request->discount_id);
@@ -709,11 +696,11 @@ class DiscountsController extends Controller
         } else {
             $serive = ServiceWidget::generateServiceArrayConsultancy($request, Auth::User()->account_id);
         }
-        if($discount_info->type =="Configurable"){
-            $serive = BaseDiscountService::join('services','services.id','base_discount_services.service_id')
-            ->select('services.name','services.id')->where('discount_id',$request->discount_id)->take(1)->get()->toArray();
+        if ($discount_info->type == "Configurable") {
+            $serive = BaseDiscountService::join('services', 'services.id', 'base_discount_services.service_id')
+                ->select('services.name', 'services.id')->where('discount_id', $request->discount_id)->take(1)->get()->toArray();
         }
-       
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $serive,
             'locaiton_id_1' => $request->id,
@@ -721,23 +708,23 @@ class DiscountsController extends Controller
     }
     public function getDiscountServices(Request $request)
     {
-        if (! Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        
+
         $serive = ServiceWidget::generateServiceArrayDiscount($request, Auth::User()->account_id);
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $serive,
             'locaiton_id_1' => $request->id,
         ]);
     }
-    
+
     /**
      * save services against location id.
      */
     public function saveDservices(Request $request)
     {
-        if (! Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -759,13 +746,12 @@ class DiscountsController extends Controller
 
             $record = DiscountHasLocations::create($data);
 
-            $record_location_name = $record->location->city->name.'-'.$record->location->name;
+            $record_location_name = $record->location->city->name . '-' . $record->location->name;
             $record_service_name = $record->service->name;
 
             $myarray = ['record' => $record, 'record_locaiton_name' => $record_location_name, 'record_service_name' => $record_service_name];
 
             return ApiHelper::apiResponse($this->success, 'Record Saved successfully.', true, $myarray);
-
         }
 
         return ApiHelper::apiResponse($this->success, 'Duplicate record found.', false);
@@ -779,7 +765,7 @@ class DiscountsController extends Controller
     public function deleteDservice(Request $request)
     {
 
-        if (! Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -788,6 +774,5 @@ class DiscountsController extends Controller
         return ApiHelper::apiResponse($this->success, 'Row deleted', true, [
             'id' => $request->id,
         ]);
-
     }
 }
