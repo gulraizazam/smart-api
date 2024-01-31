@@ -27,7 +27,7 @@ var table_columns = [
         sortable: false,
     }, {
         field: 'membership',
-        title: 'Membership Code',
+        title: 'Membership',
         width: 'auto',
         sortable: false,
         template: function (data) {
