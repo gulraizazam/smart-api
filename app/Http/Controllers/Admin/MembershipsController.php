@@ -29,25 +29,15 @@ class MembershipsController extends Controller
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
     }
-    /**
-     * Display a listing of memberships types.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
-        if (!Gate::allows('memberships_manage')) {
         if (!Gate::allows('memberships_manage')) {
             return abort(401);
         }
         return view('admin.memberships.index');
     }
-    /**
-     * Display a listing of Lead_statuse.
-     *
-     * @param \Illuminate\Http\Request
-     * @return \Illuminate\Http\Response
-     */
+
     public function datatable(Request $request)
     {
         try {
