@@ -510,7 +510,7 @@ function refund(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-           
+
             refundData(response);
 
         },
@@ -588,7 +588,7 @@ function setEditData(response) {
         let location = package.location;
         let history_options = noRecordFoundTable(5);
         let membership = response.data.membership;
-      
+
         if (packageadvances.length) {
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
@@ -1344,7 +1344,7 @@ function setServices(response) {
 
 function getAppointments(patient) {
 
-   
+
     let location = $("#add_plan_location_id").val();
 
     if (location != '' && patient != '') {
@@ -1384,7 +1384,7 @@ function setAppointments(response) {
         let appointments = response.data.appointments;
         let appointment_options = '';
         let membership = response.data.membership;
-        
+
         if (appointments.length) {
 
             Object.values(appointments).forEach(function (value) {
@@ -1395,7 +1395,7 @@ function setAppointments(response) {
 
         }
         $("#patient_membership").val(membership);
-        $("#patient_membership").attr('disabled',true);
+        $("#patient_membership").attr('disabled', true);
     } catch (error) {
         showException(error);
     }
@@ -2131,7 +2131,7 @@ function deletePlan(id, type) {
         success: function (resposne) {
 
             if (resposne.status) {
-
+                ExistingTotal = resposne.data.total;
                 $('.HR_' + resposne.data.id).remove();
                 if (resposne?.data?.total > 1) {
                     $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
@@ -2239,9 +2239,10 @@ function hideMessages() {
     $('#edit_datanotexist').hide();
 }
 
-
+var total_amountArray = [];
+var edit_amountArray = [];
+var ExistingTotal = 0;
 jQuery(document).ready(function () {
-    /*save data for both predefined discounts and keyup trigger*/
     $("#AddPackage").click(function () {
         $('.create-plan-error').html('');
 
@@ -2331,71 +2332,50 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-
                     let consume = 'No';
-                    var total_amount = 0;
                     if (resposne.status) {
+                        total_amountArray.push(parseInt(resposne.data.servicesData.record.net_amount));
+                        var sum = 0;
+                        if (total_amountArray.length) {
+                            sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+                        }
 
-                        $("#package_total_1").val(resposne.data.myarray.total ?? 0);
+                        $("#package_total_1").val(sum ?? 0);
                         $('#plan_services').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.myarray.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.myarray.record.id + ")'>" + resposne.data.myarray.service_name + "</a></td>" +
-                            "<td>" + resposne.data.myarray.service_price.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_name + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_type + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.record.id + "'>" +
+                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.record.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
+                            "<td>" + resposne.data.servicesData.service_price.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_name + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_type + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.record.tax_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<td  class='d-none'>" +
+                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.record.bundle_id + "' />" +
+
+                            "</td>" +
                             "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.myarray.record.id + "' />" +
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + resposne.data.myarray.record.id + ")'>" + trashBtn() + "</button>" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.record.id + "' />" +
+
+                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.record.id + ")'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
-                        jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
+                        jQuery.each(resposne.data.servicesData.record_detail, function (i, record_detail) {
                             if (record_detail.is_consumed == '0') {
                                 consume = 'No';
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.record.id + " " + resposne.data.servicesData.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
-
-
-
-
-
-
-                        // toggle(resposne.data.myarray.record.id);
-
                         keyfunction_grandtotal();
-
                         var rows = $('#plan_services tbody tr').length;
-
                         if (rows >= 3) {
                             $("#add_plan_location_id").prop("disabled", true);
                         }
-                        // $('#add_service_id').val(null).change();
-                        // $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#add_discount_id').val('').change();
-                        // $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#add_discount_type').val('').change();
-                        // $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#add_discount_value_1').val('');
-                        // $('#add_discount_value_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#net_amount_1').val('');
-                        // $('#net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        /*we enable add button after all functionality enable*/
-                        // $('#AddPackage_1').attr("disabled", false);
-
                     } else {
                         $('#AlreadyExitMessage').show();
-                        // $('#AddPackage_1').attr("disabled", false);
                     }
 
                     hideSpinner("-add");
@@ -2411,6 +2391,9 @@ jQuery(document).ready(function () {
         }
     });
     /*End*/
+
+
+
 
     /*function for final package information save*/
     $("#AddPackageFinal").click(function () {
@@ -2446,11 +2429,23 @@ jQuery(document).ready(function () {
             'is_exclusive': is_exclusive,
             'appointment_id': appointment_id,
             // 'base_service_id':base_service_id,
-            'package_bundles[]': []
+            package_bundles: []
         };
 
-        $(".package_bundles").each(function () {
-            formData['package_bundles[]'].push($(this).val());
+
+        $('#plan_services').find('tr:not(.inner_records_hr)').each(function () {
+            formData['package_bundles'].push({
+
+                serviceName: $(this).find('td:first-child a').text(),
+                RegularPrice: $(this).find('td:nth-child(2)').text(),
+                DiscountName: $(this).find('td:nth-child(3)').text(),
+                Type: $(this).find('td:nth-child(4)').text(),
+                DiscountValue: $(this).find('td:nth-child(5)').text(),
+                Amount: $(this).find('td:nth-child(6)').text(),
+                Tax: $(this).find('td:nth-child(7)').text(),
+                Total: $(this).find('td:nth-child(8)').text(),
+                bundleId: $(this).find('td:nth-child(9)').find('input').val()
+            });
         });
         var status = 0;
         if (cash_amount > 0) {
@@ -2510,6 +2505,7 @@ jQuery(document).ready(function () {
 
     /*save data for both predefined discounts and keyup trigger*/
     $("#EditPackage").click(function () {
+
         $('.error-msg').html('');
         if (!$('#edit_appointment_id').val()) {
             $('#edit_appointment_id_error').html('Please select appointment');
@@ -2591,51 +2587,47 @@ jQuery(document).ready(function () {
                 data: formData,
                 success: function (resposne) {
                     let consume = 'No';
-                    let total_amount;
-                    let single_amount;
+                    edit_amountArray.push(parseInt(resposne.data.servicesData.record.net_amount));
+                    ExistingTotal = resposne.data.servicesData.total;
+
+                    var editsum = 0;
+                    if (edit_amountArray.length) {
+                        editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+                    }
+                    var grandsum = editsum + resposne.data.servicesData.total;
+
                     if (resposne.status) {
-                        $("#edit_package_total_1").val(resposne?.data?.myarray?.total ?? 0);
+                        $("#edit_package_total_1").val(grandsum ?? 0);
                         $('#edit_plan_services').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.myarray.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.myarray.record.id + ")'>" + resposne.data.myarray.service_name + "</a></td>" +
-                            "<td>" + resposne.data.myarray.service_price.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_name + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_type + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.record.id + "'>" +
+                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.record.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
+                            "<td>" + resposne.data.servicesData.service_price.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_name + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_type + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.record.tax_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<td  class='d-none'>" +
+                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.record.bundle_id + "' />" +
+
+                            "</td>" +
                             "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.myarray.record.id + "' />" +
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + resposne.data.myarray.record.id + ", `edit_`)'>" + trashBtn() + "</button>" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.record.id + "' />" +
+                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.record.id + ", `edit_`)'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
 
-                        jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
+                        jQuery.each(resposne.data.servicesData.record_detail, function (i, record_detail) {
                             if (record_detail.is_consumed == '0') {
                                 consume = 'No';
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.record.id + " " + resposne.data.servicesData.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
 
                         edit_keyfunction_grandtotal();
-                        // $('#edit_service_id').val('').change();
-                        // $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_discount_id').val('').change();
-                        // $('#edit_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_discount_type').val('').change();
-                        // $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_discount_value_1').val('');
-                        // $('#edit_discount_value_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_net_amount_1').val('');
-                        // $('#edit_net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
                     } else {
                         if (resposne.data.setteled == 1) {
                             $('#casesetteled').show();
@@ -2682,11 +2674,21 @@ jQuery(document).ready(function () {
             'grand_total': grand_total,
             'is_exclusive': is_exclusive,
             'appointment_id': appointment_id,
-            'package_bundles[]': []
+            package_bundles: []
         };
 
-        $(".package_bundles").each(function () {
-            formData['package_bundles[]'].push($(this).val());
+        $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
+            formData['package_bundles'].push({
+                serviceName: $(this).find('td:first-child a').text(),
+                RegularPrice: $(this).find('td:nth-child(2)').text(),
+                DiscountName: $(this).find('td:nth-child(3)').text(),
+                Type: $(this).find('td:nth-child(4)').text(),
+                DiscountValue: $(this).find('td:nth-child(5)').text(),
+                Amount: $(this).find('td:nth-child(6)').text(),
+                Tax: $(this).find('td:nth-child(7)').text(),
+                Total: $(this).find('td:nth-child(8)').text(),
+                bundleId: $(this).find('td:nth-child(9)').find('input').val()
+            });
         });
 
         var status = 0;
@@ -2785,3 +2787,28 @@ jQuery(document).ready(function () {
 
 });
 
+function deletePlanRowTem(id, type = "") {
+    var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
+    var RowLenght = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').prevAll('tr').length;
+    var ArrayIndex = RowIndex - RowLenght;
+    console.log('RowIndex', RowIndex);
+    console.log('RowLenght', RowLenght);
+    console.log('ArrayIndex', ArrayIndex);
+
+    total_amountArray.splice(ArrayIndex, 1);
+    edit_amountArray.splice(ArrayIndex, 1);
+    var sum = 0;
+    if (total_amountArray.length) {
+        sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+    }
+    console.log('edit_amountArray', edit_amountArray);
+    var Editsum = 0;
+    if (edit_amountArray.length) {
+        Editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+    }
+    jQuery('.modal.show #package_total_1').val(sum);
+    jQuery('.modal.show #grand_total_1').val(sum);
+    jQuery('.modal.show #edit_package_total_1').val(Editsum + ExistingTotal);
+    jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
+
+}
