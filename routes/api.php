@@ -230,7 +230,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('bundles/status', [BundlesController::class, 'status'])->name('bundles.status');
     Route::get('bundles/detail/{id}', [BundlesController::class, 'detail'])->name('bundles.detail');
     Route::resource('bundles', BundlesController::class)->except(['index', 'create', 'show']);
-    Route::get('bundles/editconf/{id}', [BundlesController::class,'editconf'])->name('bundles.editconf');
+    Route::get('bundles/editconf/{id}', [BundlesController::class, 'editconf'])->name('bundles.editconf');
     //Packages Route End
 
     //Centre Target
@@ -291,8 +291,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('packages/getdiscountinfo', [PackagesController::class, 'getdiscountinfo'])->name('packages.getdiscountinfo');
 
     Route::get('packages/getdiscountinfo_custom', [PackagesController::class, 'getdiscountinfocustom'])->name('packages.getdiscountinfo_custom');
-
-    Route::get('packages/savepackagesservice', [PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
+    Route::get('packages/savepackagesservice', [PackagesController::class, 'savePackagesService'])->name('packages.savepackages_service');
+    //Route::get('packages/savepackagesservice', [PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
 
     Route::post('packages/deletepackagesservice', [PackagesController::class, 'deletepackagesservice'])->name('packages.deletepackages_service');
     Route::post('packages/deleteconfpackagesservice', [PackagesController::class, 'deleteconfpackagesservice'])->name('packages.deleteconfpackages_service');
@@ -606,7 +606,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('patient/assignmembership', [PatientsController::class, 'assignMembership'])->name('patients.assignmembership');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
     Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
-
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
