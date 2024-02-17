@@ -1751,7 +1751,7 @@ class PackagesController extends Controller
             $package = Packages::where('random_id', '=', $random_id)->first();
             $id = $package->id;
             $package->update($data_package);
-            $packageBundle = self::updateRecord($package, $request);
+            $packageBundle = self::storeRecord($package, $request);
 
             /*End*/
             if ($request->cash_amount == '0') {
@@ -2811,91 +2811,6 @@ class PackagesController extends Controller
                 $packageservice = PackageService::createPackageService($data_service);
             }
         }
-        return true;
-    }
-    public function updateRecord($package, $request)
-    {
-
-        $packageBundledata['random_id'] = $package->random_id;
-        $packageBundledata['is_allocate'] = 1;
-        if (isset($request['package_bundles'])) {
-            foreach ($request['package_bundles'] as $bundle_id) {
-                $packageBundledata['qty'] = 1;
-                $packageBundledata['discount_name'] = $bundle_id['DiscountName'];
-                $packageBundledata['discount_type'] = $bundle_id['Type'];
-                $packageBundledata['discount_price'] = $bundle_id['DiscountValue'];
-                $packageBundledata['service_price'] = str_replace(',', '', $bundle_id['RegularPrice']);
-                $packageBundledata['net_amount'] = str_replace(',', '', $bundle_id['RegularPrice']);
-                $packageBundledata['discount_id'] = 1;
-                $packageBundledata['bundle_id'] = $bundle_id['bundleId'];
-                $packageBundledata['package_id'] = $package->id;
-                $packageBundledata['tax_exclusive_net_amount'] = str_replace(',', '', $bundle_id['Amount']);
-                $packageBundledata['tax_percentage'] = 1;
-                $packageBundledata['tax_price'] = $bundle_id['Tax'];
-                $packageBundledata['tax_including_price'] = $bundle_id['Total'];
-                $packageBundledata['location_id'] = $request->location_id;
-                $record = PackageBundles::create($packageBundledata);
-                $bundle_details = BundleHasServices::where('bundle_id', '=', $record->bundle_id)->get();
-                $service_data = Bundles::find($bundle_id['bundleId']);
-                $calculable_servcies = [];
-
-                foreach ($bundle_details as $detail) {
-                    $calculable_servcies[] = [
-                        'service_price' => $detail->calculated_price,
-                        'calculated_price' => $detail->calculated_price,
-                        'service_id' => $detail->service_id,
-                    ];
-                }
-
-                $calculated_services = Bundles::calculatePrices($calculable_servcies, str_replace(',', '', $bundle_id['RegularPrice']), $bundle_id['Total']);
-                $location_information = Locations::find($request->location_id);
-                foreach ($calculated_services as $detail) {
-
-                    $data_service['random_id'] = $request->random_id;
-                    $data_service['package_bundle_id'] = $record->id;
-                    $data_service['service_id'] = $detail['service_id'];
-                    $data_service['price'] = $detail['calculated_price'];
-                    $data_service['orignal_price'] = $detail['service_price'];
-
-                    /*Checked it exclusive or not*/
-                    if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
-                        if ($request->is_exclusive == '1') {
-                            $data_service['tax_exclusive_price'] = $detail['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                            $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                            $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
-
-                            $data_service['is_exclusive'] = 1;
-                        } else {
-                            $data_service['tax_including_price'] = $detail['calculated_price'];
-                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                            $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
-                            $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
-
-                            $data_service['is_exclusive'] = 0;
-                        }
-                    } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
-                        $data_service['tax_exclusive_price'] = $detail['calculated_price'];
-                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                        $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                        $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
-
-                        $data_service['is_exclusive'] = 1;
-                    } else {
-                        $data_service['tax_including_price'] = $detail['calculated_price'];
-                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                        $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
-                        $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
-
-                        $data_service['is_exclusive'] = 0;
-                    }
-                    $data_service['created_at'] = Filters::getCurrentTimeStamp();
-                    $data_service['updated_at'] = Filters::getCurrentTimeStamp();
-                    $packageservice = PackageService::createPackageService($data_service);
-                }
-            }
-        }
-
         return true;
     }
 }
