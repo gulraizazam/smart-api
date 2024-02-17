@@ -1026,8 +1026,6 @@ class PackagesController extends Controller
             $data_package['appointment_id'] = $appointment_id;
             $data_package['created_at'] = Filters::getCurrentTimeStamp();
             $data_package['updated_at'] = Filters::getCurrentTimeStamp();
-
-            //$package = Packages::createRecord($data_package, $request);
             $package = Packages::create($data_package);
             $package->update(['name' => sprintf('%05d', $package->id)]);
             $packagebundle = self::storeRecord($package, $request);
