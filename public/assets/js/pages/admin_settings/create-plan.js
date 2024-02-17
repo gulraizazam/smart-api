@@ -2334,7 +2334,7 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
                     let consume = 'No';
                     if (resposne.status) {
-                        total_amountArray.push(parseInt(resposne.data.servicesData.record.net_amount));
+                        total_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
                         var sum = 0;
                         if (total_amountArray.length) {
                             sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
@@ -2342,32 +2342,32 @@ jQuery(document).ready(function () {
 
                         $("#package_total_1").val(sum ?? 0);
                         $('#plan_services').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.record.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
+                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
+                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.bundlesData.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
                             "<td>" + resposne.data.servicesData.service_price.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.discount_name + "</td>" +
                             "<td>" + resposne.data.servicesData.discount_type + "</td>" +
                             "<td>" + resposne.data.servicesData.discount_price + "</td>" +
-                            "<td>" + resposne.data.servicesData.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.servicesData.record.tax_price + "</td>" +
-                            "<td>" + resposne.data.servicesData.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString() + "</td>" +
                             "<td  class='d-none'>" +
-                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.record.bundle_id + "' />" +
+                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
                             "</td>" +
                             "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.record.id + "' />" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
 
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.record.id + ")'>" + trashBtn() + "</button>" +
+                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ")'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
-                        jQuery.each(resposne.data.servicesData.record_detail, function (i, record_detail) {
-                            if (record_detail.is_consumed == '0') {
+                        jQuery.each(resposne.data.servicesData.packageServicesData, function (i, packageServicesData) {
+                            if (packageServicesData.is_consumed == '0') {
                                 consume = 'No';
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.record.id + " " + resposne.data.servicesData.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
                         keyfunction_grandtotal();
                         var rows = $('#plan_services tbody tr').length;
@@ -2587,7 +2587,7 @@ jQuery(document).ready(function () {
                 data: formData,
                 success: function (resposne) {
                     let consume = 'No';
-                    edit_amountArray.push(parseInt(resposne.data.servicesData.record.net_amount));
+                    edit_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
                     ExistingTotal = resposne.data.servicesData.total;
 
                     var editsum = 0;
@@ -2599,32 +2599,32 @@ jQuery(document).ready(function () {
                     if (resposne.status) {
                         $("#edit_package_total_1").val(grandsum ?? 0);
                         $('#edit_plan_services').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.record.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
+                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
+                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.bundlesData.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
                             "<td>" + resposne.data.servicesData.service_price.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.discount_name + "</td>" +
                             "<td>" + resposne.data.servicesData.discount_type + "</td>" +
                             "<td>" + resposne.data.servicesData.discount_price + "</td>" +
-                            "<td>" + resposne.data.servicesData.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.servicesData.record.tax_price + "</td>" +
-                            "<td>" + resposne.data.servicesData.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString() + "</td>" +
                             "<td  class='d-none'>" +
-                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.record.bundle_id + "' />" +
+                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
                             "</td>" +
                             "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.record.id + "' />" +
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.record.id + ", `edit_`)'>" + trashBtn() + "</button>" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
+                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ", `edit_`)'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
 
-                        jQuery.each(resposne.data.servicesData.record_detail, function (i, record_detail) {
-                            if (record_detail.is_consumed == '0') {
+                        jQuery.each(resposne.data.servicesData.packageServicesData, function (i, packageServicesData) {
+                            if (packageServicesData.is_consumed == '0') {
                                 consume = 'No';
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.record.id + " " + resposne.data.servicesData.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
                         });
 
                         edit_keyfunction_grandtotal();
