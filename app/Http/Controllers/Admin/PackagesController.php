@@ -794,10 +794,11 @@ class PackagesController extends Controller
             $discount_type = $packageBundleData['discount_type'];
             $discount_price = $packageBundleData['discount_price'];
         }
-
+        $packageServices = PackageService::where('random_id', $request->random_id)->get();
         $servicesData = [
             'bundlesData' => $packageBundleData,
             'packageServicesData' => $allDataServices,
+            'packageServices' => $packageServices,
             'random_id' => $request->random_id,
             'service_name' => $service_name,
             'service_price' => $service_price,
