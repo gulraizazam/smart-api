@@ -2137,6 +2137,7 @@ function deletePlan(id, type) {
 
             if (resposne.status) {
                 ExistingTotal = resposne.data.total;
+                console.log('ExistingTotal', ExistingTotal);
                 $('.HR_' + resposne.data.id).remove();
                 if (resposne?.data?.total > 1) {
                     $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
@@ -2568,7 +2569,6 @@ jQuery(document).ready(function () {
                     }
                 }
             }
-
             var formData = {
                 'random_id': random_id,
                 'bundle_id': service_id, //Basicailly it is bundle id
@@ -2591,15 +2591,20 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    console.log('resposne', resposne);
                     let consume = 'No';
                     edit_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
-                    ExistingTotal = resposne.data.servicesData.total;
-
+                    if (resposne.data.servicesData.packageServices.length) {
+                        ExistingTotal = parseInt(resposne.data.servicesData.total);
+                    } else {
+                        ExistingTotal = 0;
+                    }
+                    console.log('ExistingTotal', ExistingTotal);
                     var editsum = 0;
                     if (edit_amountArray.length) {
                         editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
                     }
-                    var grandsum = editsum + resposne.data.servicesData.total;
+                    var grandsum = editsum + ExistingTotal;
 
                     if (resposne.status) {
                         $("#edit_package_total_1").val(grandsum ?? 0);
@@ -2793,6 +2798,7 @@ jQuery(document).ready(function () {
 });
 
 function deletePlanRowTem(id, type = "") {
+
     var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
     var RowLenght = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').prevAll('tr').length;
     var ArrayIndex = RowIndex - RowLenght;
@@ -2815,5 +2821,6 @@ function deletePlanRowTem(id, type = "") {
     jQuery('.modal.show #grand_total_1').val(sum);
     jQuery('.modal.show #edit_package_total_1').val(Editsum + ExistingTotal);
     jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
+    console.log('ExistingTotal', ExistingTotal);
 
 }
