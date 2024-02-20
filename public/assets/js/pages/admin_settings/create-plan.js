@@ -454,7 +454,9 @@ function actions(data) {
 
 
 function editRow(url) {
-
+    total_amountArray = [];
+    edit_amountArray = [];
+    ExistingTotal = 0;
     $('.error-msg').html('');
     $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     $("#edit_discount_id").html('<option value="">Select Discount</option>');
@@ -1200,6 +1202,9 @@ function hideShowAdvanceFilters(active_filters) {
 
 
 function createPlan(url, id) {
+    total_amountArray = [];
+    edit_amountArray = [];
+    ExistingTotal = 0;
     $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     setTimeout(function () {
         $("#add_discount_id").html('<option value="">Select Discount</option>');
