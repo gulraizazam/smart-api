@@ -1213,6 +1213,10 @@ function createPlan(url, id) {
         $("#net_amount_1").val('');
         $("#package_total_1").val('');
         $("#grand_total_1").val('');
+        $('#packages_add').find('#patient_membership').val('');
+        $('#packages_add').find('#discount_value_1').val('');
+        $('#packages_add').find("#add_appointment_id").empty();
+        $('#packages_add').find('#add_appointment_id').val(null).trigger('change');
     }, 500)
 
     $("#add_discount_type").attr('disabled', true);
@@ -1562,8 +1566,8 @@ function getDiscountInfo($this) {
                             }
                             $("#discount_value_1").val(resposne.data.discount_price);
                             $("#discount_value_1").prop("disabled", true);
-                            // $("#net_amount_1").val(resposne.data.net_amount);
-                            // $("#net_amount_1").prop("disabled", true);
+                            $("#net_amount_1").val(resposne.data.net_amount);
+                            $("#net_amount_1").prop("disabled", true);
                             $("#slug_1").val('not_custom');
                         } else {
                             $("#add_discount_type").prop("disabled", false);
@@ -1768,6 +1772,7 @@ function editDiscountInfo($this) {
         $("#edit_net_amount_1").val('');
         $("#edit_slug_1").val('not_custom');
 
+
     } else if ((discount_id == null || discount_id == '') && service_id != null) {
 
         $("#edit_discount_type").prop("disabled", true);
@@ -1840,8 +1845,8 @@ function editDiscountInfo($this) {
                                 $("#edit_discount_type_configurable").prop("disabled", true);
                             }
 
-                            // $("#edit_discount_value_1").val(resposne.data.discount_price);
-                            // $("#edit_discount_value_1").prop("disabled", true);
+                            $("#edit_discount_value_1").val(resposne.data.discount_price);
+                            $("#edit_discount_value_1").prop("disabled", true);
                             $("#edit_net_amount_1").val(resposne.data.net_amount);
                             $("#edit_net_amount_1").prop("disabled", true);
                             $("#edit_slug_1").val('not_custom');
@@ -2139,6 +2144,8 @@ function deletePlan(id, type) {
                 ExistingTotal = resposne.data.total;
                 console.log('ExistingTotal', ExistingTotal);
                 $('.HR_' + resposne.data.id).remove();
+                console.log('test', '.modal.fade.show tr[class="' + resposne.data.id + ']"');
+                $('.modal.fade.show tr[class="' + resposne.data.id + '"]').remove();
                 if (resposne?.data?.total > 1) {
                     $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
                 } else {
@@ -2802,17 +2809,12 @@ function deletePlanRowTem(id, type = "") {
     var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
     var RowLenght = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').prevAll('tr').length;
     var ArrayIndex = RowIndex - RowLenght;
-    console.log('RowIndex', RowIndex);
-    console.log('RowLenght', RowLenght);
-    console.log('ArrayIndex', ArrayIndex);
-
     total_amountArray.splice(ArrayIndex, 1);
     edit_amountArray.splice(ArrayIndex, 1);
     var sum = 0;
     if (total_amountArray.length) {
         sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
     }
-    console.log('edit_amountArray', edit_amountArray);
     var Editsum = 0;
     if (edit_amountArray.length) {
         Editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
@@ -2821,6 +2823,5 @@ function deletePlanRowTem(id, type = "") {
     jQuery('.modal.show #grand_total_1').val(sum);
     jQuery('.modal.show #edit_package_total_1').val(Editsum + ExistingTotal);
     jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
-    console.log('ExistingTotal', ExistingTotal);
-
+    jQuery('#cash_amount_1').val('');
 }
