@@ -1569,6 +1569,15 @@ function getDiscountInfo($this) {
                             $("#net_amount_1").val(resposne.data.net_amount);
                             $("#net_amount_1").prop("disabled", true);
                             $("#slug_1").val('not_custom');
+                            if (resposne.data.discount_type == 'Percentage') {
+                                if (resposne.data.discount_price > 100) {
+                                    $('#percentageMessage').show();
+                                    return false;
+                                } else {
+                                    $('#percentageMessage').hide();
+
+                                }
+                            }
                         } else {
                             $("#add_discount_type").prop("disabled", false);
                             $("#add_discount_type").val('').trigger('change');
@@ -1754,11 +1763,12 @@ function editServiceDiscount($this, type = '') {
 }
 
 function editDiscountInfo($this) {
-
+    $('#edit_DiscountRange').hide();
     hideMessages();
 
     var service_id = $('#edit_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
+
     setTimeout(function () {
         $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
@@ -1850,6 +1860,18 @@ function editDiscountInfo($this) {
                             $("#edit_net_amount_1").val(resposne.data.net_amount);
                             $("#edit_net_amount_1").prop("disabled", true);
                             $("#edit_slug_1").val('not_custom');
+
+                            if (resposne.data.discount_type == 'Percentage') {
+                                if (resposne.data.discount_price > 100) {
+                                    $('#edit_percentageMessage').show();
+                                    return false;
+                                } else {
+                                    $('#edit_percentageMessage').hide();
+
+                                }
+                            } else {
+                                $('#edit_DiscountRange').show();
+                            }
                         } else {
                             $("#edit_discount_type").prop("disabled", false);
                             $("#edit_discount_type").val('').trigger('change');
@@ -1958,7 +1980,7 @@ function changeDiscount($this, type) {
             $('#percentageMessage').hide();
         }
     }
-
+    $('#DiscountRange').hide();
     if (service_id && discount_id) {
         $.ajax({
             type: 'get',
@@ -1983,8 +2005,8 @@ function changeDiscount($this, type) {
                         $("#net_amount_1").val(resposne.data.net_amount);
                         $("#net_amount_1").prop("disabled", true);
                     }
-
                 } else {
+
                     $('#DiscountRange').show();
                     if (type && type != 'undefined') {
                         if (type == 'edit') {
