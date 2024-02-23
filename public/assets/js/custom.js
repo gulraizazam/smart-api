@@ -148,6 +148,10 @@ $(document).ready(function () {
         $("#modal_add_product_stock").find('form').trigger('reset');
         $("#modal_add_products_form").find('form').trigger('reset');
         $("#add_order_product").empty();
+        $('#packages_add').find('#patient_membership').val('');
+        $('#packages_add').find('#discount_value_1').val('');
+        $('#packages_add').find("#add_appointment_id").empty();
+        $('#packages_add').find('#add_appointment_id').val(null).trigger('change');
     });
 
     $('.select2').select2();
