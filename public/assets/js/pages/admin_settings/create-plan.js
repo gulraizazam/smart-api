@@ -1521,6 +1521,7 @@ function getDiscountInfo($this) {
         $("#slug_1").val('not_custom');
     } else if (service_id && discount_id == '0') {
         $("#slug_1").val('not_custom');
+
         $.ajax({
             type: 'get',
             url: route('admin.packages.getserviceinfo_discount_zero'),
@@ -1535,12 +1536,14 @@ function getDiscountInfo($this) {
                     $("#discount_value_1").val('');
                     $("#net_amount_1").val(resposne.data.net_amount);
                     $("#net_amount_1").prop("disabled", true);
+
                 } else {
                     $('#wrongMessage').show();
                 }
             },
         });
     } else {
+
         if (service_id && discount_id != '0') {
             $.ajax({
                 type: 'get',
@@ -1550,7 +1553,9 @@ function getDiscountInfo($this) {
                     'discount_id': discount_id
                 },
                 success: function (resposne) {
+
                     if (resposne.status) {
+
                         if (resposne.data.custom_checked == 0) {
                             $("#add_discount_type").val(resposne.data.discount_type).change();
                             if (resposne.data.discount_type == "Configurable") {
@@ -1572,15 +1577,29 @@ function getDiscountInfo($this) {
                             if (resposne.data.discount_type == 'Percentage') {
                                 if (resposne.data.discount_price > 100) {
                                     $('#percentageMessage').show();
+
                                     return false;
                                 } else {
                                     $('#percentageMessage').hide();
+
+                                }
+                            } else {
+
+                                if (resposne.data.discount_price > resposne.data.net_amount) {
+                                    setTimeout(function () {
+                                        $("#AddPackage").attr('disabled', 'disabled');
+                                    }, 500);
+                                } else {
+                                    setTimeout(function () {
+                                        $("#AddPackage").removeAttr('disabled');
+                                    }, 500);
 
                                 }
                             }
                         } else {
                             $("#add_discount_type").prop("disabled", false);
                             $("#add_discount_type").val('').trigger('change');
+
                             // $("#discount_value_1").prop("disabled", false);
                             // $("#discount_value_1").val('');
                             // $("#net_amount_1").prop("disabled", true);
@@ -1840,6 +1859,7 @@ function editDiscountInfo($this) {
                     'discount_id': discount_id
                 },
                 success: function (resposne) {
+
                     if (resposne.status) {
 
                         if (resposne.data.custom_checked == 0) {
@@ -1867,7 +1887,7 @@ function editDiscountInfo($this) {
                                     return false;
                                 } else {
                                     $('#edit_percentageMessage').hide();
-
+                                    $("#EditPackage").prop("disabled", false);
                                 }
                             } else {
                                 $('#edit_DiscountRange').show();
@@ -1904,11 +1924,11 @@ function getDiscountValue($this) {
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
-            inputSpinner(false, 'AddPackage')
+            // inputSpinner(false, 'AddPackage')
             return false;
         } else {
             $('#percentageMessage').hide();
-            inputSpinner(false, 'AddPackage')
+            // inputSpinner(false, 'AddPackage')
         }
     }
 
@@ -1931,10 +1951,11 @@ function getDiscountValue($this) {
                     $("#AddPackage").attr("disabled", true);
                     $('#DiscountRange').show();
                     //inputSpinner(false, 'AddPackage')
+
                 }
             },
             error: function () {
-                inputSpinner(false, 'AddPackage')
+                // inputSpinner(false, 'AddPackage')
             }
         });
     }
@@ -1997,6 +2018,7 @@ function changeDiscount($this, type) {
                         if (type == 'edit') {
                             $("#edit_net_amount_1").val(resposne.data.net_amount);
                             $("#edit_net_amount_1").prop("disabled", true);
+
                         } else {
 
                         } $("#net_amount_1").val(resposne.data.net_amount);
@@ -2008,17 +2030,21 @@ function changeDiscount($this, type) {
                 } else {
 
                     $('#DiscountRange').show();
+
                     if (type && type != 'undefined') {
                         if (type == 'edit') {
-                            $("#edit_net_amount_1").val('');
+                            //$("#edit_net_amount_1").val('');
                             $("#edit_net_amount_1").prop("disabled", true);
+                            $("#EditPackage").prop("disabled", true);
                         } else {
                             $("#net_amount_1").val('');
                             $("#net_amount_1").prop("disabled", true);
+                            $("#EditPackage").prop("disabled", false);
                         }
                     } else {
-                        $("#net_amount_1").val('');
+                        //$("#net_amount_1").val('');
                         $("#net_amount_1").prop("disabled", true);
+                        $("#EditPackage").prop("disabled", false);
                     }
                 }
             },
@@ -2164,9 +2190,9 @@ function deletePlan(id, type) {
 
             if (resposne.status) {
                 ExistingTotal = resposne.data.total;
-                console.log('ExistingTotal', ExistingTotal);
+
                 $('.HR_' + resposne.data.id).remove();
-                console.log('test', '.modal.fade.show tr[class="' + resposne.data.id + ']"');
+
                 $('.modal.fade.show tr[class="' + resposne.data.id + '"]').remove();
                 if (resposne?.data?.total > 1) {
                     $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
@@ -2620,7 +2646,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                    console.log('resposne', resposne);
+
                     let consume = 'No';
                     edit_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
                     if (resposne.data.servicesData.packageServices.length) {
@@ -2628,7 +2654,7 @@ jQuery(document).ready(function () {
                     } else {
                         ExistingTotal = 0;
                     }
-                    console.log('ExistingTotal', ExistingTotal);
+
                     var editsum = 0;
                     if (edit_amountArray.length) {
                         editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
