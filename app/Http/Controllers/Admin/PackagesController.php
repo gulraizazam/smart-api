@@ -180,9 +180,9 @@ class PackagesController extends Controller
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }
                 return ApiHelper::apiResponse($this->success, 'Record Found', true, [
-                    'discount_type' => $discount_type,
+                    'discount_type' => $net_amount < 0 ? '' : $discount_type,
                     'discount_price' => $discount_price,
-                    'net_amount' => $net_amount,
+                    'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
                     'custom_checked' => 0,
                 ]);
             }
@@ -867,9 +867,11 @@ class PackagesController extends Controller
                 $net_amount = ($service_data->price) - ($discount_price_in_percentage);
             }
         }
+
         if ($status == true) {
+
             return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
-                'net_amount' => $net_amount,
+                'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
             ]);
         }
 
