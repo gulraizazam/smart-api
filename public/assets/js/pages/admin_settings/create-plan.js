@@ -1588,6 +1588,7 @@ function getDiscountInfo($this) {
                                 if (resposne.data.discount_price > resposne.data.net_amount) {
                                     setTimeout(function () {
                                         $("#AddPackage").attr('disabled', 'disabled');
+                                        $("#discount_value_1").val('');
                                     }, 500);
                                 } else {
                                     setTimeout(function () {
@@ -1785,12 +1786,15 @@ function editServiceDiscount($this, type = '') {
 }
 
 function editDiscountInfo($this) {
+
     $('#edit_DiscountRange').hide();
     hideMessages();
 
     var service_id = $('#edit_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
-
+    if (discount_id == "") {
+        $("#EditPackage").prop('disabled', false);
+    }
     setTimeout(function () {
         $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
@@ -2139,7 +2143,13 @@ function checkpaymentMode() {
 function toggle(id) {
     $("." + id).toggle();
 }
-
+function checkAppointmentVal() {
+    if ($("#edit_appointment_id").val() != "") {
+        $("#edit_appointment_id_error").hide()
+    } else {
+        $("#edit_appointment_id_error").show()
+    }
+}
 /*Delete The record*/
 function deletePlanRow(id, type = '') {
 
