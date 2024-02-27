@@ -1868,7 +1868,7 @@ function editDiscountInfo($this) {
                     'discount_id': discount_id
                 },
                 success: function (resposne) {
-                    console.log(resposne);
+
                     if (resposne.status) {
 
                         if (resposne.data.custom_checked == 0) {
@@ -2194,7 +2194,7 @@ function deleteConfPlanRow(id, type = '') {
 function deletePlan(id, type) {
 
     var package_total = $('#' + type + 'package_total_1').val();
-
+    $('#edit_payment_mode_id').val('').change();
     $.ajax({
         type: 'post',
         url: route('admin.packages.deletepackages_service'),
@@ -2206,7 +2206,14 @@ function deletePlan(id, type) {
         success: function (resposne) {
 
             if (resposne.status) {
-                ExistingTotal = resposne.data.total;
+
+                ExistingTotal = resposne.data.old_total;
+
+                var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + resposne.data.id + '"]').index();
+                var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + resposne.data.id + '"] + tr:not([id="table_1"])').length;
+
+                removeElementsFromIndex(edit_amountArray, RowIndex, RowNextIndex + 1);
+
 
                 $('.HR_' + resposne.data.id).remove();
 
@@ -2412,7 +2419,14 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
                     let consume = 'No';
                     if (resposne.status) {
+
                         total_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
+                        if (resposne.data.servicesData.packageServicesData.length) {
+                            for (var i = 0; i < resposne.data.servicesData.packageServicesData.length; i++) {
+                                total_amountArray.push(0);
+                            }
+                        }
+
                         var sum = 0;
                         if (total_amountArray.length) {
                             sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
@@ -2534,6 +2548,7 @@ jQuery(document).ready(function () {
             toastr.error("Please select the payment mode");
             return false;
         }
+
         if (random_id && (patient_id > 0) && total && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total && location_id) {
 
             showSpinner("-save");
@@ -2545,11 +2560,13 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
 
                     if (resposne.status) {
+
                         $('#successMessage').show();
                         toastr.success(" Plan successfully created")
                         closePopup('modal_appointment_plan_section');
                         reInitTable();
                     } else {
+
                         $('#wrongMessage').show();
                     }
 
@@ -2657,7 +2674,6 @@ jQuery(document).ready(function () {
             $(".package_bundles").each(function () {
                 formData['package_bundles[]'].push($(this).val());
             });
-
             $.ajax({
                 type: 'get',
                 url: route('admin.packages.savepackages_service'),
@@ -2665,11 +2681,30 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
 
                     let consume = 'No';
+
+                    if (resposne.data.servicesData.packageBundle.length && !$('.modal.show #edit_plan_services tr[id="table_1"]').length) {
+                        for (var i = 0; i < resposne.data.servicesData.packageBundle.length; i++) {
+                            edit_amountArray.push(0);
+                        }
+                        if (resposne.data.servicesData.packageServices.length) {
+                            for (var i = 0; i < resposne.data.servicesData.packageServices.length; i++) {
+                                edit_amountArray.push(0);
+                            }
+                        }
+                    }
+
                     edit_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
                     if (resposne.data.servicesData.packageServices.length) {
                         ExistingTotal = parseInt(resposne.data.servicesData.total);
                     } else {
                         ExistingTotal = 0;
+                    }
+
+
+                    if (resposne.data.servicesData.packageServicesData.length) {
+                        for (var i = 0; i < resposne.data.servicesData.packageServicesData.length; i++) {
+                            edit_amountArray.push(0);
+                        }
                     }
 
                     var editsum = 0;
@@ -2869,13 +2904,20 @@ jQuery(document).ready(function () {
 
 });
 
+function removeElementsFromIndex(arr, index, numElements) {
+    arr.splice(index, numElements);
+}
+
 function deletePlanRowTem(id, type = "") {
 
     var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
-    var RowLenght = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').prevAll('tr').length;
-    var ArrayIndex = RowIndex - RowLenght;
-    total_amountArray.splice(ArrayIndex, 1);
-    edit_amountArray.splice(ArrayIndex, 1);
+    var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"] + tr:not([id="table_1"])').length;
+
+    var ArrayIndex = RowIndex + RowNextIndex;
+
+    removeElementsFromIndex(total_amountArray, RowIndex, RowNextIndex + 1);
+    removeElementsFromIndex(edit_amountArray, RowIndex, RowNextIndex + 1);
+
     var sum = 0;
     if (total_amountArray.length) {
         sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
@@ -2886,6 +2928,7 @@ function deletePlanRowTem(id, type = "") {
     }
     jQuery('.modal.show #package_total_1').val(sum);
     jQuery('.modal.show #grand_total_1').val(sum);
+    jQuery('.modal.show #payment_mode_id_1').val('').change();
     var currentRowPrice = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').find('td:nth-child(8)').text();
 
 
@@ -2893,6 +2936,7 @@ function deletePlanRowTem(id, type = "") {
         var CashReceivedRemain = jQuery('.modal.show #edit_grand_total_1').val().replace(',', '');
     }
     jQuery('.modal.show #edit_grand_total_1').val(CashReceivedRemain - currentRowPrice);
+
     jQuery('.modal.show #edit_package_total_1').val(Editsum + ExistingTotal);
     jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
     jQuery('#cash_amount_1').val('');
