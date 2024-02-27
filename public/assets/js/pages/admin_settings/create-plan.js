@@ -1488,7 +1488,9 @@ function getDiscountInfo($this) {
     setTimeout(function () {
         $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
-
+    if (discount_id == "") {
+        $("#AddPackage").prop('disabled', false);
+    }
     if (service_id == null && (discount_id == null || discount_id == '')) {
         $("#add_discount_type").prop("disabled", false);
         $("#add_discount_type").val('').trigger('change');
