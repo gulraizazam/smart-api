@@ -795,10 +795,12 @@ class PackagesController extends Controller
             $discount_price = $packageBundleData['discount_price'];
         }
         $packageServices = PackageService::where('random_id', $request->random_id)->get();
+        $packageBundle = PackageBundles::where('random_id', $request->random_id)->get();
         $servicesData = [
             'bundlesData' => $packageBundleData,
             'packageServicesData' => $allDataServices,
             'packageServices' => $packageServices,
+            'packageBundle' => $packageBundle,
             'random_id' => $request->random_id,
             'service_name' => $service_name,
             'service_price' => $service_price,
@@ -906,7 +908,7 @@ class PackagesController extends Controller
             PackageService::where('package_bundle_id', '=', $request->id)->delete();
 
             PackageBundles::find($request->id)->forcedelete();
-
+            $old_total = PackageService::where('random_id', $request->random_id)->sum('tax_including_price');
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
                     $record = Packages::find($packageService->package_id);
@@ -917,6 +919,7 @@ class PackagesController extends Controller
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'total' => $total,
                 'id' => $request->id,
+                'old_total' => $old_total
             ]);
         }
     }
@@ -1000,10 +1003,12 @@ class PackagesController extends Controller
                     $PlanAppointmentCalculation->saveinvoice($appointment_id);
                 }
             } else {
+
                 return response()->json([
                     'status' => false,
                 ]);
             }
+
 
             /*save Package information and also update random id in package service table*/
             $data_package = $request->all();
@@ -1014,10 +1019,13 @@ class PackagesController extends Controller
             $data_package['appointment_id'] = $appointment_id;
             $data_package['created_at'] = Filters::getCurrentTimeStamp();
             $data_package['updated_at'] = Filters::getCurrentTimeStamp();
+
             $package = Packages::create($data_package);
             $package->update(['name' => sprintf('%05d', $package->id)]);
             $packagebundle = self::storeRecord($package, $request);
-            if ($request->cash_amount == '0') {
+
+            if ($request->cash_amount == null || $request->cash_amount == '0') {
+
                 // Commit Transaction
                 DB::commit();
 
@@ -1025,6 +1033,7 @@ class PackagesController extends Controller
                     'status' => true,
                 ]);
             } else {
+
                 /*Save data in package advances*/
                 $data_packageAdvances['cash_flow'] = 'in';
                 $data_packageAdvances['cash_amount'] = $request->cash_amount;
@@ -1650,6 +1659,7 @@ class PackagesController extends Controller
      */
     public function getgrandtotal_update(Request $request)
     {
+
         $package = Packages::where('random_id', '=', $request->random_id)->first();
 
         $packageadvances_cash_amount = PackageAdvances::where([
@@ -1675,10 +1685,12 @@ class PackagesController extends Controller
         $total_with_refunded = $package_total + $refunded + $setteled;
         $grand_total = number_format(round(($total_with_refunded - $package_advances_cash_amount)) - $request->cash_amount);
         $package_id = Packages::whereId($package->id)->first();
+
         $package_id->update(['total_price' => $request->total, 'updated_at' => Filters::getCurrentTimeStamp()]);
 
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
             'grand_total' => $grand_total,
+
         ]);
     }
 
