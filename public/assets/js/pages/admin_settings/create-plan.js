@@ -1929,7 +1929,11 @@ function getDiscountValue($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
-
+    if (discount_value != "") {
+        $("#add_discount_value_error").hide()
+    } else {
+        $("#add_discount_value_error").show()
+    }
     // $('#discount_value_1').html(/[^0-9]/g, '')
 
     if (discount_type == 'Percentage') {
@@ -1974,8 +1978,14 @@ function getDiscountValue($this) {
 }
 
 function changeDiscount($this, type) {
+
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
+    if (discount_type != "") {
+        $('#add_discount_type_error').hide();
+    } else {
+        $('#add_discount_type_error').show();
+    }
     if (type && type != 'undefined') {
         if (type == 'edit') {
             if ($this.val()) {
@@ -1995,6 +2005,7 @@ function changeDiscount($this, type) {
         } else {
             $('#discount_value_1').val('');
             $('#discount_value_1').prop('disabled', true);
+
         }
 
         var discount_value = $('#discount_value_1').val();
@@ -2328,6 +2339,7 @@ var total_amountArray = [];
 var edit_amountArray = [];
 var ExistingTotal = 0;
 jQuery(document).ready(function () {
+
     $("#AddPackage").click(function () {
         $('.create-plan-error').html('');
 
@@ -2606,7 +2618,6 @@ jQuery(document).ready(function () {
             $('#edit_appointment_id_error').html('Please select appointment');
             return false;
         }
-
         hideMessages();
 
         $(this).attr("disabled", true);
@@ -2714,6 +2725,9 @@ jQuery(document).ready(function () {
                     var grandsum = editsum + ExistingTotal;
 
                     if (resposne.status) {
+                        if (resposne.data.servicesData.packageBundle.length == 0 && $('#edit_plan_services').find('tr[class="text-center"]').length) {
+                            $('#edit_plan_services').empty();
+                        }
                         $("#edit_package_total_1").val(grandsum ?? 0);
                         $('#edit_plan_services').append("" +
                             "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
@@ -2929,6 +2943,8 @@ function deletePlanRowTem(id, type = "") {
     jQuery('.modal.show #package_total_1').val(sum);
     jQuery('.modal.show #grand_total_1').val(sum);
     jQuery('.modal.show #payment_mode_id_1').val('').change();
+
+
     var currentRowPrice = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').find('td:nth-child(8)').text();
 
 
@@ -2940,4 +2956,9 @@ function deletePlanRowTem(id, type = "") {
     jQuery('.modal.show #edit_package_total_1').val(Editsum + ExistingTotal);
     jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
     jQuery('#cash_amount_1').val('');
+    if (!jQuery('.modal.show #edit_centre_target_location #edit_plan_services tr').length) {
+        jQuery('.modal.show #edit_payment_mode_id').val('').change();
+        jQuery('.modal.show #edit_grand_total_1').val('');
+        jQuery('.modal.show #edit_cash_amount_1').val('');
+    }
 }
