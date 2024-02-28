@@ -175,7 +175,7 @@
                         </thead>
 
                         <tbody id="edit_plan_services">
-                            <tr class="text-center">
+                            <tr class="text-center service_not_found">
                                 <td colspan="8">No record found</td>
                             </tr>
                         </tbody>
