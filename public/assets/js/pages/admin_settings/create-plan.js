@@ -1418,6 +1418,11 @@ function getServiceDiscount($this, type = '') {
     var patient_id = $('#add_patient_id').val();
     var location_id = $('#add_plan_location_id').val();
     //$("#"+type+"add_discount_id").val('0').trigger('change');
+    if (service_id == "") {
+        $("#add_service_id_error").show()
+    } else {
+        $("#add_service_id_error").hide()
+    }
     setTimeout(function () {
         $('#discount_value_1').val('');
         $("#discount_value_1").attr('disabled', true);
@@ -1483,6 +1488,7 @@ function getServiceDiscount($this, type = '') {
 
 function getDiscountInfo($this) {
     hideMessages();
+    $("#add_discount_type_error").hide()
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
     setTimeout(function () {
@@ -1632,7 +1638,12 @@ function editDiscountValue($this) {
         var discount_id = $('#edit_discount_id').val();
         var discount_type = $('#edit_discount_type').val();
         var discount_value = $this.val();
+        if (discount_value.includes('.')) {
+            // Remove the last entered character (the decimal point)
+            discount_value = discount_value.slice(0, -1);
+            $("#edit_discount_value_1").val(discount_value)
 
+        }
         if (discount_type == 'Percentage') {
             if (discount_value > 100) {
                 $('#edit_percentageMessage').show();
@@ -1923,12 +1934,18 @@ function editDiscountInfo($this) {
 }
 
 function getDiscountValue($this) {
-    //inputSpinner(true, 'AddPackage')
+
     hideMessages();
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
+    if (discount_value.includes('.')) {
+        // Remove the last entered character (the decimal point)
+        discount_value = discount_value.slice(0, -1);
+        $("#discount_value_1").val(discount_value)
+
+    }
     if (discount_value != "") {
         $("#add_discount_value_error").hide()
     } else {
