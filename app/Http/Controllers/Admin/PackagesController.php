@@ -1754,7 +1754,7 @@ class PackagesController extends Controller
             $packageBundle = self::storeRecord($package, $request);
 
             /*End*/
-            if ($request->cash_amount == '0') {
+            if ($request->cash_amount == null || $request->cash_amount == '0') {
 
                 // Commit Transaction
                 DB::commit();
