@@ -2958,7 +2958,7 @@ function deletePlanRowTem(id, type = "") {
         Editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
     }
     jQuery('.modal.show #package_total_1').val(sum);
-    jQuery('.modal.show #grand_total_1').val(sum);
+    jQuery('.modal.show #grand_total_1').val((sum).toFixed(2));
     jQuery('.modal.show #payment_mode_id_1').val('').change();
 
 
@@ -2968,7 +2968,7 @@ function deletePlanRowTem(id, type = "") {
     if (jQuery('.modal.show #edit_grand_total_1').val()) {
         var CashReceivedRemain = jQuery('.modal.show #edit_grand_total_1').val().replace(',', '');
     }
-    jQuery('.modal.show #edit_grand_total_1').val(CashReceivedRemain - currentRowPrice);
+    jQuery('.modal.show #edit_grand_total_1').val((CashReceivedRemain - currentRowPrice).toFixed(2));
 
     jQuery('.modal.show #edit_package_total_1').val(Editsum + ExistingTotal);
     jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
