@@ -1566,6 +1566,7 @@ function getDiscountInfo($this) {
 
                         if (resposne.data.custom_checked == 0) {
                             $("#add_discount_type").val(resposne.data.discount_type).change();
+                            $("#edit_discount_type").prop("disabled", true);
                             if (resposne.data.discount_type == "Configurable") {
                                 $("#select_discount_type").css("display", "none");
                                 $("#configurable_discount_type").css("display", "block");
@@ -1884,6 +1885,7 @@ function editDiscountInfo($this) {
 
                         if (resposne.data.custom_checked == 0) {
                             $("#edit_discount_type").val(resposne.data.discount_type).change();
+                            $("#edit_discount_type").prop("disabled", true);
                             if (resposne.data.discount_type == "Configurable") {
                                 $("#select_edit_discount_type").css("display", "none");
                                 $("#edit_configurable_discount_type").css("display", "block");
