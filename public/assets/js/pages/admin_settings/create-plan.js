@@ -1352,8 +1352,6 @@ function setServices(response) {
 }
 
 function getAppointments(patient) {
-
-
     let location = $("#add_plan_location_id").val();
 
     if (location != '' && patient != '') {
@@ -1412,7 +1410,6 @@ function setAppointments(response) {
 
 /*Add Plan functions*/
 function getServiceDiscount($this, type = '') {
-
     hideMessages();
     var service_id = $this.val();
     var patient_id = $('#add_patient_id').val();
@@ -1737,6 +1734,7 @@ function changeDiscount($this) {
 /*Edit plan functions*/
 
 function editServiceDiscount($this, type = '') {
+    $('#service_id').html('');
     hideMessages();
 
     var service_id = $this.val();
@@ -2857,10 +2855,10 @@ jQuery(document).ready(function () {
             return false;
         }
 
-        // if(total <= 0){
-        //     toastr.error("Please add atleast one session");
-        //     return false;
-        // }
+        if (total <= 0) {
+            toastr.error("Please add atleast one service");
+            return false;
+        }
 
         if (random_id && (patient_id > 0) && total && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total && location_id) {
             showSpinner("-edit-save");
