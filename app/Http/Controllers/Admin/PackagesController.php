@@ -903,7 +903,7 @@ class PackagesController extends Controller
             }
             $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
 
-            $total = $package_total - $packageService->tax_including_price;
+            $total = number_format(round(($package_total - $packageService->tax_including_price)));
 
             PackageService::where('package_bundle_id', '=', $request->id)->delete();
 
