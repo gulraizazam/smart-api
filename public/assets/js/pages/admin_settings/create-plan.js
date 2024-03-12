@@ -1353,8 +1353,6 @@ function setServices(response) {
 }
 
 function getAppointments(patient) {
-
-
     let location = $("#add_plan_location_id").val();
 
     if (location != '' && patient != '') {
@@ -1413,7 +1411,6 @@ function setAppointments(response) {
 
 /*Add Plan functions*/
 function getServiceDiscount($this, type = '') {
-
     hideMessages();
     var service_id = $this.val();
     var patient_id = $('#add_patients_id').val();
@@ -1567,6 +1564,7 @@ function getDiscountInfo($this) {
 
                         if (resposne.data.custom_checked == 0) {
                             $("#add_discount_type").val(resposne.data.discount_type).change();
+                            $("#edit_discount_type").prop("disabled", true);
                             if (resposne.data.discount_type == "Configurable") {
                                 $("#select_discount_type").css("display", "none");
                                 $("#configurable_discount_type").css("display", "block");
@@ -1736,6 +1734,7 @@ function changeDiscount($this) {
 /*Edit plan functions*/
 
 function editServiceDiscount($this, type = '') {
+    $('#service_id').html('');
     hideMessages();
 
     var service_id = $this.val();
@@ -1886,6 +1885,7 @@ function editDiscountInfo($this) {
 
                         if (resposne.data.custom_checked == 0) {
                             $("#edit_discount_type").val(resposne.data.discount_type).change();
+                            $("#edit_discount_type").prop("disabled", true);
                             if (resposne.data.discount_type == "Configurable") {
                                 $("#select_edit_discount_type").css("display", "none");
                                 $("#edit_configurable_discount_type").css("display", "block");
@@ -2861,10 +2861,10 @@ jQuery(document).ready(function () {
             return false;
         }
 
-        // if(total <= 0){
-        //     toastr.error("Please add atleast one session");
-        //     return false;
-        // }
+        if (total <= 0) {
+            toastr.error("Please add atleast one service");
+            return false;
+        }
 
         if (random_id && (patient_id > 0) && total && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total && location_id) {
             showSpinner("-edit-save");
