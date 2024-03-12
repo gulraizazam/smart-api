@@ -6,6 +6,7 @@ function patient_search_createpalan() {
             dataType: 'json',
             delay: 250,
             data: function (params) {
+
                 return {
                     search: params.term // search term
                 };
@@ -1208,7 +1209,7 @@ function createPlan(url, id) {
     $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     setTimeout(function () {
         $("#add_discount_id").html('<option value="">Select Discount</option>');
-        $("#add_patient_id").val('');
+        $("#add_patients_id").val('');
         $(".search_patient").val('');
         $("#net_amount_1").val('');
         $("#package_total_1").val('');
@@ -1332,7 +1333,7 @@ function getServices() {
 
 function setServices(response) {
 
-    getAppointments($("#add_patient_id").val());
+    getAppointments($("#add_patients_id").val());
 
     try {
 
@@ -1415,7 +1416,7 @@ function getServiceDiscount($this, type = '') {
 
     hideMessages();
     var service_id = $this.val();
-    var patient_id = $('#add_patient_id').val();
+    var patient_id = $('#add_patients_id').val();
     var location_id = $('#add_plan_location_id').val();
     //$("#"+type+"add_discount_id").val('0').trigger('change');
     if (service_id == "") {
@@ -1453,7 +1454,7 @@ function getServiceDiscount($this, type = '') {
 
                     $("#" + type + "add_discount_id").html(options);
 
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
 
                 } else {
@@ -1462,7 +1463,7 @@ function getServiceDiscount($this, type = '') {
 
                     $("#add_discount_id").html(options);
 
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
 
                 }
@@ -1542,7 +1543,7 @@ function getDiscountInfo($this) {
                     $("#add_discount_type").val('').trigger('change');
                     $("#discount_value_1").prop("disabled", true);
                     $("#discount_value_1").val('');
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
 
                 } else {
@@ -1579,7 +1580,7 @@ function getDiscountInfo($this) {
                             }
                             $("#discount_value_1").val(resposne.data.discount_price);
                             $("#discount_value_1").prop("disabled", true);
-                            $("#net_amount_1").val(resposne.data.net_amount);
+                            $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#net_amount_1").prop("disabled", true);
                             $("#slug_1").val('not_custom');
                             if (resposne.data.discount_type == 'Percentage') {
@@ -1667,7 +1668,6 @@ function editDiscountValue($this) {
                     'discount_type': discount_type,
                 },
                 success: function (resposne) {
-
                     if (resposne.status) {
                         $("#edit_net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
                         $("#edit_net_amount_1").prop("disabled", true, 'EditPackage');
@@ -1718,7 +1718,7 @@ function changeDiscount($this) {
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
                 } else {
                     $('#DiscountRange').show();
@@ -1760,6 +1760,7 @@ function editServiceDiscount($this, type = '') {
                 'patient_id': patient_id
             },
             success: function (resposne) {
+
                 if (resposne.status) {
                     let discounts = resposne.data.discounts;
                     let options = '<option value="" >Select Discount</option>';
@@ -1857,6 +1858,7 @@ function editDiscountInfo($this) {
                 'bundle_id': service_id, //Basicailly it is bundle id
             },
             success: function (resposne) {
+
                 if (resposne.status) {
                     $("#edit_discount_type").prop("disabled", true);
                     $("#edit_discount_type").val('').trigger('change');
@@ -1897,7 +1899,7 @@ function editDiscountInfo($this) {
 
                             $("#edit_discount_value_1").val(resposne.data.discount_price);
                             $("#edit_discount_value_1").prop("disabled", true);
-                            $("#edit_net_amount_1").val(resposne.data.net_amount);
+                            $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#edit_net_amount_1").prop("disabled", true);
                             $("#edit_slug_1").val('not_custom');
 
@@ -1919,7 +1921,9 @@ function editDiscountInfo($this) {
                             $("#edit_discount_type").val('').trigger('change');
                             // $("#edit_discount_value_1").prop("disabled", false);
                             // $("#edit_discount_value_1").val('');
+                            $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#edit_net_amount_1").prop("disabled", true);
+
                             // $("#edit_net_amount_1").val('');
                             $("#edit_slug_1").val('custom');
                         }
@@ -2055,15 +2059,15 @@ function changeDiscount($this, type) {
                 if (resposne.status) {
                     if (type && type != 'undefined') {
                         if (type == 'edit') {
-                            $("#edit_net_amount_1").val(resposne.data.net_amount);
+                            $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#edit_net_amount_1").prop("disabled", true);
 
                         } else {
 
-                        } $("#net_amount_1").val(resposne.data.net_amount);
+                        } $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                         $("#net_amount_1").prop("disabled", true);
                     } else {
-                        $("#net_amount_1").val(resposne.data.net_amount);
+                        $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                         $("#net_amount_1").prop("disabled", true);
                     }
                 } else {
@@ -2146,7 +2150,9 @@ function edit_keyfunction_grandtotal() {
                 'random_id': random_id
             },
             success: function (resposne) {
+
                 if (resposne.status) {
+
                     $("#edit_grand_total_1").val(resposne?.data?.grand_total ?? 0);
                 } else {
                     $('#edit_wrongMessage').show();
@@ -2356,7 +2362,7 @@ var total_amountArray = [];
 var edit_amountArray = [];
 var ExistingTotal = 0;
 jQuery(document).ready(function () {
-
+    patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
         $('.create-plan-error').html('');
 
@@ -2365,7 +2371,7 @@ jQuery(document).ready(function () {
             return false;
         }
 
-        if (!$('#add_patient_id').val()) {
+        if (!$('#add_patients_id').val()) {
             $('#add_patient_id_error').html('Please select patient');
             return false;
         }
@@ -2529,7 +2535,7 @@ jQuery(document).ready(function () {
         hideMessages();
 
         var random_id = $('#random_id_1').val();
-        var patient_id = $('#add_patient_id').val();
+        var patient_id = $('#add_patients_id').val();
         var total = $('#package_total_1').val();
         var payment_mode_id = $('#payment_mode_id_1').val();
         var cash_amount = $('#cash_amount_1').val();
@@ -2721,9 +2727,9 @@ jQuery(document).ready(function () {
                         }
                     }
 
-                    edit_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
+                    edit_amountArray.push(parseFloat(resposne.data.servicesData.bundlesData.net_amount));
                     if (resposne.data.servicesData.packageServices.length) {
-                        ExistingTotal = parseInt(resposne.data.servicesData.total);
+                        ExistingTotal = parseFloat(resposne.data.servicesData.total);
                     } else {
                         ExistingTotal = 0;
                     }
@@ -2941,11 +2947,11 @@ function removeElementsFromIndex(arr, index, numElements) {
 
 function deletePlanRowTem(id, type = "") {
 
+
     var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
     var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"] + tr:not([id="table_1"])').length;
 
     var ArrayIndex = RowIndex + RowNextIndex;
-
     removeElementsFromIndex(total_amountArray, RowIndex, RowNextIndex + 1);
     removeElementsFromIndex(edit_amountArray, RowIndex, RowNextIndex + 1);
 
