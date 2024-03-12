@@ -2466,8 +2466,8 @@ jQuery(document).ready(function () {
                         if (total_amountArray.length) {
                             sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
                         }
-
-                        $("#package_total_1").val(sum ?? 0);
+                        console.log(sum);
+                        $("#package_total_1").val(sum.toFixed(2) ?? 0);
                         $('#plan_services').append("" +
                             "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
                             "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.bundlesData.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
@@ -2751,7 +2751,7 @@ jQuery(document).ready(function () {
                         if (resposne.data.servicesData.packageBundle.length == 0 && $('#edit_plan_services').find('tr[class="text-center"]').length) {
                             $('#edit_plan_services').empty();
                         }
-                        $("#edit_package_total_1").val(grandsum ?? 0);
+                        $("#edit_package_total_1").val(grandsum.toFixed(2) ?? 0);
                         $('#edit_plan_services').append("" +
                             "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
                             "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.bundlesData.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
