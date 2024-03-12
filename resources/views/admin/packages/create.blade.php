@@ -59,10 +59,10 @@
                     </div>
                     <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                        <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient plan_search_patient" placeholder="Patient Search">
-                        <input type="hidden" class="filter-field search_field" id="add_patient_id">
+                        <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient_refund plan_search_patient" placeholder="Patient Search">
+                        <input type="hidden" class="filter-field search_field" id="add_patients_id">
                         <span class="plan_search_patient_croxcli" style="display: none; padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
-                        <div class="suggesstion-box" style="display: none;">
+                        <div class="suggesstion-box-refund" style="display: none;">
                             <ul class="suggestion-list"></ul>
                         </div>
                         <small class="text-danger ml-1 mt-1"><b id="add_patient_id_error" class="create-plan-error"></b></small>
