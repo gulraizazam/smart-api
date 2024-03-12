@@ -908,7 +908,7 @@ class PackagesController extends Controller
             PackageService::where('package_bundle_id', '=', $request->id)->delete();
 
             PackageBundles::find($request->id)->forcedelete();
-            $old_total = PackageService::where('random_id', $request->random_id)->sum('tax_including_price');
+            $old_total = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
                     $record = Packages::find($packageService->package_id);
