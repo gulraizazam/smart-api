@@ -1950,21 +1950,22 @@ function getDiscountValue($this) {
         $("#discount_value_1").val(discount_value)
 
     }
+
     if (discount_value != "") {
         $("#add_discount_value_error").hide()
     } else {
         $("#add_discount_value_error").show()
     }
-    // $('#discount_value_1').html(/[^0-9]/g, '')
+
 
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
-            // inputSpinner(false, 'AddPackage')
+
             return false;
         } else {
             $('#percentageMessage').hide();
-            // inputSpinner(false, 'AddPackage')
+
         }
     }
 
@@ -1991,7 +1992,7 @@ function getDiscountValue($this) {
                 }
             },
             error: function () {
-                // inputSpinner(false, 'AddPackage')
+
             }
         });
     }
@@ -2076,7 +2077,7 @@ function changeDiscount($this, type) {
 
                     if (type && type != 'undefined') {
                         if (type == 'edit') {
-                            //$("#edit_net_amount_1").val('');
+
                             $("#edit_net_amount_1").prop("disabled", true);
                             $("#EditPackage").prop("disabled", true);
                         } else {
@@ -2085,7 +2086,7 @@ function changeDiscount($this, type) {
                             $("#EditPackage").prop("disabled", false);
                         }
                     } else {
-                        //$("#net_amount_1").val('');
+
                         $("#net_amount_1").prop("disabled", true);
                         $("#EditPackage").prop("disabled", false);
                     }
@@ -2253,11 +2254,11 @@ function deletePlan(id, type) {
 
                 $('.modal.fade.show tr[class="' + resposne.data.id + '"]').remove();
 
-                var stringWithoutCommas = resposne?.data?.total.replace(/,/g, '');
-                var numericValue = parseInt(stringWithoutCommas, 10);
+                var packageTotal = resposne?.data?.total.replace(/,/g, '');
+                var totalWithoutCommas = parseInt(packageTotal, 10);
 
-                if (numericValue > 1) {
-                    $("#" + type + "package_total_1").val(numericValue ?? 0);
+                if (totalWithoutCommas > 1) {
+                    $("#" + type + "package_total_1").val(totalWithoutCommas ?? 0);
                 } else {
                     $("#" + type + "package_total_1").val(0);
                 }
@@ -2470,7 +2471,7 @@ jQuery(document).ready(function () {
                         if (total_amountArray.length) {
                             sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
                         }
-                        console.log(sum);
+
                         $("#package_total_1").val(sum.toFixed(2) ?? 0);
                         $('#plan_services').append("" +
                             "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
@@ -2978,7 +2979,7 @@ function deletePlanRowTem(id, type = "") {
     if (jQuery('.modal.show #edit_grand_total_1').val()) {
         var CashReceivedRemain = jQuery('.modal.show #edit_grand_total_1').val().replace(',', '');
     }
-    jQuery('.modal.show #edit_grand_total_1').val((CashReceivedRemain - currentRowPrice).toFixed(2));
+    jQuery('.modal.show #edit_grand_total_1').val(Math.round(CashReceivedRemain - currentRowPrice));
 
     jQuery('.modal.show #edit_package_total_1').val((Editsum + ExistingTotal).toFixed(2));
     jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
