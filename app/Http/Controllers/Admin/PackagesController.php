@@ -709,8 +709,8 @@ class PackagesController extends Controller
         }
         $packageBundleData['bundle_id'] = $bundleId;
         $randomNumber = rand(1000, 9999);
-        $fourDigitNumber = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
-        $packageBundleData['id'] = $fourDigitNumber;
+        $generateRandomId = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
+        $packageBundleData['id'] = $generateRandomId;
         $bundleServices = [];
         foreach ($allBundleServices as $bundleService) {
             $serviceName = Services::find($bundleService->service_id);
