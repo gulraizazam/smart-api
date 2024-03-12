@@ -1325,8 +1325,10 @@ function get_query() {
     return result;
 }
 function patientSearch(search_id = 'patient_id', flag = 1) {
+
     let debounceTimer;
     $("." + search_id).on("keyup", function () {
+
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         if ($(this).val().length < 2) {
@@ -1343,6 +1345,7 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                     dataType: 'json',
                     data: { search: that.val() },
                     success: function (response) {
+                        console.log(response);
                         let html = '';
                         $(".suggestion-list").html(html);
                         let patients = response.data.patients;
@@ -1358,7 +1361,7 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                         }
                     }
                 });
-            }, 500);
+            }, 700);
         } else {
             $(".suggesstion-box").hide();
             $(".croxcli").hide();
@@ -1368,6 +1371,7 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
     return false;
 }
 function patientSearchRefund(search_id = 'patient_id', flag = 1) {
+
     $("." + search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box-refund").show();
@@ -1406,6 +1410,52 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
     return false;
 }
 
+function patientSearchPlan(search_id = 'patient_id', flag = 1) {
+
+    let debounceTimer;
+    $("." + search_id).on("keyup", function () {
+
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box-refund").show();
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box-refund").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        console.log(response);
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectUserPlan(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box-refund").show();
+                            $(".croxcli").show();
+                        } else {
+                            $(".suggesstion-box-refund").hide();
+                        }
+                    }
+                });
+            }, 700);
+        } else {
+            $(".suggesstion-box-refund").hide();
+            $(".croxcli").hide();
+        }
+    });
+    $(".croxcli").hide();
+    return false;
+}
 function productSearch(from_id, from_key, id = null, type = null) {
     if (from_id != '') {
         $.ajax({
@@ -1450,6 +1500,17 @@ function selectUser(name, user_id, search_id, flag = 1) {
     // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
+    $("." + search_id).focus();
+    if (flag == 1) {
+        getServices('add');
+    }
+}
+function selectUserPlan(name, user_id, search_id, flag = 1) {
+    $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+    $("#add_patients_id").val(user_id);
+    // $(".search_field").val(user_id).change();
+    $("." + search_id).val(name);
+    $(".suggesstion-box-refund").hide();
     $("." + search_id).focus();
     if (flag == 1) {
         getServices('add');
