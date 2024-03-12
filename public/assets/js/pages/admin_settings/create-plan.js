@@ -2252,8 +2252,12 @@ function deletePlan(id, type) {
                 $('.HR_' + resposne.data.id).remove();
 
                 $('.modal.fade.show tr[class="' + resposne.data.id + '"]').remove();
-                if (resposne?.data?.total > 1) {
-                    $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
+
+                var stringWithoutCommas = resposne?.data?.total.replace(/,/g, '');
+                var numericValue = parseInt(stringWithoutCommas, 10);
+
+                if (numericValue > 1) {
+                    $("#" + type + "package_total_1").val(numericValue ?? 0);
                 } else {
                     $("#" + type + "package_total_1").val(0);
                 }
