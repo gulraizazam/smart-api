@@ -1345,7 +1345,6 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                     dataType: 'json',
                     data: { search: that.val() },
                     success: function (response) {
-                        console.log(response);
                         let html = '';
                         $(".suggestion-list").html(html);
                         let patients = response.data.patients;
@@ -1416,9 +1415,9 @@ function patientSearchPlan(search_id = 'patient_id', flag = 1) {
     $("." + search_id).on("keyup", function () {
 
         $(".suggestion-list").html('<li>Searching...</li>');
-        $(".suggesstion-box-refund").show();
+        $(".suggesstion-box-plan").show();
         if ($(this).val().length < 2) {
-            $(".suggesstion-box-refund").hide();
+            $(".suggesstion-box-plan").hide();
             return false;
         }
         var that = $(this);
@@ -1431,7 +1430,7 @@ function patientSearchPlan(search_id = 'patient_id', flag = 1) {
                     dataType: 'json',
                     data: { search: that.val() },
                     success: function (response) {
-                        console.log(response);
+
                         let html = '';
                         $(".suggestion-list").html(html);
                         let patients = response.data.patients;
@@ -1440,16 +1439,16 @@ function patientSearchPlan(search_id = 'patient_id', flag = 1) {
                                 html += '<li onClick="selectUserPlan(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
                             });
                             $(".suggestion-list").html(html);
-                            $(".suggesstion-box-refund").show();
+                            $(".suggesstion-box-plan").show();
                             $(".croxcli").show();
                         } else {
-                            $(".suggesstion-box-refund").hide();
+                            $(".suggesstion-box-plan").hide();
                         }
                     }
                 });
-            }, 700);
+            }, 500);
         } else {
-            $(".suggesstion-box-refund").hide();
+            $(".suggesstion-box-plan").hide();
             $(".croxcli").hide();
         }
     });
@@ -1508,9 +1507,8 @@ function selectUser(name, user_id, search_id, flag = 1) {
 function selectUserPlan(name, user_id, search_id, flag = 1) {
     $("." + search_id).parent('div').find('.search_field').val(user_id).change();
     $("#add_patients_id").val(user_id);
-    // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
-    $(".suggesstion-box-refund").hide();
+    $(".suggesstion-box-plan").hide();
     $("." + search_id).focus();
     if (flag == 1) {
         getServices('add');
