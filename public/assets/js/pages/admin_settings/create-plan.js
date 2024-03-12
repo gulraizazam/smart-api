@@ -2455,7 +2455,7 @@ jQuery(document).ready(function () {
                     let consume = 'No';
                     if (resposne.status) {
 
-                        total_amountArray.push(parseInt(resposne.data.servicesData.bundlesData.net_amount));
+                        total_amountArray.push(parseFloat(resposne.data.servicesData.bundlesData.net_amount));
                         if (resposne.data.servicesData.packageServicesData.length) {
                             for (var i = 0; i < resposne.data.servicesData.packageServicesData.length; i++) {
                                 total_amountArray.push(0);
