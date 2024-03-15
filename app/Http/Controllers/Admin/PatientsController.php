@@ -139,6 +139,7 @@ class PatientsController extends Controller
         $records['filter_values'] = [
             'gender' => config('constants.gender_array'),
             'status' => config('constants.status'),
+            'memberships' => MembershipType::where('active', 1)->pluck('id', 'name'),
         ];
 
         $filters = Filters::all(Auth::User()->id, 'patients');
