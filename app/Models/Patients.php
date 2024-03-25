@@ -10,6 +10,7 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Helpers\GeneralFunctions;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Gate;
 
 class Patients extends BaseModal
 {
@@ -152,10 +153,12 @@ class Patients extends BaseModal
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
     public function membership()
     {
         return $this->hasOne(Membership::class, 'patient_id');
     }
+
 
     /**
      * Get the User that owns the Patient.
@@ -288,22 +291,23 @@ class Patients extends BaseModal
      */
     public static function getTotalRecords(Request $request, $account_id, $apply_filter, $filename)
     {
-
+        $query = self::query();
+        $filters = getFilters($request->all());
         $where = self::filters_patients($request, $account_id, $apply_filter, $filename);
 
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::where($where)->count();
-            } else {
-                return self::where($where)->where(['active' => 1])->count();
-            }
-        } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::count();
-            } else {
-                return self::where(['active' => 1])->count();
-            }
+            $query->where($where);
         }
+        if (!Gate::allows('view_inactive_patients')) {
+            $query->where(['active' => 1]);
+        }
+        if (isset($filters['membership'])) {
+            $query->whereHas('membership', function ($q) use ($filters) {
+                $q->where('membership_type_id', $filters['membership']);
+            });
+        }
+
+        return $query->count();
     }
 
     /**
@@ -317,26 +321,30 @@ class Patients extends BaseModal
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $filename)
     {
 
+        $filters = getFilters($request->all());
+
         $where = self::filters_patients($request, $account_id, $apply_filter, $filename);
-
-        [$orderBy, $order] = getSortBy($request);
-
-        if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::with('membership')->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            } else {
-                return self::with('membership')->where(['active' => 1])->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            }
-
-            //return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-        } else {
-            //return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::with('membership')->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            } else {
-                return self::with('membership')->where(['active' => 1])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            }
+        $query = self::with('membership');
+        if (isset($filters['membership'])) {
+            Filters::put(Auth::user()->id, $filename, 'memberships', $filters['membership']);
+            $query->whereHas('membership', function ($q) use ($filters) {
+                $q->where('membership_type_id', $filters['membership']);
+            });
         }
+        if (count($where)) {
+            $query->where($where);
+        }
+
+        if (!Gate::allows('view_inactive_patients')) {
+            $query->where(['active' => 1]);
+        }
+
+        $query->select('*', 'id as patient_id')
+            ->orderBy('created_at', 'DESC')
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart);
+
+        return $query->get();
     }
 
     /**
