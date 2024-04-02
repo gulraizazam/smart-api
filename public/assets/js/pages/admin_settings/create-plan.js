@@ -751,7 +751,7 @@ function setEditData(response) {
         $("#edit_parent_id").val(package?.patient_id)
         $("#edit_location_id").val(package?.location?.id)
         $("#edit_random_id_1").val(package?.random_id)
-        $("#edit_package_total_1").val(total_price)
+        $("#edit_package_total_1").val(total_price.toFixed(2));
         $("#edit_grand_total_1").val(grand_total)
         $('#edit_cash_amount_1').prop('disabled', true);
 
@@ -1638,10 +1638,14 @@ function editDiscountValue($this) {
         var discount_type = $('#edit_discount_type').val();
         var discount_value = $this.val();
         if (discount_value.includes('.')) {
-            // Remove the last entered character (the decimal point)
-            discount_value = discount_value.slice(0, -1);
-            $("#edit_discount_value_1").val(discount_value)
-
+            var parts = discount_value.split('.');
+            if (parts.length > 1 && parts[1].length > 2) {
+                alert("Maximum 2 digits allowed after the decimal point.");
+                discount_value = discount_value.slice(0, -1);
+                $("#edit_discount_value_1").val(discount_value)
+            } else {
+                $("#edit_discount_value_1").val(discount_value);
+            }
         }
         if (discount_type == 'Percentage') {
             if (discount_value > 100) {
@@ -1945,10 +1949,14 @@ function getDiscountValue($this) {
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
     if (discount_value.includes('.')) {
-        // Remove the last entered character (the decimal point)
-        discount_value = discount_value.slice(0, -1);
-        $("#discount_value_1").val(discount_value)
-
+        var parts = discount_value.split('.');
+        if (parts.length > 1 && parts[1].length > 2) {
+            alert("Maximum 2 digits allowed after the decimal point.");
+            discount_value = discount_value.slice(0, -1);
+            $("#discount_value_1").val(discount_value)
+        } else {
+            $("#discount_value_1").val(discount_value);
+        }
     }
 
     if (discount_value != "") {
@@ -2950,16 +2958,14 @@ function removeElementsFromIndex(arr, index, numElements) {
     arr.splice(index, numElements);
 }
 
+
 function deletePlanRowTem(id, type = "") {
-
-
     var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
     var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"] + tr:not([id="table_1"])').length;
 
     var ArrayIndex = RowIndex + RowNextIndex;
     removeElementsFromIndex(total_amountArray, RowIndex, RowNextIndex + 1);
     removeElementsFromIndex(edit_amountArray, RowIndex, RowNextIndex + 1);
-
     var sum = 0;
     if (total_amountArray.length) {
         sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
@@ -2968,11 +2974,9 @@ function deletePlanRowTem(id, type = "") {
     if (edit_amountArray.length) {
         Editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
     }
-    jQuery('.modal.show #package_total_1').val(sum);
+    jQuery('.modal.show #package_total_1').val(sum.toFixed(2));
     jQuery('.modal.show #grand_total_1').val((sum).toFixed(2));
     jQuery('.modal.show #payment_mode_id_1').val('').change();
-
-
     var currentRowPrice = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').find('td:nth-child(8)').text();
 
 
