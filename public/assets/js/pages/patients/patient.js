@@ -8,6 +8,7 @@ var table_columns = [
         width: 80,
         title: renderCheckbox(),
         template: function (data) {
+
             return childCheckbox(data);
         }
     },
@@ -302,6 +303,7 @@ function applyFilters(datatable) {
             email: $("#search_email").val(),
             phone: $("#search_phone").val(),
             gender: $("#search_gender").val(),
+            membership: $("#search_membership").val(),
             created_at: $("#date_range").val(),
             status: $("#search_status").val(),
             filter: 'filter',
@@ -318,6 +320,7 @@ function resetAllFilters(datatable) {
             delete: '',
             patient_id: '',
             name: '',
+            membership: '',
             email: '',
             phone: '',
             gender: '',
@@ -336,21 +339,25 @@ function setFilters(filter_values, active_filters) {
 
         let status = filter_values.status;
         let genders = filter_values.gender;
-
+        let memberships = filter_values.memberships;
         let status_options = '<option value="">All</option>';
         let gender_options = '<option value="">All</option>';
-
+        let membership_options = '<option value="">All</option>';
         Object.entries(genders).forEach(function (gender, index) {
             gender_options += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
+        Object.entries(memberships).forEach(function (membership, index) {
 
+            membership_options += '<option value="' + membership[1] + '">' + membership[0] + '</option>';
+        });
         Object.entries(status).forEach(function (value, index) {
             status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
         $("#search_status").html(status_options);
         $("#search_gender").html(gender_options);
-
+        $("#search_membership").html(membership_options);
+        $("#search_membership").val(active_filters.memberships);
         $("#search_name").val(active_filters.name);
         $("#search_status").val(active_filters.status);
         $("#search_gender").val(active_filters.gender);
