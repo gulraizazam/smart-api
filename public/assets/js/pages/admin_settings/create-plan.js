@@ -996,7 +996,7 @@ function displayData(response) {
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
 
-                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                if (packageadvance.cash_amount != '0') {
                     history_options += '<tr>';
                     history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
                     if (packageadvance.is_refund == 1) {
