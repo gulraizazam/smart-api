@@ -996,7 +996,7 @@ function displayData(response) {
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
 
-                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                if (packageadvance.cash_amount != '0') {
                     history_options += '<tr>';
                     history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
                     if (packageadvance.is_refund == 1) {
@@ -2479,7 +2479,8 @@ jQuery(document).ready(function () {
                         if (total_amountArray.length) {
                             sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
                         }
-
+                        let totalAmount = resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString();
+                        let grandTotal = totalAmount.replace(/,/g, '');
                         $("#package_total_1").val(sum.toFixed(2) ?? 0);
                         $('#plan_services').append("" +
                             "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
@@ -2490,7 +2491,7 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.servicesData.discount_price + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
-                            "<td>" + resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString() + "</td>" +
+                            "<td>" + grandTotal + "</td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
@@ -2761,6 +2762,9 @@ jQuery(document).ready(function () {
                     var grandsum = editsum + ExistingTotal;
 
                     if (resposne.status) {
+                        let totalAmount = resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString();
+                        let grandTotal = totalAmount.replace(/,/g, '');
+
                         if (resposne.data.servicesData.packageBundle.length == 0 && $('#edit_plan_services').find('tr[class="text-center"]').length) {
                             $('#edit_plan_services').empty();
                         }
@@ -2774,7 +2778,7 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.servicesData.discount_price + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
-                            "<td>" + resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString() + "</td>" +
+                            "<td>" + grandTotal + "</td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
