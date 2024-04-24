@@ -45,7 +45,7 @@ class User extends Authenticatable
      */
     public function getFullNameAttribute($value)
     {
-        return ucfirst($this->name).' - '.strtolower($this->email);
+        return ucfirst($this->name) . ' - ' . strtolower($this->email);
     }
 
     public function scopeIsActive($query, $status = 1)
@@ -332,7 +332,7 @@ class User extends Authenticatable
 
         $doctor = User::getData($id);
 
-        if (! $doctor) {
+        if (!$doctor) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
@@ -415,9 +415,7 @@ class User extends Authenticatable
             AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
 
             return $record;
-
         }
-
     }
 
     /**
@@ -432,7 +430,6 @@ class User extends Authenticatable
             ['user_type_id', '=', Config::get('constants.patient_id')],
             ['account_id', '=', Auth::User()->account_id],
         ])->get();
-
     }
 
     /*
@@ -444,7 +441,7 @@ class User extends Authenticatable
     */
     public static function getBulkData($id)
     {
-        if (! is_array($id)) {
+        if (!is_array($id)) {
             $id = [$id];
         }
 
@@ -508,7 +505,7 @@ class User extends Authenticatable
      */
     public static function getAllActiveRecords($account_id, $locationId = false)
     {
-        if ($locationId && ! is_array($locationId)) {
+        if ($locationId && !is_array($locationId)) {
             $locationId = [$locationId];
         }
 
@@ -534,7 +531,7 @@ class User extends Authenticatable
      */
     public static function getAllActiveEmployeeRecords($account_id, $locationId = false)
     {
-        if ($locationId && ! is_array($locationId)) {
+        if ($locationId && !is_array($locationId)) {
             $locationId = [$locationId];
         }
 
@@ -562,7 +559,7 @@ class User extends Authenticatable
      */
     public static function getAllActivePractionersRecords($account_id, $locationId = false)
     {
-        if ($locationId && ! is_array($locationId)) {
+        if ($locationId && !is_array($locationId)) {
             $locationId = [$locationId];
         }
 
@@ -598,10 +595,10 @@ class User extends Authenticatable
      */
     public static function getActiveOnly($locationId = false, $account_id = false, $user_id = false, $pluck_columns = true)
     {
-        if ($locationId && ! is_array($locationId)) {
+        if ($locationId && !is_array($locationId)) {
             $locationId = [$locationId];
         }
-        if ($user_id && ! is_array($user_id)) {
+        if ($user_id && !is_array($user_id)) {
             $user_id = [$user_id];
         }
 
