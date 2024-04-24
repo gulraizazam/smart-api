@@ -1,10 +1,10 @@
 @inject('request', 'Illuminate\Http\Request')
 @if($request->get('medium_type') != 'web')
-    @if($request->get('medium_type') == 'pdf')
-        @include('partials.pdf_head')
-    @else
-        @include('partials.head')
-    @endif
+@if($request->get('medium_type') == 'pdf')
+@include('partials.pdf_head')
+@else
+@include('partials.head')
+@endif
 @endif
 <div class="sn-table-holder">
     <div class="sn-report-head">
@@ -22,7 +22,7 @@
                 </div>
                 <div class="col-md-6">&nbsp;</div>
             </div>
-            <div class="pt-4 border-top  all-sections section-states" >
+            <div class="pt-4 border-top  all-sections section-states">
                 @if(isset($Appointments) && count($Appointments) > 0 )
                 <div class="col-md-12 mb-3">
                     <h3 class="">{{$user ? $user : $centre}}</h3>
@@ -30,49 +30,49 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Total Scheduled Appointments</td>
-                                <td class="bg-light" style="text-align:right;">{{count($Appointments) ?? 0}}</td>
+                                <td class="bg-light" style="text-align:right;">{{(count($Appointments)-$walkin_customers) ?? 0}}</td>
                             </tr>
                             <tr class="">
                                 <td class="border-top bg-light"> Arrived </td>
-                                <td class="border-top bg-light" style="text-align:right;">{{$arrived ?? 0}}</td>
+                                <td class="border-top bg-light" style="text-align:right;">{{$arrived-$walkin_customers ?? 0}}</td>
                             </tr>
-                            <!-- @if(isset($walkin_customers))
+                            @if(isset($walkin_customers))
                             <tr class="">
                                 <td class="border-top bg-light"> Walk-In Customers</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$walkin_customers ?? 0}}</td>
                             </tr>
-                            @endif -->
-                                <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                        <?php
-                                        if (isset($arrived) && isset($Appointments)) {
-                                            echo number_format(($arrived / count($Appointments)) * 100, 2) . '%';
+                            @endif
+                            <!-- <tr class="">
+                                <td class="border-top bg-light">Arrival Ratio</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                    <?php
+                                    // if (isset($arrived) && isset($Appointments)) {
+                                    //     echo number_format(($arrived / count($Appointments)) * 100, 2) . '%';
+                                    // } else {
+                                    //     echo '00.00 %';
+                                    // }
+                                    ?>
+                                </td>
+                            </tr> -->
+
+                            @if(isset($walkin_customers))
+                            <tr class="">
+                                <td class="border-top bg-light">Arrival Ratio Without Walk-In</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                    <?php
+                                    if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0) {
+                                        if (($arrived - $walkin_customers) > 0) {
+                                            echo number_format(((($arrived) - $walkin_customers) / (count($Appointments) - $walkin_customers)) * 100, 2) . '%';
                                         } else {
                                             echo '00.00 %';
                                         }
-                                        ?>
-                                    </td>
-                                </tr>
-
-                                <!-- @if(isset($walkin_customers))
-                                <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio Without Walk-In</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                        <?php
-                                        // if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0 ) {
-                                        //     if(($arrived - $walkin_customers) > 0) {
-                                        //         echo number_format(((($arrived) - $walkin_customers) / (count($Appointments)- $walkin_customers)) * 100, 2) . '%';
-                                        //     } else {
-                                        //         echo '00.00 %';
-                                        //     }
-                                        // } else {
-                                        //     echo '00.00 %';
-                                        // }
-                                        ?>
-                                    </td>
-                                </tr>
-                                @endif -->
+                                    } else {
+                                        echo '00.00 %';
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                            @endif
                         </thead>
                     </table>
                 </div>
@@ -94,18 +94,18 @@
                                 <td class="border-top bg-light" style="text-align:right;">{{$walkin_customers ?? 0}}</td>
                             </tr> -->
                             <tr class="">
-                                    <td class="border-top bg-light" >Arrival Ratio</td>
-                                    <td class="border-top bg-light" style="text-align:right;">
-                                        <?php
-                                        if (isset($arrived) && isset($Appointments) && count($Appointments) > 0) {
-                                            echo number_format(($arrived / count($Appointments)) * 100, 2) . '%';
-                                        } else {
-                                            echo '00.00 %';
-                                        }
-                                        ?>
-                                    </td>
-                                </tr>
-                                <!-- @if(isset($walkin_customers))
+                                <td class="border-top bg-light">Arrival Ratio</td>
+                                <td class="border-top bg-light" style="text-align:right;">
+                                    <?php
+                                    if (isset($arrived) && isset($Appointments) && count($Appointments) > 0) {
+                                        echo number_format(($arrived / count($Appointments)) * 100, 2) . '%';
+                                    } else {
+                                        echo '00.00 %';
+                                    }
+                                    ?>
+                                </td>
+                            </tr>
+                            <!-- @if(isset($walkin_customers))
                                 <tr class="">
                                     <td class="border-top bg-light" >Arrival Ratio Without Walk-In</td>
                                     <td class="border-top bg-light" style="text-align:right;">
