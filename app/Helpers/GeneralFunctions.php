@@ -402,11 +402,37 @@ class GeneralFunctions
             return $mergedServices;
         }
     }
+    public static function ServicesTreeMachineType()
+    {
 
+
+        $filename = 'services';
+
+        $query = Services::with(['children' => function ($q) {
+            $q->where('active', 1)->orderBy('name');
+        }])
+            ->where(['parent_id' => 0])
+            ->where('slug', '!=', 'all');
+        $services = $query->get();
+        $mergedServices = [];
+        foreach ($services as $key => $service) {
+
+            $children = Services::where(['parent_id' => $service->id, 'active' => 1])->orderBy('name')->get();
+
+            $mergedServices[] = $service->toArray();
+            $children = $children->toArray();
+            foreach ($children as $child) {
+                $mergedServices[] = $child;
+            }
+        }
+
+        return $mergedServices;
+    }
     public static function ServicesTreeList($request = null, $total = 0, $id = null)
     {
         $where = [];
         if ($total >= 0 && $id == null) {
+
             try {
                 $filename = 'services';
                 if (isset($request)) {
@@ -450,6 +476,7 @@ class GeneralFunctions
                     if (hasFilter($filters, 'status') && hasFilter($filters, 'name') && $filters['status'] == 1) {
                         $query = Services::with('children')
                             ->where('parent_id', 0)
+                            //->where('active', 1)
                             ->where('slug', '!=', 'all')
                             ->where($where);
                         $services = $query->get();
@@ -592,12 +619,13 @@ class GeneralFunctions
                     }
                 }
                 $query = Services::with(['children' => function ($q) {
-                    $q->orderBy('name');
+                    $q->where('active', 1)->orderBy('name');
                 }])
                     ->where(['parent_id' => 0])
                     ->where('slug', '!=', 'all')
                     ->when(isset($where) && count($where) > 0, fn ($q) => $q->where($where));
                 $services = $query->get()->toArray();
+
                 $allserviceslug = Services::where(['slug' => 'all'])->first();
                 if ($allserviceslug) {
                     $allserviceslug = $allserviceslug->toArray();
@@ -609,9 +637,10 @@ class GeneralFunctions
                 return false;
             }
         } else {
+
             try {
                 $query = Services::with(['children' => function ($q) {
-                    $q->orderBy('name');
+                    $q->where('active', 1)->orderBy('name');
                 }])
                     ->where(['id' => $id, 'parent_id' => 0])
                     ->where('slug', '!=', 'all');
