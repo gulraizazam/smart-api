@@ -46,7 +46,12 @@ class MembershipReportsController extends Controller
             ->orWhere('name', 'like', '%Student Membership Card%')
             ->pluck('id')->toArray();
 
-        $packagesWithServices = Packages::with(['user', 'packageservice.service', 'location', 'user.membership.membershipType'])
+        $packagesWithServices = Packages::with([
+            'user',
+            'packageservice.service',
+            'location',
+            'user.membership.membershipType'
+        ])
             ->whereHas('packageservice', function ($query) use ($serviceIds) {
                 $query->whereIn('service_id', $serviceIds);
             })
@@ -56,7 +61,7 @@ class MembershipReportsController extends Controller
                     $query->where($whereMembership);
                 });
             })
-            ->when($request->date_range, function ($query) use ($start_date, $end_date) {
+            ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
                 $query->whereHas('user.membership', function ($query) use ($start_date, $end_date) {
                     $query->whereBetween('assigned_at', [$start_date, $end_date]);
                 });
