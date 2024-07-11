@@ -66,6 +66,10 @@ class Packages extends BaseModal
     {
         return $this->hasMany('App\Models\PackageService', 'package_id');
     }
+    public function services()
+    {
+        return $this->hasMany('App\Models\Services', 'service_id');
+    }
 
     /*
      * Create Record
@@ -137,7 +141,7 @@ class Packages extends BaseModal
 
         $package = Packages::getData($id);
 
-        if (! $package) {
+        if (!$package) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
@@ -165,7 +169,7 @@ class Packages extends BaseModal
 
         $package = Packages::getData($id);
 
-        if (! $package) {
+        if (!$package) {
 
             return [
                 'status' => false,
@@ -193,7 +197,7 @@ class Packages extends BaseModal
     {
         $package = Packages::getData($id);
 
-        if (! $package) {
+        if (!$package) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
@@ -293,7 +297,7 @@ class Packages extends BaseModal
                 ->get();
         }
     }
-    
+
     public static function filters($request, $account_id, $id, $apply_filter, $filename)
     {
 

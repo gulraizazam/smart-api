@@ -1477,7 +1477,8 @@ class PatientsController extends Controller
                 [
                     'patient_id' => $request->id,
                     'start_date' => Carbon::now()->format('Y-m-d'),
-                    'end_date' => Carbon::now()->addDays($checkMembership->membershipType->period)->format('Y-m-d')
+                    'end_date' => Carbon::now()->addDays($checkMembership->membershipType->period)->format('Y-m-d'),
+                    'assigned_at' => Carbon::now()->format('Y-m-d'),
                 ]
             );
             return ApiHelper::apiResponse($this->success, 'Membership assigned successfully');
