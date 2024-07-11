@@ -1,9 +1,7 @@
 
 $('#date_range_membership').daterangepicker({
-    locale: {
-    },
+    locale: {},
     ranges: {
-        'Today': [moment(), moment()],
         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
         'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
         'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
@@ -12,9 +10,13 @@ $('#date_range_membership').daterangepicker({
         'This Year': [moment().startOf('year'), moment().endOf('year')],
         'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
     },
-    startDate: moment().startOf('month'),
-    endDate: moment().subtract(1, 'days')
-}).val();
+    autoUpdateInput: false
+}, function (start, end, label) {
+    $('#date_range_membership').val(start.format('MM/DD/YYYY') + ' - ' + end.format('MM/DD/YYYY'));
+});
+
+// Clear any default value
+$('#date_range_membership').val('');
 var loadMembershipReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
