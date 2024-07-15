@@ -64,6 +64,7 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 use App\Http\Controllers\Admin\Reports\ActivitylogsReportController;
+use App\Http\Controllers\MembershipReportsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -577,10 +578,12 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     //Route start for Operations reports
     Route::get('operation_reports/loaddayarray', [OperationsReportController::class, 'loaddayarray'])->name('reports.operations_report_loadday');
     Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
+    Route::get('membership_reports', [MembershipReportsController::class, 'index'])->name('reports.membership-reports');
     Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
     Route::post('operation_reports/converted-report-load', [OperationsReportController::class, 'reportLoadConverted'])->name('reports.converted_report_load');
     Route::get('reports/dailyarrival', [FinanceReportController::class, 'Dailyarrival'])->name('reports.dailyarrival');
     Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
+    Route::post('reports/load_membership_report', [MembershipReportsController::class, 'loadMembershipReport'])->name('reports.load_membership_report');
     Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
     Route::get('reports/activity_logs', [ActivitylogsReportController::class, 'index'])->name('reports.activity_logs');
     Route::post('reports/activity_logs', [ActivitylogsReportController::class, 'fetchActivityReport'])->name('reports.load_activity_report');
@@ -628,6 +631,6 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
     Route::get('activitylogs', [ActivitylogsReportController::class, 'InsertLogs']);
 
     ///////////Memberships routes/////
-    Route::resource('membershiptypes',MembershipTypesController::class)->only('index');
-    Route::resource('memberships',MembershipsController::class)->only('index');
+    Route::resource('membershiptypes', MembershipTypesController::class)->only('index');
+    Route::resource('memberships', MembershipsController::class)->only('index');
 });
