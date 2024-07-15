@@ -47,7 +47,10 @@ class User extends Authenticatable
     {
         return ucfirst($this->name) . ' - ' . strtolower($this->email);
     }
-
+    public function membership()
+    {
+        return $this->hasOne(Membership::class, 'patient_id');
+    }
     public function scopeIsActive($query, $status = 1)
     {
         return $query->where('active', $status);
