@@ -15,7 +15,7 @@ $('#date_range_membership').daterangepicker({
     $('#date_range_membership').val(start.format('MM/DD/YYYY') + ' - ' + end.format('MM/DD/YYYY'));
 });
 
-// Clear any default value
+
 $('#date_range_membership').val('');
 var loadMembershipReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
@@ -37,7 +37,7 @@ var loadMembershipReport = function (that) {
             $('#membership_report_content').html('');
             $('#membership_report_content').html(response);
             $("#memberships_table").DataTable({
-                dom: 'Bfrtip',
+                dom: 'Bfrtip<"bottom"l>',
                 buttons: [
                     'excelHtml5',
                     'csvHtml5',
