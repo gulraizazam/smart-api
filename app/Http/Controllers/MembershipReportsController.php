@@ -36,7 +36,7 @@ class MembershipReportsController extends Controller
             $where[] = ['packages.location_id', $request->location_id];
         }
 
-        if ($request->membership_type_id) {
+        if ($request->membership_type_id && $request->membership_type_id !== "no_membership") {
             $whereMembership[] = ['membership_type_id', '=', $request->membership_type_id];
         }
 
@@ -56,10 +56,14 @@ class MembershipReportsController extends Controller
                 $query->whereIn('service_id', $serviceIds);
             })
             ->where($where)
-            ->when($request->membership_type_id, function ($query) use ($whereMembership) {
-                $query->whereHas('user.membership', function ($query) use ($whereMembership) {
-                    $query->where($whereMembership);
-                });
+            ->when($request->membership_type_id, function ($query) use ($whereMembership, $request) {
+                if ($request->membership_type_id === "no_membership") {
+                    $query->whereDoesntHave('user.membership');
+                } else {
+                    $query->whereHas('user.membership', function ($query) use ($whereMembership) {
+                        $query->where($whereMembership);
+                    });
+                }
             })
             ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
                 $query->whereHas('user.membership', function ($query) use ($start_date, $end_date) {
@@ -69,7 +73,6 @@ class MembershipReportsController extends Controller
             ->get();
 
         $users = $packagesWithServices->map(function ($package) use ($serviceIds) {
-
             $user = $package->user;
             $service = $package->packageservice->whereIn('service_id', $serviceIds)->first();
             $serviceName = $service->service->name;
