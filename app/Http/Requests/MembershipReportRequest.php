@@ -15,7 +15,7 @@ class MembershipReportRequest extends FormRequest
     {
         return [
             'location_id' => 'nullable|integer',
-            'membership_type_id' => 'nullable|integer',
+            'membership_type_id' => 'nullable',
             'date_range' => 'nullable|string',
         ];
     }
