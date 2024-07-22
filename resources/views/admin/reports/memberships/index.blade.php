@@ -3,6 +3,19 @@
 @section('content')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
+<style>
+    .bottom {
+        margin-top: 3px;
+        margin-left: 15px;
+        /* Adjust as needed */
+        text-align: right;
+        /* Adjust as needed */
+    }
+
+    div#memberships_table_length {
+        margin-left: 15px;
+    }
+</style>
 <!--begin::Content-->
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Memberships Report'])
@@ -52,6 +65,7 @@
                                         {!! Form::label('membership_type', 'Memberhsip Type:', ['class' => 'control-label']) !!}
                                         <select class="form-control select2" id="membership_type" name="membership_type_id">
                                             <option value="">Select Membership Type</option>
+                                            <option value="no_membership">No Membership</option>
                                             @foreach($membershipTypes as $key=>$membershipType)
                                             <option value="{{$key}}">{{$membershipType}}</option>
                                             @endforeach
