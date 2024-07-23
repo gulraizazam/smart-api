@@ -81,32 +81,34 @@
 
                                     <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                         {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br />
-                                        <a href="javascript:void(0);" onclick="loadMembershipReport($(this));" id="load_membership_report" class="btn btn-success spinner-button">Load Report</a>
+                                        <button class="btn btn-primary btn-primary--icon" id="apply_filters">Load Report</button>
+                                        <!-- <a href="javascript:void(0);" onclick="loadMembershipReport($(this));" id="load_membership_report" class="btn btn-success spinner-button">Load Report</a> -->
                                     </div>
-                                    <div class="clear clearfix"></div>
-                                    <div style="overflow: hidden; width: 100%;" id="membership_report_content"></div>
+                                    <div class="card-body">
+                                        <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
+                                        <!-- <div style="overflow: hidden; width: 100%;" id="membership_report_content"></div> -->
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+                <!--end::Card-->
             </div>
-            <!--end::Card-->
+            <!--end::Container-->
         </div>
-        <!--end::Container-->
+        <!--end::Entry-->
     </div>
-    <!--end::Entry-->
-</div>
-<!--end::Content-->
-@include('admin.settings.edit')
-@push('datatable-js')
-<script src="{{asset('assets/js/pages/admin_settings/settings.js')}}"></script>
-<script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
-<script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-<script src="{{asset('assets/js/memberhsipsreport.js')}}"></script>
-@endpush
-@endsection
+    <!--end::Content-->
+    @include('admin.settings.edit')
+    @push('datatable-js')
+    <script src="{{asset('assets/js/pages/admin_settings/settings.js')}}"></script>
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+    <script src="{{asset('assets/js/memberhsipsreport.js')}}"></script>
+    @endpush
+    @endsection
