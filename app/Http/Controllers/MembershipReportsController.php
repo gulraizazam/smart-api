@@ -65,7 +65,7 @@ class MembershipReportsController extends Controller
                 $query->whereIn('service_id', $serviceIds);
             })
             ->where($where)
-            ->when($filters['membership_type_id'], function ($query) use ($whereMembership, $request, $filters) {
+            ->when(isset($filters['membership_type_id']), function ($query) use ($whereMembership, $filters) {
                 if ($filters['membership_type_id'] === "no_membership") {
                     $query->whereDoesntHave('user.membership');
                 } else {
