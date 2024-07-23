@@ -13,7 +13,7 @@ var table_columns = [
         field: 'user_name',
         title: 'Patient Name',
         sortable: false,
-        width: 110,
+        width: 60,
     }, {
         field: 'location',
         title: 'Location',
@@ -24,7 +24,7 @@ var table_columns = [
         field: 'membership_code',
         title: 'Membership Code',
         sortable: false,
-        width: 70,
+        width: 60,
 
     }, {
         field: 'membership_type',
