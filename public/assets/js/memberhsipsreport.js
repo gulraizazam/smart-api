@@ -1,6 +1,59 @@
 
+var table_url = route('admin.reports.load_membership_report');
+if (typeof lead_type !== 'undefined' && lead_type != '') {
+    table_url = route('admin.reports.load_membership_report', { type: lead_type });
+}
+var table_columns = [
+    {
+        field: 'user_id',
+        title: 'Patient ID',
+        sortable: false,
+        width: 60,
+    }, {
+        field: 'user_name',
+        title: 'Patient Name',
+        sortable: false,
+        width: 110,
+    }, {
+        field: 'location',
+        title: 'Location',
+        sortable: false,
+        width: 90,
+
+    }, {
+        field: 'membership_code',
+        title: 'Membership Code',
+        sortable: false,
+        width: 70,
+
+    }, {
+        field: 'membership_type',
+        title: 'Membership Type',
+        sortable: false,
+        width: 70,
+
+    }, {
+        field: 'service_status',
+        title: 'Service Status',
+        sortable: false,
+        width: 70,
+    }];
+
+function applyFilters(datatable) {
+    $('#apply_filters').on('click', function () {
+        let filters = {
+            delete: '',
+            location_id: $('#location_id').val(),
+            membership_type_id: $('#membership_type').val(),
+            date_range: $('#date_range_membership').val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+    });
+}
+
 $('#date_range_membership').daterangepicker({
-    locale: {},
+
     ranges: {
         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
         'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],

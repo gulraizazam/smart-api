@@ -8,6 +8,7 @@ use App\Models\Locations;
 use App\Models\Membership;
 use App\Models\MembershipType;
 use App\Models\Packages;
+use DateTime;
 use App\Models\Services;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -31,17 +32,25 @@ class MembershipReportsController extends Controller
     {
         $where = [];
         $whereMembership = [];
+        $filters = getFilters($request->all());
 
-        if ($request->location_id) {
-            $where[] = ['packages.location_id', $request->location_id];
+        if (hasFilter($filters, 'location_id')) {
+            $where[] = ['packages.location_id', '=', $filters['location_id']];
         }
 
-        if ($request->membership_type_id && $request->membership_type_id !== "no_membership") {
-            $whereMembership[] = ['membership_type_id', '=', $request->membership_type_id];
+        if (hasFilter($filters, 'membership_type_id') && $filters['membership_type_id'] !== "no_membership") {
+            $whereMembership[] = ['membership_type_id', '=', $filters['membership_type_id']];
+        }
+        if (hasFilter($filters, 'date_range')) {
+            $date_range = explode(' - ', $filters['date_range']);
+
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
         }
 
-        $start_date = $request->getStartDate();
-        $end_date = $request->getEndDate();
         $serviceIds = Services::where('name', 'like', '%Gold Membership Card%')
             ->orWhere('name', 'like', '%Student Membership Card%')
             ->pluck('id')->toArray();
@@ -56,8 +65,8 @@ class MembershipReportsController extends Controller
                 $query->whereIn('service_id', $serviceIds);
             })
             ->where($where)
-            ->when($request->membership_type_id, function ($query) use ($whereMembership, $request) {
-                if ($request->membership_type_id === "no_membership") {
+            ->when($filters['membership_type_id'], function ($query) use ($whereMembership, $request, $filters) {
+                if ($filters['membership_type_id'] === "no_membership") {
                     $query->whereDoesntHave('user.membership');
                 } else {
                     $query->whereHas('user.membership', function ($query) use ($whereMembership) {
@@ -91,6 +100,6 @@ class MembershipReportsController extends Controller
             ];
         });
 
-        return view('admin.reports.memberships.membership_report', ['users' => $users]);
+        return $users;
     }
 }
