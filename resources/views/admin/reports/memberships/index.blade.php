@@ -43,6 +43,13 @@
                             </span>
                         </span>
                         <h3 class="card-label">Memberships Report</h3>
+
+                    </div>
+                    <div class="btn-group">
+                        <a href="#" data-href="{{route('admin.memberships.export.excel')}}" class="btn btn-primary" id="csv-leads" data-action="2" class="tool-action" style=" height: 40px;">
+                            <i class="fa fa-download"></i>
+                            <span class="hidden-xs"> Export </span>
+                        </a>
                     </div>
                 </div>
 
