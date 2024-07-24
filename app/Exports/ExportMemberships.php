@@ -41,10 +41,7 @@ class ExportMemberships implements FromCollection, WithHeadings, WithMapping, Wi
             $whereMembership[] = [['membership_type_id' => $this->request->membership_type_id]];
         }
 
-        if ($this->request->date_range && $this->request->date_range != '') {
-            $where[] = ['assigned_at', '>=', $start_date];
-            $where[] = ['assigned_at', '<=', $end_date];
-        }
+
         $serviceIds = Services::where('name', 'like', '%Gold Membership Card%')
             ->orWhere('name', 'like', '%Student Membership Card%')
             ->pluck('id')->toArray();
