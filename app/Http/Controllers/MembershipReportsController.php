@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ExportMemberships;
 use App\Helpers\ACL;
 use App\Http\Requests\MembershipReportRequest;
 use App\Models\Locations;
@@ -11,6 +12,7 @@ use App\Models\Packages;
 use DateTime;
 use App\Models\Services;
 use App\Models\User;
+use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -101,5 +103,9 @@ class MembershipReportsController extends Controller
         });
 
         return $users;
+    }
+    public function Export(Request $request)
+    {
+        return Excel::download(new ExportMemberships($request), 'memberships.' . 'xlsx');
     }
 }
