@@ -51,7 +51,17 @@ function applyFilters(datatable) {
         datatable.search(filters, 'search');
     });
 }
+$("#csv-leads").on("click", function () {
 
+    let location_id = $('#location_id').val();
+    let membership_type_id = $('#membership_type').val();
+    let date_range = $('#date_range_membership').val();
+    let url = $(this).data('href');
+    let downloadUrl = `${url}?location_id=${location_id}&membership_type_id=${membership_type_id}&date_range=${date_range}`;
+
+    // Redirect to the download URL
+    window.location.href = downloadUrl;
+});
 $('#date_range_membership').daterangepicker({
 
     ranges: {
@@ -69,7 +79,6 @@ $('#date_range_membership').daterangepicker({
 });
 
 
-$('#date_range_membership').val('');
 var loadMembershipReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
