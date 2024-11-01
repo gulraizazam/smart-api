@@ -98,7 +98,7 @@ h1 {
 <div class="message">
   <h1>Access to this page is restricted</h1>
   <p>Please check with the site admin if you believe this is a mistake.</p>
-  <a href="{{route('logout')}}">Logout</a>
+  <a href="{{route('logout')}}" class="btn btn-primary">Logout</a>
 </div>
 <!-- partial -->
   
