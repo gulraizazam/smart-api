@@ -34,7 +34,7 @@ class CheckIpRestriction
                 return $next($request);
                  // Ensure this route exists
             }
-            return view('unauthorized');
+            return redirect('unathorized');
             
         }
         
