@@ -71,5 +71,6 @@ class Kernel extends HttpKernel
         'checkAccount' => \App\Http\Middleware\CheckAccountStatus::class,
         'auth.common' => \App\Http\Middleware\AuthenticateApiWeb::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
+        'check.ip.restriction' => \App\Http\Middleware\CheckIpRestriction::class,
     ];
 }
