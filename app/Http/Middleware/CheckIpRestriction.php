@@ -22,7 +22,8 @@ class CheckIpRestriction
             if (method_exists($user, 'hasRole')) {
                 $userRole = $user->getRoleNames()->first(); // Get the first role if multiple
             } else {
-                // If role is a direct column in the user table
+                $userRole = $user->role; // Assuming 'role' is the column name
+            }
                 
             $allowedIps = config("ip_restrictions.{$userRole}", []);
 
