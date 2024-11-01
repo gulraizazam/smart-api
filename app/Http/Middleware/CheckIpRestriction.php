@@ -32,7 +32,7 @@ class CheckIpRestriction
             } else {
                 $userRole = $user->role;
             }
-            
+            dd($userRole);
             // If the role is 'CSR' or 'CSR Supervisor', apply IP restriction
             if (($userRole == 'CSR' || $userRole == 'CSR Supervisor')) {
                 $userIp = $request->ip();
