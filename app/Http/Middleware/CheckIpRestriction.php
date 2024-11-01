@@ -28,7 +28,7 @@ class CheckIpRestriction
             }
 
             // If the IP is not allowed, return an error response
-            return response()->json(['error' => 'Unauthorized IP address.'], 403);
+            return redirect()->route('unauthorized');
         }
         return $next($request);
     }
