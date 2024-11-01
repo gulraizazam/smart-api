@@ -32,10 +32,11 @@ class CheckIpRestriction
             } else {
                 $userRole = $user->role;
             }
-            dd($userRole);
+            $userIp = $request->ip();
+            dd($userRole == 'CSR Supervisor' , !in_array($userIp, $allowedIps));
             // If the role is 'CSR' or 'CSR Supervisor', apply IP restriction
             if (($userRole == 'CSR' || $userRole == 'CSR Supervisor')) {
-                $userIp = $request->ip();
+               
                 
                 if (!in_array($userIp, $allowedIps)) {
                     Auth::logout();
