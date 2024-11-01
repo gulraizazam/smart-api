@@ -21,6 +21,7 @@ class CheckIpRestriction
             $user = Auth::user();
             if (method_exists($user, 'hasRole')) {
                 $userRole = $user->getRoleNames()->first(); // Get the first role if multiple
+                dd($userRole);
             } else {
                 $userRole = $user->role; // Assuming 'role' is the column name
             }
