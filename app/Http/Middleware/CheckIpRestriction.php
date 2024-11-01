@@ -34,6 +34,7 @@ class CheckIpRestriction
                 return $next($request);
                  // Ensure this route exists
             }
+            Auth::logout();
             return redirect('unathorized');
             
         }
