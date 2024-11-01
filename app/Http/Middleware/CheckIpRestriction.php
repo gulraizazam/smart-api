@@ -29,7 +29,7 @@ class CheckIpRestriction
             $restrictedIps = config("ip_restrictions.restricted_ips.{$userRole}", []);
 
             // Check if the user's IP is in the allowed list
-            if ($userRole=='CSR' || $userRole=='CSR Supervisor' && in_array($userIp, $restrictedIps)) {
+            if (($userRole == 'CSR' || $userRole == 'CSR Supervisor') && in_array($userIp, $restrictedIps)) {
                 // Redirect to unauthorized page if the IP is restricted
                 return redirect('unauthorized'); // Ensure this route exists
             }
