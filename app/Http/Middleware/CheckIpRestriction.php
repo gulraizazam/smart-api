@@ -22,7 +22,7 @@ class CheckIpRestriction
             if (method_exists($user, 'hasRole')) {
                 $userRole = $user->getRoleNames()->first(); // Get the first role if multiple
                 $userIp=$request->ip();
-                dd($userIp);
+               
             } else {
                 $userRole = $user->role; // Assuming 'role' is the column name
             }
