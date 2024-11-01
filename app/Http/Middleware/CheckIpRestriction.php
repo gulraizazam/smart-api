@@ -19,7 +19,11 @@ class CheckIpRestriction
     {
         if (Auth::check()) {
             $user = Auth::user();
-            $userRole = $user->role; // Assume the role is stored in the 'role' column
+            if (method_exists($user, 'hasRole')) {
+                $userRole = $user->getRoleNames()->first(); // Get the first role if multiple
+            } else {
+                // If role is a direct column in the user table
+                
             $allowedIps = config("ip_restrictions.{$userRole}", []);
 
             // Check if the user's IP is in the allowed list
