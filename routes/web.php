@@ -144,7 +144,7 @@ Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController
 Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 /*After authentication*/
 Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
-    //Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
+    Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
     
         Route::get('error-logs', [LogViewerController::class, 'index']);
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
@@ -625,5 +625,5 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         ///////////Memberships routes/////
         Route::resource('membershiptypes', MembershipTypesController::class)->only('index');
         Route::resource('memberships', MembershipsController::class)->only('index');
-   // });
+    });
 });
