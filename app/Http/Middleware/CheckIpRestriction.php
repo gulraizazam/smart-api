@@ -31,12 +31,12 @@ class CheckIpRestriction
 
             // Check if the user's IP is in the allowed list
             if (($userRole == 'CSR' || $userRole == 'CSR Supervisor' || $userRole == 'HRM') && in_array($userIp, $restrictedIps)) {
-                // Redirect to unauthorized page if the IP is restricted
-                return redirect('unauthorized'); // Ensure this route exists
+                return $next($request);
+                 // Ensure this route exists
             }
-
+            return redirect('unauthorized');
             
         }
-        return $next($request);
+        
     }
 }
