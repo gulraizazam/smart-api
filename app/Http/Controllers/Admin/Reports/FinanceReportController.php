@@ -2882,14 +2882,14 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request){
-        dd($request->all());
+      
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = $dates[0];
         $endDate = $dates[1];
 
         // Fetch incentive data for the specified doctor and date range
         $user = User::find($request->input('doctor_id'));
-
+        dd($user);
         $incentives = $user->appointmentsDoc()
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->with(['packageAdvances' => function ($query) {
