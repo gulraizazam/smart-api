@@ -2891,12 +2891,13 @@ class FinanceReportController extends Controller
         $user = User::find($request->input('doctor_id'));
      
         $incentives = $user->appointmentsDoc()
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->with(['packageadvance' => function ($query) {
-                $query->where('cash_flow', 'in');
-                $query->where('cash_amount','>', 0); // Only consider cash flow 'in'
-            }, 'user'])
-            ->get();
+        ->whereBetween('scheduled_date', [$startDate, $endDate])
+        ->with(['packageadvance' => function ($query) use ($startDate, $endDate) {
+            $query->where('cash_flow', 'in')
+                ->where('cash_amount', '>', 0)
+                ->whereBetween('created_at', [$startDate, $endDate]); // Filter by date range on packageadvance
+        }, 'user']) // Assuming 'user' is the patient relationship or similar
+        ->get();
 
         // Calculate total incentive based on the cash amounts
         $totalIncentive = $incentives->flatMap(function ($appointment) {
