@@ -2880,4 +2880,8 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.staff_wise_arrived', get_defined_vars());
     }
+
+    public function loadIncentiveReport(Request $request){
+        dd($request->all());
+    }
 }
