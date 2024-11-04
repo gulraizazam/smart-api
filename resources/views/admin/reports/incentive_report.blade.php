@@ -8,7 +8,7 @@
         </thead>
         <tbody>
             @foreach($incentives as $appointment)
-                @foreach($appointment->packageAdvances as $advance)
+                @foreach($appointment->packageadvance as $advance)
                     <tr>
                         <td>{{ $appointment->appointment_date }}</td>
                         <td>{{ $advance->cash_amount }}</td>
