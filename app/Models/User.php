@@ -134,7 +134,10 @@ class User extends Authenticatable
     {
         return $this->hasMany('App\Models\Appointments', 'created_by');
     }
-
+    public function appointmentsDoc()
+    {
+        return $this->hasMany('App\Models\Appointments', 'doctor_id');
+    }
     public function account()
     {
         return $this->belongsTo('App\Models\Accounts');

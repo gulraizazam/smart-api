@@ -27,7 +27,16 @@ class CheckIpRestriction
             ];
             
             // Check if the user has a restricted role
+            
+            $allowedIps = [
+                '103.8.112.42', '103.8.112.43', '103.8.112.107', 
+                '203.215.176.205', '203.215.176.206', '203.215.181.201', 
+                '203.215.181.206', '202.69.38.28',
+            ];
+            
+            // Check if the user has a restricted role
             if (method_exists($user, 'hasRole')) {
+                $userRole = $user->getRoleNames()->first();
                 $userRole = $user->getRoleNames()->first();
             } else {
                 $userRole = $user->role;
