@@ -2884,8 +2884,8 @@ class FinanceReportController extends Controller
     public function loadIncentiveReport(Request $request){
       
         $dates = explode(' - ', $request->input('date_range'));
-        $startDate = $dates[0];
-        $endDate = $dates[1];
+        $startDate = date('Y-m-d', strtotime($dates[0]));
+        $endDate = date('Y-m-d', strtotime($dates[1]));
 
         // Fetch incentive data for the specified doctor and date range
         $user = User::find($request->input('doctor_id'));
