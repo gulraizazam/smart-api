@@ -110,7 +110,7 @@ var loadStaffWiseArrivalReport = function (that) {
     });
 };
 
-var loadIncentiveReport = function (that) {
+var loadIncentiveReport  = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
     }
