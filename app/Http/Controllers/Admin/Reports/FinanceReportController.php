@@ -2825,7 +2825,13 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.staffwisearrival', get_defined_vars());
     }
+    public function doctorWiseConversion()
+    {
+       
+        $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
 
+        return view('admin.reports.doctorwisearrival', get_defined_vars());
+    }
     public function staffWiseArrivalReport(Request $request)
     {
         $where = [];
