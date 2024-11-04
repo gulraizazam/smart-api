@@ -2825,7 +2825,13 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.staffwisearrival', get_defined_vars());
     }
+    public function doctorWiseConversion()
+    {
+       
+        $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
 
+        return view('admin.reports.doctorwiseconversion', get_defined_vars());
+    }
     public function staffWiseArrivalReport(Request $request)
     {
         $where = [];
@@ -2873,5 +2879,30 @@ class FinanceReportController extends Controller
         $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
 
         return view('admin.reports.staff_wise_arrived', get_defined_vars());
+    }
+
+    public function loadIncentiveReport(Request $request){
+      
+        $dates = explode(' - ', $request->input('date_range'));
+        $startDate = $dates[0];
+        $endDate = $dates[1];
+
+        // Fetch incentive data for the specified doctor and date range
+        $user = User::find($request->input('doctor_id'));
+     
+        $incentives = $user->appointmentsDoc()
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->with(['packageAdvances' => function ($query) {
+                $query->where('cash_flow', 'in'); // Only consider cash flow 'in'
+            }])
+            ->get();
+
+        // Calculate total incentive based on the cash amounts
+        $totalIncentive = $incentives->flatMap(function ($appointment) {
+                return $appointment->packageAdvances;
+            })->sum('cash_amount');
+
+        // Return the view with the report data
+        return view('admin.reports.incentive_report', compact('incentives', 'totalIncentive'));
     }
 }
