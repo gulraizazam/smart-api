@@ -501,6 +501,13 @@
                 </li>
                 @endif
                 @if(Gate::allows('operations_reports_manage'))
+                <li class="nav-item start">
+                    <a href="{{ route('admin.reports.doctorWiseConversion') }}">
+                        <span class="title">Doctor Incentive Report</span>
+                    </a>
+                </li>
+                @endif
+                @if(Gate::allows('operations_reports_manage'))
                 <li class="nav-item start {{ $request->segment(3) == 'operations-report' ? 'active active-sub' : '' }}">
                     <a href="{{ route('admin.reports.operations_report') }}">
                         <span class="title">Membership Report</span>
