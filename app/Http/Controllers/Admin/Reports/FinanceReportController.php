@@ -2892,7 +2892,7 @@ class FinanceReportController extends Controller
      
         $incentives = $user->appointmentsDoc()
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->with(['packageAdvances' => function ($query) {
+            ->with(['packageadvance' => function ($query) {
                 $query->where('cash_flow', 'in'); // Only consider cash flow 'in'
             }])
             ->get();
