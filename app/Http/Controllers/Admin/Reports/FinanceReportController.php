@@ -2892,16 +2892,15 @@ class FinanceReportController extends Controller
      
         $incentives = $user->appointmentsDoc()
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->with(['packageAdvances' => function ($query) {
+            ->with(['packageadvance' => function ($query) {
                 $query->where('cash_flow', 'in'); // Only consider cash flow 'in'
-            }])
+            }, 'user'])
             ->get();
 
         // Calculate total incentive based on the cash amounts
         $totalIncentive = $incentives->flatMap(function ($appointment) {
-                return $appointment->packageAdvances;
-            })->sum('cash_amount');
-
+            return $appointment->packageadvance;
+        })->sum('cash_amount');
         // Return the view with the report data
         return view('admin.reports.incentive_report', compact('incentives', 'totalIncentive'));
     }
