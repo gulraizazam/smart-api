@@ -2901,7 +2901,7 @@ class FinanceReportController extends Controller
         $totalIncentive = $incentives->flatMap(function ($appointment) {
                 return $appointment->packageAdvances;
             })->sum('cash_amount');
-
+dd($incentives, $totalIncentive);
         // Return the view with the report data
         return view('admin.reports.incentive_report', compact('incentives', 'totalIncentive'));
     }
