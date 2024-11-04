@@ -500,6 +500,7 @@
                     </a>
                 </li>
                 @endif
+           
                 @if(Gate::allows('operations_reports_manage'))
                 <li class="nav-item start {{ $request->segment(3) == 'operations-report' ? 'active active-sub' : '' }}">
                     <a href="{{ route('admin.reports.operations_report') }}">

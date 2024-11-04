@@ -29,6 +29,22 @@ $('#date_range_arrival').daterangepicker({
     startDate: moment().startOf('month'),
     endDate: moment().subtract(1, 'days')
 }).val();
+$('#date_range_incentive').daterangepicker({
+    locale: {
+    },
+    ranges: {
+        // 'Today': [moment(), moment()],
+        // 'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+        // 'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+        // 'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        // 'This Year': [moment().startOf('year'), moment().endOf('year')],
+        // 'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().subtract(1, 'days')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -93,6 +109,44 @@ var loadStaffWiseArrivalReport = function (that) {
             $('#converted_content').html('');
             $('#converted_content').html(response);
             $("#arrived_status_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false
+            });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+
+var loadIncentiveReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.incentive_report'),
+        type: "POST",
+        data: {
+           
+            doctor_id: $('#doctor_id').val(),
+            date_range: $('#date_range_incentive').val(),
+           
+        },
+        success: function(response){
+            $('#incentive_content').html('');
+            $('#incentive_content').html(response);
+            $("#incentive_table").DataTable({
                 dom: 'Bfrtip',
                 buttons: [
                     'excelHtml5',
