@@ -2828,7 +2828,7 @@ class FinanceReportController extends Controller
     public function doctorWiseConversion()
     {
        
-        $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
+        $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
 
         return view('admin.reports.doctorwiseconversion', get_defined_vars());
     }
