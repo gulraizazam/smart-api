@@ -136,7 +136,7 @@ class User extends Authenticatable
     }
     public function appointmentsDoc()
     {
-        return $this->hasMany('App\Models\Appointments', 'doctor_by');
+        return $this->hasMany('App\Models\Appointments', 'doctor_id');
     }
     public function account()
     {
