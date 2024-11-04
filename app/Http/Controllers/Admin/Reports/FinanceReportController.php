@@ -2882,6 +2882,27 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request){
-        dd($request->all());
+
+        $dates = explode(' - ', $request->input('date_range'));
+        $startDate = $dates[0];
+        $endDate = $dates[1];
+
+        // Fetch incentive data for the specified doctor and date range
+        $user = User::find($request->input('doctor_id'));
+
+        $incentives = $user->appointmentsDoc()
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->with(['packageAdvances' => function ($query) {
+                $query->where('cash_flow', 'in'); // Only consider cash flow 'in'
+            }])
+            ->get();
+
+        // Calculate total incentive based on the cash amounts
+        $totalIncentive = $incentives->flatMap(function ($appointment) {
+                return $appointment->packageAdvances;
+            })->sum('cash_amount');
+
+        // Return the view with the report data
+        return view('admin.reports.incentive_report', compact('incentives', 'totalIncentive'));
     }
 }
