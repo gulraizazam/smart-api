@@ -41,12 +41,12 @@
                                         <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
                                             {!! Form::label('date_range', 'Date*', ['class' => 'control-label']) !!}
                                             <div class="input-group">
-                                                {!! Form::text('date_range', null, ['id' => 'date_range_arrival', 'class' => 'form-control']) !!}
+                                                {!! Form::text('date_range', null, ['id' => 'date_range_incentive', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('doctor')) has-error @endif" id="users" >
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif" id="users" >
                                            {!! Form::label('created_by', 'Doctor', ['class' => 'control-label']) !!}
-                                           <select class="form-control select2" id="created_by" name="created_by">
+                                           <select class="form-control select2" id="doctor_id" name="doctor_id">
                                                <option value="">All</option>
                                                @foreach($Users as $user)
                                                    <option value="{{$user->id}}">
@@ -57,11 +57,11 @@
                                        </div>
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
-                                            <a href="javascript:void(0);" onclick="loadStaffWiseArrivalReport($(this));" id="load_staff_wise_report"
+                                            <a href="javascript:void(0);" onclick="loadIncentiveReport($(this));" id="load_incentive_report"
                                                class="btn btn-success spinner-button">Load Report</a>
                                         </div>
                                         <div class="clear clearfix"></div>
-                                        <div style="overflow: hidden; width: 100%;" id="converted_content"></div>
+                                        <div style="overflow: hidden; width: 100%;" id="incentive_content"></div>
                                     </div>
                                 </div>
                             </div>
