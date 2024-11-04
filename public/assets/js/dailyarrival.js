@@ -139,7 +139,7 @@ var loadIncentiveReport  = function (that) {
         type: "POST",
         data: {
            
-            doctor_id: $('#doctors_id').val(),
+            doctor_id: $('#doctor_id').val(),
             date_range: $('#date_range_incentive').val(),
            
         },
