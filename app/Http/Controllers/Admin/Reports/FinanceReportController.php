@@ -2884,46 +2884,54 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request)
-{
-    // Parse date range input
-    $dates = explode(' - ', $request->input('date_range'));
-    $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-    $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-
-    $centerId = $request->input('centre_id');
-
-    // Step 1: Fetch relevant package advances with related appointments for month mapping
-    $packageAdvances = PackageAdvances::with('appointment') // Eager load related appointments
-        ->where('location_id', $centerId)
-        ->whereBetween('created_at', [$startDate, $endDate])
-        ->where('cash_flow', 'in')
-        ->where('cash_amount', '>', 0)
-        ->get();
-
-    // Step 2: Calculate Total Revenue
-    $totalRevenue = $packageAdvances->sum('cash_amount');
-
-    // Step 3: Calculate Month-wise Revenue
-    $monthWiseRevenue = [];
-
-    foreach ($packageAdvances as $advance) {
-        // Extract year and month from the appointment's scheduled date
-        $yearMonth = \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('Y-m');
-
-        // Accumulate revenue for each month
-        if (isset($monthWiseRevenue[$yearMonth])) {
-            $monthWiseRevenue[$yearMonth] += $advance->cash_amount;
-        } else {
-            $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
+    {
+        // Parse date range input
+        $dates = explode(' - ', $request->input('date_range'));
+        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+    
+        $centerId = $request->input('centre_id');
+    
+        // Step 1: Fetch all package advances within the specified date range and location
+        $packageAdvances = PackageAdvances::with('appointment') // Eager load related appointments
+            ->where('location_id', $centerId)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->get();
+    
+        // Step 2: Group package advances by appointment_id and sum the cash amounts
+        $groupedAdvances = $packageAdvances->groupBy('appointment_id')->map(function ($advances) {
+            return [
+                'total_cash_amount' => $advances->sum('cash_amount'), // Sum cash amounts for each appointment
+                'appointment' => $advances->first()->appointment, // Get the related appointment
+            ];
+        });
+    
+        // Step 3: Calculate Total Revenue from grouped advances
+        $totalRevenue = $groupedAdvances->sum('total_cash_amount');
+    
+        // Step 4: Calculate Month-wise Revenue
+        $monthWiseRevenue = [];
+    
+        foreach ($groupedAdvances as $advance) {
+            // Extract year and month from the appointment's scheduled date
+            $yearMonth = \Carbon\Carbon::parse($advance['appointment']->scheduled_date)->format('Y-m');
+    
+            // Accumulate revenue for each month
+            if (isset($monthWiseRevenue[$yearMonth])) {
+                $monthWiseRevenue[$yearMonth] += $advance['total_cash_amount'];
+            } else {
+                $monthWiseRevenue[$yearMonth] = $advance['total_cash_amount'];
+            }
         }
+    
+        // Optional: Sort month-wise revenue by date
+        ksort($monthWiseRevenue);
+    dd($monthWiseRevenue);
+        // Return data to the view
+        return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue', 'groupedAdvances'));
     }
-
-    // Optional: Sort month-wise revenue by date
-    ksort($monthWiseRevenue);
-dd($monthWiseRevenue);
-    // Return data to the view
-    return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
-}
 
     
 }
