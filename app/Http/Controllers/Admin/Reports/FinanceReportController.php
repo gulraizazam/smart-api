@@ -2916,18 +2916,21 @@ class FinanceReportController extends Controller
             // Organize and calculate revenue by month
             $monthWiseRevenue = [];
         
-            foreach ($appointments as $appointment) {
+           
                
-                foreach ($appointment->packageadvance as $advance) {
-                    $yearMonth = $appointment->scheduled_date->format('Y-m');
-                    dd($yearMonth);
-                    if (isset($monthWiseRevenue[$yearMonth])) {
+                foreach ($appointments as $appointment) {
+                    // Format the scheduled date to "Y-m" for monthly grouping
+                    $yearMonth = \Carbon\Carbon::parse($appointment->scheduled_date)->format('Y-m');
+                
+                    foreach ($appointment->packageadvance as $advance) {
+                        // Initialize month if not set, then accumulate cash_amount for that month
+                        if (!isset($monthWiseRevenue[$yearMonth])) {
+                            $monthWiseRevenue[$yearMonth] = 0;
+                        }
                         $monthWiseRevenue[$yearMonth] += $advance->cash_amount;
-                    } else {
-                        $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
                     }
                 }
-            }
+            
         
         dd($totalRevenue,$monthWiseRevenue);
             return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
