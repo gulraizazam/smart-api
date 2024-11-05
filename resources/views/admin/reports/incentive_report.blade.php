@@ -2,7 +2,7 @@
     <table id="incentive_table" class="table table-striped">
         <thead>
             <tr>
-                <th>Month</th>
+                <th>Months Included</th>
                 <th>Total Revenue</th>
             </tr>
         </thead>
