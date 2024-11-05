@@ -2912,11 +2912,12 @@ class FinanceReportController extends Controller
             $totalRevenue = $appointments->flatMap(function ($appointment) {
                 return $appointment->packageadvance;
             })->sum('cash_amount');
-            dd($totalRevenue);
+            
             // Organize and calculate revenue by month
             $monthWiseRevenue = [];
         
             foreach ($appointments as $appointment) {
+                dd($appointment);
                 foreach ($appointment->packageadvance as $advance) {
                     $yearMonth = $appointment->scheduled_date->format('Y-m');
         
