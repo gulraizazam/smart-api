@@ -2911,10 +2911,10 @@ class FinanceReportController extends Controller
                             ->get();
 
         foreach ($packageAdvances as $advance) {
-            dd($advance);
+          
             // Extract year and month from the appointment's scheduled date
             $yearMonth = $advance->appointment->scheduled_date->format('Y-m');
-
+            dd($yearMonth );
             // Accumulate revenue for each month
             if (isset($monthWiseRevenue[$yearMonth])) {
                 $monthWiseRevenue[$yearMonth] += $advance->cash_amount;
