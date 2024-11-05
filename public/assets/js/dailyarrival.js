@@ -141,6 +141,7 @@ var loadIncentiveReport  = function (that) {
            
             doctor_id: $('#doctor_id').val(),
             date_range: $('#date_range_incentive').val(),
+            centre_id: $('#centre_id').val(),
            
         },
         success: function(response){
