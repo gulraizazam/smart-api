@@ -2884,9 +2884,9 @@ class FinanceReportController extends Controller
     public function loadIncentiveReport(Request $request){
       
         $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d', strtotime($dates[0]));
-        $endDate = date('Y-m-d', strtotime($dates[1]));
-        dd($startDate,$endDate );
+        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0])); // Start of the day
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));   // End of the day
+        
         $centerId = $request->input('center_id');
         // Fetch incentive data for the specified doctor and date range
         $user = User::find($request->input('doctor_id'));
@@ -2896,7 +2896,7 @@ class FinanceReportController extends Controller
         ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
             $query->where('cash_flow', 'in')
                   ->where('cash_amount', '>', 0)
-                  ->whereBetween('payment_date', [$startDate, $endDate]);
+                  ->whereBetween('created_at', [$startDate, $endDate]);
 
             // Apply center filter if center_id is provided
             if ($centerId) {
