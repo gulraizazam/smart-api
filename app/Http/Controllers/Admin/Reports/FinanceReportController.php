@@ -2913,7 +2913,7 @@ class FinanceReportController extends Controller
         foreach ($packageAdvances as $advance) {
           
             // Extract year and month from the appointment's scheduled date
-            $yearMonth = $advance->appointment->scheduled_date->format('Y-m');
+            $yearMonth =  \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('Y-m');
             dd($yearMonth );
             // Accumulate revenue for each month
             if (isset($monthWiseRevenue[$yearMonth])) {
