@@ -2904,6 +2904,9 @@ class FinanceReportController extends Controller
     
         // Get appointment IDs where `scheduled_date` is in the previous month of the given range and matches the center
         $previousMonthAppointmentIds = Appointments::where('location_id', $centerId)
+            ->where('appointment_type_id',1)
+            ->where('appointment_status_id',2)
+
             ->whereBetween('scheduled_date', [$previousMonthStart, $previousMonthEnd])
             ->pluck('id');
     
