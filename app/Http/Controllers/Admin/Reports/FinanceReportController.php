@@ -2923,12 +2923,9 @@ class FinanceReportController extends Controller
                 $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
             }
         }
-        $incentives = Appointments::where('centre_id', $centerId)
-        ->whereBetween('scheduled_date', [$startDate, $endDate])
-        ->with('packageadvance') // Load related package advances
-        ->get();
+
         // Return data to the view
-        return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue', 'incentives'));
+        return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
     
 }
