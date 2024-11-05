@@ -2902,7 +2902,7 @@ class FinanceReportController extends Controller
         ->with('appointment') // Load related appointments
         ->get();
         $currentRangeTotal = $packageAdvances->sum('total_cash_amount');
-
+        dd($currentRangeTotal);
        $monthWiseTotals = PackageAdvances::where('location_id', $centerId)
     ->whereIn('appointment_id', $packageAdvances->pluck('appointment_id'))
     ->where('cash_flow', 'in')
@@ -2915,7 +2915,7 @@ class FinanceReportController extends Controller
     ->groupBy('year_month')
     ->get()
     ->keyBy('year_month');
-    dd($currentRangeTotal,$monthWiseTotals);
+   
     // Return data to the view
     return view('admin.reports.incentive_report', get_defined_vars());
 }
