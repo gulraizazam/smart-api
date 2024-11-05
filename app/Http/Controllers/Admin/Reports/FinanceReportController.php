@@ -2889,7 +2889,7 @@ class FinanceReportController extends Controller
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-dd($startDate, $endDate);
+
         $centerId = $request->input('centre_id');
 
         // Step 1: Calculate Total Revenue
@@ -2897,6 +2897,7 @@ dd($startDate, $endDate);
                         ->whereBetween('created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
                         ->where('cash_amount', '>', 0)
+                        ->where('delete_at', null)
                         ->sum('cash_amount');
 
         // Step 2: Calculate Month-wise Revenue
