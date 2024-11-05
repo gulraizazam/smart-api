@@ -2909,10 +2909,11 @@ class FinanceReportController extends Controller
         ->where('cash_amount', '>', 0)
         ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join to get scheduled dates
         ->select(
-            \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
-            \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
+            \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'), // Format the date for grouping
+            \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount') // Sum the cash amounts
         )
-        ->groupBy('year_month')
+        ->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")')) // Use the full expression here
+        ->orderBy('year_month') // Optional: Order results by month
         ->get()
         ->keyBy('year_month');
         dd($monthWiseTotals);
