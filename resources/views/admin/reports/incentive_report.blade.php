@@ -13,7 +13,7 @@
             @foreach($packageAdvances as $advance)
                 <tr>
                     <td>{{ $advance->appointment->id ?? 'N/A' }}</td> <!-- Appointment ID -->
-                    <td>{{ $advance->appointment->user->name ?? 'N/A' }}</td> <!-- Patient Name -->
+                    <td>{{ $advance->appointment->patient->name ?? 'N/A' }}</td> <!-- Patient Name -->
                     <td>{{ \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('d M Y') }}</td> <!-- Appointment Date -->
                     <td>{{ \Carbon\Carbon::parse($advance->created_at)->format('d M Y') }}</td> <!-- Payment Date -->
                     <td>{{ number_format($advance->cash_amount, 2) }}</td> <!-- Cash Amount -->
