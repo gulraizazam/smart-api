@@ -2897,7 +2897,7 @@ class FinanceReportController extends Controller
                         ->whereBetween('created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
                         ->where('cash_amount', '>', 0)
-                        ->where('delete_at', null)
+                        ->where('deleted_at', null)
                         ->sum('cash_amount');
 
         // Step 2: Calculate Month-wise Revenue
