@@ -2884,7 +2884,7 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request) {
-        public function loadIncentiveReport(Request $request) {
+
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
@@ -2927,6 +2927,7 @@ class FinanceReportController extends Controller
                 }
             }
         
+        dd($totalRevenue,$monthWiseRevenue);
             return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
         }
      
