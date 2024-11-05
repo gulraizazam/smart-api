@@ -2935,6 +2935,6 @@ class FinanceReportController extends Controller
         
         $netRevenue = $totalIncentive - $totalRefunds;
     
-        return view('admin.reports.incentive_report', compact('incentives', 'netRevenue', 'previousTotalIncentive'));
+        return view('admin.reports.incentive_report', get_defined_vars());
     }
 }
