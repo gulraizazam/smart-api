@@ -2829,7 +2829,7 @@ class FinanceReportController extends Controller
     {
        
         $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
-
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         return view('admin.reports.doctorwiseconversion', get_defined_vars());
     }
     public function staffWiseArrivalReport(Request $request)
@@ -2884,18 +2884,26 @@ class FinanceReportController extends Controller
     public function loadIncentiveReport(Request $request){
       
         $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d', strtotime($dates[0]));
-        $endDate = date('Y-m-d', strtotime($dates[1]));
-
+        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0])); // Start of the day
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));   // End of the day
+        
+        $centerId = $request->input('center_id');
         // Fetch incentive data for the specified doctor and date range
         $user = User::find($request->input('doctor_id'));
      
-        $incentives = $user->appointmentsDoc()
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->with(['packageadvance' => function ($query) {
-                $query->where('cash_flow', 'in'); // Only consider cash flow 'in'
-            }, 'user'])
-            ->get();
+       $incentives = $user->appointmentsDoc()
+        ->whereBetween('scheduled_date', [$startDate, $endDate])
+        ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
+            $query->where('cash_flow', 'in')
+                  ->where('cash_amount', '>', 0)
+                  ->whereBetween('created_at', [$startDate, $endDate]);
+
+            // Apply center filter if center_id is provided
+            if ($centerId) {
+                $query->where('location_id', $centerId);
+            }
+        }, 'user']) // Assuming 'user' is the relationship for patient
+        ->get();
 
         // Calculate total incentive based on the cash amounts
         $totalIncentive = $incentives->flatMap(function ($appointment) {
