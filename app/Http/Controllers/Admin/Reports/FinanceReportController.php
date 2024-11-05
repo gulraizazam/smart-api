@@ -2892,11 +2892,13 @@ class FinanceReportController extends Controller
 
     $centerId = $request->input('centre_id');
 
-    // Step 1: Fetch all package advances within the specified date range and location
+    // Step 1: Fetch and group all package advances within the specified date range and location
     $packageAdvances = PackageAdvances::where('location_id', $centerId)
         ->whereBetween('created_at', [$startDate, $endDate])
         ->where('cash_flow', 'in')
         ->where('cash_amount', '>', 0)
+        ->select('appointment_id', \DB::raw('SUM(cash_amount) as total_cash_amount'))
+        ->groupBy('appointment_id')
         ->with('appointment') // Load related appointments
         ->get();
 
