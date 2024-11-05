@@ -2,22 +2,28 @@
     <table id="incentive_table" class="table table-striped">
         <thead>
             <tr>
-                <th>Months Included</th>
-                <th>Total Revenue</th>
+                <th>Appointment ID</th>
+                <th>Patient Name</th>
+                <th>Appointment Date</th>
+                <th>Payment Date</th>
+                <th>Cash Amount</th>
             </tr>
         </thead>
         <tbody>
-            @foreach($monthWiseRevenue as $month => $amount)
+            @foreach($packageAdvances as $advance)
                 <tr>
-                    <td>{{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}</td> <!-- Month formatted -->
-                    <td>{{ number_format($amount, 2) }}</td> <!-- Total revenue for the month -->
+                    <td>{{ $advance->appointment->id ?? 'N/A' }}</td> <!-- Appointment ID -->
+                    <td>{{ $advance->appointment->user->name ?? 'N/A' }}</td> <!-- Patient Name -->
+                    <td>{{ \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('d M Y') }}</td> <!-- Appointment Date -->
+                    <td>{{ \Carbon\Carbon::parse($advance->created_at)->format('d M Y') }}</td> <!-- Payment Date -->
+                    <td>{{ number_format($advance->cash_amount, 2) }}</td> <!-- Cash Amount -->
                 </tr>
             @endforeach
         </tbody>
         <tfoot>
             <tr>
-                <td><strong>Total Revenue for Selected Range</strong></td>
-                <td>{{ number_format($totalRevenue, 2) }}</td> <!-- Total revenue -->
+                <td colspan="4"><strong>Total Amount for Selected Range</strong></td>
+                <td>{{ number_format($packageAdvances->sum('cash_amount'), 2) }}</td> <!-- Total cash amount for selected range -->
             </tr>
         </tfoot>
     </table>
