@@ -2897,26 +2897,14 @@ class FinanceReportController extends Controller
         ->whereBetween('created_at', [$startDate, $endDate])
         ->where('cash_flow', 'in')
         ->where('cash_amount', '>', 0)
-        ->select('appointment_id', \DB::raw('SUM(cash_amount) as total_cash_amount'))
+        ->select('appointment_id', \DB::raw('SUM(cash_amount) as total_cash_amount'), 'created_at')
         ->groupBy('appointment_id')
-        ->with('appointment') // Load related appointments
+        ->with('appointment.patient') // Load related appointments and patients
         ->get();
 
     // Step 2: Calculate total cash amount for the current date range
     $currentRangeTotal = $packageAdvances->sum('total_cash_amount');
 
-    // Step 3: Calculate total cash amounts for other months based on appointments in the current range
-    // $monthWiseTotals = PackageAdvances::where('location_id', $centerId)
-    //     ->whereIn('appointment_id', $packageAdvances->pluck('appointment_id'))
-    //     ->where('cash_flow', 'in')
-    //     ->where('cash_amount', '>', 0)
-    //     ->select(\DB::raw('DATE_FORMAT(appointment.scheduled_date, "%Y-%m") as year_month'), \DB::raw('SUM(cash_amount) as total_cash_amount'))
-    //     ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join to get scheduled dates
-    //     ->groupBy('year_month')
-    //     ->get()
-    //     ->keyBy('year_month');
-
-    // Return data to the view
     return view('admin.reports.incentive_report', compact('packageAdvances', 'currentRangeTotal'));
 }
     
