@@ -2901,21 +2901,21 @@ class FinanceReportController extends Controller
         // Calculate the previous month’s date range based on the start date of the provided range
         $previousMonthStart = (new \DateTime($startDate))->modify('first day of last month')->format('Y-m-01 00:00:00');
         $previousMonthEnd = (new \DateTime($startDate))->modify('last day of last month')->format('Y-m-t 23:59:59');
-    dd($previousMonthStart,$previousMonthEnd);
+   
         // Get appointment IDs where `scheduled_date` is in the previous month of the given range and matches the center
         $previousMonthAppointmentIds = Appointments::where('location_id', $centerId)
             ->where('appointment_type_id',1)
             ->where('appointment_status_id',2)
-
             ->whereBetween('scheduled_date', [$previousMonthStart, $previousMonthEnd])
             ->pluck('id');
-    
+  
         // Calculate the previous month’s revenue using package advances linked to the identified appointments
         $previousMonthRevenue = PackageAdvances::where('cash_flow', 'in')
             ->where('cash_amount', '>', 0)
             ->where('is_refund', 0)
             ->where('location_id', $centerId)
             ->whereIn('appointment_id', $previousMonthAppointmentIds)
+            ->whereBetween('created_at', [$startDate, $endDate])
             ->sum('cash_amount');
     dd($totalRevenue,$previousMonthRevenue);
         return view('admin.reports.incentive_report', compact('totalRevenue', 'previousMonthRevenue'));
