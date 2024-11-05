@@ -17,6 +17,7 @@ use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\MachineType;
+use App\Models\PackageAdvances;
 use App\Models\Regions;
 use App\Models\Resources;
 use App\Models\RoleHasUsers;
@@ -2889,53 +2890,32 @@ class FinanceReportController extends Controller
         
         $centerId = $request->input('centre_id');
     
-        // Fetch appointments within the selected date range
-        $incentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
-                $query->where('cash_flow', 'in')
-                      ->where('cash_amount', '>', 0)
-                      ->where('is_refund', 0)
-                      ->where('location_id', $centerId)
-                      ->whereBetween('created_at', [$startDate, $endDate]);
-            })
-            ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
-                $query->where('location_id', $centerId)
-                      ->whereBetween('created_at', [$startDate, $endDate]);
-            }, 'user'])
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->get();
+        // Calculate total revenue within the provided date range
+        $totalRevenue = PackageAdvances::where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->where('is_refund', 0)
+            ->where('location_id', $centerId)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('cash_amount');
     
-        // Calculate total incentive within the date range
-        $totalIncentive = $incentives->flatMap(function ($appointment) {
-            return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
-        })->sum('cash_amount');
-    
-        // Calculate net revenue after subtracting refunds
-        $totalRefunds = $incentives->flatMap(function ($appointment) {
-            return $appointment->packageadvance->where('cash_flow', 'out')->where('is_refund', 1);
-        })->sum('cash_amount');
-        
-        $netRevenue = $totalIncentive - $totalRefunds;
-    
-        // Calculate the previous month's date range based on the selected date range's start date
+        // Calculate the previous month’s date range based on the start date of the provided range
         $previousMonthStart = (new \DateTime($startDate))->modify('first day of last month')->format('Y-m-01 00:00:00');
         $previousMonthEnd = (new \DateTime($startDate))->modify('last day of last month')->format('Y-m-t 23:59:59');
     
-        // Fetch previous month's appointments and calculate total incentive
-        $previousIncentives = Appointments::whereHas('packageadvance', function ($query) use ($previousMonthStart, $previousMonthEnd, $centerId) {
-                $query->where('cash_flow', 'in')
-                      ->where('cash_amount', '>', 0)
-                      ->where('is_refund', 0)
-                      ->where('location_id', $centerId)
-                      ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd]);
-            })
-            ->with('packageadvance')
-            ->get();
+        // Get appointment IDs where `scheduled_date` is in the previous month of the given range and matches the center
+        $previousMonthAppointmentIds = Appointments::where('location_id', $centerId)
+            ->whereBetween('scheduled_date', [$previousMonthStart, $previousMonthEnd])
+            ->pluck('id');
     
-        $previousTotalIncentive = $previousIncentives->flatMap(function ($appointment) {
-            return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
-        })->sum('cash_amount');
-    
-        return view('admin.reports.incentive_report', compact('incentives', 'netRevenue', 'previousTotalIncentive', 'totalIncentive'));
+        // Calculate the previous month’s revenue using package advances linked to the identified appointments
+        $previousMonthRevenue = PackageAdvances::where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->where('is_refund', 0)
+            ->where('location_id', $centerId)
+            ->whereIn('appointment_id', $previousMonthAppointmentIds)
+            ->sum('cash_amount');
+    dd($totalRevenue,$previousMonthRevenue);
+        return view('admin.reports.incentive_report', compact('totalRevenue', 'previousMonthRevenue'));
     }
     
     
