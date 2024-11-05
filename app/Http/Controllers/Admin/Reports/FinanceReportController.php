@@ -2917,10 +2917,10 @@ class FinanceReportController extends Controller
             $monthWiseRevenue = [];
         
             foreach ($appointments as $appointment) {
-                dd($appointment);
+               
                 foreach ($appointment->packageadvance as $advance) {
                     $yearMonth = $appointment->scheduled_date->format('Y-m');
-        
+                    dd($yearMonth);
                     if (isset($monthWiseRevenue[$yearMonth])) {
                         $monthWiseRevenue[$yearMonth] += $advance->cash_amount;
                     } else {
