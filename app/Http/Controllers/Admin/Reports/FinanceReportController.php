@@ -2897,7 +2897,6 @@ class FinanceReportController extends Controller
                         ->whereBetween('created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
                         ->where('cash_amount', '>', 0)
-                        //->where('deleted_at', null)
                         ->sum('cash_amount');
 
         // Step 2: Calculate Month-wise Revenue
@@ -2908,7 +2907,6 @@ class FinanceReportController extends Controller
                             ->whereBetween('created_at', [$startDate, $endDate])
                             ->where('cash_flow', 'in')
                             ->where('cash_amount', '>', 0)
-                            //->where('deleted_at', null)
                             ->with('appointment') // Load related appointments
                             ->get();
 
@@ -2924,7 +2922,7 @@ class FinanceReportController extends Controller
                 $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
             }
         }
-
+ dd($yearMonth );
         // Return data to the view
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
