@@ -12,7 +12,7 @@
         <tbody>
             @foreach($packageAdvances as $advance)
                 <tr>
-                    <td>{{ $advance->appointment->patient->id }}</td> <!-- Appointment ID -->
+                    <td>{{ $advance->appointment->id }}</td> <!-- Appointment ID -->
                     <td>{{ $advance->appointment->patient->name ?? 'N/A' }}</td> <!-- Patient Name -->
                     <td>{{ \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('d M Y') }}</td> <!-- Appointment Date -->
                     <td>{{ \Carbon\Carbon::parse($advance->created_at)->format('d M Y') }}</td> <!-- Payment Date -->
@@ -23,7 +23,7 @@
         <tfoot>
             <tr>
                 <td colspan="4"><strong>Total Amount for Selected Range</strong></td>
-                <td>{{ number_format($packageAdvances->sum('total_cash_amount'), 2) }}</td> <!-- Total cash amount for selected range -->
+                <td>{{ number_format($currentRangeTotal, 2) }}</td> <!-- Total cash amount for selected range -->
             </tr>
         </tfoot>
     </table>
