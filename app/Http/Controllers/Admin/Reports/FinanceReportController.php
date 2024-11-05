@@ -2920,17 +2920,20 @@ class FinanceReportController extends Controller
         $previousMonthStart = (new \DateTime($startDate))->modify('first day of last month')->format('Y-m-01 00:00:00');
         $previousMonthEnd = (new \DateTime($startDate))->modify('last day of last month')->format('Y-m-t 23:59:59');
     
-        // Calculate total incentive of the previous month
-        $previousTotalIncentive = Appointments::whereHas('packageadvance', function ($query) use ($previousMonthStart, $previousMonthEnd, $centerId) {
+        // Fetch previous month's appointments and calculate total incentive
+        $previousIncentives = Appointments::whereHas('packageadvance', function ($query) use ($previousMonthStart, $previousMonthEnd, $centerId) {
                 $query->where('cash_flow', 'in')
                       ->where('cash_amount', '>', 0)
                       ->where('is_refund', 0)
                       ->where('location_id', $centerId)
                       ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd]);
             })
-            ->flatMap(function ($appointment) {
-                return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
-            })->sum('cash_amount');
+            ->with('packageadvance')
+            ->get();
+    
+        $previousTotalIncentive = $previousIncentives->flatMap(function ($appointment) {
+            return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
+        })->sum('cash_amount');
     
         return view('admin.reports.incentive_report', compact('incentives', 'netRevenue', 'previousTotalIncentive', 'totalIncentive'));
     }
