@@ -2884,42 +2884,51 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request) {
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        public function loadIncentiveReport(Request $request) {
+            $dates = explode(' - ', $request->input('date_range'));
+            $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+            $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+            $centerId = $request->input('centre_id');
         
-        $centerId = $request->input('centre_id');
-    
-        // Calculate total revenue within the provided date range
-        $totalRevenue = PackageAdvances::where('cash_flow', 'in')
-            ->where('cash_amount', '>', 0)
-            ->where('is_refund', 0)
-            ->where('location_id', $centerId)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('cash_amount');
-    
-        // Calculate the previous month’s date range based on the start date of the provided range
-        $previousMonthStart = (new \DateTime($startDate))->modify('first day of last month')->format('Y-m-01 00:00:00');
-        $previousMonthEnd = (new \DateTime($startDate))->modify('last day of last month')->format('Y-m-t 23:59:59');
-   
-        // Get appointment IDs where `scheduled_date` is in the previous month of the given range and matches the center
-        $previousMonthAppointmentIds = Appointments::where('location_id', $centerId)
-            ->where('appointment_type_id',1)
-            ->where('appointment_status_id',2)
-            ->whereBetween('scheduled_date', [$previousMonthStart, $previousMonthEnd])
-            ->pluck('id');
-  
-        // Calculate the previous month’s revenue using package advances linked to the identified appointments
-        $previousMonthRevenue = PackageAdvances::where('cash_flow', 'in')
-            ->where('cash_amount', '>', 0)
-            ->where('is_refund', 0)
-            ->where('location_id', $centerId)
-            ->whereIn('appointment_id', $previousMonthAppointmentIds)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->sum('cash_amount');
-    dd($totalRevenue,$previousMonthRevenue);
-        return view('admin.reports.incentive_report', compact('totalRevenue', 'previousMonthRevenue'));
-    }
-    
+            // Fetch appointments within the given date range for the specified center
+            $appointments = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
+                    $query->where('cash_flow', 'in')
+                          ->where('cash_amount', '>', 0)
+                          ->where('is_refund', 0)
+                          ->where('location_id', $centerId)
+                          ->whereBetween('created_at', [$startDate, $endDate]);
+                })
+                ->with(['packageadvance' => function ($query) use ($centerId) {
+                    $query->where('cash_flow', 'in')
+                          ->where('cash_amount', '>', 0)
+                          ->where('is_refund', 0)
+                          ->where('location_id', $centerId);
+                }])
+                ->whereBetween('scheduled_date', [$startDate, $endDate])
+                ->get();
+        
+            // Calculate total revenue within the specified date range
+            $totalRevenue = $appointments->flatMap(function ($appointment) {
+                return $appointment->packageadvance;
+            })->sum('cash_amount');
+        
+            // Organize and calculate revenue by month
+            $monthWiseRevenue = [];
+        
+            foreach ($appointments as $appointment) {
+                foreach ($appointment->packageadvance as $advance) {
+                    $yearMonth = $appointment->scheduled_date->format('Y-m');
+        
+                    if (isset($monthWiseRevenue[$yearMonth])) {
+                        $monthWiseRevenue[$yearMonth] += $advance->cash_amount;
+                    } else {
+                        $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
+                    }
+                }
+            }
+        
+            return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
+        }
+     
     
 }
