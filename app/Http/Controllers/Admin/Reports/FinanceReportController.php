@@ -2881,35 +2881,60 @@ class FinanceReportController extends Controller
         return view('admin.reports.staff_wise_arrived', get_defined_vars());
     }
 
-    public function loadIncentiveReport(Request $request){
-      
+    public function loadIncentiveReport(Request $request) {
         $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0])); // Start of the day
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));   // End of the day
+        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         
-        $centerId = $request->input('center_id');
-        // Fetch incentive data for the specified doctor and date range
-        $user = User::find($request->input('doctor_id'));
-     
-       $incentives = $user->appointmentsDoc()
-        ->whereBetween('scheduled_date', [$startDate, $endDate])
-        ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
-            $query->where('cash_flow', 'in')
-                  ->where('cash_amount', '>', 0)
-                  ->whereBetween('created_at', [$startDate, $endDate]);
-
-            // Apply center filter if center_id is provided
-            if ($centerId) {
-                $query->where('location_id', $centerId);
+        $centerId = $request->input('centre_id');
+        $doctorId = $request->input('doctor_id');
+    
+        if ($doctorId) {
+            // Fetch data based on doctor
+            $user = User::find($doctorId);
+    
+            if (!$user) {
+                return response()->json(['error' => 'Doctor not found.'], 404);
             }
-        }, 'user']) // Assuming 'user' is the relationship for patient
-        ->get();
-
-        // Calculate total incentive based on the cash amounts
+    
+            // Fetch incentives based on doctor and date range, with optional center filter
+            $incentives = $user->appointmentsDoc()
+                ->whereBetween('scheduled_date', [$startDate, $endDate])
+                ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
+                    $query->where('cash_flow', 'in')
+                          ->where('cash_amount', '>', 0)
+                          ->whereBetween('created_at', [$startDate, $endDate]);
+    
+                    if ($centerId) {
+                        $query->where('location_id', $centerId);
+                    }
+                }, 'user'])
+                ->get();
+    
+        } elseif ($centerId) {
+            // Fetch data based on center only
+            $incentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
+                    $query->where('cash_flow', 'in')
+                          ->where('cash_amount', '>', 0)
+                          ->where('location_id', $centerId)
+                          ->whereBetween('created_at', [$startDate, $endDate]);
+                })
+                ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
+                    $query->where('cash_flow', 'in')
+                          ->where('cash_amount', '>', 0)
+                          ->where('location_id', $centerId)
+                          ->whereBetween('created_at', [$startDate, $endDate]);
+                }, 'user'])
+                ->get();
+        } else {
+            return response()->json(['error' => 'Please provide either a doctor_id or center_id.'], 400);
+        }
+    
+        // Calculate total incentive
         $totalIncentive = $incentives->flatMap(function ($appointment) {
             return $appointment->packageadvance;
         })->sum('cash_amount');
-        // Return the view with the report data
+    
         return view('admin.reports.incentive_report', compact('incentives', 'totalIncentive'));
     }
 }
