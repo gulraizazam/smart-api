@@ -147,15 +147,15 @@ var loadIncentiveReport  = function (that) {
         success: function(response){
             $('#incentive_content').html('');
             $('#incentive_content').html(response);
-            $("#incentive_table").DataTable({
-                dom: 'Bfrtip',
-                buttons: [
-                    'excelHtml5',
-                    'csvHtml5',
-                    'pdfHtml5',
-                ],
-                "ordering": false
-            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
             hideSpinner();
         },
         error: function (xhr, ajaxOptions, thrownError) {
