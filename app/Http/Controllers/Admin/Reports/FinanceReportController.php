@@ -2931,11 +2931,14 @@ class FinanceReportController extends Controller
         } else {
             return response()->json(['error' => 'Please provide either a doctor_id or center_id.'], 400);
         }
-    
-        // Calculate total incentive
-        $totalIncentive = $incentives->flatMap(function ($appointment) {
-            return $appointment->packageadvance;
+        $totalRevenue = $incentives->flatMap(function ($appointment) {
+            return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
         })->sum('cash_amount');
+        $totalRefunds = $incentives->flatMap(function ($appointment) {
+            return $appointment->packageadvance->where('cash_flow', 'out')->where('is_refund', 1);
+        })->sum('cash_amount');
+        // Calculate total incentive
+        $totalIncentive =$totalRevenue - $totalRefunds;
     
         return view('admin.reports.incentive_report', compact('incentives', 'totalIncentive'));
     }
