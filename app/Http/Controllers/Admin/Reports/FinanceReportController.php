@@ -2884,54 +2884,40 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request)
-    {
-        // Parse date range input
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-    
-        $centerId = $request->input('centre_id');
-    
-        // Step 1: Fetch all package advances within the specified date range and location
-        $packageAdvances = PackageAdvances::with('appointment') // Eager load related appointments
-            ->where('location_id', $centerId)
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->where('cash_flow', 'in')
-            ->where('cash_amount', '>', 0)
-            ->get();
-    
-        // Step 2: Group package advances by appointment_id and sum the cash amounts
-        $groupedAdvances = $packageAdvances->groupBy('appointment_id')->map(function ($advances) {
-            return [
-                'total_cash_amount' => $advances->sum('cash_amount'), // Sum cash amounts for each appointment
-                'appointment' => $advances->first()->appointment, // Get the related appointment
-            ];
-        });
-    
-        // Step 3: Calculate Total Revenue from grouped advances
-        $totalRevenue = $groupedAdvances->sum('total_cash_amount');
-    
-        // Step 4: Calculate Month-wise Revenue
-        $monthWiseRevenue = [];
-    
-        foreach ($groupedAdvances as $advance) {
-            // Extract year and month from the appointment's scheduled date
-            $yearMonth = \Carbon\Carbon::parse($advance['appointment']->scheduled_date)->format('Y-m');
-    
-            // Accumulate revenue for each month
-            if (isset($monthWiseRevenue[$yearMonth])) {
-                $monthWiseRevenue[$yearMonth] += $advance['total_cash_amount'];
-            } else {
-                $monthWiseRevenue[$yearMonth] = $advance['total_cash_amount'];
-            }
-        }
-    
-        // Optional: Sort month-wise revenue by date
-        ksort($monthWiseRevenue);
-    dd($monthWiseRevenue);
-        // Return data to the view
-        return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue', 'groupedAdvances'));
-    }
+{
+    // Parse date range input
+    $dates = explode(' - ', $request->input('date_range'));
+    $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+    $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
+    $centerId = $request->input('centre_id');
+
+    // Step 1: Fetch and group all package advances within the specified date range and location
+    $packageAdvances = PackageAdvances::where('location_id', $centerId)
+        ->whereBetween('created_at', [$startDate, $endDate])
+        ->where('cash_flow', 'in')
+        ->where('cash_amount', '>', 0)
+        ->select('appointment_id', \DB::raw('SUM(cash_amount) as total_cash_amount'))
+        ->groupBy('appointment_id')
+        ->with('appointment') // Load related appointments
+        ->get();
+
+    // Step 2: Calculate total cash amount for the current date range
+    $currentRangeTotal = $packageAdvances->sum('total_cash_amount');
+
+    // Step 3: Calculate total cash amounts for other months based on appointments in the current range
+    // $monthWiseTotals = PackageAdvances::where('location_id', $centerId)
+    //     ->whereIn('appointment_id', $packageAdvances->pluck('appointment_id'))
+    //     ->where('cash_flow', 'in')
+    //     ->where('cash_amount', '>', 0)
+    //     ->select(\DB::raw('DATE_FORMAT(appointment.scheduled_date, "%Y-%m") as year_month'), \DB::raw('SUM(cash_amount) as total_cash_amount'))
+    //     ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join to get scheduled dates
+    //     ->groupBy('year_month')
+    //     ->get()
+    //     ->keyBy('year_month');
+
+    // Return data to the view
+    return view('admin.reports.incentive_report', compact('packageAdvances', 'currentRangeTotal'));
+}
     
 }
