@@ -2892,36 +2892,37 @@ class FinanceReportController extends Controller
 
     $centerId = $request->input('centre_id');
 
-    // Step 1: Fetch and group all package advances within the specified date range and location
-    $packageAdvances = PackageAdvances::where('location_id', $centerId)
+    // Step 1: Fetch relevant package advances with related appointments for month mapping
+    $packageAdvances = PackageAdvances::with('appointment') // Eager load related appointments
+        ->where('location_id', $centerId)
         ->whereBetween('created_at', [$startDate, $endDate])
         ->where('cash_flow', 'in')
         ->where('cash_amount', '>', 0)
-        ->select('appointment_id', \DB::raw('SUM(cash_amount) as total_cash_amount'))
-        ->groupBy('appointment_id')
-        ->with('appointment') // Load related appointments
-        ->get();
-        $currentRangeTotal = $packageAdvances->sum('total_cash_amount');
-       
-        $monthWiseTotals = PackageAdvances::where('location_id', $centerId)
-        ->whereIn('appointment_id', $packageAdvances->pluck('appointment_id'))
-        ->where('cash_flow', 'in')
-        ->where('cash_amount', '>', 0)
-        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join to get scheduled dates
-        ->select(
-            \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") AS year_month'), // Correctly formatted date
-            \DB::raw('SUM(package_advances.cash_amount) AS total_cash_amount') // Sum the cash amounts
-        )
-        ->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")')) // Ensure correct grouping
-        ->orderBy('year_month') // Optional: Order results by month
         ->get();
 
-    // Convert to associative array for easy access in the view
-    $monthWiseTotals = $monthWiseTotals->keyBy('year_month');
-        dd($monthWiseTotals);
-   
+    // Step 2: Calculate Total Revenue
+    $totalRevenue = $packageAdvances->sum('cash_amount');
+
+    // Step 3: Calculate Month-wise Revenue
+    $monthWiseRevenue = [];
+
+    foreach ($packageAdvances as $advance) {
+        // Extract year and month from the appointment's scheduled date
+        $yearMonth = \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('Y-m');
+
+        // Accumulate revenue for each month
+        if (isset($monthWiseRevenue[$yearMonth])) {
+            $monthWiseRevenue[$yearMonth] += $advance->cash_amount;
+        } else {
+            $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
+        }
+    }
+
+    // Optional: Sort month-wise revenue by date
+    ksort($monthWiseRevenue);
+dd($monthWiseRevenue);
     // Return data to the view
-    return view('admin.reports.incentive_report', get_defined_vars());
+    return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
 }
 
     
