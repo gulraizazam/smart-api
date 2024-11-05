@@ -2886,6 +2886,7 @@ class FinanceReportController extends Controller
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d', strtotime($dates[0]));
         $endDate = date('Y-m-d', strtotime($dates[1]));
+        dd($startDate,$endDate );
         $centerId = $request->input('center_id');
         // Fetch incentive data for the specified doctor and date range
         $user = User::find($request->input('doctor_id'));
