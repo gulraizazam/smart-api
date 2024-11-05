@@ -2914,7 +2914,7 @@ class FinanceReportController extends Controller
           
             // Extract year and month from the appointment's scheduled date
             $yearMonth =  \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('Y-m');
-            dd($yearMonth );
+           
             // Accumulate revenue for each month
             if (isset($monthWiseRevenue[$yearMonth])) {
                 $monthWiseRevenue[$yearMonth] += $advance->cash_amount;
@@ -2922,7 +2922,7 @@ class FinanceReportController extends Controller
                 $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
             }
         }
-
+        dd($monthWiseRevenue );
         // Return data to the view
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
