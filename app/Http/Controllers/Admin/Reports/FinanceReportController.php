@@ -2915,6 +2915,7 @@ class FinanceReportController extends Controller
     ->groupBy('year_month')
     ->get()
     ->keyBy('year_month');
+    dd($currentRangeTotal,$monthWiseTotals);
     // Return data to the view
     return view('admin.reports.incentive_report', get_defined_vars());
 }
