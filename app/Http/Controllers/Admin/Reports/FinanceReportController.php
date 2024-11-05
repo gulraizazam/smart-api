@@ -2889,7 +2889,7 @@ class FinanceReportController extends Controller
         $centerId = $request->input('center_id');
     
         // Fetch appointments within the selected date range
-        $incentives = Appointment::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
+        $incentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
                 $query->where('cash_flow', 'in')
                       ->where('cash_amount', '>', 0)
                       ->where('is_refund', 0)
@@ -2904,7 +2904,7 @@ class FinanceReportController extends Controller
             ->get();
     
         // Fetch appointments before the selected date range
-        $previousIncentives = Appointment::whereHas('packageadvance', function ($query) use ($startDate, $centerId) {
+        $previousIncentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $centerId) {
                 $query->where('cash_flow', 'in')
                       ->where('cash_amount', '>', 0)
                       ->where('is_refund', 0)
