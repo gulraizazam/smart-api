@@ -2886,60 +2886,55 @@ class FinanceReportController extends Controller
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         
-        $centerId = $request->input('centre_id');
-        $doctorId = $request->input('doctor_id');
+        $centerId = $request->input('center_id');
     
-        if ($doctorId) {
-            // Fetch data based on doctor
-            $user = User::find($doctorId);
+        // Fetch appointments within the selected date range
+        $incentives = Appointment::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
+                $query->where('cash_flow', 'in')
+                      ->where('cash_amount', '>', 0)
+                      ->where('is_refund', 0)
+                      ->where('location_id', $centerId)
+                      ->whereBetween('created_at', [$startDate, $endDate]);
+            })
+            ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
+                $query->where('location_id', $centerId)
+                      ->whereBetween('created_at', [$startDate, $endDate]);
+            }, 'user'])
+            ->whereBetween('scheduled_date', [$startDate, $endDate])
+            ->get();
     
-            if (!$user) {
-                return response()->json(['error' => 'Doctor not found.'], 404);
-            }
+        // Fetch appointments before the selected date range
+        $previousIncentives = Appointment::whereHas('packageadvance', function ($query) use ($startDate, $centerId) {
+                $query->where('cash_flow', 'in')
+                      ->where('cash_amount', '>', 0)
+                      ->where('is_refund', 0)
+                      ->where('location_id', $centerId)
+                      ->where('created_at', '<', $startDate);
+            })
+            ->with(['packageadvance' => function ($query) use ($startDate, $centerId) {
+                $query->where('location_id', $centerId)
+                      ->where('created_at', '<', $startDate);
+            }, 'user'])
+            ->where('scheduled_date', '<', $startDate)
+            ->get();
     
-            // Fetch incentives based on doctor and date range, with optional center filter
-            $incentives = $user->appointmentsDoc()
-                ->whereBetween('scheduled_date', [$startDate, $endDate])
-                ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
-                    $query->where('cash_flow', 'in')
-                          ->where('cash_amount', '>', 0)
-                          ->whereBetween('created_at', [$startDate, $endDate]);
-    
-                    if ($centerId) {
-                        $query->where('location_id', $centerId);
-                    }
-                }, 'user'])
-                ->get();
-    
-        } elseif ($centerId) {
-            // Fetch data based on center only
-            $incentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
-                    $query->where('cash_flow', 'in')
-                          ->where('cash_amount', '>', 0)
-                          ->where('is_refund',  0)
-                          ->where('location_id', $centerId)
-                          ->whereBetween('created_at', [$startDate, $endDate]);
-                })
-                ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
-                    $query->where('cash_flow', 'in')
-                          ->where('cash_amount', '>', 0)
-                          ->where('is_refund',  0)
-                          ->where('location_id', $centerId)
-                          ->whereBetween('created_at', [$startDate, $endDate]);
-                }, 'user'])
-                ->get();
-        } else {
-            return response()->json(['error' => 'Please provide either a doctor_id or center_id.'], 400);
-        }
-        $totalRevenue = $incentives->flatMap(function ($appointment) {
+        // Calculate total incentive within the date range
+        $totalIncentive = $incentives->flatMap(function ($appointment) {
             return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
         })->sum('cash_amount');
+    
+        // Calculate total of previous incentives
+        $previousTotalIncentive = $previousIncentives->flatMap(function ($appointment) {
+            return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
+        })->sum('cash_amount');
+    
+        // Calculate net revenue after subtracting refunds
         $totalRefunds = $incentives->flatMap(function ($appointment) {
             return $appointment->packageadvance->where('cash_flow', 'out')->where('is_refund', 1);
         })->sum('cash_amount');
-        // Calculate total incentive
-        $totalIncentive =$totalRevenue - $totalRefunds;
+        
+        $netRevenue = $totalIncentive - $totalRefunds;
     
-        return view('admin.reports.incentive_report', compact('incentives', 'totalIncentive'));
+        return view('admin.reports.incentive_report', compact('incentives', 'netRevenue', 'previousTotalIncentive'));
     }
 }
