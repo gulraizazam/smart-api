@@ -2909,8 +2909,9 @@ class FinanceReportController extends Controller
                             ->where('cash_amount', '>', 0)
                             ->with('appointment') // Load related appointments
                             ->get();
-dd($totalRevenue);
+
         foreach ($packageAdvances as $advance) {
+            dd($advance);
             // Extract year and month from the appointment's scheduled date
             $yearMonth = $advance->appointment->scheduled_date->format('Y-m');
 
