@@ -37,16 +37,4 @@
     </table>
 </div>
 
-<script>
-    $(document).ready(function() {
-        $("#incentive_table").DataTable({
-            dom: 'Bfrtip',
-            buttons: [
-                'excelHtml5',
-                'csvHtml5',
-                'pdfHtml5'
-            ],
-            "ordering": false
-        });
-    });
-</script>
+
