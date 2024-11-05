@@ -13,18 +13,40 @@
                 @foreach($appointment->packageadvance as $advance)
                     <tr>
                         <td>{{ $appointment->user->name ?? 'N/A' }}</td> <!-- Display patient name -->
-                        <td>{{ $appointment->scheduled_date }}</td> <!-- Appointment schedule date -->
-                        <td>{{ $advance->created_at->format('Y-m-d') }}</td> <!-- Payment date -->
-                        <td>{{ $advance->cash_amount }}</td>
+                        <td>{{ \Carbon\Carbon::parse($appointment->scheduled_date)->format('d M Y') }}</td> <!-- Appointment date formatted -->
+                        <td>{{ \Carbon\Carbon::parse($advance->created_at)->format('d M Y') }}</td> <!-- Payment date formatted -->
+                        <td>{{ number_format($advance->cash_amount, 2) }}</td> <!-- Cash amount formatted -->
                     </tr>
                 @endforeach
             @endforeach
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="3"><strong>Total Incentive</strong></td>
-                <td>{{ $totalIncentive }}</td>
+                <td colspan="3"><strong>Total Incentive for Selected Range</strong></td>
+                <td>{{ number_format($totalIncentive, 2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Previous Total Incentive (Before Selected Range)</strong></td>
+                <td>{{ number_format($previousTotalIncentive, 2) }}</td>
+            </tr>
+            <tr>
+                <td colspan="3"><strong>Net Revenue (After Refunds)</strong></td>
+                <td>{{ number_format($netRevenue, 2) }}</td>
             </tr>
         </tfoot>
     </table>
 </div>
+
+<script>
+    $(document).ready(function() {
+        $("#incentive_table").DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                'excelHtml5',
+                'csvHtml5',
+                'pdfHtml5'
+            ],
+            "ordering": false
+        });
+    });
+</script>
