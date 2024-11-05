@@ -2,7 +2,7 @@
     <table id="incentive_table" class="table table-striped">
         <thead>
             <tr>
-                <th>Appointment ID</th>
+                <th>Patient ID</th>
                 <th>Patient Name</th>
                 <th>Appointment Date</th>
                 <th>Payment Date</th>
@@ -12,7 +12,7 @@
         <tbody>
             @foreach($packageAdvances as $advance)
                 <tr>
-                    <td>{{ $advance->appointment->id ?? 'N/A' }}</td> <!-- Appointment ID -->
+                    <td>{{ $advance->appointment->patient->id ?? 'N/A' }}</td> <!-- Appointment ID -->
                     <td>{{ $advance->appointment->patient->name ?? 'N/A' }}</td> <!-- Patient Name -->
                     <td>{{ \Carbon\Carbon::parse($advance->appointment->scheduled_date)->format('d M Y') }}</td> <!-- Appointment Date -->
                     <td>{{ \Carbon\Carbon::parse($advance->created_at)->format('d M Y') }}</td> <!-- Payment Date -->
