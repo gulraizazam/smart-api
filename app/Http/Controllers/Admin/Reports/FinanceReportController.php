@@ -2901,9 +2901,18 @@ class FinanceReportController extends Controller
         ->groupBy('appointment_id')
         ->with('appointment') // Load related appointments
         ->get();
-
+        $currentRangeTotal = $packageAdvances->sum('total_cash_amount');
+        $monthWiseTotals = PackageAdvances::where('location_id', $centerId)
+        ->whereIn('appointment_id', $packageAdvances->pluck('appointment_id'))
+        ->where('cash_flow', 'in')
+        ->where('cash_amount', '>', 0)
+        ->select(\DB::raw('DATE_FORMAT(appointment.scheduled_date, "%Y-%m") as year_month'), \DB::raw('SUM(cash_amount) as total_cash_amount'))
+        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join to get scheduled dates
+        ->groupBy('year_month')
+        ->get()
+        ->keyBy('year_month');
     // Return data to the view
-    return view('admin.reports.incentive_report', compact('packageAdvances'));
+    return view('admin.reports.incentive_report', get_defined_vars());
 }
 
     
