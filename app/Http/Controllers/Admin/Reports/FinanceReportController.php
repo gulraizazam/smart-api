@@ -2901,7 +2901,7 @@ class FinanceReportController extends Controller
         // Calculate the previous month’s date range based on the start date of the provided range
         $previousMonthStart = (new \DateTime($startDate))->modify('first day of last month')->format('Y-m-01 00:00:00');
         $previousMonthEnd = (new \DateTime($startDate))->modify('last day of last month')->format('Y-m-t 23:59:59');
-    
+    dd($previousMonthStart,$previousMonthEnd);
         // Get appointment IDs where `scheduled_date` is in the previous month of the given range and matches the center
         $previousMonthAppointmentIds = Appointments::where('location_id', $centerId)
             ->where('appointment_type_id',1)
