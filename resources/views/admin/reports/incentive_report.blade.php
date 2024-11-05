@@ -22,19 +22,23 @@
         </tbody>
         <tfoot>
             <tr>
-                <td colspan="3"><strong>Total Incentive for Selected Range</strong></td>
-                <td>{{ number_format($totalIncentive, 2) }}</td>
+                <td colspan="3"><strong>Total Revenue for Selected Range</strong></td>
+                <td>{{ number_format($totalRevenue, 2) }}</td> <!-- Total revenue -->
             </tr>
             <tr>
-                <td colspan="3"><strong>Previous Total Incentive (Before Selected Range)</strong></td>
-                <td>{{ number_format($previousTotalIncentive, 2) }}</td>
+                <td colspan="3"><strong>Month-wise Revenue</strong></td>
+                <td></td>
             </tr>
+            @foreach($monthWiseRevenue as $month => $amount)
+                <tr>
+                    <td colspan="3">{{ \Carbon\Carbon::parse($month . '-01')->format('F Y') }}</td> <!-- Month -->
+                    <td>{{ number_format($amount, 2) }}</td> <!-- Month-wise cash amount -->
+                </tr>
+            @endforeach
             <tr>
                 <td colspan="3"><strong>Net Revenue (After Refunds)</strong></td>
-                <td>{{ number_format($netRevenue, 2) }}</td>
+                <td>{{ number_format($netRevenue, 2) }}</td> <!-- Net revenue -->
             </tr>
         </tfoot>
     </table>
 </div>
-
-
