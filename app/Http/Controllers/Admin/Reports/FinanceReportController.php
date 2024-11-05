@@ -2922,7 +2922,7 @@ class FinanceReportController extends Controller
                 $monthWiseRevenue[$yearMonth] = $advance->cash_amount;
             }
         }
- 
+ dd($monthWiseRevenue );
         // Return data to the view
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
