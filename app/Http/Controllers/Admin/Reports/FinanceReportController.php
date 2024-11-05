@@ -2906,13 +2906,13 @@ class FinanceReportController extends Controller
                 }])
                 ->whereBetween('scheduled_date', [$startDate, $endDate])
                 ->get();
-                dd($appointments);
+                
         
             // Calculate total revenue within the specified date range
             $totalRevenue = $appointments->flatMap(function ($appointment) {
                 return $appointment->packageadvance;
             })->sum('cash_amount');
-        
+            dd($totalRevenue);
             // Organize and calculate revenue by month
             $monthWiseRevenue = [];
         
