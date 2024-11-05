@@ -2829,7 +2829,7 @@ class FinanceReportController extends Controller
     {
        
         $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
-
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         return view('admin.reports.doctorwiseconversion', get_defined_vars());
     }
     public function staffWiseArrivalReport(Request $request)
@@ -2886,17 +2886,22 @@ class FinanceReportController extends Controller
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d', strtotime($dates[0]));
         $endDate = date('Y-m-d', strtotime($dates[1]));
-
+        $centerId = $request->input('center_id');
         // Fetch incentive data for the specified doctor and date range
         $user = User::find($request->input('doctor_id'));
      
-        $incentives = $user->appointmentsDoc()
+       $incentives = $user->appointmentsDoc()
         ->whereBetween('scheduled_date', [$startDate, $endDate])
-        ->with(['packageadvance' => function ($query) use ($startDate, $endDate) {
+        ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
             $query->where('cash_flow', 'in')
-                ->where('cash_amount', '>', 0)
-                ->whereBetween('created_at', [$startDate, $endDate]); // Filter by date range on packageadvance
-        }, 'user']) // Assuming 'user' is the patient relationship or similar
+                  ->where('cash_amount', '>', 0)
+                  ->whereBetween('payment_date', [$startDate, $endDate]);
+
+            // Apply center filter if center_id is provided
+            if ($centerId) {
+                $query->where('location_id', $centerId);
+            }
+        }, 'user']) // Assuming 'user' is the relationship for patient
         ->get();
 
         // Calculate total incentive based on the cash amounts
