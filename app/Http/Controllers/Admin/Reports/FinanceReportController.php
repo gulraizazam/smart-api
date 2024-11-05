@@ -2830,6 +2830,7 @@ class FinanceReportController extends Controller
        
         $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         return view('admin.reports.doctorwiseconversion', get_defined_vars());
     }
     public function staffWiseArrivalReport(Request $request)
@@ -2886,7 +2887,7 @@ class FinanceReportController extends Controller
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         
-        $centerId = $request->input('center_id');
+        $centerId = $request->input('centre_id');
     
         // Fetch appointments within the selected date range
         $incentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
