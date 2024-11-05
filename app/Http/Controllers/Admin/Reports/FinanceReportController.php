@@ -2916,6 +2916,7 @@ class FinanceReportController extends Controller
             $incentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
                     $query->where('cash_flow', 'in')
                           ->where('cash_amount', '>', 0)
+                          ->where('is_refund',  0)
                           ->where('location_id', $centerId)
                           ->whereBetween('created_at', [$startDate, $endDate]);
                 })
