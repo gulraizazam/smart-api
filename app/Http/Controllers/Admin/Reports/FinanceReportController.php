@@ -2884,38 +2884,38 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request)
-    {
-        // Parse date range input
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-    
-        $centerId = $request->input('centre_id');
-    
-        // Calculate month-wise revenue
-        $monthWiseRevenue = PackageAdvances::where('location_id', $centerId)
-            ->where('cash_flow', 'in')
-            ->where('cash_amount', '>', 0)
-            ->where(function($query) use ($startDate, $endDate) {
-                $query->whereBetween('created_at', [$startDate, $endDate]) // Records in the current range
-                      ->orWhereHas('appointment', function($q) use ($startDate) {
-                          $q->where('scheduled_date', '<', $startDate); // Prior appointments
-                      });
-            })
-            ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
-            ->select(
-                \DB::raw('DATE_FORMAT(package_advances.created_at, "%Y-%m") as payment_month'),
-                \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
-            )
-            ->groupBy('payment_month')
-            ->orderBy('payment_month')
-            ->get()
-            ->pluck('monthly_total', 'payment_month');
-    
-        // Total revenue for the selected range
-        $currentRangeTotal = $monthWiseRevenue->sum();
-    
-        return view('admin.reports.incentive_report', compact('monthWiseRevenue', 'currentRangeTotal'));
-    }
+{
+    // Parse date range input
+    $dates = explode(' - ', $request->input('date_range'));
+    $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+    $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+
+    $centerId = $request->input('centre_id');
+
+    // Calculate month-wise revenue
+    $monthWiseRevenue = PackageAdvances::where('package_advances.location_id', $centerId) // Specify table for location_id
+        ->where('package_advances.cash_flow', 'in')
+        ->where('package_advances.cash_amount', '>', 0)
+        ->where(function($query) use ($startDate, $endDate) {
+            $query->whereBetween('package_advances.created_at', [$startDate, $endDate]) // Records in the current range
+                  ->orWhereHas('appointment', function($q) use ($startDate) {
+                      $q->where('appointments.scheduled_date', '<', $startDate); // Prior appointments
+                  });
+        })
+        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
+        ->select(
+            \DB::raw('DATE_FORMAT(package_advances.created_at, "%Y-%m") as payment_month'),
+            \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
+        )
+        ->groupBy('payment_month')
+        ->orderBy('payment_month')
+        ->get()
+        ->pluck('monthly_total', 'payment_month');
+
+    // Total revenue for the selected range
+    $currentRangeTotal = $monthWiseRevenue->sum();
+
+    return view('admin.reports.incentive_report', compact('monthWiseRevenue', 'currentRangeTotal'));
+}
     
 }
