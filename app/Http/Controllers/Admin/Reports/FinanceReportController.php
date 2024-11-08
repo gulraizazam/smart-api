@@ -2896,7 +2896,8 @@ class FinanceReportController extends Controller
         $totalRevenueQuery = PackageAdvances::where('location_id', $centerId)
                         ->whereBetween('created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
-                        ->where('cash_amount', '>', 0);
+                        ->where('cash_amount', '>', 0)
+                        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
                        // ->sum('cash_amount');
             if($doctorId) {
                 $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
@@ -2910,7 +2911,7 @@ class FinanceReportController extends Controller
                             ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
                             ->select(
                                 \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
-                                \DB::raw('appointments.doctor_id) as doctor_id'),
+                              
                                 \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
                             )
                             ->groupBy('revenue_month')
