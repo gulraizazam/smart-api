@@ -2892,55 +2892,37 @@ class FinanceReportController extends Controller
     
         $centerId = $request->input('centre_id');
         $doctorId = $request->input('doctor_id');
-        // Calculate total revenue
-$totalRevenueQuery = PackageAdvances::where('package_advances.cash_flow', 'in')
-->where('package_advances.cash_amount', '>', 0)
-->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
-->where('appointments.appointment_type_id', 1); // Filter by appointment type
+        // Step 1: Calculate total revenue in the given date range from package_advances
+        $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+                        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                        ->where('cash_flow', 'in')
+                        ->where('cash_amount', '>', 0)
+                        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
+                       // ->sum('cash_amount');
+            if($doctorId) {
+                $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
+            }
+            $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
+        $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+    ->where('cash_flow', 'in')
+    ->where('cash_amount', '>', 0)
+    ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+    ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
+    ->select(
+        \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
+        \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
+    )
+    ->groupBy('revenue_month')
+    ->orderBy('revenue_month');
 
-// Apply doctor filter if doctor_id is provided
 if ($doctorId) {
-$totalRevenueQuery->where('appointments.doctor_id', $doctorId);
+    // Apply doctor filter if doctor_id is provided
+    $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+} else {
+    // No doctor filter, continue as usual
 }
 
-// Total revenue for the doctor (or all, if no doctor filter)
-$totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
-
-// Calculate month-wise revenue
-$monthWiseRevenueQuery = PackageAdvances::where('package_advances.cash_flow', 'in')
-->where('package_advances.cash_amount', '>', 0)
-->whereBetween('package_advances.created_at', [$startDate, $endDate])
-->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
-->where('appointments.appointment_type_id', 1) // Only appointments of type 1
-->select(
-    \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
-    \DB::raw('SUM(package_advances.cash_amount) as monthly_total'),
-    \DB::raw('MIN(package_advances.created_at) as first_payment_date')
-)
-->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")'))
-->orderBy('revenue_month');
-
-// Apply doctor filter if doctor_id is provided
-if ($doctorId) {
-$monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-}
-
-// Fetch the revenue month-wise
-$monthWiseRevenue1 = $monthWiseRevenueQuery->get();
-
-// Apply the condition for first payment to be included in the correct month
-$finalMonthWiseRevenue = $monthWiseRevenue1->map(function ($item) use ($startDate, $endDate) {
-// Check if the first payment is within the date range
-if (strtotime($item->first_payment_date) < strtotime($startDate)) {
-    // If the first payment date is before the start date, include the payment in the month of the first payment
-    $item->revenue_month = \Carbon\Carbon::parse($item->first_payment_date)->format('Y-m');
-}
-
-return $item;
-});
-
-// Final month-wise revenue as a key-value pair (month => total)
-$monthWiseRevenue = $finalMonthWiseRevenue->pluck('monthly_total', 'revenue_month');
+$monthWiseRevenue = $monthWiseRevenueQuery->get()->pluck('monthly_total', 'revenue_month'); // Retrieve as a key-value pair (month => total)
     
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
