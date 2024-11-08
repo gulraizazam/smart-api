@@ -2912,7 +2912,7 @@ class FinanceReportController extends Controller
                 \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
                 \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
             );
-        
+            dd($monthWiseRevenueQuery->toSql());
             // Apply doctor filter if provided
             if ($doctorId) {
                 $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
