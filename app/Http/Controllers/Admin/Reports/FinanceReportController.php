@@ -2904,26 +2904,27 @@ class FinanceReportController extends Controller
             }
             $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
             $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
-            ->where('cash_flow', 'in')
-            ->where('cash_amount', '>', 0)
-            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-            ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
-            ->select(
-                \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
-                \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
-            )
-            ->groupBy('revenue_month')
-            ->orderBy('revenue_month');
+    ->where('cash_flow', 'in')
+    ->where('cash_amount', '>', 0)
+    ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+    ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
+    ->select(
+        \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
+        \DB::raw('SUM(package_advances.cash_amount) as monthly_total'),
+        \DB::raw('MIN(package_advances.created_at) as first_payment_date')
+    )
+    ->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")'))
+    ->orderBy('revenue_month');
         
         if ($doctorId) {
-            // Apply doctor filter if doctor_id is provided
-            $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-            $monthWiseRevenueQuery->whereRaw('DATE(package_advances.created_at) = DATE(MIN(package_advances.created_at))');
+            $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId)
+        ->selectRaw('IF(package_advances.created_at = MIN(package_advances.created_at), DATE_FORMAT(package_advances.created_at, "%Y-%m"), DATE_FORMAT(appointments.scheduled_date, "%Y-%m")) as revenue_month');
+
         } else {
             // No doctor filter, continue as usual
         }
         
-        $monthWiseRevenue = $monthWiseRevenueQuery->get()->pluck('monthly_total', 'revenue_month'); // Retrieve as a key-value pair (month => total)
+        $monthWiseRevenue = $monthWiseRevenueQuery->get()->pluck('monthly_total', 'revenue_month'); // Retrieve as a key-value pair (month => total) // Retrieve as a key-value pair (month => total)
     
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
