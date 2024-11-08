@@ -29,7 +29,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -2910,23 +2909,22 @@ class FinanceReportController extends Controller
     ->where('package_advances.cash_amount', '>', 0)
     ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
     ->select(
-        DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
-        DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
+        \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
+        \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
     );
 
-// Apply doctor filter if provided
-if ($doctorId) {
-    $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-}
+    // Apply doctor filter if provided
+    if ($doctorId) {
+        $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+    }
 
-// Group by raw expression for year_month and fetch results
-$monthWiseRevenue = $monthWiseRevenueQuery
-    ->groupBy(DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")'))
-    ->get()
-    ->pluck('total_cash_amount', 'year_month');
-
-// Debug the query (optional)
-dd($monthWiseRevenueQuery->toSql(), $monthWiseRevenueQuery->getBindings());
+    // Group by year_month using the raw SQL expression
+    $monthWiseRevenue = $monthWiseRevenueQuery
+        ->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")'))
+        ->get()
+        ->mapWithKeys(function ($item) {
+            return [$item->year_month => $item->total_cash_amount];
+        });
                            
     
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
