@@ -2903,7 +2903,7 @@ class FinanceReportController extends Controller
         $monthWiseRevenue = PackageAdvances::where('package_advances.location_id', $centerId)
                             ->where('cash_flow', 'in')
                             ->where('cash_amount', '>', 0)
-                            ->whereBetween('created_at', [$startDate, $endDate])
+                            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                             ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
                             ->select(
                                 \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
