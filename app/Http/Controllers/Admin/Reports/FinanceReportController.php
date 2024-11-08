@@ -2891,14 +2891,17 @@ class FinanceReportController extends Controller
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
     
         $centerId = $request->input('centre_id');
-    
+        $doctorId = $request->input('doctor_id');
         // Step 1: Calculate total revenue in the given date range from package_advances
-        $totalRevenue = PackageAdvances::where('location_id', $centerId)
+        $totalRevenueQuery = PackageAdvances::where('location_id', $centerId)
                         ->whereBetween('created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
-                        ->where('cash_amount', '>', 0)
-                        ->sum('cash_amount');
-    
+                        ->where('cash_amount', '>', 0);
+                       // ->sum('cash_amount');
+            if($doctorId) {
+                $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
+            }
+            $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
         // Step 2: Calculate month-wise revenue based on the scheduled date of the related appointment
         $monthWiseRevenue = PackageAdvances::where('package_advances.location_id', $centerId)
                             ->where('cash_flow', 'in')
