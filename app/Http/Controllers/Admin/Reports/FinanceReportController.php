@@ -2910,6 +2910,7 @@ class FinanceReportController extends Controller
                             ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
                             ->select(
                                 \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
+                                \DB::raw('appointments.doctor_id) as doctor_id'),
                                 \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
                             )
                             ->groupBy('revenue_month')
