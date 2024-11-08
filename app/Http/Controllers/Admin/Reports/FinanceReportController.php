@@ -2884,55 +2884,55 @@ class FinanceReportController extends Controller
     }
 
     public function loadIncentiveReport(Request $request)
-    {
-        // Parse date range input
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-    
-        $centerId = $request->input('centre_id');
-        $doctorId = $request->input('doctor_id'); // Fetch doctor_id from request
-    
-        // Step 1: Calculate Total Revenue within the given date range
-        $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
-            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-            ->where('package_advances.cash_flow', 'in')
-            ->where('package_advances.cash_amount', '>', 0)
-            ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
-    
-        // Apply doctor filter if provided
-        if ($doctorId) {
-            $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
-        }
-   
-        // Calculate total revenue
-        $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
-        
-        // Step 2: Calculate Month-wise Revenue
-        $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
-            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-            ->where('package_advances.cash_flow', 'in')
-            ->where('package_advances.cash_amount', '>', 0)
-            ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
-            ->select(
-                \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
-                \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
-            );
-    
-        // Apply doctor filter if provided
-        if ($doctorId) {
-            $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-        }
-       
-        // Group by year and month
-        $monthWiseRevenue = $monthWiseRevenueQuery
-            ->groupBy('year_month')
-            ->get()
-            ->pluck('total_cash_amount', 'year_month');
-    dd($monthWiseRevenue);
-        // Return data to the view
-        return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
+{
+    // Parse date range input
+    $dates = explode(' - ', $request->input('date_range'));
+    $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+    $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+
+    $centerId = $request->input('centre_id');
+    $doctorId = $request->input('doctor_id'); // Fetch doctor_id from request
+
+    // Step 1: Calculate Total Revenue within the given date range
+    $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+        ->where('package_advances.cash_flow', 'in')
+        ->where('package_advances.cash_amount', '>', 0)
+        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
+
+    // Apply doctor filter if provided
+    if ($doctorId) {
+        $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
     }
+
+    // Calculate total revenue
+    $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
+
+    // Step 2: Calculate Month-wise Revenue
+    $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+        ->where('package_advances.cash_flow', 'in')
+        ->where('package_advances.cash_amount', '>', 0)
+        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
+        ->select(
+            \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
+            \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
+        );
+
+    // Apply doctor filter if provided
+    if ($doctorId) {
+        $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+    }
+
+    // Group by year_month and fetch results
+    $monthWiseRevenue = $monthWiseRevenueQuery
+        ->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")'))
+        ->get()
+        ->pluck('total_cash_amount', 'year_month');
+
+    // Return data to the view
+    return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
+}
 
     
 }
