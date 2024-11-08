@@ -2900,7 +2900,7 @@ class FinanceReportController extends Controller
                         ->sum('cash_amount');
     
         // Step 2: Calculate month-wise revenue based on the scheduled date of the related appointment
-        $monthWiseRevenue = PackageAdvances::where('location_id', $centerId)
+        $monthWiseRevenue = PackageAdvances::where('package_advances.location_id', $centerId)
                             ->where('cash_flow', 'in')
                             ->where('cash_amount', '>', 0)
                             ->whereBetween('created_at', [$startDate, $endDate])
