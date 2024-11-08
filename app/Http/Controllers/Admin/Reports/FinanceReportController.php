@@ -2904,25 +2904,25 @@ class FinanceReportController extends Controller
             }
             $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
             $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
-            ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-            ->where('package_advances.cash_flow', 'in')
-            ->where('package_advances.cash_amount', '>', 0)
-            ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
-            ->select(
-                \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
-                \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
-            );
-    
-        // Apply doctor filter if provided
-        if ($doctorId) {
-            $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-        }
-    
-        // Group by year_month and fetch results
-        $monthWiseRevenue = $monthWiseRevenueQuery
-            ->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")'))
-            ->get()
-            ->pluck('total_cash_amount', 'year_month');
+  ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+  ->where('package_advances.cash_flow', 'in')
+  ->where('package_advances.cash_amount', '>', 0)
+  ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id')
+  ->select(
+    DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
+    DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
+  );
+
+// Apply doctor filter if provided
+if ($doctorId) {
+  $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+}
+
+// Group by raw expression for year_month and fetch results
+$monthWiseRevenue = $monthWiseRevenueQuery
+  ->groupBy(DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")')) // Group by raw expression
+  ->get()
+  ->pluck('total_cash_amount', 'year_month');
                            
     
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
