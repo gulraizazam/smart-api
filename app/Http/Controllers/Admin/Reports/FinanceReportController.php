@@ -2904,7 +2904,7 @@ class FinanceReportController extends Controller
             }
             $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
         // Step 2: Calculate month-wise revenue based on the scheduled date of the related appointment
-        $monthWiseRevenue = PackageAdvances::where('package_advances.location_id', $centerId)
+        $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
                             ->where('cash_flow', 'in')
                             ->where('cash_amount', '>', 0)
                             ->whereBetween('package_advances.created_at', [$startDate, $endDate])
@@ -2913,11 +2913,17 @@ class FinanceReportController extends Controller
                                 \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
                               
                                 \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
-                            )
-                            ->groupBy('revenue_month')
-                            ->orderBy('revenue_month')
-                            ->get()
-                            ->pluck('monthly_total', 'revenue_month'); // Retrieve as a key-value pair (month => total)
+                            );
+                            if ($doctorId) {
+                                $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+                            }
+                        
+                            // Group by year_month and fetch results
+                            $monthWiseRevenue = $monthWiseRevenueQuery
+                                ->groupBy(\DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m")'))
+                                ->get()
+                                ->pluck('total_cash_amount', 'year_month');
+                           
     
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
