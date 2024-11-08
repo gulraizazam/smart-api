@@ -2904,10 +2904,10 @@ class FinanceReportController extends Controller
         if ($doctorId) {
             $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
         }
-    
+   
         // Calculate total revenue
         $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
-    
+        dd($totalRevenue);
         // Step 2: Calculate Month-wise Revenue
         $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
             ->whereBetween('package_advances.created_at', [$startDate, $endDate])
