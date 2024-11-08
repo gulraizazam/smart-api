@@ -2918,6 +2918,7 @@ class FinanceReportController extends Controller
         if ($doctorId) {
             // Apply doctor filter if doctor_id is provided
             $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+            $monthWiseRevenueQuery->whereRaw('DATE(package_advances.created_at) = DATE(MIN(package_advances.created_at))');
         } else {
             // No doctor filter, continue as usual
         }
