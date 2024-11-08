@@ -2912,7 +2912,7 @@ class FinanceReportController extends Controller
                 \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as year_month'),
                 \DB::raw('SUM(package_advances.cash_amount) as total_cash_amount')
             );
-            dd($monthWiseRevenueQuery->toSql());
+       
             // Apply doctor filter if provided
             if ($doctorId) {
                 $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
@@ -2925,7 +2925,7 @@ class FinanceReportController extends Controller
                 ->mapWithKeys(function ($item) {
                     return [$item->year_month => $item->total_cash_amount];
                 });           
-    
+                dd($monthWiseRevenueQuery->toSql());
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
     
