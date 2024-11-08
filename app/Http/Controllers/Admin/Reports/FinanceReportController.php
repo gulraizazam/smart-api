@@ -2923,13 +2923,13 @@ class FinanceReportController extends Controller
         if ($doctorId) {
             $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
         }
-        dd($monthWiseRevenueQuery);
+       
         // Group by year and month
         $monthWiseRevenue = $monthWiseRevenueQuery
             ->groupBy('year_month')
             ->get()
             ->pluck('total_cash_amount', 'year_month');
-    
+    dd($monthWiseRevenue);
         // Return data to the view
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
