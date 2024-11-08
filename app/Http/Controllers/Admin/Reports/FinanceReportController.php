@@ -2893,8 +2893,8 @@ class FinanceReportController extends Controller
         $centerId = $request->input('centre_id');
         $doctorId = $request->input('doctor_id');
         // Step 1: Calculate total revenue in the given date range from package_advances
-        $totalRevenueQuery = PackageAdvances::where('location_id', $centerId)
-                        ->whereBetween('created_at', [$startDate, $endDate])
+        $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+                        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
                         ->where('cash_amount', '>', 0)
                         ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
