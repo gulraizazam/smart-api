@@ -2903,21 +2903,40 @@ class FinanceReportController extends Controller
                 $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
             }
             $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
-        $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
-    ->where('cash_flow', 'in')
-    ->where('cash_amount', '>', 0)
-    ->whereBetween('package_advances.created_at', [$startDate, $endDate])
-    ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
-    ->select(
-        \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
-        \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
-    )
-    ->groupBy('revenue_month')
-    ->orderBy('revenue_month');
+            $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+                ->where('cash_flow', 'in')
+                ->where('cash_amount', '>', 0)
+                ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
+                ->select(
+                    \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
+                    \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
+                )
+                ->groupBy('revenue_month')
+                ->orderBy('revenue_month');
 
 if ($doctorId) {
     // Apply doctor filter if doctor_id is provided
-    $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+    ///$monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+
+    $monthlyPayments = \DB::table('package_advances as pa')
+    ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
+    ->where('a.doctor_id', $doctorId)
+    ->whereBetween('a.scheduled_date', [$startDate, $endDate])
+    ->where('pa.cash_flow', 'in')
+    ->whereIn('pa.id', function ($query) {
+        $query->select(\DB::raw('MIN(id)'))
+            ->from('package_advances')
+            ->groupBy('appointment_id');
+    })
+    ->select(
+        DB::raw("DATE_FORMAT(a.scheduled_date, '%Y-%m') as month"),
+        DB::raw("SUM(pa.cash_amount) as total_payments")
+    )
+    ->groupBy('month')
+    ->orderBy('month')
+    ->get();
+    dd( $monthlyPayments);
 } else {
     // No doctor filter, continue as usual
 }
