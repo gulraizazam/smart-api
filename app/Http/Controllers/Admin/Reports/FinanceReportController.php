@@ -2930,8 +2930,8 @@ if ($doctorId) {
             ->groupBy('appointment_id');
     })
     ->select(
-        DB::raw("DATE_FORMAT(a.scheduled_date, '%Y-%m') as month"),
-        DB::raw("SUM(pa.cash_amount) as total_payments")
+        \DB::raw("DATE_FORMAT(a.scheduled_date, '%Y-%m') as month"),
+        \DB::raw("SUM(pa.cash_amount) as total_payments")
     )
     ->groupBy('month')
     ->orderBy('month')
