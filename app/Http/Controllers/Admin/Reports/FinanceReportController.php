@@ -2920,6 +2920,7 @@ if ($doctorId) {
     $appointmentIdsInRange = DB::table('package_advances as pa')
     ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
     ->where('a.doctor_id', $doctorId)
+    ->where('a.appointment_type_id',1)
     ->whereBetween('pa.created_at', [$startDate, $endDate])
     ->where('pa.cash_flow', 'in')
     ->pluck('pa.appointment_id')
@@ -2930,6 +2931,7 @@ $monthlyBreakdown = DB::table('package_advances as pa')
     ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
     ->where('a.doctor_id', $doctorId)
     ->whereIn('pa.appointment_id', $appointmentIdsInRange)
+    ->where('a.appointment_type_id',1)
     ->where('pa.cash_flow', 'in')
     ->select(
         DB::raw("DATE_FORMAT(pa.created_at, '%Y-%m') as month"),
