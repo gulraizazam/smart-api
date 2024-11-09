@@ -29,6 +29,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -2919,24 +2920,36 @@ if ($doctorId) {
     // Apply doctor filter if doctor_id is provided
     ///$monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
 
-    $monthlyPayments = \DB::table('package_advances as pa')
-    ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
-    ->where('a.doctor_id', $doctorId)
-    ->whereBetween('a.scheduled_date', [$startDate, $endDate])
-    ->where('pa.cash_flow', 'in')
-    ->whereIn('pa.id', function ($query) {
-        $query->select(\DB::raw('MIN(id)'))
-            ->from('package_advances')
-            ->groupBy('appointment_id');
-    })
-    ->select(
-        \DB::raw("DATE_FORMAT(a.scheduled_date, '%Y-%m') as month"),
-        \DB::raw("SUM(pa.cash_amount) as total_payments")
-    )
-    ->groupBy('month')
-    ->orderBy('month')
-    ->get();
-    dd( $monthlyPayments);
+    $totalRevenueInRange = DB::table('package_advances as pa')
+        ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
+        ->where('a.doctor_id', $doctorId)
+        ->whereBetween('a.scheduled_date', [$startDate, $endDate])
+        ->where('pa.cash_flow', 'in')
+        ->sum('pa.cash_amount');
+
+    // Step 2: Get the month-wise breakdown for payments in the specified date range
+    $monthlyBreakdown = DB::table('package_advances as pa')
+        ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
+        ->where('a.doctor_id', $doctorId)
+        ->where('pa.cash_flow', 'in')
+        ->where(function ($query) use ($startDate, $endDate) {
+            // Include appointments within the date range
+            $query->whereBetween('a.scheduled_date', [$startDate, $endDate])
+                ->orWhereIn('pa.id', function ($subquery) {
+                    // Include only the first recorded payment of previous appointments
+                    $subquery->select(DB::raw('MIN(id)'))
+                        ->from('package_advances')
+                        ->groupBy('appointment_id');
+                });
+        })
+        ->select(
+            DB::raw("DATE_FORMAT(a.scheduled_date, '%Y-%m') as month"),
+            DB::raw("SUM(pa.cash_amount) as total_payments")
+        )
+        ->groupBy('month')
+        ->orderBy('month', 'desc')
+        ->get();
+    dd( $totalRevenueInRange,$monthlyBreakdown);
 } else {
     // No doctor filter, continue as usual
 }
