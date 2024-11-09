@@ -29,7 +29,6 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -2917,35 +2916,10 @@ class FinanceReportController extends Controller
                 ->orderBy('revenue_month');
 
 if ($doctorId) {
-    $appointmentIdsInRange = DB::table('package_advances as pa')
-    ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
-    ->where('a.doctor_id', $doctorId)
-    ->where('a.appointment_type_id',1)
-    ->whereBetween('pa.created_at', [$startDate, $endDate])
-    ->where('pa.cash_flow', 'in')
-    ->pluck('pa.appointment_id')
-    ->unique();
+    // Apply doctor filter if doctor_id is provided
+    $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
 
-// Step 2: Calculate monthly revenue including payments from previous months for the relevant appointments
-$monthlyBreakdown = DB::table('package_advances as pa')
-    ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
-    ->where('a.doctor_id', $doctorId)
-    ->whereIn('pa.appointment_id', $appointmentIdsInRange)
-    ->where('a.appointment_type_id',1)
-    ->where('pa.cash_flow', 'in')
-    ->select(
-        DB::raw("DATE_FORMAT(pa.created_at, '%Y-%m') as month"),
-        DB::raw("SUM(pa.cash_amount) as total_payments")
-    )
-    ->groupBy('month')
-    ->orderBy('month', 'desc')
-    ->get();
-
-// Step 3: Calculate the total revenue within the specified date range
-$totalRevenueInRange = $monthlyBreakdown
-    ->whereBetween('month', [date('Y-m', strtotime($startDate)), date('Y-m', strtotime($endDate))])
-    ->sum('total_payments');
-    dd($monthlyBreakdown, $totalRevenueInRange);
+    
 } else {
     // No doctor filter, continue as usual
 }
