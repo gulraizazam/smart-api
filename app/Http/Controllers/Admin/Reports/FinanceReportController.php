@@ -2920,27 +2920,30 @@ if ($doctorId) {
     // Apply doctor filter if doctor_id is provided
     ///$monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
 // Step 1: Get appointments with their first payment date and sum payments accordingly
-$monthlyRevenue = DB::table('package_advances as pa')
-->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
-->where('a.doctor_id', $doctorId)
-->where('pa.cash_flow', 'in')
-->select(
-    DB::raw("IF(
-                (SELECT MIN(pa_inner.created_at) FROM package_advances as pa_inner WHERE pa_inner.appointment_id = pa.appointment_id) 
-                BETWEEN '$startDate' AND '$endDate', 
-                DATE_FORMAT((SELECT MIN(pa_inner.created_at) FROM package_advances as pa_inner WHERE pa_inner.appointment_id = pa.appointment_id), '%Y-%m'),
-                DATE_FORMAT(a.scheduled_date, '%Y-%m')
-            ) as month"),
-    DB::raw("SUM(pa.cash_amount) as total_payments")
-)
-->groupBy('month')
-->orderBy('month', 'desc')
-->get();
+$monthlyBreakdown = DB::table('package_advances as pa')
+        ->join('appointments as a', 'pa.appointment_id', '=', 'a.id')
+        ->where('a.doctor_id', $doctorId)
+        ->where('pa.cash_flow', 'in')
+        ->select(
+            DB::raw("
+                IF(
+                    (SELECT MIN(pa_inner.created_at) FROM package_advances as pa_inner WHERE pa_inner.appointment_id = pa.appointment_id) 
+                    BETWEEN '$startDate' AND '$endDate', 
+                    DATE_FORMAT((SELECT MIN(pa_inner.created_at) FROM package_advances as pa_inner WHERE pa_inner.appointment_id = pa.appointment_id), '%Y-%m'),
+                    DATE_FORMAT(a.scheduled_date, '%Y-%m')
+                ) as month
+            "),
+            DB::raw("SUM(pa.cash_amount) as total_payments")
+        )
+        ->groupBy('month')
+        ->orderBy('month', 'desc')
+        ->get();
 
-// Step 2: Calculate the total revenue within the specified range
-$totalRevenueInRange = $monthlyRevenue->whereBetween('month', [date('Y-m', strtotime($startDate)), date('Y-m', strtotime($endDate))])
-->sum('total_payments');
-    dd( $totalRevenueInRange);
+    // Step 2: Calculate the total revenue for months within the specified date range
+    $totalRevenueInRange = $monthlyBreakdown
+        ->whereBetween('month', [date('Y-m', strtotime($startDate)), date('Y-m', strtotime($endDate))])
+        ->sum('total_payments');
+    dd($monthlyBreakdown, $totalRevenueInRange);
 } else {
     // No doctor filter, continue as usual
 }
