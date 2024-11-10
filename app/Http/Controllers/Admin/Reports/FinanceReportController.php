@@ -2939,7 +2939,16 @@ class FinanceReportController extends Controller
                         ->whereIn('id', $appointmentsInRange);
                 })
                 ->sum('cash_amount');
-            dd($totalCashAmount);
+                $totalDoctorRevenue = PackageAdvances::where('cash_flow', '=', 'in')
+                    ->where('cash_amount', '>', 0)
+                    ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                    ->whereIn('appointment_id', function ($query) use ($doctorId) {
+                        $query->select('id')
+                            ->from('appointments')
+                            ->where('doctor_id', '=', $doctorId);
+                    })
+                    ->sum('cash_amount');
+            dd($totalDoctorRevenue);
 
             $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
 
