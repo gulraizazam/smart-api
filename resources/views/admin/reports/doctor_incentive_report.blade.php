@@ -14,8 +14,9 @@
         <tbody>
             
                 <tr>
+                <td>{{ number_format($totalDoctorRevenue, 2) }}</td>
                     <td>{{ number_format($totalCashAmount, 2) }}</td>
-                    <td>{{ number_format($totalDoctorRevenue, 2) }}</td>
+                    
                     <td>{{ number_format($diff, 2) }}</td>
                 </tr>
             
