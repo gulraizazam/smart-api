@@ -2921,7 +2921,7 @@ class FinanceReportController extends Controller
             $appointmentsInRange = PackageAdvances::select('appointment_id', DB::raw('MIN(created_at) as first_payment_date'))
             ->where('cash_flow', '=', 'in')
             ->where('cash_amount', '>', 0)
-            ->where('centre_id', '=', $centerId)
+            ->where('location_id', '=', $centerId)
             ->groupBy('appointment_id')
             ->havingRaw('first_payment_date BETWEEN ? AND ?', [$startDate, $endDate])
             ->pluck('appointment_id');
@@ -2930,7 +2930,7 @@ class FinanceReportController extends Controller
             $totalCashAmount = PackageAdvances::where('cash_flow', '=', 'in')
                 ->where('cash_amount', '>', 0)
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->where('centre_id', '=', $centerId)
+                ->where('location_id', '=', $centerId)
                 ->whereIn('appointment_id', function ($query) use ($appointmentsInRange, $doctorId) {
                     $query->select('id')
                         ->from('appointments')
