@@ -2941,6 +2941,7 @@ class FinanceReportController extends Controller
                 ->sum('cash_amount');
                 $totalDoctorRevenue = PackageAdvances::where('cash_flow', '=', 'in')
                     ->where('cash_amount', '>', 0)
+                    ->where('location_id', '=', $centerId)
                     ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                     ->whereIn('appointment_id', function ($query) use ($doctorId) {
                         $query->select('id')
@@ -2948,10 +2949,10 @@ class FinanceReportController extends Controller
                             ->where('doctor_id', '=', $doctorId);
                     })
                     ->sum('cash_amount');
-            dd($totalDoctorRevenue);
+          $diff = $totalDoctorRevenue - $totalCashAmount;
 
-            $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-
+            // $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+            return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue','diff'));
             
         } else {
             // No doctor filter, continue as usual
