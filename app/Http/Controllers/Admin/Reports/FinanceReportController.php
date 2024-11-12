@@ -2952,12 +2952,12 @@ class FinanceReportController extends Controller
           $diff = $totalDoctorRevenue - $totalCashAmount;
           $patients = PackageAdvances::select(
             'appointments.patient_id', 
-            'patients.name as patient_name', 
+            'users.name as patient_name', 
             'package_advances.created_at as payment_date', 
             'package_advances.cash_amount'
         )
         ->join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
-        ->join('patients', 'patients.id', '=', 'appointments.patient_id')
+        ->join('users', 'users.id', '=', 'appointments.patient_id')
         ->where('package_advances.cash_flow', '=', 'in')
         ->where('package_advances.cash_amount', '>', 0)
         ->where('package_advances.location_id', '=', $centerId)
