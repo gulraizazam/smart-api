@@ -31,7 +31,7 @@
                 <tr>
                     <td>{{ $patient->patient_id }}</td>
                     <td>{{ $patient->patient_name }}</td>
-                    <td>{{ $patient->payment_date->format('d-m-Y') }}</td>
+                    <td>{{ date('d-m-Y', strtotime($patient->payment_date)) }}</td>
                     <td>{{ number_format($patient->cash_amount, 2) }}</td>
                 </tr>
             @endforeach
