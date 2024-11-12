@@ -2950,7 +2950,20 @@ class FinanceReportController extends Controller
                     })
                     ->sum('cash_amount');
           $diff = $totalDoctorRevenue - $totalCashAmount;
-
+          $patients = PackageAdvances::select(
+            'appointments.patient_id', 
+            'patients.name as patient_name', 
+            'package_advances.created_at as payment_date', 
+            'package_advances.cash_amount'
+        )
+        ->join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
+        ->join('patients', 'patients.id', '=', 'appointments.patient_id')
+        ->where('package_advances.cash_flow', '=', 'in')
+        ->where('package_advances.cash_amount', '>', 0)
+        ->where('package_advances.location_id', '=', $centerId)
+        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+        ->where('appointments.doctor_id', '=', $doctorId)
+        ->get();
             // $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
             return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue','diff'));
             
