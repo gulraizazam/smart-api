@@ -2965,7 +2965,7 @@ class FinanceReportController extends Controller
         ->where('appointments.doctor_id', '=', $doctorId)
         ->get();
             // $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
-            return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue','diff'));
+            return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue','diff','patients'));
             
         } else {
             // No doctor filter, continue as usual
