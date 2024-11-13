@@ -1916,8 +1916,14 @@ class AppointmentsController extends Controller
 
     private function sendPromotionSMS($appointmentId, $patient_phone)
     {
-        // SEND SMS for Appointment Booked
-        $SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
+        $apt = Appointments::find($appointmentId);
+        if($apt->appointment_type_id==1){
+            $SMSTemplate = SMSTemplates::getBySlug('on-appointment', Auth::User()->account_id);
+        }
+        if($apt->appointment_type_id==2){
+            $SMSTemplate = SMSTemplates::getBySlug('treatment-on-appointment', Auth::User()->account_id);
+        }
+        //$SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
         if (! $SMSTemplate) {
             // SMS Promotion is disabled
             return [
