@@ -2485,7 +2485,7 @@ class DashboardReportsController extends Controller
             $service = Services::find($request->child_id);
 
             return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'child' => $service->name,
+                'child' => $service->name ?? 'N/A',
             ]);
         } else {
             return ApiHelper::apiResponse($this->success, 'service data', true, [
