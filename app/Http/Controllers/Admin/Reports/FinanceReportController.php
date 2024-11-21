@@ -2897,14 +2897,21 @@ class FinanceReportController extends Controller
         $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
                         ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
-                        ->where('is_refund', 0)
+                        
                         ->where('cash_amount', '>', 0)
                         ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
                        // ->sum('cash_amount');
             if($doctorId) {
                 $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
             }
-            $totalRevenue = $totalRevenueQuery->sum('package_advances.cash_amount');
+            $totalRevenuewithRefund = $totalRevenueQuery->sum('package_advances.cash_amount');
+            $totalRefund = PackageAdvances::where('package_advances.location_id', $centerId)
+                        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                        ->where('cash_flow', 'out')
+                        ->where('cash_amount', '>', 0)
+                        ->where('is_refund', 1)
+                        ->sum('cash_amount');
+                        $totalRevenue = $totalRevenuewithRefund - $totalRefund;
             $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
                 ->where('cash_flow', 'in')
                 ->where('cash_amount', '>', 0)
@@ -2932,7 +2939,7 @@ class FinanceReportController extends Controller
             // Step 2: Sum `cash_amount` for appointments where all payments fall within the specified date range.
             $totalCashAmount = PackageAdvances::where('cash_flow', '=', 'in')
                 ->where('cash_amount', '>', 0)
-                ->where('is_refund', 0)
+
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->where('location_id', '=', $centerId)
                 ->whereIn('appointment_id', function ($query) use ($appointmentsInRange, $doctorId) {
