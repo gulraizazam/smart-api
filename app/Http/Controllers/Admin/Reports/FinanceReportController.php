@@ -2897,6 +2897,7 @@ class FinanceReportController extends Controller
         $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
                         ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
+                        ->where('is_refund', 0)
                         ->where('cash_amount', '>', 0)
                         ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
                        // ->sum('cash_amount');
@@ -2907,6 +2908,7 @@ class FinanceReportController extends Controller
             $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
                 ->where('cash_flow', 'in')
                 ->where('cash_amount', '>', 0)
+                ->where('is_refund', 0)
                 ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                 ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
                 ->select(
@@ -2921,6 +2923,7 @@ class FinanceReportController extends Controller
             $appointmentsInRange = PackageAdvances::select('appointment_id', DB::raw('MIN(created_at) as first_payment_date'))
             ->where('cash_flow', '=', 'in')
             ->where('cash_amount', '>', 0)
+            ->where('is_refund', 0)
             ->where('location_id', '=', $centerId)
             ->groupBy('appointment_id')
             ->havingRaw('first_payment_date BETWEEN ? AND ?', [$startDate, $endDate])
@@ -2929,6 +2932,7 @@ class FinanceReportController extends Controller
             // Step 2: Sum `cash_amount` for appointments where all payments fall within the specified date range.
             $totalCashAmount = PackageAdvances::where('cash_flow', '=', 'in')
                 ->where('cash_amount', '>', 0)
+                ->where('is_refund', 0)
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->where('location_id', '=', $centerId)
                 ->whereIn('appointment_id', function ($query) use ($appointmentsInRange, $doctorId) {
@@ -2941,6 +2945,7 @@ class FinanceReportController extends Controller
                 ->sum('cash_amount');
                 $totalDoctorRevenue = PackageAdvances::where('cash_flow', '=', 'in')
                     ->where('cash_amount', '>', 0)
+                    ->where('is_refund', 0)
                     ->where('location_id', '=', $centerId)
                     ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                     ->whereIn('appointment_id', function ($query) use ($doctorId) {
