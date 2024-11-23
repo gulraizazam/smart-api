@@ -2964,6 +2964,7 @@ class FinanceReportController extends Controller
           $diff = $totalDoctorRevenue - $totalCashAmount;
           $patients = PackageAdvances::select(
             'appointments.patient_id', 
+            'appointments.scheduled_date',
             'users.name as patient_name', 
             'package_advances.created_at as payment_date', 
             'package_advances.cash_amount'
