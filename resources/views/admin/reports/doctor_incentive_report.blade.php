@@ -22,6 +22,7 @@
             <tr>
                 <th>Patient ID</th>
                 <th>Patient Name</th>
+                <th>Appointment Date</th>
                 <th>Payment Date</th>
                 <th>Amount</th>
             </tr>
@@ -31,6 +32,7 @@
                 <tr>
                     <td>{{ $patient->patient_id }}</td>
                     <td>{{ $patient->patient_name }}</td>
+                    <td>{{ $patient->scheduled_date }}</td>
                     <td>{{ date('d-m-Y', strtotime($patient->payment_date)) }}</td>
                     <td>{{ number_format($patient->cash_amount, 2) }}</td>
                 </tr>
