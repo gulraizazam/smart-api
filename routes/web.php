@@ -80,7 +80,7 @@ use App\Http\Controllers\MembershipReportsController;
 Route::get('/', function () {
     return redirect()->route('login');
 });
-Route::get('/unathorized', function () {
+Route::get('/unauthorized', function () {
     return view('unathorized');
 })->name('unauthorized');
 Auth::routes();

@@ -2757,6 +2757,7 @@ class Finanaces
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
+                        ->where('deleted_at', null)
                         ->where('package_advances.created_at', '>=', $start_date . ' 00:00:00')
                         ->where('package_advances.created_at', '<=', $end_date . ' 23:59:59')
                         ->get();
@@ -2764,6 +2765,7 @@ class Finanaces
                         $check = 0;
                         $first_advance = PackageAdvances::whereIn('id', $package_info)
                             ->where('cash_amount', '>', 0)
+                            ->where('deleted_at', null)
                             ->orderBy('created_at', 'asc')
                             ->first();
                         $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
