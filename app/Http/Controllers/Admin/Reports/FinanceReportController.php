@@ -17,6 +17,7 @@ use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Locations;
 use App\Models\MachineType;
+use App\Models\PackageAdvances;
 use App\Models\Regions;
 use App\Models\Resources;
 use App\Models\RoleHasUsers;
@@ -28,6 +29,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -2830,6 +2832,7 @@ class FinanceReportController extends Controller
        
         $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         return view('admin.reports.doctorwiseconversion', get_defined_vars());
     }
     public function staffWiseArrivalReport(Request $request)
@@ -2881,60 +2884,109 @@ class FinanceReportController extends Controller
         return view('admin.reports.staff_wise_arrived', get_defined_vars());
     }
 
-    public function loadIncentiveReport(Request $request) {
+    public function loadIncentiveReport(Request $request)
+    {
+        // Parse the date range input
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        
+    
         $centerId = $request->input('centre_id');
-    
-        // Fetch appointments within the selected date range
-        $incentives = Appointments::whereHas('packageadvance', function ($query) use ($startDate, $endDate, $centerId) {
-                $query->where('cash_flow', 'in')
-                      ->where('cash_amount', '>', 0)
-                      ->where('is_refund', 0)
-                      ->where('location_id', $centerId)
-                      ->whereBetween('created_at', [$startDate, $endDate]);
-            })
-            ->with(['packageadvance' => function ($query) use ($startDate, $endDate, $centerId) {
-                $query->where('location_id', $centerId)
-                      ->whereBetween('created_at', [$startDate, $endDate]);
-            }, 'user'])
-            ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->get();
-    
-        // Calculate total incentive within the date range
-        $totalIncentive = $incentives->flatMap(function ($appointment) {
-            return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
-        })->sum('cash_amount');
-    
-        // Calculate net revenue after subtracting refunds
-        $totalRefunds = $incentives->flatMap(function ($appointment) {
-            return $appointment->packageadvance->where('cash_flow', 'out')->where('is_refund', 1);
-        })->sum('cash_amount');
-        
-        $netRevenue = $totalIncentive - $totalRefunds;
-    
-        // Calculate the previous month's date range based on the selected date range's start date
-        $previousMonthStart = (new \DateTime($startDate))->modify('first day of last month')->format('Y-m-01 00:00:00');
-        $previousMonthEnd = (new \DateTime($startDate))->modify('last day of last month')->format('Y-m-t 23:59:59');
-    
-        // Fetch previous month's appointments and calculate total incentive
-        $previousIncentives = Appointments::whereHas('packageadvance', function ($query) use ($previousMonthStart, $previousMonthEnd, $centerId) {
-                $query->where('cash_flow', 'in')
-                      ->where('cash_amount', '>', 0)
-                      ->where('is_refund', 0)
-                      ->where('location_id', $centerId)
-                      ->whereBetween('created_at', [$previousMonthStart, $previousMonthEnd]);
-            })
-            ->with('packageadvance')
-            ->get();
-    
-        $previousTotalIncentive = $previousIncentives->flatMap(function ($appointment) {
-            return $appointment->packageadvance->where('cash_flow', 'in')->where('is_refund', 0);
-        })->sum('cash_amount');
-    
-        return view('admin.reports.incentive_report', compact('incentives', 'netRevenue', 'previousTotalIncentive', 'totalIncentive'));
+        $doctorId = $request->input('doctor_id');
+        // Step 1: Calculate total revenue in the given date range from package_advances
+        $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+                        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                        ->where('cash_flow', 'in')
+                        
+                        ->where('cash_amount', '>', 0)
+                        ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
+                       // ->sum('cash_amount');
+            if($doctorId) {
+                $totalRevenueQuery->where('appointments.doctor_id', $doctorId);
+            }
+            $totalRevenuewithRefund = $totalRevenueQuery->sum('package_advances.cash_amount');
+            $totalRefund = PackageAdvances::where('package_advances.location_id', $centerId)
+                        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                        ->where('cash_flow', 'out')
+                        ->where('cash_amount', '>', 0)
+                        ->where('is_refund', 1)
+                        ->sum('cash_amount');
+                        $totalRevenue = $totalRevenuewithRefund - $totalRefund;
+            $monthWiseRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
+                ->where('cash_flow', 'in')
+                ->where('cash_amount', '>', 0)
+                ->where('is_refund', 0)
+                ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id') // Join with appointments
+                ->select(
+                    \DB::raw('DATE_FORMAT(appointments.scheduled_date, "%Y-%m") as revenue_month'),
+                    \DB::raw('SUM(package_advances.cash_amount) as monthly_total')
+                )
+                ->groupBy('revenue_month')
+                ->orderBy('revenue_month');
+
+        if ($doctorId) {
+            // Apply doctor filter if doctor_id is provided
+            $appointmentsInRange = PackageAdvances::select('appointment_id', DB::raw('MIN(created_at) as first_payment_date'))
+            ->where('cash_flow', '=', 'in')
+            ->where('cash_amount', '>', 0)
+            ->where('is_refund', 0)
+            ->where('location_id', '=', $centerId)
+            ->groupBy('appointment_id')
+            ->havingRaw('first_payment_date BETWEEN ? AND ?', [$startDate, $endDate])
+            ->pluck('appointment_id');
+
+            // Step 2: Sum `cash_amount` for appointments where all payments fall within the specified date range.
+            $totalCashAmount = PackageAdvances::where('cash_flow', '=', 'in')
+                ->where('cash_amount', '>', 0)
+
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where('location_id', '=', $centerId)
+                ->whereIn('appointment_id', function ($query) use ($appointmentsInRange, $doctorId) {
+                    $query->select('id')
+                        ->from('appointments')
+                        ->where('appointment_type_id', '=', 1)
+                        ->where('doctor_id', '=', $doctorId)
+                        ->whereIn('id', $appointmentsInRange);
+                })
+                ->sum('cash_amount');
+                $totalDoctorRevenue = PackageAdvances::where('cash_flow', '=', 'in')
+                    ->where('cash_amount', '>', 0)
+                    ->where('is_refund', 0)
+                    ->where('location_id', '=', $centerId)
+                    ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+                    ->whereIn('appointment_id', function ($query) use ($doctorId) {
+                        $query->select('id')
+                            ->from('appointments')
+                            ->where('doctor_id', '=', $doctorId);
+                    })
+                    ->sum('cash_amount');
+          $diff = $totalDoctorRevenue - $totalCashAmount;
+          $patients = PackageAdvances::select(
+            'appointments.patient_id', 
+            'appointments.scheduled_date',
+            'users.name as patient_name', 
+            'package_advances.created_at as payment_date', 
+            'package_advances.cash_amount'
+        )
+        ->join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
+        ->join('users', 'users.id', '=', 'appointments.patient_id')
+        ->where('package_advances.cash_flow', '=', 'in')
+        ->where('package_advances.cash_amount', '>', 0)
+        ->where('package_advances.location_id', '=', $centerId)
+        ->whereBetween('package_advances.created_at', [$startDate, $endDate])
+        ->where('appointments.doctor_id', '=', $doctorId)
+        ->get();
+            // $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
+            return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue','diff','patients'));
+            
+        } else {
+            // No doctor filter, continue as usual
+        }
+
+        $monthWiseRevenue = $monthWiseRevenueQuery->get()->pluck('monthly_total', 'revenue_month'); // Retrieve as a key-value pair (month => total)
+            
+        return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
     
     
