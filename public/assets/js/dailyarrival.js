@@ -45,6 +45,22 @@ $('#date_range_incentive').daterangepicker({
     startDate: moment().startOf('month'),
     endDate: moment().subtract(1, 'days')
 }).val();
+$('#date_range_appointments').daterangepicker({
+    locale: {
+    },
+    ranges: {
+         'Today': [moment(), moment()],
+         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+         'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+         'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        // 'This Year': [moment().startOf('year'), moment().endOf('year')],
+        // 'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().subtract(1, 'days')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
