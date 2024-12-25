@@ -16,7 +16,7 @@
         @foreach ($appointments as $apt)
                 <tr>
                     <td>{{ $apt->patient_id }}</td>
-                    <td>{{ $apt->patient->patient_name }}</td>
+                    <td>{{ $apt->patient->name }}</td>
                     <td>{{ $apt->scheduled_date }}</td>
                     <td>{{ date('d-m-Y H:i:s', strtotime($apt->created_at)) }}</td>
                     <td>
