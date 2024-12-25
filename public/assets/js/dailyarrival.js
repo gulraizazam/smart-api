@@ -201,6 +201,16 @@ var loadAppointmentsReport  = function (that) {
         success: function(response){
             $('#apt_content').html('');
             $('#apt_content').html(response);
+            $("#appointments_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
             // $("#incentive_table").DataTable({
             //     dom: 'Bfrtip',
             //     buttons: [
