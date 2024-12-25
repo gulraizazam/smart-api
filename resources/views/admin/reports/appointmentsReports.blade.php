@@ -12,6 +12,7 @@
                 <th>Location</th>
                 <th>Created Date/Time</th>
                 <th>Arrival Date/Time</th>
+                <th>Created By</th>
             </tr>
         </thead>
         <tbody>
@@ -30,6 +31,7 @@
                             N/A
                         @endif
                     </td>
+                    <td>{{$apt->user->name ?? 'N/A'}}</td>
                 </tr>
             @endforeach
         </tbody>
