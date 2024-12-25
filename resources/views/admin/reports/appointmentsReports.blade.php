@@ -20,8 +20,8 @@
                     <td>{{ $apt->scheduled_date }}</td>
                     <td>{{ date('d-m-Y H:i:s', strtotime($apt->created_at)) }}</td>
                     <td>
-                        @if ($apt->hasInvoices)
-                            {{ date('d-m-Y H:i:s', strtotime($apt->hasInvoices->created_at)) }}
+                        @if ($apt->hasInvoices->isNotEmpty())
+                            {{ date('d-m-Y H:i:s', strtotime($apt->hasInvoices->first()->created_at)) }}
                         @else
                             N/A
                         @endif
