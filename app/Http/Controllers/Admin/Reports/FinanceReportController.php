@@ -2997,7 +2997,7 @@ class FinanceReportController extends Controller
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
     
         $centerId = $request->input('centre_id');
-        $appointments = Appointments::with(['patient','location', 'hasInvoices' => function ($query) {
+        $appointments = Appointments::with(['patient','location','user', 'hasInvoices' => function ($query) {
             $query->orderBy('created_at', 'asc'); // Order invoices by creation time
         }])
             ->where('appointment_type_id', 1)
