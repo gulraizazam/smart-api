@@ -2,7 +2,7 @@
     
 
    
-    <table class="table table-bordered">
+    <table class="table table-bordered" id="appointments_table">
         <thead>
             <tr>
                 <th>Patient ID</th>
