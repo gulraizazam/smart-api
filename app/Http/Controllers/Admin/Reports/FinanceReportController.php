@@ -2990,7 +2990,7 @@ class FinanceReportController extends Controller
     }
     public function loadAppointmentsReport(Request $request)
     {
-        dd($request->all());
+        
         $timeInterval  = $request->time;
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
@@ -3000,6 +3000,7 @@ class FinanceReportController extends Controller
         $appointments = Appointments::query()
         ->where('appointment_type_id', 1)
         ->where('appointment_status_id', 2)
+        
         ->whereHas('invoice', function ($query) use ($timeInterval) {
             $query->whereRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, invoices.created_at) <= ?', [$timeInterval]);
         })
