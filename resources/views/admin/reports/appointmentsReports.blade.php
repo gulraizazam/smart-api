@@ -1,7 +1,7 @@
 <div id="revenue_report">
     
 
-    <h3>Appointments</h3>
+   
     <table class="table table-bordered">
         <thead>
             <tr>
