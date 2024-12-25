@@ -3001,7 +3001,7 @@ class FinanceReportController extends Controller
         ->where('appointment_type_id', 1)
         ->where('appointment_status_id', 2)
         
-        ->whereHas('invoice', function ($query) use ($timeInterval) {
+        ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
             $query->whereRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, invoices.created_at) <= ?', [$timeInterval]);
         })
         ->whereBetween('created_at', [$startDate, $endDate])
