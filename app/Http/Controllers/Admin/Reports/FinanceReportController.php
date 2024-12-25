@@ -2997,15 +2997,16 @@ class FinanceReportController extends Controller
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
     
         $centerId = $request->input('centre_id');
-        $appointments = Appointments::with('patient')
-        ->where('appointment_type_id', 1)
-        ->where('appointment_status_id', 2)
-        
-        ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
-            $query->whereRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, invoices.created_at) <= ?', [$timeInterval]);
-        })
-        ->whereBetween('created_at', [$startDate, $endDate])
-        ->get();
+        $appointments = Appointments::with(['patient', 'hasInvoices' => function ($query) {
+            $query->orderBy('created_at', 'asc'); // Order invoices by creation time
+        }])
+            ->where('appointment_type_id', 1)
+            ->where('appointment_status_id', 2)
+            ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
+                $query->havingRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, MIN(invoices.created_at)) <= ?', [$timeInterval]);
+            })
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
         return view('admin.reports.appointmentsReports',get_defined_vars());
 
     }
