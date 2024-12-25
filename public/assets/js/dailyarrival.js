@@ -164,6 +164,44 @@ var loadIncentiveReport  = function (that) {
         }
     });
 };
+var loadAppointmentsReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.appointments_report'),
+        type: "POST",
+        data: {
+           
+            time: $('#time_id').val(),
+            date_range: $('#date_range_incentive').val(),
+            centre_id: $('#centre_id').val(),
+           
+        },
+        success: function(response){
+            $('#apt_content').html('');
+            $('#apt_content').html(response);
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
 var loadPatientFollowUpReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
