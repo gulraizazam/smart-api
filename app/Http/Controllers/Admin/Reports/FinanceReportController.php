@@ -2997,7 +2997,7 @@ class FinanceReportController extends Controller
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
     
         $centerId = $request->input('centre_id');
-        $appointments = Appointments::query()
+        $appointments = Appointments::with('patient')
         ->where('appointment_type_id', 1)
         ->where('appointment_status_id', 2)
         
@@ -3006,7 +3006,7 @@ class FinanceReportController extends Controller
         })
         ->whereBetween('created_at', [$startDate, $endDate])
         ->get();
-        dd($appointments);
+        return view('admin.reports.appointmentsReports',get_defined_vars());
 
     }
     public function appointmentsReport()
