@@ -7,10 +7,11 @@
             <tr>
                 <th>Patient ID</th>
                 <th>Patient Name</th>
-                <th>Appointment Date</th>
+                <th>Schedule Date</th>
+                <th>Schedule Time</th>
                 <th>Location</th>
-                <th>Appointment Created Date/Time</th>
-                <th>Appointment Arrival Date/Time</th>
+                <th>Created Date/Time</th>
+                <th>Arrival Date/Time</th>
             </tr>
         </thead>
         <tbody>
@@ -19,6 +20,7 @@
                     <td>{{ $apt->patient_id }}</td>
                     <td>{{ $apt->patient->name }}</td>
                     <td>{{ $apt->scheduled_date }}</td>
+                    <td>{{$apt->scheduled_time}}</td>
                     <td>{{$apt->location->name ?? 'N/A'}}</td>
                     <td>{{ date('d-m-Y H:i:s', strtotime($apt->created_at)) }}</td>
                     <td>
