@@ -2990,7 +2990,7 @@ class FinanceReportController extends Controller
     }
     public function loadAppointmentsReport(Request $request)
     {
-        dd($request->all());
+        
         $timeInterval  = $request->time;
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
