@@ -66,7 +66,7 @@
                                            <span id="created_by_handler"></span>
                                        </div>
                                        <div class="form-group col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif" id="users" >
-                                           {!! Form::label('created_by', 'Doctor', ['class' => 'control-label']) !!}
+                                           {!! Form::label('created_by', 'Created By', ['class' => 'control-label']) !!}
                                            <select class="form-control select2" id="created_by_id" name="created_by_id">
                                                <option value="">All</option>
                                                @foreach($Users as $user)
