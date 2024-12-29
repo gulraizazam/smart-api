@@ -65,6 +65,17 @@
                                            </select>
                                            <span id="created_by_handler"></span>
                                        </div>
+                                       <div class="form-group col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif" id="users" >
+                                           {!! Form::label('created_by', 'Doctor', ['class' => 'control-label']) !!}
+                                           <select class="form-control select2" id="created_by_id" name="created_by_id">
+                                               <option value="">All</option>
+                                               @foreach($Users as $user)
+                                                   <option value="{{$user->id}}">
+                                                           <b>{!! $user['name'] !!}</b></option>
+                                               @endforeach
+                                           </select>
+                                           <span id="created_by_handler"></span>
+                                       </div>
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                             <a href="javascript:void(0);" onclick="loadAppointmentsReport($(this));" id="load_apt_report"
