@@ -196,6 +196,7 @@ var loadAppointmentsReport  = function (that) {
             time: $('#time_id').val(),
             date_range: $('#date_range_appointments').val(),
             centre_id: $('#centre_id').val(),
+            created_by:$("#created_by_id").val(),
            
         },
         success: function(response){
