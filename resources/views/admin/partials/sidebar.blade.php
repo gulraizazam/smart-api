@@ -963,7 +963,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('appointments_report')
+                    @can('dashboard_appointments_report')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
