@@ -45,7 +45,7 @@ function actions(data) {
     let url = route('admin.products.edit', { id: id });
     let stock_url = route('admin.products.stock', { id: id });
     let inventories_url = route('admin.products.inventory', { id: id });
-    let transfer_product_url = route('admin.products.transfer_product.get', { id: inventory_id });
+    //let transfer_product_url = route('admin.products.transfer_product.get', { id: inventory_id });
     let log_url = route('admin.products.logs', { id: id });
 
     let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -82,14 +82,14 @@ function actions(data) {
                                     </li>';
                         }
                         
-                        if (permissions.transfer_product) {
-                            actions += '<li class="navi-item">\
-                                            <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
-                                            <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
-                                            <span class="navi-text">Transfer Product</span>\
-                                            </a>\
-                                        </li>';
-                        }
+                        // if (permissions.transfer_product) {
+                        //     actions += '<li class="navi-item">\
+                        //                     <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
+                        //                     <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
+                        //                     <span class="navi-text">Transfer Product</span>\
+                        //                     </a>\
+                        //                 </li>';
+                        // }
                         if (permissions.stock_detail) {
                             actions += '<li class="navi-item">\
                                         <a href="'+ stock_url + '" class="navi-link">\
