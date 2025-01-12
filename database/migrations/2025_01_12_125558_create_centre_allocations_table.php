@@ -15,12 +15,11 @@ class CreateCentreAllocationsTable extends Migration
     {
         Schema::create('centre_allocations', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('product_id');
-            $table->unsignedBigInteger('location_id');
+            $table->foreignId('product_id')->constrained('products');
+            $table->foreign('location_id')->constrained('locations');
             $table->integer('quantity');
             $table->timestamps();
-            $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('location_id')->references('id')->on('locations')->onDelete('cascade');
+           
            
         });
     }
