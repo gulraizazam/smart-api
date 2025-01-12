@@ -20,7 +20,7 @@ class CreateCentreAllocationsTable extends Migration
             $table->integer('quantity');
             $table->timestamps();
             $table->foreign('product_id')->references('id')->on('products')->onDelete('cascade');
-            $table->foreign('centre_id')->references('id')->on('centres')->onDelete('cascade');
+            $table->foreign('centre_id')->references('id')->on('locations')->onDelete('cascade');
            
         });
     }
