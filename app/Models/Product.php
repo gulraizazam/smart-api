@@ -129,48 +129,48 @@ class Product extends BaseModal
     //  * @param  (int)  $account_id Current Organization's ID
     //  * @return (mixed)
     //  */
-    // public static function lead_sources_filters($request, $account_id, $search = false)
-    // {
-    //     $where = [];
-    //     $filters = getFilters($request->all());
-    //     if (hasFilter($filters, 'created_at')) {
-    //         $date_range = explode(' - ', $filters['created_at']);
-    //         $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-    //         $end_date_string = new DateTime($date_range[1]);
-    //         $end_date_string->setTime(23, 59, 0);
-    //         $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-    //     } else {
-    //         $start_date_time = null;
-    //         $end_date_time = null;
-    //     }
+    public static function lead_sources_filters($request, $account_id, $search = false)
+    {
+        $where = [];
+        $filters = getFilters($request->all());
+        if (hasFilter($filters, 'created_at')) {
+            $date_range = explode(' - ', $filters['created_at']);
+            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
+            $end_date_string = new DateTime($date_range[1]);
+            $end_date_string->setTime(23, 59, 0);
+            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
+        } else {
+            $start_date_time = null;
+            $end_date_time = null;
+        }
 
-    //     if ($search) {
-    //         if (hasFilter($filters, 'name')) {
-    //             $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
-    //         }
-    //         if (hasFilter($filters, 'product_type')) {
-    //             $where[][] = ['product_type' => $filters['product_type']];
-    //         }
-    //         if (hasFilter($filters, 'brand_id')) {
-    //             $where[][] = ['brand_id' => $filters['brand_id']];
-    //         }
-    //         if (hasFilter($filters, 'centre_id')) {
-    //             $where[][] = ['location_id' => $filters['centre_id']];
-    //         }
-    //         if (hasFilter($filters, 'warehouse_id')) {
-    //             $where[][] = ['warehouse_id' => $filters['warehouse_id']];
-    //         }
-    //         if (hasFilter($filters, 'status')) {
-    //             $where[][] = ['active' => $filters['status']];
-    //         }
-    //         if (hasFilter($filters, 'created_at')) {
-    //             $where[] = ['products.created_at', '>=', $start_date_time];
-    //             $where[] = ['products.created_at', '<=', $end_date_time];
-    //         }
-    //     }
+        if ($search) {
+            if (hasFilter($filters, 'name')) {
+                $where[] = ['name', 'like', '%' . $filters['name'] . '%'];
+            }
+            if (hasFilter($filters, 'product_type')) {
+                $where[][] = ['product_type' => $filters['product_type']];
+            }
+            if (hasFilter($filters, 'brand_id')) {
+                $where[][] = ['brand_id' => $filters['brand_id']];
+            }
+            if (hasFilter($filters, 'centre_id')) {
+                $where[][] = ['location_id' => $filters['centre_id']];
+            }
+            if (hasFilter($filters, 'warehouse_id')) {
+                $where[][] = ['warehouse_id' => $filters['warehouse_id']];
+            }
+            if (hasFilter($filters, 'status')) {
+                $where[][] = ['active' => $filters['status']];
+            }
+            if (hasFilter($filters, 'created_at')) {
+                $where[] = ['products.created_at', '>=', $start_date_time];
+                $where[] = ['products.created_at', '<=', $end_date_time];
+            }
+        }
 
-    //     return $where;
-    // }
+        return $where;
+    }
 
     // /**
     //  * Create Record
