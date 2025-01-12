@@ -200,39 +200,21 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if ($request->quantity <= 0) {
-                return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
-            }
-            if ($request->purchase_price && $request->purchase_price  < 0) {
-                return ApiHelper::apiResponse($this->error, "Purchase price must be greater than 0", false);
-            }
+            
             if ($request->sale_price && $request->sale_price  < 0) {
                 return ApiHelper::apiResponse($this->error, "Sale price must be greater than 0", false);
             }
-            if ($request->product_type == 'for_sale' && $request->sale_price == null) {
-                if ($request->sale_price == null) {
-                    return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
-                }
-            }
-            if ($request->product_type == 'for_sale' && $request->sale_price != null) {
-                if ($request->purchase_price > $request->sale_price) {
-                    return ApiHelper::apiResponse($this->error, 'sale price must be higher than the purchase price.', false);
-                }
-            }
-            if ($request->location_id == null && $request->warehouse_id == null) {
-                $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
-                return ApiHelper::apiResponse($this->error, $err_message, false);
-            }
            
-            $request['type'] = 'product_create';
-            $request['message'] = 'Product create';
+            $data = $request->all();
+            $data['slug'] =\Str::slug($data['name']);
 
-            $product = Product::createRecord($request, Auth::User()->account_id);
+           $product =  Product::create($data);
+
             if ($product) {
-                if (ProductDetail::createRecord($request, Auth::User()->account_id, $product->id)) {
+                
                   
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
-                }
+                
             }
 
             return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.', false);
@@ -251,7 +233,7 @@ class ProductsController extends Controller
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
             'brand_id' => 'required',
-            'purchase_price' => 'required',
+            'sale_price' => 'required',
             
         ]);
     }
