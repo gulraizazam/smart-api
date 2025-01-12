@@ -47,19 +47,7 @@
                         </div>
                     </div>
                    
-                    <div class="row">
-                        <div class="fv-row col-md-12">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Product Type <span
-                                    class="text text-danger">*</span></label>
-                            <select id="edit_product_type" class="form-control form-control mb-3 mb-lg-0"
-                                name="product_type">
-                                <option value="">Select Product Type</option>
-                                <option value="in_house_use">In House Use</option>
-                                <option value="for_sale">For Sale</option>
-                            </select>
-                        </div>
-                       
-                    </div>
+                    
                     
                 </div>
             </div>

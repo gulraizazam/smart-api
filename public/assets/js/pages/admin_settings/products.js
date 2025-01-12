@@ -11,27 +11,12 @@ var table_columns = [
         title: 'Brand',
         width: 'auto',
         sortable: false,
-    }, {
-        field: 'product_type',
-        title: 'Type',
-        width: 'auto',
-        sortable: false,
-    }, {
-        field: 'stock_have',
-        title: 'Stock Location',
-        width: 'auto',
-        sortable: false,
-    }, {
+    } , {
         field: 'sale_price',
         title: 'Sale Price',
         width: 'auto',
         sortable: false,
-    }, {
-        field: 'quantity',
-        title: 'Quantity',
-        width: 'auto',
-        sortable: false,
-    }, {
+    },  {
         field: 'status',
         title: 'status',
         width: 80,
