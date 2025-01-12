@@ -99,28 +99,25 @@ class Product extends BaseModal
     //  * @param  (int)  $account_id Current Organization's ID
     //  * @return (mixed)
     //  */
-    // public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
-    // {
-    //     $where = self::lead_sources_filters($request, $account_id, $apply_filter);
-    //     if (count($where)) {
-    //         return self::join('inventories','products.id','inventories.product_id')
-    //         ->select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
-    //         ->where($where)
-    //             ->where(function ($query) {
-    //                 $query->whereIn('inventories.location_id', ACL::getUserCentres())
-    //                     ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
-    //             })
-    //             ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
-    //     } else {
-    //         return self::join('inventories','products.id','inventories.product_id')
-    //         ->select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
-    //         ->where(function ($query) {
-    //             $query->whereIn('inventories.location_id', ACL::getUserCentres())
-    //                 ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
-    //         })
-    //             ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
-    //     }
-    // }
+    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
+    {
+        $where = self::lead_sources_filters($request, $account_id, $apply_filter);
+        if (count($where)) {
+            return self::where($where)
+                ->where(function ($query) {
+                    $query->whereIn('inventories.location_id', ACL::getUserCentres())
+                        ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
+                })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
+        } else {
+            return self::select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
+            ->where(function ($query) {
+                $query->whereIn('inventories.location_id', ACL::getUserCentres())
+                    ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
+            })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
+        }
+    }
 
     // /**
     //  * Get filters
