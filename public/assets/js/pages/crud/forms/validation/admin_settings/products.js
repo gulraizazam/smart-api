@@ -22,41 +22,17 @@ var AddUserValidation = function () {
                             }
                         }
                     },
-                    purchase_price: {
+                    sale_price: {
                         validators: {
                             notEmpty: {
-                                message: 'The Purchase field is required'
+                                message: 'The Sale Price field is required'
                             }
                         }
                     },
-                    quantity: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Quantity field is required'
-                            }
-                        }
-                    },
-                    total_purchase_price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Total Purchase field is required'
-                            }
-                        }
-                    },
-                    product_type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Product Type field is required'
-                            }
-                        }
-                    },
-                    warehouse_id:{
-                        validators: {
-                            notEmpty: {
-                                message: 'The Warehouse field is required'
-                            }
-                        }
-                    }
+                   
+                    
+                   
+                    
                    
                 },
 
