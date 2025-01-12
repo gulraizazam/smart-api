@@ -2988,7 +2988,43 @@ class FinanceReportController extends Controller
             
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
+    public function loadAppointmentsReport(Request $request)
+    {
+        
+        $timeInterval  = $request->time;
+        $dates = explode(' - ', $request->input('date_range'));
+        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
     
-    
-    
+        $centerId = $request->input('centre_id');
+        $createdBy = $request->input('created_by');
+        $appointments = Appointments::with(['patient','location','user', 'hasInvoices' => function ($query) {
+            $query->orderBy('created_at', 'asc'); // Order invoices by creation time
+        }])
+            ->where('appointment_type_id', 1)
+            ->where('appointment_status_id', 2)
+            ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
+                $query->havingRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, MIN(invoices.created_at)) <= ?', [$timeInterval]);
+            })
+            ->when($centerId, function ($query, $centerId) {
+                // Apply the centre_id condition if it's present
+                return $query->where('location_id', $centerId);
+            })
+            ->when($createdBy, function ($query, $createdBy) {
+                // Apply the centre_id condition if it's present
+                return $query->where('created_by', $createdBy);
+            })
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
+        return view('admin.reports.appointmentsReports',get_defined_vars());
+
+    }
+    public function appointmentsReport()
+    {
+       
+        $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        return view('admin.reports.appointments_report', get_defined_vars());
+    }
 }
