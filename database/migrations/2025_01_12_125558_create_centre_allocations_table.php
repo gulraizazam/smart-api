@@ -16,7 +16,7 @@ class CreateCentreAllocationsTable extends Migration
         Schema::create('centre_allocations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products');
-            $table->foreign('location_id')->constrained('locations');
+            $table->foreignId('location_id')->constrained('locations');
             $table->integer('quantity');
             $table->timestamps();
            
