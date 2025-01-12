@@ -80,20 +80,16 @@ class Product extends BaseModal
     //  * @param  (int)  $account_id Current Organization's ID
     //  * @return (mixed)
     //  */
-    // public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
-    // {
-    //     $where = self::lead_sources_filters($request, $account_id, $apply_filter);
+    public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
+    {
+        $where = self::lead_sources_filters($request, $account_id, $apply_filter);
 
-    //     if (count($where)) {
-    //         return self::join('inventories','products.id','inventories.product_id')->where($where)
-    //             ->where(function ($query) {
-    //                 $query->whereIn('location_id', ACL::getUserCentres())
-    //                     ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
-    //             })->count();
-    //     } else {
-    //         return self::join('inventories','products.id','inventories.product_id')->count();
-    //     }
-    // }
+        if (count($where)) {
+            return self::where($where)->count();
+        } else {
+            return self::count();
+        }
+    }
 
     // /**
     //  * Get Records
