@@ -180,7 +180,7 @@ function applyFilters(datatable) {
         let filters = {
             delete: '',
             name: $("#search_name").val(),
-            product_type: $("#search_product_type").val(),
+           
             status: $("#search_status").val(),
             brand_id: $("#search_brand_id").val(),
             centre_id: $("#search_centre_id").val(),
@@ -258,7 +258,7 @@ function setFilters(filter_values, active_filters) {
 
     /* Active Filters */
     $("#search_name").val(active_filters.name);
-    $("#search_product_type").val(active_filters.product_type);
+   
     $("#search_status").val(active_filters.status);
     $("#search_brand_id").val(active_filters.brand_id);
     $("#search_centre_id").val(active_filters.centre_id);
