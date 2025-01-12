@@ -45,6 +45,22 @@ $('#date_range_incentive').daterangepicker({
     startDate: moment().startOf('month'),
     endDate: moment().subtract(1, 'days')
 }).val();
+$('#date_range_appointments').daterangepicker({
+    locale: {
+    },
+    ranges: {
+         'Today': [moment(), moment()],
+         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+         'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+         'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        // 'This Year': [moment().startOf('year'), moment().endOf('year')],
+        // 'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().subtract(1, 'days')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -147,6 +163,55 @@ var loadIncentiveReport  = function (that) {
         success: function(response){
             $('#incentive_content').html('');
             $('#incentive_content').html(response);
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadAppointmentsReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.appointments_report'),
+        type: "POST",
+        data: {
+           
+            time: $('#time_id').val(),
+            date_range: $('#date_range_appointments').val(),
+            centre_id: $('#centre_id').val(),
+            created_by:$("#created_by_id").val(),
+           
+        },
+        success: function(response){
+            $('#apt_content').html('');
+            $('#apt_content').html(response);
+            $("#appointments_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
             // $("#incentive_table").DataTable({
             //     dom: 'Bfrtip',
             //     buttons: [

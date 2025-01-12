@@ -287,17 +287,19 @@ class Invoices
             foreach ($records as $record) {
 
                 $doctor = User::find($record->doctor_id, ['id', 'name']);
+                if($doctor){
+                    if (! in_array($record->doctor_id, $doctor_Array)) {
 
-                if (! in_array($record->doctor_id, $doctor_Array)) {
-
-                    $reportdata[$doctor->id] = [
-                        'id' => $doctor->id,
-                        'name' => $doctor->name,
-                        'records' => [],
-                    ];
-
-                    $doctor_Array[] = $doctor->id;
+                        $reportdata[$doctor->id] = [
+                            'id' => $doctor->id,
+                            'name' => $doctor->name,
+                            'records' => [],
+                        ];
+    
+                        $doctor_Array[] = $doctor->id;
+                    }
                 }
+                
 
                 $service = Services::find($record->service_id, ['id', 'name']);
 
