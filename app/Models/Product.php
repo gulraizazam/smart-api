@@ -104,18 +104,11 @@ class Product extends BaseModal
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
             return self::where($where)
-                ->where(function ($query) {
-                    $query->whereIn('inventories.location_id', ACL::getUserCentres())
-                        ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
-                })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
+              
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         } else {
-            return self::select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
-            ->where(function ($query) {
-                $query->whereIn('inventories.location_id', ACL::getUserCentres())
-                    ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
-            })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
+            return self::select('products.*')
+           ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         }
     }
 
