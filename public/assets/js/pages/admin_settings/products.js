@@ -11,27 +11,12 @@ var table_columns = [
         title: 'Brand',
         width: 'auto',
         sortable: false,
-    }, {
-        field: 'product_type',
-        title: 'Type',
-        width: 'auto',
-        sortable: false,
-    }, {
-        field: 'stock_have',
-        title: 'Stock Location',
-        width: 'auto',
-        sortable: false,
-    }, {
+    },  {
         field: 'sale_price',
         title: 'Sale Price',
         width: 'auto',
         sortable: false,
-    }, {
-        field: 'quantity',
-        title: 'Quantity',
-        width: 'auto',
-        sortable: false,
-    }, {
+    },  {
         field: 'status',
         title: 'status',
         width: 80,
@@ -58,9 +43,10 @@ function actions(data) {
     let inventory_id = data.inventory_id;
     let edit_sale_price_url = route('admin.products.edit-sale-price', { id: id });
     let url = route('admin.products.edit', { id: id });
-    let stock_url = route('admin.products.stock', { id: id });
+   
     let inventories_url = route('admin.products.inventory', { id: id });
-    let transfer_product_url = route('admin.products.transfer_product.get', { id: inventory_id });
+    let allocate_url = route('admin.products.location_manage', {id: id});
+    //let transfer_product_url = route('admin.products.transfer_product.get', { id: inventory_id });
     let log_url = route('admin.products.logs', { id: id });
 
     let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -72,22 +58,21 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
+                        actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="allocateRow(`' + allocate_url + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Allocate</span>\
+                        </a>\
+                    </li>';
                         // if (permissions.add_stock) {
                             actions += '<li class="navi-item">\
                                                 <a href="'+ inventories_url + '" class="navi-link">\
                                                 <span class="navi-icon"><i class="la la-archway"></i></span>\
-                                                <span class="navi-text">Inventories</span>\
+                                                <span class="navi-text">Allocations</span>\
                                             </a>\
                                          </li>';
                         //}
-                        if (permissions.add_stock) {
-                            actions += '<li class="navi-item">\
-                                            <a href="javascript:void(0);" onclick="addProductStock(`' + id + '`,`'+inventory_id+'`);" class="navi-link">\
-                                            <span class="navi-icon"><i class="la la-plus"></i></span>\
-                                            <span class="navi-text">Add Stock</span>\
-                                            </a>\
-                                        </li>';
-                        }
+                        
                         if (permissions.sale_price) {
                             actions += '<li class="navi-item">\
                                         <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
@@ -97,22 +82,22 @@ function actions(data) {
                                     </li>';
                         }
                         
-                        if (permissions.transfer_product) {
-                            actions += '<li class="navi-item">\
-                                            <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
-                                            <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
-                                            <span class="navi-text">Transfer Product</span>\
-                                            </a>\
-                                        </li>';
-                        }
-                        if (permissions.stock_detail) {
-                            actions += '<li class="navi-item">\
-                                        <a href="'+ stock_url + '" class="navi-link">\
-                                            <span class="navi-icon"><i class="la la-archway"></i></span>\
-                                            <span class="navi-text">Stock Logs</span>\
-                                        </a>\
-                                    </li>';
-                        }
+                        // if (permissions.transfer_product) {
+                        //     actions += '<li class="navi-item">\
+                        //                     <a href="javascript:void(0);" onclick="transferProductRow(`' + transfer_product_url + '`);" class="navi-link">\
+                        //                     <span class="navi-icon"><i class="la la-exchange-alt"></i></span>\
+                        //                     <span class="navi-text">Transfer Product</span>\
+                        //                     </a>\
+                        //                 </li>';
+                        // }
+                        // if (permissions.stock_detail) {
+                        //     actions += '<li class="navi-item">\
+                        //                 <a href="'+ stock_url + '" class="navi-link">\
+                        //                     <span class="navi-icon"><i class="la la-archway"></i></span>\
+                        //                     <span class="navi-text">Stock Logs</span>\
+                        //                 </a>\
+                        //             </li>';
+                        // }
                         if (permissions.edit) {
                             actions += '<li class="navi-item">\
                                             <a href="javascript:void(0);" onclick="editRow(`'+ url + '`);" class="navi-link">\
@@ -132,7 +117,54 @@ function actions(data) {
 
                         return actions;
 }
+function allocateRow(url) {
+    $("#modal_allocate_products").modal("show");
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setAllocateData(response);
+            reInitSelect2(".select2", "");
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(EditValidation);
+        }
+    });
+}
 
+
+function setAllocateData(response) {
+    try {
+        let product = response.data.product;
+        let locations = response.data.location;
+      
+        let location_options = '<option value="">Select Centre</option>';
+        let location_services = '';
+        Object.values(locations).forEach(function(value, index) {
+            location_options += '<option value="">Select</option>';
+            Object.values(value.children).forEach(function(child, index) {
+                location_options += '<option value="'+child.id+'">'+child.name+'</option>';
+            });
+        });
+      
+
+       
+
+        $("#product_id").val(product.id);
+
+        $("#locations").html(location_options);
+
+       
+
+    } catch (error) {
+        showException(error);
+    }
+}
 function editRow(url) {
     $.ajax({
         headers: {

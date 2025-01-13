@@ -59,32 +59,19 @@ var table_columns = [
             }
             return '<span class="badge badge-success">' + payment_mode_name + '</span>';
         }
-    },{
-        field: 'is_refunded',
-        title: 'Is Refunded',
-        width: 80,
-        template: function (data) {
-            if(data.is_refunded==1)
-            {
-                return '<span class="badge badge-success">Yes</span>';
-            }else{
-                return '<span class="badge badge-warning">No</span>';
-            }
-           
-        }
     }
     
-    ,{
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 80,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
-        }
-    }
+    // ,{
+    //     field: 'actions',
+    //     title: 'Actions',
+    //     sortable: false,
+    //     width: 80,
+    //     overflow: 'visible',
+    //     autoHide: false,
+    //     template: function (data) {
+    //         return actions(data);
+    //     }
+    // }
 ];
 
 function actions(data) {
@@ -152,6 +139,7 @@ function addRow() {
         let product_id = $('#add_order_product').find(':selected').attr('data-id');
         let product_name = $('#add_order_product').find(':selected').attr('data-name');
         let product_price = $('#add_order_product').find(':selected').attr('data-price');
+        let location_id = $("#add_order_location").val();
         let quantity = 0;
         ProductStock.forEach(function (element) {
             if (element == product_id) {
@@ -166,6 +154,7 @@ function addRow() {
             dataType: 'json',
             data: {
                 product_id: product_id,
+                location_id: location_id
             },
             success: function (response) {
                 
