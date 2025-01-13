@@ -15,6 +15,7 @@ use App\Models\ProductDetail;
 use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
+use App\Helpers\Widgets\LocationsWidget;
 use App\Http\Controllers\Controller;
 use App\Models\Inventory;
 use App\Models\Purchase;
@@ -126,7 +127,7 @@ class ProductsController extends Controller
                     $product->brand_id = (array_key_exists($product->brand_id, $brands)) ? $brands[$product->brand_id]->name : 'N/A';
                     $product->sale_price = $product->sale_price ?? 'N/A';
                     $product->product_type = ucwords(str_replace("_", " ", $product->product_type));
-                    $product->stock_have = ($product->location_id != null) ? ((array_key_exists($product->location_id, $centres)) ? $centres[$product->location_id]->name : 'N/A') : ((array_key_exists($product->warehouse_id, $warehouse)) ? $warehouse[$product->warehouse_id]->name : 'N/A');
+                    //$product->stock_have = ($product->location_id != null) ? ((array_key_exists($product->location_id, $centres)) ? $centres[$product->location_id]->name : 'N/A') : ((array_key_exists($product->warehouse_id, $warehouse)) ? $warehouse[$product->warehouse_id]->name : 'N/A');
                     return $product;
                 });
             }
@@ -200,29 +201,29 @@ class ProductsController extends Controller
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
             }
-            if ($request->quantity <= 0) {
-                return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
-            }
-            if ($request->purchase_price && $request->purchase_price  < 0) {
-                return ApiHelper::apiResponse($this->error, "Purchase price must be greater than 0", false);
-            }
+            // if ($request->quantity <= 0) {
+            //     return ApiHelper::apiResponse($this->error, "Quantity can't be 0.", false);
+            // }
+            // if ($request->purchase_price && $request->purchase_price  < 0) {
+            //     return ApiHelper::apiResponse($this->error, "Purchase price must be greater than 0", false);
+            // }
             if ($request->sale_price && $request->sale_price  < 0) {
                 return ApiHelper::apiResponse($this->error, "Sale price must be greater than 0", false);
             }
-            if ($request->product_type == 'for_sale' && $request->sale_price == null) {
-                if ($request->sale_price == null) {
-                    return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
-                }
-            }
-            if ($request->product_type == 'for_sale' && $request->sale_price != null) {
-                if ($request->purchase_price > $request->sale_price) {
-                    return ApiHelper::apiResponse($this->error, 'sale price must be higher than the purchase price.', false);
-                }
-            }
-            if ($request->location_id == null && $request->warehouse_id == null) {
-                $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
-                return ApiHelper::apiResponse($this->error, $err_message, false);
-            }
+            // if ($request->product_type == 'for_sale' && $request->sale_price == null) {
+            //     if ($request->sale_price == null) {
+            //         return ApiHelper::apiResponse($this->error, 'Sale price is required.', false);
+            //     }
+            // }
+            // if ($request->product_type == 'for_sale' && $request->sale_price != null) {
+            //     if ($request->purchase_price > $request->sale_price) {
+            //         return ApiHelper::apiResponse($this->error, 'sale price must be higher than the purchase price.', false);
+            //     }
+            // }
+            // if ($request->location_id == null && $request->warehouse_id == null) {
+            //     $err_message = $request->product_type_option == 'in_branch' ? 'Branch Field is required' : 'Warehouse field is required';
+            //     return ApiHelper::apiResponse($this->error, $err_message, false);
+            // }
            
             $request['type'] = 'product_create';
             $request['message'] = 'Product create';
@@ -251,7 +252,7 @@ class ProductsController extends Controller
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
             'brand_id' => 'required',
-            'purchase_price' => 'required',
+            
             
         ]);
     }
@@ -785,5 +786,40 @@ class ProductsController extends Controller
         $warehouses = Warehouse::where('active',1)->get();
         $locations = Locations::where('active',1)->get();
        return response()->json(['status'=>1,'inventory'=>$inventory,'warehouse'=>$warehouses,'locations'=>$locations]);
+   }
+   public function displaylocation($id)
+    {
+        try {
+            
+            $product = Product::find($id);
+            $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
+                    //return view('admin.doctors.location', compact('doctor', 'location', 'doctor_has_location'));
+            return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
+                'product' => $product,
+                'location' => $location,
+                
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+    public function saveAllocate(Request $request)
+    {
+        $myarray = [];
+        try {
+            $inventory = new Inventory();
+            $inventory->product_id =  $request->product_id;
+            $inventory->location_id = $request->location_id;
+            $inventory->is_saleable =  1;
+            $inventory->quantity =  $request->quantity;
+            $inventory->save();
+            
+            return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
+            
+
+            
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 }
