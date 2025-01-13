@@ -23,14 +23,14 @@
             <input type="text" class="form-control filter-field" placeholder="Enter Name" id="search_name" />
         </div>
 
-        <div class="col-lg-3 mb-lg-0 mb-6">
+        <!-- <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Product Type:</label>
             <select class="form-control filter-field select2" name="product-type" id="search_product_type">
                 <option value="" selected disabled>Select Product Type</option>
                 <option value="in_house_use">In House Use</option>
                 <option value="for_sale">For Sale</option>
             </select>
-        </div>
+        </div> -->
 
         @if (\Illuminate\Support\Facades\Gate::allows('view_inactive_centres'))
             <div class="col-lg-3 mb-lg-0 mb-6">
