@@ -524,6 +524,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('products', [ProductsController::class, 'store'])->name('products.store');
     Route::post('products/status', [ProductsController::class, 'status'])->name('products.status');
     Route::get('products/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
+    Route::post('products/save_allocate', [ProductsController::class, 'saveAllocate'])->name('products.save_allocate');
+    Route::get('products/products/{id}', [ProductsController::class, 'displaylocation'])->name('products.location_manage');
     Route::get('products/{id}/saleprice', [ProductsController::class, 'editSalePrice'])->name('products.edit-sale-price');
     Route::post('products/stock-detail/{id}', [ProductsController::class, 'productStockDetail'])->name('products.stock-detail');
     Route::post('products/inventory-detail/{id}', [ProductsController::class, 'productInventoryDetail'])->name('products.inventories');

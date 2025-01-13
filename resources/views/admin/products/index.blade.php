@@ -112,7 +112,15 @@
         </div>
         <!--end::Modal dialog-->
     </div>
+    <div class="modal fade" id="modal_allocate_products" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="products_allocate">
 
+            @include('admin.products.allocate')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
     <div class="modal fade" id="modal_transfer_products_form" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">

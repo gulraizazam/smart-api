@@ -22,41 +22,41 @@ var AddUserValidation = function () {
                             }
                         }
                     },
-                    purchase_price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Purchase field is required'
-                            }
-                        }
-                    },
-                    quantity: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Quantity field is required'
-                            }
-                        }
-                    },
-                    total_purchase_price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Total Purchase field is required'
-                            }
-                        }
-                    },
-                    product_type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Product Type field is required'
-                            }
-                        }
-                    },
-                    warehouse_id:{
-                        validators: {
-                            notEmpty: {
-                                message: 'The Warehouse field is required'
-                            }
-                        }
-                    }
+                    // purchase_price: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Purchase field is required'
+                    //         }
+                    //     }
+                    // },
+                    // quantity: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Quantity field is required'
+                    //         }
+                    //     }
+                    // },
+                    // total_purchase_price: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Total Purchase field is required'
+                    //         }
+                    //     }
+                    // },
+                    // product_type: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Product Type field is required'
+                    //         }
+                    //     }
+                    // },
+                    // warehouse_id:{
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Warehouse field is required'
+                    //         }
+                    //     }
+                    // }
                    
                 },
 
@@ -385,11 +385,113 @@ var AddStockValidation = function () {
         }
     };
 }();
+var AllocateValidation = function () {
+    // Private functions
+    var validation = function () {
+        let modal_id = 'modal_allocate_products_form';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    location_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The centre field is required'
+                            }
+                        }
+                    },
+                    service_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The service field is required'
+                            }
+                        }
+                    },
+                },
 
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+            select2Validation();
+        });
+        validate.on('core.form.valid', function(event) {
+            submitData(function (response) {
+                if (response.status == true) {
+                    toastr.success(response.message);
+                } else {
+                    toastr.error(response.message);
+                }
+            });
+        });
+    }
+
+    return {
+        init: function() {
+            validation();
+        }
+    };
+}();
 jQuery(document).ready(function () {
     AddUserValidation.init();
     EditUserValidation.init();
     UpdateSalePriceValidation.init();
     AddStockValidation.init();
     TransferProductValidation.init();
+    AllocateValidation.init();
 });
+function submitData(callback) {
+    
+    var location_id = $("#locations").val();
+    var quantity =$("#quantity").val();
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.products.save_allocate'),
+        type: "POST",
+        data: {product_id: $("#product_id").val(), location_id:location_id, quantity:quantity},
+        cache: false,
+        success: function (response) {
+            if (response.status == true) {
+                var data = response.data;
+              
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                $("form").trigger("reset");
+                hideSpinnerRestForm();
+            } else {
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                hideSpinnerRestForm();
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            if (xhr.status == '401') {
+                callback({
+                    'status': 0,
+                    'message': 'You are not authorized to access this resource',
+                });
+                hideSpinnerRestForm();
+            } else {
+                callback({
+                    'status': 0,
+                    'message': 'Unable to process your request, please try again later.',
+                });
+                hideSpinnerRestForm();
+            }
+        }
+    });
+}

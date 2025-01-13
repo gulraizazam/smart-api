@@ -85,13 +85,9 @@ class Product extends BaseModal
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
 
         if (count($where)) {
-            return self::join('inventories','products.id','inventories.product_id')->where($where)
-                ->where(function ($query) {
-                    $query->whereIn('location_id', ACL::getUserCentres())
-                        ->orWhereIn('warehouse_id', ACL::getUserWarehouse());
-                })->count();
+            return self::where($where)->count();
         } else {
-            return self::join('inventories','products.id','inventories.product_id')->count();
+            return self::count();
         }
     }
 
@@ -107,22 +103,20 @@ class Product extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::join('inventories','products.id','inventories.product_id')
-            ->select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
+            return self::select('products.*')
             ->where($where)
-                ->where(function ($query) {
-                    $query->whereIn('inventories.location_id', ACL::getUserCentres())
-                        ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
-                })
+                // ->where(function ($query) {
+                //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
+                //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
+                // })
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
         } else {
-            return self::join('inventories','products.id','inventories.product_id')
-            ->select('products.*','inventories.warehouse_id','inventories.location_id','inventories.quantity','inventories.id as inventory_id')
-            ->where(function ($query) {
-                $query->whereIn('inventories.location_id', ACL::getUserCentres())
-                    ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
-            })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
+            return self::select('products.*')
+            // ->where(function ($query) {
+            //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
+            //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
+            // })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         }
     }
 
@@ -198,16 +192,11 @@ class Product extends BaseModal
         $product->account_id =  $data['account_id'];
         $product->brand_id =  $data['brand_id'];
         $product->sale_price =  $data['sale_price'];
-        $product->purchase_price =  $data['purchase_price'];
-        $product->product_type =  $data['product_type'];
+       
+        $product->product_type = 'for_sale';
         $product->save();
 
-        $inventory = new Inventory();
-        $inventory->product_id =  $product->id;
-        $inventory->warehouse_id =  $data['warehouse_id'];
-        $inventory->is_saleable =  $product->product_type == 'in_house_use' ? 1 :0;
-        $inventory->quantity =  $data['quantity'];
-        $inventory->save();
+       
 
 
          $subjectModel = self::find($product->id);
