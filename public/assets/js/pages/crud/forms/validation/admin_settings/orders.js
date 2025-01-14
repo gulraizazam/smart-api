@@ -15,10 +15,17 @@ var AddOrderValidation = function () {
                             }
                         }
                     },
-                    patient_id: {
+                    // patient_id: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Patient id field is required'
+                    //         }
+                    //     }
+                    // },
+                    doctor_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The Patient id field is required'
+                                message: 'The Doctor field is required'
                             }
                         }
                     },
