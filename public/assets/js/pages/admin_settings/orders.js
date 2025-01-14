@@ -202,7 +202,7 @@ function calculateTotal(data) {
         totalPrice += subtotal; // Add the subtotal to the total
         if(employee_id){
             totalDiscount = totalPrice * 0.2;
-            totalPrice = totalPrice - totalDiscount;
+            totalPrice -= totalDiscount;
         }
     });
 
