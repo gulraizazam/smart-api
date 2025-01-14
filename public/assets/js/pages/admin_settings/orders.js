@@ -140,6 +140,8 @@ function addRow() {
         let product_name = $('#add_order_product').find(':selected').attr('data-name');
         let product_price = $('#add_order_product').find(':selected').attr('data-price');
         let location_id = $("#add_order_location").val();
+        let patient_id = $("#create_order_patient_search").val();
+        let employee_id = $("#add_employee_id").val();
         let quantity = 0;
         ProductStock.forEach(function (element) {
             if (element == product_id) {
@@ -154,7 +156,9 @@ function addRow() {
             dataType: 'json',
             data: {
                 product_id: product_id,
-                location_id: location_id
+                location_id: location_id,
+                patient_id:patient_id,
+                employee_id:employee_id
             },
             success: function (response) {
                 
@@ -183,25 +187,32 @@ function addRow() {
 }
 
 function calculateTotal(data) {
+   
     let totalPrice = 0;
     var quantity = data.closest("tr").find('input[name="quantity[]"]').val();
     var price = data.closest("tr").find('.productPriceValue').val();
-
+   var patient_id = $("#create_order_patient_search").val();
+   var employee_id = $("#add_employee_id").val();
+   
     data.closest("tr").find('.sub-total').empty();
     data.closest("tr").find('.sub-total').text(quantity * price);
     $('tr .sub-total').each(function () {
         var subtotal = parseFloat($(this).text()); // Get the subtotal value and convert to a number
+       
         totalPrice += subtotal; // Add the subtotal to the total
-        console.log(totalPrice, subtotal, $(this).text());
+        if(employee_id){
+            totalPrice -= totalPrice * 0.2;
+        }
     });
 
     $('#product_price').val(price);
     $('#total_product_price strong').text(totalPrice);
     $('#refund_total_product_price').text(totalPrice);
+    $('#product_discount').text('20%');
 }
 
 function setProduct(id, product_id, product_name, price, stock) {
-    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td class="sub-total">' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
+    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td></td><td class="sub-total">' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
 }
 
 
@@ -451,7 +462,42 @@ function resetAllFilters(datatable) {
         datatable.search(filters, 'search');
     });
 }
-
+function SelectEmployee(){
+   if($("#sold_to").val()=="employee")
+   {
+    let url = route('admin.get-employees');
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+          
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+                $("#patientDropDown").hide();
+                $("#employeeDropDown").show();               
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Employee</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#add_employee_id").html(emp_options);
+            }
+            
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+   }else{
+        $("#patientDropDown").show();
+                $("#employeeDropDown").hide();  
+   }
+}
 function setFilters(filter_values, active_filters) {
     let centres = filter_values.centres;
     let users = filter_values.users;
@@ -538,8 +584,14 @@ function productSelect(product_id, id = null) {
             product_id: product_id,
         },
         success: function (response) {
-            console.log('productSelect',response);
+            let user_options = '<option value="">Select Doctor</option>';
             let product = response.data.products;
+            let users = response.data.users;
+           
+            Object.entries(users).forEach(function (value, index) {
+                user_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+            });
+            $("#add_doctor_id").html(user_options);
             //if (products.length) {
 
                 //products.forEach(function (product) {

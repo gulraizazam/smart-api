@@ -61,26 +61,26 @@ function actions(data) {
                         actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="allocateRow(`' + allocate_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                            <span class="navi-text">Allocate</span>\
+                            <span class="navi-text">Add Inventory</span>\
                         </a>\
                     </li>';
                         // if (permissions.add_stock) {
                             actions += '<li class="navi-item">\
                                                 <a href="'+ inventories_url + '" class="navi-link">\
                                                 <span class="navi-icon"><i class="la la-archway"></i></span>\
-                                                <span class="navi-text">Allocations</span>\
+                                                <span class="navi-text">Inventories</span>\
                                             </a>\
                                          </li>';
                         //}
                         
-                        if (permissions.sale_price) {
-                            actions += '<li class="navi-item">\
-                                        <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
-                                        <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
-                                        <span class="navi-text">Sale Price</span>\
-                                        </a>\
-                                    </li>';
-                        }
+                        // if (permissions.sale_price) {
+                        //     actions += '<li class="navi-item">\
+                        //                 <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
+                        //                 <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
+                        //                 <span class="navi-text">Sale Price</span>\
+                        //                 </a>\
+                        //             </li>';
+                        // }
                         
                         // if (permissions.transfer_product) {
                         //     actions += '<li class="navi-item">\
