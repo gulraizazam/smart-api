@@ -260,7 +260,7 @@ class OrdersController extends Controller
      */
     public function store(Request $request)
     {
-      
+     
        
         try {
             if (!Gate::allows('order_create')) {
@@ -436,5 +436,10 @@ class OrdersController extends Controller
         }
 
         return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'products', 'company_phone_number', 'location_info', 'download'));
+    }
+    public function getEmployees()
+    {
+        $users = User::whereIn('user_type_id',[2,5])->where('active',1)->pluck('name','id')->toArray();
+        return response()->json(['users'=>$users]);
     }
 }
