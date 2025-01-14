@@ -102,6 +102,7 @@ class Patients extends BaseModal
                 'account_id' => $account_id,
                 'id' => $name,
             ])->select('name', 'id', 'phone')->get();
+            
         }
         if ($users->count() > 0) {
             return $users;

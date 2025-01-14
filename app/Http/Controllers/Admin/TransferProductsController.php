@@ -16,6 +16,7 @@ use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\Inventory;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -400,6 +401,7 @@ class TransferProductsController extends Controller
        
          
         $products = Product::getTransferProductsAjax($request, Auth::User()->account_id);
+       
         if($request->location_id){
             $warehouseId = TransferProduct::where(['product_id'=>$request->product_id,'to_location_id'=>$request->location_id])->pluck('from_warehouse_id')->toArray();
             $warehouses = Warehouse::whereIn('id',$warehouseId)->get();
@@ -408,9 +410,11 @@ class TransferProductsController extends Controller
             $warehouses = Warehouse::get();
            
         }
+        $Users = User::where('user_type_id', 5)->where('active', 1)->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
             'warehouses' =>$warehouses,
+            'users'=>$Users
         ]);
        
     }
