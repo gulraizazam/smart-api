@@ -200,16 +200,16 @@ function calculateTotal(data) {
         var subtotal = parseFloat($(this).text()); // Get the subtotal value and convert to a number
        
         totalPrice += subtotal; // Add the subtotal to the total
-        if(employee_id){
-            totalDiscount = totalPrice * 0.2;
-            totalPrice -= totalDiscount;
-        }
+        // if(employee_id){
+        //     totalDiscount = totalPrice * 0.2;
+        //     totalPrice -= totalDiscount;
+        // }
     });
 
     $('#product_price').val(price);
     $('#total_product_price strong').text(totalPrice);
     $('#refund_total_product_price').text(totalPrice);
-    $('#product_discount').text('20%');
+    //$('#product_discount').text('20%');
 }
 
 function setProduct(id, product_id, product_name, price, stock) {
