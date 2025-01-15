@@ -8,6 +8,8 @@
                 <select class="form-control" id="report_types" name="report_type">
                     <option value="">Select Report</option>
                     <option value="stock_report">Stock Report</option>
+                    <option value="sales_report">Sales Report</option>
+                    <option value="doctor_sales_report">Doctor Wise Sales Report</option>
                 </select>
                 @error('report_type')
                 <div class="alert alert-danger">{{ $message }}</div>

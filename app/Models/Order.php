@@ -387,4 +387,12 @@ class Order extends BaseModal
 
         return $record;
     }
+    public function centre()
+    {
+        return $this->belongsTo(Locations::class, 'location_id');
+    }
+    public function doctor()
+    {
+        return $this->belongsTo(User::class, 'prescribed_by');
+    }
 }
