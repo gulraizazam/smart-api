@@ -935,6 +935,22 @@
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Inventory Reports</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                    @endcan
+                    @can('operations_reports_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
                             <li class="menu-item {{ activeMenu('admin.reports.membership-reports') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.reports.membership-reports') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">

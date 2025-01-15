@@ -366,4 +366,9 @@ class Product extends BaseModal
     {
         return $this->hasOne(self::class, 'id', 'parent_id');
     }
+    public function inventories() {
+        return $this->hasMany(Inventory::class, 'product_id');
+    }
+    
+   
 }
