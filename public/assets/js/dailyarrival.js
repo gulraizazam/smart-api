@@ -229,6 +229,65 @@ var loadAppointmentsReport  = function (that) {
         }
     });
 };
+var loadInventoryReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_inventory_report'),
+        type: "POST",
+        data: {
+           
+           report_type:$("#report_type").val(),
+            date_range: $('#date_range_appointments').val(),
+            centre_id: $('#centre_id').val(),
+           
+           
+        },
+        success: function(response){
+            $('#inv_content').html('');
+            $('#inv_content').html(response);
+            $("#inv_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            $("#doc_sales_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
 var loadPatientFollowUpReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;

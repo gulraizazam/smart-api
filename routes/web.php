@@ -43,7 +43,7 @@ use App\Http\Controllers\Admin\PaymentModesController;
 use App\Http\Controllers\Admin\SMSTemplatesController;
 use App\Http\Controllers\Admin\CentreTargetsController;
 use App\Http\Controllers\Admin\ResourceRotasController;
-use App\Http\Controllers\Admin\InventoryReportController;
+
 use App\Http\Controllers\Admin\PackageAdvancesController;
 use App\Http\Controllers\Admin\AppointmentimageController;
 use App\Http\Controllers\Admin\TransferProductsController;
@@ -64,6 +64,7 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 use App\Http\Controllers\Admin\Reports\ActivitylogsReportController;
+use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
 
 /*
@@ -557,7 +558,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
         Route::get('products/inventory/{id}', [ProductsController::class, 'productInventory'])->name('products.inventory');
         Route::get('inventory/edit/{id}', [ProductsController::class, 'editInventory'])->name('inventory.edit');
-        Route::get('reports/inventory_reports', [InventoryReportController::class, 'report'])->name('reports.inventory_report');
+        //Route::get('reports/inventory_reports', [InventoryReportController::class, 'report'])->name('reports.inventory_report');
 
         Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
         Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
@@ -568,6 +569,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         //Route start for Operations reports
         Route::get('operation_reports/loaddayarray', [OperationsReportController::class, 'loaddayarray'])->name('reports.operations_report_loadday');
+        Route::get('inventory_reports', [InventoryReportsController::class, 'inventoryReport'])->name('reports.inventory_report');
+        Route::post('load_inventory_reports', [InventoryReportsController::class, 'loadInventoryReport'])->name('reports.load_inventory_report');
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
         Route::get('membership_reports', [MembershipReportsController::class, 'index'])->name('reports.membership-reports');
         Route::post('operation_reports/operations-report-load', [OperationsReportController::class, 'reportLoad'])->name('reports.operations_report_load');
