@@ -586,7 +586,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('reports/staff_wise_arrival', [FinanceReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival')->middleware('permission:staff_wise_arrival_manage');
         Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
          Route::get('reports/doctor_wise_conversion', [FinanceReportController::class, 'doctorWiseConversion'])->name('reports.doctorWiseConversion')->middleware('permission:staff_wise_arrival_manage');
-        
+
          Route::post('reports/incentive_report', [FinanceReportController::class, 'loadIncentiveReport'])->name('reports.incentive_report');
          Route::get('reports/appointments', [FinanceReportController::class, 'appointmentsReport'])->name('reports.appointmentsReport');
          Route::post('reports/appointments_report', [FinanceReportController::class, 'loadAppointmentsReport'])->name('reports.appointments_report');

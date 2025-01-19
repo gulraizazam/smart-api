@@ -127,7 +127,67 @@ class Patients extends BaseModal
             ])->select('name', 'id', 'phone')->get();
         }
     }
+    public static function getPatientidAjaxOrder($name, $account_id)
+{
+    // Initialize the result collection
+    $users = collect();
+    
+    // Handle searching by patient ID (C- or numeric ID)
+    if (stripos($name, 'C-') !== false) {
+        $name = str_replace(['C-', 'c-'], '', $name);
+        $users = self::where([
+            'user_type_id' => '3',
+            'active' => '1',
+            'account_id' => $account_id,
+            'id' => $name,
+        ])->select('name', 'id', 'phone')->get();
+    }
+    
+    if (is_numeric($name)) {
+        $users = self::where([
+            'user_type_id' => '3',
+            'active' => '1',
+            'account_id' => $account_id,
+            'id' => $name,
+        ])->select('name', 'id', 'phone')->get();
+    }
 
+    // If no patient found by ID, search by name
+    if ($users->count() == 0) {
+        $name = GeneralFunctions::patientSearch($name);
+        $phone_numeric = GeneralFunctions::clearnString($name);
+        if (is_numeric($phone_numeric)) {
+            $phone = GeneralFunctions::cleanNumber($name);
+            $users = self::where([
+                'user_type_id' => '3',
+                'active' => '1',
+                'account_id' => $account_id,
+                'phone' => 'LIKE', "%{$phone}%"
+            ])->select('name', 'id', 'phone')->get();
+        } else {
+            $users = self::where([
+                'user_type_id' => '3',
+                'active' => '1',
+                'account_id' => $account_id,
+                'name' => 'LIKE', "%{$name}%"
+            ])->select('name', 'id', 'phone')->get();
+        }
+    }
+
+    // Add membership data to users
+    foreach ($users as $user) {
+        $membership = Membership::where('patient_id', $user->id)->first(); // Assuming `patient_id` is the foreign key
+        if ($membership) {
+            $user->membership_code = $membership->code;
+            $user->membership_status = $membership->end_date >= now() ? 'Active' : 'Inactive';
+        } else {
+            $user->membership_code = 'N/A';
+            $user->membership_status = 'Inactive';
+        }
+    }
+
+    return $users;
+}
     public static function getPatientPhoneAjax($phone, $account_id)
     {
         if (is_numeric($phone)) {
