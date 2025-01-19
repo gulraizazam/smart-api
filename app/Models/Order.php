@@ -200,7 +200,7 @@ class Order extends BaseModal
        $record->quantity = array_sum($products);
        $record->prescribed_by = $data['doctor_id'];
        $record->employee_id = $data['employee_id'] ?? null;
-       $record->discount = $data['discount'];
+       $record->discount = $data['discount'] ?? 0;
         $record->save();
         //$record = self::create($data);
         
