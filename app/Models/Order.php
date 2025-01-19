@@ -13,7 +13,7 @@ class Order extends BaseModal
 {
     use HasFactory;
 
-    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status','quantity','prescribed_by','employee_id'];
+    protected $fillable = ['patient_id', 'location_id', 'warehouse_id', 'total_price', 'refund_order_id', 'order_type', 'payment_mode', 'created_by', 'updated_by', 'account_id', 'status','quantity','prescribed_by','employee_id','discount'];
 
     /**
      * Get Total Records
@@ -200,6 +200,7 @@ class Order extends BaseModal
        $record->quantity = array_sum($products);
        $record->prescribed_by = $data['doctor_id'];
        $record->employee_id = $data['employee_id'] ?? null;
+       $record->discount = $data['discount'];
         $record->save();
         //$record = self::create($data);
         

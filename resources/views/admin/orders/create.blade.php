@@ -37,6 +37,7 @@
                     <input type="hidden" id="add_order_location_type" name="location_type">
                     <input type="hidden" id="total_products">
                     <input type="hidden" id="grand_total" name="grand_total">
+                    <input type="hidden" id="discount" name="discount">
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Location <span

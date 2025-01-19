@@ -380,6 +380,7 @@
                 <th>Product Price</th>
                 <th>Quantity</th>
                 <th>Sub Total</th>
+                <th>Dicount</th>
             </tr>
             @foreach ($invoice_info->orderDetail as $product)
                 <tr>
@@ -388,6 +389,7 @@
                     <td>{{ $product->product->sale_price }}</td>
                     <td>{{ $product->quantity }}</td>
                     <td>{{ $product->product->sale_price * $product->quantity }}</td>
+                    <td>{{ $product->discount ?? 0% }}</td>
                 </tr>
             @endforeach
         </table>
