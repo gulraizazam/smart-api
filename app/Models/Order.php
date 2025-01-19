@@ -187,7 +187,7 @@ class Order extends BaseModal
         $data[$data['location_type']] = $location_id;
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::id();
-        $data['total_price'] = array_sum($productTotals);
+        $data['total_price'] = $request->grand_total;
         $data['status'] = 1;
        
         $record = new Order();
