@@ -24,6 +24,7 @@ use App\Models\Inventory;
 use App\Models\OrderRefund;
 use App\Models\OrderRefundDetail;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class OrdersController extends Controller
@@ -406,7 +407,24 @@ class OrdersController extends Controller
 
         return view('admin.orders.displayInvoice', compact('invoice_info', 'patient', 'products', 'company_phone_number', 'location_info', 'account'));
     }
+    public function checkMembership(Request $request)
+    {
+        $patient_id = $request->input('patient_id');
 
+        // Query for active membership (adjust as per your table and structure)
+        $membership = DB::table('memberships')->where('patient_id', $patient_id)->first();
+
+        // Check if membership exists and is active
+        if ($membership && isset($membership->active) && $membership->active == 1) {
+            return response()->json([
+                'has_active_membership' => true
+            ]);
+        }
+
+        return response()->json([
+            'has_active_membership' => false
+        ]);
+    }
     public function invoicePdf($id, $download = null)
     {
         if (!Gate::allows('order_manage')) {

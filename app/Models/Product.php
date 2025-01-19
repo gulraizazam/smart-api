@@ -48,7 +48,7 @@ class Product extends BaseModal
     }
     public function orderDetails()
     {
-        return $this->hasMany(OrderDetail::class)->with('order');
+        return $this->hasMany(OrderDetail::class); // A product has many order details
     }
 
     public function transferProduct()
