@@ -277,7 +277,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     //Invoice Management route end
 
     Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
-    Route::get('users/getpatientid', [UsersController::class, 'getpatientidOrder'])->name('users.getpatient.order');
+    Route::get('users/getpatientorder', [UsersController::class, 'getpatientidOrder'])->name('users.getpatient.order');
     Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
     Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
     Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
