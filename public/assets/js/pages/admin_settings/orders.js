@@ -239,6 +239,7 @@ function calculateTotal(data) {
             $('#total_product_price strong').text(discountedTotal.toFixed(2)); // Update total with discount
             $("#grand_total").val(discountedTotal.toFixed(2));
             $('#refund_total_product_price').text(discountedTotal.toFixed(2)); // Update refund price
+            $('#discount').val(discount); // Update refund price
         },
         error: function (error) {
             console.error("Error checking membership:", error);
