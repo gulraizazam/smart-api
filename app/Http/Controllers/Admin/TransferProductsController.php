@@ -401,7 +401,7 @@ class TransferProductsController extends Controller
        
          
         $products = Product::getTransferProductsAjax($request, Auth::User()->account_id);
-       
+      
         if($request->location_id){
             $warehouseId = TransferProduct::where(['product_id'=>$request->product_id,'to_location_id'=>$request->location_id])->pluck('from_warehouse_id')->toArray();
             $warehouses = Warehouse::whereIn('id',$warehouseId)->get();

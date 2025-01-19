@@ -864,7 +864,14 @@ class UsersController extends Controller
             'patients' => $patients,
         ]);
     }
+    public function getpatientidOrder(Request $request)
+    {
+        $patients = Patients::getPatientidAjaxOrder($request->search, Auth::User()->account_id);
 
+        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+            'patients' => $patients,
+        ]);
+    }
     public function phoneSearch(Request $request)
     {
         $patients = Patients::getPatientPhoneAjax($request->search, Auth::User()->account_id);

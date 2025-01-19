@@ -187,30 +187,64 @@ function addRow() {
 }
 
 function calculateTotal(data) {
-   
     let totalPrice = 0;
     var quantity = data.closest("tr").find('input[name="quantity[]"]').val();
     var price = data.closest("tr").find('.productPriceValue').val();
-   var patient_id = $("#create_order_patient_search").val();
-   var employee_id = $("#add_employee_id").val();
-   
+    var patient_id = $("#create_order_patient_search").val();
+    var employee_id = $("#add_employee_id").val();
+
     data.closest("tr").find('.sub-total').empty();
     data.closest("tr").find('.sub-total').text(quantity * price);
+
+    // Calculate total price by adding all subtotals
     $('tr .sub-total').each(function () {
         var subtotal = parseFloat($(this).text()); // Get the subtotal value and convert to a number
-       
         totalPrice += subtotal; // Add the subtotal to the total
-        // if(employee_id){
-        //     totalDiscount = totalPrice * 0.2;
-        //     totalPrice -= totalDiscount;
-        // }
     });
 
-    $('#product_price').val(price);
-    $('#total_product_price strong').text(totalPrice);
-    $('#refund_total_product_price').text(totalPrice);
-    //$('#product_discount').text('20%');
+    // Check if the patient has an active membership
+    $.ajax({
+        type: "GET",
+        url: route('admin.orders.check_membership'), // Your route to check membership
+        dataType: 'json',
+        data: { patient_id: patient_id },
+        success: function (response) {
+            // Default discount is 0
+            let discount = 0;
+            
+            // Apply a 10% discount if the patient has an active membership
+            if (response.has_active_membership) {
+                discount = 0.10; // 10% discount
+            }
+
+            // Apply a 20% discount if employee_id exists
+            if (employee_id) {
+                discount = 0.20; // 20% discount
+            }
+
+            // Calculate the discount amount and the final discounted price
+            let discountAmount = totalPrice * discount;
+            let discountedTotal = totalPrice - discountAmount;
+
+            // Update the discount message and total price
+            if (discount === 0.10) {
+                $('#product_discount').text('10% Discount');
+            } else if (discount === 0.20) {
+                $('#product_discount').text('20% Employee Discount');
+            } else {
+                $('#product_discount').text('');
+            }
+
+            // Update the total price in the UI
+            $('#total_product_price strong').text(discountedTotal.toFixed(2)); // Update total with discount
+            $('#refund_total_product_price').text(discountedTotal.toFixed(2)); // Update refund price
+        },
+        error: function (error) {
+            console.error("Error checking membership:", error);
+        }
+    });
 }
+
 
 function setProduct(id, product_id, product_name, price, stock) {
     return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td></td><td class="sub-total">' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';

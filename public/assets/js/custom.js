@@ -269,6 +269,7 @@ $(document).ready(function () {
     });
 
     patientSearch('user_search');
+    orderPatientSearch('user_search')
     leadSearch('lead_search_id')
 
     $(".package_id").select2({
@@ -1325,7 +1326,7 @@ function get_query() {
     return result;
 }
 function patientSearch(search_id = 'patient_id', flag = 1) {
-
+   
     let debounceTimer;
     $("." + search_id).on("keyup", function () {
 
@@ -1351,6 +1352,55 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                         if (patients.length) {
                             patients.forEach(function (patient) {
                                 html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                            $(".croxcli").show();
+                        } else {
+                            $(".suggesstion-box").hide();
+                        }
+                    }
+                });
+            }, 700);
+        } else {
+            $(".suggesstion-box").hide();
+            $(".croxcli").hide();
+        }
+    });
+    $(".croxcli").hide();
+    return false;
+}
+function orderPatientSearch(search_id = 'patient_id', flag = 1) {
+   
+    let debounceTimer;
+    $("." + search_id).on("keyup", function () {
+
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.order'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                let membershipCode = patient.membership_code || 'No-Membership';
+                                let membershipStatus = patient.membership_status || 'Inactive';
+                
+                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">'
+                                    + patient.name + ' - ' + patient.id + ' - ' + membershipCode + ' - ' + membershipStatus + '</li>';
                             });
                             $(".suggestion-list").html(html);
                             $(".suggesstion-box").show();
@@ -1410,7 +1460,7 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
 }
 
 function patientSearchPlan(search_id = 'patient_id', flag = 1) {
-
+  
     let debounceTimer;
     $("." + search_id).on("keyup", function () {
 
