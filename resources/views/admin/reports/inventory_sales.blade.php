@@ -24,7 +24,11 @@
                 <td>{{$report['quantity']}}</td>
                 <td>{{$report['purchased_by']}}</td>
                 <td>{{$report['order_date']}}</td>
-                <td>{{$report['payment_mode']}}</td>
+                <td>
+                    <span class="badge badge-success">
+                        {{$report['payment_mode'] == 1 ? 'Cash' ? 'Card' : 'Bank Transfer'}}
+                    </span>
+                    </td>
                 <td>{{$report['total_revenue']}}</td>
             </tr>
         @endforeach
