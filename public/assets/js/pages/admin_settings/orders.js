@@ -61,17 +61,17 @@ var table_columns = [
         }
     }
     
-    // ,{
-    //     field: 'actions',
-    //     title: 'Actions',
-    //     sortable: false,
-    //     width: 80,
-    //     overflow: 'visible',
-    //     autoHide: false,
-    //     template: function (data) {
-    //         return actions(data);
-    //     }
-    // }
+    ,{
+        field: 'actions',
+        title: 'Actions',
+        sortable: false,
+        width: 80,
+        overflow: 'visible',
+        autoHide: false,
+        template: function (data) {
+            return actions(data);
+        }
+    }
 ];
 
 function actions(data) {
