@@ -101,7 +101,7 @@
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Prescribed By <span
                                     class="text text-danger">*</span></label>
-                            <select class="form-control select2" name="doctor_id" id="add_doctor_id">
+                            <select class="form-control select2" name="doctor_id" id="add_doctor_ids">
                             </select>
                         </div>
                     </div>
