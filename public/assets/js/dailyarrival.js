@@ -257,7 +257,7 @@ var loadInventoryReport  = function (that) {
         data: {
            
            report_type:$("#report_type").val(),
-            date_range: $('#date_range_appointments').val(),
+            date_range: $('#date_range_inv').val(),
             centre_id: $('#centre_id').val(),
             doctor_id:$("#doctor_id_filter").val(),
            
