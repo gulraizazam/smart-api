@@ -26,7 +26,14 @@
                 <td>{{$report['order_date']}}</td>
                 <td>
                     <span class="badge badge-success">
-                        {{$report['payment_mode'] == 1 ? 'Cash' ? 'Card' : 'Bank Transfer'}}
+                        @if($report['payment_mode'] == 1)
+                            Cash
+                        @elseif($report['payment_mode'] == 2)
+                            Card
+                        @else
+                            Bank Transfer
+                        @endif
+                      
                     </span>
                     </td>
                 <td>{{$report['total_revenue']}}</td>
