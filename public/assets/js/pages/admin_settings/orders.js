@@ -505,13 +505,15 @@ function SelectEmployee(){
    if($("#sold_to").val()=="employee")
    {
     let url = route('admin.get-employees');
+    let location_id = $("#add_order_location").val();
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
         url: url,
-        type: "GET",
+        type: "POST",
         cache: false,
+        data: {location_id: location_id},
         success: function (response) {
           
             if(response.status==false){
@@ -537,6 +539,7 @@ function SelectEmployee(){
                 $("#employeeDropDown").hide();  
    }
 }
+
 function setFilters(filter_values, active_filters) {
     let centres = filter_values.centres;
     let users = filter_values.users;
@@ -665,19 +668,23 @@ function productSearch(from_id, id = null, type = null) {
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name + '</option>';
+                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name +' - '+product.available_quantity+' products available' + '</option>';
                     });
                 } else {
                     html = '<option value="">No Product Found</option>';
                 }
-                if(doctors.length){
-                    let user_options = '<option value="">Select Doctor</option>';
-                    Object.entries(doctors).forEach(function (value, index) {
-                        user_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                let user_options = '';
+                if (Object.keys(doctors).length) {
+                    user_options = '<option value="">Select Doctor</option>';
+                    Object.entries(doctors).forEach(function ([id, name]) {
+                        user_options += '<option value="' + id + '">' + name + '</option>';
                     });
-                    $("#add_doctor_ids").html(user_options);
+                } else {
+                    user_options = '<option value="">No Doctor Found</option>';
                 }
+
                 $("#" + id + "_order_product").html(html);
+                $("#add_doctor_ids").html(user_options);
             }
         });
     } else {
