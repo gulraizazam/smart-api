@@ -61,6 +61,19 @@ $('#date_range_appointments').daterangepicker({
     startDate: moment().startOf('month'),
     endDate: moment().subtract(1, 'days')
 }).val();
+$('#date_range_inv').daterangepicker({
+    locale: {
+    },
+    ranges: {
+        
+    
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().endOf('month')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
