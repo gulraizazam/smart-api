@@ -661,7 +661,7 @@ function productSearch(from_id, id = null, type = null) {
             },
             success: function (response) {
                 let products = response.data.products;
-
+                let doctors = response.data.doctors;
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
@@ -669,6 +669,13 @@ function productSearch(from_id, id = null, type = null) {
                     });
                 } else {
                     html = '<option value="">No Product Found</option>';
+                }
+                if(doctors.length){
+                    let user_options = '<option value="">Select Doctor</option>';
+                    Object.entries(doctors).forEach(function (value, index) {
+                        user_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                    });
+                    $("#add_doctor_ids").html(user_options);
                 }
                 $("#" + id + "_order_product").html(html);
             }
