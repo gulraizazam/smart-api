@@ -234,6 +234,7 @@ var loadInventoryReport  = function (that) {
         return false;
     }
     showSpinner();
+  
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -245,6 +246,7 @@ var loadInventoryReport  = function (that) {
            report_type:$("#report_type").val(),
             date_range: $('#date_range_appointments').val(),
             centre_id: $('#centre_id').val(),
+            doctor_id:$("#doctor_id_filter").val(),
            
            
         },
@@ -360,6 +362,39 @@ var loadPatientFollowUpMonthReport = function (that) {
         }
     });
 };
+function getEmployees(locationId){
+   
+    let url = route('admin.get-doctors');
+ 
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: locationId},
+        success: function (response) {
+          
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+                        
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Doctor</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#doctor_id_filter").html(emp_options);
+            }
+            
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+  
+}
 function patientSearch(search_id = 'patient_id',flag=1) {
     
     $("." + search_id).on("keyup",function() {

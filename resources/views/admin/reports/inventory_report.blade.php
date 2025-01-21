@@ -58,7 +58,7 @@
                                         <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="centre_id" name="centre_id">
+                                            <select class="form-control select2" id="centre_id" name="centre_id" onchange="getEmployees(this.value);">
                                                 <option value="">Select Centre</option>
                                                 @foreach($locations as $location)
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
@@ -66,7 +66,14 @@
                                             </select>
                                             <span id="centre_id_handler"></span>
                                         </div>
-                                        
+                                        <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
+                                             id="locations">
+                                            {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
+                                            <select class="form-control select2" id="doctor_id_filter" name="doctor_id">
+                                                
+                                            </select>
+                                            <span id="centre_id_handler"></span>
+                                        </div>
                                        
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
