@@ -109,7 +109,7 @@ class Product extends BaseModal
                 //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
                 //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
                 // })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('inventories.id', 'DESC')->get();
+                ->limit($iDisplayLength)->offset($iDisplayStart)->get();
         } else {
             return self::select('products.*')
             // ->where(function ($query) {
