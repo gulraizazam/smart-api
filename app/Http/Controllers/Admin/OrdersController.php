@@ -20,9 +20,11 @@ use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\App;
 use App\Http\Controllers\Controller;
+use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
 use App\Models\OrderRefund;
 use App\Models\OrderRefundDetail;
+use App\Models\UserHasLocations;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -455,9 +457,17 @@ class OrdersController extends Controller
 
         return view('admin.orders.invoice_pdf', compact('invoice_info', 'patient', 'account', 'products', 'company_phone_number', 'location_info', 'download'));
     }
-    public function getEmployees()
+    public function getEmployees(Request $request)
     {
-        $users = User::whereIn('user_type_id',[2,5])->where('active',1)->pluck('name','id')->toArray();
+        $checkUsers = UserHasLocations::where('location_id',$request->location_id)->pluck('user_id')->toArray();
+        $users = User::whereIn('user_type_id',[2,5])->where('active',1)->whereIn('id',$checkUsers)->pluck('name','id')->toArray();
+        return response()->json(['users'=>$users]);
+    }
+    public function getDoctors(Request $request)
+    {
+        $doctors = DoctorHasLocations::where('location_id',$request->location_id)->pluck('user_id')->toArray();
+        $users = User::whereIn('id', $doctors)->where('active', 1)->pluck('name', 'id')->toArray();
+
         return response()->json(['users'=>$users]);
     }
 }
