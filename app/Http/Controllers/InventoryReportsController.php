@@ -192,7 +192,7 @@ class InventoryReportsController extends Controller
         $query = Order::query()
             ->with(['orderDetail.product', 'centre','patients']) // Include related models
             ->when($locationId, function ($q) use ($locationId) {
-                $q->where('location_id', $locationId);
+                $q->where('orders.location_id', $locationId);
             })
             ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('orders.created_at', [$startDate, $endDate]);
