@@ -284,13 +284,44 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            return self::join('inventories','products.id','inventories.product_id')->where([
-                ['products.status', '=', '1'],
-                ['products.account_id', '=', $account_id],
-                [$request->from_key, $request->from_id]
-            ])->when($request->type == 'order', function ($q) {
-                return $q->where(['product_type' => 'for_sale']);
-            })->select('products.id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+            $totalQuantitySubquery = \DB::table('inventories')
+                ->selectRaw('product_id, location_id, SUM(quantity) as total_quantity')
+                ->groupBy('product_id', 'location_id');
+        
+            $soldQuantitySubquery = \DB::table('order_details')
+                ->join('orders', 'orders.id', '=', 'order_details.order_id')
+                ->selectRaw('order_details.product_id, orders.location_id, SUM(order_details.quantity) as sold_quantity')
+                ->where('orders.location_id', $request->from_id) // Filter by location_id
+                ->groupBy('order_details.product_id', 'orders.location_id');
+        
+            $result = self::leftJoinSub($totalQuantitySubquery, 'inventory_totals', function ($join) {
+                    $join->on('products.id', '=', 'inventory_totals.product_id');
+                })
+                ->leftJoinSub($soldQuantitySubquery, 'sold_totals', function ($join) {
+                    $join->on('products.id', '=', 'sold_totals.product_id')
+                         ->on('inventory_totals.location_id', '=', 'sold_totals.location_id');
+                })
+                ->where([
+                    ['products.status', '=', '1'],
+                    ['products.account_id', '=', $account_id],
+                    ['inventory_totals.location_id', '=', $request->from_id],
+                ])
+                ->when($request->type == 'order', function ($q) {
+                    return $q->where(['product_type' => 'for_sale']);
+                })
+                ->selectRaw(
+                    'products.id, 
+                     products.name, 
+                     products.product_type, 
+                     products.sale_price, 
+                     inventory_totals.location_id, 
+                     COALESCE(inventory_totals.total_quantity, 0) as total_quantity, 
+                     COALESCE(sold_totals.sold_quantity, 0) as sold_quantity, 
+                     COALESCE(inventory_totals.total_quantity, 0) - COALESCE(sold_totals.sold_quantity, 0) as available_quantity'
+                )
+                ->get();
+        
+            return $result;
         } else if (isset($request->product_id)) {
             return self::join('inventories','products.id','inventories.product_id')->where([
                 ['products.status', '=', '1'],

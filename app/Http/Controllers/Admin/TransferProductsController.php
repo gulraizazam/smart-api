@@ -390,12 +390,10 @@ class TransferProductsController extends Controller
         $products = Product::getProductsAjax($request, Auth::User()->account_id);
         $doctors = DoctorHasLocations::where('location_id',$request->from_id)->pluck('user_id')->toArray();
         $users = User::whereIn('id', $doctors)->where('active', 1)->pluck('name', 'id')->toArray();
-        // foreach ($products as $product) {
-        //     $product->quantity = Stock::sumProductQuantity($product->id);
-        // }
-
+    
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
+            'doctors'=>$users
         ]);
     }
     public function getTransferProducts(Request $request)
