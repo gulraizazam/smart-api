@@ -553,7 +553,7 @@ function setFilters(filter_values, active_filters) {
     let centres_selected, warehouse_selected;
     let FDM = '';
 
-    if (Object.keys(centres).length == 1 && Object.keys(warehouses).length == 0) {
+    if (Object.keys(centres).length == 1) {
         centres_selected = "selected"
         FDM = "fdm_select";
     
