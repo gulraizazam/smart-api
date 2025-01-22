@@ -36,9 +36,9 @@ class OrderDetail extends BaseModal
             $data['sale_price'] = $combinedData[$product_id];
             $data['stock_type'] = 'out';
 
-           $inventory = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
-           $updated_quantity = $inventory->quantity-$quantity;
-           $inventory ->update(['quantity'=>$updated_quantity]);
+        //    $inventory = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
+        //    $updated_quantity = $inventory->quantity-$quantity;
+        //    $inventory ->update(['quantity'=>$updated_quantity]);
             self::create($data);
         }
         return true;

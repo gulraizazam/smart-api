@@ -64,14 +64,14 @@ function actions(data) {
                             <span class="navi-text">Add Inventory</span>\
                         </a>\
                     </li>';
-                        // if (permissions.add_stock) {
+                         if (permissions.add_stock) {
                             actions += '<li class="navi-item">\
                                                 <a href="'+ inventories_url + '" class="navi-link">\
                                                 <span class="navi-icon"><i class="la la-archway"></i></span>\
                                                 <span class="navi-text">Inventories</span>\
                                             </a>\
                                          </li>';
-                        //}
+                        }
                         
                         // if (permissions.sale_price) {
                         //     actions += '<li class="navi-item">\
@@ -347,7 +347,7 @@ function statusesProduct(data, status_url, is_column_name_change = false) {
     let status = '';
 
     if (active) {
-        if (permissions.active) {
+        if (permissions.product_active) {
             status += '<span class="switch switch-icon">\
             <label>\
                 <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
@@ -364,13 +364,21 @@ function statusesProduct(data, status_url, is_column_name_change = false) {
         }
 
     } else {
-
-        status += '<span class="switch switch-icon">\
-        <label>\
-            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
-            <span></span>\
-        </label>\
-        </span>';
+        if (permissions.product_active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox"  name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
     }
 
     return status;
