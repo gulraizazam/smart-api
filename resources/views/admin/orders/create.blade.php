@@ -97,7 +97,7 @@
                             </button>
                         </div>
                     </div>
-                    <div class="row mt-2">
+                    <div class="row mt-2" id="prescribedBy">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Prescribed By <span
                                     class="text text-danger">*</span></label>
