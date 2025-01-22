@@ -504,6 +504,7 @@ function resetAllFilters(datatable) {
 function SelectEmployee(){
    if($("#sold_to").val()=="employee")
    {
+    $("#prescribedBy").hide();
     let url = route('admin.get-employees');
     let location_id = $("#add_order_location").val();
     $.ajax({
@@ -535,6 +536,7 @@ function SelectEmployee(){
         }
     });
    }else{
+        $("#prescribedBy").show();
         $("#patientDropDown").show();
                 $("#employeeDropDown").hide();  
    }

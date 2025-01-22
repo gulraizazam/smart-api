@@ -105,6 +105,7 @@ class Product extends BaseModal
         if (count($where)) {
             return self::select('products.*')
             ->where($where)
+            
                 // ->where(function ($query) {
                 //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
                 //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
@@ -192,7 +193,7 @@ class Product extends BaseModal
         $product->account_id =  $data['account_id'];
         $product->brand_id =  $data['brand_id'];
         $product->sale_price =  $data['sale_price'];
-       
+        $product->sku =  'sku-'.rand(1000,9999);
         $product->product_type = 'for_sale';
         $product->save();
 

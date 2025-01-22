@@ -34,18 +34,7 @@ class InventoryReportsController extends Controller
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        $currentMonth = now()->format('m');
-        $currentYear = now()->format('Y');
-        $isCurrentMonth = false;
-        if ($startDate && $endDate) {
-            $startMonth = date('m', strtotime($startDate));
-            $startYear = date('Y', strtotime($startDate));
-            $endMonth = date('m', strtotime($endDate));
-            $endYear = date('Y', strtotime($endDate));
-    
-            // Check if the date range is within the current month
-            $isCurrentMonth = ($startMonth == $currentMonth && $endMonth == $currentMonth && $startYear == $currentYear && $endYear == $currentYear);
-        }
+        
         $doctorId = $request->input('doctor_id');
         if ($request->report_type == "stock_report") {
             // Load products with their inventories, orders, and order details
@@ -67,7 +56,7 @@ class InventoryReportsController extends Controller
         
             // Process the product data for the report
             $report = $products->map(function ($product) use ($locationId, $endDate) {
-                // Calculate total inventory till the selected date
+                
                 $totalInventory = $product->inventories
                     ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate)) // Filter inventories by date
                     ->sum('quantity');
