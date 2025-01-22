@@ -931,7 +931,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('operations_reports_manage')
+                    @can('finance_general_revenue_reports_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
