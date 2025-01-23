@@ -8,6 +8,7 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class Product extends BaseModal
 {
@@ -347,6 +348,13 @@ class Product extends BaseModal
             $inventory = Inventory::where([
                 'location_id' => $request->location_id,'product_id' => $request->product_id])
                ->first();
+               $totalSoldQuantity = DB::table('order_details')
+                ->join('orders', 'order_details.order_id', '=', 'orders.id')
+                ->where('order_details.product_id', $request->product_id)
+                ->where('orders.location_id', $request->location_id)
+              
+                ->sum('order_details.quantity');
+                $inventory->quantity = max(0, $inventory->quantity - $totalSoldQuantity);
             
        }else{
         $inventory = Inventory::where([
