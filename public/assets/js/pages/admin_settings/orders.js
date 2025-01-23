@@ -746,7 +746,13 @@ $(document).ready(function () {
     });
 
 });
-
+function resetFields()
+{
+    $("#employeeDropDown").hide();
+    $("#patientDropDown").show();
+    $("#product_discount").text('');
+    $('#sold_to').val('patient').trigger('change');
+}
 $("#add_new_order").on("click", function () {
     $("input").val('');
     $(".select2").val('').trigger("change");
