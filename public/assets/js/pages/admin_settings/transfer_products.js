@@ -304,6 +304,8 @@ function productSelectTransfer(product_id, id = null) {
     });
 }
 function formRest() {
+    $('#modal_create_order_form')[0].reset();
+    $('.select2').val(null).trigger('change');
     $("#add_product_type_option_from").val("");
     $("#add_product_type_option_to").val("");
     $("#add_transfer_product").val("").trigger("change");
@@ -311,10 +313,10 @@ function formRest() {
     $('.select_warehouse_from').hide();
     $('.select_centre_to').hide();
     $('.select_warehouse_to').hide();
-    $("#employeeDropDown").hide();
-    $("#patientDropDown").show();
+    $("#employeeDropDown").style.display="none";
+    $("#patientDropDown").style.display="block";
     $("#product_discount").text('');
-                    $("#sold_to").change();
+    $('#sold_to').val('patient').trigger('change');
 }
 
 $("#add_product_p").on("click", function(){
