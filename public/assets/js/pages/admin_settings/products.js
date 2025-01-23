@@ -2,6 +2,12 @@ var table_url = route('admin.products.datatable');
 
 var table_columns = [
     {
+        field: 'sku',
+        title: 'SKU',
+        width: 'auto',
+        sortable: false,
+    },
+    {
         field: 'name',
         title: 'Name',
         width: 'auto',
