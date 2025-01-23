@@ -313,6 +313,8 @@ function formRest() {
     $('.select_warehouse_to').hide();
     $("#employeeDropDown").hide();
     $("#patientDropDown").show();
+    $("#product_discount").text('');
+                    $("#sold_to").change();
 }
 
 $("#add_product_p").on("click", function(){
