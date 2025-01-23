@@ -752,6 +752,10 @@ $("#add_new_order").on("click", function () {
     $(".select2").val('').trigger("change");
     $("#product_list").empty();
     $("#refund_product_list").empty();
+    $("#employeeDropDown").style.display="none";
+    $("#patientDropDown").style.display="block";
+    $("#product_discount").text('');
+    $('#sold_to').val('patient').trigger('change');
     var FDMVal = $('#add_order_location[role="fdm_select"] optgroup option:first-child').val();
     setTimeout(function () {
         $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');
