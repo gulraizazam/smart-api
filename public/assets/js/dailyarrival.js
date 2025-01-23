@@ -454,3 +454,12 @@ function selectUser(name, user_id,  search_id) {
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
 }
+function hideDoctor()
+{
+    var rType = $("#report_type").val();
+    if(rType == "doctor_sales_report"){
+        $("#doc_dropdown").show();
+    }else{
+        $("#doc_dropdown").hide();
+    }
+}
