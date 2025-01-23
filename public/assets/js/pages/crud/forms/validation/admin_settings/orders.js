@@ -59,7 +59,8 @@ var AddOrderValidation = function () {
                     closePopup(modal_id);
                     $("#product_discount").text('');
                     $("#sold_to").change();
-                    reInitTable();
+                    $("#add_employee_id").change();
+                                        reInitTable();
                 } else {
                     toastr.error(response.message);
                 }

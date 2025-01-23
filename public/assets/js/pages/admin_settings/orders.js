@@ -165,7 +165,7 @@ function addRow() {
                 let products = response.data.products;
                 
                 if (products.quantity - quantity == 0 || products.quantity - quantity < 0) {
-                    toastr.error("Product quantity out of stock");
+                    toastr.error("This Product is out of stock");
                     $("#add_service_btn").removeAttr('disabled');
                 } else {
                    
@@ -438,7 +438,7 @@ $('body').on('keyup', ".quantity_input", function () {
         calculateTotal($(this));
        
     } else {
-        toastr.error("Product quantity out of stock.");
+        toastr.error("This Product is out of stock");
     }
     return false;
 });
@@ -740,7 +740,7 @@ $(document).ready(function () {
             calculateTotal($(this));
             console.log($input.val(count), stock, count, ProductStock);
         } else {
-            toastr.error("Product quantity out of stock.");
+            toastr.error("This Product is out of stock");
         }
         return false;
     });
