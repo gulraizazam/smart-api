@@ -67,7 +67,7 @@
                                             <span id="centre_id_handler"></span>
                                         </div>
                                         <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
-                                             id="doc_dropdown">
+                                             id="doc_dropdown" style="display:none">
                                             {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="doctor_id_filter" name="doctor_id">
                                                 
