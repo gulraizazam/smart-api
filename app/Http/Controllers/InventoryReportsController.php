@@ -175,54 +175,56 @@ class InventoryReportsController extends Controller
 }
         if($request->report_type=="sales_report"){
             $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        // Get filters
-        $locationId =$request->input('centre_id') ? [$request->input('centre_id')] : ACL::getUserCentres();
+            $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+            $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+            // Get filters
+            $locationId =$request->input('centre_id') ? [$request->input('centre_id')] : ACL::getUserCentres();
        
 
-        // Build query
-        $query = Order::query()
-            ->with(['orderDetail.product', 'centre','patients']) // Include related models
-            ->when($locationId, function ($q) use ($locationId) {
-                $q->whereIn('orders.location_id', $locationId);
-            })
-            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('orders.created_at', [$startDate, $endDate]);
-            });
+            // Build query
+            $query = Order::query()
+                ->with(['orderDetail.product', 'centre','patients']) // Include related models
+                ->when($locationId, function ($q) use ($locationId) {
+                    $q->whereIn('orders.location_id', $locationId);
+                })
+                ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('orders.created_at', [$startDate, $endDate]);
+                });
 
-        // Fetch data
-        $orders = $query->get();
+            // Fetch data
+            $orders = $query->get();
            
-        // Aggregate data   
-        $reportData = $orders->map(function ($order) {
-            $totalRevenue = $order->orderDetail->sum(function ($detail) {
-               
-                return $detail->quantity * $detail->sale_price;
+            // Aggregate data   
+            $reportData = $orders->map(function ($order) {
+                $totalRevenue = $order->orderDetail->sum(function ($detail) {
+                
+                    return $detail->quantity * $detail->sale_price;
+                });
+                $productNames = $order->orderDetail->map(function ($detail) {
+                    return $detail->product->name ?? 'N/A';
+                })->unique()->join(', '); // Join multiple product names if needed
+                $quantity = $order->orderDetail->map(function ($detail) {
+                    return $detail->quantity ?? 'N/A';
+                })->unique()->join(', '); // Join multiple product names if needed
+                return [
+                    'order_id' => $order->id,
+                    'location_name' => $order->centre->name ?? 'N/A',
+                    'order_date' => $order->created_at,
+                    'total_revenue' => $totalRevenue,
+                    'purchased_by'=>$order->patients->name??'N/A',
+                    'product_name'=>$productNames??'N/A',
+                    'quantity'=>$quantity,
+                    'payment_mode'=>$order->payment_mode
+                ];
             });
-            $productNames = $order->orderDetail->map(function ($detail) {
-                return $detail->product->name ?? 'N/A';
-            })->unique()->join(', '); // Join multiple product names if needed
-            $quantity = $order->orderDetail->map(function ($detail) {
-                return $detail->quantity ?? 'N/A';
-            })->unique()->join(', '); // Join multiple product names if needed
-            return [
-                'order_id' => $order->id,
-                'location_name' => $order->centre->name ?? 'N/A',
-                'order_date' => $order->created_at,
-                'total_revenue' => $totalRevenue,
-                'purchased_by'=>$order->patients->name??'N/A',
-                'product_name'=>$productNames??'N/A',
-                'quantity'=>$quantity,
-                'payment_mode'=>$order->payment_mode
-            ];
-        });
+            $cashTotal = $reportData->where('payment_mode', 1)->sum('total_revenue');
+            $cardTotal = $reportData->where('payment_mode', 2)->sum('total_revenue');
+            $bankTransferTotal = $reportData->where('payment_mode', 3)->sum('total_revenue');
+            // Calculate overall totals
+            $overallTotal = $reportData->sum('total_revenue');
 
-        // Calculate overall totals
-        $overallTotal = $reportData->sum('total_revenue');
-
-        return view('admin.reports.inventory_sales',get_defined_vars());
-        }
+            return view('admin.reports.inventory_sales',get_defined_vars());
+            }
             
     }
     public function getSalesReport(Request $request)
