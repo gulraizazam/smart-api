@@ -313,10 +313,7 @@ function formRest() {
     $('.select_warehouse_from').hide();
     $('.select_centre_to').hide();
     $('.select_warehouse_to').hide();
-    $("#employeeDropDown").style.display="none";
-    $("#patientDropDown").style.display="block";
-    $("#product_discount").text('');
-    $('#sold_to').val('patient').trigger('change');
+   
 }
 
 $("#add_product_p").on("click", function(){
