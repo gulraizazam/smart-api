@@ -345,16 +345,32 @@ class Product extends BaseModal
     public static function  getTransferProductsAjax($request, $account_id)
     {
        if($request->location_id){
-            $inventory = Inventory::where([
-                'location_id' => $request->location_id,'product_id' => $request->product_id])
-               ->first();
-               $totalSoldQuantity = DB::table('order_details')
-                ->join('orders', 'order_details.order_id', '=', 'orders.id')
-                ->where('order_details.product_id', $request->product_id)
-                ->where('orders.location_id', $request->location_id)
-              
-                ->sum('order_details.quantity');
-                $inventory->quantity = max(0, $inventory->quantity - $totalSoldQuantity);
+        $inventories = Inventory::where([
+            'location_id' => $request->location_id,
+            'product_id' => $request->product_id
+        ])->get();
+        
+        // Calculate the total available quantity across all inventories
+        $totalAvailableQuantity = $inventories->sum('quantity');
+        
+        // Calculate the total quantity sold
+        $totalSoldQuantity = DB::table('order_details')
+            ->join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->where('order_details.product_id', $request->product_id)
+            ->where('orders.location_id', $request->location_id)
+            ->sum('order_details.quantity');
+        
+        // Calculate the updated total quantity
+        $updatedQuantity = max(0, $totalAvailableQuantity - $totalSoldQuantity);
+        
+        // Set the updated quantity in the first inventory object
+        $primaryInventory = $inventories->first();
+        if ($primaryInventory) {
+            $primaryInventory->quantity = $updatedQuantity;
+        }
+        
+        // Return the updated inventory object
+        return $primaryInventory;
             
        }else{
         $inventory = Inventory::where([
