@@ -43,4 +43,10 @@
     </tbody>
 </table>
 
-<h3>Overall Total: <span id="overall-total">{{$overallTotal ?? 0}}</span></h3>
+<h3>Totals:</h3>
+<ul>
+    <li>Cash Total: <span id="cash-total">{{ $cashTotal ?? 0 }}</span></li>
+    <li>Card Total: <span id="card-total">{{ $cardTotal ?? 0 }}</span></li>
+    <li>Bank Transfer Total: <span id="bank-transfer-total">{{ $bankTransferTotal ?? 0 }}</span></li>
+    <li>Overall Total: <span id="overall-total">{{ $overallTotal ?? 0 }}</span></li>
+</ul>
