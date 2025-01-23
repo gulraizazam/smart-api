@@ -59,7 +59,12 @@ var AddOrderValidation = function () {
                     closePopup(modal_id);
                     $("#product_discount").text('');
                     $("#sold_to").change();
-                    
+                    $('#modal_create_order_form')[0].reset();
+                    $('.select2').val(null).trigger('change');
+                    $("#employeeDropDown").style.display="none";
+                    $("#patientDropDown").style.display="block";
+                    $("#product_discount").text('');
+                    $('#sold_to').val('patient').trigger('change');
                     reInitTable();
                 } else {
                     toastr.error(response.message);
