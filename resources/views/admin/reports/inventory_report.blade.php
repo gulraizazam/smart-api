@@ -39,7 +39,7 @@
                                     <div class="row align-items-center">
                                     <div class="form-group col-md-3 " id="report_type_div">
                                         {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
-                                        <select class="form-control" id="report_type" name="report_type">
+                                        <select class="form-control" id="report_type" name="report_type" onchange="hideDoctor()">
                                             <!-- <option value="">Select Report</option> -->
                                             <option value="stock_report">Stock Report</option>
                                             <option value="sales_report">Sales Report</option>
@@ -67,7 +67,7 @@
                                             <span id="centre_id_handler"></span>
                                         </div>
                                         <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
-                                             id="locations">
+                                             id="doc_dropdown">
                                             {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="doctor_id_filter" name="doctor_id">
                                                 
