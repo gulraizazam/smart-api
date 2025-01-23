@@ -311,6 +311,8 @@ function formRest() {
     $('.select_warehouse_from').hide();
     $('.select_centre_to').hide();
     $('.select_warehouse_to').hide();
+    $("#employeeDropDown").hide();
+    $("#patientDropDown").show();
 }
 
 $("#add_product_p").on("click", function(){
