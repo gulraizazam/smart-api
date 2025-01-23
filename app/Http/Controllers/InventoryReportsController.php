@@ -42,6 +42,8 @@ class InventoryReportsController extends Controller
                 'inventories' => function ($query) use ($locationId) {
                     if ($locationId) {
                         $query->where('location_id', $locationId); // Filter inventories by location
+                    }else{
+                        $query->whereIn('location_id', ACL::getUserCentres());
                     }
                 },
                 'orderDetails' => function ($query) use ($endDate) {
@@ -65,6 +67,8 @@ class InventoryReportsController extends Controller
                     ->whereHas('order', function ($query) use ($locationId, $endDate) {
                         if ($locationId) {
                             $query->where('location_id', $locationId);
+                        }else{
+                            $query->whereIn('location_id', ACL::getUserCentres());
                         }
                         
                         if ($endDate) {
@@ -174,14 +178,14 @@ class InventoryReportsController extends Controller
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         // Get filters
-        $locationId = $request->input('centre_id');
+        $locationId = [$request->input('centre_id')] ?? ACL::getUserCentres();
        
 
         // Build query
         $query = Order::query()
             ->with(['orderDetail.product', 'centre','patients']) // Include related models
             ->when($locationId, function ($q) use ($locationId) {
-                $q->where('orders.location_id', $locationId);
+                $q->whereIn('orders.location_id', $locationId);
             })
             ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('orders.created_at', [$startDate, $endDate]);
