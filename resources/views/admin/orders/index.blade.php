@@ -52,7 +52,7 @@
 
                             @if (Gate::allows('order_create'))
                                 <a href="javascript:void(0);" class="btn btn-primary" data-toggle="modal"
-                                    data-target="#modal_create_order" id="add_new_order" onclick="resetFields()">
+                                    data-target="#modal_create_order" id="add_new_order" >
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
