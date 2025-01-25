@@ -42,7 +42,7 @@
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">SKU <span class="text text-danger">*</span></label>
-                            <input type="text" id="sku" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input type="text" id="product_sku" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
