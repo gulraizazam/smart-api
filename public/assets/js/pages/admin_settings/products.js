@@ -200,7 +200,7 @@ function setEditData(response) {
 
     /* Products */
     $("#edit_name").val(product.name);
-    $("#sku").val(product.sku);
+    $("#product_sku").val(product.sku);
     $("#edit_products_brand").val(product.brand_id).trigger('change');
     $("#edit_sale_price").val(product.sale_price);
     $("#edit_product_centre").val(product.location_id).trigger('change');
