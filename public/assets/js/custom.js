@@ -1521,18 +1521,15 @@ function productSearch(from_id, from_key, id = null, type = null) {
                 $("#" + id + "_transfer_product").html(html);
                 let products = response.data.products;
                 if (products.length) {
-                    let html = '<option value="">Select Product</option>';
+                    html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        let oldProduct = $('#' + id + '_product_id').val();
-
-                        if (product.id == oldProduct) {
-                            html += '<option value="' + product.id + '" selected>' + product.name + '</option>';
-                        } else {
-                            html += '<option value="' + product.id + '">' + product.name + '</option>';
-                        }
+                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name +' - '+product.available_quantity+' products available' + '</option>';
                     });
-                    $("#" + id + "_transfer_product").html(html);
+                } else {
+                    html = '<option value="">No Product Found</option>';
                 }
+                $("#add_transfer_product").html(html);
+                
             }
         });
     }

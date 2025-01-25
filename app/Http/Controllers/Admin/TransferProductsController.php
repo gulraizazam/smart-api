@@ -66,37 +66,7 @@ class TransferProductsController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (isset($filters['delete'])) {
-                $ids = explode(',', $filters['delete']);
-                $transfer_products = TransferProduct::getBulkData($ids);
-
-                if (!$transfer_products->isEmpty()) {
-                    $is_child = false;
-                    foreach ($transfer_products as $transfer_product) {
-                        if (!TransferProduct::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
-                            DB::transaction(function () use ($transfer_product) {
-                                Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
-                                Stock::where(['transfer_id' => $transfer_product->id])->delete();
-                                $transfer_product->delete();
-                                $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->get();
-                                foreach ($product_detail as $data) {
-                                    $data->delete();
-                                }
-                                Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
-                            });
-                            $is_child = true;
-                        }
-                    }
-                    if (!$is_child) {
-                        $records['status'] = false;
-                        $records['message'] = 'Child records exist, unable to delete resource!';
-                    } else {
-                        $records['status'] = true;
-                        $records['message'] = 'Records has been deleted successfully!';
-                    }
-                }
-
-            }
+           
             // Get Total Records
             $iTotalRecords = TransferProduct::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
             [$orderBy, $order] = getSortBy($request);
@@ -282,6 +252,8 @@ class TransferProductsController extends Controller
         return $validator = Validator::make($request->all(), [
             'product_id' => 'required',
             'quantity' => 'required',
+            'from_location_id'=>'required',
+            'to_location_id'=>'required'
         ]);
     }
 
