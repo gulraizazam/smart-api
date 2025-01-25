@@ -14,7 +14,7 @@ class Product extends BaseModal
 {
     use  HasFactory;
 
-    protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by','sku'];
 
     protected $table = 'products';
 
@@ -194,7 +194,7 @@ class Product extends BaseModal
         $product->account_id =  $data['account_id'];
         $product->brand_id =  $data['brand_id'];
         $product->sale_price =  $data['sale_price'];
-        $product->sku =  'sku-'.rand(1000,9999);
+        $product->sku =  $data['sku'];
         $product->product_type = 'for_sale';
         $product->save();
 

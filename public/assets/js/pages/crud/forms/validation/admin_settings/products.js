@@ -22,6 +22,13 @@ var AddUserValidation = function () {
                             }
                         }
                     },
+                    sku: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The sku field is required'
+                            }
+                        }
+                    },
                     // purchase_price: {
                     //     validators: {
                     //         notEmpty: {
