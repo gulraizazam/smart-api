@@ -31,64 +31,32 @@
                 data-kt-scroll-dependencies="#kt_modal_add_user_header"
                 data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
                 <div class="form-group">
-                    <div class="row">
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Transfer From <span
-                                    class="text text-danger">*</span></label>
-                            <select id="add_product_type_option_from" class="form-control form-control mb-3 mb-lg-0"
-                                name="product_type_option_from">
-                                <option value="">Select Option</option>
-                                <option value="in_warehouse">Warehouse</option>
-                                <option value="in_branch">Branch</option>
-                            </select>
-                        </div>
-                        <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Transfer To <span
-                                    class="text text-danger">*</span></label>
-                            <select id="add_product_type_option_to" class="form-control form-control mb-3 mb-lg-0"
-                                name="product_type_option_to">
-                                <option value="">Select Option</option>
-                                <option value="in_warehouse">Warehouse</option>
-                                <option value="in_branch" id="to_branch">Branch</option>
-                            </select>
-                        </div>
-                    </div>
+                    
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="fv-row select_centre_from" style="display: none">
+                            <div class="fv-row select_centre_from" >
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Centre From</label>
                                 <select id="add_product_centre_from"
                                     class="form-control form-control-solid mb-3 mb-lg-0 select2 product_search_id"
-                                    name="from_location_id" onchange="productSearch(this.value, 'location_id', 'add', 'transfer')">
+                                    name="from_location_id" onchange="productSearch(this.value, 'add', 'order')">
                                 </select>
                             </div>
-                            <div class="fv-row select_warehouse_from" style="display: none">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse From</label>
-                                <select id="add_product_warehouse_from"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2 product_search_id"
-                                    name="from_warehouse_id" onchange="productSearch(this.value, 'warehouse_id', 'add', 'transfer')">
-                                </select>
-                            </div>
+                           
                         </div>
 
 
                         <div class="col-md-6">
-                            <div class="fv-row select_centre_to" style="display: none">
+                            <div class="fv-row select_centre_to">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Centre To</label>
                                 <select id="add_product_centre_to"
                                     class="form-control form-control-solid mb-3 mb-lg-0 select2" name="to_location_id">
                                 </select>
                             </div>
-                            <div class="fv-row select_warehouse_to" style="display: none">
-                                <label class="required fw-bold fs-6 mb-2 pl-0">Warehouse To</label>
-                                <select id="add_product_warehouse_to"
-                                    class="form-control form-control-solid mb-3 mb-lg-0 select2" name="to_warehouse_id">
-                                </select>
-                            </div>
+                            
                         </div>
                     </div>
 
-                    <div class="row mb-2">
+                    <div class="row mt-6">
                         <div class="col-md-6">
                             <div class="fv-row">
                                 <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
@@ -98,9 +66,14 @@
                                 </select>
                             </div>
                         </div>
+                        <div class="col-md-6 mb-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Transfer Date <span
+                                class="text text-danger">*</span></label>
+                            <input type="text" id="add_transfer_date" class="custom-datepicker form-control filter-field datatable-input" name="transfer_date" placeholder="Transfer Date" data-col-index="5">
+                        </div>
                     </div>
 
-                    <div class="row mb-2">
+                    <div class="row ">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total Stock </label>
                             <input type="number" id="add_total_stock"
@@ -114,11 +87,7 @@
                         </div>
                     </div>
                     <div class="row mb-2">
-                        <div class="col-md-6 mb-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Transfer Date <span
-                                class="text text-danger">*</span></label>
-                            <input type="text" id="add_transfer_date" class="custom-datepicker form-control filter-field datatable-input" name="transfer_date" placeholder="Transfer Date" data-col-index="5">
-                        </div>
+                       
                     </div>
                 </div>
             </div>

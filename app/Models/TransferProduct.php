@@ -68,16 +68,14 @@ class TransferProduct extends BaseModal
                 $q->whereIn('product_id', $product_id);
             })
                 ->where(function ($query) {
-                    $query->whereIn('from_location_id', ACL::getUserCentres())
-                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                    $query->whereIn('from_location_id', ACL::getUserCentres());
                 })->count();
         } else {
             return self::when($product_id != null, function ($q) use ($product_id) {
                 $q->whereIn('product_id', $product_id);
             })
                 ->where(function ($query) {
-                    $query->whereIn('from_location_id', ACL::getUserCentres())
-                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                    $query->whereIn('from_location_id', ACL::getUserCentres());
                 })->count();
         }
     }
@@ -105,8 +103,7 @@ class TransferProduct extends BaseModal
                 return $q->whereIn('product_id', $product_id);
             })
                 ->where(function ($query) {
-                    $query->whereIn('from_location_id', ACL::getUserCentres())
-                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                    $query->whereIn('from_location_id', ACL::getUserCentres());
                 })
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         } else {
@@ -114,8 +111,7 @@ class TransferProduct extends BaseModal
                 return $q->whereIn('product_id', $product_id);
             })
                 ->where(function ($query) {
-                    $query->whereIn('from_location_id', ACL::getUserCentres())
-                        ->orWhereIn('from_warehouse_id', ACL::getUserWarehouse());
+                    $query->whereIn('from_location_id', ACL::getUserCentres());
                 })
                 ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'desc')->get();
         }
@@ -200,10 +196,7 @@ class TransferProduct extends BaseModal
             $to_value = $request->to_location_id;
         }
         $product = Product::where(['id' => $parent_product_id])->first();
-       
-        
-
-        $product_quantity = Stock::sumProductQuantity($parent_product_id);
+        $product_quantity = Inventory::where([$from_key => $from_value, 'product_id' => $parent_product_id])->sum('quantity');
 
         if ($request->quantity <= $product_quantity) {
             $check_product = Product::where(['id' => $request->product_id])->first();
@@ -226,7 +219,7 @@ class TransferProduct extends BaseModal
             $data2['message'] = $request['message'];
             $data2['quantity'] = $data['quantity'];
         } else {
-            $message = "Out of stock quantity product.";
+            $message = "Out of stock";
         }
 
         return [
