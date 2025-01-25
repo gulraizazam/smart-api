@@ -289,7 +289,9 @@ class OrdersController extends Controller
                     }
                 }
             }
-           
+            if($request->sold_to=="patient" && $request->doctor_id ==null){
+                return ApiHelper::apiResponse($this->error, 'prescribed by field is required', false);
+            }
             $order = Order::createRecord($request, Auth::User()->account_id,$products);
             if ($order) {
                
