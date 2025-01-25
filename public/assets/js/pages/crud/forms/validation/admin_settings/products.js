@@ -124,41 +124,48 @@ var EditUserValidation = function () {
                             }
                         }
                     },
-                    purchase_price: {
+                    sku: {
                         validators: {
                             notEmpty: {
-                                message: 'The Purchase field is required'
+                                message: 'The sku field is required'
                             }
                         }
                     },
-                    quantity: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Quantity field is required'
-                            }
-                        }
-                    },
-                    total_purchase_price: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Total Purchase field is required'
-                            }
-                        }
-                    },
-                    product_type: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Product Type field is required'
-                            }
-                        }
-                    },
-                    product_type_option: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Product Type Option field is required'
-                            }
-                        }
-                    },
+                    // purchase_price: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Purchase field is required'
+                    //         }
+                    //     }
+                    // },
+                    // quantity: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Quantity field is required'
+                    //         }
+                    //     }
+                    // },
+                    // total_purchase_price: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Total Purchase field is required'
+                    //         }
+                    //     }
+                    // },
+                    // product_type: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Product Type field is required'
+                    //         }
+                    //     }
+                    // },
+                    // product_type_option: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Product Type Option field is required'
+                    //         }
+                    //     }
+                    // },
                 },
 
                 plugins: {
