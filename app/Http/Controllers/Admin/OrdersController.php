@@ -18,13 +18,18 @@ use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
 use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
+use App\Helpers\JazzSMSAPI;
+use App\Helpers\TelenorSMSAPI;
 use Illuminate\Support\Facades\App;
 use App\Http\Controllers\Controller;
 use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
 use App\Models\OrderRefund;
 use App\Models\OrderRefundDetail;
+use App\Models\SMSTemplates;
 use App\Models\UserHasLocations;
+use App\Models\UserOperatorSettings;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -294,7 +299,8 @@ class OrdersController extends Controller
             }
             $order = Order::createRecord($request, Auth::User()->account_id,$products);
             if ($order) {
-               
+                $userPhone = User::whereId($request->patient_id)->first();
+                $this->PlanCashReceived_SMS($userPhone->phone,$request->grand_total,$order);
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.', true, $order->id);
@@ -305,8 +311,72 @@ class OrdersController extends Controller
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
-    }
+    }public static function PlanCashReceived_SMS($phone,$total,$order)
+    {
+        // SEND SMS for Appointment Booked
+        $SMSTemplate = SMSTemplates::getBySlug('plan-cash', Auth::User()->account_id);
 
+        if (! $SMSTemplate) {
+            // SMS Promotion is disabled
+            return [
+                'status' => true,
+                'sms_data' => 'Plan Cash Amount SMS is disabled',
+                'error_msg' => '',
+            ];
+        }
+
+        
+
+        $preparedText = self::prepareSMSContent($SMSTemplate->content,$phone,$total,$order);
+
+        $setting = Settings::whereSlug('sys-current-sms-operator')->first();
+
+        $UserOperatorSettings = UserOperatorSettings::getRecord(Auth::User()->account_id, $setting->data);
+
+        if ($setting->data == 1) {
+
+            $SMSObj = [
+                'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+                'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+                'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($phone)),
+                'text' => $preparedText,
+                'mask' => $UserOperatorSettings->mask, // Setting ID 3 for Mask
+                'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+            ];
+            $response = TelenorSMSAPI::SendSMS($SMSObj);
+        } else {
+            $SMSObj = [
+                'username' => $UserOperatorSettings->username, // Setting ID 1 for Username
+                'password' => $UserOperatorSettings->password, // Setting ID 2 for Password
+                'from' => $UserOperatorSettings->mask,
+                'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($phone)),
+                'text' => $preparedText,
+                'test_mode' => $UserOperatorSettings->test_mode, // Setting ID 3 Test Mode
+            ];
+            $response = JazzSMSAPI::SendSMS($SMSObj);
+        }
+
+       
+        // SEND SMS for Appointment Booked End
+        return $response;
+    }
+    public static function prepareSMSContent($smsContent,$phone,$total,$order)
+    {
+        if (! $phone) {
+            return $smsContent;
+        } else {
+            if ($phone) {
+                $patient = User::where('phone',$phone)->first();
+                $smsContent = str_replace('##patient_name##', $patient->name, $smsContent);
+                $smsContent = str_replace('##cash_amount##', number_format($total), $smsContent);
+
+                $smsContent = str_replace('##created_at##', Carbon::parse($order->created_at)->toFormattedDateString(), $smsContent);
+                $smsContent = str_replace('##id##', $order->id, $smsContent);
+            }
+
+            return $smsContent;
+        }
+    }
     /**
      * Show the form for editing products.
      *
