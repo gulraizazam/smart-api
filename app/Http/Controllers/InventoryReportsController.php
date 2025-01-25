@@ -205,7 +205,7 @@ class InventoryReportsController extends Controller
                 })->unique()->join(', '); // Join multiple product names if needed
                 $quantity = $order->orderDetail->map(function ($detail) {
                     return $detail->quantity ?? 'N/A';
-                })->unique()->join(', '); // Join multiple product names if needed
+                })->join(', '); // No unique() to avoid filtering out duplicate quantities
                 return [
                     'order_id' => $order->id,
                     'location_name' => $order->centre->name ?? 'N/A',
