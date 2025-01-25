@@ -214,6 +214,7 @@ class Product extends BaseModal
      */
     public static function updateRecord($id, $request, $account_id)
     {
+        dd($request->all());
         if (!is_array($request)) {
             $data = $request->all();
         } else {
