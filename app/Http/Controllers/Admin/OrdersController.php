@@ -363,6 +363,7 @@ class OrdersController extends Controller
             $SMSLog['mask'] = $SMSObj['from'];
         }
         SMSLogs::create($SMSLog);
+        
        
         // SEND SMS for Appointment Booked End
         return $response;
