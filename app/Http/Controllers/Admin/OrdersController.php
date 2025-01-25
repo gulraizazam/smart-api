@@ -26,6 +26,7 @@ use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
 use App\Models\OrderRefund;
 use App\Models\OrderRefundDetail;
+use App\Models\SMSLogs;
 use App\Models\SMSTemplates;
 use App\Models\UserHasLocations;
 use App\Models\UserOperatorSettings;
@@ -355,7 +356,13 @@ class OrdersController extends Controller
             ];
             $response = JazzSMSAPI::SendSMS($SMSObj);
         }
-
+        $SMSLog = array_merge($SMSObj, $response);
+       $SMSLog['log_type'] = 'inventory';
+        $SMSLog['created_by'] = Auth::user()->id;
+        if ($setting->data == 2) {
+            $SMSLog['mask'] = $SMSObj['from'];
+        }
+        SMSLogs::create($SMSLog);
        
         // SEND SMS for Appointment Booked End
         return $response;
