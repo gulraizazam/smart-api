@@ -504,12 +504,6 @@ function resetAllFilters(datatable) {
 function SelectEmployee(){
    if($("#sold_to").val()=="employee")
    {
-    ProductStock=[];
-    $("#product_list").html("");
-    $("#discount").val("");
-    $("#total_product_price").text("");
-    $("#add_order_product").change();
-    $("#product_discount").text("");
     $("#prescribedBy").hide();
     let url = route('admin.get-employees');
     let location_id = $("#add_order_location").val();
@@ -542,11 +536,6 @@ function SelectEmployee(){
         }
     });
    }else{
-    ProductStock=[];
-    $("#discount").val("");
-    $("#product_list").html("");
-    $("#total_product_price").text("");
-    $("#product_discount").text("");
         $("#prescribedBy").show();
         $("#patientDropDown").show();
                 $("#employeeDropDown").hide();  
