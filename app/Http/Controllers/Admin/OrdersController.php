@@ -300,7 +300,12 @@ class OrdersController extends Controller
             }
             $order = Order::createRecord($request, Auth::User()->account_id,$products);
             if ($order) {
-                $userPhone = User::whereId($request->patient_id)->first();
+                if($request->patient_id){
+                    $userPhone = User::whereId($request->patient_id)->first();
+                }else{
+                    $userPhone = User::whereId($request->employee_id)->first();
+                }
+                
                 $this->PlanCashReceived_SMS($userPhone->phone,$request->grand_total,$order);
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
 
