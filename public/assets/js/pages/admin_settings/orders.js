@@ -509,7 +509,7 @@ function SelectEmployee(){
     $("#product_discount").text("");
     $("#footHtml").html("");
     $("#discount").val("");
-    $("#total_product_price").val("");
+    $("#total_product_price").text("");
     $("#prescribedBy").hide();
     let url = route('admin.get-employees');
     let location_id = $("#add_order_location").val();
@@ -547,7 +547,7 @@ function SelectEmployee(){
     $("#product_discount").text("");
     $("#discount").val("");
     $("#footHtml").html("");
-    $("#total_product_price").val("");
+    $("#total_product_price").text("");
         $("#prescribedBy").show();
         $("#patientDropDown").show();
                 $("#employeeDropDown").hide();  
