@@ -507,7 +507,7 @@ function SelectEmployee(){
     $("#product_list").html("");
     $("#discount").val("");
     $("#total_product_price").text("");
-    $("#add_order_product").change();
+    $("#add_order_product").select2().change();
     $("#product_discount").text("");
     $("#prescribedBy").hide();
     let url = route('admin.get-employees');
@@ -543,7 +543,7 @@ function SelectEmployee(){
    }else{
     $("#product_list").html("");
     $("#discount").val("");
-    $("#add_order_product").change();
+    $("#add_order_product").select2().change();
     $("#total_product_price").text("");
     $("#product_discount").text("");
         $("#prescribedBy").show();
