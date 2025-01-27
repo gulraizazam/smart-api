@@ -504,7 +504,8 @@ function resetAllFilters(datatable) {
 function SelectEmployee(){
    if($("#sold_to").val()=="employee")
    {
-    console.log(ProductStock);
+    ProductStock=[];
+    $("#product_list").html("");
     $("#discount").val("");
     $("#total_product_price").text("");
     $("#add_order_product").change();
@@ -541,9 +542,9 @@ function SelectEmployee(){
         }
     });
    }else{
-    console.log(ProductStock);
+    ProductStock=[];
     $("#discount").val("");
-    
+    $("#product_list").html("");
     $("#total_product_price").text("");
     $("#product_discount").text("");
         $("#prescribedBy").show();
