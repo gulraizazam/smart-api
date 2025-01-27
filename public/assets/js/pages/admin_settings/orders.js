@@ -507,6 +507,7 @@ function SelectEmployee(){
     $("#product_list").html("");
     ProductStock=[];
     $("#product_discount").text("");
+    $("#footHtml").html("");
     $("#discount").val("");
     $("#total_product_price").val("");
     $("#prescribedBy").hide();
@@ -545,6 +546,7 @@ function SelectEmployee(){
     ProductStock=[];
     $("#product_discount").text("");
     $("#discount").val("");
+    $("#footHtml").html("");
     $("#total_product_price").val("");
         $("#prescribedBy").show();
         $("#patientDropDown").show();
