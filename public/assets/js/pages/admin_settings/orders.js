@@ -508,7 +508,7 @@ function SelectEmployee(){
     $("#product_discount").text("");
   
     $("#discount").val("");
-    $("#total_product_price").text("");
+    //$("#total_product_price").text("");
     $("#prescribedBy").hide();
     let url = route('admin.get-employees');
     let location_id = $("#add_order_location").val();
