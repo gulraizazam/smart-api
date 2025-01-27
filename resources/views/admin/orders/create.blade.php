@@ -120,7 +120,7 @@
                                 </thead>
                                 <tbody id="product_list" class="text-left">
                                 </tbody>
-                                <tfoot>
+                                <tfoot id="footHtml">
                                     <tr>
                                         <td></td>
                                         <td></td>
