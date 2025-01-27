@@ -504,6 +504,7 @@ function resetAllFilters(datatable) {
 function SelectEmployee(){
    if($("#sold_to").val()=="employee")
    {
+    $("#product_list").html("");
     $("#discount").val("");
     $("#product_discount").text("");
     $("#prescribedBy").hide();
@@ -538,6 +539,7 @@ function SelectEmployee(){
         }
     });
    }else{
+    $("#product_list").html("");
     $("#discount").val("");
     $("#product_discount").text("");
         $("#prescribedBy").show();
