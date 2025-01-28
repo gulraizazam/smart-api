@@ -106,14 +106,11 @@ class Product extends BaseModal
         if (count($where)) {
             return self::select('products.*')
             ->where($where)
-            
-                // ->where(function ($query) {
-                //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
-                //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
-                // })
-                ->limit($iDisplayLength)->offset($iDisplayStart)->get();
+            ->orderBy('products.name', 'asc')
+            ->limit($iDisplayLength)->offset($iDisplayStart)->get();
         } else {
             return self::select('products.*')
+            ->orderBy('products.name', 'asc')
             // ->where(function ($query) {
             //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
             //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
