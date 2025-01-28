@@ -505,20 +505,26 @@ function SelectEmployee() {
     const productList = $("#product_list").children();
     const soldToDropdown = $("#sold_to");
 
-    // Store previous selection safely
-    const previousValue = soldToDropdown.data("previous") || soldToDropdown.val();
+    // Get the current value of the sold_to dropdown
+    const currentValue = soldToDropdown.val();
 
-    // Save current selection for the next use
-    soldToDropdown.data("previous", soldToDropdown.val());
+    // Track previous value safely, only if change is valid
+    const previousValue = soldToDropdown.data("previous") || currentValue;
 
-    // Prevent 'Sold To' change if products are present
+    // Store the current value as the previous value for future reference
+    soldToDropdown.data("previous", currentValue);
+
+    // Check if there are products in the list
     if (productList.length > 0) {
-        soldToDropdown.val(previousValue).trigger('change.select2'); // Reflect previous value correctly
+        // Restore the previous value of 'sold_to' without triggering the change event
+        soldToDropdown.val(previousValue).trigger('change.select2');  // Use Select2's change event explicitly
         toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
         return;
     }
 
-    if (soldToDropdown.val() === "employee") {
+    // Proceed with the change if there are no products in the list
+    if (currentValue === "employee") {
+        // Reset specific fields
         $("#product_discount").text("");
         $("#discount").val("");
         $("#prescribedBy").hide();
@@ -558,6 +564,7 @@ function SelectEmployee() {
         $("#employeeDropDown").hide();
     }
 }
+
 
 function setFilters(filter_values, active_filters) {
     let centres = filter_values.centres;
