@@ -508,6 +508,7 @@ function SelectEmployee() {
     const soldToDropdown = $("#sold_to");
     const previousValue = soldToDropdown.data("previous") || soldToDropdown.val();
 
+    // Check if products are present
     if (productList.length > 0) {
         if (!isResetting) {
             isResetting = true;
@@ -518,7 +519,7 @@ function SelectEmployee() {
         return;
     }
 
-    // Save current selection
+    // Save the current selection to restore later if needed
     soldToDropdown.data("previous", soldToDropdown.val());
 
     if (soldToDropdown.val() === "employee") {
@@ -539,7 +540,7 @@ function SelectEmployee() {
             data: { location_id: location_id },
             success: function (response) {
                 if (!response.status) {
-                    toastr.error(response.message);
+                    toastr.error(response.message || "An error occurred while fetching employees.");
                 } else {
                     $("#patientDropDown").hide();
                     $("#employeeDropDown").show();
