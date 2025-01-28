@@ -89,6 +89,7 @@ class BrandsController extends Controller
                 'manage' => Gate::allows('brand_manage'),
                 'delete' => Gate::allows('brand_destroy'),
                 'create' => Gate::allows('brand_create'),
+                'active'=>Gate::allows('brand_active'),
             ];
             $records['active_filters'] = $apply_filter;
             $records['filter_values'] = [
