@@ -501,73 +501,66 @@ function resetAllFilters(datatable) {
         datatable.search(filters, 'search');
     });
 }
-function SelectEmployee(){
+let isResetting = false;
+
+function SelectEmployee() {
     const productList = $("#product_list").children();
-
-    // Get dropdown reference
     const soldToDropdown = $("#sold_to");
-
-    // Track and store previous selection safely
     const previousValue = soldToDropdown.data("previous") || soldToDropdown.val();
 
     if (productList.length > 0) {
-        // Restore previous value without causing infinite trigger
-        soldToDropdown.val(previousValue).off('change').trigger('change.select2');
-        
-        toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
+        if (!isResetting) {
+            isResetting = true;
+            soldToDropdown.val(previousValue).trigger('change.select2');
+            toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
+            isResetting = false;
+        }
         return;
     }
 
-    // Save current selection for the next use
+    // Save current selection
     soldToDropdown.data("previous", soldToDropdown.val());
-   if($("#sold_to").val()=="employee")
-   {
-   
-    $("#product_discount").text("");
-  
-    $("#discount").val("");
-   
-    $("#prescribedBy").hide();
-    let url = route('admin.get-employees');
-    let location_id = $("#add_order_location").val();
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: url,
-        type: "POST",
-        cache: false,
-        data: {location_id: location_id},
-        success: function (response) {
-          
-            if(response.status==false){
-                toastr.error(response.message);
-            }else{
-                $("#patientDropDown").hide();
-                $("#employeeDropDown").show();               
-                 let employees = response.users;
-                let emp_options = '<option value="">Select Employee</option>';
-                Object.entries(employees).forEach(function (value, index) {
-                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
-                });
-                $("#add_employee_id").html(emp_options);
+
+    if (soldToDropdown.val() === "employee") {
+        $("#product_discount").text("");
+        $("#discount").val("");
+        $("#prescribedBy").hide();
+
+        let url = route('admin.get-employees');
+        let location_id = $("#add_order_location").val();
+
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: url,
+            type: "POST",
+            cache: false,
+            data: { location_id: location_id },
+            success: function (response) {
+                if (!response.status) {
+                    toastr.error(response.message);
+                } else {
+                    $("#patientDropDown").hide();
+                    $("#employeeDropDown").show();
+                    let emp_options = '<option value="">Select Employee</option>';
+                    Object.entries(response.users).forEach(function ([key, value]) {
+                        emp_options += '<option value="' + key + '">' + value + '</option>';
+                    });
+                    $("#add_employee_id").html(emp_options);
+                }
+            },
+            error: function (xhr) {
+                errorMessage(xhr);
             }
-            
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-        }
-    });
-   }else{
-    
-    $("#product_discount").text("");
-    $("#discount").val("");
-   
-   
+        });
+    } else {
+        $("#product_discount").text("");
+        $("#discount").val("");
         $("#prescribedBy").show();
         $("#patientDropDown").show();
-                $("#employeeDropDown").hide();  
-   }
+        $("#employeeDropDown").hide();
+    }
 }
 
 function setFilters(filter_values, active_filters) {
