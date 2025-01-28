@@ -503,7 +503,7 @@ function resetAllFilters(datatable) {
 }
 function SelectEmployee(){
     const productList = $("#product_list").children();
-    let oldVl = $("#sold_to").val();
+   
     // Check if there are products in the list
     if (productList.length > 0) {
         // Prevent switching and reset the selection
