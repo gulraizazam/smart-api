@@ -505,14 +505,15 @@ function SelectEmployee() {
     const productList = $("#product_list").children();
     const soldToDropdown = $("#sold_to");
 
-    // Store previous value for resetting
+    // Store previous selection safely
     const previousValue = soldToDropdown.data("previous") || soldToDropdown.val();
-    soldToDropdown.data("previous", previousValue);
 
-    // Check if there are products in the list
+    // Save current selection for the next use
+    soldToDropdown.data("previous", soldToDropdown.val());
+
+    // Prevent 'Sold To' change if products are present
     if (productList.length > 0) {
-        // Prevent switching and reset the selection
-        soldToDropdown.val(previousValue).trigger('change.select2'); // Ensure Select2 reflects the value
+        soldToDropdown.val(previousValue).trigger('change.select2'); // Reflect previous value correctly
         toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
         return;
     }
@@ -526,9 +527,7 @@ function SelectEmployee() {
         let location_id = $("#add_order_location").val();
 
         $.ajax({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
             url: url,
             type: "POST",
             cache: false,
