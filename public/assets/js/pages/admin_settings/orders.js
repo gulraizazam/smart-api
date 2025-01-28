@@ -502,6 +502,15 @@ function resetAllFilters(datatable) {
     });
 }
 function SelectEmployee(){
+    const productList = $("#product_list").children();
+
+    // Check if there are products in the list
+    if (productList.length > 0) {
+        // Prevent switching and reset the selection
+        $("#sold_to").val($("#sold_to").data("previous"));
+        toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
+        return;
+    }
    if($("#sold_to").val()=="employee")
    {
    
