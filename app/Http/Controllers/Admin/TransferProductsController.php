@@ -389,7 +389,7 @@ class TransferProductsController extends Controller
         $findRole = DB::table('roles')->where('name','FDM')->first();
         $roleHasUser = RoleHasUsers::where('role_id',$findRole)->pluck('user_id')->toArray();
         $fdmUsers = array_intersect($findFDM, $roleHasUser);
-
+        dd($fdmUsers);
         // Fetch FDM user details (id and name) from the users table
         $FDMUsers = User::whereIn('id', $fdmUsers)->pluck('name', 'id');
 
