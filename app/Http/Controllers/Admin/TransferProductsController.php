@@ -358,14 +358,16 @@ class TransferProductsController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function getProducts(Request $request)
-    {
-      
-        
-        $products = Product::getProductsAjax($request, Auth::User()->account_id);
-        $doctors = DoctorHasLocations::where('location_id',$request->from_id)->pluck('user_id')->toArray();
-        $users = User::whereIn('id', $doctors)->where('active', 1)->pluck('name', 'id')->toArray();
+{
+    $products = Product::getProductsAjax($request, Auth::User()->account_id);
+    $doctors = DoctorHasLocations::where('location_id', $request->from_id)->pluck('user_id')->toArray();
+    $users = User::whereIn('id', $doctors)->where('active', 1)->pluck('name', 'id')->toArray();
+
+    // Ensure 'from_id' is an array
+    $locationIds = is_array($request->from_id) ? $request->from_id : [$request->from_id];
+
     // Fetch FDM users by getting the user_ids associated with the center (location_id)
-    $findFDM = UserHasLocations::whereIn('location_id', $request->from_id)->pluck("user_id")->toArray();
+    $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck("user_id")->toArray();
 
     // Fetch the 'FDM' role and get its user ids
     $findRole = DB::table('roles')->where('name', 'FDM')->first();
@@ -380,13 +382,14 @@ class TransferProductsController extends Controller
     // Fetch FDM user details (id and name) from the users table
     $FDMUsers = User::whereIn('id', $fdmUsers)->pluck('name', 'id');
 
-// Combine the two user lists
-$combinedUsers = $users->merge($FDMUsers);
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'products' => $products,
-            'doctors'=>$combinedUsers
-        ]);
-    }
+    // Combine the two user lists
+    $combinedUsers = $users->merge($FDMUsers);
+
+    return ApiHelper::apiResponse($this->success, 'Record found.', true, [
+        'products' => $products,
+        'doctors' => $combinedUsers
+    ]);
+}
     public function getTransferProducts(Request $request)
     {
        
