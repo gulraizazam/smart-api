@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
+use App\Models\RoleHasUsers;
 use App\Models\User;
+use App\Models\UserHasLocations;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -383,6 +385,16 @@ class TransferProductsController extends Controller
            
         }
         $Users = User::where('user_type_id', 5)->where('active', 1)->pluck('name', 'id');
+        $findFDM = UserHasLocations::where('location_id',ACL::getUserCentres())->pluck("user_id")->toArray();
+        $findRole = DB::table('roles')->where('name','FDM')->first();
+        $roleHasUser = RoleHasUsers::where('role_id',$findRole)->pluck('user_id')->toArray();
+        $fdmUsers = array_intersect($findFDM, $roleHasUser);
+
+        // Fetch FDM user details (id and name) from the users table
+        $FDMUsers = User::whereIn('id', $fdmUsers)->pluck('name', 'id');
+
+        // Combine the two user lists
+        $combinedUsers = $Users->merge($FDMUsers);
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
             'warehouses' =>$warehouses,
