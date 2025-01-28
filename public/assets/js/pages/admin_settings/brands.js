@@ -101,14 +101,14 @@ console.log(permissions);
         else{
             status += '<span class="switch switch-icon">\
             <label>\
-                <input value="1"  type="checkbox" checked="checked" name="select">\
+                <input disabled type="checkbox" checked="checked" name="select">\
                 <span></span>\
             </label>\
             </span>';
         }
 
     } else {
-        if (permissions.active) {
+        if (permissions.b_active) {
             status += '<span class="switch switch-icon">\
             <label>\
                 <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
@@ -118,7 +118,7 @@ console.log(permissions);
         }else{
             status += '<span class="switch switch-icon">\
             <label>\
-                <input value="1" type="checkbox" name="select">\
+                <input disabled type="checkbox"  name="select">\
                 <span></span>\
             </label>\
             </span>';
