@@ -385,12 +385,29 @@ class TransferProductsController extends Controller
            
         }
         $Users = User::where('user_type_id', 5)->where('active', 1)->pluck('name', 'id');
-       
+        // Fetch FDM users by getting the user_ids associated with the center (location_id)
+        $findFDM = UserHasLocations::whereIn('location_id', ACL::getUserCentres())->pluck("user_id")->toArray();
+
+        // Fetch the 'FDM' role and get its user ids
+        $findRole = DB::table('roles')->where('name', 'FDM')->first();
+        $roleId = $findRole->id;  // Access the 'id' of the role
+
+        // Get users who have the FDM role
+        $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+
+        // Get the intersection of users who are both FDM and belong to the center
+        $fdmUsers = array_intersect($findFDM, $roleHasUser);
+
+        // Fetch FDM user details (id and name) from the users table
+        $FDMUsers = User::whereIn('id', $fdmUsers)->pluck('name', 'id');
+
+        // Combine the two user lists
+        $combinedUsers = $Users->merge($FDMUsers);
 
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
             'warehouses' =>$warehouses,
-            'users'=>$Users
+            'users'=>$combinedUsers
         ]);
        
     }
