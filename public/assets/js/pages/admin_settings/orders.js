@@ -501,70 +501,65 @@ function resetAllFilters(datatable) {
         datatable.search(filters, 'search');
     });
 }
-function SelectEmployee() {
+function SelectEmployee(){
     const productList = $("#product_list").children();
-    const soldToDropdown = $("#sold_to");
-
-    // Get the current value of the sold_to dropdown
-    const currentValue = soldToDropdown.val();
-
-    // Track previous value safely, only if change is valid
-    const previousValue = soldToDropdown.data("previous") || currentValue;
-
-    // Store the current value as the previous value for future reference
-    soldToDropdown.data("previous", currentValue);
-
+    let oldVl = $("#sold_to").val();
     // Check if there are products in the list
     if (productList.length > 0) {
-        // Restore the previous value of 'sold_to' without triggering the change event
-        soldToDropdown.val(previousValue).trigger('change.select2');  // Use Select2's change event explicitly
+        // Prevent switching and reset the selection
+        $("#sold_to").val(oldVl).trigger().change();
         toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
         return;
     }
-
-    // Proceed with the change if there are no products in the list
-    if (currentValue === "employee") {
-        // Reset specific fields
-        $("#product_discount").text("");
-        $("#discount").val("");
-        $("#prescribedBy").hide();
-
-        let url = route('admin.get-employees');
-        let location_id = $("#add_order_location").val();
-
-        $.ajax({
-            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
-            url: url,
-            type: "POST",
-            cache: false,
-            data: { location_id: location_id },
-            success: function (response) {
-                if (!response.status) {
-                    toastr.error(response.message);
-                } else {
-                    $("#patientDropDown").hide();
-                    $("#employeeDropDown").show();
-
-                    let emp_options = '<option value="">Select Employee</option>';
-                    Object.entries(response.users).forEach(function ([key, value]) {
-                        emp_options += `<option value="${key}">${value}</option>`;
-                    });
-                    $("#add_employee_id").html(emp_options);
-                }
-            },
-            error: function (xhr) {
-                errorMessage(xhr);
+   if($("#sold_to").val()=="employee")
+   {
+   
+    $("#product_discount").text("");
+  
+    $("#discount").val("");
+   
+    $("#prescribedBy").hide();
+    let url = route('admin.get-employees');
+    let location_id = $("#add_order_location").val();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: location_id},
+        success: function (response) {
+          
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+                $("#patientDropDown").hide();
+                $("#employeeDropDown").show();               
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Employee</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#add_employee_id").html(emp_options);
             }
-        });
-    } else {
-        $("#product_discount").text("");
-        $("#discount").val("");
+            
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+   }else{
+    
+    $("#product_discount").text("");
+    $("#discount").val("");
+   
+   
         $("#prescribedBy").show();
         $("#patientDropDown").show();
-        $("#employeeDropDown").hide();
-    }
+                $("#employeeDropDown").hide();  
+   }
 }
-
 
 function setFilters(filter_values, active_filters) {
     let centres = filter_values.centres;
