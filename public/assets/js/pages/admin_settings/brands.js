@@ -90,23 +90,39 @@ function statusesBrand(data, status_url, is_column_name_change = false) {
     let status = '';
 
     if (active) {
-        
+        if (permissions.active) {
             status += '<span class="switch switch-icon">\
             <label>\
                 <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
                 <span></span>\
             </label>\
             </span>';
-       
+        }
+        else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1"  type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
 
     } else {
-
-        status += '<span class="switch switch-icon">\
-        <label>\
-            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
-            <span></span>\
-        </label>\
-        </span>';
+        if (permissions.active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" type="checkbox" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
     }
 
     return status;
