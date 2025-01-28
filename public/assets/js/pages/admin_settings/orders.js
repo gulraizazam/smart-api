@@ -504,19 +504,21 @@ function resetAllFilters(datatable) {
 function SelectEmployee(){
     const productList = $("#product_list").children();
 
-    // Get the current and previous values
+    // Get dropdown reference
     const soldToDropdown = $("#sold_to");
-    const previousValue = soldToDropdown.data("previous") || "";
 
-    // Check if products exist
+    // Track and store previous selection safely
+    const previousValue = soldToDropdown.data("previous") || soldToDropdown.val();
+
     if (productList.length > 0) {
-        // Restore previous value in Select2 and show error
-        soldToDropdown.val(previousValue).trigger('change.select2');
+        // Restore previous value without causing infinite trigger
+        soldToDropdown.val(previousValue).off('change').trigger('change.select2');
+        
         toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
         return;
     }
 
-    // Store current selection as previous
+    // Save current selection for the next use
     soldToDropdown.data("previous", soldToDropdown.val());
    if($("#sold_to").val()=="employee")
    {
