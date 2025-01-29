@@ -73,7 +73,7 @@
                                     <th>Product Price</th>
                                     <th>Quantity</th>
                                     <th>Sub Total</th>
-                                    <th>Discount</th>
+                                    <th>Discount (%)</th>
                                 </tr>
                             </thead>
                             <tbody>
