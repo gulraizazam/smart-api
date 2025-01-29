@@ -271,7 +271,7 @@ class OrdersController extends Controller
     public function store(Request $request)
     {
      
-       
+      
         try {
             if (!Gate::allows('order_create')) {
                 return abort(401);

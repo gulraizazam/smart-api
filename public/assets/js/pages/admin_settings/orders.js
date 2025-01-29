@@ -686,6 +686,7 @@ function productSearch(from_id, id = null, type = null) {
             success: function (response) {
                 let products = response.data.products;
                 let doctors = response.data.doctors;
+                console.log('doc',doctors);
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
