@@ -6,10 +6,10 @@ var table_url = route('admin.orders.datatable');
 
 var table_columns = [
     {
-        field: 'id',
+        field: 'patient_id',
         sortable: false,
         width: '80',
-        title: 'Order ID'
+        title: 'Patient ID'
     }, {
         field: 'patients.name',
         title: 'Patient',
@@ -21,7 +21,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            
+            console.log(data);
             return displayProducts(data.order_detail);
         }
     }, {
