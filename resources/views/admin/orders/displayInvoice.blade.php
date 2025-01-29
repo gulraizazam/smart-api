@@ -73,6 +73,7 @@
                                     <th>Product Price</th>
                                     <th>Quantity</th>
                                     <th>Sub Total</th>
+                                    <th>Discount</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -83,6 +84,7 @@
                                         <td>{{ $product->product->sale_price }}</td>
                                         <td>{{ $product->quantity }}</td>
                                         <td>{{ $product->product->sale_price * $product->quantity }}</td>
+                                        <td>{{ $invoice_info->discount }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>
