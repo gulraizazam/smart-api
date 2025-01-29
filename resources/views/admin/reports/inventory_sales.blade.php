@@ -9,7 +9,8 @@
             <th>Location</th>
             <th>Product Name</th>
             <th>Quantity</th>
-            <th>Purchased By</th>
+            <th>Patient ID</th>
+            <th>Patient Name</th>
             <th>Order Date</th>
             <th>Payment Mode</th>
             <th>Order Total</th>
@@ -22,6 +23,7 @@
                 <td>{{$report['location_name']}}</td>
                 <td>{{$report['product_name']}}</td>
                 <td>{{$report['quantity']}}</td>
+                <td>{{$report['patient_id']}}</td>
                 <td>{{$report['purchased_by']}}</td>
                 <td>{{$report['order_date']}}</td>
                 <td>
