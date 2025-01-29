@@ -835,7 +835,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('transfer_product_manage')
+                    @can('product_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
