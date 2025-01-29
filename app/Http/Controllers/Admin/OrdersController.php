@@ -498,20 +498,24 @@ class OrdersController extends Controller
     public function checkMembership(Request $request)
     {
         $patient_id = $request->input('patient_id');
+        if($patient_id){
+            // Query for active membership (adjust as per your table and structure)
+            $membership = DB::table('memberships')->where('patient_id', $patient_id)->first();
 
-        // Query for active membership (adjust as per your table and structure)
-        $membership = DB::table('memberships')->where('patient_id', $patient_id)->first();
-
-        // Check if membership exists and is active
-        if ($membership && isset($membership->active) && $membership->active == 1) {
+            // Check if membership exists and is active
+            if ($membership && isset($membership->active) && $membership->active == 1) {
+                return response()->json([
+                    'has_active_membership' => true
+                ]);
+            }
+        }else{
             return response()->json([
-                'has_active_membership' => true
+                'has_active_membership' => false
             ]);
         }
+        
 
-        return response()->json([
-            'has_active_membership' => false
-        ]);
+       
     }
     public function invoicePdf($id, $download = null)
     {
@@ -545,9 +549,31 @@ class OrdersController extends Controller
     }
     public function getEmployees(Request $request)
     {
-        $checkUsers = UserHasLocations::where('location_id',$request->location_id)->pluck('user_id')->toArray();
-        $users = User::whereIn('user_type_id',[2,5])->where('active',1)->whereIn('id',$checkUsers)->pluck('name','id')->toArray();
-        return response()->json(['users'=>$users]);
+        $checkUsers = UserHasLocations::where('location_id', $request->location_id)
+            ->pluck('user_id')
+            ->toArray();
+    
+        $doctors = DoctorHasLocations::where('location_id', $request->location_id)
+            ->pluck('user_id')
+            ->toArray();
+    
+        // Fetch users based on user types and active status
+        $users = User::whereIn('user_type_id', [2, 5])
+            ->where('active', 1)
+            ->whereIn('id', $checkUsers)
+            ->pluck('name', 'id')
+            ->toArray();
+    
+        // Fetch doctor names and IDs
+        $doctorUsers = User::whereIn('id', $doctors)
+            ->where('active',1)
+            ->pluck('name', 'id')
+            ->toArray();
+    
+        // Merge both arrays while preserving user IDs as keys
+        $finalUsers = $users + $doctorUsers;
+    
+        return response()->json(['users' => $finalUsers]);
     }
     public function getDoctors(Request $request)
     {
