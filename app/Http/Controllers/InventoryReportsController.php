@@ -212,6 +212,7 @@ class InventoryReportsController extends Controller
                     'order_date' => $order->created_at,
                     'total_revenue' => $totalRevenue,
                     'purchased_by'=>$order->patients->name??'N/A',
+                    'patient_id'=>$order->patient_id,
                     'product_name'=>$productNames??'N/A',
                     'quantity'=>$quantity,
                     'payment_mode'=>$order->payment_mode
