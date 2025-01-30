@@ -27,13 +27,18 @@ class OrderDetail extends BaseModal
         $data = $request->all();
 
         $combinedData = array_combine($data['product_id'], $data['product_price']);
+        $discount = $data['discount'] ?? 0;
         $products = array_combine($data['product_id'], $data['quantity']);
         foreach ($products as $product_id => $quantity) {
             $data['product_id'] = $product_id;
             $data['quantity'] = $quantity;
             $data['account_id'] = $account_id;
             $data['order_id'] = $order_id;
-            $data['sale_price'] = $combinedData[$product_id];
+            $originalPrice = $combinedData[$product_id];
+            $discountedPrice = $discount > 0 ? $originalPrice - ($originalPrice * ($discount / 100)) : $originalPrice;
+            
+            $data['sale_price'] = $discountedPrice;
+           // $data['sale_price'] = $combinedData[$product_id];
             $data['stock_type'] = 'out';
 
         //    $inventory = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
