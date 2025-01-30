@@ -507,6 +507,10 @@ class OrdersController extends Controller
                 return response()->json([
                     'has_active_membership' => true
                 ]);
+            }else{
+                return response()->json([
+                    'has_active_membership' => false
+                ]);
             }
         }else{
             return response()->json([

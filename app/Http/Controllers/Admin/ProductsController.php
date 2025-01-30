@@ -252,7 +252,7 @@ class ProductsController extends Controller
         return $validator = Validator::make($request->all(), [
             'name' => 'required',
             'brand_id' => 'required',
-            
+            'sku' => 'required|unique:products,sku',
             
         ]);
     }
