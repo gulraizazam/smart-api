@@ -28,8 +28,8 @@
             <label>Membership Type:</label>
             <select class="form-control filter-field select2" id="search_membership_type">
                 <option value="">Select</option>
-                <option value="3">Student Membership</option>
-                <option value="4">Gold Membership</option>
+                <option value="4">Student Membership</option>
+                <option value="3">Gold Membership</option>
             </select>
         </div>
         <div class="col-md-4 mt-8">
