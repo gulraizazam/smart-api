@@ -357,6 +357,29 @@ class MembershipsController extends Controller
                 }
             }
         }
+        if (hasFilter($filters, 'assigned')) {
+            if ($filters['assigned'] == 1) {
+                // patient_id is not null
+                $where[] = ['memberships.patient_id', '<>', null];
+            } elseif ($filters['assigned'] == 0) {
+                // patient_id is null
+                $where[] = ['memberships.patient_id', '=', null];
+            }
+            Filters::put(Auth::user()->id, 'memberships', 'assigned', $filters['assigned']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'memberships', 'assigned');
+            } else {
+                if (Filters::get(Auth::user()->id, 'memberships', 'assigned') !== null) {
+                    $assignedFilter = Filters::get(Auth::user()->id, 'memberships', 'assigned');
+                    if ($assignedFilter == 1) {
+                        $where[] = ['memberships.patient_id', '<>', null];
+                    } elseif ($assignedFilter == 0) {
+                        $where[] = ['memberships.patient_id', '=', null];
+                    }
+                }
+            }
+        }
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));

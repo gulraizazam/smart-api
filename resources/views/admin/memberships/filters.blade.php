@@ -32,6 +32,14 @@
                 <option value="3">Gold Membership</option>
             </select>
         </div>
+        <div class="col-lg-3 mb-lg-0">
+            <label>Assigned Status</label>
+            <select class="form-control filter-field select2" id="search_assigned_status">
+                <option value="">Select</option>
+                <option value="1">Assigned</option>
+                <option value="0">Not Assigned</option>
+            </select>
+        </div>
         <div class="col-md-4 mt-8">
 
 @include('admin.partials.filter-buttons')
