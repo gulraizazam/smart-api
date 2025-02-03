@@ -214,7 +214,7 @@ function applyFilters(datatable) {
             code: $("#search_code_name").val(),
             membership_type_id: $("#membershiptype_id").val(),
            
-            created_by: $("#search_created_by").val(),
+            membership_type_id: $("#search_membership_type").val(),
             created_at: $("#date_range").val(),
          
             filter: 'filter',
