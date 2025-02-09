@@ -410,6 +410,23 @@ class MembershipsController extends Controller
 
         return $where;
     }
+    public function exportPdf(Request $request)
+    {
+        ini_set('memory_limit', '-1');
+        set_time_limit(0);
+        $where = [];
+
+        $where = self::membershiptype_filters($request, $account_id, $apply_filter);
+        $memberships =  Membership::with('membershiptype')->where($where)->where('membership_types.active', 1)
+        ->limit($iDisplayLength)
+        ->offset($iDisplayStart)
+        ->orderby($orderBy, $order)
+        ->get();
+        $customPaper = [0, 0, 720, 1440];
+        $pdf = PDF::loadView('admin.memberships.membership-pdf', compact('memberships'))->setPaper($customPaper, 'portrait');
+
+        return $pdf->download('memberships.pdf');
+    }
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
