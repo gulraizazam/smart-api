@@ -360,8 +360,9 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         Route::put('leads_save_city', [LeadsController::class, 'saveCity'])->name('leads.save_city');
         Route::get('leads/export/pdf', [LeadsController::class, 'exportPdf'])->name('leads.export.pdf');
+        Route::get('memberships/export/pdf', [MembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
         Route::get('leads/export/excel', [LeadsController::class, 'exportDocs'])->name('leads.export.excel');
-        Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('memberships.export.excel');
+        Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('membership.export.excel');
         Route::get('patients/{id}/preview', [PatientsController::class, 'preview'])->name('patients.preview');
 
         Route::get('plans/log/{id}/{patient_id}/{type}', [PatientPackageController::class, 'planlog'])->name('plans.log');
