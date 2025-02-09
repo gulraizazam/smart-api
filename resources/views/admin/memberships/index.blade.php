@@ -53,7 +53,7 @@
                                     Add New
                                 </a>
                             @endif
-                            <div class="btn-group">
+                            <div class="btn-group" style="margin-left: 13px;">
                                     <a class="btn  btn-primary" href="javascript:void(0);" data-toggle="dropdown">
                                         <i class="fa fa-download"></i>
                                         <span class="hidden-xs"> Export </span>
