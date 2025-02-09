@@ -418,77 +418,21 @@ class MembershipsController extends Controller
         ini_set('memory_limit', '-1');
         set_time_limit(0);
         $where = [];
-        $filename = 'memberships';
-        $filters = getFilters($request->all());
-        $apply_filter = checkFilters($filters, $filename);
-
-        if (hasFilter($filters, 'code')) {
-            $where[] = [
-                'memberships.code',
-                'like',
-                '%' . $filters['code'] . '%',
-            ];
-            Filters::put(Auth::User()->id, 'memberships', 'code', $filters['code']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'memberships', 'code');
-            } else {
-                if (Filters::get(Auth::User()->id, 'memberships', 'code')) {
-                    $where[] = [
-                        'memberships.code',
-                        'like',
-                        '%' . Filters::get(Auth::User()->id, 'memberships', 'code') . '%',
-                    ];
-                }
-            }
-        }
-
-
-        if (hasFilter($filters, 'membership_type_id')) {
-            $where[] = [
-                'memberships.membership_type_id',
-                '=',
-                $filters['membership_type_id'],
-            ];
-            Filters::put(Auth::user()->id, 'memberships', 'membership_type_id', $filters['membership_type_id']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::user()->id, 'memberships', 'membership_type_id');
-            } else {
-                if (Filters::get(Auth::user()->id, 'membershipss', 'membership_type_id')) {
-                    if (Filters::get(Auth::user()->id, 'memberships', 'membership_type_id') != null) {
-                        $where[] = [
-                            'memberships.membership_type_id',
-                            '=',
-                            Filters::get(Auth::user()->id, 'memberships', 'membership_type_id'),
-                        ];
-                    }
-                }
-            }
-        }
-       
-        if (hasFilter($filters, 'assigned')) {
-            if ($filters['assigned'] == 1) {
+        if ($request->assigned && $request->assigned != '') {
+            if ($request->assigned == 1) {
                 // patient_id is not null
                 $where[] = ['memberships.patient_id', '<>', null];
-            } elseif ($filters['assigned'] == 0) {
+            } elseif ($request->assigned == 0) {
                 // patient_id is null
                 $where[] = ['memberships.patient_id', '=', null];
             }
-            Filters::put(Auth::user()->id, 'memberships', 'assigned', $filters['assigned']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::user()->id, 'memberships', 'assigned');
-            } else {
-                if (Filters::get(Auth::user()->id, 'memberships', 'assigned') !== null) {
-                    $assignedFilter = Filters::get(Auth::user()->id, 'memberships', 'assigned');
-                    if ($assignedFilter == 1) {
-                        $where[] = ['memberships.patient_id', '<>', null];
-                    } elseif ($assignedFilter == 0) {
-                        $where[] = ['memberships.patient_id', '=', null];
-                    }
-                }
-            }
+            $where[] = ['memberships.patient_id', '<>', null];
+        } 
+        if ($request->membership_type_id != null || $request->membership_type_id != '') {
+            $where[] = [['membership_type_id' => $request->membership_type_id]];
+        }
+        if ($request->code != null || $request->code != '') {
+            $where[] = [['code' => $request->code]];
         }
         
        
