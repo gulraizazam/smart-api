@@ -207,14 +207,14 @@ function importMembership() {
 
 $("#export-memberships").on("click",function(){
     let code= $("#search_code_name").val();
-    let membership_type_id = $("#membershiptype_id").val();
+    let membership_type_id = $("#search_membership_type").val();
     let assigned = $("#search_assigned_status").val();
     let url = $(this).data('href');
     window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned+'&ext=xlsx';
 });
 $("#export-memberships-leads").on("click",function(){
     let code= $("#search_code_name").val();
-    let membership_type_id = $("#membershiptype_id").val();
+    let membership_type_id = $("#search_membership_type").val();
     let assigned = $("#search_assigned_status").val();
     let url = $(this).data('href');
     window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned;
