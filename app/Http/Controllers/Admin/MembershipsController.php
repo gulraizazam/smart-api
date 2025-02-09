@@ -414,36 +414,36 @@ class MembershipsController extends Controller
         return $where;
     }
     public function exportPdf(Request $request)
-    {
-        ini_set('memory_limit', '-1');
-        set_time_limit(0);
-        $where = [];
-       
-        if ($request->membership_type_id != null || $request->membership_type_id != '') {
-            $where[] = [['membership_type_id' => $request->membership_type_id]];
-        }
-        if ($request->code != null || $request->code != '') {
-            $where[] = [['code' => $request->code]];
-        }
-        
-       
-        $membershipsData =  Membership::with('membershiptype')->where($where);
-        if (!is_null($request->assigned) && $request->assigned !== '') {
-            if ($request->assigned == 1) {
-                // patient_id is not null
-                $membershipsData->whereNotNull('memberships.patient_id');
-            } elseif ($request->assigned == 0) {
-                // patient_id is null
-                $membershipsData->whereNull('memberships.patient_id');
-            }
-        }
-        
-        $membershipsData->get();
-        $customPaper = [0, 0, 720, 1440];
-        $pdf = PDF::loadView('admin.memberships.membership-pdf', compact('membershipsData'))->setPaper($customPaper, 'portrait');
+{
+    ini_set('memory_limit', '-1');
+    set_time_limit(0);
 
-        return $pdf->download('memberships.pdf');
+    $query = Membership::with('membershiptype');
+
+    if (!is_null($request->membership_type_id) && $request->membership_type_id !== '') {
+        $query->where('membership_type_id', $request->membership_type_id);
     }
+
+    if (!is_null($request->code) && $request->code !== '') {
+        $query->where('code', $request->code);
+    }
+
+    if (!is_null($request->assigned) && $request->assigned !== '') {
+        if ($request->assigned == 1) {
+            $query->whereNotNull('memberships.patient_id');
+        } elseif ($request->assigned == 0) {
+            $query->whereNull('memberships.patient_id');
+        }
+    }
+
+    $membershipsData = $query->get();
+
+    $customPaper = [0, 0, 720, 1440];
+    $pdf = PDF::loadView('admin.memberships.membership-pdf', compact('membershipsData'))
+        ->setPaper($customPaper, 'portrait');
+
+    return $pdf->download('memberships.pdf');
+}
     public function exportDocs(Request $request)
     {
         
