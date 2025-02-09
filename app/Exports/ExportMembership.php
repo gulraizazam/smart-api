@@ -58,47 +58,33 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
     {
         return [
             'ID',
-            'Full Name',
-            'Phone',
-            'Gender',
-            'City',
-            'Centre',
-            'Region',
-            'Lead Status',
-            'Service',
-            'Treatment',
-            'Created At',
-            'Created By',
+            'Code',
+            'Membership Type',
+            'Patient',
+            'Start Date',
+            'End Date',
+           
         ];
     }
 
-    public function map($lead): array
+    public function map($memberships): array
     {
        
-        if (! Gate::allows('contact')) {
-            $phone = '***********';
-        } else {
-            $phone = $lead->phone ?? 'N/A';
-        }
+       
         $lead_data = [];
-        foreach ($lead->lead_service as $service) {
-            $lead_data[] = [
-                $lead->id,
-                $lead->name ?? 'N/A',
-                $phone,
-                $lead->gender == 1 ? 'Male' : 'Female',
-                $lead->city->name ?? 'N/A',
-                $lead->towns->name ?? 'N/A',
-                $lead->region->name ?? 'N/A',
-                $lead->lead_status->name ?? 'N/A',
-                $service->service->name ?? 'N/A',
-                $service->childservice->name ?? 'Empty',
-                Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A') ?? 'N/A',
-                $lead->user->name,
+        foreach ($memberships as $membership) {
+            $membership_data[] = [
+                $membership->id,
+                $membership->code ?? 'N/A',
+                $membership->membership_type_id == '3' ? 'Gold' : 'Student',
+                $membership->patient->name ?? 'N/A',
+                $membership->start_date ?? 'N/A',
+                $membership->end_date ?? 'N/A',
+                
             ];
         }
 
-        return $lead_data;
+        return $membership_data;
     }
 
     /**
