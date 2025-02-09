@@ -67,25 +67,18 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
         ];
     }
 
-    public function map($memberships): array
-    {
-       
-       
-        $lead_data = [];
-        foreach ($memberships as $membership) {
-            $membership_data[] = [
-                $membership->id,
-                $membership->code ?? 'N/A',
-                $membership->membership_type_id == '3' ? 'Gold' : 'Student',
-                $membership->patient->name ?? 'N/A',
-                $membership->start_date ?? 'N/A',
-                $membership->end_date ?? 'N/A',
-                
-            ];
-        }
+    public function map($membership): array
+{
+    return [
+        $membership->id,
+        $membership->code ?? 'N/A',
+        $membership->membership_type_id == '3' ? 'Gold' : 'Student',
+        optional($membership->patient)->name ?? 'N/A',
+        $membership->start_date ?? 'N/A',
+        $membership->end_date ?? 'N/A',
+    ];
+}
 
-        return $membership_data;
-    }
 
     /**
      * Write code on Method
