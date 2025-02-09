@@ -492,11 +492,11 @@ class MembershipsController extends Controller
         }
         
        
-        $memberships =  Membership::with('membershiptype')->where($where)
+        $membershipsData =  Membership::with('membershiptype')->where($where)
         
         ->get();
         $customPaper = [0, 0, 720, 1440];
-        $pdf = PDF::loadView('admin.memberships.membership-pdf', compact('memberships'))->setPaper($customPaper, 'portrait');
+        $pdf = PDF::loadView('admin.memberships.membership-pdf', compact('membershipsData'))->setPaper($customPaper, 'portrait');
 
         return $pdf->download('memberships.pdf');
     }
