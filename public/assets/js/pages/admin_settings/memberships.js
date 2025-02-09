@@ -22,7 +22,7 @@ var table_columns = [{
     sortable: false,
     width: 110,
     template: function (data) {
-        console.log(data);
+        
         if(data.start_date  !=undefined){
             return data.start_date;
         }else{

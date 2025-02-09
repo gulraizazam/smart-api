@@ -5,6 +5,7 @@ namespace App\Exports;
 use DateTime;
 use App\Helpers\ACL;
 use App\Models\Leads;
+use App\Models\Membership;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Events\AfterSheet;
@@ -26,65 +27,31 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
     {
       
         $where = [];
-        if ($this->request->created_at && $this->request->created_at != '') {
-            $date_range = explode(' - ', $this->request->created_at);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
+        if ($this->request->assigned && $this->request->assigned != '') {
+            if ($this->request->assigned == 1) {
+                // patient_id is not null
+                $where[] = ['memberships.patient_id', '<>', null];
+            } elseif ($this->request->assigned == 0) {
+                // patient_id is null
+                $where[] = ['memberships.patient_id', '=', null];
+            }
+            $where[] = ['memberships.patient_id', '<>', null];
+        } 
+        if ($this->request->membership_type_id != null || $this->request->membership_type_id != '') {
+            $where[] = [['membership_type_id' => $this->request->membership_type_id]];
         }
-        if ($this->request->id != null || $this->request->id != '') {
-            $where[] = [['id' => $this->request->id]];
+        if ($this->request->code != null || $this->request->code != '') {
+            $where[] = [['code' => $this->request->code]];
         }
-        if ($this->request->lead_status_id != null || $this->request->lead_status_id != '') {
-            $where[] = [['lead_status_id' => $this->request->lead_status_id]];
-        }
-        if ($this->request->city_id != null || $this->request->city_id != '') {
-            $where[] = [['city_id' => $this->request->city_id]];
-        }
-        if ($this->request->location_id != null || $this->request->location_id != '') {
-            $where[] = [['location_id' => $this->request->location_id]];
-        }
-        if ($this->request->region_id != null || $this->request->region_id != '') {
-            $where[] = [['region_id' => $this->request->region_id]];
-        }
-        if ($this->request->created_by != null || $this->request->created_by != '') {
-            $where[] = [['created_by' => $this->request->created_by]];
-        }
-        if ($this->request->phone != null || $this->request->phone != '') {
-            $where[] = [['phone' => $this->request->phone]];
-        }
-        if ($this->request->gender_id != null || $this->request->gender_id != '') {
-            $where[] = [['gender' => $this->request->gender_id]];
-        }
-        if ($this->request->name != null || $this->request->name != '') {
-            $where[] = ['name', 'like', '%'.$this->request->name.'%'];
-        }
-        if ($this->request->created_at && $this->request->created_at != '') {
-            $where[] = ['created_at', '>=', $start_date_time];
-            $where[] = ['created_at', '<=', $end_date_time];
-        }
-        $result_query = Leads::whereIn('city_id', ACL::getUserCities());
-        if (count($where)) {
-            $result_query->where($where);
-        }
-        if ($this->request->service_id != null || $this->request->service_id != '') {
-            $service_id = $this->request->service_id;
-            $result_query->with(['lead_service' => function ($q) use ($service_id) {
-                $q->where(['service_id' => $service_id, 'status' => 1]);
-            }]);
-        } else {
-            $result_query->with(['lead_service' => function ($q) {
-                $q->where(['status' => 1]);
-            }]);
-        }
-        $result = $result_query->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
-            ->orderBy('id', 'DESC')->latest()->get()->unique('phone');
-
-        return $result;
+       
+        
+        
+        
+        $result_query = Membership::where($where)->get();
+        
+       
+       
+        return $result_query;
     }
 
     public function headings(): array

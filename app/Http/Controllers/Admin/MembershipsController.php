@@ -466,28 +466,7 @@ class MembershipsController extends Controller
                 }
             }
         }
-        if (hasFilter($filters, 'created_by')) {
-            $where[] = [
-                'memberships.created_by',
-                '=',
-                $filters['created_by'],
-            ];
-            Filters::put(Auth::user()->id, 'memberships', 'created_by', $filters['created_by']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::user()->id, 'memberships', 'created_by');
-            } else {
-                if (Filters::get(Auth::user()->id, 'membershipss', 'created_by')) {
-                    if (Filters::get(Auth::user()->id, 'memberships', 'created_by') != null) {
-                        $where[] = [
-                            'memberships.created_by',
-                            '=',
-                            Filters::get(Auth::user()->id, 'memberships', 'created_by'),
-                        ];
-                    }
-                }
-            }
-        }
+       
         if (hasFilter($filters, 'assigned')) {
             if ($filters['assigned'] == 1) {
                 // patient_id is not null
@@ -511,34 +490,9 @@ class MembershipsController extends Controller
                 }
             }
         }
-        if (hasFilter($filters, 'created_at')) {
-            $date_range = explode(' - ', $filters['created_at']);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
-        if (hasFilter($filters, 'created_at')) {
-            $where[] = ['memberships.created_at', '>=', $start_date_time];
-            $where[] = ['memberships.created_at', '<=', $end_date_time];
-            Filters::put(Auth::User()->id, 'memberships', 'created_at', $filters['created_at']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, 'memberships', 'created_at');
-            } else {
-                if (Filters::get(Auth::User()->id, 'memberships', 'created_at')) {
-                    $where[] = [
-                        'memberships.created_at',
-                        '>=',
-                        Filters::get(Auth::User()->id, 'memberships', 'created_at'),
-                    ];
-                }
-            }
-        }
-        $memberships =  Membership::with('membershiptype')->where($where)->where('membership_types.active', 1)
+        
+       
+        $memberships =  Membership::with('membershiptype')->where($where)
         
         ->get();
         $customPaper = [0, 0, 720, 1440];
