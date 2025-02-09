@@ -10,7 +10,7 @@
            
         </tr>
 
-        @foreach($memebrships as $data)
+        @foreach($membershipsData as $data)
            
            
                 <tr style="font-size: 14px; background-color: #f6f6f6;">
