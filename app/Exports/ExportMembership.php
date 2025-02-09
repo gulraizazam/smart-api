@@ -27,7 +27,7 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
     {
       
         $where = [];
-        if ($this->request->assigned && $this->request->assigned != '') {
+        if (!is_null($this->request->assigned) && $this->request->assigned !== '') {
             if ($this->request->assigned == 1) {
                 // patient_id is not null
                 $where[] = ['memberships.patient_id', '<>', null];
@@ -35,8 +35,7 @@ class ExportMembership implements FromCollection, WithHeadings, WithMapping, Wit
                 // patient_id is null
                 $where[] = ['memberships.patient_id', '=', null];
             }
-            $where[] = ['memberships.patient_id', '<>', null];
-        } 
+        }
         if ($this->request->membership_type_id != null || $this->request->membership_type_id != '') {
             $where[] = [['membership_type_id' => $this->request->membership_type_id]];
         }
