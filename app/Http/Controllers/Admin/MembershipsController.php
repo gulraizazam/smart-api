@@ -418,16 +418,7 @@ class MembershipsController extends Controller
         ini_set('memory_limit', '-1');
         set_time_limit(0);
         $where = [];
-        if ($request->assigned && $request->assigned != '') {
-            if ($request->assigned == 1) {
-                // patient_id is not null
-                $where[] = ['memberships.patient_id', '!=', null];
-            } elseif ($request->assigned == 0) {
-                // patient_id is null
-                $where[] = ['memberships.patient_id', '=', null];
-            }
-            $where[] = ['memberships.patient_id', '<>', null];
-        } 
+       
         if ($request->membership_type_id != null || $request->membership_type_id != '') {
             $where[] = [['membership_type_id' => $request->membership_type_id]];
         }
@@ -436,9 +427,18 @@ class MembershipsController extends Controller
         }
         
        
-        $membershipsData =  Membership::with('membershiptype')->where($where)
+        $membershipsData =  Membership::with('membershiptype')->where($where);
+        if (!is_null($request->assigned) && $request->assigned !== '') {
+            if ($request->assigned == 1) {
+                // patient_id is not null
+                $membershipsData->whereNotNull('memberships.patient_id');
+            } elseif ($request->assigned == 0) {
+                // patient_id is null
+                $membershipsData->whereNull('memberships.patient_id');
+            }
+        }
         
-        ->get();
+        $membershipsData->get();
         $customPaper = [0, 0, 720, 1440];
         $pdf = PDF::loadView('admin.memberships.membership-pdf', compact('membershipsData'))->setPaper($customPaper, 'portrait');
 
