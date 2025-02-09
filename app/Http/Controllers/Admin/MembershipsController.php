@@ -421,7 +421,7 @@ class MembershipsController extends Controller
         if ($request->assigned && $request->assigned != '') {
             if ($request->assigned == 1) {
                 // patient_id is not null
-                $where[] = ['memberships.patient_id', '<>', null];
+                $where[] = ['memberships.patient_id', '!=', null];
             } elseif ($request->assigned == 0) {
                 // patient_id is null
                 $where[] = ['memberships.patient_id', '=', null];
