@@ -67,7 +67,7 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a href="#" title="Max export limit is 1000 records" id="export-leads" data-href="{{route('admin.memberships.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i>
+                                            <a href="#" title="Max export limit is 1000 records" id="export-leads" data-href="{{route('admin.membership.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i>
                                                 Excel
                                                 <!-- <span class="export-excel-limit">(1 to {{config('constants.export-lead-excel-limit')}})</span> -->
                                             </a>
