@@ -72,9 +72,7 @@
                                                 <!-- <span class="export-excel-limit">(1 to {{config('constants.export-lead-excel-limit')}})</span> -->
                                             </a>
                                         </li>
-                                        <li>
-                                            <a href="#" data-href="{{route('admin.leads.export.excel')}}" id="csv-leads" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
-                                        </li>
+                                        
                                     </ul>
                                 </div>
                         <!--end::Button-->
