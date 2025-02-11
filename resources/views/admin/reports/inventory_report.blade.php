@@ -43,7 +43,9 @@
                                             <!-- <option value="">Select Report</option> -->
                                             <option value="stock_report">Stock Report</option>
                                             <option value="sales_report">Sales Report</option>
+                                            <option value="addition_report">Products Addition Report</option>
                                             <option value="doctor_sales_report">Doctor Wise Sales Report</option>
+                                            
                                         </select>
                                         @error('report_type')
                                         <div class="alert alert-danger">{{ $message }}</div>

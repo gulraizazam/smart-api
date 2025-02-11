@@ -813,7 +813,12 @@ class ProductsController extends Controller
             $inventory->is_saleable =  1;
             $inventory->quantity =  $request->quantity;
             $inventory->save();
-            
+            $stock = new Stock();
+            $stock->account_id = 1;
+            $stock->product_id = $request->product_id;
+            $stock->quantity = $request->quantity;
+            $stock->location_id = $request->location_id;
+            $stock->save();
             return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
             
 
