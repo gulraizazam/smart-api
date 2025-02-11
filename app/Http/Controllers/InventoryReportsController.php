@@ -7,6 +7,7 @@ use App\Models\Locations;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
+use App\Models\Stock;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -121,58 +122,58 @@ class InventoryReportsController extends Controller
             return view('admin.reports.inventoryReport', compact('report'));
         }
         if ($request->report_type == "doctor_sales_report") {
-    $locationId = $validated['centre_id'];
-    $startDate = $validated['start_date'] ?? null;
-    $endDate = $validated['end_date'] ?? null;
+            $locationId = $validated['centre_id'];
+            $startDate = $validated['start_date'] ?? null;
+            $endDate = $validated['end_date'] ?? null;
 
-    // If a specific doctorId is provided, use it, else fetch all doctors for the location
-    if ($doctorId) {
-        $doctorIds = [$doctorId];
-    } else {
-        $doctorIds = DB::table('doctor_has_locations')
-            ->where('location_id', $locationId)
-            ->pluck('user_id');
-    }
+            // If a specific doctorId is provided, use it, else fetch all doctors for the location
+            if ($doctorId) {
+                $doctorIds = [$doctorId];
+            } else {
+                $doctorIds = DB::table('doctor_has_locations')
+                    ->where('location_id', $locationId)
+                    ->pluck('user_id');
+            }
 
-    // Fetch orders based on doctor IDs and the date range (if provided)
-    $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
-        ->whereIn('prescribed_by', $doctorIds)
-        ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('orders.created_at', [$startDate, $endDate]);
-        });
+            // Fetch orders based on doctor IDs and the date range (if provided)
+            $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
+                ->whereIn('prescribed_by', $doctorIds)
+                ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                    $query->whereBetween('orders.created_at', [$startDate, $endDate]);
+                });
 
-    $orders = $ordersQuery->get();
+            $orders = $ordersQuery->get();
 
-    // Process the orders to build the report
-    $report = $orders->groupBy('prescribed_by')->map(function ($doctorOrders) {
-        $doctorName = $doctorOrders->first()->doctor->name ?? 'Unknown Doctor';
+            // Process the orders to build the report
+            $report = $orders->groupBy('prescribed_by')->map(function ($doctorOrders) {
+                $doctorName = $doctorOrders->first()->doctor->name ?? 'Unknown Doctor';
 
-        // Process each order detail to calculate sales data
-        $productSales = $doctorOrders->flatMap(function ($order) {
-            return $order->orderDetail;  // Access orderDetails (which is a collection)
-        })->groupBy('product_id')->map(function ($orderDetails, $productId) {
-            $productName = $orderDetails->first()->product->name ?? 'Unknown Product';
-            $productPrice = $orderDetails->first()->product->sale_price ?? 0;  // Get the product price
-            $totalQuantity = $orderDetails->sum('quantity');  // Sum the quantities of the product sold
-            $subtotal = $totalQuantity * $productPrice;  // Calculate subtotal for this product
+                // Process each order detail to calculate sales data
+                $productSales = $doctorOrders->flatMap(function ($order) {
+                    return $order->orderDetail;  // Access orderDetails (which is a collection)
+                })->groupBy('product_id')->map(function ($orderDetails, $productId) {
+                    $productName = $orderDetails->first()->product->name ?? 'Unknown Product';
+                    $productPrice = $orderDetails->first()->product->sale_price ?? 0;  // Get the product price
+                    $totalQuantity = $orderDetails->sum('quantity');  // Sum the quantities of the product sold
+                    $subtotal = $totalQuantity * $productPrice;  // Calculate subtotal for this product
 
-            return [
-                'product_name' => $productName,
-                'total_quantity' => $totalQuantity,
-                'subtotal' => $subtotal,  // Add subtotal for the product
-            ];
-        });
-        $grandTotal = $productSales->sum('subtotal');
-      
-        return [
-            'doctor_name' => $doctorName,
-            'product_sales' => $productSales,
-            'grand_total' => $grandTotal,  // Add grand total for the doctor
-        ];
-    });
-    $overallTotal = $report->sum('grand_total');
-    return view('admin.reports.doctor_wise_sales', get_defined_vars());
-}
+                    return [
+                        'product_name' => $productName,
+                        'total_quantity' => $totalQuantity,
+                        'subtotal' => $subtotal,  // Add subtotal for the product
+                    ];
+                });
+                $grandTotal = $productSales->sum('subtotal');
+            
+                return [
+                    'doctor_name' => $doctorName,
+                    'product_sales' => $productSales,
+                    'grand_total' => $grandTotal,  // Add grand total for the doctor
+                ];
+            });
+            $overallTotal = $report->sum('grand_total');
+            return view('admin.reports.doctor_wise_sales', get_defined_vars());
+        }
         if($request->report_type=="sales_report"){
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
@@ -225,7 +226,37 @@ class InventoryReportsController extends Controller
             $overallTotal = $reportData->sum('total_revenue');
 
             return view('admin.reports.inventory_sales',get_defined_vars());
+        }
+        if($request->report_type=="addition_report"){
+            
+            $dates = explode(' - ', $request->input('date_range'));
+            $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+            $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+            // Get filters
+            $locationId =$request->input('centre_id') ? [$request->input('centre_id')] : ACL::getUserCentres();
+            $query = Stock::select(
+                'products.name as product_name',
+                'locations.name as location_name',
+                'stocks.quantity',
+                'stocks.created_at'
+            )
+            ->join('products', 'stocks.product_id', '=', 'products.id')
+            ->join('locations', 'stocks.location_id', '=', 'locations.id')
+            ->where('stocks.stock_type', 'in');
+        
+            // Apply filters
+            if ($locationId) {
+                $query->where('stocks.location_id', $locationId);
             }
+        
+            if ($startDate && $endDate) {
+                $query->whereBetween('stocks.created_at', [$startDate, $endDate]);
+            }
+        
+            $stocks = $query->get();
+            
+            return view('admin.reports.addition_report',get_defined_vars());
+        }
             
     }
     public function getSalesReport(Request $request)
