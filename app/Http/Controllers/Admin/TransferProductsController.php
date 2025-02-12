@@ -47,9 +47,9 @@ class TransferProductsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('transfer_product_manage')) {
-            return abort(401);
-        }
+        // if (!Gate::allows('transfer_product_manage')) {
+        //     return abort(401);
+        // }
 
         return view('admin.transfer_product.index');
     }
