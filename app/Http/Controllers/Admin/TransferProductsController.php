@@ -123,9 +123,9 @@ class TransferProductsController extends Controller
     public function create()
     {
         try {
-            if (!Gate::allows('transfer_product_create')) {
-                return abort(401);
-            }
+            // if (!Gate::allows('transfer_product_create')) {
+            //     return abort(401);
+            // }
 
             $centres = Locations::whereIn('id', ACL::getUserCentres())->pluck('name', 'id');
             $warehouse = Warehouse::whereActive(1)->pluck('name', 'id');
@@ -147,9 +147,9 @@ class TransferProductsController extends Controller
     {
      
         try {
-            if (!Gate::allows('transfer_product_create')) {
-                return abort(401);
-            }
+            // if (!Gate::allows('transfer_product_create')) {
+            //     return abort(401);
+            // }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -267,9 +267,9 @@ class TransferProductsController extends Controller
     public function edit($id)
     {
         try {
-            if (!Gate::allows('transfer_product_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+            // if (!Gate::allows('transfer_product_edit')) {
+            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            // }
             $data['product'] = TransferProduct::findOrFail($id);
             $data['product_details'] = ProductDetail::findOrFail($data['product']->product_detail_id);
             $data['products'] = Product::getAllRecordsDictionary(Auth::user()->account_id);
@@ -291,9 +291,9 @@ class TransferProductsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('transfer_product_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+            // if (!Gate::allows('transfer_product_edit')) {
+            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            // }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -340,9 +340,9 @@ class TransferProductsController extends Controller
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('transfer_product_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+            // if (!Gate::allows('transfer_product_destroy')) {
+            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            // }
             $response = TransferProduct::DeleteRecord($id);
 
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
