@@ -260,6 +260,7 @@ var loadInventoryReport  = function (that) {
             date_range: $('#date_range_inv').val(),
             centre_id: $('#centre_id').val(),
             doctor_id:$("#doctor_id_filter").val(),
+            brand_id:$("#brand_id").val(),
            
            
         },

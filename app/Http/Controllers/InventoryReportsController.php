@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ACL;
+use App\Models\Brand;
 use App\Models\Locations;
 use App\Models\Order;
 use App\Models\OrderDetail;
@@ -21,17 +22,21 @@ class InventoryReportsController extends Controller
         $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        $brands = Brand::where('status',1)->get();
+        
         return view('admin.reports.inventory_report', get_defined_vars());
     
     }
     public function loadInventoryReport(Request $request)
     {
+        
         $validated = $request->validate([
             'centre_id' => 'nullable|integer|exists:locations,id', // Assuming locations table exists
             
         ]);
         
         $locationId = $validated['centre_id'] ?? null;
+        $brandId = $request->brand_id;
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
@@ -42,21 +47,26 @@ class InventoryReportsController extends Controller
             $products = Product::with([
                 'inventories' => function ($query) use ($locationId) {
                     if ($locationId) {
-                        $query->where('location_id', $locationId); // Filter inventories by location
-                    }else{
+                        $query->where('location_id', $locationId);
+                    } else {
                         $query->whereIn('location_id', ACL::getUserCentres());
                     }
                 },
                 'orderDetails' => function ($query) use ($endDate) {
                     if ($endDate) {
                         $query->whereHas('order', function ($orderQuery) use ($endDate) {
-                            $orderQuery->whereDate('created_at', '<=', $endDate); // Filter orders by date
+                            $orderQuery->whereDate('created_at', '<=', $endDate);
                         });
                     }
                 },
-                'orderDetails.order.centre' // Ensure `centre` is loaded for location filtering
-            ])->get();
-        
+                'orderDetails.order.centre'
+            ])
+            ->whereHas('inventories.product', function ($query) use ($brandId) {
+                if ($brandId) {
+                    $query->where('brand_id', $brandId);
+                }
+            })
+            ->get();
             // Process the product data for the report
             $report = $products->map(function ($product) use ($locationId, $endDate) {
                 

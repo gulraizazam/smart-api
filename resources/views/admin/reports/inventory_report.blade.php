@@ -68,6 +68,17 @@
                                             </select>
                                             <span id="centre_id_handler"></span>
                                         </div>
+                                        <div class="form-group col-md-3 sn-select @if($errors->has('brand_id')) has-error @endif"
+                                             id="brands">
+                                            {!! Form::label('brand_id', 'Brand:', ['class' => 'control-label']) !!}
+                                            <select class="form-control select2" id="brand_id" name="brand_id">
+                                                <option value="">Select Brand</option>
+                                                @foreach($brands as $brand)
+                                                <option value="{{$brand->id}}">{{$brand->name}}</option>
+                                                @endforeach
+                                            </select>
+                                            <span id="centre_id_handler"></span>
+                                        </div>
                                         <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
                                              id="doc_dropdown" style="display:none">
                                             {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
