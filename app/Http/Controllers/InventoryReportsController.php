@@ -132,7 +132,7 @@ class InventoryReportsController extends Controller
             return view('admin.reports.inventoryReport', compact('report'));
         }
         if ($request->report_type == "doctor_sales_report") {
-            $locationId = $validated['centre_id'];
+            $locationId = $validated['centre_id'] ? [$validated['centre_id']] : ACL::getUserCentres();
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
@@ -141,7 +141,7 @@ class InventoryReportsController extends Controller
                 $doctorIds = [$doctorId];
             } else {
                 $doctorIds = DB::table('doctor_has_locations')
-                    ->where('location_id', $locationId)
+                    ->whereIn('location_id', $locationId)
                     ->pluck('user_id');
             }
             dd($doctorIds);
