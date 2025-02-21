@@ -253,7 +253,7 @@ class InventoryReportsController extends Controller
             ->join('products', 'stocks.product_id', '=', 'products.id')
             ->join('locations', 'stocks.location_id', '=', 'locations.id')
             ->where('stocks.stock_type', 'in');
-        
+        dd($locationId);
             // Apply filters
             if (!is_null($locationId) && $locationId !== '') {
                 $query->where('stocks.location_id', $locationId);
