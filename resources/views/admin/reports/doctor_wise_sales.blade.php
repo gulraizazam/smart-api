@@ -5,6 +5,7 @@
             <th>Product Name</th>
             <th>Total Quantity Sold</th>
             <th>Sub Total</th>
+            <th>Order Date</th>
 
         </tr>
     </thead>
@@ -16,6 +17,7 @@
                     <td>{{ $productSale['product_name'] }}</td>
                     <td>{{ $productSale['total_quantity'] }}</td>
                     <td>{{ $productSale['subtotal'] }}</td>
+                    <td>{{$productSale['order_date']}}</td>
                 </tr>
             @endforeach
         @endforeach
