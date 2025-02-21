@@ -238,12 +238,12 @@ class InventoryReportsController extends Controller
             return view('admin.reports.inventory_sales',get_defined_vars());
         }
         if($request->report_type=="addition_report"){
-            DB::enableQueryLog();
+            
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
             // Get filters
-            $locationId =$request->input('centre_id') ? [$request->input('centre_id')] : ACL::getUserCentres();
+            $locationId =[$request->input('centre_id')];
             $query = Stock::select(
                 'products.name as product_name',
                 'locations.name as location_name',
@@ -264,7 +264,7 @@ class InventoryReportsController extends Controller
             }
         
             $stocks = $query->get();
-            dd(DB::getQueryLog());
+            
             return view('admin.reports.addition_report',get_defined_vars());
         }
             
