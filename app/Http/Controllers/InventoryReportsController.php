@@ -264,7 +264,7 @@ class InventoryReportsController extends Controller
             }
         
             $stocks = $query->get();
-            
+            dd(DB::getQueryLog());
             return view('admin.reports.addition_report',get_defined_vars());
         }
             
