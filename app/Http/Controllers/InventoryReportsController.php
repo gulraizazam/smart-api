@@ -136,7 +136,8 @@ class InventoryReportsController extends Controller
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-            // If a specific doctorId is provided, use it, else fetch all doctors for the location
+        
+            // If a specific doctorId is provided, use it; otherwise, fetch all doctors for the location
             if ($doctorId) {
                 $doctorIds = [$doctorId];
             } else {
@@ -144,48 +145,56 @@ class InventoryReportsController extends Controller
                     ->whereIn('location_id', $locationId)
                     ->pluck('user_id');
             }
-           
-
+        
             // Fetch orders based on doctor IDs and the date range (if provided)
             $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
                 ->whereIn('prescribed_by', $doctorIds)
                 ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                     $query->whereBetween('orders.created_at', [$startDate, $endDate]);
                 });
-
+        
             $orders = $ordersQuery->get();
-
+        
             // Process the orders to build the report
             $report = $orders->groupBy('prescribed_by')->map(function ($doctorOrders) {
                 $doctorName = $doctorOrders->first()->doctor->name ?? 'Unknown Doctor';
-
+        
                 // Process each order detail to calculate sales data
                 $productSales = $doctorOrders->flatMap(function ($order) {
-                    return $order->orderDetail;  // Access orderDetails (which is a collection)
-                })->groupBy('product_id')->map(function ($orderDetails, $productId,$order) {
-                    $productName = $orderDetails->first()->product->name ?? 'Unknown Product';
-                    $productPrice = $orderDetails->first()->product->sale_price ?? 0;  // Get the product price
-                    $totalQuantity = $orderDetails->sum('quantity');  // Sum the quantities of the product sold
-                    $subtotal = $totalQuantity * $productPrice;  // Calculate subtotal for this product
-                    
+                    return $order->orderDetail->map(function ($detail) use ($order) {
+                        return [
+                            'product_id' => $detail->product_id,
+                            'product_name' => $detail->product->name ?? 'Unknown Product',
+                            'total_quantity' => $detail->quantity,
+                            'subtotal' => $detail->quantity * ($detail->product->sale_price ?? 0),
+                            'order_date' => $order->created_at->format('d M Y'), // Adding order date
+                        ];
+                    });
+                })->groupBy('product_id')->map(function ($orderDetails) {
+                    $firstDetail = $orderDetails->first();
+        
                     return [
-                        'product_name' => $productName,
-                        'total_quantity' => $totalQuantity,
-                        'subtotal' => $subtotal,  // Add subtotal for the product
-                        'order_date'=>$order->created_at
+                        'product_name' => $firstDetail['product_name'],
+                        'total_quantity' => $orderDetails->sum('total_quantity'),
+                        'subtotal' => $orderDetails->sum('subtotal'),
+                        'order_dates' => $orderDetails->pluck('order_date')->unique()->values(), // Collecting unique order dates
                     ];
                 });
+        
                 $grandTotal = $productSales->sum('subtotal');
-            
+        
                 return [
                     'doctor_name' => $doctorName,
                     'product_sales' => $productSales,
                     'grand_total' => $grandTotal,  // Add grand total for the doctor
                 ];
             });
+        
             $overallTotal = $report->sum('grand_total');
+        
             return view('admin.reports.doctor_wise_sales', get_defined_vars());
         }
+        
         if($request->report_type=="sales_report"){
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
