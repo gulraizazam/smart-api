@@ -162,16 +162,17 @@ class InventoryReportsController extends Controller
                 // Process each order detail to calculate sales data
                 $productSales = $doctorOrders->flatMap(function ($order) {
                     return $order->orderDetail;  // Access orderDetails (which is a collection)
-                })->groupBy('product_id')->map(function ($orderDetails, $productId) {
+                })->groupBy('product_id')->map(function ($orderDetails, $productId,$order) {
                     $productName = $orderDetails->first()->product->name ?? 'Unknown Product';
                     $productPrice = $orderDetails->first()->product->sale_price ?? 0;  // Get the product price
                     $totalQuantity = $orderDetails->sum('quantity');  // Sum the quantities of the product sold
                     $subtotal = $totalQuantity * $productPrice;  // Calculate subtotal for this product
-
+                    
                     return [
                         'product_name' => $productName,
                         'total_quantity' => $totalQuantity,
                         'subtotal' => $subtotal,  // Add subtotal for the product
+                        'order_date'=>$order->created_at
                     ];
                 });
                 $grandTotal = $productSales->sum('subtotal');
