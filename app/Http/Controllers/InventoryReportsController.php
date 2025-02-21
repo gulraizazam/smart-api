@@ -133,9 +133,9 @@ class InventoryReportsController extends Controller
         }
         if ($request->report_type == "doctor_sales_report") {
             $locationId = $validated['centre_id'];
-            $startDate = $validated['start_date'] ?? null;
-            $endDate = $validated['end_date'] ?? null;
-
+            $dates = explode(' - ', $request->input('date_range'));
+            $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+            $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
             // If a specific doctorId is provided, use it, else fetch all doctors for the location
             if ($doctorId) {
                 $doctorIds = [$doctorId];
