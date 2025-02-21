@@ -255,16 +255,16 @@ class InventoryReportsController extends Controller
             ->where('stocks.stock_type', 'in');
         
             // Apply filters
-            // if ($locationId) {
-            //     $query->where('stocks.location_id', $locationId);
-            // }
+            if (!empty($locationId)) { // Only apply filter if locationId is not null or empty
+                $query->where('stocks.location_id', $locationId);
+            }
         
             if ($startDate && $endDate) {
                 $query->whereBetween('stocks.created_at', [$startDate, $endDate]);
             }
         
             $stocks = $query->get();
-            //dd(DB::getQueryLog());
+
             return view('admin.reports.addition_report',get_defined_vars());
         }
             
