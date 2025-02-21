@@ -237,13 +237,15 @@ class InventoryReportsController extends Controller
 
             return view('admin.reports.inventory_sales',get_defined_vars());
         }
-        if($request->report_type=="addition_report"){
-           
+        if ($request->report_type == "addition_report") {
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        
             // Get filters
-            $locationId =$request->input('centre_id');
+            $locationId = $request->input('centre_id');
+            $brandId = $request->input('brand_id'); // Corrected request method
+        
             $query = Stock::select(
                 'products.name as product_name',
                 'locations.name as location_name',
@@ -254,19 +256,26 @@ class InventoryReportsController extends Controller
             ->join('locations', 'stocks.location_id', '=', 'locations.id')
             ->where('stocks.stock_type', 'in');
         
-            // Apply filters
+            // Apply location filter if provided
             if (!is_null($locationId) && $locationId !== '') {
                 $query->where('stocks.location_id', $locationId);
             }
         
-            if ($startDate && $endDate) {
+            // Apply brand filter if provided
+            if (!is_null($brandId) && $brandId !== '') {
+                $query->where('products.brand_id', $brandId);
+            }
+        
+            // Apply date range filter
+            if (!empty($startDate) && !empty($endDate)) {
                 $query->whereBetween('stocks.created_at', [$startDate, $endDate]);
             }
         
             $stocks = $query->get();
-
-            return view('admin.reports.addition_report',get_defined_vars());
+        
+            return view('admin.reports.addition_report', get_defined_vars());
         }
+        
             
     }
     public function getSalesReport(Request $request)
