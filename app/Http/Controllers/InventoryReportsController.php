@@ -255,7 +255,7 @@ class InventoryReportsController extends Controller
             ->where('stocks.stock_type', 'in');
         
             // Apply filters
-            if (isset($locationId) && $locationId !=null) { // Only apply filter if locationId is not null or empty
+            if (!is_null($locationId) && $locationId !== '') {
                 $query->where('stocks.location_id', $locationId);
             }
         
