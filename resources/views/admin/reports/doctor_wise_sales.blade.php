@@ -17,7 +17,9 @@
                     <td>{{ $productSale['product_name'] }}</td>
                     <td>{{ $productSale['total_quantity'] }}</td>
                     <td>{{ $productSale['subtotal'] }}</td>
-                    <td>{{$productSale['order_date']}}</td>
+                    <td>
+                    {{ implode(', ', $productSale['order_dates']->toArray()) }}
+                </td>
                 </tr>
             @endforeach
         @endforeach
