@@ -144,6 +144,7 @@ class InventoryReportsController extends Controller
                     ->where('location_id', $locationId)
                     ->pluck('user_id');
             }
+            dd($doctorIds);
 
             // Fetch orders based on doctor IDs and the date range (if provided)
             $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
