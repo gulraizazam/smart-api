@@ -174,7 +174,7 @@ class InventoryReportsController extends Controller
                 
                     // Fetch FDM user details (id and name) from the users table
                     $FDMUsers = User::whereIn('id', $fdmUsers)
-                        ->pluck('name', 'id') // Preserve user IDs
+                        ->pluck('id') // Preserve user IDs
                         ->toArray();
                 
                     // Merge the arrays while preserving keys
