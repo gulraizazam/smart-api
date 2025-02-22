@@ -54,6 +54,7 @@
                         <select class="form-control" id="sold_to" name="sold_to" onchange="SelectEmployee()">
                             <option value="patient">Patient</option>
                             <option value="employee">Employee</option>
+                            <option value="walkin">Walk In</option>
                         </select>
                     </div>
                     </div>
@@ -72,6 +73,24 @@
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2" id="walkinDiv">
+                        <div class="fv-row col-md-6">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Name<span
+                                    class="text text-danger">*</span></label>
+                            <input class="form-control"
+                                placeholder="Name" type="text" name="name">
+
+                            
+                        </div>
+                        <div class="fv-row col-md-6">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Phone<span
+                                    class="text text-danger">*</span></label>
+                            <input class="form-control"
+                                placeholder="Phone" type="text" name="phone">
+
+                            
                         </div>
                     </div>
                     <div class="row mt-2" style="display: none;" id="employeeDropDown">
