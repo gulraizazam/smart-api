@@ -153,27 +153,29 @@ class InventoryReportsController extends Controller
                     // Fetch active doctors as an associative array
                     $users = User::whereIn('id', $doctors)
                         ->where('active', 1)
-                        ->pluck( 'id');
+                        ->pluck( 'id') // Preserve user IDs
+                        ->toArray();
                 
                     // Ensure 'from_id' is an array
                     $locationIds = is_array($locationId) ? $locationId : [$locationId];
                 
                     // Fetch FDM users by getting the user_ids associated with the center (location_id)
-                    $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id');
+                    $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
                 
                     // Fetch the 'FDM' role and get its user ids
                     $findRole = DB::table('roles')->where('name', 'FDM')->first();
                     $roleId = $findRole->id;
                 
                     // Get users who have the FDM role
-                    $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id');
+                    $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
                 
                     // Get the intersection of users who are both FDM and belong to the center
                     $fdmUsers = array_intersect($findFDM, $roleHasUser);
                 
                     // Fetch FDM user details (id and name) from the users table
                     $FDMUsers = User::whereIn('id', $fdmUsers)
-                        ->pluck('id');
+                        ->pluck('id') // Preserve user IDs
+                        ->toArray();
                 
                     // Merge the arrays while preserving keys
                     $doctorIds = $users + $FDMUsers;
