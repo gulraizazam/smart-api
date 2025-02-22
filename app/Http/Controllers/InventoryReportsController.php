@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Helpers\ACL;
 use App\Models\Brand;
+use App\Models\DoctorHasLocations;
 use App\Models\Locations;
 use App\Models\Order;
 use App\Models\OrderDetail;
 use App\Models\Product;
+use App\Models\RoleHasUsers;
 use App\Models\Stock;
 use App\Models\User;
+use App\Models\UserHasLocations;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -141,9 +144,42 @@ class InventoryReportsController extends Controller
             if ($doctorId) {
                 $doctorIds = [$doctorId];
             } else {
-                $doctorIds = DB::table('doctor_has_locations')
-                    ->whereIn('location_id', $locationId)
-                    ->pluck('user_id');
+                // $doctorIds = DB::table('doctor_has_locations')
+                //     ->whereIn('location_id', $locationId)
+                //     ->pluck('user_id');
+
+                    $doctors = DoctorHasLocations::where('location_id', $request->from_id)->pluck('user_id')->toArray();
+    
+                    // Fetch active doctors as an associative array
+                    $users = User::whereIn('id', $doctors)
+                        ->where('active', 1)
+                        ->pluck('name', 'id') // Preserve user IDs
+                        ->toArray();
+                
+                    // Ensure 'from_id' is an array
+                    $locationIds = is_array($request->from_id) ? $request->from_id : [$request->from_id];
+                
+                    // Fetch FDM users by getting the user_ids associated with the center (location_id)
+                    $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
+                
+                    // Fetch the 'FDM' role and get its user ids
+                    $findRole = DB::table('roles')->where('name', 'FDM')->first();
+                    $roleId = $findRole->id;
+                
+                    // Get users who have the FDM role
+                    $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+                
+                    // Get the intersection of users who are both FDM and belong to the center
+                    $fdmUsers = array_intersect($findFDM, $roleHasUser);
+                
+                    // Fetch FDM user details (id and name) from the users table
+                    $FDMUsers = User::whereIn('id', $fdmUsers)
+                        ->pluck('name', 'id') // Preserve user IDs
+                        ->toArray();
+                
+                    // Merge the arrays while preserving keys
+                    $doctorIds = $users + $FDMUsers;
+                    dd($doctorIds);
             }
         
             // Fetch orders based on doctor IDs and the date range (if provided)
