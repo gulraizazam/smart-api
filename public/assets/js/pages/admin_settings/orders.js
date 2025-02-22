@@ -513,7 +513,7 @@ function SelectEmployee(){
     }
    if($("#sold_to").val()=="employee")
    {
-   
+    $("#walkinDiv").hide();  
     $("#product_discount").text("");
   
     $("#discount").val("");
@@ -549,15 +549,21 @@ function SelectEmployee(){
             errorMessage(xhr);
         }
     });
+   }else if($("#sold_to").val()=="walkin"){
+        $("#prescribedBy").hide();
+        $("#patientDropDown").hide();
+        $("#employeeDropDown").hide();  
+        $("#walkinDiv").show();  
    }else{
     
     $("#product_discount").text("");
     $("#discount").val("");
+    $("#walkinDiv").hide();  
    
    
         $("#prescribedBy").show();
         $("#patientDropDown").show();
-                $("#employeeDropDown").hide();  
+        $("#employeeDropDown").hide();  
    }
 }
 
