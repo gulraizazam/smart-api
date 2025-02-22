@@ -153,7 +153,7 @@ class InventoryReportsController extends Controller
                     // Fetch active doctors as an associative array
                     $users = User::whereIn('id', $doctors)
                         ->where('active', 1)
-                        ->pluck('name', 'id') // Preserve user IDs
+                        ->pluck( 'id') // Preserve user IDs
                         ->toArray();
                 
                     // Ensure 'from_id' is an array
