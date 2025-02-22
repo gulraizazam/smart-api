@@ -168,7 +168,19 @@ class Order extends BaseModal
     public static function createRecord($request, $account_id,$products)
     {
         $data = $request->all();
-        
+        if(isset($data['name']) && isset($data['phone']) && $data['phone'] !=""){
+            $patient = Patients::where(['phone' => $data['phone']])->first();
+            if(!$patient){
+                $newPatient = Patients::create([
+                    'name'=>$data['name'],
+                    'phone'=>$data['phone'],
+                ]);
+                $data['patient_id'] = $newPatient->id;
+            }else{
+                $data['patient_id'] =$patient->id;
+            }
+           
+        }
         $productTotals = [];
         // Iterate through the arrays
         for ($i = 0; $i < count($data['product_id']); $i++) {
