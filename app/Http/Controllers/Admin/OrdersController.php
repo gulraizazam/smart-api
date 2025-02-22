@@ -303,11 +303,16 @@ class OrdersController extends Controller
             if ($order) {
                 if($request->patient_id){
                     $userPhone = User::whereId($request->patient_id)->first();
-                }else{
+                    $this->PlanCashReceived_SMS($userPhone->phone,$request->grand_total,$order);
+                }elseif($request->employee_id){
                     $userPhone = User::whereId($request->employee_id)->first();
+                    $this->PlanCashReceived_SMS($userPhone->phone,$request->grand_total,$order);
+                }else{
+                    $userPhone =$request->phone;
+                    $this->PlanCashReceived_SMS($userPhone ,$request->grand_total,$order);
                 }
                 
-                $this->PlanCashReceived_SMS($userPhone->phone,$request->grand_total,$order);
+               
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.', true, $order->id);
