@@ -180,7 +180,17 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     }).datepicker("setDate", new Date());
-
+    $('.endRota-datepicker').datepicker({
+        todayHighlight: true,
+        orientation: 'bottom',
+        //startDate: new Date(),
+        "setDate": "7/11/2011",
+        format: 'yyyy-mm-dd',
+        templates: {
+            leftArrow: '<i class="la la-angle-left"></i>',
+            rightArrow: '<i class="la la-angle-right"></i>',
+        },
+    });
     $('.timepicker').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
 
     $('#date_range').daterangepicker({
