@@ -2269,8 +2269,7 @@ class FinanceReportController extends Controller
         ->where('package_advances.cash_flow', 'in') // Ensure there is a payment
         ->where('package_advances.cash_amount', '>', 0) // Ensure payment is made
         ->where('packages.location_id',$locationId)
-        ->where('package_advances.created_at', '>=', $start_date)
-        ->where('package_advances.created_at', '<=', $end_date)
+        ->whereBetween('package_advances.created_at', [$start_date, $end_date])
         ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'),'packages.location_id')
         ->groupBy('package_services.service_id')
         ->get();
