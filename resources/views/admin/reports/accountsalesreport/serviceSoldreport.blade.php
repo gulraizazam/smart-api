@@ -90,7 +90,7 @@
                     @if(count($soldServices))
                         
                         @foreach($soldServices as $reportRow)
-                        @dd($reportRow);
+                       
                         @php 
                             $service = \App\Models\Services::where('id',$reportRow->service_id)->first();
                             $location = \App\Models\Locations::where('id',$reportRow->location_id)->first();
@@ -98,7 +98,7 @@
                             <tr>
                                 <td style="text-align: center;">{{ $service->name }}</td>
                                 <td>{{ $location->name }}</td>
-                                <td>{{ $reportRow->count }}</td>
+                                <td>{{ $reportRow->total_sold }}</td>
                                 <td>{{ $service->price }}</td>
                                </tr>
                         @endforeach
