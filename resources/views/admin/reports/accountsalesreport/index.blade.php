@@ -211,19 +211,15 @@
                                             <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
                                                  id="service_id_E">
                                                 {!! Form::label('service_id', 'Services', ['class' => 'control-label']) !!}
-                                                <select class="form-control select2" id="service_id" name="service_id">
-                                                    <option value="">All</option>
-                                                    @foreach($services as $id => $service)
-                                                        @if ($id == 0) @continue; @endif
-                                                        @if($id < 0)
-                                                            @php($tmp_id = ($id * -1))
-                                                        @else
-                                                            @php($tmp_id = ($id * 1))
-                                                        @endif
-                                                        <option value="@if($id < 0){{ ($id * -1) }}@else{{ $id }}@endif">@if($id < 0)
-                                                                <b>{!! $service['name'] !!}</b>@else{!! $service['name'] !!}@endif</option>
-                                                    @endforeach
-                                                </select>
+                                                <select name="service_id" class="form-control select2">
+    <option value="">All</option>
+    @foreach($services as $service)
+        <option value="{{ $service['id'] }}" 
+            @if($service['is_parent']) disabled @endif>
+            {{ str_repeat('-- ', $service['level']) . $service['name'] }}
+        </option>
+    @endforeach
+</select>
                                                 <span id="service_id_handler"></span>
                                             </div>
 
