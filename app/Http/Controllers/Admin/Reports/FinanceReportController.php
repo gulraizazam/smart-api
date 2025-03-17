@@ -2271,10 +2271,11 @@ class FinanceReportController extends Controller
         ->where('packages.location_id',$locationId)
         ->where('package_advances.created_at', '>=', $start_date)
         ->where('package_advances.created_at', '<=', $end_date)
-        ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'))
+        ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'),'packages.location_id')
         ->groupBy('package_services.service_id')
         ->get();
-        dd($soldServices);
+        return view('admin.reports.accountsalesreport.serviceSoldreport', compact('soldServices', 'start_date', 'end_date'));
+        
     }
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
     {
