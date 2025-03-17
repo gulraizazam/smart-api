@@ -160,7 +160,7 @@
                                                     @endif--}}
 
                                                         @if(Gate::allows('finance_general_revenue_reports_conversion_report'))
-                                                            <option value="conversion_report">Conversion Report
+                                                            <option value="services_sold">Services sold report
                                                             </option>
                                                         @endif
                                                 </select>
@@ -449,6 +449,12 @@
                     $("#appointment_type_id_E").hide();
                     $("#machine").hide();
                     $('#discount').hide();
+                } else if (type_p == 'services_sold') {
+                    $("#location_id_E").show();
+                    $("#location_id_D").hide();
+                    
+                    $("#service_id_E").show();
+                   
                 } else if (type_p == "collection_by_service") {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();

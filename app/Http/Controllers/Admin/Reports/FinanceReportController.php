@@ -127,6 +127,9 @@ class FinanceReportController extends Controller
             case 'conversion_report':
                 return self::conversionreport($request);
                 break;
+            case 'services_sold':
+                return self::serviceSoldreport($request);
+                break;
             default:
                 return self::collectionbyservice($request);
                 break;
@@ -2248,6 +2251,31 @@ class FinanceReportController extends Controller
         }
     }
 
+    public function serviceSoldreport(Request $request)
+    {
+        if ($request->get('date_range')) {
+            $date_range = explode(' - ', $request->get('date_range'));
+            $start_date = date('Y-m-d', strtotime($date_range[0]));
+            $end_date = date('Y-m-d', strtotime($date_range[1]));
+        } else {
+            $start_date = null;
+            $end_date = null;
+        }
+        $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
+        
+        $soldServices = DB::table('package_services')
+        ->join('packages', 'package_services.package_id', '=', 'packages.id')
+        ->join('package_advances', 'package_advances.package_id', '=', 'packages.id')
+        ->where('package_advances.cash_flow', 'in') // Ensure there is a payment
+        ->where('package_advances.cash_amount', '>', 0) // Ensure payment is made
+        ->where('packages.location_id',$locationId)
+        ->where('package_advances.created_at', '>=', $start_date)
+        ->where('package_advances.created_at', '<=', $end_date)
+        ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'))
+        ->groupBy('package_services.service_id')
+        ->get();
+        dd($soldServices);
+    }
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
