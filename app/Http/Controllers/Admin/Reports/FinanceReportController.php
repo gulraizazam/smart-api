@@ -2261,8 +2261,9 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
+        dd($request->all());
         $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
-        
+        $serviceId = $request->service_id;    
         $soldServices = DB::table('package_services')
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('package_advances', 'package_advances.package_id', '=', 'packages.id')
