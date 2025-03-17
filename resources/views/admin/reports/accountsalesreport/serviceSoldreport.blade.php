@@ -96,7 +96,7 @@
                             $location = \App\Models\Locations::where('id',$reportRow->location_id)->first();
                         @endphp
                             <tr>
-                                <td style="text-align: center;">{{ $service->name }}</td>
+                                <td>{{ $service->name }}</td>
                                 <td>{{ $location->name }}</td>
                                 <td>{{ $reportRow->total_sold }}</td>
                                 <td>{{ $service->price }}</td>
