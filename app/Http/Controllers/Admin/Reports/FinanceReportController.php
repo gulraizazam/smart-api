@@ -67,17 +67,14 @@ class FinanceReportController extends Controller
         $parentGroups->toList($parentGroups, -1);
         $services = $parentGroups->nodeList;
 
-        foreach ($services as $key => &$ser) {
+        foreach ($services as $key => $ser) {
             if ($key) {
                 if (isset($ser['name']) && $ser['name'] == $allserviceslug->name) {
                     unset($services[$key]);
                 }
             }
-
-            // Check if the service has children (i.e., it's a parent)
-            $ser['is_parent'] = isset($ser['children']) && count($ser['children']) > 0;
+            
         }
-        unset($ser);
 
         $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
 
