@@ -90,6 +90,7 @@
                     @if(count($soldServices))
                         
                         @foreach($soldServices as $reportRow)
+                        @dd($reportRow);
                         @php 
                             $service = \App\Models\Services::where('id',$reportRow->service_id)->first();
                             $location = \App\Models\Locations::where('id',$reportRow->location_id)->first();
