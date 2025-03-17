@@ -2255,13 +2255,13 @@ class FinanceReportController extends Controller
     {
         if ($request->get('date_range')) {
             $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
+            $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
+            $end_date = date('Y-m-d 23:59:59', strtotime($date_range[1]));
         } else {
             $start_date = null;
             $end_date = null;
         }
-        dd( $start_date, $end_date);
+
         $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $serviceId = $request->service_id;    
         $soldServices = DB::table('package_services')
@@ -2269,10 +2269,15 @@ class FinanceReportController extends Controller
         ->join('package_advances', 'package_advances.package_id', '=', 'packages.id')
         ->where('package_advances.cash_flow', 'in') // Ensure there is a payment
         ->where('package_advances.cash_amount', '>', 0) // Ensure payment is made
-        ->where('packages.location_id',$locationId)
-        ->whereBetween('package_advances.created_at', [$start_date, $end_date])
+        ->whereIn('packages.location_id', $locationId) // Use whereIn for multiple locations
+        ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
+            return $query->whereBetween('package_advances.created_at', [$start_date, $end_date]);
+        })
+        ->when($request->service_id, function ($query) use ($request) {
+            return $query->where('package_services.service_id', $request->service_id);
+        })
         ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'),'packages.location_id')
-        ->groupBy('package_services.service_id')
+        ->groupBy('package_services.service_id','packages.location_id')
         ->get();
         return view('admin.reports.accountsalesreport.serviceSoldreport', compact('soldServices', 'start_date', 'end_date'));
         
