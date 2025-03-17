@@ -73,9 +73,9 @@ class FinanceReportController extends Controller
                     unset($services[$key]);
                 }
             }
-            $ser['is_parent'] = isset($ser['children']) && count($ser['children']) > 0;
+            
         }
-dd($services);
+
         $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
 
         $operators = User::getAllActivePractionersRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
