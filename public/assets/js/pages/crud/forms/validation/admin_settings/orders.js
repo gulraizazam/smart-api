@@ -15,13 +15,20 @@ var AddOrderValidation = function () {
                             }
                         }
                     },
-                    patient_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Patient id field is required'
-                            }
-                        }
-                    },
+                    // patient_id: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Patient id field is required'
+                    //         }
+                    //     }
+                    // },
+                    // doctor_id: {
+                    //     validators: {
+                    //         notEmpty: {
+                    //             message: 'The Doctor field is required'
+                    //         }
+                    //     }
+                    // },
                     payment_mode: {
                         validators: {
                             notEmpty: {
@@ -49,8 +56,10 @@ var AddOrderValidation = function () {
                     toastr.success(response.message);
 
                     openInNewTab(response.data);
-
                     closePopup(modal_id);
+                    $("#product_discount").text('');
+                    $("#sold_to").change();
+                    
                     reInitTable();
                 } else {
                     toastr.error(response.message);

@@ -15,12 +15,7 @@ var table_columns = [
         width: 'auto',
         sortable: false,
     },
-    {
-        field: 'warehouse.name',
-        title: 'Warehouse',
-        width: 'auto',
-        sortable: false,
-    },
+    
     {
         field: 'centre.name',
         title: 'Centre',
@@ -36,7 +31,7 @@ var table_columns = [
             return formatDate(data.created_at)
         },
     },
-    // }, {
+    // {
     //     field: 'actions',
     //     title: 'Actions',
     //     sortable: false,
@@ -47,10 +42,14 @@ var table_columns = [
     //         return actions(data);
     //     }
     // }
+    
+    // }, 
+    // }
 ];
 function actions(data) {
     let id = data.id;
     let edit_url = route('admin.inventory.edit', { id: id });
+    let stock_url = route('admin.products.stock', { id: id });
     let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                 <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -61,14 +60,21 @@ function actions(data) {
                         Choose an action: \
                         </li>';
                        
-                        //if (permissions.add_stock) {
+                            actions += '<li class="navi-item">\
+                                            <a href="javascript:void(0);" onclick="addProductStock(`' + id + '`,`'+id+'`);" class="navi-link">\
+                                            <span class="navi-icon"><i class="la la-plus"></i></span>\
+                                            <span class="navi-text">Add Stock</span>\
+                                            </a>\
+                                        </li>';
+                    
+                        
                             actions += '<li class="navi-item">\
                                             <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="navi-link">\
                                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                                             <span class="navi-text">Edit</span>\
                                             </a>\
                                         </li>';
-                        // }
+                        
                         
                         
                        
@@ -78,6 +84,13 @@ function actions(data) {
                             </div>';
 
                         return actions;
+}
+function addProductStock(id,inventory_id) {
+    
+    let action = route('admin.products.add-stock', { id: id });
+    $("#modal_add_product_stock_form").attr("action", action);
+    $("#modal_add_product_stock").modal("show");
+    $("#inventory_id").val(inventory_id);
 }
 function editRow(url) {
 

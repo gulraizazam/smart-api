@@ -88,25 +88,41 @@ function statusesBrand(data, status_url, is_column_name_change = false) {
 
     let active = is_column_name_change == false ? data.active : data.status;
     let status = '';
-
+console.log(permissions);
     if (active) {
-        
+        if (permissions.b_active) {
             status += '<span class="switch switch-icon">\
             <label>\
                 <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
                 <span></span>\
             </label>\
             </span>';
-       
+        }
+        else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
 
     } else {
-
-        status += '<span class="switch switch-icon">\
-        <label>\
-            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
-            <span></span>\
-        </label>\
-        </span>';
+        if (permissions.b_active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox"  name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
     }
 
     return status;

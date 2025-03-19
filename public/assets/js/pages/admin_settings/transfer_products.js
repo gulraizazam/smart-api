@@ -304,6 +304,8 @@ function productSelectTransfer(product_id, id = null) {
     });
 }
 function formRest() {
+    $('#modal_create_order_form')[0].reset();
+    $('.select2').val(null).trigger('change');
     $("#add_product_type_option_from").val("");
     $("#add_product_type_option_to").val("");
     $("#add_transfer_product").val("").trigger("change");
@@ -311,6 +313,7 @@ function formRest() {
     $('.select_warehouse_from').hide();
     $('.select_centre_to').hide();
     $('.select_warehouse_to').hide();
+   
 }
 
 $("#add_product_p").on("click", function(){

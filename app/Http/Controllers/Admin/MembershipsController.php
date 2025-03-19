@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exports\ExportMembership;
 use App\HelperModule\ApiHelper;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
+use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Membership;
 use App\Models\MembershipType;
 use App\Models\User;
@@ -15,6 +17,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Maatwebsite\Excel\Facades\Excel;
 use Rap2hpoutre\FastExcel\FastExcel;
 
 class MembershipsController extends Controller
@@ -357,6 +360,29 @@ class MembershipsController extends Controller
                 }
             }
         }
+        if (hasFilter($filters, 'assigned')) {
+            if ($filters['assigned'] == 1) {
+                // patient_id is not null
+                $where[] = ['memberships.patient_id', '<>', null];
+            } elseif ($filters['assigned'] == 0) {
+                // patient_id is null
+                $where[] = ['memberships.patient_id', '=', null];
+            }
+            Filters::put(Auth::user()->id, 'memberships', 'assigned', $filters['assigned']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'memberships', 'assigned');
+            } else {
+                if (Filters::get(Auth::user()->id, 'memberships', 'assigned') !== null) {
+                    $assignedFilter = Filters::get(Auth::user()->id, 'memberships', 'assigned');
+                    if ($assignedFilter == 1) {
+                        $where[] = ['memberships.patient_id', '<>', null];
+                    } elseif ($assignedFilter == 0) {
+                        $where[] = ['memberships.patient_id', '=', null];
+                    }
+                }
+            }
+        }
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
@@ -386,6 +412,44 @@ class MembershipsController extends Controller
         }
 
         return $where;
+    }
+    public function exportPdf(Request $request)
+{
+    ini_set('memory_limit', '-1');
+    set_time_limit(0);
+
+    $query = Membership::with('membershiptype');
+
+    if (!is_null($request->membership_type_id) && $request->membership_type_id !== '') {
+        $query->where('membership_type_id', $request->membership_type_id);
+    }
+
+    if (!is_null($request->code) && $request->code !== '') {
+        $query->where('code', $request->code);
+    }
+
+    if (!is_null($request->assigned) && $request->assigned !== '') {
+        if ($request->assigned == 1) {
+            $query->whereNotNull('memberships.patient_id');
+        } elseif ($request->assigned == 0) {
+            $query->whereNull('memberships.patient_id');
+        }
+    }
+
+    $membershipsData = $query->get();
+
+    $customPaper = [0, 0, 720, 1440];
+    $pdf = PDF::loadView('admin.memberships.membership-pdf', compact('membershipsData'))
+        ->setPaper($customPaper, 'portrait');
+
+    return $pdf->download('memberships.pdf');
+}
+    public function exportDocs(Request $request)
+    {
+        
+        set_time_limit(0);
+        ini_set('memory_limit', '-1');
+        return Excel::download(new ExportMembership($request), 'memberships.' . $request->ext);
     }
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {

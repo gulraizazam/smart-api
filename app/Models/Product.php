@@ -8,12 +8,13 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class Product extends BaseModal
 {
     use  HasFactory;
 
-    protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by'];
+    protected $fillable = ['name', 'account_id', 'brand_id', 'location_id', 'warehouse_id', 'parent_id', 'sale_price', 'product_type', 'status', 'created_by', 'updated_by','sku'];
 
     protected $table = 'products';
 
@@ -38,18 +39,18 @@ class Product extends BaseModal
     //     return $this->hasMany(ProductDetail::class, 'product_id');
     // }
 
-    // public function stocks()
-    // {
-    //     return $this->hasMany(Stock::class);
-    // }
-    // public function order()
-    // {
-    //     return $this->hasMany(Order::class)->with('orderDetail');
-    // }
-    // public function orderDetails()
-    // {
-    //     return $this->hasMany(OrderDetail::class)->with('order');
-    // }
+    public function stocks()
+    {
+        return $this->hasMany(Stock::class);
+    }
+    public function order()
+    {
+        return $this->hasMany(Order::class)->with('orderDetail');
+    }
+    public function orderDetails()
+    {
+        return $this->hasMany(OrderDetail::class); // A product has many order details
+    }
 
     // public function transferProduct()
     // {
@@ -103,12 +104,18 @@ class Product extends BaseModal
     {
         $where = self::lead_sources_filters($request, $account_id, $apply_filter);
         if (count($where)) {
-            return self::where($where)
-              
-                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
+            return self::select('products.*')
+            ->where($where)
+            ->orderBy('products.name', 'asc')
+            ->limit($iDisplayLength)->offset($iDisplayStart)->get();
         } else {
             return self::select('products.*')
-           ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
+            ->orderBy('products.name', 'asc')
+            // ->where(function ($query) {
+            //     $query->whereIn('inventories.location_id', ACL::getUserCentres())
+            //         ->orWhereIn('inventories.warehouse_id', ACL::getUserWarehouse());
+            // })
+                ->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('id', 'DESC')->get();
         }
     }
 
@@ -176,24 +183,19 @@ class Product extends BaseModal
     //         $data = $request;
     //     }
        
-    //     // Set Account ID
-    //     $data['account_id'] = $account_id;
-    //     $data['created_by'] = Auth::user()->id;
-    //     $product = new Product();
-    //     $product->name =  $data['name'];
-    //     $product->account_id =  $data['account_id'];
-    //     $product->brand_id =  $data['brand_id'];
-    //     $product->sale_price =  $data['sale_price'];
-    //     $product->purchase_price =  $data['purchase_price'];
-    //     $product->product_type =  $data['product_type'];
-    //     $product->save();
+        // Set Account ID
+        $data['account_id'] = $account_id;
+        $data['created_by'] = Auth::user()->id;
+        $product = new Product();
+        $product->name =  $data['name'];
+        $product->account_id =  $data['account_id'];
+        $product->brand_id =  $data['brand_id'];
+        $product->sale_price =  $data['sale_price'];
+        $product->sku =  $data['sku'];
+        $product->product_type = 'for_sale';
+        $product->save();
 
-    //     $inventory = new Inventory();
-    //     $inventory->product_id =  $product->id;
-    //     $inventory->warehouse_id =  $data['warehouse_id'];
-    //     $inventory->is_saleable =  $product->product_type == 'in_house_use' ? 1 :0;
-    //     $inventory->quantity =  $data['quantity'];
-    //     $inventory->save();
+       
 
 
     //      $subjectModel = self::find($product->id);
@@ -201,21 +203,22 @@ class Product extends BaseModal
     //      return $product;
     // }
 
-    // /**
-    //  * Update Record
-    //  *
-    //  * @param  \Illuminate\Http\Request  $request
-    //  * @return (mixed)
-    //  */
-    // public static function updateRecord($id, $request, $account_id)
-    // {
-    //     if (!is_array($request)) {
-    //         $data = $request->all();
-    //     } else {
-    //         $data = $request;
-    //     }
-    //     $data['account_id'] = $account_id;
-    //     $data['updated_by'] = Auth::user()->id;
+    /**
+     * Update Record
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return (mixed)
+     */
+    public static function updateRecord($id, $request, $account_id)
+    {
+        
+        if (!is_array($request)) {
+            $data = $request->all();
+        } else {
+            $data = $request;
+        }
+        $data['account_id'] = $account_id;
+        $data['updated_by'] = Auth::user()->id;
 
     //     $record = self::where([
     //         'id' => $id,
@@ -276,42 +279,96 @@ class Product extends BaseModal
     //     return false;
     // }
 
-    // /* * Ajax base result of patient according to id or name
-    // * */
-    // public static function getProductsAjax($request, $account_id)
-    // {
-    //     if (isset($request->from_id)) {
-    //         return self::join('inventories','products.id','inventories.product_id')->where([
-    //             ['products.status', '=', '1'],
-    //             ['products.account_id', '=', $account_id],
-    //             [$request->from_key, $request->from_id]
-    //         ])->when($request->type == 'order', function ($q) {
-    //             return $q->where(['product_type' => 'for_sale']);
-    //         })->select('products.id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
-    //     } else if (isset($request->product_id)) {
-    //         return self::join('inventories','products.id','inventories.product_id')->where([
-    //             ['products.status', '=', '1'],
-    //             ['products.account_id', '=', $account_id],
-    //             ['products.id', $request->product_id],
-    //         ])->when($request->type == 'order', function ($q) {
-    //             return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
-    //         })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
-    //     } else if ($request['request_from'] == 'order') {
-    //         return self::join('inventories','products.id','inventories.product_id')->where([
-    //             ['products.status', '=', '1'],
-    //             ['products.account_id', '=', $account_id],
-    //             [$request['from_key'], $request['from_id']]
-    //         ])->when(isset($request->type) && $request->type == 'order', function ($q) {
-    //             return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
-    //         })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
-    //     }
-    // }
-    // public static function  getTransferProductsAjax($request, $account_id)
-    // {
-    //    if($request->location_id){
-    //         $inventory = Inventory::where([
-    //             'location_id' => $request->location_id,'product_id' => $request->product_id])
-    //            ->first();
+    /* * Ajax base result of patient according to id or name
+    * */
+    public static function getProductsAjax($request, $account_id)
+    {
+        if (isset($request->from_id)) {
+            $totalQuantitySubquery = \DB::table('inventories')
+                ->selectRaw('product_id, location_id, SUM(quantity) as total_quantity')
+                ->groupBy('product_id', 'location_id');
+        
+            $soldQuantitySubquery = \DB::table('order_details')
+                ->join('orders', 'orders.id', '=', 'order_details.order_id')
+                ->selectRaw('order_details.product_id, orders.location_id, SUM(order_details.quantity) as sold_quantity')
+                ->where('orders.location_id', $request->from_id) // Filter by location_id
+                ->groupBy('order_details.product_id', 'orders.location_id');
+        
+            $result = self::leftJoinSub($totalQuantitySubquery, 'inventory_totals', function ($join) {
+                    $join->on('products.id', '=', 'inventory_totals.product_id');
+                })
+                ->leftJoinSub($soldQuantitySubquery, 'sold_totals', function ($join) {
+                    $join->on('products.id', '=', 'sold_totals.product_id')
+                         ->on('inventory_totals.location_id', '=', 'sold_totals.location_id');
+                })
+                ->where([
+                    ['products.status', '=', '1'],
+                    ['products.account_id', '=', $account_id],
+                    ['inventory_totals.location_id', '=', $request->from_id],
+                ])
+                ->when($request->type == 'order', function ($q) {
+                    return $q->where(['product_type' => 'for_sale']);
+                })
+                ->selectRaw(
+                    'products.id, 
+                     products.name, 
+                     products.product_type, 
+                     products.sale_price, 
+                     inventory_totals.location_id, 
+                     COALESCE(inventory_totals.total_quantity, 0) as total_quantity, 
+                     COALESCE(sold_totals.sold_quantity, 0) as sold_quantity, 
+                     COALESCE(inventory_totals.total_quantity, 0) - COALESCE(sold_totals.sold_quantity, 0) as available_quantity'
+                )
+                ->get();
+        
+            return $result;
+        } else if (isset($request->product_id)) {
+            return self::join('inventories','products.id','inventories.product_id')->where([
+                ['products.status', '=', '1'],
+                ['products.account_id', '=', $account_id],
+                ['products.id', $request->product_id],
+            ])->when($request->type == 'order', function ($q) {
+                return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
+            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+        } else if ($request['request_from'] == 'order') {
+            return self::join('inventories','products.id','inventories.product_id')->where([
+                ['products.status', '=', '1'],
+                ['products.account_id', '=', $account_id],
+                [$request['from_key'], $request['from_id']]
+            ])->when(isset($request->type) && $request->type == 'order', function ($q) {
+                return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
+            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+        }
+    }
+    public static function  getTransferProductsAjax($request, $account_id)
+    {
+       if($request->location_id){
+        $inventories = Inventory::where([
+            'location_id' => $request->location_id,
+            'product_id' => $request->product_id
+        ])->get();
+        
+        // Calculate the total available quantity across all inventories
+        $totalAvailableQuantity = $inventories->sum('quantity');
+        
+        // Calculate the total quantity sold
+        $totalSoldQuantity = DB::table('order_details')
+            ->join('orders', 'order_details.order_id', '=', 'orders.id')
+            ->where('order_details.product_id', $request->product_id)
+            ->where('orders.location_id', $request->location_id)
+            ->sum('order_details.quantity');
+        
+        // Calculate the updated total quantity
+        $updatedQuantity = max(0, $totalAvailableQuantity - $totalSoldQuantity);
+        
+        // Set the updated quantity in the first inventory object
+        $primaryInventory = $inventories->first();
+        if ($primaryInventory) {
+            $primaryInventory->quantity = $updatedQuantity;
+        }
+        
+        // Return the updated inventory object
+        return $primaryInventory;
             
     //    }else{
     //     $inventory = Inventory::where([
@@ -359,17 +416,13 @@ class Product extends BaseModal
     //     return $this->hasMany(self::class, 'parent_id');
     // }
 
-    // public function parent()
-    // {
-    //     return $this->hasOne(self::class, 'id', 'parent_id');
-    // }
-    public function brand()
+    public function parent()
     {
-        return $this->belongsTo(Brand::class);
+        return $this->hasOne(self::class, 'id', 'parent_id');
     }
-
-    public function centreAllocations()
-    {
-        return $this->hasMany(CentreAllocation::class);
+    public function inventories() {
+        return $this->hasMany(Inventory::class, 'product_id');
     }
+    
+   
 }
