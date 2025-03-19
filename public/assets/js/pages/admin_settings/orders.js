@@ -6,10 +6,10 @@ var table_url = route('admin.orders.datatable');
 
 var table_columns = [
     {
-        field: 'id',
+        field: 'patient_id',
         sortable: false,
         width: '80',
-        title: 'Order ID'
+        title: 'Patient ID'
     }, {
         field: 'patients.name',
         title: 'Patient',
@@ -21,7 +21,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            
+            console.log(data);
             return displayProducts(data.order_detail);
         }
     }, {
@@ -59,19 +59,6 @@ var table_columns = [
             }
             return '<span class="badge badge-success">' + payment_mode_name + '</span>';
         }
-    },{
-        field: 'is_refunded',
-        title: 'Is Refunded',
-        width: 80,
-        template: function (data) {
-            if(data.is_refunded==1)
-            {
-                return '<span class="badge badge-success">Yes</span>';
-            }else{
-                return '<span class="badge badge-warning">No</span>';
-            }
-           
-        }
     }
     
     ,{
@@ -101,22 +88,22 @@ function actions(data) {
             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                         </a>';
 
-    actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
-                <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
-            </a>\
-            <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
-                <ul class="navi flex-column navi-hover py-2">\
-                    <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
-                        Choose an action: \
-                        </li>';
-    if (permissions.refund) {
-        actions += '<li class="navi-item">\
-                            <a href="javascript:void(0);" onclick="refundOrder(`' + refund_url + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-plus"></i></span>\
-                            <span class="navi-text">Refund Order</span>\
-                            </a>\
-                        </li>';
-    }
+    // actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+    //             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+    //         </a>\
+    //         <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+    //             <ul class="navi flex-column navi-hover py-2">\
+    //                 <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
+    //                     Choose an action: \
+    //                     </li>';
+    // if (permissions.refund) {
+    //     actions += '<li class="navi-item">\
+    //                         <a href="javascript:void(0);" onclick="refundOrder(`' + refund_url + '`);" class="navi-link">\
+    //                         <span class="navi-icon"><i class="la la-plus"></i></span>\
+    //                         <span class="navi-text">Refund Order</span>\
+    //                         </a>\
+    //                     </li>';
+    // }
    
     actions += '</ul>\
             </div>\
@@ -152,6 +139,9 @@ function addRow() {
         let product_id = $('#add_order_product').find(':selected').attr('data-id');
         let product_name = $('#add_order_product').find(':selected').attr('data-name');
         let product_price = $('#add_order_product').find(':selected').attr('data-price');
+        let location_id = $("#add_order_location").val();
+        let patient_id = $("#create_order_patient_search").val();
+        let employee_id = $("#add_employee_id").val();
         let quantity = 0;
         ProductStock.forEach(function (element) {
             if (element == product_id) {
@@ -166,13 +156,16 @@ function addRow() {
             dataType: 'json',
             data: {
                 product_id: product_id,
+                location_id: location_id,
+                patient_id:patient_id,
+                employee_id:employee_id
             },
             success: function (response) {
                 
                 let products = response.data.products;
                 
                 if (products.quantity - quantity == 0 || products.quantity - quantity < 0) {
-                    toastr.error("Product quantity out of stock");
+                    toastr.error("This Product is out of stock");
                     $("#add_service_btn").removeAttr('disabled');
                 } else {
                    
@@ -197,22 +190,68 @@ function calculateTotal(data) {
     let totalPrice = 0;
     var quantity = data.closest("tr").find('input[name="quantity[]"]').val();
     var price = data.closest("tr").find('.productPriceValue').val();
+    var patient_id = $("#create_order_patient_search").val();
+    var employee_id = $("#add_employee_id").val();
 
     data.closest("tr").find('.sub-total').empty();
     data.closest("tr").find('.sub-total').text(quantity * price);
+
+    // Calculate total price by adding all subtotals
     $('tr .sub-total').each(function () {
         var subtotal = parseFloat($(this).text()); // Get the subtotal value and convert to a number
         totalPrice += subtotal; // Add the subtotal to the total
-        console.log(totalPrice, subtotal, $(this).text());
     });
 
-    $('#product_price').val(price);
-    $('#total_product_price strong').text(totalPrice);
-    $('#refund_total_product_price').text(totalPrice);
+    // Check if the patient has an active membership
+    $.ajax({
+        type: "GET",
+        url: route('admin.orders.check_membership'), // Your route to check membership
+        dataType: 'json',
+        data: { patient_id: patient_id },
+        success: function (response) {
+            // Default discount is 0
+            let discount = 0;
+            
+            // Apply a 10% discount if the patient has an active membership
+            if (response.has_active_membership) {
+                discount = 0.10; // 10% discount
+            }
+
+            // Apply a 20% discount if employee_id exists
+            if (employee_id) {
+                discount = 0.20; // 20% discount
+            }
+
+            // Calculate the discount amount and the final discounted price
+            let discountAmount = totalPrice * discount;
+            let discountedTotal = totalPrice - discountAmount;
+
+            // Update the discount message and total price
+            if (discount === 0.10) {
+                $('#product_discount').text('10% Discount');
+                $('#discount').val(10); // Update refund price
+            } else if (discount === 0.20) {
+                $('#product_discount').text('20% Employee Discount');
+                $('#discount').val(20); // Update refund price
+            } else {
+                $('#product_discount').text('');
+            }
+
+            // Update the total price in the UI
+            $('#total_product_price strong').text(discountedTotal.toFixed(2)); // Update total with discount
+            $("#grand_total").val(discountedTotal.toFixed(2));
+            $('#refund_total_product_price').text(discountedTotal.toFixed(2)); // Update refund price
+           
+        },
+        error: function (error) {
+            console.error("Error checking membership:", error);
+        }
+    });
 }
 
+
 function setProduct(id, product_id, product_name, price, stock) {
-    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td class="sub-total">' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
+    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td></td><td class="sub-total">' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
 }
 
 
@@ -399,7 +438,7 @@ $('body').on('keyup', ".quantity_input", function () {
         calculateTotal($(this));
        
     } else {
-        toastr.error("Product quantity out of stock.");
+        toastr.error("This Product is out of stock");
     }
     return false;
 });
@@ -462,6 +501,71 @@ function resetAllFilters(datatable) {
         datatable.search(filters, 'search');
     });
 }
+function SelectEmployee(){
+    const productList = $("#product_list").children();
+   
+    // Check if there are products in the list
+    if (productList.length > 0) {
+        // Prevent switching and reset the selection
+        $("#sold_to").val($("#sold_to").data("previous"));
+        toastr.error("You cannot change 'Sold To' after adding products. Please remove the products first.");
+        return;
+    }
+   if($("#sold_to").val()=="employee")
+   {
+    $("#walkinDiv").hide();  
+    $("#product_discount").text("");
+  
+    $("#discount").val("");
+   
+    $("#prescribedBy").hide();
+    let url = route('admin.get-employees');
+    let location_id = $("#add_order_location").val();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: location_id},
+        success: function (response) {
+          
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+                $("#patientDropDown").hide();
+                $("#employeeDropDown").show();               
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Employee</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#add_employee_id").html(emp_options);
+            }
+            
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+   }else if($("#sold_to").val()=="walkin"){
+        $("#prescribedBy").hide();
+        $("#patientDropDown").hide();
+        $("#employeeDropDown").hide();  
+        $("#walkinDiv").show();  
+   }else{
+    
+    $("#product_discount").text("");
+    $("#discount").val("");
+    $("#walkinDiv").hide();  
+   
+   
+        $("#prescribedBy").show();
+        $("#patientDropDown").show();
+        $("#employeeDropDown").hide();  
+   }
+}
 
 function setFilters(filter_values, active_filters) {
     let centres = filter_values.centres;
@@ -476,7 +580,7 @@ function setFilters(filter_values, active_filters) {
     let centres_selected, warehouse_selected;
     let FDM = '';
 
-    if (Object.keys(centres).length == 1 && Object.keys(warehouses).length == 0) {
+    if (Object.keys(centres).length == 1) {
         centres_selected = "selected"
         FDM = "fdm_select";
     
@@ -549,8 +653,14 @@ function productSelect(product_id, id = null) {
             product_id: product_id,
         },
         success: function (response) {
-            console.log('productSelect',response);
+            let user_options = '<option value="">Select Doctor</option>';
             let product = response.data.products;
+            let users = response.data.users;
+           
+            Object.entries(users).forEach(function (value, index) {
+                user_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+            });
+            $("#add_doctor_id").html(user_options);
             //if (products.length) {
 
                 //products.forEach(function (product) {
@@ -581,16 +691,28 @@ function productSearch(from_id, id = null, type = null) {
             },
             success: function (response) {
                 let products = response.data.products;
-
+                let doctors = response.data.doctors;
+                console.log('doc',doctors);
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name + '</option>';
+                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name +' - '+product.available_quantity+' products available' + '</option>';
                     });
                 } else {
                     html = '<option value="">No Product Found</option>';
                 }
+                let user_options = '';
+                if (Object.keys(doctors).length) {
+                    user_options = '<option value="">Select Doctor</option>';
+                    Object.entries(doctors).forEach(function ([id, name]) {
+                        user_options += '<option value="' + id + '">' + name + '</option>';
+                    });
+                } else {
+                    user_options = '<option value="">No Doctor Found</option>';
+                }
+
                 $("#" + id + "_order_product").html(html);
+                $("#add_doctor_ids").html(user_options);
             }
         });
     } else {
@@ -644,7 +766,7 @@ $(document).ready(function () {
             calculateTotal($(this));
             console.log($input.val(count), stock, count, ProductStock);
         } else {
-            toastr.error("Product quantity out of stock.");
+            toastr.error("This Product is out of stock");
         }
         return false;
     });
@@ -656,6 +778,10 @@ $("#add_new_order").on("click", function () {
     $(".select2").val('').trigger("change");
     $("#product_list").empty();
     $("#refund_product_list").empty();
+    $("#employeeDropDown").hide();
+    $("#patientDropDown").show();
+    $("#product_discount").text('');
+    $('#sold_to').val('patient').trigger('change');
     var FDMVal = $('#add_order_location[role="fdm_select"] optgroup option:first-child').val();
     setTimeout(function () {
         $('#add_order_location[role="fdm_select"]').val(FDMVal).trigger('change');

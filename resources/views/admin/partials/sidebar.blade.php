@@ -787,7 +787,7 @@
                         <span class="menu-text">Inventory</span>
                         <i class="menu-arrow"></i>
                     </a>
-                    @can('warehouse_manage')
+                    <!-- @can('warehouse_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -802,7 +802,7 @@
 
                         </ul>
                     </div>
-                    @endcan
+                    @endcan -->
                     @can('brand_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
@@ -835,7 +835,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('transfer_product_manage')
+                    @can('product_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -867,7 +867,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('inventory_refund_manage')
+                    <!-- @can('inventory_refund_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -884,7 +884,7 @@
                     </div>
                     @endcan
                 </li>
-                @endcan
+                @endcan -->
                 @endif
 
                 <!-- End Inventory menu -->
@@ -925,6 +925,22 @@
                                         <span></span>
                                     </i>
                                     <span class="menu-text">Operation Reports</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                    @endcan
+                    @can('finance_general_revenue_reports_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.inventory_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.inventory_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Inventory Reports</span>
                                 </a>
                             </li>
 

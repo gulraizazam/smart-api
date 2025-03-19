@@ -180,7 +180,17 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     }).datepicker("setDate", new Date());
-
+    $('.endRota-datepicker').datepicker({
+        todayHighlight: true,
+        orientation: 'bottom',
+        //startDate: new Date(),
+        "setDate": "7/11/2011",
+        format: 'yyyy-mm-dd',
+        templates: {
+            leftArrow: '<i class="la la-angle-left"></i>',
+            rightArrow: '<i class="la la-angle-right"></i>',
+        },
+    });
     $('.timepicker').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
 
     $('#date_range').daterangepicker({
@@ -269,6 +279,7 @@ $(document).ready(function () {
     });
 
     patientSearch('user_search');
+    orderPatientSearch('user_search')
     leadSearch('lead_search_id')
 
     $(".package_id").select2({
@@ -1325,7 +1336,7 @@ function get_query() {
     return result;
 }
 function patientSearch(search_id = 'patient_id', flag = 1) {
-
+   
     let debounceTimer;
     $("." + search_id).on("keyup", function () {
 
@@ -1351,6 +1362,55 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                         if (patients.length) {
                             patients.forEach(function (patient) {
                                 html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                            $(".croxcli").show();
+                        } else {
+                            $(".suggesstion-box").hide();
+                        }
+                    }
+                });
+            }, 700);
+        } else {
+            $(".suggesstion-box").hide();
+            $(".croxcli").hide();
+        }
+    });
+    $(".croxcli").hide();
+    return false;
+}
+function orderPatientSearch(search_id = 'patient_id', flag = 1) {
+   
+    let debounceTimer;
+    $("." + search_id).on("keyup", function () {
+
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.order'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                let membershipCode = patient.membership_code || 'No-Membership';
+                                let membershipStatus = patient.membership_status || 'Inactive';
+                
+                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">'
+                                    + patient.name + ' - ' + patient.id + ' - ' + membershipCode + ' - ' + membershipStatus + '</li>';
                             });
                             $(".suggestion-list").html(html);
                             $(".suggesstion-box").show();
@@ -1410,7 +1470,7 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
 }
 
 function patientSearchPlan(search_id = 'patient_id', flag = 1) {
-
+  
     let debounceTimer;
     $("." + search_id).on("keyup", function () {
 
@@ -1471,18 +1531,15 @@ function productSearch(from_id, from_key, id = null, type = null) {
                 $("#" + id + "_transfer_product").html(html);
                 let products = response.data.products;
                 if (products.length) {
-                    let html = '<option value="">Select Product</option>';
+                    html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        let oldProduct = $('#' + id + '_product_id').val();
-
-                        if (product.id == oldProduct) {
-                            html += '<option value="' + product.id + '" selected>' + product.name + '</option>';
-                        } else {
-                            html += '<option value="' + product.id + '">' + product.name + '</option>';
-                        }
+                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name +' - '+product.available_quantity+' products available' + '</option>';
                     });
-                    $("#" + id + "_transfer_product").html(html);
+                } else {
+                    html = '<option value="">No Product Found</option>';
                 }
+                $("#add_transfer_product").html(html);
+                
             }
         });
     }

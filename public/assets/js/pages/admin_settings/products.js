@@ -2,6 +2,12 @@ var table_url = route('admin.products.datatable');
 
 var table_columns = [
     {
+        field: 'sku',
+        title: 'SKU',
+        width: 'auto',
+        sortable: false,
+    },
+    {
         field: 'name',
         title: 'Name',
         width: 'auto',
@@ -11,7 +17,7 @@ var table_columns = [
         title: 'Brand',
         width: 'auto',
         sortable: false,
-    } , {
+    },  {
         field: 'sale_price',
         title: 'Sale Price',
         width: 'auto',
@@ -43,8 +49,9 @@ function actions(data) {
     let inventory_id = data.inventory_id;
     let edit_sale_price_url = route('admin.products.edit-sale-price', { id: id });
     let url = route('admin.products.edit', { id: id });
-    let stock_url = route('admin.products.stock', { id: id });
+   
     let inventories_url = route('admin.products.inventory', { id: id });
+    let allocate_url = route('admin.products.location_manage', {id: id});
     //let transfer_product_url = route('admin.products.transfer_product.get', { id: inventory_id });
     let log_url = route('admin.products.logs', { id: id });
 
@@ -57,30 +64,29 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-                        // if (permissions.add_stock) {
+                        actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="allocateRow(`' + allocate_url + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Add Inventory</span>\
+                        </a>\
+                    </li>';
+                         if (permissions.add_stock) {
                             actions += '<li class="navi-item">\
                                                 <a href="'+ inventories_url + '" class="navi-link">\
                                                 <span class="navi-icon"><i class="la la-archway"></i></span>\
                                                 <span class="navi-text">Inventories</span>\
                                             </a>\
                                          </li>';
-                        //}
-                        if (permissions.add_stock) {
-                            actions += '<li class="navi-item">\
-                                            <a href="javascript:void(0);" onclick="addProductStock(`' + id + '`,`'+inventory_id+'`);" class="navi-link">\
-                                            <span class="navi-icon"><i class="la la-plus"></i></span>\
-                                            <span class="navi-text">Add Stock</span>\
-                                            </a>\
-                                        </li>';
                         }
-                        if (permissions.sale_price) {
-                            actions += '<li class="navi-item">\
-                                        <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
-                                        <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
-                                        <span class="navi-text">Sale Price</span>\
-                                        </a>\
-                                    </li>';
-                        }
+                        
+                        // if (permissions.sale_price) {
+                        //     actions += '<li class="navi-item">\
+                        //                 <a href="javascript:void(0);" onclick="editSalePrice(`' + edit_sale_price_url + '`);" class="navi-link">\
+                        //                 <span class="navi-icon"><i class="la la-money-bill-wave"></i></span>\
+                        //                 <span class="navi-text">Sale Price</span>\
+                        //                 </a>\
+                        //             </li>';
+                        // }
                         
                         // if (permissions.transfer_product) {
                         //     actions += '<li class="navi-item">\
@@ -90,14 +96,14 @@ function actions(data) {
                         //                     </a>\
                         //                 </li>';
                         // }
-                        if (permissions.stock_detail) {
-                            actions += '<li class="navi-item">\
-                                        <a href="'+ stock_url + '" class="navi-link">\
-                                            <span class="navi-icon"><i class="la la-archway"></i></span>\
-                                            <span class="navi-text">Stock Logs</span>\
-                                        </a>\
-                                    </li>';
-                        }
+                        // if (permissions.stock_detail) {
+                        //     actions += '<li class="navi-item">\
+                        //                 <a href="'+ stock_url + '" class="navi-link">\
+                        //                     <span class="navi-icon"><i class="la la-archway"></i></span>\
+                        //                     <span class="navi-text">Stock Logs</span>\
+                        //                 </a>\
+                        //             </li>';
+                        // }
                         if (permissions.edit) {
                             actions += '<li class="navi-item">\
                                             <a href="javascript:void(0);" onclick="editRow(`'+ url + '`);" class="navi-link">\
@@ -117,7 +123,54 @@ function actions(data) {
 
                         return actions;
 }
+function allocateRow(url) {
+    $("#modal_allocate_products").modal("show");
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            setAllocateData(response);
+            reInitSelect2(".select2", "");
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(EditValidation);
+        }
+    });
+}
 
+
+function setAllocateData(response) {
+    try {
+        let product = response.data.product;
+        let locations = response.data.location;
+      
+        let location_options = '<option value="">Select Centre</option>';
+        let location_services = '';
+        Object.values(locations).forEach(function(value, index) {
+            location_options += '<option value="">Select</option>';
+            Object.values(value.children).forEach(function(child, index) {
+                location_options += '<option value="'+child.id+'">'+child.name+'</option>';
+            });
+        });
+      
+
+       
+
+        $("#product_id").val(product.id);
+
+        $("#locations").html(location_options);
+
+       
+
+    } catch (error) {
+        showException(error);
+    }
+}
 function editRow(url) {
     $.ajax({
         headers: {
@@ -141,11 +194,13 @@ function setEditData(response) {
     let product = response.data.product;
     let product_detail = response.data.product_detail;
     let quantity = response.data.quantity;
+   
     let action = route('admin.products.update', { id: product.id, detail: product_detail.id });
     $("#modal_edit_products_form").attr("action", action);
 
     /* Products */
     $("#edit_name").val(product.name);
+    $("#product_sku").val(product.sku);
     $("#edit_products_brand").val(product.brand_id).trigger('change');
     $("#edit_sale_price").val(product.sale_price);
     $("#edit_product_centre").val(product.location_id).trigger('change');
@@ -317,13 +372,21 @@ function statusesProduct(data, status_url, is_column_name_change = false) {
         }
 
     } else {
-
-        status += '<span class="switch switch-icon">\
-        <label>\
-            <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
-            <span></span>\
-        </label>\
-        </span>';
+        if (permissions.active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+         }else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox"  name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
     }
 
     return status;

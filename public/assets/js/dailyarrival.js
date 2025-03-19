@@ -61,6 +61,19 @@ $('#date_range_appointments').daterangepicker({
     startDate: moment().startOf('month'),
     endDate: moment().subtract(1, 'days')
 }).val();
+$('#date_range_inv').daterangepicker({
+    locale: {
+    },
+    ranges: {
+        
+    
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().endOf('month')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -229,6 +242,68 @@ var loadAppointmentsReport  = function (that) {
         }
     });
 };
+var loadInventoryReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+  
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_inventory_report'),
+        type: "POST",
+        data: {
+           
+           report_type:$("#report_type").val(),
+            date_range: $('#date_range_inv').val(),
+            centre_id: $('#centre_id').val(),
+            doctor_id:$("#doctor_id_filter").val(),
+            brand_id:$("#brand_id").val(),
+           
+           
+        },
+        success: function(response){
+            $('#inv_content').html('');
+            $('#inv_content').html(response);
+            $("#inv_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            $("#doc_sales_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
 var loadPatientFollowUpReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -301,8 +376,41 @@ var loadPatientFollowUpMonthReport = function (that) {
         }
     });
 };
+function getEmployees(locationId){
+   
+    let url = route('admin.get-doctors');
+ 
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: locationId},
+        success: function (response) {
+          
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+                        
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Doctor</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#doctor_id_filter").html(emp_options);
+            }
+            
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+  
+}
 function patientSearch(search_id = 'patient_id',flag=1) {
-
+    
     $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
@@ -346,4 +454,13 @@ function selectUser(name, user_id,  search_id) {
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
+}
+function hideDoctor()
+{
+    var rType = $("#report_type").val();
+    if(rType == "doctor_sales_report"){
+        $("#doc_dropdown").show();
+    }else{
+        $("#doc_dropdown").hide();
+    }
 }

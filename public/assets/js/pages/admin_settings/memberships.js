@@ -22,7 +22,7 @@ var table_columns = [{
     sortable: false,
     width: 110,
     template: function (data) {
-        console.log(data);
+        
         if(data.start_date  !=undefined){
             return data.start_date;
         }else{
@@ -205,8 +205,20 @@ function importMembership() {
     });
 }
 
-
-
+$("#export-memberships").on("click",function(){
+    let code= $("#search_code_name").val();
+    let membership_type_id = $("#search_membership_type").val();
+    let assigned = $("#search_assigned_status").val();
+    let url = $(this).data('href');
+    window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned+'&ext=xlsx';
+});
+$("#export-memberships-leads").on("click",function(){
+    let code= $("#search_code_name").val();
+    let membership_type_id = $("#search_membership_type").val();
+    let assigned = $("#search_assigned_status").val();
+    let url = $(this).data('href');
+    window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned;
+});
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {
@@ -214,7 +226,8 @@ function applyFilters(datatable) {
             code: $("#search_code_name").val(),
             membership_type_id: $("#membershiptype_id").val(),
            
-            created_by: $("#search_created_by").val(),
+            membership_type_id: $("#search_membership_type").val(),
+            assigned:$("#search_assigned_status").val(),
             created_at: $("#date_range").val(),
          
             filter: 'filter',

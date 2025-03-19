@@ -15,7 +15,11 @@ use App\Models\TransferProduct;
 use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
+use App\Models\DoctorHasLocations;
 use App\Models\Inventory;
+use App\Models\RoleHasUsers;
+use App\Models\User;
+use App\Models\UserHasLocations;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 
@@ -43,9 +47,9 @@ class TransferProductsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('transfer_product_manage')) {
-            return abort(401);
-        }
+        // if (!Gate::allows('transfer_product_manage')) {
+        //     return abort(401);
+        // }
 
         return view('admin.transfer_product.index');
     }
@@ -64,37 +68,7 @@ class TransferProductsController extends Controller
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-            if (isset($filters['delete'])) {
-                $ids = explode(',', $filters['delete']);
-                $transfer_products = TransferProduct::getBulkData($ids);
-
-                if (!$transfer_products->isEmpty()) {
-                    $is_child = false;
-                    foreach ($transfer_products as $transfer_product) {
-                        if (!TransferProduct::isChildExists($transfer_product->child_product_id, Auth::User()->account_id)) {
-                            DB::transaction(function () use ($transfer_product) {
-                                Stock::where(['product_id' => $transfer_product->child_product_id])->delete();
-                                Stock::where(['transfer_id' => $transfer_product->id])->delete();
-                                $transfer_product->delete();
-                                $product_detail = ProductDetail::where(['product_id' => $transfer_product->child_product_id])->get();
-                                foreach ($product_detail as $data) {
-                                    $data->delete();
-                                }
-                                Product::where(['id' => $transfer_product->child_product_id, 'account_id' => Auth::User()->account_id])->delete();
-                            });
-                            $is_child = true;
-                        }
-                    }
-                    if (!$is_child) {
-                        $records['status'] = false;
-                        $records['message'] = 'Child records exist, unable to delete resource!';
-                    } else {
-                        $records['status'] = true;
-                        $records['message'] = 'Records has been deleted successfully!';
-                    }
-                }
-
-            }
+           
             // Get Total Records
             $iTotalRecords = TransferProduct::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
             [$orderBy, $order] = getSortBy($request);
@@ -149,9 +123,9 @@ class TransferProductsController extends Controller
     public function create()
     {
         try {
-            if (!Gate::allows('transfer_product_create')) {
-                return abort(401);
-            }
+            // if (!Gate::allows('transfer_product_create')) {
+            //     return abort(401);
+            // }
 
             $centres = Locations::whereIn('id', ACL::getUserCentres())->pluck('name', 'id');
             $warehouse = Warehouse::whereActive(1)->pluck('name', 'id');
@@ -173,9 +147,9 @@ class TransferProductsController extends Controller
     {
      
         try {
-            if (!Gate::allows('transfer_product_create')) {
-                return abort(401);
-            }
+            // if (!Gate::allows('transfer_product_create')) {
+            //     return abort(401);
+            // }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -280,6 +254,8 @@ class TransferProductsController extends Controller
         return $validator = Validator::make($request->all(), [
             'product_id' => 'required',
             'quantity' => 'required',
+            'from_location_id'=>'required',
+            'to_location_id'=>'required'
         ]);
     }
 
@@ -291,9 +267,9 @@ class TransferProductsController extends Controller
     public function edit($id)
     {
         try {
-            if (!Gate::allows('transfer_product_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+            // if (!Gate::allows('transfer_product_edit')) {
+            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            // }
             $data['product'] = TransferProduct::findOrFail($id);
             $data['product_details'] = ProductDetail::findOrFail($data['product']->product_detail_id);
             $data['products'] = Product::getAllRecordsDictionary(Auth::user()->account_id);
@@ -315,9 +291,9 @@ class TransferProductsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('transfer_product_edit')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+            // if (!Gate::allows('transfer_product_edit')) {
+            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            // }
             $validator = $this->verifyFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->errors()->first(), false, $validator->errors());
@@ -364,9 +340,9 @@ class TransferProductsController extends Controller
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('transfer_product_destroy')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+            // if (!Gate::allows('transfer_product_destroy')) {
+            //     return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            // }
             $response = TransferProduct::DeleteRecord($id);
 
             return ApiHelper::apiResponse($this->success, $response->get('message'), $response->get('status'));
@@ -383,16 +359,42 @@ class TransferProductsController extends Controller
      */
     public function getProducts(Request $request)
     {
-      
-        
         $products = Product::getProductsAjax($request, Auth::User()->account_id);
-      
-        // foreach ($products as $product) {
-        //     $product->quantity = Stock::sumProductQuantity($product->id);
-        // }
-
+        $doctors = DoctorHasLocations::where('location_id', $request->from_id)->pluck('user_id')->toArray();
+    
+        // Fetch active doctors as an associative array
+        $users = User::whereIn('id', $doctors)
+            ->where('active', 1)
+            ->pluck('name', 'id') // Preserve user IDs
+            ->toArray();
+    
+        // Ensure 'from_id' is an array
+        $locationIds = is_array($request->from_id) ? $request->from_id : [$request->from_id];
+    
+        // Fetch FDM users by getting the user_ids associated with the center (location_id)
+        $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
+    
+        // Fetch the 'FDM' role and get its user ids
+        $findRole = DB::table('roles')->where('name', 'FDM')->first();
+        $roleId = $findRole->id;
+    
+        // Get users who have the FDM role
+        $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+    
+        // Get the intersection of users who are both FDM and belong to the center
+        $fdmUsers = array_intersect($findFDM, $roleHasUser);
+    
+        // Fetch FDM user details (id and name) from the users table
+        $FDMUsers = User::whereIn('id', $fdmUsers)
+            ->pluck('name', 'id') // Preserve user IDs
+            ->toArray();
+    
+        // Merge the arrays while preserving keys
+        $combinedUsers = $users + $FDMUsers;
+    
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
+            'doctors' => $combinedUsers
         ]);
     }
     public function getTransferProducts(Request $request)
@@ -400,6 +402,7 @@ class TransferProductsController extends Controller
        
          
         $products = Product::getTransferProductsAjax($request, Auth::User()->account_id);
+      
         if($request->location_id){
             $warehouseId = TransferProduct::where(['product_id'=>$request->product_id,'to_location_id'=>$request->location_id])->pluck('from_warehouse_id')->toArray();
             $warehouses = Warehouse::whereIn('id',$warehouseId)->get();
@@ -408,9 +411,13 @@ class TransferProductsController extends Controller
             $warehouses = Warehouse::get();
            
         }
+        $Users = User::where('user_type_id', 5)->where('active', 1)->pluck('name', 'id');
+        
+
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'products' => $products,
             'warehouses' =>$warehouses,
+            'users'=>$Users
         ]);
        
     }
