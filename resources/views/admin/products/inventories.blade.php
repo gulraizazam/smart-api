@@ -1,11 +1,11 @@
 @extends('admin.layouts.master')
-@section('title', 'Products Inventories')
+@section('title', 'Products Allocations')
 @section('content')
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Product Inventories', 'title' => 'Product Inventories'])
+    @include('admin.partials.breadcrumb', ['module' => 'Product Allocations', 'title' => 'Product Allocations'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Products Inventories</h3>
+                            <h3 class="card-label">Products Allocations</h3>
                         </div>
                     </div>
 
@@ -56,7 +56,13 @@
         </div>
         <!--end::Modal dialog-->
     </div>
-
+    <div class="modal fade" id="modal_add_product_stock" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="user-edit">
+            @include('admin.products.stock')
+        </div>
+        <!--end::Modal dialog-->
+    </div>
     @push('datatable-js')
         <script>
             var inventory_id = "{{request('id')}}";
