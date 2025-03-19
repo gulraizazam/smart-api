@@ -36,7 +36,8 @@
                     <input type="hidden" id="add_product_type" name="product_type">
                     <input type="hidden" id="add_order_location_type" name="location_type">
                     <input type="hidden" id="total_products">
-
+                    <input type="hidden" id="grand_total" name="grand_total">
+                    <input type="hidden" id="discount" name="discount">
                     <div class="row mt-2">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Location <span
@@ -47,6 +48,17 @@
                         </div>
                     </div>
                     <div class="row mt-2">
+                    <div class="fv-row col-md-12">
+                        <label class="fw-bold fs-6 mb-2 pl-0">Sold To <span
+                            class="text text-danger">*</span></label>
+                        <select class="form-control" id="sold_to" name="sold_to" onchange="SelectEmployee()">
+                            <option value="patient">Patient</option>
+                            <option value="employee">Employee</option>
+                            <option value="walkin">Walk In</option>
+                        </select>
+                    </div>
+                    </div>
+                    <div class="row mt-2" id="patientDropDown">
                         <div class="fv-row col-md-12">
                             <label class="fw-bold fs-6 mb-2 pl-0">Patient Search <span
                                     class="text text-danger">*</span></label>
@@ -63,7 +75,32 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-2" id="walkinDiv">
+                        <div class="fv-row col-md-6">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Name<span
+                                    class="text text-danger">*</span></label>
+                            <input class="form-control"
+                                placeholder="Name" type="text" name="name">
 
+                            
+                        </div>
+                        <div class="fv-row col-md-6">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Phone<span
+                                    class="text text-danger">*</span></label>
+                            <input class="form-control"
+                                placeholder="Phone" type="text" name="phone">
+
+                            
+                        </div>
+                    </div>
+                    <div class="row mt-2" style="display: none;" id="employeeDropDown">
+                        <div class="fv-row col-md-12">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Employee <span
+                                    class="text text-danger">*</span></label>
+                            <select class="form-control select2" name="employee_id" id="add_employee_id">
+                            </select>
+                        </div>
+                    </div>
                     <div class="row mt-2">
                         <div class="fv-row col-10">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Product</label>
@@ -79,7 +116,14 @@
                             </button>
                         </div>
                     </div>
-
+                    <div class="row mt-2" id="prescribedBy">
+                        <div class="fv-row col-md-12">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Prescribed By <span
+                                    class="text text-danger">*</span></label>
+                            <select class="form-control select2" name="doctor_id" id="add_doctor_ids">
+                            </select>
+                        </div>
+                    </div>
                     <div class="row mt-5">
                         <div class="fv-row col-md-12">
                             <table class="table table-bordered order_list_table">
@@ -88,17 +132,19 @@
                                         <th>Product Name</th>
                                         <th>Sale Price</th>
                                         <th>Quantity</th>
+                                        <th>Discount</th>
                                         <th>SubTotal</th>
                                         <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody id="product_list" class="text-left">
                                 </tbody>
-                                <tfoot>
+                                <tfoot id="footHtml">
                                     <tr>
                                         <td></td>
                                         <td></td>
                                         <td></td>
+                                        <td id="product_discount" class="discount"></td>
                                         <td id="total_product_price"><strong>0</strong></td>
                                         
                                         <td></td>

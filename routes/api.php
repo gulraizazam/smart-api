@@ -277,6 +277,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     //Invoice Management route end
 
     Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
+    Route::get('users/getpatientorder', [UsersController::class, 'getpatientidOrder'])->name('users.getpatient.order');
+    Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
     Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
     Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
     Route::get('users/get_cities', [UsersController::class, 'getUserCities'])->name('users.get_cities');
@@ -524,6 +526,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('products', [ProductsController::class, 'store'])->name('products.store');
     Route::post('products/status', [ProductsController::class, 'status'])->name('products.status');
     Route::get('products/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
+    Route::post('products/save_allocate', [ProductsController::class, 'saveAllocate'])->name('products.save_allocate');
+    Route::get('products/products/{id}', [ProductsController::class, 'displaylocation'])->name('products.location_manage');
     Route::get('products/{id}/saleprice', [ProductsController::class, 'editSalePrice'])->name('products.edit-sale-price');
     Route::post('products/stock-detail/{id}', [ProductsController::class, 'productStockDetail'])->name('products.stock-detail');
     Route::post('products/inventory-detail/{id}', [ProductsController::class, 'productInventoryDetail'])->name('products.inventories');
@@ -549,7 +553,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('orders/getdiscounts', [OrdersController::class, 'getDiscounts'])->name('orders.getdiscounts');
     Route::get('orders/displayInvoice/{id}', [OrdersController::class, 'displayInvoiceAppointment'])->name('orders.invoiceDisplay');
     Route::get('invoices/pdf/{id}/{download?}', [OrdersController::class, 'invoicePdf'])->name('orders.invoice_pdf');
-
+    Route::post('get-employees', [OrdersController::class, 'getEmployees'])->name('get-employees');
+    Route::post('get-doctors', [OrdersController::class, 'getDoctors'])->name('get-doctors');
     Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
     Route::get('orders/{id}/edit', [OrdersController::class, 'edit'])->name('orders.edit');
     Route::post('orders/update/{id}', [OrdersController::class, 'update'])->name('orders.update');
