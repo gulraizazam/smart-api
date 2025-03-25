@@ -2263,13 +2263,16 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        if ((isset($request->location_id) && $request->location_id)) {
-            /* Case 1: */
+        if (!empty($request->location_id)) {
             $locationId = [$request->location_id];
         } else {
             $locationId = ACL::getUserCentres();
         }
-        dd($request->location_id);
+        
+        // Ensure $locationId is always an array with valid values
+        $locationId = array_filter($locationId); // Remove null/empty values
+        
+        dd($locationId);
        // $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $serviceId = $request->service_id;    
         $soldServices = DB::table('package_services')
