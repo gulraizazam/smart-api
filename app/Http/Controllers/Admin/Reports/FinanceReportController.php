@@ -2269,6 +2269,7 @@ class FinanceReportController extends Controller
         } else {
             $locationId = ACL::getUserCentres();
         }
+        dd($request->location_id);
        // $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $serviceId = $request->service_id;    
         $soldServices = DB::table('package_services')
