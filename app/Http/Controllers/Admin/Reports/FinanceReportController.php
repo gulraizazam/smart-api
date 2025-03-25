@@ -2269,7 +2269,7 @@ class FinanceReportController extends Controller
             $locationId = ACL::getUserCentres(); // Use all allowed centres
         }
         
-        dd($locationId);
+        
        // $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $serviceId = $request->service_id;    
         $soldServices = DB::table('package_services')
