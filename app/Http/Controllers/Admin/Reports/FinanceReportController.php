@@ -2272,7 +2272,7 @@ class FinanceReportController extends Controller
         // Ensure $locationId is always an array with valid values
         $locationId = array_filter($locationId); // Remove null/empty values
         
-        dd($locationId);
+        dd(ACL::getUserCentres());
        // $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $serviceId = $request->service_id;    
         $soldServices = DB::table('package_services')
