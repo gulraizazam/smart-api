@@ -2254,7 +2254,7 @@ class FinanceReportController extends Controller
 
     public function serviceSoldreport(Request $request)
     {
-       
+       DB::enableQueryLog();
         if ($request->get('date_range')) {
             $date_range = explode(' - ', $request->get('date_range'));
             $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
@@ -2286,6 +2286,7 @@ class FinanceReportController extends Controller
         ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'),'packages.location_id')
         ->groupBy('package_services.service_id','packages.location_id')
         ->get();
+        dd(DB::getQueryLog());
         return view('admin.reports.accountsalesreport.serviceSoldreport', compact('soldServices', 'start_date', 'end_date'));
         
     }
