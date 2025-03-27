@@ -14,8 +14,8 @@ class UpdateExpiredMemberships extends Command
     public function handle()
     {
         $count = Membership::where('end_date', '<', Carbon::today())
-            ->where('status', 1)
-            ->update(['status' => 0]);
+            ->where('active', 1)
+            ->update(['active' => 0]);
 
         $this->info("$count memberships updated successfully.");
     }
