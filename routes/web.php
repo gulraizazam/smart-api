@@ -106,6 +106,9 @@ Route::get('/check-expired-records', function () {
 Route::get('/daily-stats', function () {
     \Artisan::call('appointments:daily-stats');
 });
+Route::get('/check-memberships', function () {
+    \Artisan::call('memberships:expire');
+});
 Route::get('/get_deleted', function () {
     $appointments = Appointments::onlyTrashed()->where('deleted_by', 4)->get();
     return view('deleted', get_defined_vars());
