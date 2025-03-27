@@ -227,7 +227,7 @@ $("#export-memberships-leads").on("click",function(){
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {
-            alert($("#search_membership_status").val());
+           
             code: $("#search_code_name").val(),
             membership_type_id: $("#membershiptype_id").val(),
            
