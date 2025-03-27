@@ -66,6 +66,8 @@ use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as Patient
 use App\Http\Controllers\Admin\Reports\ActivitylogsReportController;
 use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
+use App\Models\Membership;
+use Illuminate\Support\Carbon;
 
 /*
 |--------------------------------------------------------------------------
@@ -107,7 +109,11 @@ Route::get('/daily-stats', function () {
     \Artisan::call('appointments:daily-stats');
 });
 Route::get('/check-memberships', function () {
-    \Artisan::call('memberships:expire');
+    $count = Membership::where('end_date', '<', Carbon::today())
+    ->where('status', 1)
+    ->update(['status' => 0]);
+
+dd($count. 'updated');
 });
 Route::get('/get_deleted', function () {
     $appointments = Appointments::onlyTrashed()->where('deleted_by', 4)->get();
