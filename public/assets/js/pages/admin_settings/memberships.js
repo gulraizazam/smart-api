@@ -47,7 +47,7 @@ var table_columns = [{
     width: 60,
     template: function (data) {
      
-        if(data.status ==1){
+        if(data.active ==1){
             return '<span class="text text-success">Active</span>';
         }else{
             return '<span class="text text-danger">Expired</span>';
