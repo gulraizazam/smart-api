@@ -40,6 +40,14 @@
                 <option value="0">Not Assigned</option>
             </select>
         </div>
+        <div class="col-lg-3 mb-lg-0">
+            <label>Membership Status</label>
+            <select class="form-control filter-field select2" id="search_membership_status">
+                <option value="">Select</option>
+                <option value="1">Active</option>
+                <option value="0">Expired</option>
+            </select>
+        </div>
         <div class="col-md-4 mt-8">
 
 @include('admin.partials.filter-buttons')
