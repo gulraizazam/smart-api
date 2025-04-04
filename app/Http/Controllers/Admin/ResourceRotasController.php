@@ -876,12 +876,12 @@ class ResourceRotasController extends Controller
             if (count($rota_appointments)) {
                 foreach ($rota_appointments as $rota_appointment) {
                     if ($rota_appointment['scheduled_time'] && $request->start_time && $request->end_time) {
-                        if (! ResourceHasRota::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $request->start_time, $request->end_time)) {
-                            $not_allow = true;
+                        // if (! ResourceHasRota::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), $request->start_time, $request->end_time)) {
+                        //     $not_allow = true;
 
-                            return ApiHelper::apiResponse($this->success, 'Provided rota timings are conflicts with appointments. Unable to update rota.', false);
-                            break;
-                        }
+                        //     return ApiHelper::apiResponse($this->success, 'Provided rota timings are conflicts with appointments. Unable to update rota.', false);
+                        //     break;
+                        // }
                         if (ResourceHasRota::checkTime(Carbon::parse($rota_appointment['scheduled_time'])->format('h:i A'), Input::get('start_off'), Input::get('end_off'))) {
                             $not_allow = true;
 
