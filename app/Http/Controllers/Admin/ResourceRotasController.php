@@ -669,12 +669,10 @@ class ResourceRotasController extends Controller
 
             $response = ResourceHasRota::updateRecord($id, $request, Auth::User()->account_id);
 
-            return ApiHelper::apiResponse($this->success, 'Record updated successfully', 'success');
+            return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
 
         }
-        // $response = ResourceHasRota::updateRecord($id, $request, Auth::User()->account_id);
 
-        // return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
         return ApiHelper::apiResponse($this->success, 'Your To date must be equal or greater than your previous To date '.$resourcerota->end, false);
 
     }
