@@ -530,12 +530,12 @@ class ResourceHasRota extends BaseModal
                     }
                 }
             }
-            if ($not_allow) {
-                return [
-                    'status' => 0,
-                    'message' => 'Provided rota timings are conflicts with appointments. Unable to update rota.',
-                ];
-            }
+            // if ($not_allow) {
+            //     return [
+            //         'status' => 0,
+            //         'message' => 'Provided rota timings are conflicts with appointments. Unable to update rota.',
+            //     ];
+            // }
             if ($not_allow_2) {
                 return [
                     'status' => 0,
