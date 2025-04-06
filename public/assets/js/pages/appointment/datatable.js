@@ -20,6 +20,7 @@ var table_columns = [
         title: 'Phone',
         width: 90,
         template: function (data) {
+            console.log(data);
             return phoneClip(data);
         }
     }, {
