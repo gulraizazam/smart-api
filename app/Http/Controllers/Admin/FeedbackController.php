@@ -46,7 +46,7 @@ class RefundsController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('feedback_manage')) {
+        if (!Gate::allows('feedbacks_manage')) {
             return abort(401);
         }
 
@@ -167,14 +167,11 @@ class RefundsController extends Controller
                 ];
             }
             $records['permissions'] = [
-                'edit' => Gate::allows('leads_edit'),
-                'delete' => Gate::allows('leads_destroy'),
-                'active' => Gate::allows('leads_active'),
-                'inactive' => Gate::allows('leads_inactive'),
-                'create' => Gate::allows('leads_create'),
-                'convert' => Gate::allows('leads_convert'),
-                'contact' => Gate::allows('contact'),
-                'update_status' => Gate::allows('leads_lead_status'),
+                'edit' => Gate::allows('feedbacks_edit'),
+                'delete' => Gate::allows('feedbacks_destroy'),
+                
+                'create' => Gate::allows('feedbacks_create'),
+               
             ];
 
             return ApiHelper::apiDataTable($records);
@@ -213,9 +210,7 @@ class RefundsController extends Controller
     {
        
        
-        if (! Gate::allows('refunds_refund')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
-        }
+       
         $checkFeedback = Feedback::where([
            'service_id'=>$request->treatment_id
         ])->first();
