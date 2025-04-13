@@ -64,6 +64,7 @@ use App\Http\Controllers\Admin\Patients\PackagesController as PatientPackageCont
 use App\Http\Controllers\Admin\Reports\AppointmentsController as ReportAppointmentsController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
 use App\Http\Controllers\Admin\Reports\ActivitylogsReportController;
+use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
 
@@ -105,6 +106,9 @@ Route::get('/check-expired-records', function () {
 });
 Route::get('/daily-stats', function () {
     \Artisan::call('appointments:daily-stats');
+});
+Route::get('/check-memberships', function () {
+    \Artisan::call('memberships:expire');
 });
 Route::get('/get_deleted', function () {
     $appointments = Appointments::onlyTrashed()->where('deleted_by', 4)->get();
@@ -253,7 +257,10 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         // Refund Route
         Route::resource('refunds', RefundsController::class)->only('index');
+        Route::resource('feedbacks', FeedbackController::class)->only('index');
         Route::post('refunds/getplans', [PackagesController::class, 'getPlans'])->name('refunds.getplans');
+        Route::post('feedbacks/gettreatments', [FeedbackController::class, 'getTreatment'])->name('feedbacks.gettreatments');
+        Route::post('feedbacks/gettreatmentsinfo', [FeedbackController::class, 'getTreatmentInfo'])->name('feedbacks.gettreatmentsinfo');
         Route::get('refunds/edit/{id}', [PackagesController::class, 'editRefund'])->name('refunds.edit');
         Route::post('refunds/update', [PackagesController::class, 'updateRefund'])->name('refunds.update');
         //Refunds route end
@@ -341,6 +348,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
         Route::post('memberships/upload', [MembershipsController::class, 'uploadMemberships'])->name('memberships.upload');
         Route::resource('leads', LeadsController::class)->only('index');
+       
         Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
         // Load and Save Lead Statuses
         Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
@@ -571,6 +579,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         //Route start for Operations reports
         Route::get('operation_reports/loaddayarray', [OperationsReportController::class, 'loaddayarray'])->name('reports.operations_report_loadday');
         Route::get('inventory_reports', [InventoryReportsController::class, 'inventoryReport'])->name('reports.inventory_report');
+       
         Route::post('load_inventory_reports', [InventoryReportsController::class, 'loadInventoryReport'])->name('reports.load_inventory_report');
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
         Route::get('membership_reports', [MembershipReportsController::class, 'index'])->name('reports.membership-reports');
