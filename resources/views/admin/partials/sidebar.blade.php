@@ -347,7 +347,7 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('resourcerotas_manage'))
+                @if (Gate::allows('feedbacks_manage'))
                 <li class="menu-item {{ activeMenu('admin.feedbacks.index') }} " aria-haspopup="true">
                     <a href="{{ route('admin.feedbacks.index') }}" class="menu-link">
                         <span class="svg-icon menu-icon"><i class="font-icon la la-file"></i></span>
