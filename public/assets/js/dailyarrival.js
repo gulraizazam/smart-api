@@ -304,6 +304,68 @@ var loadInventoryReport  = function (that) {
         }
     });
 };
+var loadFeedbackReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+  
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_feedback_report'),
+        type: "POST",
+        data: {
+           
+           
+            date_range: $('#date_range_inv').val(),
+            centre_id: $('#centre_id').val(),
+            doctor_id:$("#feedback_doctor_id_filter").val(),
+            service_id:$("#service_id_filter").val(),
+           
+           
+        },
+        success: function(response){
+            $('#feedback_content').html('');
+            $('#feedback_content').html(response);
+            $("#feedback_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            $("#doc_sales_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
 var loadPatientFollowUpReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -400,6 +462,39 @@ function getEmployees(locationId){
                     emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
                 });
                 $("#doctor_id_filter").html(emp_options);
+            }
+            
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+  
+}
+function getCentreDoctors(locationId){
+   
+    let url = route('admin.get-centre-doctors');
+ 
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: locationId},
+        success: function (response) {
+          
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+                        
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Doctor</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#feedback_doctor_id_filter").html(emp_options);
             }
             
         },

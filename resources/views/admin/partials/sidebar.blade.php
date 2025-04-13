@@ -1080,7 +1080,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('inventory_report_manage')
+                    @can('feedbacks_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -1095,7 +1095,21 @@
                         </ul>
                     </div>
                     @endcan
-                   
+                    @can('feedback_report_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.feedback_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.feedback_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Feedbacks Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
                 </li>
 
 

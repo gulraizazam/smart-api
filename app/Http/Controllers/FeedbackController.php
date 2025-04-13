@@ -9,6 +9,7 @@ use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
 use App\Models\Feedback;
 use App\Models\Locations;
+use App\Models\Services;
 use App\Models\User;
 use Illuminate\Http\Request;
 use DateTime;
@@ -242,13 +243,13 @@ class FeedbackController extends Controller
         // }
         $treatment = Appointments::select('patient_id','doctor_id','location_id','service_id')->whereId($request->treatment)->first();
         $patintPhone = User::whereId($treatment->patient_id)->first();
-       
+        $parentId = Services::whereId($treatment->service_id)->first();
         $feedback = new Feedback();
      
         $feedback->patient_id = $treatment->patient_id;
         $feedback->patient_name = $patintPhone->name;
         $feedback->patient_phone = $patintPhone->phone;
-        $feedback->service_id = $treatment->service_id; 
+        $feedback->service_id = $parentId->parent_id; 
         $feedback->appointment_id = $request->treatment;
         $feedback->created_by = Auth::User()->id;
         $feedback->location_id = $treatment->location_id;
