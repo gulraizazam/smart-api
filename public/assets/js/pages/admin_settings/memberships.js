@@ -47,8 +47,11 @@ var table_columns = [{
     width: 60,
     template: function (data) {
      
-        let status_url = route('admin.memberships.status');
-        return statuses(data, status_url);
+        if(data.active ==1){
+            return '<span class="text text-success">Active</span>';
+        }else{
+            return '<span class="text text-danger">Expired</span>';
+        }
     }
 },{
     field: 'actions',
@@ -209,25 +212,28 @@ $("#export-memberships").on("click",function(){
     let code= $("#search_code_name").val();
     let membership_type_id = $("#search_membership_type").val();
     let assigned = $("#search_assigned_status").val();
+    let status = $("#search_membership_status").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned+'&ext=xlsx';
+    window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned+'&status='+status+'&ext=xlsx';
 });
 $("#export-memberships-leads").on("click",function(){
     let code= $("#search_code_name").val();
     let membership_type_id = $("#search_membership_type").val();
     let assigned = $("#search_assigned_status").val();
+    let status = $("#search_membership_status").val();
     let url = $(this).data('href');
-    window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned;
+    window.location.href =  url+'?&code='+code+'&membership_type_id='+membership_type_id+'&assigned='+assigned+'&status='+status;
 });
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {
-            
+           
             code: $("#search_code_name").val(),
             membership_type_id: $("#membershiptype_id").val(),
            
             membership_type_id: $("#search_membership_type").val(),
             assigned:$("#search_assigned_status").val(),
+            status:$("#search_membership_status").val(),
             created_at: $("#date_range").val(),
          
             filter: 'filter',
@@ -245,7 +251,7 @@ function resetAllFilters(datatable) {
             membership_type_id: '',
             created_by: '',
             created_at: '',
-           
+            status: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -270,6 +276,7 @@ function setFilters(filter_values, active_filters) {
         $("#search_created_by").html(user_options);
         $("#search_code_name").val(active_filters.code);
         $("#date_range").val(active_filters.created_at);
+        $("#search_membership_status").val(active_filters.status);
         $("#search_created_by").val(active_filters.created_by);
         hideShowAdvanceFilters(active_filters);
 
