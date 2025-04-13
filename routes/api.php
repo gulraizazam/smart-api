@@ -557,6 +557,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('invoices/pdf/{id}/{download?}', [OrdersController::class, 'invoicePdf'])->name('orders.invoice_pdf');
     Route::post('get-employees', [OrdersController::class, 'getEmployees'])->name('get-employees');
     Route::post('get-doctors', [OrdersController::class, 'getDoctors'])->name('get-doctors');
+    Route::post('get-centre-doctors', [OrdersController::class, 'getCentreDoctors'])->name('get-centre-doctors');
     Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
     Route::get('orders/{id}/edit', [OrdersController::class, 'edit'])->name('orders.edit');
     Route::post('orders/update/{id}', [OrdersController::class, 'update'])->name('orders.update');
