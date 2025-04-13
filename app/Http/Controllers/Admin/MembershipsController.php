@@ -383,6 +383,29 @@ class MembershipsController extends Controller
                 }
             }
         }
+        if (hasFilter($filters, 'status')) {
+            if ($filters['status'] == 1) {
+                // patient_id is not null
+                $where[] = ['memberships.active', '<>', null];
+            } elseif ($filters['status'] == 0) {
+                // patient_id is null
+                $where[] = ['memberships.active', '=', null];
+            }
+            Filters::put(Auth::user()->id, 'memberships', 'status', $filters['status']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::user()->id, 'memberships', 'status');
+            } else {
+                if (Filters::get(Auth::user()->id, 'memberships', 'status') !== null) {
+                    $assignedFilter = Filters::get(Auth::user()->id, 'memberships', 'status');
+                    if ($assignedFilter == 1) {
+                        $where[] = ['memberships.active', '<>', null];
+                    } elseif ($assignedFilter == 0) {
+                        $where[] = ['memberships.active', '=', null];
+                    }
+                }
+            }
+        }
         if (hasFilter($filters, 'created_at')) {
             $date_range = explode(' - ', $filters['created_at']);
             $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
@@ -435,7 +458,13 @@ class MembershipsController extends Controller
             $query->whereNull('memberships.patient_id');
         }
     }
-
+    if (!is_null($request->status) && $request->status !== '') {
+        if ($request->status == 1) {
+            $query->where('memberships.active', '==',  1);
+        } elseif ($request->status == 0) {
+            $query->where('memberships.active', '==',  0);
+        }
+    }
     $membershipsData = $query->get();
 
     $customPaper = [0, 0, 720, 1440];
