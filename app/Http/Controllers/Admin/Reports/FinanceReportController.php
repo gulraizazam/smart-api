@@ -2263,12 +2263,13 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        if ((isset($request->location_id) && $request->location_id)) {
-            /* Case 1: */
-            $locationId = [$request->location_id];
+        if (!empty($request->location_id) && $request->location_id[0] !== null) {
+            $locationId = $request->location_id; // Use provided location IDs
         } else {
-            $locationId = ACL::getUserCentres();
+            $locationId = ACL::getUserCentres(); // Use all allowed centres
         }
+        
+        
        // $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $serviceId = $request->service_id;    
         $soldServices = DB::table('package_services')
@@ -2286,6 +2287,7 @@ class FinanceReportController extends Controller
         ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'),'packages.location_id')
         ->groupBy('package_services.service_id','packages.location_id')
         ->get();
+       
         return view('admin.reports.accountsalesreport.serviceSoldreport', compact('soldServices', 'start_date', 'end_date'));
         
     }

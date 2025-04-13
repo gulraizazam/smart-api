@@ -51,6 +51,7 @@ use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
+use App\Http\Controllers\FeedbackController;
 
 /*
 |-----------------------------------------viewDetail---------------------------------
@@ -213,7 +214,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
     Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
     Route::resource('refunds', RefundsController::class)->except('index');
-
+    Route::resource('feedbacks', FeedbackController::class)->except('index');
     //Discount route Start
     Route::post('discounts/datatable', [DiscountsController::class, 'datatable'])->name('discounts.datatable');
     Route::post('discounts/status', [DiscountsController::class, 'status'])->name('discounts.status');
@@ -377,6 +378,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('leads/phone/search', [LeadsController::class, 'phoneSearch'])->name('leads.phone.search');
     Route::resource('leads', LeadsController::class)->except('index');
     Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
+    Route::post('feedbacks/datatable', [FeedbackController::class, 'datatable'])->name('feedbacks.datatable');
     // Convert Lead
     Route::get('leads/convert/{id}', [LeadsController::class, 'convert'])->name('leads.convert');
     Route::get('lead_Create_popup', [LeadsController::class, 'make_pop'])->name('leads.create_popup');
