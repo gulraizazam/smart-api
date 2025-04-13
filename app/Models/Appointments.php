@@ -571,7 +571,10 @@ class Appointments extends Model
             'message' => 'Record has been deleted successfully.',
         ];
     }
-
+    public function feedback()
+    {
+        return $this->hasOne(Feedback::class,'appointment_id'); // or hasMany if multiple feedbacks can exist
+    }
     /**
      * Check if child records exist
      *
