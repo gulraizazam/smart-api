@@ -39,7 +39,7 @@
                           
                            
                             
-                            <a href="" class="btn btn-primary " style="height: 37px;" data-toggle="modal" data-target="#modal_add_feedback"><i class="la la-plus"></i>  Add Feedback</a>
+                            <a href="" class="btn btn-primary " onclick="openFeedbackForm()" style="height: 37px;" data-toggle="modal" data-target="#modal_add_feedback"><i class="la la-plus"></i>  Add Feedback</a>
                            
 
                         <!--end::Button-->
