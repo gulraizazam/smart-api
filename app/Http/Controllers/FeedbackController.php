@@ -161,7 +161,7 @@ class FeedbackController extends Controller
             }
             $records['permissions'] = [
                 'edit' => Gate::allows('feedbacks_edit'),
-                'delete' => Gate::allows('feedbacks_destroy'),
+                'delete' => Gate::allows('feedbacks_delete'),
                
                 'create' => Gate::allows('feedbacks_create'),
                 

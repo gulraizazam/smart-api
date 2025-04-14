@@ -101,6 +101,9 @@ function actions(data) {
     }
     return '-';
 }
+function openFeedbackForm(){
+    $("#add_treatment_id").trigger('change');
+}
 $("#add_patients_id").on('change',function(){
     var patient_id = $('#add_patients_id').val();
     let url = route('admin.feedbacks.gettreatments');
