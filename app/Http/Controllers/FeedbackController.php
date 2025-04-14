@@ -202,6 +202,7 @@ class FeedbackController extends Controller
         ->where('appointment_type_id', 2)
         ->where('appointment_status_id', 2)
         ->doesntHave('feedback')
+        ->whereDate('scheduled_date', '>=', now()->subDays(7)) // Filter by scheduled_date
         ->get();
         return response()->json([
             'status' => 1,
