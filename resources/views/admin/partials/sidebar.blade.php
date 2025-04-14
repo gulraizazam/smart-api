@@ -1080,7 +1080,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('feedbacks_manage')
+                    @can('inventory_report_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -1095,7 +1095,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('feedback_report_manage')
+                    @can('feedbacks_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
