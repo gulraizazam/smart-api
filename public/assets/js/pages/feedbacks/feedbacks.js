@@ -103,6 +103,7 @@ function actions(data) {
 }
 function openFeedbackForm(){
     $("#add_treatment_id").trigger('change');
+    $(".search_patient_refund").val('');
 }
 $("#add_patients_id").on('change',function(){
     var patient_id = $('#add_patients_id').val();
@@ -116,13 +117,21 @@ $("#add_patients_id").on('change',function(){
         data:{'patient_id':patient_id},
         cache: false,
         success: function (response) {
-            let plans_options = '<option value=""> Select Treatment </option>';
-            Object.values(response.treatments).forEach(function (value) {
-                plans_options += '<option value="' + value.id + '"> ' + value.service.name + ' </option>';
-            });
+            let plans_options = '';
+        
+            if (response.treatments.length === 0) {
+                plans_options = '<option value="">No Treatment Found</option>';
+            } else if (response.treatments.length === 1) {
+                let treatment = response.treatments[0];
+                plans_options = `<option value="${treatment.id}" selected>${treatment.service.name}</option>`;
+            } else {
+                plans_options = '<option value="">Select Treatment</option>';
+                response.treatments.forEach(function (value) {
+                    plans_options += `<option value="${value.id}">${value.service.name}</option>`;
+                });
+            }
+        
             $("#add_treatment_id").html(plans_options);
-           
-
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
