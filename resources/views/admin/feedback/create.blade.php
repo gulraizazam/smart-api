@@ -44,15 +44,10 @@
                         <div class="fv-row col-md-6 mt-5">
                             <label for="add_plan_id" class="required fw-bold fs-6 mb-2 pl-0">Treatments <span class="text text-danger">*</span></label>
                             <select id="add_treatment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="treatment" onchange="GetTreatmentDetail()">
-                                <option value="">Select Treatment</option>
+                                
                             </select>
                         </div>
                        
-                        
-                        <div class="fv-row col-md-6 mt-5">
-                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Treatment Scheduled Date</label>
-                            <input readonly="readonly" type="text" id="scheduled_date" class="form-control disable-filed" name="scheduled_date">
-                        </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Doctor Name </label>
                             <input readonly="readonly" type="text"  id="doctor_name" class="form-control disable-filed" name="doctor_name" >
@@ -61,6 +56,12 @@
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Location </label>
                             <input readonly="readonly" type="text"  id="location" class="form-control disable-filed" name="location" >
                         </div>
+                        <div class="fv-row col-md-6 mt-5">
+                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Treatment Scheduled Date</label>
+                            <input readonly="readonly" type="text" id="scheduled_date" class="form-control disable-filed" name="scheduled_date">
+                        </div>
+                        
+                        
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Rating <span class="text text-danger">*</span></label>
                             <select id="rating" class="form-control  mb-3 mb-lg-0" name="rating">
