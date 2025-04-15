@@ -19,8 +19,8 @@ var table_columns = [{
     sortable: false,
     width: 110,
     template: function (data) {
-        if(data.location != ""){
-            return data.location;
+        if(data.doctor != ""){
+            return data.doctor;
         }else{
             return '<span class="text text-danger">Empty</span>';
         }
