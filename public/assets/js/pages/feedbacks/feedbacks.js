@@ -14,8 +14,8 @@ var table_columns = [{
         return phoneClip(data);
     }
 },{
-    field: 'location_id',
-    title: 'Centre',
+    field: 'doctor',
+    title: 'Doctor',
     sortable: false,
     width: 110,
     template: function (data) {
