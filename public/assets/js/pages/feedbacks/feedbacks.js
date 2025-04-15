@@ -121,13 +121,10 @@ $("#add_patients_id").on('change',function(){
         
             if (response.treatments.length === 0) {
                 plans_options = '<option value="">No Treatment Found</option>';
-            } else if (response.treatments.length === 1) {
-                let treatment = response.treatments[0];
-                plans_options = `<option value="${treatment.id}" selected>${treatment.service.name}</option>`;
             } else {
                 plans_options = '<option value="">Select Treatment</option>';
-                response.treatments.forEach(function (value) {
-                    plans_options += `<option value="${value.id}">${value.service.name}</option>`;
+                Object.values(response.treatments).forEach(function (value) {
+                    plans_options += '<option value="' + value.id + '">' + value.service.name + '</option>';
                 });
             }
         
