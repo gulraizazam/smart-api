@@ -32,6 +32,12 @@ var table_columns = [{
     width: 110,
     
 },{
+    field: 'treatment',
+    title: 'Treatment',
+    sortable: false,
+    width: 110,
+    
+},{
     field: 'rating',
     title: 'Rating',
     sortable: false,

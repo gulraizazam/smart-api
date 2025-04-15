@@ -142,6 +142,7 @@ class FeedbackController extends Controller
                         
                         'service_id' => $feedback->service_id ?? '',
                         'service'=> $feedback->service->name ?? '',
+                        'treatment'=> $feedback->treatment->name ?? '',
                         'created_at' => Carbon::parse($feedback->created_at)->format('F j,Y h:i A'),
                         'created_by' => array_key_exists($feedback->created_by, $Users) ? $Users[$feedback->created_by]->name : 'N/A',
                         'location' => $feedback->location->name ?? '',
@@ -251,6 +252,7 @@ class FeedbackController extends Controller
         $feedback->patient_name = $patintPhone->name;
         $feedback->patient_phone = $patintPhone->phone;
         $feedback->service_id = $parentId->parent_id; 
+        $feedback->treatment_id = $treatment->service_id; 
         $feedback->appointment_id = $request->treatment;
         $feedback->created_by = Auth::User()->id;
         $feedback->location_id = $treatment->location_id;

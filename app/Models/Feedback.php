@@ -20,6 +20,10 @@ class Feedback extends Model
     {
         return $this->belongsTo(Services::class);
     }
+    public function treatment()
+    {
+        return $this->belongsTo(Services::class,'treatment_id');    
+    }
     public function patient()
     {
         return $this->belongsTo(User::class);
