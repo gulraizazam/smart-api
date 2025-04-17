@@ -30,13 +30,13 @@ var table_columns = [{
     title: 'Service',
     sortable: false,
     width: 110,
-    
+
 },{
     field: 'treatment',
     title: 'Treatment',
     sortable: false,
     width: 110,
-    
+
 },{
     field: 'rating',
     title: 'Rating',
@@ -49,7 +49,7 @@ var table_columns = [{
             return '<span class="text text-danger">Empty</span>';
         }
     }
-    
+
 }, {
     field: 'created_at',
     title: 'Created At',
@@ -83,12 +83,13 @@ function actions(data) {
                     Choose an action: \
                     </li>';
 
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="edit(`' + edit_url + '`);" class="navi-link">\
+                    actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                        <span class="navi-text">edit</span>\
+                        <span class="navi-text">Edit</span>\
                     </a>\
                 </li>';
+
                 if (permissions.delete) {
                     actions += '<li class="navi-item">\
                             <a href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);" class="navi-link">\
@@ -107,6 +108,45 @@ function actions(data) {
     }
     return '-';
 }
+function editRow(url) {
+
+    $("#modal_edit_feedbacks").modal("show");
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setEditData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            reInitValidation(EditValidation);
+        }
+    });
+
+
+}
+function setEditData(response) {
+
+    try {
+
+        let feedback = response;
+
+        $("#modal_edit_feedbacks_form").attr("action", route('admin.feedbacks.update', {id: feedback.id}));
+        $("#edit_rating").val(feedback.rating).change();
+
+    } catch (error) {
+        showException(error);
+    }
+
+}
 function openFeedbackForm(){
     $("#add_treatment_id").trigger('change');
     $(".search_patient_refund").val('');
@@ -124,7 +164,7 @@ $("#add_patients_id").on('change',function(){
         cache: false,
         success: function (response) {
             let plans_options = '';
-        
+
             if (response.treatments.length === 0) {
                 plans_options = '<option value="">No Treatment Found</option>';
             } else {
@@ -133,13 +173,13 @@ $("#add_patients_id").on('change',function(){
                     plans_options += '<option value="' + value.id + '">' + value.service.name + '</option>';
                 });
             }
-        
+
             $("#add_treatment_id").html(plans_options);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
 
-            
+
         }
     });
 });
@@ -164,9 +204,9 @@ function GetTreatmentDetail(){
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
 
-            
+
         }
     });
-    
+
 }
 
