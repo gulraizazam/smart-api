@@ -22,10 +22,10 @@ var FeedbackValidation = function () {
                             }
                         }
                     },
-                    
-                    
-                    
-                    
+
+
+
+
                 },
 
                 plugins: {
@@ -47,7 +47,7 @@ var FeedbackValidation = function () {
                     closePopup(modal_id);
                     reInitTable();
                 } else {
-                
+
                     toastr.error(response.message);
                 }
             }, form);
@@ -63,7 +63,7 @@ var FeedbackValidation = function () {
 var EditFeedbackValidation = function () {
     // Private functions
     var validation = function () {
-        let modal_id = 'edit_feedbacks_form';
+        let modal_id = 'modal_edit_feedbacks_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
@@ -76,7 +76,7 @@ var EditFeedbackValidation = function () {
                             }
                         }
                     },
-                    
+
                 },
 
                 plugins: {
