@@ -449,15 +449,17 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-
-            if(data.appointment_type == 2 && data.appointment_status==2 && permissions.add_feedback) {
-                actions += '<li class="navi-item">\
-                <a href="javascript:void(0);" onclick="addFeedback(`'+detail_url+'`);" class="navi-link">\
-                    <span class="navi-icon"><i class="la la-plus"></i></span>\
-                    <span class="navi-text">Add Feedback</span>\
-                </a>\
-            </li>';
+            if( permissions.add_feedback){
+                if(data.appointment_type == 2 && data.appointment_status==2 ) {
+                    actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="addFeedback(`'+detail_url+'`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-plus"></i></span>\
+                        <span class="navi-text">Add Feedback</span>\
+                    </a>\
+                </li>';
+                }
             }
+
 
         actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`);" class="navi-link">\
