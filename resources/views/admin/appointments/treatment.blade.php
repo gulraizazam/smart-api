@@ -344,7 +344,7 @@
 
         <script src="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script>
-
+        <script src="{{asset('assets/js/pages/crud/forms/validation/feedbacks/feedbacks.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/plan/create.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/common.js')}}"></script>
