@@ -720,7 +720,98 @@
                     </div>
                 </div>
                 @endif
+                @if (\Illuminate\Support\Facades\Gate::allows('dashboard_doctor_wise_feedback'))
+                <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="doctor_wise_feedback_section">
+                    <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                        <div class="card-body p-0">
+                            <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                <span class="dashboard-counter text-uppercase">Doctors Feedback</span>
+                                <ul class="nav nav-tabs d-flex align-items-center  doc_feedback_ul">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style p-3 mr-3">
+                                            @php
+                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
+                                            $locations = \App\Helpers\ACL::getUserCentres();
+                                            $centres = \App\Models\Locations::whereIn('id', $locations)
+                                            ->whereNotIn('name', $centres_array)
+                                            ->where('active', 1)
+                                            ->get();
+                                            @endphp
+                                            <div class="btn-group">
+                                                {{-- @if (Auth::user()->hasRole('Administrator') ||
+                                                Auth::user()->hasRole('Super-Admin') ||
+                                                Auth::user()->hasRole('Head of Operations') ||
+                                                Auth::user()->hasRole('Finance'))
+                                                <a class="btn form-control btndropdown btn_Report doctorwisefeedback" href="javascript:;"
+                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false" data-id="all">
+                                                    All Centres
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                @else
+                                                <a class="btn form-control btndropdown btn_Report doctorwisefeedback" href="javascript:;"
+                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false"
+                                                    data-id="{{ count($centres) > 0 ? $centres[0]->id : '' }}">
+                                                    {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
+                                                    <i class="fa fa-angle-down"></i>
+                                                </a>
+                                                @endif --}}
+                                                <select class="form-control btndropdown btn_Report doctorwisefeedback selectcenterfeedback"
+                                                    data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
+                                                    @if (Auth::user()->hasRole('Administrator') ||
+                                                    Auth::user()->hasRole('Super-Admin') ||
+                                                    Auth::user()->hasRole('Head of Operations') ||
+                                                    Auth::user()->hasRole('Finance'))
+                                                    <option value="all" data-period="thismonth" {{-- onclick="changeCenterDoct('thismonth', 'all')" --}}>
+                                                        {{-- <a class="dropdown-item doctor_wise_feedback_centre_id" data-id="all"></a> --}}
+                                                        All
+                                                        Centres
+                                                    </option>
+                                                    @endif
+                                                    @foreach ($centres as $centre)
+                                                    <option value="{{ $centre->id }}" data-period="thismonth">
+                                                        {{-- <a class="dropdown-item doctor_wise_feedback_centre_id" data-id="{{ $centre->id }}"></a> --}}
+                                                        {{ $centre->name }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </li>
+                                    
+                                    <li style="border-bottom: none;">
+                                        <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                            <select id="dr_wise_fed" class="form-control" name="type">
+                                                <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
+                                                </option>
+                                                <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
+                                                    Week</option>
+                                                <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
+                                                    Month</option>
+                                                {{-- <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option> --}}
+                                            </select>
+                                        </div>
+                                    </li>
+                                </ul>
 
+                                <div class="d-none flex-column text-right">
+                                    <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                    <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                </div>
+                            </div>
+
+                            <div class="row pt-7">
+                                <div class="col-7">
+                                    <div id="doc_wise_feedback_data"></div>
+                                </div>
+                                
+                                <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
             </div>
         </div>
     </div>
@@ -746,6 +837,14 @@
                 var dataText = jQuery(this).text();
                 jQuery('.btn.doctorwiseconversion').attr('data-id', dataID);
                 jQuery('.btn.doctorwiseconversion').html(dataText + '<i class="fa fa-angle-down"></i>')
+                jQuery('.doc_wise_arrival_ul li a').removeClass('active');
+                jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
+            });
+            jQuery('.btn.doctorwisefeedback + .dropdown-menu li a').on('click', function() {
+                var dataID = jQuery(this).attr('data-id');
+                var dataText = jQuery(this).text();
+                jQuery('.btn.doctorwisefeedback').attr('data-id', dataID);
+                jQuery('.btn.doctorwisefeedback').html(dataText + '<i class="fa fa-angle-down"></i>')
                 jQuery('.doc_wise_arrival_ul li a').removeClass('active');
                 jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
             });
@@ -779,6 +878,13 @@
                     initDoctorWiseConversion('today', centre_id, 'firsttime');
                     @endif
                 @endif
+                
+                    var centre_id = $(".doctorwisefeedback").attr('data-id');
+                    
+                    @if (!auth()->user()->hasRole('CSR'))
+                    initDoctorWiseFeedback('today', centre_id, 'firsttime');
+                    @endif
+               
 
             });
 
