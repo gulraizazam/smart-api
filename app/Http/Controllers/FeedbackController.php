@@ -51,13 +51,13 @@ class FeedbackController extends Controller
             $where = [];
             $records = [];
             $records['data'] = [];
-           
+
             $filename = 'feedbacks';
-           
+
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
-           
+
             if (hasFilter($filters, 'created_at')) {
                 $date_range = explode(' - ', $filters['created_at']);
                 $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
@@ -68,7 +68,7 @@ class FeedbackController extends Controller
                 $start_date_time = null;
                 $end_date_time = null;
             }
-            
+
             if (hasFilter($filters, 'patient_id')) {
                 $where[] = ['patient_id', '=', $filters['patient_id']];
                 Filters::put(Auth::User()->id, $filename, 'patient_id', $filters['patient_id']);
@@ -105,41 +105,41 @@ class FeedbackController extends Controller
                     }
                 }
             }
-         
+
             $iTotalRecords = Feedback::count();
-            
+
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
             $resultQuery = Feedback::with(['location', 'patient', 'doctor','service'])->where(function ($query) {
                 $query->whereIn('feedback.location_id', ACL::getUserCentres());
-               
+
             });
             if (count($where)) {
                 $resultQuery->where($where);
             }
-           
-            
+
+
                 $feedbacks = $resultQuery->limit($iDisplayLength)
                     ->offset($iDisplayStart)
                     ->orderBy('id', 'desc')
                     ->get();
-           
+
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             //$Locations = Locations::getAllRecords(Auth::User()->account_id)->getDictionary();
-           
-            
+
+
            $orderBy = 'created_at';
             $records = $this->getFiltersData($records, $filename);
             if ($feedbacks->count()) {
                 $index = 0;
                 foreach ($feedbacks as $feedback) {
-                    
+
                     $records['data'][$index] = [
                         'id' => $feedback->id,
                         'paient_id' => $feedback->patient_id,
                         'paient_name' => $feedback->patient_name,
-                        
-                        'phone' => GeneralFunctions::prepareNumber4Call($feedback->patient->phone),
-                        
+
+                        'phone' => GeneralFunctions::prepareNumber4Call($feedback->patient->phone ?? ''),
+
                         'service_id' => $feedback->service_id ?? '',
                         'service'=> $feedback->service->name ?? '',
                         'treatment'=> $feedback->treatment->name ?? '',
@@ -157,16 +157,16 @@ class FeedbackController extends Controller
                     'pages' => $pages,
                     'perpage' => $iDisplayLength,
                     'total' => $iTotalRecords,
-                    
+
                 ];
             }
             $records['permissions'] = [
                 'edit' => Gate::allows('feedbacks_edit'),
                 'delete' => Gate::allows('feedbacks_delete'),
-               
+
                 'create' => Gate::allows('feedbacks_create'),
-                
-             
+
+
             ];
 
             return ApiHelper::apiDataTable($records);
@@ -174,16 +174,39 @@ class FeedbackController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function edit($id)
+    {
+        try {
+
+            $feedback = Feedback::find($id);
+
+            return response()->json($feedback);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+    public function update(Request $request,$id)
+    {
+        try {
+
+            $feedback = Feedback::find($id);
+            $feedback->rating = $request->rating;
+            $feedback->save();
+            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
     private function getFiltersData($records, $fileName)
     {
         $filters = Filters::all(Auth::User()->id, $fileName);
-        
+
         $users = User::getAllActiveRecords(Auth::User()->account_id)->pluck('name', 'id');
-        
+
         $records['filter_values'] = [
-            
+
             'users' => $users,
-            
+
         ];
         if (isset($filters['created_from'])) {
             $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
@@ -213,7 +236,7 @@ class FeedbackController extends Controller
     }
     public function getTreatmentInfo(Request $request)
     {
-       
+
         $treatments = Appointments::with(['doctor','location'])
         ->where('id', $request->treatment_id)
         ->where('appointment_type_id', 2)
@@ -227,19 +250,19 @@ class FeedbackController extends Controller
     }
     public function store(Request $request)
     {
-       
-       
-       
+
+
+
         $checkFeedback = Feedback::where([
            'appointment_id'=>$request->treatment
         ])->first();
-      
+
         if($checkFeedback)
         {
             return ApiHelper::apiResponse($this->error, 'Feedback already added', false);
         }
         // $validator = $this->verifyFields($request);
-       
+
         // if ($validator->fails()) {
         //     return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         // }
@@ -247,12 +270,12 @@ class FeedbackController extends Controller
         $patintPhone = User::whereId($treatment->patient_id)->first();
         $parentId = Services::whereId($treatment->service_id)->first();
         $feedback = new Feedback();
-     
+
         $feedback->patient_id = $treatment->patient_id;
         $feedback->patient_name = $patintPhone->name;
         $feedback->patient_phone = $patintPhone->phone;
-        $feedback->service_id = $parentId->parent_id; 
-        $feedback->treatment_id = $treatment->service_id; 
+        $feedback->service_id = $parentId->parent_id;
+        $feedback->treatment_id = $treatment->service_id;
         $feedback->appointment_id = $request->treatment;
         $feedback->created_by = Auth::User()->id;
         $feedback->location_id = $treatment->location_id;
@@ -261,20 +284,20 @@ class FeedbackController extends Controller
         $feedback->comment = $request->comment;
         $feedback->save();
         return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
-        
-        
-       
+
+
+
     }
     public function destroy($id)
     {
-        
+
         $feedback = Feedback::find($id);
         $feedback->delete();
 
-       
-        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
-        
 
-        
+        return ApiHelper::apiResponse($this->success, 'Record has been deleted successfully.');
+
+
+
     }
 }
