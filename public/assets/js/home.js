@@ -1,5 +1,6 @@
 var central_wise_arrival_chart;
 var doc_wise_conversion_chart;
+var doc_wise_feedback_chart;
 var CENTRE_ID;
 var SELECTED_MONTH;
 var DOC_ID;
@@ -818,7 +819,9 @@ function ConsultanciesByStatus(bar) {
 function changeCenterDoct(period, center_id) {
     initDoctorWiseConversion(period, center_id, '', true);
 }
-
+function changeCenterFeedback(period, center_id) {
+    initDoctorWiseFeedback(period, center_id, '', true);
+}
 function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = true) {
     $("#doctor_wise_conversion_section .loader-img-attended").css('display', '');
     $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', 'none');
@@ -950,6 +953,53 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
 
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+    return false;
+
+    // }
+
+
+}
+function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true) {
+    $("#doctor_wise_feedback_section .loader-img-attended").css('display', '');
+    $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', 'none');
+  
+    dropDownList('doctor', period);
+    if (time != 'firsttime') {
+        doc_wise_feedback_chart.destroy();
+    }
+
+    $('.loader-imgs').css('display', "block");
+    SELECTED_MONTH = period;
+    var centre_id = $('.selectcenterfeedback option:selected').val();
+    CENTRE_ID = centre_id;
+
+
+    $('.arrivalbtn').text();
+    
+    $.ajax({
+        url: route('admin.dashboard.doctor_wise_feedback'),
+        type: 'GET',
+        cache: false,
+        data: {
+            // 'period': period,
+            'period': $('#dr_wise_fed option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_fed option:selected').val(),
+            'centre_id': centre_id,
+     
+        },
+        success: function (response) {
+            console.log(response);
+            $("#doctor_wise_feedback_section .loader-img-attended").css('display', 'none');
+            $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', '');
+           
+
+            $('.loader-imgs').css('display', "none");
+           
+            DoctorWiseFeedback(response);
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
@@ -1153,7 +1203,44 @@ function DoctorWiseConversion(bar) {
     doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
     doc_wise_conversion_chart.render();
 }
+function DoctorWiseFeedback(bar) {
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    let lables = bar.data.labels;
+    var options = {
+        series: [{
+            name: 'Rating ' + `(${bar.data.rating.reduce((a, b) => a + b, 0)})`,
+            data: bar.data.rating
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
 
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 1,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: lables,
+        },
+        colors: [primary, success, warning]
+    };
+    $("#doc_wise_feedback_data").html("");
+    doc_wise_feedback_chart = new ApexCharts(document.querySelector("#doc_wise_feedback_data"), options);
+    doc_wise_feedback_chart.render();
+}
 function AllDoctorWiseConversion(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
@@ -1349,7 +1436,11 @@ $(document).ready(function () {
         var period = 'thismonth';
         changeCenterDoct(period, selectedValue)
     });
-
+    $('.selectcenterfeedback').on('change', function () {
+        var selectedValue = $(this).val();
+        var period = 'thismonth';
+        changeCenterFeedback(period, selectedValue)
+    });
     // $('#doc_nav').select2();
     // $('#doc_nav').on('change', function () {
     //     var selectedValue = $(this).val();
