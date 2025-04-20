@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Lead</h2>
+        <h2 class="fw-bolder">Edit Feedback</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,89 +22,31 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_edit_leads_form" method="post">
+        <form id="modal_edit_feedbacks_form" method="post" action="">
             <!--begin::Scroll-->
+            @csrf
             @method('put')
-
-            <input type="hidden" class="form_type" value="edit_">
-            <input type="hidden" name="id" id="edit_lead_id" value="">
-            <input type="hidden" name="old_service" id="edit_old_service" value="">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
-                    <table class="table">
-                        <thead>
-                          <tr>
-                            <th>Services</th>
-                            <th>Treatment</th>
-                            <th>Edit</th>
-                          </tr>
-                        </thead>
-                        <tbody id="service_list_table">
-
-                        </tbody>
-                      </table>
                     <div class="row">
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Services </label>
-                            <select name="service_id" id="edit_service_id" class="form-control select2 select2-hidden-accessible" data-select2-id="edit_service_id" tabindex="-1" aria-hidden="true" onchange="loadEditChildServices()">
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Rating <span class="text text-danger">*</span></label>
+                            <select id="edit_rating" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="rating">
+                                <option value="1">1/10</option>
+                                <option value="2">2/10</option>
+                                <option value="3">3/10</option>
+                                <option value="4">4/10</option>
+                                <option value="5">5/10</option>
+                                <option value="6">6/10</option>
+                                <option value="7">7/10</option>
+                                <option value="8">8/10</option>
+                                <option value="9">9/10</option>
+                                <option value="10">10/10</option>
                             </select>
-                        </div>
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Treatment </label>
-                            <select name="child_service_id[]" multiple="" id="edit_child_service_id" class="form-control select2 select2-hidden-accessible" data-select2-id="edit_child_service_id" tabindex="-1" aria-hidden="true">
-                            </select>
-                        </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span></label>
-                            <input type="text" oninput="phoneField(this);" id="edit_phone" name="phone" autocomplete="off" class="form-control search-phone" placeholder="Enter Phone" />
-                            <input type="hidden" id="edit_old_phone" name="old_phone">
 
-                            <div class="suggesstion-box">
-                                <ul class="suggestion-list"></ul>
-                            </div>
-
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Full Name <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_full_name" name="name" class="form-control">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
-                            <select id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span></label>
-                            <select id="edit_city_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="city_id" onchange="loadEditLocation()">
-                            </select>
-                        </div>
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Centre <span class="text text-danger">*</span></label>
-                            <select id="edit_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id">
-                            </select>
-                        </div>
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>
-                            <select id="edit_lead_source_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Status</label>
-                            <select id="edit_lead_status_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_status_id">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Referred By</label>
-                            <select id="edit_referred_by_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="referred_by">
-                            </select>
                         </div>
 
                     </div>

@@ -1009,7 +1009,7 @@ class AppointmentsController extends Controller
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
                     'phone'=> $phoneNumber,
-                  
+
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
@@ -1440,6 +1440,8 @@ class AppointmentsController extends Controller
             'plans_create' => Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
+            'add_feedback' => Gate::allows('feedbacks_create'),
+
         ];
 
         return ApiHelper::apiDataTable($records);

@@ -430,6 +430,7 @@ function actions(data) {
         }
 
         if (permissions.invoice_display) {
+
             if(data.invoice) {
                 actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
@@ -448,6 +449,18 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
+            if( permissions.add_feedback){
+                if(data.appointment_type == 2 && data.appointment_status==2 ) {
+                    actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="addFeedback(`'+detail_url+'`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-plus"></i></span>\
+                        <span class="navi-text">Add Feedback</span>\
+                    </a>\
+                </li>';
+                }
+            }
+
+
         actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-eye"></i></span>\
@@ -688,7 +701,35 @@ function viewDetail(url) {
 
 
 }
+function addFeedback(url) {
 
+    $("#modal_appointment_feedback").modal("show");
+
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            console.log(response);
+            $('#add_patients_name').val(response.data.appointment.patient.name);
+            $('#treatment_name').val(response.data.appointment.service.name);
+            $('#add_doctor_name').val(response.data.appointment.doctor.name);
+            $('#location').val(response.data.appointment.location.name);
+            $('#scheduled_date').val(response.data.appointment.scheduled_date);
+            $('#add_patients_id').val(response.data.appointment.patient.id);
+            $('#add_treatment_id').val(response.data.appointment.id);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+
+}
 function setAppointmentDetailData(response) {
 
     try {
