@@ -802,7 +802,7 @@
                             </div>
 
                             <div class="row pt-7">
-                                <div class="col-7">
+                                <div class="col-12">
                                     <div id="doc_wise_feedback_data"></div>
                                 </div>
                                 
