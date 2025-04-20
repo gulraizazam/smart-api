@@ -127,7 +127,20 @@ $(document).ready(function () {
             initDoctorWiseConversion('today', '', '', false);
         }
     });
-
+    $('#dr_wise_fed').on('change', function () {
+        var currentVal = $(this).val();
+        if (currentVal == 'thismonth') {
+            initDoctorWiseFeedback('thismonth', '', '', false);
+        } else if (currentVal == 'yesterday') {
+            initDoctorWiseFeedback('yesterday', '', '', false);
+        } else if (currentVal == 'last7days') {
+            initDoctorWiseFeedback('last7days', '', '', false);
+        } else if (currentVal == 'week') {
+            initDoctorWiseFeedback('week', '', '', false);
+        } else {
+            initDoctorWiseFeedback('today', '', '', false);
+        }
+    });
     $(document).on("change", ".select2", function () {
         if ($(this).val() != '') {
             $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").hide();
