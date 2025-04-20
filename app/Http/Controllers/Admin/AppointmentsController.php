@@ -2522,7 +2522,22 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
         ]);
     }
+    public function editFeedback($id)
+    {
+        if (! Gate::allows('appointments_manage')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
+        $treatment = Appointments::with(['doctor','location'])
+        ->where('id', $id)
+        ->where('appointment_type_id', 2)
+        ->where('appointment_status_id', 2)
+        ->first();
 
+        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+            'appointment' => $treatment,
+            
+        ]);
+    }
     /**
      * Update Appointment in storage.
      *
