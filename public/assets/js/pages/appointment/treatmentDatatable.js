@@ -381,6 +381,7 @@ function actions(data) {
     let edit_url = route('admin.appointments.edit', {id: id});
     let edit_service_url = route('admin.appointments.edit_service', {id: id});
     let detail_url = route('admin.appointments.detail', {id: id});
+    let feedback_url = route('admin.appointments.feedback.index', {id: id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
 
     let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: id, type: 'appointment'});
@@ -452,7 +453,7 @@ function actions(data) {
             if( permissions.add_feedback){
                 if(data.appointment_type == 2 && data.appointment_status==2 ) {
                     actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="addFeedback(`'+detail_url+'`);" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="addFeedback(`'+feedback_url+'`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-plus"></i></span>\
                         <span class="navi-text">Add Feedback</span>\
                     </a>\
@@ -714,7 +715,7 @@ function addFeedback(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-            console.log(response);
+
             $('#add_patients_name').val(response.data.appointment.patient.name);
             $('#treatment_name').val(response.data.appointment.service.name);
             $('#add_doctor_name').val(response.data.appointment.doctor.name);
@@ -812,7 +813,7 @@ function editRow(url, id, $class = 'detail-actions') {
 }
 
 function setEditData(response) {
-
+console.log(response);
     try {
 
         let appointment = response.data.appointment;
