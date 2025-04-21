@@ -2529,6 +2529,7 @@ class AppointmentsController extends Controller
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
+
         $treatment = Appointments::with(['doctor','location'])
         ->where('id', $id)
         ->where('appointment_type_id', 2)
@@ -2537,7 +2538,7 @@ class AppointmentsController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'Data found.', true, [
             'appointment' => $treatment,
-            
+
         ]);
     }
     /**
