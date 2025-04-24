@@ -25,7 +25,7 @@ class FeedbacksReportController extends Controller
     public function loadFeedbackReport(Request $request)
 {
     $validated = $request->validate([
-        'centre_id' => 'nullable|integer|exists:locations,id',
+        'centre_id' => 'required|integer|exists:locations,id',
 
     ]);
 
