@@ -46,10 +46,7 @@
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach
                                             </select>
-                                            @if($errors->has('centre_id'))
-                                            <span class="invalid-feedback" role="alert"></span>
-                                                <strong>{{ $errors->first('centre_id') }}</strong>
-                                            @endif
+
                                             <span id="centre_id_handler"></span>
                                         </div>
                                         <div class="form-group col-md-3 sn-select @if($errors->has('doctor_id')) has-error @endif"
