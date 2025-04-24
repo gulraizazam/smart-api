@@ -13,6 +13,7 @@
                 @endif
 
                 <th>Average Rating (out of 10)</th>
+                <th>Total Feedbacks</th>
             </tr>
         </thead>
         <tbody>
@@ -27,6 +28,7 @@
                     @endif
 
                     <td>{{ number_format($row->avg_rating, 2) }}</td>
+                    <td>{{ $row->total_feedbacks ?? 0 }}</td>
                 </tr>
             @endforeach
         </tbody>
