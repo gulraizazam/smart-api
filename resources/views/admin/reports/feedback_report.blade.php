@@ -46,13 +46,14 @@
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach
                                             </select>
+
                                             <span id="centre_id_handler"></span>
                                         </div>
                                         <div class="form-group col-md-3 sn-select @if($errors->has('doctor_id')) has-error @endif"
                                              id="doc_dropdown" >
                                             {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="feedback_doctor_id_filter" name="doctor_id">
-                                                
+
                                             </select>
                                             <span id="centre_id_handler"></span>
                                         </div>
@@ -73,10 +74,10 @@
                                                 {!! Form::text('date_range', null, ['id' => 'date_range_inv', 'class' => 'form-control']) !!}
                                             </div>
                                         </div> -->
-                                        
-                                        
-                                        
-                                       
+
+
+
+
                                         <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
                                             <a href="javascript:void(0);" onclick="loadFeedbackReport($(this));" id="load_feedback_report"
