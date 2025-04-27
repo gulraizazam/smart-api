@@ -720,7 +720,7 @@
                     </div>
                 </div>
                 @endif
-                @if (\Illuminate\Support\Facades\Gate::allows('dashboard_doctor_wise_feedback'))
+                @if (\Illuminate\Support\Facades\Gate::allows('dashboard_doctor_wise_conversion'))
                 <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="doctor_wise_feedback_section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                         <div class="card-body p-0">
