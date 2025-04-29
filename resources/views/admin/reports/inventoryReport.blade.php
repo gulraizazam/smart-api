@@ -5,23 +5,23 @@
         <thead>
             <tr>
                 <th>Product Name</th>
-                <th>Location</th>
                 <th>Opening Stock</th>
+                <th>Addition in Range</th>
+                <th>Total Stock</th>
                 <th>Sold Stock</th>
-                <th>Closing Stock</th>
+                <th>Remaining Stock</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($report as $product)
-                @foreach ($product['locations'] as $location)
-                    <tr>
-                        <td>{{ $product['product_name'] }}</td>
-                        <td>{{ $location['location_name'] }}</td>
-                        <td>{{ $location['opening_stock'] }}</td>
-                        <td>{{ $location['sold_stock'] }}</td>
-                        <td>{{ $location['closing_stock'] }}</td>
-                    </tr>
-                @endforeach
+                <tr>
+                    <td>{{ $product['product_name'] }}</td>
+                    <td>{{ $product['opening_stock'] }}</td>
+                    <td>{{ $product['addition'] }}</td>
+                    <td>{{ $product['total_stock'] }}</td>
+                    <td>{{ $product['sold_stock'] }}</td>
+                    <td>{{ $product['remaining_stock'] }}</td>
+                </tr>
             @endforeach
         </tbody>
     </table>
