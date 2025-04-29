@@ -34,7 +34,9 @@
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">SKU <span class="text text-danger">*</span></label>
-                            <input type="text" id="sku" name="sku" class="form-control form-control-lg form-control-solid mb-2">
+                            <select id="sku" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sku">
+                            </select>
+                            
                         </div>
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
