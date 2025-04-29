@@ -1,15 +1,14 @@
-
 <div id="revenue_report">
-<h4>Inventory Stock Report</h4>
+    <h4>Inventory Stock Report</h4>
 
-    <table  id="inv_table" class="display">
+    <table id="inv_table" class="display">
         <thead>
             <tr>
                 <th>Product Name</th>
                 <th>Location</th>
-                <th>Total Stock</th>
+                <th>Opening Stock</th>
                 <th>Sold Stock</th>
-                <th>Remaining Stock</th>
+                <th>Closing Stock</th>
             </tr>
         </thead>
         <tbody>
@@ -18,9 +17,9 @@
                     <tr>
                         <td>{{ $product['product_name'] }}</td>
                         <td>{{ $location['location_name'] }}</td>
-                        <td>{{ $location['total_stock'] }}</td>
+                        <td>{{ $location['opening_stock'] }}</td>
                         <td>{{ $location['sold_stock'] }}</td>
-                        <td>{{ $location['remaining_stock'] }}</td>
+                        <td>{{ $location['closing_stock'] }}</td>
                     </tr>
                 @endforeach
             @endforeach
