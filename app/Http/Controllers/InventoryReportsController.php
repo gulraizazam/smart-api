@@ -72,13 +72,27 @@ class InventoryReportsController extends Controller
             ->get();
             // Process the product data for the report
             $report = $products->map(function ($product) use ($locationId, $startDate, $endDate) {
-                // Opening Stock = all inventory added BEFORE start date
-                $openingStock = $product->inventories
-                    ->filter(fn($inventory) => $inventory->created_at < $startDate)
+                // Opening inventory before the range
+                $openingInventory = $product->inventories
+                    ->where('created_at', '<', $startDate)
                     ->sum('quantity');
 
-                // Sold Stock = quantity sold BETWEEN start and end date
-                $soldStock = OrderDetail::where('product_id', $product->id)
+                // Sold stock before the range (for opening stock calc)
+                $soldBefore = OrderDetail::where('product_id', $product->id)
+                    ->whereHas('order', function ($query) use ($locationId, $startDate) {
+                        if ($locationId) {
+                            $query->where('location_id', $locationId);
+                        } else {
+                            $query->whereIn('location_id', ACL::getUserCentres());
+                        }
+                        $query->where('created_at', '<', $startDate);
+                    })
+                    ->sum('quantity');
+
+                $openingStock = $openingInventory - $soldBefore;
+
+                // Sold stock in the given range
+                $soldInRange = OrderDetail::where('product_id', $product->id)
                     ->whereHas('order', function ($query) use ($locationId, $startDate, $endDate) {
                         if ($locationId) {
                             $query->where('location_id', $locationId);
@@ -89,46 +103,53 @@ class InventoryReportsController extends Controller
                     })
                     ->sum('quantity');
 
-                // Closing stock = Opening - Sold
-                $closingStock = $openingStock - $soldStock;
+                $closingStock = $openingStock - $soldInRange;
 
-                // Location-wise breakdown
+                // Per location breakdown
                 $locationData = $product->inventories->groupBy('location_id')->map(function ($inventoryGroup, $locationId) use ($product, $startDate, $endDate) {
                     $locationName = $inventoryGroup->first()->centre->name ?? 'Unknown Location';
 
-                    // Opening stock at this location
-                    $locationOpening = $inventoryGroup->where('created_at', '<', $startDate)->sum('quantity');
+                    $inventoryBefore = $inventoryGroup->where('created_at', '<', $startDate)->sum('quantity');
 
-                    // Sold stock in this location in range
-                    $locationSold = $product->orderDetails
-                        ->filter(function ($orderDetail) use ($locationId, $startDate, $endDate, $product) {
-                            $order = $orderDetail->order;
+                    $soldBefore = $product->orderDetails
+                        ->filter(function ($od) use ($locationId, $startDate) {
+                            $order = $od->order;
                             return $order?->location_id == $locationId &&
-                                   $order?->created_at >= $startDate &&
-                                   $order?->created_at <= $endDate &&
-                                   $orderDetail->product_id == $product->id;
+                                   $order?->created_at < $startDate;
                         })
                         ->sum('quantity');
 
-                    $locationClosing = $locationOpening - $locationSold;
+                    $openingStock = $inventoryBefore - $soldBefore;
+
+                    $soldInRange = $product->orderDetails
+                        ->filter(function ($od) use ($locationId, $startDate, $endDate) {
+                            $order = $od->order;
+                            return $order?->location_id == $locationId &&
+                                   $order?->created_at >= $startDate &&
+                                   $order?->created_at <= $endDate;
+                        })
+                        ->sum('quantity');
+
+                    $closingStock = $openingStock - $soldInRange;
 
                     return [
                         'location_name' => $locationName,
                         'location_id' => $locationId,
-                        'opening_stock' => $locationOpening,
-                        'sold_stock' => $locationSold,
-                        'closing_stock' => $locationClosing,
+                        'opening_stock' => $openingStock,
+                        'sold_stock' => $soldInRange,
+                        'closing_stock' => $closingStock,
                     ];
                 });
 
                 return [
                     'product_name' => $product->name,
                     'opening_stock' => $openingStock,
-                    'sold_stock' => $soldStock,
+                    'sold_stock' => $soldInRange,
                     'closing_stock' => $closingStock,
                     'locations' => $locationData,
                 ];
             });
+
 
             return view('admin.reports.inventoryReport', compact('report'));
         }
