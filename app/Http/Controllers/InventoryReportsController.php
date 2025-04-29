@@ -94,6 +94,8 @@ class InventoryReportsController extends Controller
                 // Addition in range from stocks table
                 $additionInRange = DB::table('stocks')
                     ->where('product_id', $product->id)
+                    ->where('stock_type', 'in')
+                    ->where('location_id', $locationId)
                     ->whereBetween('created_at', [$startDate, $endDate])
                     ->sum('quantity');
 
