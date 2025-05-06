@@ -386,7 +386,7 @@ class LocationsWidget
     $filteredDoctors = User::whereIn('id', $doctorIds)
         ->where('active',1) // or 1 if it's a numeric status
         ->whereHas('user_roles', function ($query) {
-            $query->where('name', 'Aesthetic Consultant');
+            $query->whereIn('name', ['Aesthetic Consultant', 'Lifestyle Consultant']);
         })
         ->pluck('name', 'id'); // key = user_id, value = name
 
