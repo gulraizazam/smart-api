@@ -716,12 +716,12 @@ function addFeedback(url) {
         cache: false,
         success: function (response) {
             console.log('res', response);
-            $('#add_patients_name').val(response.data.appointment.patient.name);
+            $('#add_patients_name').val(response.data.appointment.name);
             $('#treatment_name').val(response.data.appointment.service.name);
             $('#add_doctor_name').val(response.data.appointment.doctor.name);
             $('#location').val(response.data.appointment.location.name);
             $('#scheduled_date').val(response.data.appointment.scheduled_date);
-            $('#add_patients_id').val(response.data.appointment.patient.id);
+            $('#add_patients_id').val(response.data.appointment.patient_id);
             $('#add_treatment_id').val(response.data.appointment.id);
         },
         error: function (xhr, ajaxOptions, thrownError) {
