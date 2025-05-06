@@ -3390,20 +3390,12 @@ class AppointmentsController extends Controller
                     $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
                 } else {
                     
-                    $doctors = $doctors_no_final = LocationsWidget::loadConsultantDoctorByLocation($request->location_id, Auth::User()->account_id);
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
                 
                 }
                 foreach ($doctors_no_final as $key => $doctor) {
                     $resource = Resources::where('external_id', '=', $key)->first();
-                    if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
-                        $doctor_rota = ResourceHasRota::where([
-                            ['resource_id', '=', $resource->id],
-                            ['is_treatment', '=', '1'],
-                        ])->get();
-                        if (count($doctor_rota) == 0) {
-                            unset($doctors[$key]);
-                        }
-                    }
+                   
                     if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
                         $doctor_rota = ResourceHasRota::where([
                             ['resource_id', '=', $resource->id],
