@@ -2530,7 +2530,7 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        $treatment = Appointments::with(['doctor','location'])
+        $treatment = Appointments::with(['doctor','location','service'])
         ->where('id', $id)
         ->where('appointment_type_id', 2)
         ->where('appointment_status_id', 2)
