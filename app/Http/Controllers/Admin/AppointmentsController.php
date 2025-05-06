@@ -3396,7 +3396,7 @@ class AppointmentsController extends Controller
                 foreach ($doctors_no_final as $key => $doctor) {
                     $resource = Resources::where('external_id', '=', $key)->first();
                    
-                    if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
+                    //if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
                         $doctor_rota = ResourceHasRota::where([
                             ['resource_id', '=', $resource->id],
                             ['is_consultancy', '=', '1'],
@@ -3404,7 +3404,7 @@ class AppointmentsController extends Controller
                         if (count($doctor_rota) == 0) {
                             unset($doctors[$key]);
                         }
-                    }
+                    //}
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
