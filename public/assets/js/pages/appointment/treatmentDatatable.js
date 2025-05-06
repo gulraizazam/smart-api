@@ -715,7 +715,7 @@ function addFeedback(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-
+            console.log('res', response);
             $('#add_patients_name').val(response.data.appointment.patient.name);
             $('#treatment_name').val(response.data.appointment.service.name);
             $('#add_doctor_name').val(response.data.appointment.doctor.name);
