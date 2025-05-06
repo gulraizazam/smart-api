@@ -3368,6 +3368,66 @@ class AppointmentsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function loadConsultantDoctorsByLocation(Request $request)
+    {
+        try {
+            if ($request->location_id) {
+                if ($request->machine_type_allocation) {
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
+                    if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
+                        $reverse_process = true;
+                    } else {
+                        $reverse_process = false;
+                    }
+                    $doctorids = [];
+                    /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
+                    foreach ($doctors as $key => $doctor) {
+                        $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $request->location_id, Auth::User()->account_id, $reverse_process);
+                        if (in_array($request->service_id, $doctor_serivce)) {
+                            $doctorids[] = $key;
+                        }
+                    }
+                    $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
+                } else {
+                    
+                    $doctors = $doctors_no_final = LocationsWidget::loadConsultantDoctorByLocation($request->location_id, Auth::User()->account_id);
+                
+                }
+                foreach ($doctors_no_final as $key => $doctor) {
+                    $resource = Resources::where('external_id', '=', $key)->first();
+                    if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
+                        $doctor_rota = ResourceHasRota::where([
+                            ['resource_id', '=', $resource->id],
+                            ['is_treatment', '=', '1'],
+                        ])->get();
+                        if (count($doctor_rota) == 0) {
+                            unset($doctors[$key]);
+                        }
+                    }
+                    if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
+                        $doctor_rota = ResourceHasRota::where([
+                            ['resource_id', '=', $resource->id],
+                            ['is_consultancy', '=', '1'],
+                        ])->get();
+                        if (count($doctor_rota) == 0) {
+                            unset($doctors[$key]);
+                        }
+                    }
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'dropdown' => $doctors,
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Record found', false, [
+                'dropdown' => null,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+    
     /*
      * Load Locations by City
      *

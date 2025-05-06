@@ -17,6 +17,8 @@ use App\Models\Regions;
 use App\Models\Resources;
 use App\Models\ServiceHasLocations;
 use App\Models\Services;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
 
 class LocationsWidget
 {
@@ -375,7 +377,21 @@ class LocationsWidget
 
         return $doctors;
     }
+    public static function loadConsultantDoctorByLocation($location_id, $account_id)
+{
+    $doctorIds = DoctorHasLocations::where('location_id', $location_id)
+        ->pluck('user_id')
+        ->toArray();
 
+    $filteredDoctors = User::whereIn('id', $doctorIds)
+        ->where('active',1) // or 1 if it's a numeric status
+        ->whereHas('user_roles', function ($query) {
+            $query->where('name', 'Aesthetic Consultant');
+        })
+        ->pluck('name', 'id'); // key = user_id, value = name
+
+    return $filteredDoctors;
+}
     /*
     * Array of centers with option group of regions
     *
