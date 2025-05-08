@@ -778,7 +778,7 @@
                                         </div>
                                     </li>
                                     
-                                    <li style="border-bottom: none;">
+                                    <!-- <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="dr_wise_fed" class="form-control" name="type">
                                                 <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
@@ -792,7 +792,7 @@
                                                 {{-- <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option> --}}
                                             </select>
                                         </div>
-                                    </li>
+                                    </li> -->
                                 </ul>
 
                                 <div class="d-none flex-column text-right">
