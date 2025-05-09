@@ -3056,6 +3056,9 @@ class DashboardReportsController extends Controller
             ->get();
 
         // Step 4: Loop through each doctor and calculate average rating in date range
+        if($period == "all"){
+            $dateRange = null;
+        }
         foreach ($doctors as $doctor) {
             $avgRating = Feedback::where('doctor_id', $doctor->id)
                 ->when($dateRange, function ($query) use ($dateRange) {
