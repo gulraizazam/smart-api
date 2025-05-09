@@ -777,22 +777,22 @@
                                             </div>
                                         </div>
                                     </li>
-                                    
-                                    <!-- <li style="border-bottom: none;">
+
+                                    <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="dr_wise_fed" class="form-control" name="type">
-                                                <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
+                                                <!-- <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
                                                 </option>
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
-                                                    Week</option>
+                                                    Week</option> -->
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                {{-- <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option> --}}
+                                                <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option>
                                             </select>
                                         </div>
-                                    </li> -->
+                                    </li>
                                 </ul>
 
                                 <div class="d-none flex-column text-right">
@@ -805,7 +805,7 @@
                                 <div class="col-12">
                                     <div id="doc_wise_feedback_data"></div>
                                 </div>
-                                
+
                                 <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
                             </div>
                         </div>
@@ -878,13 +878,13 @@
                     initDoctorWiseConversion('today', centre_id, 'firsttime');
                     @endif
                 @endif
-                
+
                     var centre_id = $(".doctorwisefeedback").attr('data-id');
-                    
+
                     @if (!auth()->user()->hasRole('CSR'))
                     initDoctorWiseFeedback('today', centre_id, 'firsttime');
                     @endif
-               
+
 
             });
 
