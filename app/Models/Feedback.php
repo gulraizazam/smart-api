@@ -22,7 +22,7 @@ class Feedback extends Model
     }
     public function treatment()
     {
-        return $this->belongsTo(Services::class,'treatment_id');    
+        return $this->belongsTo(Services::class,'treatment_id');
     }
     public function patient()
     {
@@ -31,5 +31,9 @@ class Feedback extends Model
     public function doctor()
     {
         return $this->belongsTo(User::class);
+    }
+    public function appointment()
+    {
+        return $this->belongsTo(Appointments::class);
     }
 }
