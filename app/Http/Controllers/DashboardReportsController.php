@@ -3021,60 +3021,60 @@ class DashboardReportsController extends Controller
         ]);
     }
     public function DoctoreWiseFeedback(Request $request)
-{
-    $period = $request->period;
-    $centreId = $request->centre_id;
+    {
+        $period = $request->period;
+        $centreId = $request->centre_id;
 
-    $labels = [];
-    $ratings = [];
+        $labels = [];
+        $ratings = [];
 
-    // Get date range from period
-    $dateRanges = GeneralFunctions::GetPeriods($period);
-    $dateRange = $dateRanges[$period] ?? null;
+        // Get date range from period
+        $dateRanges = GeneralFunctions::GetPeriods($period);
+        $dateRange = $dateRanges[$period] ?? null;
 
-    // Step 1: Get relevant location IDs
-    $whereNot = ['All Centres', 'All South Region', 'All Central Region'];
-    if ($centreId === 'all') {
-        $locationIds = Locations::whereNotIn('name', $whereNot)
-            ->where('active', 1)
-            ->pluck('id');
-    } else {
-        $locationIds = [$centreId];
-    }
+        // Step 1: Get relevant location IDs
+        $whereNot = ['All Centres', 'All South Region', 'All Central Region'];
+        if ($centreId === 'all') {
+            $locationIds = Locations::whereNotIn('name', $whereNot)
+                ->where('active', 1)
+                ->pluck('id');
+        } else {
+            $locationIds = [$centreId];
+        }
 
-    // Step 2: Get doctors assigned to those locations
-    $doctorIds = DoctorHasLocations::whereIn('location_id', $locationIds)
-        ->when($request->doc_id && $request->doc_id !== '0' && $request->doc_id !== 'all-docs', function ($query) use ($request) {
-            return $query->where('user_id', $request->doc_id);
-        })
-        ->distinct()
-        ->pluck('user_id');
-
-    // Step 3: Get active doctor records
-    $doctors = User::whereIn('id', $doctorIds)
-        ->where('active', 1)
-        ->get();
-
-    // Step 4: Loop through each doctor and calculate average rating in date range
-    foreach ($doctors as $doctor) {
-        $avgRating = Feedback::where('doctor_id', $doctor->id)
-            ->when($dateRange, function ($query) use ($dateRange) {
-                return $query->whereBetween('created_at', [
-                    $dateRange['start_date'] . ' 00:00:00',
-                    $dateRange['end_date'] . ' 23:59:59'
-                ]);
+        // Step 2: Get doctors assigned to those locations
+        $doctorIds = DoctorHasLocations::whereIn('location_id', $locationIds)
+            ->when($request->doc_id && $request->doc_id !== '0' && $request->doc_id !== 'all-docs', function ($query) use ($request) {
+                return $query->where('user_id', $request->doc_id);
             })
-            ->avg('rating');
+            ->distinct()
+            ->pluck('user_id');
 
-        $labels[] = $doctor->name;
-        $ratings[] = round($avgRating ?? 0, 2); // handle nulls gracefully
+        // Step 3: Get active doctor records
+        $doctors = User::whereIn('id', $doctorIds)
+            ->where('active', 1)
+            ->get();
+
+        // Step 4: Loop through each doctor and calculate average rating in date range
+        foreach ($doctors as $doctor) {
+            $avgRating = Feedback::where('doctor_id', $doctor->id)
+                ->when($dateRange, function ($query) use ($dateRange) {
+                    return $query->whereBetween('created_at', [
+                        $dateRange['start_date'] . ' 00:00:00',
+                        $dateRange['end_date'] . ' 23:59:59'
+                    ]);
+                })
+                ->avg('rating');
+
+            $labels[] = $doctor->name;
+            $ratings[] = round($avgRating ?? 0, 2); // handle nulls gracefully
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
+            'labels' => $labels,
+            'rating' => $ratings,
+        ]);
     }
-
-    return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
-        'labels' => $labels,
-        'rating' => $ratings,
-    ]);
-}
     public function AllDoctorsWiseConversion(Request $request)
     {
         $total_apts = [];
