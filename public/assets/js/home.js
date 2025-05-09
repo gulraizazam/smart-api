@@ -967,7 +967,7 @@ function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = tru
 function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true) {
     $("#doctor_wise_feedback_section .loader-img-attended").css('display', '');
     $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', 'none');
-  
+
     dropDownList('doctor', period);
     if (time != 'firsttime') {
         doc_wise_feedback_chart.destroy();
@@ -980,7 +980,7 @@ function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true)
 
 
     $('.arrivalbtn').text();
-    
+
     $.ajax({
         url: route('admin.dashboard.doctor_wise_feedback'),
         type: 'GET',
@@ -989,16 +989,16 @@ function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true)
             // 'period': period,
             'period': $('#dr_wise_fed option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_fed option:selected').val(),
             'centre_id': centre_id,
-     
+
         },
         success: function (response) {
             console.log(response);
             $("#doctor_wise_feedback_section .loader-img-attended").css('display', 'none');
             $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', '');
-           
+
 
             $('.loader-imgs').css('display', "none");
-           
+
             DoctorWiseFeedback(response);
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -1234,6 +1234,16 @@ function DoctorWiseFeedback(bar) {
         },
         xaxis: {
             categories: lables,
+        },
+        yaxis: {
+            min: 0,
+            max: 10,
+            tickAmount: 5,
+            labels: {
+                formatter: function (val) {
+                    return parseInt(val);
+                }
+            }
         },
         colors: [primary, success, warning]
     };
