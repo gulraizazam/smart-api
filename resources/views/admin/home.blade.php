@@ -781,10 +781,10 @@
                                     <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="dr_wise_fed" class="form-control" name="type">
-                                                <!-- <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
+                                                 <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
                                                 </option>
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
-                                                <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                <!-- <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                                     Week</option> -->
                                                 <option value="all" {{ request('type')=='thismonth' ? 'selected' : '' }}>Life Time
