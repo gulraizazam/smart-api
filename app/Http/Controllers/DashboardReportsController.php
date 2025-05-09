@@ -3062,12 +3062,14 @@ class DashboardReportsController extends Controller
         foreach ($doctors as $doctor) {
             $avgRating = Feedback::where('doctor_id', $doctor->id)
                 ->when($dateRange, function ($query) use ($dateRange) {
-                    return $query->whereBetween('created_at', [
-                        $dateRange['start_date'] . ' 00:00:00',
-                        $dateRange['end_date'] . ' 23:59:59'
-                    ]);
+                    $query->whereHas('appointment', function ($q) use ($dateRange) {
+                        $q->whereBetween('scheduled_date', [
+                            $dateRange['start_date'] . ' 00:00:00',
+                            $dateRange['end_date'] . ' 23:59:59'
+                        ]);
+                    });
                 })
-                ->avg('rating');
+            ->avg('rating');
 
             $labels[] = $doctor->name;
             $ratings[] = round($avgRating ?? 0, 2); // handle nulls gracefully
