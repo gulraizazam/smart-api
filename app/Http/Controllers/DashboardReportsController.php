@@ -3062,7 +3062,28 @@ class DashboardReportsController extends Controller
         $doctorRatings = [];
 
         foreach ($doctors as $doctor) {
-            $avgRating = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
+            if($centreId == 'all'){
+                $avgRating = Feedback::where('doctor_id', $doctor->id)
+                ->when($dateRange, function ($query) use ($dateRange) {
+                    $query->whereHas('appointment', function ($q) use ($dateRange) {
+                        $q->whereBetween('scheduled_date', [
+                            $dateRange['start_date'] . ' 00:00:00',
+                            $dateRange['end_date'] . ' 23:59:59'
+                        ]);
+                    });
+                })
+                ->avg('rating');
+                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)
+                        ->when($dateRange, function ($query) use ($dateRange) {
+                            $query->whereHas('appointment', function ($q) use ($dateRange) {
+                                $q->whereBetween('scheduled_date', [
+                                    $dateRange['start_date'] . ' 00:00:00',
+                                    $dateRange['end_date'] . ' 23:59:59'
+                                ]);
+                            });
+                        })->count();
+            }else{
+                $avgRating = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
                 ->when($dateRange, function ($query) use ($dateRange) {
                     $query->whereHas('appointment', function ($q) use ($dateRange) {
                         $q->whereBetween('scheduled_date', [
@@ -3081,6 +3102,8 @@ class DashboardReportsController extends Controller
                                 ]);
                             });
                         })->count();
+            }
+
 
                     $doctorRatings[] = [
                         'name' => $doctor->name,
