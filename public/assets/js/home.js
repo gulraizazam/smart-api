@@ -1209,7 +1209,9 @@ function DoctorWiseFeedback(bar) {
     const info = '#8950FC';
     const warning = '#FFA800';
     const danger = '#F64E60';
-    let lables = bar.data.labels;
+    let labels = bar.data.labels;
+    let totals = bar.data.total;
+
     var options = {
         series: [{
             name: 'Rating ' + `(${bar.data.rating.reduce((a, b) => a + b, 0)})`,
@@ -1218,7 +1220,6 @@ function DoctorWiseFeedback(bar) {
         chart: {
             type: 'bar',
             height: 350,
-
         },
         plotOptions: {
             bar: {
@@ -1227,13 +1228,23 @@ function DoctorWiseFeedback(bar) {
                 endingShape: 'rounded'
             },
         },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val, opts) {
+                return val + ' (' + totals[opts.dataPointIndex] + ')';
+            },
+            style: {
+                fontSize: '14px',
+                colors: ['#fff']
+            }
+        },
         stroke: {
             show: true,
             width: 1,
             colors: ['transparent']
         },
         xaxis: {
-            categories: lables,
+            categories: labels,
         },
         yaxis: {
             min: 0,
@@ -1247,6 +1258,7 @@ function DoctorWiseFeedback(bar) {
         },
         colors: [primary, success, warning]
     };
+
     $("#doc_wise_feedback_data").html("");
     doc_wise_feedback_chart = new ApexCharts(document.querySelector("#doc_wise_feedback_data"), options);
     doc_wise_feedback_chart.render();
