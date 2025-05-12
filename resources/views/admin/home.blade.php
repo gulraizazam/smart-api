@@ -1,6 +1,13 @@
 @extends('admin.layouts.master')
 @section('title', 'Dashboard')
 @section('content')
+<style>
+    #doc_wise_feedback_data {
+  overflow-x: auto;
+  width: 100%;
+  white-space: nowrap;
+}
+</style>
 <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
 
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">

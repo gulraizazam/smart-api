@@ -3062,7 +3062,7 @@ class DashboardReportsController extends Controller
         $doctorRatings = [];
 
         foreach ($doctors as $doctor) {
-            $avgRating = Feedback::where('doctor_id', $doctor->id)
+            $avgRating = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
                 ->when($dateRange, function ($query) use ($dateRange) {
                     $query->whereHas('appointment', function ($q) use ($dateRange) {
                         $q->whereBetween('scheduled_date', [
@@ -3072,7 +3072,7 @@ class DashboardReportsController extends Controller
                     });
                 })
                 ->avg('rating');
-                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)
+                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
                         ->when($dateRange, function ($query) use ($dateRange) {
                             $query->whereHas('appointment', function ($q) use ($dateRange) {
                                 $q->whereBetween('scheduled_date', [
