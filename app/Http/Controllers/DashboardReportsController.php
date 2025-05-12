@@ -3072,11 +3072,22 @@ class DashboardReportsController extends Controller
                     });
                 })
                 ->avg('rating');
+                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)
+                        ->when($dateRange, function ($query) use ($dateRange) {
+                            $query->whereHas('appointment', function ($q) use ($dateRange) {
+                                $q->whereBetween('scheduled_date', [
+                                    $dateRange['start_date'] . ' 00:00:00',
+                                    $dateRange['end_date'] . ' 23:59:59'
+                                ]);
+                            });
+                        })->count();
 
-            $doctorRatings[] = [
-                'name' => $doctor->name,
-                'rating' => round($avgRating ?? 0, 2),
-            ];
+                    $doctorRatings[] = [
+                        'name' => $doctor->name,
+                        'rating' => round($avgRating ?? 0, 2),
+                        'total' => $totalFeedbacks,
+                    ];
+
         }
 
         // Sort by rating descending
@@ -3085,12 +3096,14 @@ class DashboardReportsController extends Controller
         });
 
         // Separate into labels and ratings
-        $labels = array_column($doctorRatings, 'name');
+       $labels = array_column($doctorRatings, 'name');
         $ratings = array_column($doctorRatings, 'rating');
+        $totals = array_column($doctorRatings, 'total');
 
         return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
             'labels' => $labels,
             'rating' => $ratings,
+            'total' => $totals
         ]);
     }
     public function AllDoctorsWiseConversion(Request $request)
