@@ -3059,6 +3059,8 @@ class DashboardReportsController extends Controller
         if($period == "all"){
             $dateRange = null;
         }
+        $doctorRatings = [];
+
         foreach ($doctors as $doctor) {
             $avgRating = Feedback::where('doctor_id', $doctor->id)
                 ->when($dateRange, function ($query) use ($dateRange) {
@@ -3069,11 +3071,22 @@ class DashboardReportsController extends Controller
                         ]);
                     });
                 })
-            ->avg('rating');
+                ->avg('rating');
 
-            $labels[] = $doctor->name;
-            $ratings[] = round($avgRating ?? 0, 2); // handle nulls gracefully
+            $doctorRatings[] = [
+                'name' => $doctor->name,
+                'rating' => round($avgRating ?? 0, 2),
+            ];
         }
+
+        // Sort by rating descending
+        usort($doctorRatings, function ($a, $b) {
+            return $b['rating'] <=> $a['rating'];
+        });
+
+        // Separate into labels and ratings
+        $labels = array_column($doctorRatings, 'name');
+        $ratings = array_column($doctorRatings, 'rating');
 
         return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
             'labels' => $labels,
