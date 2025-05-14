@@ -3416,4 +3416,27 @@ class DashboardReportsController extends Controller
             return view('admin.reports.patients_follow_up_report', get_defined_vars());
         }
     }
+    public function ViewFeedback($id)
+    {
+        $avgByService = Feedback::where('doctor_id', $id)
+        ->select('service_id')
+        ->selectRaw('AVG(rating) as avg_rating')
+        ->groupBy('service_id')
+       ->with(['service' => function($query) {
+            $query->select('id', 'name', 'color'); // Make sure to fetch only necessary fields
+        }])
+        ->get();
+
+        // Average feedback by treatment for this doctor
+        $avgByTreatment = Feedback::where('doctor_id', $id)
+            ->select('treatment_id')
+            ->selectRaw('AVG(rating) as avg_rating')
+            ->groupBy('treatment_id')
+            ->with('treatment') // assuming treatment() relationship exists
+            ->with(['treatment' => function($query) {
+            $query->select('id', 'name', 'color'); // Make sure to fetch only necessary fields
+        }])
+            ->get();
+         return view('admin.reports.feedbackBarChart', compact('avgByService', 'avgByTreatment'));
+    }
 }
