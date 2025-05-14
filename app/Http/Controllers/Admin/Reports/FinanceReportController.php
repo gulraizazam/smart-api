@@ -2272,25 +2272,33 @@ class FinanceReportController extends Controller
         
        // $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
         $serviceId = $request->service_id;    
-        $soldServices = DB::table('package_services')
-        ->join('packages', 'package_services.package_id', '=', 'packages.id')
-        ->join('package_advances', 'package_advances.package_id', '=', 'packages.id')
-        ->where('package_advances.cash_flow', 'in') // Ensure there is a payment
-        ->where('package_advances.cash_amount', '>', 0) // Ensure payment is made
-        ->whereIn('packages.location_id', $locationId) // Use whereIn for multiple locations
+        $soldServices = DB::table('appointments')
+        ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
+       
+        ->where('appointments.appointment_type_id',2)
+        ->where('appointments.appointment_status_id', 2)
+       
+        ->when($locationId, function ($query) use ($locationId) {
+            return $query->whereIn('appointments.location_id', $locationId);
+        })
         ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
-            return $query->whereBetween('package_advances.created_at', [$start_date, $end_date]);
+            return $query->whereBetween('appointments.scheduled_date', [$start_date, $end_date]);
         })
         ->when($request->service_id, function ($query) use ($request) {
-            return $query->where('package_services.service_id', $request->service_id);
+            return $query->where('appointments.service_id', $request->service_id);
         })
-        ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'),'packages.location_id')
-        ->groupBy('package_services.service_id','packages.location_id')
+        ->select(
+            'appointments.service_id',
+            DB::raw('COUNT(appointments.id) as total_sold'),
+            'appointments.location_id'
+        )
+        ->groupBy('appointments.service_id', 'appointments.location_id')
         ->get();
        
         return view('admin.reports.accountsalesreport.serviceSoldreport', compact('soldServices', 'start_date', 'end_date'));
         
     }
+
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
