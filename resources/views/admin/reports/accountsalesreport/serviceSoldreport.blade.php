@@ -40,19 +40,7 @@
         <div class="sn-title">
             <h1>Services Sales Count Report</h1>
         </div>
-        <div class="sn-buttons">
-            @if($request->get('medium_type') == 'web')
-                <a class="btn sn-white-btn btn-default" href="javascript:;" onclick="printReport('excel');">
-                    <i class="fa fa-file-excel-o"></i><span>Excel</span>
-                </a>
-                <a class="btn sn-white-btn btn-default" href="javascript:;" onclick="printReport('pdf');">
-                    <i class="fa fa-file-pdf-o"></i><span>PDF</span>
-                </a>
-                <a class="btn sn-white-btn btn-default" href="javascript:;" onclick="printReport('print');">
-                    <i class="fa fa-print"></i><span>Print</span>
-                </a>
-            @endif
-        </div>
+       
     </div>
 </div>
 
@@ -78,7 +66,7 @@
                 </div>
             </div>
             <div class="table-wrapper" id="topscroll">
-                <table class="table">
+                <table class="table" id="servicesSoldTable">
                     <thead>
                         <tr>
                             <th>Service Name</th>
@@ -114,4 +102,16 @@
     </div>
     <div class="clear clearfix"></div>
     <script src="{{ url('js/admin/scrollbar/scrollbardev.js') }}" type="text/javascript"></script>
+    <script>
+         $("#servicesSoldTable").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+    </script>
 </div>
