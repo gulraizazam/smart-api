@@ -20,7 +20,7 @@
             @foreach ($result as $row)
                 <tr>
                     @if(isset($row->doctor))
-                        <td>{{ $row->doctor->name ?? 'N/A' }}</td>
+                        <td><a href="{{ route('admin.feedback.view', $row->doctor->id) }}" style="color: black";> {{$row->doctor->name ?? 'N/A' }}</a></td>
                     @endif
 
                     @if(isset($row->service))
