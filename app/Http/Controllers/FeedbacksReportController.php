@@ -34,14 +34,18 @@ class FeedbacksReportController extends Controller
     $serviceId = $serviceId === '' ? null : $serviceId;
 
     // Parse date range
-    // $dates = explode(' - ', $request->input('date_range'));
-    // $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-    // $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+     $period = $request->date_range;
+    $dates = explode(' - ', $request->input('date_range'));
+    $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+    $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
     $feedbacks = Feedback::query()
         ->when($locationId, fn($q) => $q->where('location_id', $locationId))
         ->when($serviceId, fn($q) => $q->where('service_id', $serviceId))
-        ->when($doctorId, fn($q) => $q->where('doctor_id', $doctorId));
+        ->when($doctorId, fn($q) => $q->where('doctor_id', $doctorId))
+       ->whereHas('appointment', function ($q) use ($startDate, $endDate) {
+            $q->whereBetween('scheduled_date', [$startDate, $endDate]);
+        });
        // ->whereBetween('created_at', [$startDate, $endDate]);
 
     // CASE LOGIC
@@ -75,10 +79,10 @@ class FeedbacksReportController extends Controller
     } elseif ($locationId && $doctorId && !$serviceId) {
 
         // CASE 4: location + doctor → That doctor's rating per service in that location
-        $result = $feedbacks->select('service_id')
+        $result = $feedbacks->select('service_id', 'doctor_id')
             ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
             ->groupBy('service_id')
-            ->with('service')
+            ->with('service', 'doctor')
             ->get();
 
     } elseif ($locationId && $serviceId && !$doctorId) {

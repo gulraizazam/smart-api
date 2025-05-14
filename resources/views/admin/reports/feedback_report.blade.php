@@ -49,7 +49,7 @@
 
                                             <span id="centre_id_handler"></span>
                                         </div>
-                                        <div class="form-group col-md-3 sn-select @if($errors->has('doctor_id')) has-error @endif"
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('doctor_id')) has-error @endif"
                                              id="doc_dropdown" >
                                             {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="feedback_doctor_id_filter" name="doctor_id">
@@ -57,7 +57,7 @@
                                             </select>
                                             <span id="centre_id_handler"></span>
                                         </div>
-                                        <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('service_id')) has-error @endif"
                                              id="service_dropdown" >
                                             {!! Form::label('service_id', 'Service:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="service_id_filter" name="service_id">
@@ -68,12 +68,12 @@
                                             </select>
                                             <span id="centre_id_handler"></span>
                                         </div>
-                                        <!-- <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
+                                        <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
                                             {!! Form::label('date_range', 'Date*', ['class' => 'control-label']) !!}
                                             <div class="input-group">
                                                 {!! Form::text('date_range', null, ['id' => 'date_range_inv', 'class' => 'form-control']) !!}
                                             </div>
-                                        </div> -->
+                                        </div>
 
 
 
