@@ -732,7 +732,7 @@
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
                         <div class="card-body p-0">
                             <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
-                                <span class="dashboard-counter text-uppercase">Doctors Feedback</span>
+                                <span class="dashboard-counter text-uppercase">Doctor Ratings - Based on Client Insight</span>
                                 <ul class="nav nav-tabs d-flex align-items-center  doc_feedback_ul">
                                     <li style="border-bottom: none;">
                                         <div class="actions action-style p-3 mr-3">
