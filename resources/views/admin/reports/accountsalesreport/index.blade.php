@@ -1,7 +1,8 @@
 @extends('admin.layouts.master')
 @section('title', 'General Revenue Reports')
 @section('content')
-
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
     @push('css')
         <style>
             .table-wrapper {
@@ -527,6 +528,18 @@
 
         </script>
 
+<script>
+    $("#servicesSoldTable").DataTable({
+           dom: 'Bfrtip',
+           buttons: [
+               'excelHtml5',
+               'csvHtml5',
+               'pdfHtml5',
+           ],
+           "ordering": false,
+           "pageLength": 50
+       });
+</script>
     @endpush
 
 @endsection
