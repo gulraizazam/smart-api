@@ -38,7 +38,7 @@
 <div class="sn-table-holder">
     <div class="sn-report-head">
         <div class="sn-title">
-            <h1>{{ 'Services Sales Count Report'  }}</h1>
+            <h1>Services Sales Count Report</h1>
         </div>
         <div class="sn-buttons">
             @if($request->get('medium_type') == 'web')
@@ -61,7 +61,7 @@
         <div class="sn-table-head">
             <div class="row">
                 <div class="col-md-2">
-                    <img src="{{asset('logo_final.png')}}" style="height: 120px;">
+                    <img src="{{ asset('logo_final.png') }}" style="height: 120px;">
                 </div>
                 <div class="col-md-6">&nbsp;</div>
                 <div class="col-md-4">
@@ -72,7 +72,7 @@
                         </tr>
                         <tr>
                             <th>Date</th>
-                            <td>{{ \Carbon\Carbon::now()->format('Y-m-d') }}</td>
+                            <td>{{ now()->format('Y-m-d') }}</td>
                         </tr>
                     </table>
                 </div>
@@ -80,42 +80,38 @@
             <div class="table-wrapper" id="topscroll">
                 <table class="table">
                     <thead>
-                    <th>Service Name</th>
-                    <th>Centre</th>
-                    <th>Sold</th>
-                    <th>Service Price</th>
-                    
+                        <tr>
+                            <th>Service Name</th>
+                            <th>Centre</th>
+                            <th>Sold</th>
+                            <th>Service Price</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    @if(count($soldServices))
-                        
-                        @foreach($soldServices as $reportRow)
-                       
-                        @php 
-                            $service = \App\Models\Services::where('id',$reportRow->service_id)->first();
-                            $location = \App\Models\Locations::where('id',$reportRow->location_id)->first();
-                        @endphp
+                        @if($soldServices->count())
+                            @php
+                                $services = \App\Models\Services::whereIn('id', $soldServices->pluck('service_id'))->get()->keyBy('id');
+                                $locations = \App\Models\Locations::whereIn('id', $soldServices->pluck('location_id'))->get()->keyBy('id');
+                            @endphp
+
+                            @foreach($soldServices as $reportRow)
+                                <tr>
+                                    <td>{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</td>
+                                    <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
+                                    <td>{{ $reportRow->total_sold }}</td>
+                                    <td>{{ number_format($services[$reportRow->service_id]->price ?? 0, 2) }}</td>
+                                </tr>
+                            @endforeach
+                        @else
                             <tr>
-                                <td>{{ $service->name }}</td>
-                                <td>{{ $location->name }}</td>
-                                <td>{{ $reportRow->total_sold }}</td>
-                                <td>{{ $service->price }}</td>
-                               </tr>
-                        @endforeach
-
-                       
-
-                    @else
-                        <tr>
-                            <td colspan="16" align="center">No record round.</td>
-                        </tr>
-                    @endif
+                                <td colspan="4" class="text-center">No record found.</td>
+                            </tr>
+                        @endif
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
     <div class="clear clearfix"></div>
-    <!-- Liabilities and Assets -->
     <script src="{{ url('js/admin/scrollbar/scrollbardev.js') }}" type="text/javascript"></script>
 </div>
