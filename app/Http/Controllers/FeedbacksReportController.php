@@ -18,7 +18,12 @@ class FeedbacksReportController extends Controller
         $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $services = Services::where('parent_id', 0)->where('active', 1)->get();
-
+        $feedbacks = Feedback::with('doctor', 'service')->select('doctor_id')
+        ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+        ->groupBy('doctor_id')
+        ->with('doctor')
+        ->get();
+       
         return view('admin.reports.feedback_report', get_defined_vars());
 
     }

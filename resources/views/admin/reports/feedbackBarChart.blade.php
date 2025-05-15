@@ -34,7 +34,7 @@
                     </div>
                    <div class="card-body">
                     <div class="mt-2 mb-7">
-                        <h3>Feedback By Service Category</h3>
+                        <h3>Ratings By Service Category</h3>
                         <div class="row justify-content-center align-items-center">
 
                             <div class="col-lg-12 col-xl-12 d-flex justify-content-center">
@@ -43,7 +43,7 @@
                                 </div>
                             </div>
                         </div>
-                <h3>Feedback By Service</h3>
+                <h3>Ratings By Service</h3>
                         <div class="row justify-content-center align-items-center">
 
                             <div class="col-lg-12 col-xl-12 d-flex justify-content-center">
