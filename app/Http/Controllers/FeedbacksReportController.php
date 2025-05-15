@@ -167,7 +167,7 @@ class FeedbacksReportController extends Controller
         })
         ->when($membershipId, function ($query) use ($membershipId) {
             $query->whereHas('membership', function ($q) use ($membershipId) {
-                $q->where('id', $membershipId);
+                $q->where('membership_type_id', $membershipId);
             });
         })
         ->with([
