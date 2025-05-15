@@ -4,11 +4,9 @@
     <table id="patients_table" class="display">
         <thead>
             <tr>
-                
                 <th>Patient ID</th>
                 <th>Name</th>
                 <th>Phone</th>
-
                 <th>Membership</th>
                 <th>Last Arrival Date</th>
             </tr>
@@ -16,17 +14,19 @@
         <tbody>
             @foreach ($patients as $row)
                 <tr>
-                    
-                        <td> {{$row->id ?? 'N/A' }}</td>
-                    
-
-                    
-                        <td>{{ $row->name ?? 'N/A' }}</td>
-                    
-
+                    <td>{{ $row->id ?? 'N/A' }}</td>
+                    <td>{{ $row->name ?? 'N/A' }}</td>
                     <td>{{ $row->phone ?? 'N/A' }}</td>
-                    <td>Gold</td>
-                    <td>{{ \Carbon\Carbon::parse($row->scheduled_date, null)->format('M j, y') }}</td>
+
+                    {{-- Assuming 'name' column exists in membership --}}
+                    <td>{{ $row->membership->name ?? 'N/A' }}</td>
+
+                    {{-- Get scheduled_date from the first appointment in the loaded relation --}}
+                    <td>
+                        {{ optional($row->appointments->first())->scheduled_date 
+                            ? \Carbon\Carbon::parse($row->appointments->first()->scheduled_date)->format('d M Y')
+                            : 'N/A' }}
+                    </td>
                 </tr>
             @endforeach
         </tbody>
