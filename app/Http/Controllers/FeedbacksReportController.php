@@ -160,10 +160,10 @@ class FeedbacksReportController extends Controller
             $query->where('scheduled_date', '>=', $today);
         })
         ->when($centreId, function ($query) use ($centreId) {
-            $query->where('centre_id', $centreId);
+            $query->where('location_id', $centreId);
         })
         ->when($patientId, function ($query) use ($patientId) {
-            $query->where('id', $patientId);
+            $query->where('patient_id', $patientId);
         })
         ->when($membershipId, function ($query) use ($membershipId) {
             $query->whereHas('membership', function ($q) use ($membershipId) {
