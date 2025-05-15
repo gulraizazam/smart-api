@@ -167,7 +167,7 @@ class FeedbacksReportController extends Controller
             $query->whereBetween('scheduled_date', [$startDate, $endDate])
                   ->where('appointment_type_id', 2)
                   ->where('appointment_status_id', 2);
-        }, 'membership'])
+        }, 'membership.membershipType'])
         ->get();
 
     return view('admin.reports.futureTreatmentsReport', compact('patients'));
