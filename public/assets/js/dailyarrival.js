@@ -74,6 +74,22 @@ $('#date_range_inv').daterangepicker({
     startDate: moment().startOf('month'),
     endDate: moment().endOf('month')
 }).val();
+$('#date_range_ratings').daterangepicker({
+    locale: {
+    },
+    ranges: {
+
+        'Today': [moment(), moment()],
+        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+        'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+        'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+       'This Month': [moment().startOf('month'), moment().endOf('month')],
+       'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+         'This Year': [moment().startOf('year'), moment().endOf('year')],
+    },
+    startDate: moment().startOf('year'),
+    endDate: moment().endOf('year')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -323,7 +339,7 @@ var loadFeedbackReport  = function (that) {
         data: {
 
 
-            date_range: $('#date_range_inv').val(),
+            date_range: $('#date_range_ratings').val(),
             centre_id: $('#centre_id').val(),
             doctor_id:$("#feedback_doctor_id_filter").val(),
             service_id:$("#service_id_filter").val(),
