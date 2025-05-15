@@ -19,7 +19,7 @@
                     <td>{{ $row->phone ?? 'N/A' }}</td>
 
                     {{-- Assuming 'name' column exists in membership --}}
-                    <td>{{ $row->membership->name ?? 'N/A' }}</td>
+                    <td>{{ $row->membershipType->name ?? 'N/A' }}</td>
 
                     {{-- Get scheduled_date from the first appointment in the loaded relation --}}
                     <td>
