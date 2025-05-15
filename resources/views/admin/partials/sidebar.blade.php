@@ -1110,6 +1110,21 @@
                         </ul>
                     </div>
                     @endcan
+                    @can('feedbacks_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.future_treatments') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.future_treatments') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">No Future Treatments Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
                 </li>
 
 
