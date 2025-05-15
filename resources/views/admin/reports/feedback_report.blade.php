@@ -29,7 +29,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Feedback Report</h3>
+                            <h3 class="card-label">Doctor Ratings Report</h3>
                         </div>
                     </div>
                     <div class="card-body">
@@ -86,7 +86,7 @@
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="feedback_content">
                                         <div id="ratings_report">
-                                        <h4>Doctor Ratings Report</h4>
+                                       
 
                                         <table id="ratings_table" class="display">
                                             <thead>
