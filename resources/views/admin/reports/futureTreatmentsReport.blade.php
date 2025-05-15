@@ -23,7 +23,7 @@
 
                     {{-- Get scheduled_date from the first appointment in the loaded relation --}}
                     <td>
-                        {{ optional($row->appointments->first())->scheduled_date 
+                        {{ optional($row->appointmentsPatient->first())->scheduled_date 
                             ? \Carbon\Carbon::parse($row->appointments->first()->scheduled_date)->format('d M Y')
                             : 'N/A' }}
                     </td>
