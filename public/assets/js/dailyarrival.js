@@ -90,6 +90,13 @@ $('#date_range_ratings').daterangepicker({
     startDate: moment().startOf('year'),
     endDate: moment().endOf('year')
 }).val();
+$('#date_range_patients').daterangepicker({
+    locale: {
+    },
+   
+    startDate: moment().startOf('year'),
+    endDate: moment().endOf('year')
+}).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -378,6 +385,52 @@ var loadFeedbackReport  = function (that) {
             //     ],
             //     "ordering": false
             // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadFutureTreatmentsReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+   
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_future_treatments_report'),
+        type: "POST",
+        data: {
+
+
+            date_range: $('#date_range_patients').val(),
+            centre_id: $('#centre_id').val(),
+            patient_id:$("#patient_id_filter").val(),
+            membership_id:$("#membership_id_filter").val(),
+
+
+        },
+        success: function(response){
+            $('#patients_content').html('');
+            $('#patients_content').html(response);
+            $("#patients_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            
+           
             hideSpinner();
         },
         error: function (xhr, ajaxOptions, thrownError) {

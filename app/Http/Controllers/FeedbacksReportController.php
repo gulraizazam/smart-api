@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Helpers\ACL;
 use App\Models\Feedback;
 use App\Models\Locations;
+use App\Models\MembershipType;
 use App\Models\Services;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class FeedbacksReportController extends Controller
 {
@@ -25,6 +28,14 @@ class FeedbacksReportController extends Controller
         ->get();
        
         return view('admin.reports.feedback_report', get_defined_vars());
+
+    }
+    public function futureTreatmentsReport()
+    {
+
+        $membershipTypes = MembershipType::pluck('name', 'id');
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+        return view('admin.reports.future_treatments_report', get_defined_vars());
 
     }
     public function loadFeedbackReport(Request $request)
@@ -121,4 +132,44 @@ class FeedbacksReportController extends Controller
 
     return view('admin.reports.feedbackReport', compact('result'));
 }
+
+    public function loadFutureTreatmentsReport(Request $request) 
+    {
+        
+        $dates = explode(' - ', $request->input('date_range'));
+        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+        $centreId = $request->input('centre_id');
+        $patientId = $request->input('patient_id');
+        $membershipId = $request->input('membership_id');
+        $today = Carbon::today();
+
+        $patients = User::whereHas('appointmentsPatient', function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('scheduled_date', [$startDate, $endDate])
+                  ->where('appointment_type_id', 2)
+                  ->where('appointment_status_id', 2);
+        })
+        ->whereDoesntHave('appointmentsPatient', function ($query) use ($today) {
+            $query->where('scheduled_date', '>=', $today);
+        })
+        ->when($centreId, function ($query) use ($centreId) {
+            $query->where('centre_id', $centreId);
+        })
+        ->when($patientId, function ($query) use ($patientId) {
+            $query->where('id', $patientId);
+        })
+        ->when($membershipId, function ($query) use ($membershipId) {
+            $query->whereHas('membership', function ($q) use ($membershipId) {
+                $q->where('id', $membershipId);
+            });
+        })
+        ->with(['appointmentsPatient' => function ($query) use ($startDate, $endDate) {
+            $query->whereBetween('scheduled_date', [$startDate, $endDate])
+                  ->where('appointment_type_id', 2)
+                  ->where('appointment_status_id', 2);
+        }, 'membership'])
+        ->get();
+
+    return view('admin.reports.futureTreatmentsReport', compact('patients'));
+    }
 }
