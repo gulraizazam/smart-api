@@ -84,7 +84,36 @@
                                                class="btn btn-success spinner-button">Load Report</a>
                                         </div>
                                         <div class="clear clearfix"></div>
-                                        <div style="overflow: hidden; width: 100%;" id="feedback_content"></div>
+                                        <div style="overflow: hidden; width: 100%;" id="feedback_content">
+                                        <div id="ratings_report">
+                                        <h4>Doctor Ratings Report</h4>
+
+                                        <table id="ratings_table" class="display">
+                                            <thead>
+                                                <tr>
+                                                   
+                                                <th>Doctor</th>
+                                                <th>Average Rating (out of 10)</th>
+                                                <th>Total Feedbacks</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach ($feedbacks as $row)
+                                                    <tr>
+                                                        @if(isset($row->doctor))
+                                                            <td><a href="{{ route('admin.feedback.view', $row->doctor->id) }}" style="color: black";> {{$row->doctor->name ?? 'N/A' }}</a></td>
+                                                        @endif
+
+                                                       
+
+                                                        <td>{{ number_format($row->avg_rating, 2) }}</td>
+                                                        <td>{{ $row->total_feedbacks ?? 0 }}</td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -108,5 +137,8 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
         <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
+        <script>
+            $("#ratings_table").DataTable();
+        </script>
     @endpush
 @endsection
