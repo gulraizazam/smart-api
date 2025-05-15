@@ -71,7 +71,7 @@
                                         <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
                                             {!! Form::label('date_range', 'Date*', ['class' => 'control-label']) !!}
                                             <div class="input-group">
-                                                {!! Form::text('date_range', null, ['id' => 'date_range_inv', 'class' => 'form-control']) !!}
+                                                {!! Form::text('date_range', null, ['id' => 'date_range_ratings', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
 
