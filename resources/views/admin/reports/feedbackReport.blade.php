@@ -1,5 +1,5 @@
 <div id="revenue_report">
-    <h4>Feedback Report</h4>
+    <h4>Doctor Ratings Report</h4>
 
     <table id="feedback_table" class="display">
         <thead>
