@@ -144,10 +144,17 @@ class FeedbacksReportController extends Controller
         $membershipId = $request->input('membership_id');
         $today = Carbon::today()->startOfDay();
 
-    $patients = User::whereHas('appointmentsPatient', function ($query) use ($startDate, $endDate) {
+    $patients = User::whereHas('appointmentsPatient', function ($query) use ($startDate, $endDate, $centreId, $patientId) {
             $query->whereBetween('scheduled_date', [$startDate, $endDate])
                   ->where('appointment_type_id', 2)
                   ->where('appointment_status_id', 2); // arrived treatments in range
+                  if ($centreId) {
+                    $query->where('location_id', $centreId);
+                }
+    
+                if ($patientId) {
+                    $query->where('patient_id', $patientId);
+                }
         })
         // ❌ No arrived treatments AFTER the end of selected range
         ->whereDoesntHave('appointmentsPatient', function ($query) use ($endDate) {
@@ -159,12 +166,7 @@ class FeedbacksReportController extends Controller
         ->whereDoesntHave('appointmentsPatient', function ($query) use ($today) {
             $query->where('scheduled_date', '>=', $today);
         })
-        ->when($centreId, function ($query) use ($centreId) {
-            $query->where('appointmentsPatient.location_id', $centreId);
-        })
-        ->when($patientId, function ($query) use ($patientId) {
-            $query->where('appointmentsPatient.patient_id', $patientId);
-        })
+        
         ->when($membershipId, function ($query) use ($membershipId) {
             $query->whereHas('membership', function ($q) use ($membershipId) {
                 $q->where('membership_type_id', $membershipId);
