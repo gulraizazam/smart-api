@@ -363,8 +363,9 @@ var loadFeedbackReport  = function (that) {
                     'csvHtml5',
                     'pdfHtml5',
                 ],
-                "ordering": false,
-                "pageLength": 50
+               searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false
             });
             $("#doc_sales_table").DataTable({
                 dom: 'Bfrtip',
