@@ -26,7 +26,7 @@ class FeedbacksReportController extends Controller
         ->groupBy('doctor_id')
         ->with('doctor')
         ->get();
-       
+
         return view('admin.reports.feedback_report', get_defined_vars());
 
     }
@@ -127,15 +127,15 @@ class FeedbacksReportController extends Controller
     } else {
 
         // Default: fallback to full feedback list if no logic matched
-        $result = $feedbacks->with(['doctor', 'service', 'location'])->get();
+        $result = $feedbacks->with(['doctor', 'service', 'location'])->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')->get();
     }
 
     return view('admin.reports.feedbackReport', compact('result'));
 }
 
-    public function loadFutureTreatmentsReport(Request $request) 
+    public function loadFutureTreatmentsReport(Request $request)
     {
-        
+
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
@@ -151,7 +151,7 @@ class FeedbacksReportController extends Controller
                   if ($centreId) {
                     $query->where('location_id', $centreId);
                 }
-    
+
                 if ($patientId) {
                     $query->where('patient_id', $patientId);
                 }
@@ -166,7 +166,7 @@ class FeedbacksReportController extends Controller
         ->whereDoesntHave('appointmentsPatient', function ($query) use ($today) {
             $query->where('scheduled_date', '>=', $today);
         })
-        
+
         ->when($membershipId, function ($query) use ($membershipId) {
             $query->whereHas('membership', function ($q) use ($membershipId) {
                 $q->where('membership_type_id', $membershipId);
