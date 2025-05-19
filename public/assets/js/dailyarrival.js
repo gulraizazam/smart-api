@@ -93,7 +93,7 @@ $('#date_range_ratings').daterangepicker({
 $('#date_range_patients').daterangepicker({
     locale: {
     },
-   
+
     startDate: moment().startOf('year'),
     endDate: moment().endOf('year')
 }).val();
@@ -331,10 +331,10 @@ var loadFeedbackReport  = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
     }
-    if($("#centre_id").val() == ""){
-        alert("Please select a centre");
-        return false;
-    }
+    // if($("#centre_id").val() == ""){
+    //     alert("Please select a centre");
+    //     return false;
+    // }
     showSpinner();
 
     $.ajax({
@@ -397,7 +397,7 @@ var loadFutureTreatmentsReport  = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
     }
-   
+
     showSpinner();
 
     $.ajax({
@@ -429,8 +429,8 @@ var loadFutureTreatmentsReport  = function (that) {
                 "ordering": false,
                 "pageLength": 50
             });
-            
-           
+
+
             hideSpinner();
         },
         error: function (xhr, ajaxOptions, thrownError) {
