@@ -86,12 +86,12 @@
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="feedback_content">
                                         <div id="ratings_report">
-                                       
+
 
                                         <table id="ratings_table" class="display">
                                             <thead>
                                                 <tr>
-                                                   
+
                                                 <th>Doctor</th>
                                                 <th>Average Rating (out of 10)</th>
                                                 <th>Total Feedbacks</th>
@@ -104,7 +104,7 @@
                                                             <td><a href="{{ route('admin.feedback.view', $row->doctor->id) }}" style="color: black";> {{$row->doctor->name ?? 'N/A' }}</a></td>
                                                         @endif
 
-                                                       
+
 
                                                         <td>{{ number_format($row->avg_rating, 2) }}</td>
                                                         <td>{{ $row->total_feedbacks ?? 0 }}</td>
@@ -138,7 +138,11 @@
         <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
         <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
         <script>
-            $("#ratings_table").DataTable();
-        </script>
+            $("#ratings_table").DataTable({
+                searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false           // Disable "Showing X of Y entries" info text (optional)
+            });
+</script>
     @endpush
 @endsection
