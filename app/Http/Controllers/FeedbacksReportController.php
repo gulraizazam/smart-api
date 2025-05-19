@@ -127,7 +127,11 @@ class FeedbacksReportController extends Controller
     } else {
 
         // Default: fallback to full feedback list if no logic matched
-        $result = $feedbacks->with(['doctor', 'service', 'location'])->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')->get();
+       $result = $feedbacks->select('doctor_id')
+    ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+    ->groupBy('doctor_id')
+    ->with('doctor')
+    ->get();
     }
 
     return view('admin.reports.feedbackReport', compact('result'));
