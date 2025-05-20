@@ -151,7 +151,7 @@ class FeedbacksReportController extends Controller
     $patients = User::whereHas('appointmentsPatient', function ($query) use ($startDate, $endDate, $centreId, $patientId) {
             $query->whereBetween('scheduled_date', [$startDate, $endDate])
                   ->where('appointment_type_id', 2)
-                  ->where('appointment_status_id', 2); // arrived treatments in range
+                  ->where('appointment_status_id', 2)->orderBy('scheduled_date', 'asc'); // arrived treatments in range
                   if ($centreId) {
                     $query->where('location_id', $centreId);
                 }
@@ -180,11 +180,11 @@ class FeedbacksReportController extends Controller
             'appointmentsPatient' => function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('scheduled_date', [$startDate, $endDate])
                       ->where('appointment_type_id', 2)
-                      ->where('appointment_status_id', 2);
+                      ->where('appointment_status_id', 2)->orderBy('scheduled_date', 'asc');
             },
             'membership.membershipType'
         ])
-        ->orderBy('appointmentsPatient.scheduled_date', 'asc')->get();
+       ->get();
 
     return view('admin.reports.futureTreatmentsReport', compact('patients'));
     }
