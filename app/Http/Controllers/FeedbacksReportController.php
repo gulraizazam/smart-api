@@ -184,7 +184,8 @@ class FeedbacksReportController extends Controller
             },
             'membership.membershipType'
         ])
-        ->get()->sortBy(function ($patient) {
+        ->get()->sortByDesc(function ($patient) {
+    // Sort users by their latest scheduled_date from loaded appointments
     return optional($patient->appointmentsPatient->first())->scheduled_date;
 });
 
