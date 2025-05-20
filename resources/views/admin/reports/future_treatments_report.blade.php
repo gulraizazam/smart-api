@@ -49,7 +49,7 @@
 
                                             <span id="centre_id_handler"></span>
                                         </div>
-                                         <div class="fv-row col-md-3">
+                                         <div class="form-group col-md-3">
                                             <label>Patient Search </label>
                                             <input class="form-control order_patient_search_id patient_search_id search_field"
                                                 placeholder="Patients Search">
