@@ -395,7 +395,7 @@ var loadFeedbackReport  = function (that) {
     });
 };
 var loadFutureTreatmentsReport  = function (that) {
-    alert($("#order_patient_search").val());
+
 
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
