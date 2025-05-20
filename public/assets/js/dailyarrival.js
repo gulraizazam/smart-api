@@ -412,7 +412,7 @@ var loadFutureTreatmentsReport  = function (that) {
 
             date_range: $('#date_range_patients').val(),
             centre_id: $('#centre_id').val(),
-            patient_id:$("#patient_id_filter").val(),
+            patient_id:$("#create_order_patient_search").val(),
             membership_id:$("#membership_id_filter").val(),
 
 
