@@ -157,7 +157,21 @@
                     }
                 },
                 legend: {
-                    position: 'right'
+                    position: 'right',
+                    labels: {
+            generateLabels: function(chart) {
+                const data = chart.data;
+                const dataset = data.datasets[0];
+                return data.labels.map((label, i) => ({
+                    text: `${label} (${dataset.data[i].toFixed(1)})`,
+                    fillStyle: dataset.backgroundColor[i],
+                    strokeStyle: dataset.backgroundColor[i],
+                    lineWidth: 1,
+                    hidden: chart.getDatasetMeta(0).data[i].hidden,
+                    index: i
+                }));
+            }
+        }
                 },
                 tooltip: {
                     callbacks: {
