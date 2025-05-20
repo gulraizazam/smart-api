@@ -53,7 +53,10 @@
                                              id="doc_dropdown" >
                                             {!! Form::label('doctor_id', 'Doctor:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="feedback_doctor_id_filter" name="doctor_id">
-
+                                            <option value="">Select Doctor</option>
+                                                @foreach($Users as $user)
+                                                <option value="{{$user->id}}">{{$user->name}}</option>
+                                                @endforeach
                                             </select>
                                             <span id="centre_id_handler"></span>
                                         </div>
