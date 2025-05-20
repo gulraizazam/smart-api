@@ -119,7 +119,11 @@
         <script src="{{ asset('assets/js/pages/admin_settings/orders.js') }}"></script>
 
         <script>
-            $("#ratings_table").DataTable();
+            $("#ratings_table").DataTable({
+                 searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false
+            });
         </script>
     @endpush
 @endsection
