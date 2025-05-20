@@ -71,6 +71,7 @@
     const treatmentLabels = {!! json_encode($avgByTreatment->pluck('treatment.name')) !!};
     const treatmentData = {!! json_encode($avgByTreatment->pluck('avg_rating')) !!};
     const serviceColors = {!! json_encode($avgByService->pluck('service.color')) !!};
+    const treatmentColors = {!! json_encode($avgByTreatment->pluck('service.color')) !!};
     const serviceCtx = document.getElementById('serviceChart').getContext('2d');
     new Chart(serviceCtx, {
         type: 'pie',
@@ -110,9 +111,7 @@
             datasets: [{
                 label: 'Average Rating by Treatment',
                 data: treatmentData,
-                backgroundColor: treatmentLabels.map((_, i) =>
-                    `hsl(${i * 40}, 70%, 60%)`
-                ),
+                backgroundColor: treatmentColors,
                 borderWidth: 1
             }]
         },
