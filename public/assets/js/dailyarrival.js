@@ -431,7 +431,8 @@ var loadFutureTreatmentsReport  = function (that) {
                 ],
                  searching: false,     // Disable search box
                 paging: false,        // Disable pagination
-                info: false
+                info: false,
+                "ordering": false
             });
 
 
