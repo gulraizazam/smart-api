@@ -7,17 +7,21 @@
                 <th>Patient ID</th>
                 <th>Name</th>
                 <th>Phone</th>
+                <th>Centre</th>
                 <th>Membership</th>
                 <th>Last Arrival Date</th>
             </tr>
         </thead>
         <tbody>
             @foreach ($patients as $row)
+            @php
+                $location = \App\Models\Locations::where('id', $row->appointmentsPatient->first()->location_id)->first();
+            @endphp
                 <tr>
                     <td>{{ $row->id ?? 'N/A' }}</td>
                     <td>{{ $row->name ?? 'N/A' }}</td>
                     <td>{{ $row->phone ?? 'N/A' }}</td>
-
+                    <td>{{$location->name ?? 'N/A' }}</td>
                     {{-- Assuming 'name' column exists in membership --}}
                     <td>{{ $row->membership->membershipType->name ?? 'N/A' }}</td>
 
