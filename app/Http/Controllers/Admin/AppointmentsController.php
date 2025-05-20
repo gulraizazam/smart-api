@@ -3389,13 +3389,13 @@ class AppointmentsController extends Controller
                     }
                     $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
                 } else {
-                    
+
                     $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
-                
+
                 }
                 foreach ($doctors_no_final as $key => $doctor) {
                     $resource = Resources::where('external_id', '=', $key)->first();
-                   
+
                     //if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
                         $doctor_rota = ResourceHasRota::where([
                             ['resource_id', '=', $resource->id],
@@ -3419,7 +3419,7 @@ class AppointmentsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
-    
+
     /*
      * Load Locations by City
      *
@@ -4345,7 +4345,7 @@ class AppointmentsController extends Controller
             $count++;
         }
         if ($package_advances->package_id != null) {
-            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp()]);
+            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(),'consumed_at' => Filters::getCurrentTimeStamp()]);
             $packagesservice = PackageService::find($request->package_service_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
             if ($request->cash > 0) {

@@ -8,11 +8,11 @@ use Illuminate\Database\Eloquent\Model;
 
 class PackageService extends Model
 {
-    protected static $_fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'is_consumed', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id'];
+    protected static $_fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id'];
 
     protected static $_table = 'package_services';
 
-    protected $fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'created_at', 'updated_at', 'is_consumed', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id'];
+    protected $fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'created_at', 'updated_at', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id'];
 
     protected $table = 'package_services';
 
@@ -24,14 +24,14 @@ class PackageService extends Model
 
     public static function createPackageService($data)
     {
-       
+
        $find_package_bundle = PackageBundles::find($data['package_bundle_id']);
        $find_discount = Discounts::find($find_package_bundle->discount_id);
-       
+
        if($find_discount && $find_discount->type =="Configurable" && $data['tax_including_price'] > 0){
         $find_package = Packages::where('random_id',$data['random_id'])->first();
         $find_base_service = BaseDiscountService::where('discount_id',$find_discount->id)->first();
-        
+
         if($find_package){
             $data['package_id'] = $find_package->id;
         }
@@ -40,7 +40,7 @@ class PackageService extends Model
         $data['tax_price'] = $data['tax_price'];
         $data['tax_exclusive_price'] = $data['tax_exclusive_price'];
         $data['tax_including_price'] = $data['tax_including_price'];
-        
+
     }else if($find_discount && $find_discount->type =="Configurable" && $data['tax_including_price'] == 0){
         $find_package = Packages::where('random_id',$data['random_id'])->first();
         $find_base_service = BaseDiscountService::where('discount_id',$find_discount->id)->first();
@@ -183,7 +183,7 @@ class PackageService extends Model
 
         $parent_id = $package_service->package_bundle_id;
 
-        $record = $package_service->update(['is_consumed' => '0']);
+        $record = $package_service->update(['is_consumed' => '0','consumed_at' => null]);
 
         $record = self::find($invoice_detail->package_service_id)->toArray();
 
