@@ -184,7 +184,7 @@ class FeedbacksReportController extends Controller
             },
             'membership.membershipType'
         ])
-        ->orderBy('scheduled_date', 'asc')->get();
+        ->orderBy('appointmentsPatient.scheduled_date', 'asc')->get();
 
     return view('admin.reports.futureTreatmentsReport', compact('patients'));
     }
