@@ -113,7 +113,13 @@ class FeedbacksReportController extends Controller
     } elseif ($serviceId && $doctorId && !$locationId) {
 
         // CASE 6: service + doctor → Rating for that doctor + service
-        $result = $feedbacks->select('doctor_id')->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')->first();
+       // CASE 6: service + doctor → Rating for that doctor + service
+    $record = $feedbacks->select('doctor_id', 'service_id')
+        ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_feedbacks')
+        ->with('doctor', 'service')
+        ->first();
+
+    $result = $record ? [$record] : [];
 
     } elseif ($locationId && $doctorId && $serviceId) {
         $feedback = Feedback::where('location_id', $locationId)
