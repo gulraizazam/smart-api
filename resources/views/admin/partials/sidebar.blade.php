@@ -1110,7 +1110,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('feedbacks_manage')
+                   @can('followuppatient_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
