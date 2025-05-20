@@ -27,7 +27,7 @@
                         <td>{{ $row->service->name ?? 'N/A' }}</td>
                     @endif
 
-                    <td>{{ number_format($row->avg_rating, 2) }}</td>
+                    <td>{{$row->avg_rating ? number_format($row->avg_rating, 2) : 0   }}</td>
                     <td>{{ $row->total_feedbacks ?? 0 }}</td>
                 </tr>
             @endforeach
