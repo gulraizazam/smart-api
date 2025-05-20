@@ -19,11 +19,11 @@
                     <td>{{ $row->phone ?? 'N/A' }}</td>
 
                     {{-- Assuming 'name' column exists in membership --}}
-                    <td>{{ $row->membershipType->name ?? 'N/A' }}</td>
+                    <td>{{ $row->membership->name ?? 'N/A' }}</td>
 
                     {{-- Get scheduled_date from the first appointment in the loaded relation --}}
                     <td>
-                        {{ optional($row->appointmentsPatient->first())->scheduled_date 
+                        {{ optional($row->appointmentsPatient->first())->scheduled_date
                             ? \Carbon\Carbon::parse($row->appointmentsPatient->first()->scheduled_date)->format('d M Y')
                             : 'N/A' }}
                     </td>
