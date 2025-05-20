@@ -704,7 +704,8 @@ function setEditData(response) {
                         service_options += '<td>Tax:' + packageservice.tax_price + '</td>';
                         service_options += '<td>Total Amount:' + packageservice.tax_including_price + '</td>';
                         service_options += '<td colspan="2">Is Consumed:' + consume + '</td>';
-                         service_options += '<td colspan="2">Consumed At:' + packageservice.consumed_at ?? 'N/A' + '</td>';
+                        service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
+
                         service_options += '</tr>';
                     }
 
@@ -1076,7 +1077,8 @@ function displayData(response) {
 
                         service_options += '<td>Tax Amt. : ' + packageservice.tax_price + '</td>';
                         service_options += '<td colspan="2">Is Consumed : ' + consume + '</td>';
-                         service_options += '<td colspan="2">Consumed At: ' + packageservice.consumed_at ?? 'N/A' + '</td>';
+                         service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
+
                         service_options += '</tr>';
                     }
 
@@ -2510,7 +2512,7 @@ jQuery(document).ready(function () {
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + packageServicesData.consumed_at ?? 'N/A' + "</td></tr>");
+                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + (packageServicesData.consumed_at ?? 'N/A') + "</td></tr>");
                         });
                         keyfunction_grandtotal();
                         var rows = $('#plan_services tbody tr').length;
@@ -2797,7 +2799,7 @@ jQuery(document).ready(function () {
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + packageServicesData.consumed_at ?? 'N/A' + "</td></tr>");
+                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + (packageServicesData.consumed_at ?? 'N/A') + "</td></tr>");
                         });
 
                         edit_keyfunction_grandtotal();
