@@ -49,8 +49,20 @@
 
                                             <span id="centre_id_handler"></span>
                                         </div>
-                                       
-                                        <div class="form-group col-md-3 sn-select @if($errors->has('membership_type')) has-error @endif" id="membership_type_id">
+                                         <div class="fv-row col-md-3">
+                                            <label>Patient Search </label>
+                                            <input class="form-control order_patient_search_id patient_search_id search_field"
+                                                placeholder="Patients Search">
+
+                                            <input type="hidden" id="order_patient_search" name="patient_id" class="filter-field search_field">
+                                            <span onclick="addUsers()" class="croxcli"
+                                                style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times"
+                                                    aria-hidden="true"></i></span>
+                                            <div class="suggesstion-box" style="display: none;">
+                                                <ul class="suggestion-list"></ul>
+                                            </div>
+                                        </div>
+                                                                        <div class="form-group col-md-3 sn-select @if($errors->has('membership_type')) has-error @endif" id="membership_type_id">
                                         {!! Form::label('membership_type', 'Memberhsip Type:', ['class' => 'control-label']) !!}
                                         <select class="form-control select2" id="membership_type" name="membership_type_id">
                                             <option value="">Select Membership Type</option>
@@ -78,7 +90,7 @@
                                         </div>
                                         <div class="clear clearfix"></div>
                                         <div style="overflow: hidden; width: 100%;" id="patients_content">
-                                        
+
                                         </div>
                                     </div>
                                 </div>
