@@ -74,7 +74,7 @@
                                         <span id="location_id_handler"></span>
                                     </div>
                                         <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
-                                            {!! Form::label('date_range', 'Date*', ['class' => 'control-label']) !!}
+                                            {!! Form::label('date_range', 'Date Range:', ['class' => 'control-label']) !!}
                                             <div class="input-group">
                                                 {!! Form::text('date_range', null, ['id' => 'date_range_patients', 'class' => 'form-control']) !!}
                                             </div>
