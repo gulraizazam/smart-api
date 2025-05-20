@@ -188,7 +188,7 @@ class FeedbacksReportController extends Controller
     // Sort users by their latest scheduled_date from loaded appointments
     return optional($patient->appointmentsPatient->first())->scheduled_date;
 });
-
+dd($patients);
     return view('admin.reports.futureTreatmentsReport', compact('patients'));
     }
 }
