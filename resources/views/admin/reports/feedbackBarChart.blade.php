@@ -63,15 +63,20 @@
     <!--end::Content-->
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
 
 <script>
+    // Register DataLabels plugin
+    Chart.register(ChartDataLabels);
+
     const serviceLabels = {!! json_encode($avgByService->pluck('service.name')) !!};
     const serviceData = {!! json_encode($avgByService->pluck('avg_rating')) !!};
+    const serviceColors = {!! json_encode($avgByService->pluck('service.color')) !!};
 
     const treatmentLabels = {!! json_encode($avgByTreatment->pluck('treatment.name')) !!};
     const treatmentData = {!! json_encode($avgByTreatment->pluck('avg_rating')) !!};
-    const serviceColors = {!! json_encode($avgByService->pluck('service.color')) !!};
-const treatmentColors = {!! json_encode($avgByTreatment->pluck('treatment.color')) !!};
+    const treatmentColors = {!! json_encode($avgByTreatment->pluck('treatment.color')) !!};
+
     const serviceCtx = document.getElementById('serviceChart').getContext('2d');
     new Chart(serviceCtx, {
         type: 'pie',
@@ -80,8 +85,6 @@ const treatmentColors = {!! json_encode($avgByTreatment->pluck('treatment.color'
             datasets: [{
                 label: 'Average Rating by Service',
                 data: serviceData,
-
-
                 backgroundColor: serviceColors,
                 borderWidth: 1
             }]
@@ -89,8 +92,18 @@ const treatmentColors = {!! json_encode($avgByTreatment->pluck('treatment.color'
         options: {
             responsive: true,
             plugins: {
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: function(value) {
+                        return value.toFixed(1);
+                    }
+                },
                 legend: {
-                    position: 'right',
+                    position: 'right'
                 },
                 tooltip: {
                     callbacks: {
@@ -100,7 +113,8 @@ const treatmentColors = {!! json_encode($avgByTreatment->pluck('treatment.color'
                     }
                 }
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
 
     const treatmentCtx = document.getElementById('treatmentChart').getContext('2d');
@@ -118,8 +132,18 @@ const treatmentColors = {!! json_encode($avgByTreatment->pluck('treatment.color'
         options: {
             responsive: true,
             plugins: {
+                datalabels: {
+                    color: '#fff',
+                    font: {
+                        weight: 'bold',
+                        size: 14
+                    },
+                    formatter: function(value) {
+                        return value.toFixed(1);
+                    }
+                },
                 legend: {
-                    position: 'right',
+                    position: 'right'
                 },
                 tooltip: {
                     callbacks: {
@@ -129,7 +153,8 @@ const treatmentColors = {!! json_encode($avgByTreatment->pluck('treatment.color'
                     }
                 }
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
 </script>
 
