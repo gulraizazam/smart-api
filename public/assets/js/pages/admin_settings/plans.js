@@ -575,7 +575,8 @@ function setEditData(response) {
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
                         service_options += '<td>Tax % : ' + packageservice.tax_percenatage + '</td>';
                         service_options += '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '<td colspan="2">Is Consumed : ' + consume + '</td>';
+                        service_options += '<td colspan="2">Consumed At: ' + packageservice.consumed_at ?? 'N/A' + '</td>';
                         service_options += '</tr>';
                     }
 
@@ -757,7 +758,8 @@ function displayData(response) {
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
                         service_options += '<td>Tax % : ' + packageservice.tax_percenatage + '</td>';
                         service_options += '<td>Tax Amt. : ' + packageservice.tax_including_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '<td colspan="2">Is Consumed : ' + consume + '</td>';
+                         service_options += '<td colspan="2">Consumed At: ' + packageservice.consumed_at ?? 'N/A' + '</td>';
                         service_options += '</tr>';
                     }
 
