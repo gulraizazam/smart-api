@@ -3419,10 +3419,10 @@ class DashboardReportsController extends Controller
     public function ViewFeedback($doctorId)
 {
     // Fetch all services that are parents
-    $parentServices = Services::whereNull('parent_id')->get();
+    $parentServices = Services::where('parent_id',0)->get();
 
     $feedbackData = [];
- dd($parentServices);
+
     foreach ($parentServices as $service) {
         // Get avg rating for parent service (if directly rated)
         $parentRating = Feedback::where('doctor_id', $doctorId)
