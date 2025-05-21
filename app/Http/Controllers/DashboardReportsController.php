@@ -3421,7 +3421,7 @@ class DashboardReportsController extends Controller
     $treatments = Feedback::where('doctor_id', $id)
         ->with([
             'treatment:id,name',
-            'service:id,name,treatment_id',
+            'service:id,name,parent_id',
         ])
         ->get()
         ->groupBy('treatment_id')
