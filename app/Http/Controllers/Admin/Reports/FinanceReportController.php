@@ -104,7 +104,7 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.accountsalesreport.index', compact('locations', 'services', 'users', 'appointment_types', 'regions', 'locations_com', 'operators', 'cities'));
     }
-    public function serviceBarChart($service_id,Request $request)
+    public function serviceBarChart(Request $request,$service_id)
     {
         $service = Services::findOrFail($service_id);
         $start_date = $request->query('start_date'); // e.g. '2025-05-20'
@@ -2333,7 +2333,7 @@ class FinanceReportController extends Controller
 
     $soldServices = $soldServicesQuery->get();
 
-    return view('admin.reports.accountsalesreport.serviceSoldreport', compact('soldServices', 'start_date', 'end_date'));
+    return view('admin.reports.accountsalesreport.serviceSoldreport',get_defined_vars());
 }
 
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
