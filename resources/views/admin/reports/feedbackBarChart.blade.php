@@ -10,7 +10,7 @@
 
         <div class="accordion" id="feedbackAccordion">
             @foreach($feedbackData as $index => $service)
-            <div class="card shadow-sm mb-3 border-left" style="border-left: 5px solid {{ $service['color'] }};">
+            <div class="card shadow-sm mb-3 border-left" style="border-left: 5px solid {{ $service['color'] }}; !important">
                 <div class="card-header bg-white" id="heading{{ $index }}">
                     <h5 class="mb-0 d-flex justify-content-between align-items-center">
                         <button class="btn btn-link text-dark text-decoration-none w-100 d-flex justify-content-between" type="button" data-toggle="collapse" data-target="#collapse{{ $index }}" aria-expanded="false" aria-controls="collapse{{ $index }}">
