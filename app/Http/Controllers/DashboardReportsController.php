@@ -3456,7 +3456,7 @@ class DashboardReportsController extends Controller
         ];
     }
 
-    return view('admin.reports.feedbackbackBarChart', compact('feedbackData'));
+    return view('admin.reports.feedbackBarChart', compact('feedbackData'));
 }
 
 }
