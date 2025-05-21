@@ -2254,6 +2254,7 @@ class FinanceReportController extends Controller
 
    public function serviceSoldreport(Request $request)
 {
+    dd($request->all());
     if ($request->get('date_range')) {
         $date_range = explode(' - ', $request->get('date_range'));
         $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
