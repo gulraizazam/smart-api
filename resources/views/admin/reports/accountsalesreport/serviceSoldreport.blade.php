@@ -1,4 +1,5 @@
 @inject('request', 'Illuminate\Http\Request')
+
 @if($request->get('medium_type') != 'web')
     @if($request->get('medium_type') == 'pdf')
         @include('partials.pdf_head')
@@ -41,7 +42,6 @@
         <div class="sn-title">
             <h1>Services Sales Count Report</h1>
         </div>
-       
     </div>
 </div>
 
@@ -57,7 +57,7 @@
                     <table class="dark-th-table table table-bordered">
                         <tr>
                             <th width="25%">Duration</th>
-                            <td>From {{ $start_date }} to {{ $end_date }}</td>
+                            <td>From {{ $start_date ?? 'N/A' }} to {{ $end_date ?? 'N/A' }}</td>
                         </tr>
                         <tr>
                             <th>Date</th>
@@ -66,12 +66,15 @@
                     </table>
                 </div>
             </div>
+
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="servicesSoldTable">
                     <thead>
                         <tr>
                             <th>Service Name</th>
-                            <th>Centre</th>
+                            @if(isset($soldServices[0]) && property_exists($soldServices[0], 'location_id'))
+                                <th>Centre</th>
+                            @endif
                             <th>Sold</th>
                             <th>Service Price</th>
                         </tr>
@@ -79,14 +82,21 @@
                     <tbody>
                         @if($soldServices->count())
                             @php
-                                $services = \App\Models\Services::whereIn('id', $soldServices->pluck('service_id'))->get()->keyBy('id');
-                                $locations = \App\Models\Locations::whereIn('id', $soldServices->pluck('location_id'))->get()->keyBy('id');
+                                $serviceIds = $soldServices->pluck('service_id')->unique();
+                                $services = \App\Models\Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+
+                                $locationIds = $soldServices->pluck('location_id')->filter()->unique();
+                                $locations = \App\Models\Locations::whereIn('id', $locationIds)->get()->keyBy('id');
                             @endphp
 
                             @foreach($soldServices as $reportRow)
                                 <tr>
                                     <td>{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</td>
-                                    <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
+
+                                    @if(isset($reportRow->location_id))
+                                        <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
+                                    @endif
+
                                     <td>{{ $reportRow->total_sold }}</td>
                                     <td>{{ number_format($services[$reportRow->service_id]->price ?? 0, 2) }}</td>
                                 </tr>
@@ -101,7 +111,8 @@
             </div>
         </div>
     </div>
+
     <div class="clear clearfix"></div>
+
     <script src="{{ url('js/admin/scrollbar/scrollbardev.js') }}" type="text/javascript"></script>
-   
 </div>
