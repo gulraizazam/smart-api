@@ -3419,7 +3419,7 @@ class DashboardReportsController extends Controller
     public function ViewFeedback($doctorId)
 {
     // Fetch all services that are parents
-    $parentServices = Service::whereNull('parent_id')->get();
+    $parentServices = Services::whereNull('parent_id')->get();
 
     $feedbackData = [];
 
@@ -3430,7 +3430,7 @@ class DashboardReportsController extends Controller
             ->avg('rating');
 
         // Get children services (treatments) of this parent
-        $children = Service::where('parent_id', $service->id)->get();
+        $children = Services::where('parent_id', $service->id)->get();
 
         $childRatings = [];
 
