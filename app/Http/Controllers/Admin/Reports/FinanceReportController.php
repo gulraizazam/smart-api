@@ -123,16 +123,22 @@ class FinanceReportController extends Controller
         ->select('appointments.location_id', DB::raw('COUNT(*) as total_sold'))
         ->groupBy('appointments.location_id')
         ->get();
+
         $locations = Locations::whereIn('id', $soldServicesQuery->pluck('location_id'))->get()->keyBy('id');
 
         $labels = [];
         $values = [];
 
-        foreach ($soldServicesQuery as $data) {
-            $locationName = $locations[$data->location_id]->name ?? 'Unknown';
-            $labels[] = $locationName;
-            $values[] = $data->total_sold;
-        }
+       foreach ($soldServicesQuery as $data) {
+                $locationName = $locations[$data->location_id]->name ?? 'Unknown';
+
+                // Remove the word "CUTERA" (case-insensitive)
+                $cleanName = preg_replace('/\bCUTERA\b/i', '', $locationName);
+
+                // Optionally trim whitespace
+                $labels[] = trim($cleanName);
+                $values[] = $data->total_sold;
+            }
 
         return view('admin.reports.service_barchart', get_defined_vars());
     }
