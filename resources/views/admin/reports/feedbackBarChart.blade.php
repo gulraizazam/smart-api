@@ -1,12 +1,12 @@
 @extends('admin.layouts.master')
-@section('title', 'Feedback Report')
+@section('title', 'Doctor Ratings Report')
 
 @section('content')
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Feedback Report'])
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Doctor Ratings Report'])
 
     <div class="container-fluid mt-4">
-        <h2 class="mb-4 font-weight-bold">Doctor Feedback Report</h2>
+        <h2 class="mb-4 font-weight-bold">Doctor Ratings Report</h2>
 
         <div class="accordion" id="feedbackAccordion">
             @foreach($feedbackData as $index => $service)
