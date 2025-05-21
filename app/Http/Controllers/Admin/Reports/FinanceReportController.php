@@ -120,7 +120,7 @@ class FinanceReportController extends Controller
                 $query->whereBetween('appointments.scheduled_date', [$start_date, $end_date]);
             }
             if($locationId){
-                $query->where('appointments.location_id', $locationId);
+                $query->whereIn('appointments.location_id', $locationId);
             }
             $soldServicesQuery = $query
         ->select('appointments.location_id', DB::raw('COUNT(*) as total_sold'))
