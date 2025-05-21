@@ -93,8 +93,8 @@
                                 <tr>
                                     <td><a href="{{ route('admin.service.barchart', [
                                         'service_id' => $reportRow->service_id,
-                                        'start_date' => request('start_date'),
-                                        'end_date' => request('end_date')
+                                        'start_date' => $start_date,
+                                        'end_date' =>$end_date
                                     ]) }}">{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</a></td>
 
                                     @if(isset($reportRow->location_id))
