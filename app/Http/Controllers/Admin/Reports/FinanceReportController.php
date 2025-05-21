@@ -2254,7 +2254,7 @@ class FinanceReportController extends Controller
 
    public function serviceSoldreport(Request $request)
 {
-    dd($request->all());
+
     if ($request->get('date_range')) {
         $date_range = explode(' - ', $request->get('date_range'));
         $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
@@ -2285,7 +2285,7 @@ class FinanceReportController extends Controller
         });
 
     // Conditionally group
-    if ($serviceId && empty($request->location_id)) {
+    if ($serviceId && $request->location_id[0] == null) {
         // Only service selected, no location filtering
         $soldServicesQuery->select(
             'appointments.service_id',
