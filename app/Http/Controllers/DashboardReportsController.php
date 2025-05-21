@@ -3417,26 +3417,31 @@ class DashboardReportsController extends Controller
         }
     }
     public function ViewFeedback($id)
-    {
-        $avgByService = Feedback::where('doctor_id', $id)
-        ->select('service_id')
-        ->selectRaw('AVG(rating) as avg_rating')
-        ->groupBy('service_id')
-       ->with(['service' => function($query) {
-            $query->select('id', 'name', 'color'); // Make sure to fetch only necessary fields
-        }])
-        ->get();
+{
+    $treatments = Feedback::where('doctor_id', $id)
+        ->with([
+            'treatment:id,name',
+            'service:id,name,treatment_id',
+        ])
+        ->get()
+        ->groupBy('treatment_id')
+        ->map(function ($feedbacks) {
+            $treatment = optional($feedbacks->first()->treatment);
+            $services = $feedbacks->groupBy('service_id')->map(function ($items) {
+                $service = optional($items->first()->service);
+                return [
+                    'name' => $service->name,
+                    'avg_rating' => round($items->avg('rating'), 1),
+                ];
+            })->values();
 
-        // Average feedback by treatment for this doctor
-        $avgByTreatment = Feedback::where('doctor_id', $id)
-            ->select('treatment_id')
-            ->selectRaw('AVG(rating) as avg_rating')
-            ->groupBy('treatment_id')
-            ->with('treatment') // assuming treatment() relationship exists
-            ->with(['treatment' => function($query) {
-            $query->select('id', 'name', 'color'); // Make sure to fetch only necessary fields
-        }])
-            ->get();
-         return view('admin.reports.feedbackBarChart', compact('avgByService', 'avgByTreatment'));
-    }
+            return [
+                'treatment_name' => $treatment->name,
+                'services' => $services,
+            ];
+        })
+        ->values();
+
+    return view('admin.reports.feedbackAccordion', compact('treatments'));
+}
 }
