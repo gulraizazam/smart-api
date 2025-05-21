@@ -91,7 +91,11 @@
 
                             @foreach($soldServices as $reportRow)
                                 <tr>
-                                    <td><a href="{{ route('admin.service.barchart', $reportRow->service_id) }}">{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</a></td>
+                                    <td><a href="{{ route('admin.service.barchart', [
+                                        'service_id' => $service->id,
+                                        'start_date' => request('start_date'),
+                                        'end_date' => request('end_date')
+                                    ]) }}">{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</a></td>
 
                                     @if(isset($reportRow->location_id))
                                         <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
