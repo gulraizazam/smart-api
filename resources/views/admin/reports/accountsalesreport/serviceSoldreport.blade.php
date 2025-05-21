@@ -92,7 +92,7 @@
                             @foreach($soldServices as $reportRow)
                                 <tr>
                                     <td><a href="{{ route('admin.service.barchart', [
-                                        'service_id' => $service->id,
+                                        'service_id' => $reportRow->service_id,
                                         'start_date' => request('start_date'),
                                         'end_date' => request('end_date')
                                     ]) }}">{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</a></td>
