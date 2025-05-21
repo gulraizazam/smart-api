@@ -104,20 +104,25 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.accountsalesreport.index', compact('locations', 'services', 'users', 'appointment_types', 'regions', 'locations_com', 'operators', 'cities'));
     }
-    public function serviceBarChart($service_id)
+    public function serviceBarChart($service_id,Request $request)
     {
         $service = Services::findOrFail($service_id);
+        $start_date = $request->query('start_date'); // e.g. '2025-05-20'
+        $end_date = $request->query('end_date'); // e.g. '2025-05-21'
 
-
-        $soldServicesQuery = DB::table('appointments')
+        $query = DB::table('appointments')
             ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
             ->where('appointments.appointment_type_id', 2)
             ->where('appointments.appointment_status_id', 2)
 
-            ->where('appointments.service_id', $service_id)
-            ->select('appointments.location_id', DB::raw('COUNT(*) as total_sold'))
-            ->groupBy('appointments.location_id')
-            ->get();
+            ->where('appointments.service_id', $service_id);
+            if ($start_date && $end_date) {
+                $query->whereBetween('appointments.scheduled_date', [$start_date, $end_date]);
+            }
+            $soldServicesQuery = $query
+        ->select('appointments.location_id', DB::raw('COUNT(*) as total_sold'))
+        ->groupBy('appointments.location_id')
+        ->get();
         $locations = Locations::whereIn('id', $soldServicesQuery->pluck('location_id'))->get()->keyBy('id');
 
         $labels = [];

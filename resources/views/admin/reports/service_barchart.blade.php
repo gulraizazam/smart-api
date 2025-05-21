@@ -30,12 +30,15 @@
                                 </svg>
                             </span>
                         </span>
-                        <h2 class="mb-0">Service Sold by Centre: {{ $service->name }}</h2>
+                        <h2>Service Sold by Centre: {{ $service->name }}</h2>
+@if($start_date && $end_date)
+    <p>From: {{ \Carbon\Carbon::parse($start_date)->format('d M Y') }} To: {{ \Carbon\Carbon::parse($end_date)->format('d M Y') }}</p>
+@endif
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="mt-2 mb-7">
-                        <canvas id="barChart" style="width: 100%; max-width: 800px; height: 400px;"></canvas>
+                        <canvas id="barChart" style="width: 100%;  height: 400px;"></canvas>
                         @if(count($labels) === 0)
                             <p>No sales data found for this service.</p>
                         @endif
