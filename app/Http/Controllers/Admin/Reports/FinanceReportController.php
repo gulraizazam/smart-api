@@ -104,7 +104,33 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.accountsalesreport.index', compact('locations', 'services', 'users', 'appointment_types', 'regions', 'locations_com', 'operators', 'cities'));
     }
+    public function serviceBarChart($service_id)
+    {
+        $service = Services::findOrFail($service_id);
 
+
+        $soldServicesQuery = DB::table('appointments')
+            ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
+            ->where('appointments.appointment_type_id', 2)
+            ->where('appointments.appointment_status_id', 2)
+
+            ->where('appointments.service_id', $service_id)
+            ->select('appointments.location_id', DB::raw('COUNT(*) as total_sold'))
+            ->groupBy('appointments.location_id')
+            ->get();
+        $locations = Locations::whereIn('id', $soldServicesQuery->pluck('location_id'))->get()->keyBy('id');
+
+        $labels = [];
+        $values = [];
+
+        foreach ($soldServicesQuery as $data) {
+            $locationName = $locations[$data->location_id]->name ?? 'Unknown';
+            $labels[] = $locationName;
+            $values[] = $data->total_sold;
+        }
+
+        return view('reports.service_barchart', compact('service', 'labels', 'values'));
+    }
     /**
      * Load Report
      *
