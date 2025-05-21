@@ -3416,32 +3416,47 @@ class DashboardReportsController extends Controller
             return view('admin.reports.patients_follow_up_report', get_defined_vars());
         }
     }
-    public function ViewFeedback($id)
+    public function ViewFeedback($doctorId)
 {
-    $treatments = Feedback::where('doctor_id', $id)
-        ->with([
-            'treatment:id,name',
-            'service:id,name,parent_id',
-        ])
-        ->get()
-        ->groupBy('treatment_id')
-        ->map(function ($feedbacks) {
-            $treatment = optional($feedbacks->first()->treatment);
-            $services = $feedbacks->groupBy('service_id')->map(function ($items) {
-                $service = optional($items->first()->service);
-                return [
-                    'name' => $service->name,
-                    'avg_rating' => round($items->avg('rating'), 1),
-                ];
-            })->values();
+    // Fetch all services that are parents
+    $parentServices = Service::whereNull('parent_id')->get();
 
-            return [
-                'treatment_name' => $treatment->name,
-                'services' => $services,
+    $feedbackData = [];
+
+    foreach ($parentServices as $service) {
+        // Get avg rating for parent service (if directly rated)
+        $parentRating = Feedback::where('doctor_id', $doctorId)
+            ->where('service_id', $service->id)
+            ->avg('rating');
+
+        // Get children services (treatments) of this parent
+        $children = Service::where('parent_id', $service->id)->get();
+
+        $childRatings = [];
+
+        foreach ($children as $child) {
+            $avgRating = Feedback::where('doctor_id', $doctorId)
+                ->where('treatment_id', $child->id)
+                ->avg('rating');
+
+            $childRatings[] = [
+                'id' => $child->id,
+                'name' => $child->name,
+                'color' => $child->color,
+                'avg_rating' => $avgRating ? round($avgRating, 2) : 0,
             ];
-        })
-        ->values();
+        }
 
-    return view('admin.reports.feedbackBarChart', compact('treatments'));
+        $feedbackData[] = [
+            'id' => $service->id,
+            'name' => $service->name,
+            'color' => $service->color,
+            'avg_rating' => $parentRating ? round($parentRating, 2) : 0,
+            'treatments' => $childRatings
+        ];
+    }
+
+    return view('admin.reports.feedbackbackBarChart', compact('feedbackData'));
 }
+
 }
