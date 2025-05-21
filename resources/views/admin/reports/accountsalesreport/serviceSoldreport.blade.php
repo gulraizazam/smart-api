@@ -91,7 +91,7 @@
 
                             @foreach($soldServices as $reportRow)
                                 <tr>
-                                    <td>{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</td>
+                                    <td><a href="{{ url('service-report/' . $reportRow->service_id) }}" target="_blank">{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</a></td>
 
                                     @if(isset($reportRow->location_id))
                                         <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
