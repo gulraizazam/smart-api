@@ -3442,6 +3442,6 @@ class DashboardReportsController extends Controller
         })
         ->values();
 
-    return view('admin.reports.feedbackAccordion', compact('treatments'));
+    return view('admin.reports.feedbackBarChart', compact('treatments'));
 }
 }
