@@ -176,7 +176,7 @@ class InventoryReportsController extends Controller
                     $doctorIds = $users + $FDMUsers;
 
             }
-
+            dd($doctorIds);
             // Fetch orders based on doctor IDs and the date range (if provided)
             $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
                 ->whereIn('prescribed_by', $doctorIds)
