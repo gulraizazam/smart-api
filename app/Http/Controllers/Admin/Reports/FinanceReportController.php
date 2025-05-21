@@ -109,7 +109,7 @@ class FinanceReportController extends Controller
         $service = Services::findOrFail($service_id);
         $start_date = $request->query('start_date'); // e.g. '2025-05-20'
         $end_date = $request->query('end_date'); // e.g. '2025-05-21'
-
+        $locationId = $request->location_id;
         $query = DB::table('appointments')
             ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
             ->where('appointments.appointment_type_id', 2)
@@ -118,6 +118,9 @@ class FinanceReportController extends Controller
             ->where('appointments.service_id', $service_id);
             if ($start_date && $end_date) {
                 $query->whereBetween('appointments.scheduled_date', [$start_date, $end_date]);
+            }
+            if($locationId){
+                $query->where('appointments.location_id', $locationId);
             }
             $soldServicesQuery = $query
         ->select('appointments.location_id', DB::raw('COUNT(*) as total_sold'))
