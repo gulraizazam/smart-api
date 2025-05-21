@@ -134,7 +134,7 @@ class FinanceReportController extends Controller
             $values[] = $data->total_sold;
         }
 
-        return view('admin.reports.service_barchart', compact('service', 'labels', 'values'));
+        return view('admin.reports.service_barchart', get_defined_vars());
     }
     /**
      * Load Report
