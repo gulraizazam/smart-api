@@ -2489,7 +2489,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                    console.log('res1',resposne);
+                   
                     let consume = 'No';
                     if (resposne.status) {
 
@@ -2523,7 +2523,7 @@ jQuery(document).ready(function () {
                             "</td>" +
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
-
+                            "<input type='hidden' class='package_bundles' name='sold_by[]' value='" + resposne.data.servicesData.bundlesData.sold_by + "' />" +
                             "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ")'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
