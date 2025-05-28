@@ -585,6 +585,7 @@ function setEditData(response) {
         let packagebundles = response.data.packagebundles;
         let packageservices = response.data.packageservices;
         let paymentmodes = response.data.paymentmodes;
+        let users = response.data.users;
         let range = response.data.range;
         let total_price = response.data.total_price;
         let patient = package.user;
@@ -721,7 +722,12 @@ function setEditData(response) {
         }
 
         let serviceOptions = '<option value="">Select Service</option>';
-
+        let userOptions = '<option value="">Select</option>';
+        if (users) {
+            Object.entries(users).forEach(function (user) {
+                userOptions += '<option value="' + user[0] + '">' + user[1] + '</option>';
+            });
+        }
         if (locationhasservice.length) {
             Object.values(locationhasservice).forEach(function (packageservice) {
                 serviceOptions += '<option value="' + packageservice?.id + '">' + packageservice?.name + '</option>';
@@ -746,7 +752,7 @@ function setEditData(response) {
         $(".edit_plan_history").html(history_options);
 
         $("#edit_payment_mode_id").html(payment_options);
-
+        $("#edit_sold_by").html(userOptions);
         $("#edit-patient-name").text(patient?.name)
         $("#edit-location-name").text(location?.name)
         $("#edit_random_id").val(package?.random_id)
