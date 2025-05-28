@@ -2563,6 +2563,7 @@ jQuery(document).ready(function () {
 
     /*function for final package information save*/
     $("#AddPackageFinal").click(function () {
+        alert($(this).find('td:nth-child(10)').find('input').val())
         $('.create-plan-error').html('');
         if ($('#payment_mode_id_1').val()) {
             if (!$('#cash_amount_1').val()) {
@@ -2615,6 +2616,7 @@ jQuery(document).ready(function () {
 
             });
         });
+        console.log('formData', formData);
         var status = 0;
         if (cash_amount > 0) {
             var status = 1;
