@@ -54,7 +54,7 @@
                         <select class="form-control" id="sold_to" name="sold_to" onchange="SelectEmployee()">
                             <option value="patient">Patient</option>
                             <option value="employee">Employee</option>
-                            <option value="walkin">Walk In</option>
+                           
                         </select>
                     </div>
                     </div>
