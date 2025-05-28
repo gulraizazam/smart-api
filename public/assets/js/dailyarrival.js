@@ -65,14 +65,37 @@ $('#date_range_inv').daterangepicker({
     locale: {
     },
     ranges: {
-        
-    
+
+
         'This Month': [moment().startOf('month'), moment().endOf('month')],
         'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
-        
+
     },
     startDate: moment().startOf('month'),
     endDate: moment().endOf('month')
+}).val();
+$('#date_range_ratings').daterangepicker({
+    locale: {
+    },
+    ranges: {
+
+        'Today': [moment(), moment()],
+        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+        'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+        'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+       'This Month': [moment().startOf('month'), moment().endOf('month')],
+       'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+         'This Year': [moment().startOf('year'), moment().endOf('year')],
+    },
+    startDate: moment().startOf('year'),
+    endDate: moment().endOf('year')
+}).val();
+$('#date_range_patients').daterangepicker({
+    locale: {
+    },
+
+    startDate: moment().startOf('year'),
+    endDate: moment().endOf('year')
 }).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
@@ -167,11 +190,11 @@ var loadIncentiveReport  = function (that) {
         url: route('admin.reports.incentive_report'),
         type: "POST",
         data: {
-           
+
             doctor_id: $('#doctor_id').val(),
             date_range: $('#date_range_incentive').val(),
             centre_id: $('#centre_id').val(),
-           
+
         },
         success: function(response){
             $('#incentive_content').html('');
@@ -205,12 +228,12 @@ var loadAppointmentsReport  = function (that) {
         url: route('admin.reports.appointments_report'),
         type: "POST",
         data: {
-           
+
             time: $('#time_id').val(),
             date_range: $('#date_range_appointments').val(),
             centre_id: $('#centre_id').val(),
             created_by:$("#created_by_id").val(),
-           
+
         },
         success: function(response){
             $('#apt_content').html('');
@@ -247,7 +270,7 @@ var loadInventoryReport  = function (that) {
         return false;
     }
     showSpinner();
-  
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -255,14 +278,14 @@ var loadInventoryReport  = function (that) {
         url: route('admin.reports.load_inventory_report'),
         type: "POST",
         data: {
-           
+
            report_type:$("#report_type").val(),
             date_range: $('#date_range_inv').val(),
             centre_id: $('#centre_id').val(),
             doctor_id:$("#doctor_id_filter").val(),
             brand_id:$("#brand_id").val(),
-           
-           
+
+
         },
         success: function(response){
             $('#inv_content').html('');
@@ -296,6 +319,123 @@ var loadInventoryReport  = function (that) {
             //     ],
             //     "ordering": false
             // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadFeedbackReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    // if($("#centre_id").val() == ""){
+    //     alert("Please select a centre");
+    //     return false;
+    // }
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_feedback_report'),
+        type: "POST",
+        data: {
+
+
+            date_range: $('#date_range_ratings').val(),
+            centre_id: $('#centre_id').val(),
+            doctor_id:$("#feedback_doctor_id_filter").val(),
+            service_id:$("#service_id_filter").val(),
+
+
+        },
+        success: function(response){
+            $('#feedback_content').html('');
+            $('#feedback_content').html(response);
+            $("#feedback_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+               searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false
+            });
+            $("#doc_sales_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadFutureTreatmentsReport  = function (that) {
+
+
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_future_treatments_report'),
+        type: "POST",
+        data: {
+
+
+            date_range: $('#date_range_patients').val(),
+            centre_id: $('#centre_id').val(),
+            patient_id:$("#order_patient_search").val(),
+            membership_id:$("#membership_type").val(),
+
+
+        },
+        success: function(response){
+            $('#patients_content').html('');
+            $('#patients_content').html(response);
+            $("#patients_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                 searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false,
+                "ordering": false
+            });
+
+
             hideSpinner();
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -377,9 +517,9 @@ var loadPatientFollowUpMonthReport = function (that) {
     });
 };
 function getEmployees(locationId){
-   
+
     let url = route('admin.get-doctors');
- 
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -389,11 +529,11 @@ function getEmployees(locationId){
         cache: false,
         data: {location_id: locationId},
         success: function (response) {
-          
+
             if(response.status==false){
                 toastr.error(response.message);
             }else{
-                        
+
                  let employees = response.users;
                 let emp_options = '<option value="">Select Doctor</option>';
                 Object.entries(employees).forEach(function (value, index) {
@@ -401,16 +541,49 @@ function getEmployees(locationId){
                 });
                 $("#doctor_id_filter").html(emp_options);
             }
-            
+
         },
         error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
-  
+
+}
+function getCentreDoctors(locationId){
+
+    let url = route('admin.get-centre-doctors');
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: locationId},
+        success: function (response) {
+
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Doctor</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#feedback_doctor_id_filter").html(emp_options);
+            }
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
 }
 function patientSearch(search_id = 'patient_id',flag=1) {
-    
+
     $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();

@@ -203,6 +203,7 @@ var something = (function() {
     };
 })();
 let loadDoctors = function (locationId, appointment = null) {
+  
     if (locationId != '' && locationId != null) {
         $('#treatment_doctor_filter').removeAttr('disabled');
         $('#treatment_resource_filter').removeAttr('disabled');
@@ -212,6 +213,121 @@ let loadDoctors = function (locationId, appointment = null) {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
             url: route('admin.appointments.load_doctors'),
+            type: 'POST',
+            data: {
+                location_id: locationId
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let dropdowns =  response.data.dropdown;
+                    let dropdown_options =  '<option value="">Select a Doctor</option>';
+
+                    Object.entries(dropdowns).forEach(function (dropdown) {
+                        dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                    });
+
+                    let result = get_query();
+                    if (appointment && appointment == 'consultancy') {
+                        $('#consultancy_doctor_filter').html(dropdown_options);
+                        setQueryStringParameter('location_id', locationId);
+                        if (typeof calendar !== "undefined") { /*if already initiate then destroy first*/
+                            calendar.destroy();
+                        }
+                        var result02 = get_query();
+
+                        if ($("#consultancy_location_filter").val() !== ""
+                            && typeof result02.tab !== 'undefined' && result02.tab == 'consultancy') {
+                            window.eventData = {};
+                            window.eventData.id = null;
+                            window.eventData.firstTime = true;
+                            ConsultancyCalendar.init();
+                        }
+                        if (typeof result.doctor_id !== "undefined") {
+                            $("#consultancy_doctor_filter").val(result.doctor_id).change();
+                        }
+
+                        var result3 = get_query();
+
+                        if (
+                             $("#consultancy_location_filter").val() !== ""
+                            && typeof result3.tab !== 'undefined' && result3.tab == 'treatment') {
+                            window.eventData = {}
+                            window.eventData.location_id = $("#consultancy_location_filter").val()
+                            window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
+                            window.eventData.id = null;
+                            window.eventData.firstTime = true;
+                            if($('#consultancy_location_filter option').length == 2){
+                                something();
+                            } else{
+                                setTimeout( function () {
+                                    ConsultancyCalendar.init();
+                                }, 500);
+                            }
+                        }
+                    } else if (appointment && appointment == 'treatment') {
+                        if (typeof treatment_calendar !== "undefined" && $('#treatment_location_filter option').length > 2) { /*if already initiate then destroy first*/
+                            treatment_calendar.destroy();
+                        }
+                        $('#treatment_doctor_filter').html(dropdown_options);
+                        if(typeof result.machine_id == "undefined"){
+                            setQueryStringParameter('doctor_id', '');
+                        }
+
+                        if(result.location_id !== jQuery('#treatment_location_filter').val()){
+                            setQueryStringParameter('doctor_id', '');
+                            setQueryStringParameter('machine_id', '');
+                        }
+                        setQueryStringParameter('location_id', locationId);
+                        loadMachine(locationId);
+                        var result3 = get_query();
+                        if (
+                             $("#treatment_location_filter").val() !== ""
+                            && typeof result3.tab !== 'undefined' && result3.tab == 'treatment') {
+                            window.eventData = {}
+                            window.eventData.location_id = $("#treatment_location_filter").val()
+                            window.eventData.doctor_id = $("#treatment_doctor_filter").val();
+                            window.eventData.id = null;
+                            window.eventData.firstTime = true;
+                            if($('#treatment_location_filter option').length == 2){
+                                something();
+                            } else{
+                                setTimeout( function () {
+                                    TreatmentCalendar.init();
+                                }, 500);
+                            }
+                        }
+                        if (typeof result.doctor_id !== "undefined" && typeof result.reload === "undefined") {
+                        }
+                    } else {
+                        $('#edit_doctor').html(dropdown_options);
+                    }
+
+                } else {
+                    resetDoctors();
+                }
+                setQueryStringParameter('reload');
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                resetDoctors();
+            }
+        });
+    } else {
+        resetDoctors();
+    }
+
+}
+let loadConsultantDoctors = function (locationId, appointment = null) {
+   
+    if (locationId != '' && locationId != null) {
+        $('#treatment_doctor_filter').removeAttr('disabled');
+        $('#treatment_resource_filter').removeAttr('disabled');
+        $('#consultancy_doctor_filter').removeAttr('disabled');
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_consultant_doctors'),
             type: 'POST',
             data: {
                 location_id: locationId
