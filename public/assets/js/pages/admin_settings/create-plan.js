@@ -1332,7 +1332,7 @@ function getServices() {
             $("#modal_edit_regions").modal("show");
 
             setServices(response);
-            setSoldBy(response);
+           
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -1398,7 +1398,7 @@ function getAppointments(patient) {
             cache: false,
             success: function (response) {
                 setAppointments(response);
-
+                    setSoldBy(response);
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 errorMessage(xhr);
