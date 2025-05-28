@@ -1568,6 +1568,7 @@ class PackagesController extends Controller
      */
     public function edit($id)
     {
+        dd($id);
         if (!Gate::allows('plans_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
