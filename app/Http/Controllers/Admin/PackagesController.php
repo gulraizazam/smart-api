@@ -51,6 +51,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Models\DoctorHasLocations;
 use App\Models\Membership;
 use Illuminate\Support\Facades\Log;
 
@@ -126,9 +127,33 @@ class PackagesController extends Controller
         if ($service_has_location) {
 
             $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
+            
+            $checkUsers = UserHasLocations::where('location_id', $request->location_id)
+            ->pluck('user_id')
+            ->toArray();
 
+            $doctors = DoctorHasLocations::where('location_id', $request->location_id)
+                ->pluck('user_id')
+                ->toArray();
+
+            // Fetch users based on user types and active status
+            $users = User::whereIn('user_type_id', [2, 5])
+                ->where('active', 1)
+                ->whereIn('id', $checkUsers)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            // Fetch doctor names and IDs
+            $doctorUsers = User::whereIn('id', $doctors)
+                ->where('active',1)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            // Merge both arrays while preserving user IDs as keys
+            $finalUsers = $users + $doctorUsers;
             return ApiHelper::apiResponse($this->success, 'Recode found', true, [
                 'service' => $locationhasservice,
+                'users'=>$finalUsers
             ]);
         }
 
