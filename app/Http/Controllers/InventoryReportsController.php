@@ -21,29 +21,29 @@ class InventoryReportsController extends Controller
 {
     public function inventoryReport()
     {
-        
+
         $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $brands = Brand::where('status',1)->get();
-        
+
         return view('admin.reports.inventory_report', get_defined_vars());
-    
+
     }
     public function loadInventoryReport(Request $request)
     {
-        
+
         $validated = $request->validate([
             'centre_id' => 'nullable|integer|exists:locations,id', // Assuming locations table exists
-            
+
         ]);
-        
+
         $locationId = $validated['centre_id'] ?? null;
         $brandId = $request->brand_id;
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        
+
         $doctorId = $request->input('doctor_id');
         if ($request->report_type == "stock_report") {
             // Load products with their inventories, orders, and order details
@@ -71,67 +71,62 @@ class InventoryReportsController extends Controller
             })
             ->get();
             // Process the product data for the report
-            $report = $products->map(function ($product) use ($locationId, $endDate) {
-                
-                $totalInventory = $product->inventories
-                    ->when($endDate, fn($q) => $q->where('created_at', '<=', $endDate)) // Filter inventories by date
+            $report = $products->map(function ($product) use ($locationId, $startDate, $endDate) {
+
+                // Opening Stock = Inventory before range - sold before range
+                $inventoryBefore = $product->inventories
+                    ->where('created_at', '<', $startDate)
                     ->sum('quantity');
-        
-                    $soldStock = OrderDetail::where('product_id', $product->id)
-                    ->whereHas('order', function ($query) use ($locationId, $endDate) {
+
+                $soldBefore = OrderDetail::where('product_id', $product->id)
+                    ->whereHas('order', function ($query) use ($locationId, $startDate) {
+                        $query->where('created_at', '<', $startDate);
                         if ($locationId) {
                             $query->where('location_id', $locationId);
-                        }else{
+                        } else {
                             $query->whereIn('location_id', ACL::getUserCentres());
-                        }
-                        
-                        if ($endDate) {
-                            $query->whereDate('created_at', '<=', $endDate);
                         }
                     })
                     ->sum('quantity');
-                   
-        
-                // Calculate remaining stock
-                $remainingStock = $totalInventory - $soldStock;
-        
-                // Location-specific stock details
-                $locationData = $product->inventories->groupBy('location_id')->map(function ($inventoryGroup, $locationId) use ($product, $endDate) {
-                    $locationName = $inventoryGroup->first()->centre->name ?? 'Unknown Location'; // Fetch location name
-        
-                    // Total inventory for this location
-                    $locationTotal = $inventoryGroup->where('created_at', '<=', $endDate)->sum('quantity');
-        
-                    // Sold stock at this location (make sure we filter by location_id and product_id)
-                    $locationSold = $product->orderDetails
-                        ->filter(function ($orderDetail) use ($locationId, $endDate, $product) {
-                            $order = $orderDetail->order;
-                            return $order?->location_id == $locationId &&
-                                   (!$endDate || $order?->created_at <= $endDate) &&
-                                   $orderDetail->product_id == $product->id; // Ensure product_id is matched
-                        })
-                        ->sum('quantity'); // Sum the sold quantities
-        
-                    $locationRemaining = $locationTotal - $locationSold;
-        
-                    return [
-                        'location_name' => $locationName,
-                        'location_id' => $locationId,
-                        'total_stock' => $locationTotal,
-                        'sold_stock' => $locationSold,
-                        'remaining_stock' => $locationRemaining,
-                    ];
-                });
-        
+
+                $openingStock = $inventoryBefore - $soldBefore;
+
+                // Addition in range from stocks table
+                $additionInRange = DB::table('stocks')
+                    ->where('product_id', $product->id)
+                    ->where('stock_type', 'in')
+                    ->where('location_id', $locationId)
+                    ->whereBetween('created_at', [$startDate, $endDate])
+                    ->sum('quantity');
+
+                // Sold in the current range
+                $soldInRange = OrderDetail::where('product_id', $product->id)
+                    ->whereHas('order', function ($query) use ($locationId, $startDate, $endDate) {
+                        $query->whereBetween('created_at', [$startDate, $endDate]);
+                        if ($locationId) {
+                            $query->where('location_id', $locationId);
+                        } else {
+                            $query->whereIn('location_id', ACL::getUserCentres());
+                        }
+                    })
+                    ->sum('quantity');
+
+                $totalStock = $openingStock + $additionInRange;
+                $remainingStock = $totalStock - $soldInRange;
+
                 return [
                     'product_name' => $product->name,
-                    'total_inventory' => $totalInventory,
-                    'sold_stock' => $soldStock,
+                    'opening_stock' => $openingStock,
+                    'addition' => $additionInRange,
+                    'total_stock' => $totalStock,
+                    'sold_stock' => $soldInRange,
                     'remaining_stock' => $remainingStock,
-                    'locations' => $locationData,
                 ];
             });
-        
+
+
+
+
             return view('admin.reports.inventoryReport', compact('report'));
         }
         if ($request->report_type == "doctor_sales_report") {
@@ -139,7 +134,7 @@ class InventoryReportsController extends Controller
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        
+
             // If a specific doctorId is provided, use it; otherwise, fetch all doctors for the location
             if ($doctorId) {
                 $doctorIds = [$doctorId];
@@ -149,52 +144,52 @@ class InventoryReportsController extends Controller
                 //     ->pluck('user_id');
 
                     $doctors = DoctorHasLocations::where('location_id',$locationId)->pluck('user_id')->toArray();
-    
+
                     // Fetch active doctors as an associative array
                     $users = User::whereIn('id', $doctors)
                         ->where('active', 1)
                         ->pluck( 'id') // Preserve user IDs
                         ->toArray();
-                
+
                     // Ensure 'from_id' is an array
                     $locationIds = is_array($locationId) ? $locationId : [$locationId];
-                
+
                     // Fetch FDM users by getting the user_ids associated with the center (location_id)
                     $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
-                
+
                     // Fetch the 'FDM' role and get its user ids
                     $findRole = DB::table('roles')->where('name', 'FDM')->first();
                     $roleId = $findRole->id;
-                
+
                     // Get users who have the FDM role
                     $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-                
+
                     // Get the intersection of users who are both FDM and belong to the center
                     $fdmUsers = array_intersect($findFDM, $roleHasUser);
-                
+
                     // Fetch FDM user details (id and name) from the users table
                     $FDMUsers = User::whereIn('id', $fdmUsers)
                         ->pluck('id') // Preserve user IDs
                         ->toArray();
-                
+
                     // Merge the arrays while preserving keys
                     $doctorIds = $users + $FDMUsers;
-                    
+
             }
-        
+
             // Fetch orders based on doctor IDs and the date range (if provided)
             $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
                 ->whereIn('prescribed_by', $doctorIds)
                 ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                     $query->whereBetween('orders.created_at', [$startDate, $endDate]);
                 });
-        
+
             $orders = $ordersQuery->get();
-        
+
             // Process the orders to build the report
             $report = $orders->groupBy('prescribed_by')->map(function ($doctorOrders) {
                 $doctorName = $doctorOrders->first()->doctor->name ?? 'Unknown Doctor';
-        
+
                 // Process each order detail to calculate sales data
                 $productSales = $doctorOrders->flatMap(function ($order) {
                     return $order->orderDetail->map(function ($detail) use ($order) {
@@ -208,7 +203,7 @@ class InventoryReportsController extends Controller
                     });
                 })->groupBy('product_id')->map(function ($orderDetails) {
                     $firstDetail = $orderDetails->first();
-        
+
                     return [
                         'product_name' => $firstDetail['product_name'],
                         'total_quantity' => $orderDetails->sum('total_quantity'),
@@ -216,28 +211,28 @@ class InventoryReportsController extends Controller
                         'order_dates' => $orderDetails->pluck('order_date')->unique()->values(), // Collecting unique order dates
                     ];
                 });
-        
+
                 $grandTotal = $productSales->sum('subtotal');
-        
+
                 return [
                     'doctor_name' => $doctorName,
                     'product_sales' => $productSales,
                     'grand_total' => $grandTotal,  // Add grand total for the doctor
                 ];
             });
-        
+
             $overallTotal = $report->sum('grand_total');
-        
+
             return view('admin.reports.doctor_wise_sales', get_defined_vars());
         }
-        
+
         if($request->report_type=="sales_report"){
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
             // Get filters
             $locationId =$request->input('centre_id') ? [$request->input('centre_id')] : ACL::getUserCentres();
-       
+
 
             // Build query
             $query = Order::query()
@@ -251,11 +246,11 @@ class InventoryReportsController extends Controller
 
             // Fetch data
             $orders = $query->get();
-           
-            // Aggregate data   
+
+            // Aggregate data
             $reportData = $orders->map(function ($order) {
                 $totalRevenue = $order->orderDetail->sum(function ($detail) {
-                
+
                     return $detail->quantity * $detail->sale_price;
                 });
                 $productNames = $order->orderDetail->map(function ($detail) {
@@ -288,11 +283,11 @@ class InventoryReportsController extends Controller
             $dates = explode(' - ', $request->input('date_range'));
             $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
             $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        
+
             // Get filters
             $locationId = $request->input('centre_id');
             $brandId = $request->input('brand_id'); // Corrected request method
-        
+
             $query = Stock::select(
                 'products.name as product_name',
                 'locations.name as location_name',
@@ -302,42 +297,42 @@ class InventoryReportsController extends Controller
             ->join('products', 'stocks.product_id', '=', 'products.id')
             ->join('locations', 'stocks.location_id', '=', 'locations.id')
             ->where('stocks.stock_type', 'in');
-        
+
             // Apply location filter if provided
             if (!is_null($locationId) && $locationId !== '') {
                 $query->where('stocks.location_id', $locationId);
             }
-        
+
             // Apply brand filter if provided
             if (!is_null($brandId) && $brandId !== '') {
                 $query->where('products.brand_id', $brandId);
             }
-        
+
             // Apply date range filter
             if (!empty($startDate) && !empty($endDate)) {
                 $query->whereBetween('stocks.created_at', [$startDate, $endDate]);
             }
-        
+
             $stocks = $query->get();
-        
+
             return view('admin.reports.addition_report', get_defined_vars());
         }
-        
-            
+
+
     }
     public function getSalesReport(Request $request)
     {
         // Validate filters
         $request->validate([
             'location_id' => 'nullable|exists:locations,id',
-           
+
         ]);
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         // Get filters
         $locationId = $request->input('location_id');
-       
+
 
         // Build query
         $query = Order::query()

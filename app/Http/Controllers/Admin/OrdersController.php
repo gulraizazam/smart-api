@@ -620,4 +620,23 @@ class OrdersController extends Controller
        
         return response()->json(['users'=>$combinedUsers]);
     }
+    public function getCentreDoctors(Request $request)
+    {
+        $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
+    
+        // Fetch active doctors as an associative array
+        $users = User::whereIn('id', $doctors)
+            ->where('active', 1)
+            ->pluck('name', 'id') // Preserve user IDs
+            ->toArray();
+    
+        // Ensure 'from_id' is an array
+        $locationIds = is_array($request->location_id) ? $request->location_id : [$request->location_id];
+    
+       
+        // Merge the arrays while preserving keys
+        $combinedUsers = $users;
+       
+        return response()->json(['users'=>$combinedUsers]);
+    }
 }

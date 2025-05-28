@@ -9,7 +9,7 @@
 
         <div class="col-lg-6 mb-lg-0 mb-6">
             <label>Centre:</label>
-            <select onchange="loadDoctors($(this).val(), 'consultancy');" class="form-control select2" id="consultancy_location_filter"></select>
+            <select onchange="loadConsultantDoctors($(this).val(), 'consultancy');" class="form-control select2" id="consultancy_location_filter"></select>
         </div>
 
         <div class="col-lg-6 mb-lg-0 mb-6">

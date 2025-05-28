@@ -73,7 +73,7 @@ class FinanceReportController extends Controller
                     unset($services[$key]);
                 }
             }
-            
+
         }
 
         $employees = User::getAllActiveEmployeeRecords(Auth::User()->account_id, ACL::getUserCentres())->pluck('name', 'id');
@@ -104,7 +104,47 @@ class FinanceReportController extends Controller
 
         return view('admin.reports.accountsalesreport.index', compact('locations', 'services', 'users', 'appointment_types', 'regions', 'locations_com', 'operators', 'cities'));
     }
+    public function serviceBarChart(Request $request,$service_id)
+    {
+        $service = Services::findOrFail($service_id);
+        $start_date = $request->query('start_date'); // e.g. '2025-05-20'
+        $end_date = $request->query('end_date'); // e.g. '2025-05-21'
+        $locationId = $request->location_id;
+        $query = DB::table('appointments')
+            ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
+            ->where('appointments.appointment_type_id', 2)
+            ->where('appointments.appointment_status_id', 2)
 
+            ->where('appointments.service_id', $service_id);
+            if ($start_date && $end_date) {
+                $query->whereBetween('appointments.scheduled_date', [$start_date, $end_date]);
+            }
+            if($locationId){
+                $query->whereIn('appointments.location_id', $locationId);
+            }
+            $soldServicesQuery = $query
+        ->select('appointments.location_id', DB::raw('COUNT(*) as total_sold'))
+        ->groupBy('appointments.location_id')
+        ->get();
+
+        $locations = Locations::whereIn('id', $soldServicesQuery->pluck('location_id'))->get()->keyBy('id');
+
+        $labels = [];
+        $values = [];
+
+       foreach ($soldServicesQuery as $data) {
+                $locationName = $locations[$data->location_id]->name ?? 'Unknown';
+
+                // Remove the word "CUTERA" (case-insensitive)
+                $cleanName = preg_replace('/\bCUTERA\b/i', '', $locationName);
+
+                // Optionally trim whitespace
+                $labels[] = trim($cleanName);
+                $values[] = $data->total_sold;
+            }
+
+        return view('admin.reports.service_barchart', get_defined_vars());
+    }
     /**
      * Load Report
      *
@@ -2252,45 +2292,59 @@ class FinanceReportController extends Controller
         }
     }
 
-    public function serviceSoldreport(Request $request)
-    {
-       
-        if ($request->get('date_range')) {
-            $date_range = explode(' - ', $request->get('date_range'));
-            $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
-            $end_date = date('Y-m-d 23:59:59', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        if (!empty($request->location_id) && $request->location_id[0] !== null) {
-            $locationId = $request->location_id; // Use provided location IDs
-        } else {
-            $locationId = ACL::getUserCentres(); // Use all allowed centres
-        }
-        
-        
-       // $locationId = $request->location_id ? [$request->location_id] : ACL::getUserCentres();
-        $serviceId = $request->service_id;    
-        $soldServices = DB::table('package_services')
-        ->join('packages', 'package_services.package_id', '=', 'packages.id')
-        ->join('package_advances', 'package_advances.package_id', '=', 'packages.id')
-        ->where('package_advances.cash_flow', 'in') // Ensure there is a payment
-        ->where('package_advances.cash_amount', '>', 0) // Ensure payment is made
-        ->whereIn('packages.location_id', $locationId) // Use whereIn for multiple locations
-        ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
-            return $query->whereBetween('package_advances.created_at', [$start_date, $end_date]);
-        })
-        ->when($request->service_id, function ($query) use ($request) {
-            return $query->where('package_services.service_id', $request->service_id);
-        })
-        ->select('package_services.service_id', DB::raw('COUNT(package_services.id) as total_sold'),'packages.location_id')
-        ->groupBy('package_services.service_id','packages.location_id')
-        ->get();
-       
-        return view('admin.reports.accountsalesreport.serviceSoldreport', compact('soldServices', 'start_date', 'end_date'));
-        
+   public function serviceSoldreport(Request $request)
+{
+
+    if ($request->get('date_range')) {
+        $date_range = explode(' - ', $request->get('date_range'));
+        $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
+        $end_date = date('Y-m-d 23:59:59', strtotime($date_range[1]));
+    } else {
+        $start_date = null;
+        $end_date = null;
     }
+
+    $locationId = (!empty($request->location_id) && $request->location_id[0] !== null)
+        ? $request->location_id
+        : ACL::getUserCentres();
+
+    $serviceId = $request->service_id;
+
+    $soldServicesQuery = DB::table('appointments')
+        ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
+        ->where('appointments.appointment_type_id', 2)
+        ->where('appointments.appointment_status_id', 2)
+        ->when($locationId, function ($query) use ($locationId) {
+            return $query->whereIn('appointments.location_id', $locationId);
+        })
+        ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
+            return $query->whereBetween('appointments.scheduled_date', [$start_date, $end_date]);
+        })
+        ->when($serviceId, function ($query) use ($serviceId) {
+            return $query->where('appointments.service_id', $serviceId);
+        });
+
+    // Conditionally group
+    if ($serviceId && $request->location_id[0] == null) {
+        // Only service selected, no location filtering
+        $soldServicesQuery->select(
+            'appointments.service_id',
+            DB::raw('COUNT(appointments.id) as total_sold')
+        )->groupBy('appointments.service_id');
+    } else {
+        // Group by both service and location
+        $soldServicesQuery->select(
+            'appointments.service_id',
+            DB::raw('COUNT(appointments.id) as total_sold'),
+            'appointments.location_id'
+        )->groupBy('appointments.service_id', 'appointments.location_id');
+    }
+
+    $soldServices = $soldServicesQuery->get();
+
+    return view('admin.reports.accountsalesreport.serviceSoldreport',get_defined_vars());
+}
+
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -2872,7 +2926,7 @@ class FinanceReportController extends Controller
     }
     public function doctorWiseConversion()
     {
-       
+
         $Users = User::getAllRecords(Auth::User()->account_id)->where('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
@@ -2933,14 +2987,14 @@ class FinanceReportController extends Controller
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-    
+
         $centerId = $request->input('centre_id');
         $doctorId = $request->input('doctor_id');
         // Step 1: Calculate total revenue in the given date range from package_advances
         $totalRevenueQuery = PackageAdvances::where('package_advances.location_id', $centerId)
                         ->whereBetween('package_advances.created_at', [$startDate, $endDate])
                         ->where('cash_flow', 'in')
-                        
+
                         ->where('cash_amount', '>', 0)
                         ->join('appointments', 'package_advances.appointment_id', '=', 'appointments.id');
                        // ->sum('cash_amount');
@@ -3006,10 +3060,10 @@ class FinanceReportController extends Controller
                     ->sum('cash_amount');
           $diff = $totalDoctorRevenue - $totalCashAmount;
           $patients = PackageAdvances::select(
-            'appointments.patient_id', 
+            'appointments.patient_id',
             'appointments.scheduled_date',
-            'users.name as patient_name', 
-            'package_advances.created_at as payment_date', 
+            'users.name as patient_name',
+            'package_advances.created_at as payment_date',
             'package_advances.cash_amount'
         )
         ->join('appointments', 'appointments.id', '=', 'package_advances.appointment_id')
@@ -3022,23 +3076,23 @@ class FinanceReportController extends Controller
         ->get();
             // $monthWiseRevenueQuery->where('appointments.doctor_id', $doctorId);
             return view('admin.reports.doctor_incentive_report', compact('totalCashAmount', 'totalDoctorRevenue','diff','patients'));
-            
+
         } else {
             // No doctor filter, continue as usual
         }
 
         $monthWiseRevenue = $monthWiseRevenueQuery->get()->pluck('monthly_total', 'revenue_month'); // Retrieve as a key-value pair (month => total)
-            
+
         return view('admin.reports.incentive_report', compact('totalRevenue', 'monthWiseRevenue'));
     }
     public function loadAppointmentsReport(Request $request)
     {
-        
+
         $timeInterval  = $request->time;
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-    
+
         $centerId = $request->input('centre_id');
         $createdBy = $request->input('created_by');
         $appointments = Appointments::with(['patient','location','user', 'hasInvoices' => function ($query) {
@@ -3064,7 +3118,7 @@ class FinanceReportController extends Controller
     }
     public function appointmentsReport()
     {
-       
+
         $Users = User::getAllRecords(Auth::User()->account_id)->whereNotIn('user_type_id', 5)->where('active', 1)->getDictionary();
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
