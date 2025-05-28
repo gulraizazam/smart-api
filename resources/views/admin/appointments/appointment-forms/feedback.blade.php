@@ -24,33 +24,29 @@
         <!--begin::Form-->
         <form id="modal_add_feedback_form" method="post" action="{{route('admin.feedbacks.store')}}">
             <!--begin::Scroll-->
- 
-            
+
+
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_resources_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
-                    
+
                     <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                            <input  class="form-control filter-field search_patient_refund" placeholder="Patient Search">
-                            <input type="hidden" class="filter-field search_field" id="add_patients_id">
-                            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
-                            <div class="suggesstion-box-refund" style="display: none;">
-                                <ul class="suggestion-list"></ul>
-                            </div>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span></label>
+
+                            <input type="hidden" class="filter-field search_field" id="add_patients_id" name="patient_id">
+                            <input type="hidden" class="filter-field search_field" id="add_treatment_id" name="treatment">
+                            <input type="text" class="form-control disable-filed" id="add_patients_name" readonly="readonly">
                         </div>
                         <div class="fv-row col-md-6 mt-5">
-                            <label for="add_plan_id" class="required fw-bold fs-6 mb-2 pl-0">Treatments <span class="text text-danger">*</span></label>
-                            <select id="add_treatment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="treatment" onchange="GetTreatmentDetail()">
-                                
-                            </select>
+                            <label for="add_plan_id" class="required fw-bold fs-6 mb-2 pl-0">Treatment <span class="text text-danger">*</span></label>
+                            <input type="text" class="form-control disable-filed" id="treatment_name" readonly="readonly">
                         </div>
-                       
+
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Doctor Name </label>
-                            <input readonly="readonly" type="text"  id="doctor_name" class="form-control disable-filed" name="doctor_name" >
+                            <input readonly="readonly" type="text"  id="add_doctor_name" class="form-control disable-filed" name="doctor_name" >
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Location </label>
@@ -60,8 +56,8 @@
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Treatment Scheduled Date</label>
                             <input readonly="readonly" type="text" id="scheduled_date" class="form-control disable-filed" name="scheduled_date">
                         </div>
-                        
-                        
+
+
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Rating <span class="text text-danger">*</span></label>
                             <select id="rating" class="form-control  mb-3 mb-lg-0" name="rating">
@@ -78,8 +74,8 @@
                                 <option value="10">10/10</option>
                             </select>
                         </div>
-                      
-                       
+
+
                     </div>
                 </div>
 

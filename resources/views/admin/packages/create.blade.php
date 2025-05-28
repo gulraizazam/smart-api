@@ -112,7 +112,7 @@
                         <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled min="0" oninput="validity.valid||(value='');" step=".001">
                         <small class="text-danger ml-1 mt-1"><b id="add_discount_value_error" class="create-plan-error"></b></small>
                     </div>
-                    <div class="fv-row col-md-4 mt-5">
+                    <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
                         <div class="blockui input-spinner" style="display: none; background: transparent; box-shadow: none; position: absolute;margin-top: 28px;margin-left: 15%;">
                             <span>Please wait...</span>
@@ -122,7 +122,14 @@
                         </div>
                         <input type="text" readonly name="net_amount_1" class="form-control" id="net_amount_1">
                     </div>
-                    <div class="fv-row col-md-4 mt-5">
+                    <div class="fv-row col-md-3 mt-5" id="sold_by_div">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
+                        <select  id="add_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
+                            <option value="">Select </option>
+                        </select>
+                        <small class="text-danger ml-1 mt-1"><b id="add_sold_by_errorr" class="create-plan-error"></b></small>
+                    </div>
+                    <div class="fv-row col-md-2 mt-1">
                         <div class="text-center mt-10">
                             <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button-add">
                                 <span class="indicator-label">Add</span>

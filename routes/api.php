@@ -386,6 +386,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Appointment routes*/
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
     Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
+    Route::post('appointments/load-consultant-doctors', [AppointmentsController::class, 'loadConsultantDoctorsByLocation'])->name('appointments.load_consultant_doctors');
     Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
     Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
     Route::resource('appointments', AppointmentsController::class);
@@ -557,6 +558,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('invoices/pdf/{id}/{download?}', [OrdersController::class, 'invoicePdf'])->name('orders.invoice_pdf');
     Route::post('get-employees', [OrdersController::class, 'getEmployees'])->name('get-employees');
     Route::post('get-doctors', [OrdersController::class, 'getDoctors'])->name('get-doctors');
+    Route::post('get-centre-doctors', [OrdersController::class, 'getCentreDoctors'])->name('get-centre-doctors');
     Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
     Route::get('orders/{id}/edit', [OrdersController::class, 'edit'])->name('orders.edit');
     Route::post('orders/update/{id}', [OrdersController::class, 'update'])->name('orders.update');
@@ -587,6 +589,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
     // Edit Service
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
+    Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');
 
     Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
 

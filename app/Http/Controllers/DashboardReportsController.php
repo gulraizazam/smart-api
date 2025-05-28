@@ -27,6 +27,7 @@ use Spatie\Permission\Models\Role;
 use App\Models\AppointmentStatuses;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AppointmentsDailyStats;
+use App\Models\Feedback;
 use Illuminate\Support\Facades\Config;
 use Symfony\Component\Routing\Generator\Dumper\GeneratorDumper;
 
@@ -3019,6 +3020,115 @@ class DashboardReportsController extends Controller
 
         ]);
     }
+    public function DoctoreWiseFeedback(Request $request)
+    {
+        $period = $request->period;
+        $centreId = $request->centre_id;
+
+        $labels = [];
+        $ratings = [];
+
+        // Get date range from period
+        $dateRanges = GeneralFunctions::GetPeriods($period);
+        $dateRange = $dateRanges[$period] ?? null;
+
+        // Step 1: Get relevant location IDs
+        $whereNot = ['All Centres', 'All South Region', 'All Central Region'];
+        if ($centreId === 'all') {
+            $locationIds = Locations::whereNotIn('name', $whereNot)
+                ->where('active', 1)
+                ->pluck('id');
+        } else {
+            $locationIds = [$centreId];
+        }
+
+        // Step 2: Get doctors assigned to those locations
+        $doctorIds = DoctorHasLocations::whereIn('location_id', $locationIds)
+            ->when($request->doc_id && $request->doc_id !== '0' && $request->doc_id !== 'all-docs', function ($query) use ($request) {
+                return $query->where('user_id', $request->doc_id);
+            })
+            ->distinct()
+            ->pluck('user_id');
+
+        // Step 3: Get active doctor records
+        $doctors = User::whereIn('id', $doctorIds)
+            ->where('active', 1)
+            ->get();
+
+        // Step 4: Loop through each doctor and calculate average rating in date range
+        if($period == "all"){
+            $dateRange = null;
+        }
+        $doctorRatings = [];
+
+        foreach ($doctors as $doctor) {
+            if($centreId == 'all'){
+                $avgRating = Feedback::where('doctor_id', $doctor->id)
+                ->when($dateRange, function ($query) use ($dateRange) {
+                    $query->whereHas('appointment', function ($q) use ($dateRange) {
+                        $q->whereBetween('scheduled_date', [
+                            $dateRange['start_date'] . ' 00:00:00',
+                            $dateRange['end_date'] . ' 23:59:59'
+                        ]);
+                    });
+                })
+                ->avg('rating');
+                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)
+                        ->when($dateRange, function ($query) use ($dateRange) {
+                            $query->whereHas('appointment', function ($q) use ($dateRange) {
+                                $q->whereBetween('scheduled_date', [
+                                    $dateRange['start_date'] . ' 00:00:00',
+                                    $dateRange['end_date'] . ' 23:59:59'
+                                ]);
+                            });
+                        })->count();
+            }else{
+                $avgRating = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
+                ->when($dateRange, function ($query) use ($dateRange) {
+                    $query->whereHas('appointment', function ($q) use ($dateRange) {
+                        $q->whereBetween('scheduled_date', [
+                            $dateRange['start_date'] . ' 00:00:00',
+                            $dateRange['end_date'] . ' 23:59:59'
+                        ]);
+                    });
+                })
+                ->avg('rating');
+                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
+                        ->when($dateRange, function ($query) use ($dateRange) {
+                            $query->whereHas('appointment', function ($q) use ($dateRange) {
+                                $q->whereBetween('scheduled_date', [
+                                    $dateRange['start_date'] . ' 00:00:00',
+                                    $dateRange['end_date'] . ' 23:59:59'
+                                ]);
+                            });
+                        })->count();
+            }
+
+
+                    $doctorRatings[] = [
+                        'name' => $doctor->name,
+                        'rating' => round($avgRating ?? 0, 2),
+                        'total' => $totalFeedbacks,
+                    ];
+
+        }
+
+        // Sort by rating descending
+        usort($doctorRatings, function ($a, $b) {
+            return $b['rating'] <=> $a['rating'];
+        });
+
+        // Separate into labels and ratings
+       $labels = array_column($doctorRatings, 'name');
+        $ratings = array_column($doctorRatings, 'rating');
+        $totals = array_column($doctorRatings, 'total');
+
+        return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
+            'labels' => $labels,
+            'rating' => $ratings,
+            'total' => $totals
+        ]);
+    }
     public function AllDoctorsWiseConversion(Request $request)
     {
         $total_apts = [];
@@ -3306,4 +3416,53 @@ class DashboardReportsController extends Controller
             return view('admin.reports.patients_follow_up_report', get_defined_vars());
         }
     }
+    public function ViewFeedback($doctorId)
+{
+    // Get all parent services (services without a parent_id)
+    $parentServices = Services::where('parent_id',0)->get();
+
+    $feedbackData = [];
+
+    foreach ($parentServices as $service) {
+        // Average rating directly on the parent service
+        $parentRating = Feedback::where('doctor_id', $doctorId)
+            ->where('service_id', $service->id)
+            ->avg('rating');
+
+        // Get child services of this parent
+        $children = Services::where('parent_id', $service->id)->get();
+
+        $childRatings = [];
+
+        foreach ($children as $child) {
+            $avgRating = Feedback::where('doctor_id', $doctorId)
+                ->where('treatment_id', $child->id)
+                ->avg('rating');
+
+            // Only include child if it has a rating
+            if ($avgRating !== null) {
+                $childRatings[] = [
+                    'id' => $child->id,
+                    'name' => $child->name,
+                    'color' => $child->color,
+                    'avg_rating' => round($avgRating, 2),
+                ];
+            }
+        }
+
+        // Include the parent only if it or at least one child has a rating
+        if ($parentRating !== null || count($childRatings) > 0) {
+            $feedbackData[] = [
+                'id' => $service->id,
+                'name' => $service->name,
+                'color' => $service->color,
+                'avg_rating' => $parentRating !== null ? round($parentRating, 2) : 0,
+                'treatments' => $childRatings
+            ];
+        }
+    }
+
+    return view('admin.reports.feedbackBarChart', compact('feedbackData'));
+}
+
 }
