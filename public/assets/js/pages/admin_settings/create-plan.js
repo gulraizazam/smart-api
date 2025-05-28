@@ -2419,7 +2419,7 @@ jQuery(document).ready(function () {
             return false;
         }
         if (!$('#add_sold_by').val()) {
-            $('#add_sold_by_errorr').text('Please select sold by');
+            $('#add_sold_by_errorr').html('Please select sold by');
             return false;
         }
         if ($('#add_discount_id').val()) {

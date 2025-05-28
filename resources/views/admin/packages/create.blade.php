@@ -127,7 +127,7 @@
                         <select  id="add_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
                             <option value="">Select </option>
                         </select>
-                        <small class="text-danger ml-1 mt-1"><p id="add_sold_by_errorr" class="create-plan-error"></p></small>
+                        <small class="text-danger ml-1 mt-1"><b id="add_sold_by_errorr" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-2 mt-1">
                         <div class="text-center mt-10">
