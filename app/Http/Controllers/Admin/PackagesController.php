@@ -129,7 +129,7 @@ class PackagesController extends Controller
 
             $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
             
-            $doctors = DoctorHasLocations::where('location_id', $request->from_id)->pluck('user_id')->toArray();
+            $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
     
             // Fetch active doctors as an associative array
             $users = User::whereIn('id', $doctors)
