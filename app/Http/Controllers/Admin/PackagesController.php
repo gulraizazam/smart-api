@@ -845,7 +845,7 @@ class PackagesController extends Controller
             'discount_price' => $discount_price,
             'net_amount' => $net_amount,
             'total' => $total,
-            'sold_by' => $sold_by,  
+            'sold_by' => $request->sold_by,  
         ];
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
