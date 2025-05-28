@@ -12,7 +12,7 @@ class PackageService extends Model
 
     protected static $_table = 'package_services';
 
-    protected $fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'created_at', 'updated_at', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id'];
+    protected $fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'created_at', 'updated_at', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id','sold_by'];
 
     protected $table = 'package_services';
 
