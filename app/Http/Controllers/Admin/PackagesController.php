@@ -703,7 +703,7 @@ class PackagesController extends Controller
             'service_price' => $bundle->price,
             'service_name' => $bundle->name,
             'net_amount' => $request->net_amount,
-            'sold_by'=>$soldBy,
+          
         ];
         if ($discount) {
             $packageBundleData['discount_name'] = $discount->name;
@@ -829,6 +829,7 @@ class PackagesController extends Controller
             $discount_type = $packageBundleData['discount_type'];
             $discount_price = $packageBundleData['discount_price'];
         }
+        $packageBundleData['sold_by']=$request->sold_by;
         $packageServices = PackageService::where('random_id', $request->random_id)->get();
         $packageBundle = PackageBundles::where('random_id', $request->random_id)->get();
         $servicesData = [
