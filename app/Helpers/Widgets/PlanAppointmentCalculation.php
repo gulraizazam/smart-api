@@ -58,7 +58,7 @@ class PlanAppointmentCalculation
                 ['base_appointment_status_id', '=', $appointment_status?->id],
                 ['appointment_type_id', '=', $appointment_type?->id],
                 ['location_id', '=', $request?->location_id],
-            ])->orderBy('created_at', 'asc')->get();
+            ])->orderBy('created_at', 'desc')->get();
 
             // Making array for above data
             foreach ($appointment_info as $appointment) {

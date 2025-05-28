@@ -1009,7 +1009,7 @@ class AppointmentsController extends Controller
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
                     'phone'=> $phoneNumber,
-                  
+
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
@@ -1440,6 +1440,8 @@ class AppointmentsController extends Controller
             'plans_create' => Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
+            'add_feedback' => Gate::allows('feedbacks_create'),
+
         ];
 
         return ApiHelper::apiDataTable($records);
@@ -2522,7 +2524,23 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
         ]);
     }
+    public function editFeedback($id)
+    {
+        if (! Gate::allows('appointments_manage')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
 
+        $treatment = Appointments::with(['doctor','location','service'])
+        ->where('id', $id)
+        ->where('appointment_type_id', 2)
+        ->where('appointment_status_id', 2)
+        ->first();
+
+        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+            'appointment' => $treatment,
+
+        ]);
+    }
     /**
      * Update Appointment in storage.
      *
@@ -3350,6 +3368,58 @@ class AppointmentsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function loadConsultantDoctorsByLocation(Request $request)
+    {
+        try {
+            if ($request->location_id) {
+                if ($request->machine_type_allocation) {
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
+                    if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
+                        $reverse_process = true;
+                    } else {
+                        $reverse_process = false;
+                    }
+                    $doctorids = [];
+                    /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
+                    foreach ($doctors as $key => $doctor) {
+                        $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $request->location_id, Auth::User()->account_id, $reverse_process);
+                        if (in_array($request->service_id, $doctor_serivce)) {
+                            $doctorids[] = $key;
+                        }
+                    }
+                    $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
+                } else {
+
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
+
+                }
+                foreach ($doctors_no_final as $key => $doctor) {
+                    $resource = Resources::where('external_id', '=', $key)->first();
+
+                    //if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
+                        $doctor_rota = ResourceHasRota::where([
+                            ['resource_id', '=', $resource->id],
+                            ['is_consultancy', '=', '1'],
+                        ])->get();
+                        if (count($doctor_rota) == 0) {
+                            unset($doctors[$key]);
+                        }
+                    //}
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'dropdown' => $doctors,
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Record found', false, [
+                'dropdown' => null,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
     /*
      * Load Locations by City
      *
@@ -4275,7 +4345,7 @@ class AppointmentsController extends Controller
             $count++;
         }
         if ($package_advances->package_id != null) {
-            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp()]);
+            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(),'consumed_at' => Filters::getCurrentTimeStamp()]);
             $packagesservice = PackageService::find($request->package_service_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
             if ($request->cash > 0) {

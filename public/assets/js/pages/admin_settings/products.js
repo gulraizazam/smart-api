@@ -266,17 +266,22 @@ function resetAllFilters(datatable) {
 
 function setFilters(filter_values, active_filters) {
     let brands = filter_values.brands;
+    let skus = filter_values.sku;
     let centres = filter_values.centres;
     let warehouses = filter_values.warehouse;
     let status = filter_values.status;
 
     let brands_options = '<option value="">Select Brand</option>';
+    let sku_options = '<option value="">Select SKU</option>';
     let centre_options = '<option value="">Select Centre</option>';
     let warehouse_options = '<option value="">Select Warehouse</option>';
     let status_options = '<option value="">Select Status</option>';
 
     Object.entries(brands).forEach(function (value, index) {
         brands_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+    });
+    Object.entries(skus).forEach(function (value, index) {
+        sku_options += '<option value="' + value[1] + '">' + value[1] + '</option>';
     });
     Object.entries(centres).forEach(function (value, index) {
         centre_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
@@ -297,6 +302,13 @@ function setFilters(filter_values, active_filters) {
 
     /* Add product values */
     $("#add_products_brand").html(brands_options);
+    $("#sku").html(sku_options);
+    $('#sku').select2({
+        tags: true, // Allows custom entries
+        placeholder: "Select or enter SKU",
+        allowClear: true,
+        width: '100%' // Adjust width to match form-control styling
+    });
     $("#add_product_centre").html(centre_options);
     $("#add_product_warehouse").html(warehouse_options);
 

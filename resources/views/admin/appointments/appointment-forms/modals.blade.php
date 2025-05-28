@@ -131,4 +131,11 @@
 
     </div>
 </div>
+<div class="modal fade" id="modal_appointment_feedback" tabindex="-1" aria-hidden="true">
+    <!--begin::Modal dialog-->
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="appointment_detail">
 
+        @include('admin.appointments.appointment-forms.feedback')
+
+    </div>
+</div>

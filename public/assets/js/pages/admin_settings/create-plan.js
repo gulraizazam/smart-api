@@ -703,7 +703,9 @@ function setEditData(response) {
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
                         service_options += '<td>Tax:' + packageservice.tax_price + '</td>';
                         service_options += '<td>Total Amount:' + packageservice.tax_including_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed:' + consume + '</td>';
+                        service_options += '<td colspan="2">Is Consumed:' + consume + '</td>';
+                        service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
+
                         service_options += '</tr>';
                     }
 
@@ -1074,7 +1076,9 @@ function displayData(response) {
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
 
                         service_options += '<td>Tax Amt. : ' + packageservice.tax_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '<td colspan="2">Is Consumed : ' + consume + '</td>';
+                         service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
+
                         service_options += '</tr>';
                     }
 
@@ -1322,6 +1326,7 @@ function getServices() {
             $("#modal_edit_regions").modal("show");
 
             setServices(response);
+            setSoldBy(response);
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -1351,7 +1356,21 @@ function setServices(response) {
     }
 
 }
+function setSoldBy(response) {
+    try {
+        let users = response.data.users;
+        let user_options = '<option value=""> Select </option>';
 
+        Object.entries(users).forEach(function ([id, name]) {
+            user_options += '<option value="' + id + '"> ' + name + ' </option>';
+        });
+
+        $("#add_sold_by").html(user_options);
+
+    } catch (error) {
+        showException(error);
+    }
+}
 function getAppointments(patient) {
     let location = $("#add_plan_location_id").val();
 
@@ -2377,6 +2396,7 @@ var ExistingTotal = 0;
 jQuery(document).ready(function () {
     patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
+        
         $('.create-plan-error').html('');
 
         if (!$('#add_plan_location_id').val()) {
@@ -2398,7 +2418,10 @@ jQuery(document).ready(function () {
             $('#add_service_id_error').html('Please select service');
             return false;
         }
-
+        if (!$('#add_sold_by').val()) {
+            $('#add_sold_by_errorr').html('Please select sold by');
+            return false;
+        }
         if ($('#add_discount_id').val()) {
             if (!$('#add_discount_type').val()) {
                 $('#add_discount_type_error').html('Please select discount type');
@@ -2508,7 +2531,7 @@ jQuery(document).ready(function () {
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + (packageServicesData.consumed_at ?? 'N/A') + "</td></tr>");
                         });
                         keyfunction_grandtotal();
                         var rows = $('#plan_services tbody tr').length;
@@ -2674,7 +2697,7 @@ jQuery(document).ready(function () {
             hideSpinner("-edit-add");
             return false;
         }
-
+        
         if (discount_id) {
             if (!discount_type) {
                 $('#discount_type_error').html('Please select discount type');
@@ -2795,7 +2818,7 @@ jQuery(document).ready(function () {
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + (packageServicesData.consumed_at ?? 'N/A') + "</td></tr>");
                         });
 
                         edit_keyfunction_grandtotal();

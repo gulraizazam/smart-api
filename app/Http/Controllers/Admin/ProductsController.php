@@ -118,6 +118,7 @@ class ProductsController extends Controller
             $products = Product::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $apply_filter);
            
             $brands = Brand::getAllRecordsDictionary(Auth::User()->account_id);
+            $sku = Product::pluck('sku')->toArray();
             $centres = Locations::getAllRecordsDictionary(Auth::user()->account_id, 'custom', 'id', 'desc', ACL::getUserCentres());
             $warehouse = Warehouse::getAllRecordsDictionary(Auth::user()->account_id, ACL::getUserWarehouse());
 
@@ -150,6 +151,7 @@ class ProductsController extends Controller
                 'centres' => collect($centres)->pluck('name', 'id'),
                 'warehouse' => collect($warehouse)->pluck('name', 'id'),
                 'status' => config('constants.status'),
+                'sku' => $sku,
             ];
             $records['meta'] = [
                 'field' => $orderBy,

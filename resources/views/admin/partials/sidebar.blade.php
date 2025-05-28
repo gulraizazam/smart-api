@@ -338,7 +338,14 @@
 
                 </li>
                 @endif
-
+                @if (Gate::allows('feedbacks_manage'))
+                <li class="menu-item {{ activeMenu('admin.feedbacks.index') }} " aria-haspopup="true">
+                    <a href="{{ route('admin.feedbacks.index') }}" class="menu-link">
+                        <span class="svg-icon menu-icon"><i class="font-icon la la-file"></i></span>
+                        <span class="menu-text">Doctor Ratings</span>
+                    </a>
+                </li>
+                @endif
                 @if (Gate::allows('resourcerotas_manage'))
                 <li class="menu-item {{ activeMenu('admin.resourcerotas.index') }} {{ activeMenu('admin.resourcerotas.calender-view') }}" aria-haspopup="true">
                     <a href="{{ route('admin.resourcerotas.index') }}" class="menu-link">
@@ -347,14 +354,7 @@
                     </a>
                 </li>
                 @endif
-                @if (Gate::allows('resourcerotas_manage'))
-                <li class="menu-item {{ activeMenu('admin.feedbacks.index') }} " aria-haspopup="true">
-                    <a href="{{ route('admin.feedbacks.index') }}" class="menu-link">
-                        <span class="svg-icon menu-icon"><i class="font-icon la la-file"></i></span>
-                        <span class="menu-text">Feedbacks</span>
-                    </a>
-                </li>
-                @endif
+
                 @if (Gate::allows('settings_manage') ||
                 Gate::allows('user_operator_settings_manage') ||
                 Gate::allows('sms_templates_manage') ||
@@ -1095,7 +1095,36 @@
                         </ul>
                     </div>
                     @endcan
-                   
+                    @can('feedbacks_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.feedback_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.feedback_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Doctor Ratings Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+                   @can('followuppatient_manage')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.future_treatments') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.future_treatments') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">No Future Treatments Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
                 </li>
 
 
