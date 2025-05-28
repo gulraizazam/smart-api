@@ -175,13 +175,13 @@ class Product extends BaseModal
     //  * @param  \Illuminate\Http\Request  $request
     //  * @return (mixed)
     //  */
-    // public static function createRecord($request, $account_id)
-    // {
-    //     if (!is_array($request)) {
-    //         $data = $request->all();
-    //     } else {
-    //         $data = $request;
-    //     }
+    public static function createRecord($request, $account_id)
+    {
+        if (!is_array($request)) {
+            $data = $request->all();
+        } else {
+            $data = $request;
+        }
        
         // Set Account ID
         $data['account_id'] = $account_id;
@@ -200,8 +200,8 @@ class Product extends BaseModal
 
     //      $subjectModel = self::find($product->id);
         
-    //      return $product;
-    // }
+          return $product;
+     }
 
     /**
      * Update Record
@@ -220,22 +220,22 @@ class Product extends BaseModal
         $data['account_id'] = $account_id;
         $data['updated_by'] = Auth::user()->id;
 
-    //     $record = self::where([
-    //         'id' => $id,
-    //         'account_id' => $account_id,
-    //     ])->first();
+        $record = self::where([
+            'id' => $id,
+            'account_id' => $account_id,
+        ])->first();
 
-    //     if (!$record) {
-    //         return null;
-    //     }
+        if (!$record) {
+            return null;
+        }
 
-    //     $record->update($data);
+         $record->update($data);
 
     //     $subjectModel = self::find($id);
        
 
-    //     return $record;
-    // }
+         return $record;
+     }
 
     // /**
     //  * Delete Record
@@ -243,24 +243,24 @@ class Product extends BaseModal
     //  * @param id
     //  * @return (mixed)
     //  */
-    // public static function DeleteRecord($id, $data = null)
-    // {
-    //     $product = self::getData($id);
-    //     if (!$product) {
-    //         return collect(['status' => false, 'message' => 'Resource not found.']);
-    //     }
-    //     // Check if child records exists or not, If exist then disallow to delete it.
-    //     if (self::isChildExists($id, Auth::User()->account_id)) {
-    //         return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
-    //     }
-    //     Stock::where(['product_id' => $product->id])->delete();
-    //     ProductDetail::where('product_id', $id)->delete();
-    //     $record = $product->delete();
+    public static function DeleteRecord($id, $data = null)
+    {
+        $product = self::getData($id);
+        if (!$product) {
+            return collect(['status' => false, 'message' => 'Resource not found.']);
+        }
+        // Check if child records exists or not, If exist then disallow to delete it.
+        if (self::isChildExists($id, Auth::User()->account_id)) {
+            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
+        }
+        Stock::where(['product_id' => $product->id])->delete();
+        ProductDetail::where('product_id', $id)->delete();
+        $record = $product->delete();
 
-    //     $subjectModel = $product;
+        $subjectModel = $product;
        
-    //     return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
-    // }
+        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
+    }
 
     // /**
     //  * Check if child records exist
@@ -268,16 +268,16 @@ class Product extends BaseModal
     //  * @param  (int)  $id
     //  * @return (boolean)
     //  */
-    // public static function isChildExists($id, $account_id)
-    // {
-    //     if (
-    //         TransferProduct::where(['product_id' => $id, 'account_id' => $account_id])->orwhere(['child_product_id' => $id])->count() ||
-    //         OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()
-    //     ) {
-    //         return true;
-    //     }
-    //     return false;
-    // }
+    public static function isChildExists($id, $account_id)
+    {
+        if (
+            TransferProduct::where(['product_id' => $id, 'account_id' => $account_id])->orwhere(['child_product_id' => $id])->count() ||
+            OrderDetail::where(['product_id' => $id, 'account_id' => $account_id])->count()
+        ) {
+            return true;
+        }
+        return false;
+    }
 
     /* * Ajax base result of patient according to id or name
     * */
@@ -370,16 +370,16 @@ class Product extends BaseModal
         // Return the updated inventory object
         return $primaryInventory;
             
-    //    }else{
-    //     $inventory = Inventory::where([
-    //         'warehouse_id' => $request->warehouse_id,'product_id' => $request->product_id])
-    //        ->first();
-    //    }
+       }else{
+        $inventory = Inventory::where([
+            'warehouse_id' => $request->warehouse_id,'product_id' => $request->product_id])
+           ->first();
+       }
        
-    //     return $inventory;
+        return $inventory;
 
 
-    // }
+    }
     // /**
     //  * Get All Records
     //  *
