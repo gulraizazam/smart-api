@@ -2622,7 +2622,7 @@ jQuery(document).ready(function () {
 
             });
         });
-        
+        console.log('formData', formData);
         var status = 0;
         if (cash_amount > 0) {
             var status = 1;
@@ -2695,7 +2695,6 @@ jQuery(document).ready(function () {
         $(this).attr("disabled", true);
         var random_id = $('#edit_random_id_1').val();
         var service_id = $('#edit_service_id').val(); //Basicailly it is bundle id
-        var sold_by = $('#edit_sold_by').val();
         var discount_id = $('#edit_discount_id').val();
         var net_amount = $('#edit_net_amount_1').val();
         var discount_type = $('#edit_discount_type').val();
@@ -2710,12 +2709,7 @@ jQuery(document).ready(function () {
             hideSpinner("-edit-add");
             return false;
         }
-        if (!sold_by) {
-            $('#edit_sold_by_errorr').html('Please select sold by');
-            $(this).attr("disabled", false);
-            hideSpinner("-edit-add");
-            return false;
-        }
+        
         if (discount_id) {
             if (!discount_type) {
                 $('#discount_type_error').html('Please select discount type');
@@ -2757,8 +2751,7 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
-                'package_bundles[]': [],
-                'sold_by': sold_by
+                'package_bundles[]': []
             };
 
             $(".package_bundles").each(function () {
@@ -2827,7 +2820,6 @@ jQuery(document).ready(function () {
                             "</td>" +
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
-                            "<input type='hidden' class='package_bundles_edit_sold' name='sold_by[]' value='" + resposne.data.servicesData.sold_by + "' />" +
                             "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ", `edit_`)'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
@@ -2901,8 +2893,7 @@ jQuery(document).ready(function () {
                 Amount: $(this).find('td:nth-child(6)').text(),
                 Tax: $(this).find('td:nth-child(7)').text(),
                 Total: $(this).find('td:nth-child(8)').text(),
-                bundleId: $(this).find('td:nth-child(9)').find('input').val(),
-                sold_by: $(this).find('td:nth-child(10)').find("input[name='sold_by[]']").val(),
+                bundleId: $(this).find('td:nth-child(9)').find('input').val()
             });
         });
 
