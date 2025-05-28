@@ -2443,7 +2443,7 @@ jQuery(document).ready(function () {
         var discount_price = $('#discount_value_1').val();
         var discount_slug = $("#slug_1").val();
         var package_total = $('#package_total_1').val();
-
+        var sold_by = $('#add_sold_by').val();
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_plan_location_id').val();
 
@@ -2476,7 +2476,8 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
-                'package_bundles[]': []
+                'package_bundles[]': [],
+                'sold_by': sold_by
             };
 
             $(".package_bundles").each(function () {
