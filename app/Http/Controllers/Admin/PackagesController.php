@@ -829,7 +829,7 @@ class PackagesController extends Controller
             $discount_type = $packageBundleData['discount_type'];
             $discount_price = $packageBundleData['discount_price'];
         }
-        $packageBundleData['sold_by']=$request->sold_by;
+        
         $packageServices = PackageService::where('random_id', $request->random_id)->get();
         $packageBundle = PackageBundles::where('random_id', $request->random_id)->get();
         $servicesData = [
@@ -845,6 +845,7 @@ class PackagesController extends Controller
             'discount_price' => $discount_price,
             'net_amount' => $net_amount,
             'total' => $total,
+            'sold_by' => $sold_by,  
         ];
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
