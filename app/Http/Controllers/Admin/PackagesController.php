@@ -689,7 +689,7 @@ class PackagesController extends Controller
     }
     public function makePackagesServicesData(Request $request)
     {
-
+        $soldBy = $request->sold_by;
         $bundle = Bundles::find($request->bundle_id);
         $discount = Discounts::find($request->discount_id);
         $allBundleServices = BundleHasServices::where('bundle_id', $request->bundle_id)->get();
@@ -703,6 +703,7 @@ class PackagesController extends Controller
             'service_price' => $bundle->price,
             'service_name' => $bundle->name,
             'net_amount' => $request->net_amount,
+            'sold_by'=>$soldBy,
         ];
         if ($discount) {
             $packageBundleData['discount_name'] = $discount->name;
