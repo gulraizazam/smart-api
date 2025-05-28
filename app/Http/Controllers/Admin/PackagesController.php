@@ -1568,7 +1568,7 @@ class PackagesController extends Controller
      */
     public function edit($id)
     {
-        dd($id);
+        
         if (!Gate::allows('plans_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -1666,12 +1666,43 @@ class PackagesController extends Controller
                     $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
                 }
             }
-
+            $doctors = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
+    
+            // Fetch active doctors as an associative array
+            $users = User::whereIn('id', $doctors)
+                ->where('active', 1)
+                ->pluck('name', 'id') // Preserve user IDs
+                ->toArray();
+        
+            // Ensure 'from_id' is an array
+            $locationId = $package->location_id;
+    
+            // Fetch FDM users by getting the user_ids associated with the center (location_id)
+            $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+    
+            // Fetch the 'FDM' role and get its user ids
+            $findRole = DB::table('roles')->where('name', 'FDM')->first();
+            $roleId = $findRole->id;
+    
+            // Get users who have the FDM role
+            $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+    
+            // Get the intersection of users who are both FDM and belong to the center
+            $fdmUsers = array_intersect($findFDM, $roleHasUser);
+    
+            // Fetch FDM user details (id and name) from the users table
+            $FDMUsers = User::whereIn('id', $fdmUsers)
+                ->pluck('name', 'id') // Preserve user IDs
+                ->toArray();
+    
+            // Merge the arrays while preserving keys
+            $combinedUsers = $users + $FDMUsers;
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
                 'packagebundles' => $packagebundles,
                 'packageservices' => $packageservices,
+                'users' => $combinedUsers,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
                 'grand_total' => $remaining_amount,
