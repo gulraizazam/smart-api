@@ -53,6 +53,7 @@ use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
+use App\Models\RoleHasUsers;
 use Illuminate\Support\Facades\Log;
 
 
@@ -128,32 +129,40 @@ class PackagesController extends Controller
 
             $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
             
-            $checkUsers = UserHasLocations::where('location_id', $request->location_id)
-            ->pluck('user_id')
-            ->toArray();
-
-            $doctors = DoctorHasLocations::where('location_id', $request->location_id)
-                ->pluck('user_id')
-                ->toArray();
-
-            // Fetch users based on user types and active status
-            $users = User::whereIn('user_type_id', [2, 5])
+            $doctors = DoctorHasLocations::where('location_id', $request->from_id)->pluck('user_id')->toArray();
+    
+            // Fetch active doctors as an associative array
+            $users = User::whereIn('id', $doctors)
                 ->where('active', 1)
-                ->whereIn('id', $checkUsers)
-                ->pluck('name', 'id')
+                ->pluck('name', 'id') // Preserve user IDs
                 ->toArray();
-
-            // Fetch doctor names and IDs
-            $doctorUsers = User::whereIn('id', $doctors)
-                ->where('active',1)
-                ->pluck('name', 'id')
+        
+            // Ensure 'from_id' is an array
+            $locationId = $request->location_id;
+    
+            // Fetch FDM users by getting the user_ids associated with the center (location_id)
+            $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+    
+            // Fetch the 'FDM' role and get its user ids
+            $findRole = DB::table('roles')->where('name', 'FDM')->first();
+            $roleId = $findRole->id;
+    
+            // Get users who have the FDM role
+            $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+    
+            // Get the intersection of users who are both FDM and belong to the center
+            $fdmUsers = array_intersect($findFDM, $roleHasUser);
+    
+            // Fetch FDM user details (id and name) from the users table
+            $FDMUsers = User::whereIn('id', $fdmUsers)
+                ->pluck('name', 'id') // Preserve user IDs
                 ->toArray();
-
-            // Merge both arrays while preserving user IDs as keys
-            $finalUsers = $users + $doctorUsers;
+    
+            // Merge the arrays while preserving keys
+            $combinedUsers = $users + $FDMUsers;
             return ApiHelper::apiResponse($this->success, 'Recode found', true, [
                 'service' => $locationhasservice,
-                'users'=>$finalUsers
+                'users'=>$combinedUsers
             ]);
         }
 
