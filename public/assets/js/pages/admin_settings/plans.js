@@ -63,6 +63,7 @@ $(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    console.log('res2',resposne);
                     let consume = 'NO';
                     if (resposne.status == '1') {
 
