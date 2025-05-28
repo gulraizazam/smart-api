@@ -2488,7 +2488,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                    console.log(resposne);
+                    console.log('res1',resposne);
                     let consume = 'No';
                     if (resposne.status) {
 

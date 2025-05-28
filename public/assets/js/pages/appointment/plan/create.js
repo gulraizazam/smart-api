@@ -611,7 +611,9 @@ jQuery(document).ready(function () {
                 type: 'get',
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
+
                 success: function (resposne) {
+                    console.log('res3',resposne);
                     let consume = 'NO';
                     if (resposne.status) {
 
