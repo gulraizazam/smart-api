@@ -2396,6 +2396,7 @@ var ExistingTotal = 0;
 jQuery(document).ready(function () {
     patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
+        alert('hi');
         $('.create-plan-error').html('');
 
         if (!$('#add_plan_location_id').val()) {
@@ -2696,7 +2697,7 @@ jQuery(document).ready(function () {
             hideSpinner("-edit-add");
             return false;
         }
-
+        
         if (discount_id) {
             if (!discount_type) {
                 $('#discount_type_error').html('Please select discount type');
