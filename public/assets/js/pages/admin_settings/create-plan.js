@@ -2893,7 +2893,9 @@ jQuery(document).ready(function () {
                 Amount: $(this).find('td:nth-child(6)').text(),
                 Tax: $(this).find('td:nth-child(7)').text(),
                 Total: $(this).find('td:nth-child(8)').text(),
-                bundleId: $(this).find('td:nth-child(9)').find('input').val()
+                bundleId: $(this).find('td:nth-child(9)').find('input').val(),
+                sold_by: $(this).find('td:nth-child(10)').find("input[name='sold_by[]']").val()
+
             });
         });
 
