@@ -2396,7 +2396,7 @@ var ExistingTotal = 0;
 jQuery(document).ready(function () {
     patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
-        alert($('#add_sold_by').val());
+        
         $('.create-plan-error').html('');
 
         if (!$('#add_plan_location_id').val()) {
@@ -2418,7 +2418,7 @@ jQuery(document).ready(function () {
             $('#add_service_id_error').html('Please select service');
             return false;
         }
-        if (!$('#add_sold_by').val()) {
+        if ($('#add_sold_by').val()=="") {
             $('#add_sold_by_error').html('Please select sold by');
             return false;
         }
