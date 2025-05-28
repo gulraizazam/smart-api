@@ -2396,7 +2396,7 @@ var ExistingTotal = 0;
 jQuery(document).ready(function () {
     patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
-        alert('hi');
+        alert($('#add_sold_by').val());
         $('.create-plan-error').html('');
 
         if (!$('#add_plan_location_id').val()) {
