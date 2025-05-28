@@ -1357,16 +1357,12 @@ function setServices(response) {
 
 }
 function setSoldBy(response) {
-
-   
-
     try {
-
         let users = response.data.users;
         let user_options = '<option value=""> Select </option>';
 
-        Object.values(users).forEach(function (value) {
-            user_options += '<option value="' + value.id + '"> ' + value.name + ' </option>';
+        Object.entries(users).forEach(function ([id, name]) {
+            user_options += '<option value="' + id + '"> ' + name + ' </option>';
         });
 
         $("#add_sold_by").html(user_options);
@@ -1374,7 +1370,6 @@ function setSoldBy(response) {
     } catch (error) {
         showException(error);
     }
-
 }
 function getAppointments(patient) {
     let location = $("#add_plan_location_id").val();
