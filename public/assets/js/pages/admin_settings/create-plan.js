@@ -2417,7 +2417,10 @@ jQuery(document).ready(function () {
             $('#add_service_id_error').html('Please select service');
             return false;
         }
-
+        if (!$('#add_sold_by').val()) {
+            $('#add_sold_by_error').html('Please select sold by');
+            return false;
+        }
         if ($('#add_discount_id').val()) {
             if (!$('#add_discount_type').val()) {
                 $('#add_discount_type_error').html('Please select discount type');

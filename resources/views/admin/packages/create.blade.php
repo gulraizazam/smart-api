@@ -129,7 +129,7 @@
                         </select>
                         <small class="text-danger ml-1 mt-1"><b id="add_sold_by_error" class="create-plan-error"></b></small>
                     </div>
-                    <div class="fv-row col-md-2 mt-5">
+                    <div class="fv-row col-md-2 mt-1">
                         <div class="text-center mt-10">
                             <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button-add">
                                 <span class="indicator-label">Add</span>
