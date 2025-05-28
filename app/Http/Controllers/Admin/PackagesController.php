@@ -2878,7 +2878,7 @@ class PackagesController extends Controller
                     }
                     $data_service['created_at'] = Filters::getCurrentTimeStamp();
                     $data_service['updated_at'] = Filters::getCurrentTimeStamp();
-                    $data_service['sold_by'] =$packageBundle['sold_by'] ;
+                    //$data_service['sold_by'] =$packageBundle['sold_by'] ;
                     $packageservice = PackageService::createPackageService($data_service);
                 }
             }
