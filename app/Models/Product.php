@@ -386,10 +386,10 @@ class Product extends BaseModal
     //  * @param  (int)  $account_id Current Organization's ID
     //  * @return (mixed)
     //  */
-    // public static function getAllRecordsDictionary($account_id)
-    // {
-    //     return self::where(['account_id' => $account_id])->get()->getDictionary();
-    // }
+    public static function getAllRecordsDictionary($account_id)
+    {
+        return self::where(['account_id' => $account_id])->get()->getDictionary();
+    }
 
     // /**
     //  * active Record
