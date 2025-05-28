@@ -1326,6 +1326,7 @@ function getServices() {
             $("#modal_edit_regions").modal("show");
 
             setServices(response);
+            setSoldBy(response);
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -1355,7 +1356,26 @@ function setServices(response) {
     }
 
 }
+function setSoldBy(response) {
 
+   
+
+    try {
+
+        let users = response.data.users;
+        let user_options = '<option value=""> Select </option>';
+
+        Object.values(users).forEach(function (value) {
+            user_options += '<option value="' + value.id + '"> ' + value.name + ' </option>';
+        });
+
+        $("#add_sold_by").html(user_options);
+
+    } catch (error) {
+        showException(error);
+    }
+
+}
 function getAppointments(patient) {
     let location = $("#add_plan_location_id").val();
 
