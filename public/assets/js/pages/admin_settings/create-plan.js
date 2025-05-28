@@ -2488,6 +2488,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    console.log(resposne);
                     let consume = 'No';
                     if (resposne.status) {
 
@@ -2608,7 +2609,8 @@ jQuery(document).ready(function () {
                 Amount: $(this).find('td:nth-child(6)').text(),
                 Tax: $(this).find('td:nth-child(7)').text(),
                 Total: $(this).find('td:nth-child(8)').text(),
-                bundleId: $(this).find('td:nth-child(9)').find('input').val()
+                bundleId: $(this).find('td:nth-child(9)').find('input').val(),
+
             });
         });
         var status = 0;
