@@ -1667,12 +1667,20 @@ class PackagesController extends Controller
     
             // Merge the arrays while preserving keys
             $combinedUsers = $users + $FDMUsers;
+            $selectedUserId = null;
+            if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
+                $firstDoctorId = $appointmentArray[0]['doctor_id'];
+                if (array_key_exists($firstDoctorId, $combinedUsers)) {
+                    $selectedUserId = $firstDoctorId;
+                }
+            }
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
                 'packagebundles' => $packagebundles,
                 'packageservices' => $packageservices,
                 'users' => $combinedUsers,
+                'selectedUserId' => $selectedUserId,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
                 'grand_total' => $remaining_amount,
