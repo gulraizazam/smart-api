@@ -2689,7 +2689,7 @@ jQuery(document).ready(function () {
 
     /*save data for both predefined discounts and keyup trigger*/
     $("#EditPackage").click(function () {
-alert("ss");
+
         $('.error-msg').html('');
         if (!$('#edit_appointment_id').val()) {
             $('#edit_appointment_id_error').html('Please select appointment');
@@ -2708,6 +2708,7 @@ alert("ss");
         var package_total = $('#edit_package_total_1').val();
         var is_exclusive = $('#edit_is_exclusive').val();
         var location_id = $('#edit_location_id').val();
+        var sold_by = $('#add_sold_by').val();
         if (!service_id) {
             $('#service_id').html('Please select service');
             $(this).attr("disabled", false);
@@ -2756,7 +2757,9 @@ alert("ss");
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
-                'package_bundles[]': []
+                'package_bundles[]': [],
+                'sold_by': sold_by
+                 
             };
 
             $(".package_bundles").each(function () {
