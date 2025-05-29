@@ -2153,8 +2153,12 @@ class PackagesController extends Controller
 
         // Merge the arrays while preserving keys
         $combinedUsers = $users + $FDMUsers;
-        
-dd($appointmentArray);
+        $selectedUser = null;
+        if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
+            $firstDoctorId = $appointmentArray[0]['doctor_id'];
+            $selectedUser = $combinedUsers[$firstDoctorId] ?? null;
+        }
+dd($selectedUser);
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
             'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
