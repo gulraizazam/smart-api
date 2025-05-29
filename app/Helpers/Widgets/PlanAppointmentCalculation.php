@@ -65,6 +65,7 @@ class PlanAppointmentCalculation
                 $appointmentArray_appointment[$appointment?->id] = [
                     'id' => $appointment?->id.'.'.'A',
                     'name' => $appointment?->service->name.' - '.Carbon::parse($appointment?->created_at)->format('F j,Y h:i A').' - '.$appointment->doctor->name,
+                    'doctor_id' => $appointment?->doctor_id
                 ];
                 $doctorids[] = $appointment?->doctor_id;
             }
