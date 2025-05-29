@@ -2770,6 +2770,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    console.log(resposne);
 
                     let consume = 'No';
 
