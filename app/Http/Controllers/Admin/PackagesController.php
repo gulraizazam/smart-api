@@ -2158,7 +2158,7 @@ class PackagesController extends Controller
             $firstDoctorId = $appointmentArray[0]['doctor_id'];
             $selectedUser = $combinedUsers[$firstDoctorId] ?? null;
         }
-dd($selectedUser);
+dd($combinedUsers,$selectedUser);
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
             'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
