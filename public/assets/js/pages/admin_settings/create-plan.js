@@ -2708,7 +2708,7 @@ jQuery(document).ready(function () {
         var package_total = $('#edit_package_total_1').val();
         var is_exclusive = $('#edit_is_exclusive').val();
         var location_id = $('#edit_location_id').val();
-        var sold_by = $('#add_sold_by').val();
+        var sold_by = $('#edit_sold_by').val();
         if (!service_id) {
             $('#service_id').html('Please select service');
             $(this).attr("disabled", false);
