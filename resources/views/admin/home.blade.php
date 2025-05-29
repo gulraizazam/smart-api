@@ -794,9 +794,10 @@
                                                 <!-- <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                                     Week</option> -->
-                                                <option value="all" {{ request('type')=='thismonth' ? 'selected' : '' }}>Life Time
+                                               
+                                                <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
+                                                <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time
                                                     </option>
-                                                <option value="thismonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>This Month</option>
                                             </select>
                                         </div>
                                     </li>
