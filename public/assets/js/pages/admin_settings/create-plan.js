@@ -592,7 +592,7 @@ function setEditData(response) {
         let location = package.location;
         let history_options = noRecordFoundTable(5);
         let membership = response.data.membership;
-
+        let selectedUserId = response.data.selectedUserId;
         if (packageadvances.length) {
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
@@ -724,10 +724,13 @@ function setEditData(response) {
         let serviceOptions = '<option value="">Select Service</option>';
         let userOptions = '<option value="">Select</option>';
         if (users) {
-            Object.entries(users).forEach(function (user) {
-                userOptions += '<option value="' + user[0] + '">' + user[1] + '</option>';
+            
+            Object.entries(users).forEach(function ([id, name]) {
+                let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
+                userOptions += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
             });
         }
+        
         if (locationhasservice.length) {
             Object.values(locationhasservice).forEach(function (packageservice) {
                 serviceOptions += '<option value="' + packageservice?.id + '">' + packageservice?.name + '</option>';
