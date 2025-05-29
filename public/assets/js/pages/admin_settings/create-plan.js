@@ -1365,10 +1365,12 @@ function setServices(response) {
 function setSoldBy(response) {
     try {
         let users = response.data.users;
+        let selectedUserId = response.data.selected_doctor_id; // Get selected user ID from response
         let user_options = '<option value=""> Select </option>';
 
         Object.entries(users).forEach(function ([id, name]) {
-            user_options += '<option value="' + id + '"> ' + name + ' </option>';
+            let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
+            user_options += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
         });
 
         $("#add_sold_by").html(user_options);
