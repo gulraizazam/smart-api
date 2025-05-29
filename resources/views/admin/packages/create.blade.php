@@ -125,7 +125,7 @@
                     <div class="fv-row col-md-3 mt-5" id="sold_by_div">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
                         <select  id="add_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
-                            <option value="">Select </option>
+                           
                         </select>
                         <small class="text-danger ml-1 mt-1"><b id="add_sold_by_errorr" class="create-plan-error"></b></small>
                     </div>
