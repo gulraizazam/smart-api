@@ -2689,7 +2689,7 @@ jQuery(document).ready(function () {
 
     /*save data for both predefined discounts and keyup trigger*/
     $("#EditPackage").click(function () {
-
+alert("ss");
         $('.error-msg').html('');
         if (!$('#edit_appointment_id').val()) {
             $('#edit_appointment_id_error').html('Please select appointment');
