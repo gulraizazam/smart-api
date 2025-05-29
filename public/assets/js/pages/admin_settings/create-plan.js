@@ -2708,6 +2708,7 @@ jQuery(document).ready(function () {
         var package_total = $('#edit_package_total_1').val();
         var is_exclusive = $('#edit_is_exclusive').val();
         var location_id = $('#edit_location_id').val();
+        var sold_by = $('#edit_sold_by').val();
         if (!service_id) {
             $('#service_id').html('Please select service');
             $(this).attr("disabled", false);
@@ -2756,7 +2757,9 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
-                'package_bundles[]': []
+                'package_bundles[]': [],
+                'sold_by': sold_by
+                 
             };
 
             $(".package_bundles").each(function () {
@@ -2767,6 +2770,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    console.log(resposne);
 
                     let consume = 'No';
 
@@ -2825,6 +2829,7 @@ jQuery(document).ready(function () {
                             "</td>" +
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
+                            "<input type='hidden' class='package_bundles_sold_by' name='sold_by[]' value='" + resposne.data.servicesData.sold_by + "' />" +
                             "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ", `edit_`)'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
