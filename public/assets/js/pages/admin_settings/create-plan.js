@@ -2828,6 +2828,7 @@ jQuery(document).ready(function () {
                             "</td>" +
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
+                            "<input type='hidden' class='package_bundles_sold_by' name='sold_by[]' value='" + resposne.data.servicesData.sold_by + "' />" +
                             "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ", `edit_`)'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
