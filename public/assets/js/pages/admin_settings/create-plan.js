@@ -1441,7 +1441,6 @@ function setAppointments(response) {
 
 /*Add Plan functions*/
 function getServiceDiscount($this, type = '') {
-    
     hideMessages();
     var service_id = $this.val();
     var patient_id = $('#add_patients_id').val();
@@ -1658,10 +1657,9 @@ function getDiscountInfo($this) {
 }
 
 function editDiscountValue($this) {
-    alert("here1");
     //inputSpinner(true, 'EditPackage')
     hideMessages();
-    alert($('#edit_discount_type').val());
+
     if ($("#edit_discount_value_1").val() < 0) {
         $("#edit_discount_value_1").val('');
     } else {
@@ -1772,7 +1770,7 @@ function changeDiscount($this) {
 function editServiceDiscount($this, type = '') {
     $('#service_id').html('');
     hideMessages();
-   
+
     var service_id = $this.val();
     var location_id = $('#edit_location_id').val();
     var patient_id = $('#edit_parent_id').val();
@@ -1974,7 +1972,7 @@ function editDiscountInfo($this) {
 }
 
 function getDiscountValue($this) {
-alert("here3");
+
     hideMessages();
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
     var discount_id = $('#add_discount_id').val();
@@ -2039,8 +2037,8 @@ alert("here3");
 
 }
 
-function changeDiscount1($this, type) {
-    
+function changeDiscount($this, type) {
+
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
     if (discount_type != "") {
