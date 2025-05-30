@@ -3005,7 +3005,7 @@ class FinanceReportController extends Controller
 
             // Percentage calculation
             $percentageArrived = $totalScheduled > 0 ? round(($totalArrived / $totalScheduled) * 100, 2) : 0;
-$percentageArrived = $percentageArrived .'%';
+            $percentageArrived = $percentageArrived .'%';
             // Result
             return view('admin.reports.treatments_report', get_defined_vars());
         }
