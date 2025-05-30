@@ -1723,7 +1723,7 @@ function editDiscountValue($this) {
 }
 
 function changeDiscount($this) {
-alert("here2");
+
     hideMessages();
 
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
@@ -2038,8 +2038,8 @@ alert("here3");
 
 }
 
-function changeDiscount($this, type) {
-    $("#edit_discount_type").val("").change();
+function changeDiscount1($this, type) {
+    
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
     if (discount_type != "") {
