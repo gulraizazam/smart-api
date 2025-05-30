@@ -138,7 +138,14 @@ var loadConvertedReport = function (that) {
     });
 };
 
-
+function hideShowCreatedBy()
+{
+    if($("#report_type").val()=="consultancy"){
+        $("#created_by").show();
+    }else{
+        $("#created_by").hide();
+    }
+}
 var loadStaffWiseArrivalReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
