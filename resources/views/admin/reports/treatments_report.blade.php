@@ -54,7 +54,7 @@
                             <tr class="">
                                 <td class="border-top bg-light">Arrival Ratio </td>
                                 <td class="border-top bg-light" style="text-align:right;">
-                                    {{$percentageArrived ?? '0.00%'}}
+                                    {{$percentageArrived .'%'. ?? '0.00%'}}
                                 </td>
                             </tr>
                             
