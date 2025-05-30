@@ -109,7 +109,7 @@ $(document).ready(function () {
         } else if (currentVal == 'week') {
             initCentreWiseArrival('week', 'centre');
         } else {
-            initCentreWiseArrival('today', 'centre');
+            initCentreWiseArrival('yesterday', 'centre');
         }
     });
 

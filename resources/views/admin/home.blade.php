@@ -879,7 +879,7 @@
                 }
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    initCentreWiseArrival('today', '', 'firsttime');
+                    initCentreWiseArrival('yesterday', '', 'firsttime');
                     @if (!auth()->user()->hasRole('CSR'))
                     initDoctorWiseConversion('today', centre_id, 'firsttime');
                     @endif
