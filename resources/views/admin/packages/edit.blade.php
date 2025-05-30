@@ -119,7 +119,7 @@
 
                         <div class="fv-row col-md-4 mt-5" id="select_edit_discount_type">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <select id="edit_discount_type" onchange="changeDiscount($(this),'edit');" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                            <select id="edit_discount_type" onchange="changeDiscount1($(this),'edit');" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
                                 <option value="">Select Discount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
