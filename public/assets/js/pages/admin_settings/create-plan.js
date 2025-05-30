@@ -1659,7 +1659,7 @@ function getDiscountInfo($this) {
 function editDiscountValue($this) {
     //inputSpinner(true, 'EditPackage')
     hideMessages();
-
+    alert($('#edit_discount_type').val());
     if ($("#edit_discount_value_1").val() < 0) {
         $("#edit_discount_value_1").val('');
     } else {
