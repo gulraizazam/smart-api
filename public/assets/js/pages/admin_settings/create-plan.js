@@ -2039,7 +2039,7 @@ alert("here3");
 }
 
 function changeDiscount($this, type) {
-alert("here4");
+    $("#edit_discount_type").val("").change();
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
     if (discount_type != "") {
