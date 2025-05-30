@@ -40,7 +40,7 @@
                                         <div class="form-group col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="report_type" name="report_type">
+                                            <select class="form-control select2" id="report_type" name="report_type" onchange="hideShowCreatedBy()">
                                                <option value="consultancy">Consultancy</option>
                                                <option value="treatment">Treatment</option>
                                             </select>
@@ -63,7 +63,7 @@
                                                 {!! Form::text('date_range', null, ['id' => 'date_range_arrival', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="users" >
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="created_by" >
                                            {!! Form::label('created_by', 'Created By', ['class' => 'control-label']) !!}
                                            <select class="form-control select2" id="created_by" name="created_by">
                                                <option value="">All</option>
