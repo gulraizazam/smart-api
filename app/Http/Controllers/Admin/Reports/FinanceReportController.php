@@ -2983,7 +2983,30 @@ class FinanceReportController extends Controller
 
             return view('admin.reports.staff_wise_arrived', get_defined_vars());
         }else{
-            dd("here");
+            $query = Appointments::query()
+                ->where('appointment_type_id', 2)
+                ->whereIn('location_id', $locations);
+
+            // Apply date filter
+            if ($start_date && $end_date) {
+                $query->whereBetween('scheduled_date', [$start_date, $end_date]);
+            }
+
+            // Clone the base query to use it multiple times
+            $scheduledAppointmentsQuery = clone $query;
+            $arrivedAppointmentsQuery = clone $query;
+
+            // Total scheduled appointments
+            $totalScheduled = $scheduledAppointmentsQuery->count();
+
+            // Total arrived appointments (status_id = 2)
+            $totalArrived = $arrivedAppointmentsQuery->where('appointment_status_id', 2)->count();
+
+            // Percentage calculation
+            $percentageArrived = $totalScheduled > 0 ? round(($totalArrived / $totalScheduled) * 100, 2) : 0;
+
+            // Result
+            return view('admin.reports.treatments_report', get_defined_vars());
         }
         
     }
