@@ -2037,7 +2037,7 @@ function getDiscountValue($this) {
 
 }
 
-function changeDiscount($this, type) {
+function changeDiscount1($this, type) {
 
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
