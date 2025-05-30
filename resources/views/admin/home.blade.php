@@ -748,7 +748,7 @@
                                                 {{-- @if (Auth::user()->hasRole('Administrator') ||
                                                 Auth::user()->hasRole('Super-Admin') ||
                                                 Auth::user()->hasRole('Head of Operations') ||
-                                                Auth::user()->hasRole('Finance'))
+                                                Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                 <a class="btn form-control btndropdown btn_Report doctorwisefeedback" href="javascript:;"
                                                     data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false" data-id="all">
                                                     All Centres
@@ -767,7 +767,7 @@
                                                     @if (Auth::user()->hasRole('Administrator') ||
                                                     Auth::user()->hasRole('Super-Admin') ||
                                                     Auth::user()->hasRole('Head of Operations') ||
-                                                    Auth::user()->hasRole('Finance'))
+                                                    Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                     <option value="all" data-period="thismonth" {{-- onclick="changeCenterDoct('thismonth', 'all')" --}}>
                                                         {{-- <a class="dropdown-item doctor_wise_feedback_centre_id" data-id="all"></a> --}}
                                                         All
