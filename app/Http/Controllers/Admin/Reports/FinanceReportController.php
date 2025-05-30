@@ -2935,6 +2935,7 @@ class FinanceReportController extends Controller
     public function staffWiseArrivalReport(Request $request)
     {
         $where = [];
+        $reportType = $request->report_type;
         if (isset($request->date_range) && $request->date_range) {
             $date_range = explode(' - ', $request->date_range);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -2943,6 +2944,7 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
+        
         $locations = $request->location_id == null ? ACL::getUserCentres() : [$request->location_id];
 
         if ($request->created_by && $request->created_by != null) {
@@ -2950,8 +2952,8 @@ class FinanceReportController extends Controller
         }
         $records = [];
         $records['data'] = [];
-
-        $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
+        if($reportType ='consultancy'){
+$fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
         if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services') || Gate::allows('appointments_consultancy')) {
             $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
         }
@@ -2979,6 +2981,10 @@ class FinanceReportController extends Controller
         $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
 
         return view('admin.reports.staff_wise_arrived', get_defined_vars());
+        }else{
+            dd("here");
+        }
+        
     }
 
     public function loadIncentiveReport(Request $request)
