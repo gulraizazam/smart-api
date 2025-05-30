@@ -23,7 +23,7 @@
                 <div class="col-md-6">&nbsp;</div>
             </div>
             <div class="pt-4 border-top  all-sections section-states">
-                @if(isset($Appointments) && count($Appointments) > 0 )
+               
                 <div class="col-md-12 mb-3">
                     <h3 class="">{{$user ? $user : $centre}}</h3>
                     <table class="table border">
