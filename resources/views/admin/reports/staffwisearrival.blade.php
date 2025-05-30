@@ -37,7 +37,7 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                        <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="report_type" name="report_type">
@@ -46,7 +46,7 @@
                                             </select>
                                             <span id="location_id_handler"></span>
                                         </div>
-                                        <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="location_id" name="service_id">
