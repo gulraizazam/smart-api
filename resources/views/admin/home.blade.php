@@ -537,8 +537,8 @@
                                     <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="center_wise_arrival" class="form-control" name="type">
-                                                <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
-                                                </option>
+                                                <!-- <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
+                                                </option> -->
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
@@ -553,8 +553,8 @@
                                     <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="initCentreWiseArrival" class="form-control" name="type">
-                                                <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
-                                                </option>
+                                                <!-- <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today
+                                                </option> -->
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
