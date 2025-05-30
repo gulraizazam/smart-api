@@ -34,7 +34,7 @@
                             </tr>
                             <tr class="">
                                 <td class="border-top bg-light">Total Arrived Treatments</td>
-                                <td class="border-top bg-light" style="text-align:right;">{{totalArrived ?? 0}}</td>
+                                <td class="border-top bg-light" style="text-align:right;">{{$totalArrived ?? 0}}</td>
                             </tr>
                            
                             <!-- <tr class="">
