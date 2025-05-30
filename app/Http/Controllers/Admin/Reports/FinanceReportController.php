@@ -2936,6 +2936,7 @@ class FinanceReportController extends Controller
     {
         $where = [];
         $reportType = $request->report_type;
+        dd( $reportType);
         if (isset($request->date_range) && $request->date_range) {
             $date_range = explode(' - ', $request->date_range);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -2953,34 +2954,34 @@ class FinanceReportController extends Controller
         $records = [];
         $records['data'] = [];
         if($reportType ='consultancy'){
-$fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
-        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services') || Gate::allows('appointments_consultancy')) {
-            $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
-        }
-        if (count($where)) {
-            $resultQuery->where($where);
-        }
-        if ($request->created_by == null) {
-            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
-                ->whereIn('centre_id', $locations)
+            $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
+            if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services') || Gate::allows('appointments_consultancy')) {
+                $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
+            }
+            if (count($where)) {
+                $resultQuery->where($where);
+            }
+            if ($request->created_by == null) {
+                $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+                    ->whereIn('centre_id', $locations)
+                    ->whereBetween('scheduled_date', [$start_date, $end_date])
+                    ->count();
+            } else {
+                $walkin_customers = 0;
+            }
+
+            $Appointments = $resultQuery->with(['user', 'appointment' => function ($q) {
+                $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+                    ->orderBy('appointments.created_at', 'DESC');
+            }])
                 ->whereBetween('scheduled_date', [$start_date, $end_date])
-                ->count();
-        } else {
-            $walkin_customers = 0;
-        }
+                ->get();
 
-        $Appointments = $resultQuery->with(['user', 'appointment' => function ($q) {
-            $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
-                ->orderBy('appointments.created_at', 'DESC');
-        }])
-            ->whereBetween('scheduled_date', [$start_date, $end_date])
-            ->get();
+            $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
+            $user = User::where(['id' => $request->created_by])->first()->name ?? '';
+            $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
 
-        $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
-        $user = User::where(['id' => $request->created_by])->first()->name ?? '';
-        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
-
-        return view('admin.reports.staff_wise_arrived', get_defined_vars());
+            return view('admin.reports.staff_wise_arrived', get_defined_vars());
         }else{
             dd("here");
         }
