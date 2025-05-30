@@ -2983,6 +2983,7 @@ class FinanceReportController extends Controller
 
             return view('admin.reports.staff_wise_arrived', get_defined_vars());
         }else{
+            $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
             $query = Appointments::query()
                 ->where('appointment_type_id', 2)
                 ->whereIn('location_id', $locations);
