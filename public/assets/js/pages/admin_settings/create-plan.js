@@ -1770,7 +1770,7 @@ function changeDiscount($this) {
 function editServiceDiscount($this, type = '') {
     $('#service_id').html('');
     hideMessages();
-
+    $("#edit_discount_id").val('').change();
     var service_id = $this.val();
     var location_id = $('#edit_location_id').val();
     var patient_id = $('#edit_parent_id').val();
