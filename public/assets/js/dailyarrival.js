@@ -151,6 +151,7 @@ var loadStaffWiseArrivalReport = function (that) {
         url: route('admin.reports.staff_wise_arrival_report'),
         type: "POST",
         data: {
+            report_type:$("#report_type").val(),
             location_id: $('#location_id').val(),
             doctor_id: $('#doctors_list').val(),
             date_range: $('#date_range_arrival').val(),
