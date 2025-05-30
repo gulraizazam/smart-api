@@ -25,7 +25,7 @@
             <div class="pt-4 border-top  all-sections section-states">
                
                 <div class="col-md-12 mb-3">
-                    <h3 class="">{{$centre}}  {{'From ' . $start_date . 'To '. $end_date}}</h3>
+                    <h3 class="">{{$centre}}  {{'From ' . $start_date . ' To '. $end_date}}</h3>
                     <table class="table border">
                         <thead>
                             <tr class="">
