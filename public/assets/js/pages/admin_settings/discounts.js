@@ -321,6 +321,7 @@ function editRow(url) {
 }
 
 function setEditData(response) {
+    console.log('res',response);
     $('#tes_container').empty();
 
     try {
@@ -348,14 +349,7 @@ function setEditData(response) {
                     });
                 }
             });
-            let roles = response.data.roles;
-            let selectedRoles = response.data.selected_roles;
-            let roleOptions = '';
-
-            Object.entries(roles).forEach(([id, name]) => {
-                let selected = selectedRoles.includes(parseInt(id)) ? 'selected' : '';
-                roleOptions += `<option value="${id}" ${selected}>${name}</option>`;
-            });
+            
 
             $("#edit_user_roles").html(roleOptions).trigger("change");
             $("#edit_get_services").html(service_options);
@@ -398,7 +392,14 @@ function setEditData(response) {
         $("#edit_end").val(discount.end);
 
         $("#edit_active").prop("checked", discount.active);
+let roles = response.data.roles;
+            let selectedRoles = response.data.selected_roles;
+            let roleOptions = '';
 
+            Object.entries(roles).forEach(([id, name]) => {
+                let selected = selectedRoles.includes(parseInt(id)) ? 'selected' : '';
+                roleOptions += `<option value="${id}" ${selected}>${name}</option>`;
+            });
     } catch (error) {
         showException(error);
     }
