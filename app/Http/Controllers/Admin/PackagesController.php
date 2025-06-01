@@ -1145,7 +1145,10 @@ class PackagesController extends Controller
                         }
                     }
                 }
-                $discounts = Discounts::whereIn('id', $uniq_array)->where([
+                $userRoleIds = Auth::user()->roles->pluck('id')->toArray();
+                $discounts = Discounts::whereIn('id', $uniq_array)->whereHas('roles', function ($query) use ($userRoleIds) {
+                    $query->whereIn('roles.id', $userRoleIds);
+                })->where([
                     ['discount_type', '=', 'Treatment'],
                     ['active', '=', '1'],
                 ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
