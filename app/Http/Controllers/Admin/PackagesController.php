@@ -1114,11 +1114,18 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-
-            $discounts = Discounts::whereIn('id', $discountIds)->where([
-                ['discount_type', '=', 'Treatment'],
-                ['active', '=', '1'],
-            ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
+            $userRoleIds = Auth::user()->roles->pluck('id')->toArray();
+            $discounts = Discounts::whereIn('id', $discountIds)
+                ->whereHas('roles', function ($query) use ($userRoleIds) {
+                    $query->whereIn('roles.id', $userRoleIds);
+                })
+                ->where([
+                    ['discount_type', '=', 'Treatment'],
+                    ['active', '=', '1'],
+                ])
+                ->whereDate('start', '<=', $today)
+                ->whereDate('end', '>=', $today)
+                ->get();
         } else {
 
             if ($bundle && $bundle->apply_discount == '1') {
