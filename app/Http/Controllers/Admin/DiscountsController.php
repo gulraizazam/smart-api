@@ -19,6 +19,7 @@ use App\Helpers\Widgets\ServiceWidget;
 use Illuminate\Support\Facades\Config;
 use App\Helpers\Widgets\LocationsWidget;
 use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Role;
 
 class DiscountsController extends Controller
 {
@@ -56,16 +57,18 @@ class DiscountsController extends Controller
      */
     public function create()
     {
+        
         if (!Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         try {
-
+            $roles = Role::pluck('name', 'id')->toArray();
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'discount_types' => config('constants.discount_types'),
                 'discount_groups' => config('constants.discount_groups'),
                 'amount_types' => config('constants.amount_types'),
+                'roles'=>$roles
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -137,6 +140,8 @@ class DiscountsController extends Controller
             'type' => 'required',
             'start' => 'required',
             'end' => 'required',
+             'roles' => 'required|array',
+            'roles.*' => 'exists:roles,id',
         ]);
     }
     protected function verifyConfigurableFields(Request $request)
@@ -537,12 +542,18 @@ class DiscountsController extends Controller
                 }
                 $base_discount_services = BaseDiscountService::where(['discount_id' => $id])->get();
                 $get_discount_services = GetDiscountService::where(['discount_id' => $id])->get();
+                $roles = Role::pluck('name', 'id')->toArray();
+
+                // 🔹 Get selected role ids for this discount
+                $selected_role_ids = $discount->roles()->pluck('role_id')->toArray();
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'discount' => $Discount ?? $discount,
                     'locations' => $locations,
                     'services' => $Services,
                     'base_discount_services' => $base_discount_services,
                     'get_discount_services' => $get_discount_services,
+                    'roles' => $roles,
+                    'selected_roles' => $selected_role_ids,
                 ]);
             }
         } catch (\Exception $e) {

@@ -9,6 +9,7 @@ use App\HelperModule\ApiHelper;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
+use Spatie\Permission\Models\Role;
 
 class Discounts extends BaseModal
 {
@@ -65,7 +66,7 @@ class Discounts extends BaseModal
     {
 
         $record = self::create($data);
-
+        $record->roles()->sync($data['roles']);
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
         return $record;
@@ -376,5 +377,9 @@ class Discounts extends BaseModal
             ['active', '=', '1'],
             ['account_id', '=', $account_id],
         ])->get();
+    }
+    public function roles()
+    {
+        return $this->belongsToMany(Role::class, 'discount_role', 'discount_id', 'role_id');
     }
 }

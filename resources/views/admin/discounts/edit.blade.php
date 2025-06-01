@@ -116,7 +116,12 @@
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
                             <input type="text" id="edit_end" class="form-control datatable-input" name="end">
                         </div>
-
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Roles <span class="text text-danger">*</span></label>
+                            <select id="edit_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple name="roles[]">
+                                <!-- options will be filled by JS -->
+                            </select>
+                        </div>
                         <span class="switch switch-icon mt-5">
                            <label for="edit_active" class="fw-bold fs-6">
                             <input id="edit_active" checked value="1" type="checkbox" name="active">

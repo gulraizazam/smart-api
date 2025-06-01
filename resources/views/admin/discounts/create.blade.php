@@ -91,7 +91,13 @@
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
                             <input type="text" id="add_end" class="form-control datatable-input" name="end">
                         </div>
+<div class="fv-row col-md-12 mt-5">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Roles <span class="text text-danger">*</span></label>
+                        <select id="add_user_roles" class="form-control form-control-solid mb-3 mb-lg-0 select2" multiple="multiple" name="roles[]">
 
+                        </select>
+                    </div>
+                    
                         <span class="switch switch-icon mt-5">
                            <label for="add_active" class="fw-bold fs-6">
                             <input id="add_active" value="1" type="checkbox" name="active">
