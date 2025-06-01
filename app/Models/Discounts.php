@@ -236,7 +236,7 @@ class Discounts extends BaseModal
         $record = Discounts::findOrFail($id);
 
         $record->update($data);
-
+        $record->roles()->sync($data['roles']);
         AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
 
         return $record;
