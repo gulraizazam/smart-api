@@ -348,6 +348,16 @@ function setEditData(response) {
                     });
                 }
             });
+            let roles = response.data.roles;
+            let selectedRoles = response.data.selected_roles;
+            let roleOptions = '';
+
+            Object.entries(roles).forEach(([id, name]) => {
+                let selected = selectedRoles.includes(parseInt(id)) ? 'selected' : '';
+                roleOptions += `<option value="${id}" ${selected}>${name}</option>`;
+            });
+
+            $("#edit_user_roles").html(roleOptions).trigger("change");
             $("#edit_get_services").html(service_options);
 
             Object.values(get_services).forEach(function(value, index) {
@@ -505,6 +515,13 @@ function createDiscount($route) {
         type: "GET",
         cache: false,
         success: function (response) {
+            let roles = response.data.roles;
+            let roleOptions = '';
+           Object.entries(roles).forEach(([id, name]) => {
+                roleOptions += `<option value="${id}">${name}</option>`;
+            });
+
+            $("#add_user_roles").html(roleOptions).trigger("change");
             let locations = response.data.locations;
             let location_options = '<option value="">Select Centre</option>';
             Object.values(locations).forEach(function(value, index) {
