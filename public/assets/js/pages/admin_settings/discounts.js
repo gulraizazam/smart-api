@@ -321,7 +321,7 @@ function editRow(url) {
 }
 
 function setEditData(response) {
-    console.log('res',response);
+   
     $('#tes_container').empty();
 
     try {
@@ -392,14 +392,17 @@ function setEditData(response) {
         $("#edit_end").val(discount.end);
 
         $("#edit_active").prop("checked", discount.active);
-let roles = response.data.roles;
-            let selectedRoles = response.data.selected_roles;
-            let roleOptions = '';
+        let roles = response.data.roles;
+let selectedRoles = response.data.selected_roles || []; // handle null/undefined
+let roleOptions = '';
 
-            Object.entries(roles).forEach(([id, name]) => {
-                let selected = selectedRoles.includes(parseInt(id)) ? 'selected' : '';
-                roleOptions += `<option value="${id}" ${selected}>${name}</option>`;
-            });
+// Always populate all roles
+Object.entries(roles).forEach(([id, name]) => {
+    let selected = selectedRoles.length > 0 && selectedRoles.includes(parseInt(id)) ? 'selected' : '';
+    roleOptions += `<option value="${id}" ${selected}>${name}</option>`;
+});
+
+$("#edit_user_roles").html(roleOptions).trigger("change");
     } catch (error) {
         showException(error);
     }
