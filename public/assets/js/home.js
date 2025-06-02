@@ -987,7 +987,7 @@ function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true)
         cache: false,
         data: {
             // 'period': period,
-            'period': $('#dr_wise_fed option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_fed option:selected').val(),
+            'period': $('#dr_wise_fed option:selected').val() == 'thismonth' ? 'thismonth' : $('#dr_wise_fed option:selected').val(),
             'centre_id': centre_id,
 
         },
