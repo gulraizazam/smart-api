@@ -289,7 +289,7 @@ class OrdersController extends Controller
                         return ApiHelper::apiResponse($this->error,'Quantity must be greater than 0', false);
                     }
                     $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
-                    dd($product_name);
+                    //dd($product_name);
                     $quantity_check = Stock::sumProductQuantity($product_id);
 
                     if ($product_name->quantity < $quantity) {
