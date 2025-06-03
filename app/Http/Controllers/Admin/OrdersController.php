@@ -288,6 +288,19 @@ class OrdersController extends Controller
                     if( $quantity <= 0){
                         return ApiHelper::apiResponse($this->error,'Quantity must be greater than 0', false);
                     }
+                    $totalQuantitySubquery = \DB::table('inventories')
+                        ->selectRaw('product_id, location_id, SUM(quantity) as total_quantity')
+                        ->where('product_id', $product_id)
+                        ->where('location_id', $request->location_id)
+                        ->groupBy('product_id', 'location_id');
+
+                    $soldQuantitySubquery = \DB::table('order_details')
+                        ->join('orders', 'orders.id', '=', 'order_details.order_id')
+                        ->selectRaw('order_details.product_id, orders.location_id, SUM(order_details.quantity) as sold_quantity')
+                        ->where('orders.location_id', $request->location_id)
+                        ->where('order_details.product_id', $product_id)
+                        ->groupBy('order_details.product_id', 'orders.location_id');
+                    dd($totalQuantitySubquery, $soldQuantitySubquery);
                     $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
                     //dd($product_name);
                     $quantity_check = Stock::sumProductQuantity($product_id);
