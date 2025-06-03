@@ -99,7 +99,7 @@ class OrdersController extends Controller
 
             // Get Total Records
             $iTotalRecords = Order::getTotalRecords($request, Auth::User()->account_id, $apply_filter);
-           
+
             [$orderBy, $order] = getSortBy($request);
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
@@ -270,8 +270,8 @@ class OrdersController extends Controller
      */
     public function store(Request $request)
     {
-     
-      
+
+
         try {
             if (!Gate::allows('order_create')) {
                 return abort(401);
@@ -283,14 +283,15 @@ class OrdersController extends Controller
                 return ApiHelper::apiResponse($this->error, 'Please select any product', false);
             } else {
                 $products = array_combine($request['product_id'], $request['quantity']);
-               
+
                 foreach ($products as $product_id => $quantity) {
                     if( $quantity <= 0){
                         return ApiHelper::apiResponse($this->error,'Quantity must be greater than 0', false);
                     }
                     $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
+                    dd($product_name);
                     $quantity_check = Stock::sumProductQuantity($product_id);
-                  
+
                     if ($product_name->quantity < $quantity) {
                         return ApiHelper::apiResponse($this->error, $product_name->name . ' quantity is out of stock', false);
                     }
@@ -311,8 +312,8 @@ class OrdersController extends Controller
                     $userPhone =$request->phone;
                     $this->PlanCashReceived_SMS($userPhone ,$request->grand_total,$order);
                 }
-                
-               
+
+
                 if (OrderDetail::createRecord($request, Auth::User()->account_id, $order->id)) {
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.', true, $order->id);
@@ -337,7 +338,7 @@ class OrdersController extends Controller
             ];
         }
 
-        
+
 
         $preparedText = self::prepareSMSContent($SMSTemplate->content,$phone,$total,$order);
 
@@ -374,8 +375,8 @@ class OrdersController extends Controller
             $SMSLog['mask'] = $SMSObj['from'];
         }
         SMSLogs::create($SMSLog);
-        
-       
+
+
         // SEND SMS for Appointment Booked End
         return $response;
     }
@@ -452,7 +453,7 @@ class OrdersController extends Controller
 
     public function orderRefund($id, Request $request)
     {
-      
+
         $check_refund = Order::where('id',$id)->first();
         if($check_refund->is_refunded==1){
             return ApiHelper::apiResponse($this->success, 'This Order is already refunded!', false);
@@ -465,7 +466,7 @@ class OrdersController extends Controller
                 return ApiHelper::apiResponse($this->error, 'You do not have refunded any product.', false);
             }
             $order_refund = OrderRefund::refund($id, $request);
-         
+
             if ($order_refund) {
                 OrderRefundDetail::refund($check_refund->location_id,$id, $order_refund->id, $request, Auth::User()->account_id);
 
@@ -522,9 +523,9 @@ class OrdersController extends Controller
                 'has_active_membership' => false
             ]);
         }
-        
 
-       
+
+
     }
     public function invoicePdf($id, $download = null)
     {
@@ -561,82 +562,82 @@ class OrdersController extends Controller
         $checkUsers = UserHasLocations::where('location_id', $request->location_id)
             ->pluck('user_id')
             ->toArray();
-    
+
         $doctors = DoctorHasLocations::where('location_id', $request->location_id)
             ->pluck('user_id')
             ->toArray();
-    
+
         // Fetch users based on user types and active status
         $users = User::whereIn('user_type_id', [2, 5])
             ->where('active', 1)
             ->whereIn('id', $checkUsers)
             ->pluck('name', 'id')
             ->toArray();
-    
+
         // Fetch doctor names and IDs
         $doctorUsers = User::whereIn('id', $doctors)
             ->where('active',1)
             ->pluck('name', 'id')
             ->toArray();
-    
+
         // Merge both arrays while preserving user IDs as keys
         $finalUsers = $users + $doctorUsers;
-    
+
         return response()->json(['users' => $finalUsers]);
     }
     public function getDoctors(Request $request)
     {
         $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
-    
+
         // Fetch active doctors as an associative array
         $users = User::whereIn('id', $doctors)
             ->where('active', 1)
             ->pluck('name', 'id') // Preserve user IDs
             ->toArray();
-    
+
         // Ensure 'from_id' is an array
         $locationIds = is_array($request->location_id) ? $request->location_id : [$request->location_id];
-    
+
         // Fetch FDM users by getting the user_ids associated with the center (location_id)
         $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
-    
+
         // Fetch the 'FDM' role and get its user ids
         $findRole = DB::table('roles')->where('name', 'FDM')->first();
         $roleId = $findRole->id;
-    
+
         // Get users who have the FDM role
         $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-    
+
         // Get the intersection of users who are both FDM and belong to the center
         $fdmUsers = array_intersect($findFDM, $roleHasUser);
-    
+
         // Fetch FDM user details (id and name) from the users table
         $FDMUsers = User::whereIn('id', $fdmUsers)
             ->pluck('name', 'id') // Preserve user IDs
             ->toArray();
-    
+
         // Merge the arrays while preserving keys
         $combinedUsers = $users + $FDMUsers;
-       
+
         return response()->json(['users'=>$combinedUsers]);
     }
     public function getCentreDoctors(Request $request)
     {
         $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
-    
+
         // Fetch active doctors as an associative array
         $users = User::whereIn('id', $doctors)
             ->where('active', 1)
             ->pluck('name', 'id') // Preserve user IDs
             ->toArray();
-    
+
         // Ensure 'from_id' is an array
         $locationIds = is_array($request->location_id) ? $request->location_id : [$request->location_id];
-    
-       
+
+
         // Merge the arrays while preserving keys
         $combinedUsers = $users;
-       
+
         return response()->json(['users'=>$combinedUsers]);
     }
 }
