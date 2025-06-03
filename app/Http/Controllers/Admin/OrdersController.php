@@ -300,7 +300,15 @@ class OrdersController extends Controller
                         ->where('orders.location_id', $request->location_id)
                         ->where('order_details.product_id', $product_id)
                         ->groupBy('order_details.product_id', 'orders.location_id');
-                    dd($totalQuantitySubquery, $soldQuantitySubquery);
+                    $result = \DB::table(\DB::raw("({$totalQuantitySubquery->toSql()}) as total"))
+                    ->mergeBindings($totalQuantitySubquery) // Needed to pass bindings from subquery
+                    ->leftJoinSub($soldQuantitySubquery, 'sold', function ($join) {
+                        $join->on('total.product_id', '=', 'sold.product_id')
+                            ->on('total.location_id', '=', 'sold.location_id');
+                    })
+                    ->selectRaw('total.product_id, total.location_id, total.total_quantity - COALESCE(sold.sold_quantity, 0) as available_quantity')
+                    ->first();
+                    dd($result);
                     $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
                     //dd($product_name);
                     $quantity_check = Stock::sumProductQuantity($product_id);
