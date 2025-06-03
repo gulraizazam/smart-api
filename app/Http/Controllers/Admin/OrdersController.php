@@ -302,12 +302,12 @@ class OrdersController extends Controller
 
                 // Available quantity
                     $availableQuantity = $totalQuantity - $soldQuantity;
-                    dd($availableQuantity);
+
                     $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
                     //dd($product_name);
                     $quantity_check = Stock::sumProductQuantity($product_id);
 
-                    if ($product_name->quantity < $quantity) {
+                    if ($availableQuantity < $quantity) {
                         return ApiHelper::apiResponse($this->error, $product_name->name . ' quantity is out of stock', false);
                     }
                 }
