@@ -288,27 +288,21 @@ class OrdersController extends Controller
                     if( $quantity <= 0){
                         return ApiHelper::apiResponse($this->error,'Quantity must be greater than 0', false);
                     }
-                    $totalQuantitySubquery = \DB::table('inventories')
-                        ->selectRaw('product_id, location_id, SUM(quantity) as total_quantity')
-                        ->where('product_id', $product_id)
-                        ->where('location_id', $request->location_id)
-                        ->groupBy('product_id', 'location_id');
+                    $totalQuantity = \DB::table('inventories')
+                    ->where('product_id', $product_id)
+                    ->where('location_id', $request->location_id)
+                    ->sum('quantity');
 
-                    $soldQuantitySubquery = \DB::table('order_details')
-                        ->join('orders', 'orders.id', '=', 'order_details.order_id')
-                        ->selectRaw('order_details.product_id, orders.location_id, SUM(order_details.quantity) as sold_quantity')
-                        ->where('orders.location_id', $request->location_id)
-                        ->where('order_details.product_id', $product_id)
-                        ->groupBy('order_details.product_id', 'orders.location_id');
-                    $result = \DB::table(\DB::raw("({$totalQuantitySubquery->toSql()}) as total"))
-                    ->mergeBindings($totalQuantitySubquery) // Needed to pass bindings from subquery
-                    ->leftJoinSub($soldQuantitySubquery, 'sold', function ($join) {
-                        $join->on('total.product_id', '=', 'sold.product_id')
-                            ->on('total.location_id', '=', 'sold.location_id');
-                    })
-                    ->selectRaw('total.product_id, total.location_id, total.total_quantity - COALESCE(sold.sold_quantity, 0) as available_quantity')
-                    ->first();
-                    dd($result);
+                // Sold quantity from orders
+                $soldQuantity = \DB::table('order_details')
+                    ->join('orders', 'orders.id', '=', 'order_details.order_id')
+                    ->where('order_details.product_id', $product_id)
+                    ->where('orders.location_id', $request->location_id)
+                    ->sum('order_details.quantity');
+
+                // Available quantity
+                    $availableQuantity = $totalQuantity - $soldQuantity;
+                    dd($availableQuantity);
                     $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
                     //dd($product_name);
                     $quantity_check = Stock::sumProductQuantity($product_id);
