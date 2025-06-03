@@ -180,6 +180,7 @@ class InventoryReportsController extends Controller
             // Fetch orders based on doctor IDs and the date range (if provided)
             $ordersQuery = Order::with(['doctor', 'orderDetail.product'])
                 ->whereIn('prescribed_by', $doctorIds)
+                ->where('location_id', $locationId)
                 ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                     $query->whereBetween('orders.created_at', [$startDate, $endDate]);
                 });
