@@ -2357,6 +2357,7 @@ class HomeController extends Controller
                 'appointment_log' => [],
                 'unauthorized' => true,
             ];
+            
         }
 
         $centres = ACL::getUserCentres();
