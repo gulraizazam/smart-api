@@ -2368,7 +2368,7 @@ class HomeController extends Controller
         ])->whereIn('location', $center_names)
             ->whereIn('action', ['received', 'consumed'])
             ->whereDate('created_at', Carbon::now()
-                ->format('Y-m-d'))->take(20)->latest()->get();
+                ->format('Y-m-d'))->latest()->get();
 
         return $data['recent_activities'] = [
             'finance_log' => $activities,
