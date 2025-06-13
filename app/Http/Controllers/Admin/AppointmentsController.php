@@ -725,11 +725,10 @@ class AppointmentsController extends Controller
     private function getDefaultListing(Request $request)
 {
     // Enable query log for debugging
-    
+    DB::connection()->enableQueryLog();
     
     // Get filters
     $filters = getFilters($request->all());
-    $filename = 'appointments';
     
     // Get base query with access control
     $query = $this->getBaseQuery();
@@ -738,11 +737,13 @@ class AppointmentsController extends Controller
     $query = $this->applyFilters($query, $filters);
     
     // Get count (optimized)
-    $i_total_records = $query->count();
-    [$i_display_length, $i_display_start, $pages, $page] = getPaginationElement($request, $i_total_records);
+    $totalRecords = $query->count();
+    
+    // Get pagination parameters
+    [$perPage, $currentPage, $pages] = $this->getPaginationParams($request, $totalRecords);
     
     // Get paginated results with eager loading
-    $Appointments = $query->with([
+    $appointments = $query->with([
             'doctor:id,name',
             'city:id,name',
             'location:id,name',
@@ -755,17 +756,173 @@ class AppointmentsController extends Controller
             'users.name as user_name',
             'users.phone'
         ])
-        ->simplePaginate($i_display_length);
+        ->simplePaginate($perPage, ['*'], 'page', $currentPage);
     
     // Prepare response
-    $records = $this->prepareResponse($Appointments, $i_total_records, $page, $pages, $i_display_length);
+    $response = $this->prepareResponse($appointments, $totalRecords, $currentPage, $pages, $perPage);
+    
+    // Handle delete filter if present
+    if (hasFilter($filters, 'delete')) {
+        $this->handleDeleteFilter($filters['delete']);
+        $response['status'] = true;
+        $response['message'] = 'Records deleted successfully';
+    }
     
     // Log queries for optimization
     Log::debug(DB::getQueryLog());
     
-    return ApiHelper::apiDataTable($records);
+    return ApiHelper::apiDataTable($response);
 }
 
+private function getPaginationParams($request, $totalRecords)
+{
+    $perPage = $request->input('length', 10);
+    $currentPage = floor($request->input('start', 0) / $perPage) + 1;
+    $pages = ceil($totalRecords / $perPage);
+    
+    return [$perPage, $currentPage, $pages];
+}
+
+private function handleDeleteFilter($ids)
+{
+    $ids = explode(',', $ids);
+    Appointments::whereIn('id', $ids)->delete();
+}
+private function prepareResponse($appointments, $totalRecords, $page, $pages, $perPage)
+{
+    $records = [
+        'data' => [],
+        'meta' => [
+            'field' => request('sort') ?: 'appointments.scheduled_date',
+            'page' => $page,
+            'pages' => $pages,
+            'perpage' => $perPage,
+            'total' => $totalRecords,
+            'sort' => request('order') ?: 'desc',
+        ],
+        'permissions' => $this->getAppointmentPermissions()
+    ];
+
+    // Cache these lookups to avoid repeated queries
+    $regions = Cache::remember('regions_'.Auth::id(), now()->addDay(), function() {
+        return Regions::getAllRecordsDictionary(Auth::User()->account_id);
+    });
+    
+    $users = Cache::remember('users_'.Auth::id(), now()->addDay(), function() {
+        return User::getAllRecords(Auth::User()->account_id)->getDictionary();
+    });
+    
+    $appointmentStatuses = Cache::remember('appt_statuses_'.Auth::id(), now()->addDay(), function() {
+        return AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
+    });
+    
+    $invoiceStatusPaid = Cache::remember('invoice_status_paid', now()->addDay(), function() {
+        return InvoiceStatuses::where('slug', 'paid')->first();
+    });
+
+    foreach ($appointments as $appointment) {
+        $invoice = Invoices::where([
+            ['appointment_id', $appointment->id],
+            ['invoice_status_id', $invoiceStatusPaid->id]
+        ])->first(['id']);
+
+        $records['data'][] = $this->formatAppointmentData(
+            $appointment, 
+            $regions, 
+            $users, 
+            $appointmentStatuses, 
+            $invoice
+        );
+    }
+
+    return $records;
+}
+private function formatAppointmentData($appointment, $regions, $users, $appointmentStatuses, $invoice)
+{
+    return [
+        'id' => $appointment->id,
+        'patient_id' => $appointment->patient_id,
+        'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
+        'name' => $appointment->patient_name ?? $appointment->user_name,
+        'phone' => Gate::allows('contact') ? $appointment->phone : '***********',
+        'scheduled_date' => $this->formatScheduledDate($appointment),
+        'doctor_id' => $appointment->doctor->name ?? 'N/A',
+        'doctorId' => $appointment->doctor_id ?? 0,
+        'region_id' => $regions[$appointment->region_id]->name ?? 'N/A',
+        'city_id' => $appointment->city->name ?? 'N/A',
+        'cityId' => $appointment->city_id ?? 0,
+        'location_id' => $appointment->location->name ?? 'N/A',
+        'locationId' => $appointment->location_id ?? 0,
+        'service_id' => $appointment->service->name ?? 'N/A',
+        'resource_id' => $appointment->resource_id ?? 0,
+        'appointment_type_id' => $appointment->appointment_type->name ?? 'N/A',
+        'appointment_type' => $appointment->appointment_type_id ?? 0,
+        'consultancy_type' => $this->getConsultancyType($appointment->consultancy_type),
+        'created_at' => $appointment->created_at->format('F j, Y h:i A'),
+        'created_by' => $users[$appointment->created_by]->name ?? 'N/A',
+        'converted_by' => $users[$appointment->converted_by]->name ?? 'N/A',
+        'updated_by' => $users[$appointment->updated_by]->name ?? 'N/A',
+        'appointment_status_id' => $this->getStatusName($appointment, $appointmentStatuses),
+        'appointment_status' => $appointment->appointment_status_id,
+        'invoice_id' => $invoice->id ?? 0,
+        'invoice' => $invoice ?? null,
+    ];
+}
+
+/**
+ * Gets appointment permissions
+ */
+private function getAppointmentPermissions()
+{
+    return [
+        'edit' => Gate::allows('appointments_edit'),
+        'consultancy' => Gate::allows('appointments_consultancy'),
+        'treatment' => Gate::allows('appointments_services'),
+        'delete' => Gate::allows('appointments_destroy'),
+        'active' => Gate::allows('appointments_active'),
+        'inactive' => Gate::allows('appointments_inactive'),
+        'create' => Gate::allows('appointments_create'),
+        'log' => Gate::allows('appointments_log'),
+        'status' => Gate::allows('appointments_appointment_status'),
+        'invoice' => Gate::allows('appointments_invoice'),
+        'invoice_display' => Gate::allows('appointments_invoice_display'),
+        'image_manage' => Gate::allows('appointments_image_manage'),
+        'measurement_manage' => Gate::allows('appointments_measurement_manage'),
+        'medical_form_manage' => Gate::allows('appointments_medical_form_manage'),
+        'plans_create' => Gate::allows('appointments_plans_create'),
+        'patient_card' => Gate::allows('appointments_patient_card'),
+        'contact' => Gate::allows('contact'),
+    ];
+}
+
+/**
+ * Helper methods for formatting
+ */
+private function formatScheduledDate($appointment)
+{
+    return $appointment->scheduled_date 
+        ? Carbon::parse($appointment->scheduled_date)->format('M j, Y') . ' at ' . 
+          Carbon::parse($appointment->scheduled_time)->format('h:i A')
+        : '-';
+}
+
+private function getConsultancyType($type)
+{
+    return match($type) {
+        'in_person' => 'In Person',
+        'virtual' => 'Virtual',
+        default => '',
+    };
+}
+
+private function getStatusName($appointment, $statuses)
+{
+    if (!$appointment->appointment_status_id) return '';
+    
+    return $appointment->appointment_status->parent_id 
+        ? $statuses[$appointment->appointment_status->parent_id]->name
+        : $appointment->appointment_status->name;
+}
     private function getDefaultTreatmentListing(Request $request)
     {
         $where = [];
