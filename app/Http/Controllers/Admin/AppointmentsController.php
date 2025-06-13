@@ -917,7 +917,7 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                dd($appointment);
+                
                 $invoice = Invoices::where([
                     ['appointment_id', '=', $appointment->id],
                     ['invoice_status_id', '=', $invoice_status->id],
@@ -934,7 +934,7 @@ class AppointmentsController extends Controller
                     $consultancy_type = '';
                 }
                 if(Gate::allows('contact')){
-                    $phoneNumber = $appointment->phone;
+                    $phoneNumber = $appointment->patient->phone;
                 }else{
                     $phoneNumber ='***********';
                 }
