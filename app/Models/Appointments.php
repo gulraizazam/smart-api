@@ -264,6 +264,10 @@ class Appointments extends Model
     {
         return $this->hasMany(Invoices::class, 'appointment_id');
     }
+    public function invoice() // clearer
+{
+    return $this->hasOne(Invoices::class, 'appointment_id');
+}
 
     /**
      * Prepare SMS Contnet for Delivery
