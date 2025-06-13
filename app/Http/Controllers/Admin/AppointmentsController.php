@@ -1173,13 +1173,13 @@ class AppointmentsController extends Controller
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $i_total_records);
         $records = [];
         $records['data'] = [];
-        
+         $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         if (Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $treatmentslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
+            $resultQuery = Appointments::with(['patient','hasInvoice' => function ($q) use ($invoice_status) {
+                $q->where('invoice_status_id', $invoice_status->id);
+            }])->where('users.user_type_id', '=', config('constants.patient_id'))
+            ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
+                
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         
@@ -1229,21 +1229,14 @@ class AppointmentsController extends Controller
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-            $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
+           
             // Default Un-scheduled Appointment Status
             $unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id, ['id']);
             $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly(Auth::User()->account_id);
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                $invoice = Invoices::where([
-                    ['appointment_id', '=', $appointment->app_id],
-                    ['invoice_status_id', '=', $invoice_status->id],
-                ])->first();
-                $invoicearray[] = $invoice;
-                if ($invoice) {
-                    $invoiceid = $invoice->id;
-                }
+                
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
@@ -1284,8 +1277,8 @@ class AppointmentsController extends Controller
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
-                    'invoice_id' => $invoiceid,
-                    'invoice' => $invoice,
+                    'invoice_id' => $appointment->hasInvoice->id ?? null,
+                    'invoice' => $appointment->hasInvoice ?? null,
                 ];
                 $index++;
             }
