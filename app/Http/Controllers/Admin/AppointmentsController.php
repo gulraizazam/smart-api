@@ -1175,7 +1175,7 @@ class AppointmentsController extends Controller
         $records['data'] = [];
          $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         if (Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::with(['patient','hasInvoice' => function ($q) use ($invoice_status) {
+            $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
                 $q->where('invoice_status_id', $invoice_status->id);
             }])
             ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
@@ -1277,8 +1277,8 @@ class AppointmentsController extends Controller
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
-                    'invoice_id' => $appointment->hasInvoice->id ?? null,
-                    'invoice' => $appointment->hasInvoice ?? null,
+                    'invoice_id' => $appointment->invoice->id ?? null,
+                    'invoice' => $appointment->invoice ?? null,
                 ];
                 $index++;
             }
