@@ -854,7 +854,13 @@ class AppointmentsController extends Controller
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::with([
             'patient',
-           
+            'doctor',
+            'city',
+            'location',
+            'service',
+            'appointment_type',
+            'appointment_status',
+            'appointment_status.parent',
             'hasInvoices', // 👈 eager load invoice
         ])
        
@@ -899,7 +905,11 @@ class AppointmentsController extends Controller
         }
         $Appointments = $count_query->select(
         'appointments.*',
-        
+        'appointments.name as patient_name',
+        'appointments.id as app_id',
+        'appointments.created_by',
+        'appointments.updated_by',
+        'appointments.created_at '
     )
     ->limit($i_display_length)
     ->offset($i_display_start)
@@ -917,7 +927,14 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                
+                $invoice = Invoices::where([
+                    ['appointment_id', '=', $appointment->app_id],
+                    ['invoice_status_id', '=', $invoice_status->id],
+                ])->first();
+                $invoicearray[] = $invoice;
+                if ($invoice) {
+                    $invoiceid = $invoice->id;
+                }
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
@@ -931,7 +948,7 @@ class AppointmentsController extends Controller
                     $phoneNumber ='***********';
                 }
                 $records['data'][$index] = [
-                    'id' => $appointment->id,
+                    'id' => $appointment->app_id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
@@ -958,10 +975,8 @@ class AppointmentsController extends Controller
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
-                   
-                    'invoice' => $appointment->hasInvoice ? [
-                        'id' => $appointment->hasInvoice->id,
-                    ] : null,
+                    'invoice_id' => $invoiceid,
+                    'invoice' => $invoice,
                 ];
                 $index++;
             }
