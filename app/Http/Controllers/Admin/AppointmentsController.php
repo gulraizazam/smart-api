@@ -76,6 +76,7 @@ use App\Helpers\Widgets\PlanAppointmentCalculation;
 use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
 use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
 use App\Models\MachineTypeHasServices;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class AppointmentsController extends Controller
