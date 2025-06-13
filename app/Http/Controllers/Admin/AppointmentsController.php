@@ -1175,7 +1175,7 @@ class AppointmentsController extends Controller
         $records['data'] = [];
          $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         if (Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
+            $resultQuery = Appointments::with(['patient','hasInvoice' => function ($q) use ($invoice_status) {
                 $q->where('invoice_status_id', $invoice_status->id);
             }])
             ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
@@ -1236,7 +1236,14 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                dd($appointment);
+                $invoice = Invoices::where([
+                    ['appointment_id', '=', $appointment->app_id],
+                    ['invoice_status_id', '=', $invoice_status->id],
+                ])->first();
+                $invoicearray[] = $invoice;
+                if ($invoice) {
+                    $invoiceid = $invoice->id;
+                }
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
@@ -1277,8 +1284,8 @@ class AppointmentsController extends Controller
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
-                    'invoice_id' => $appointment->invoice->id ?? null,
-                    'invoice' => $appointment->invoice ?? null,
+                    'invoice_id' => $invoiceid,
+                    'invoice' => $invoice,
                 ];
                 $index++;
             }
