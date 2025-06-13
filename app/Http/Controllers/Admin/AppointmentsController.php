@@ -854,13 +854,7 @@ class AppointmentsController extends Controller
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::with([
             'patient',
-            'doctor',
-            'city',
-            'location',
-            'service',
-            'appointment_type',
-            'appointment_status',
-            'appointment_status.parent',
+            
             'hasInvoices', // 👈 eager load invoice
         ])
        
