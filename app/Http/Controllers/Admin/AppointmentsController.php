@@ -917,7 +917,7 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                dd($appointment);
+                
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
@@ -931,7 +931,7 @@ class AppointmentsController extends Controller
                     $phoneNumber ='***********';
                 }
                 $records['data'][$index] = [
-                    'id' => $appointment->app_id,
+                    'id' => $appointment->id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
