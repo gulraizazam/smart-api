@@ -905,11 +905,7 @@ class AppointmentsController extends Controller
         }
         $Appointments = $count_query->select(
         'appointments.*',
-        'appointments.name as patient_name',
-        'appointments.id as app_id',
-        'appointments.created_by',
-        'appointments.updated_by',
-        'appointments.created_at '
+       
     )
     ->limit($i_display_length)
     ->offset($i_display_start)
