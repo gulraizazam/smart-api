@@ -1252,7 +1252,7 @@ class AppointmentsController extends Controller
                     $consultancy_type = '';
                 }
                 if(Gate::allows('contact')){
-                    $phoneNumber = $appointment->phone;
+                    $phoneNumber = $appointment->patient->phone;
                 }else{
                     $phoneNumber ='***********';
                 }
