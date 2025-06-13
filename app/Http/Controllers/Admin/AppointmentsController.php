@@ -1218,10 +1218,7 @@ class AppointmentsController extends Controller
         if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
             $orderBy = 'appointments.name';
         }
-        $Appointments = $resultQuery->select(
-        'appointments.*',
-       
-    )
+        $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy('appointments.created_at', 'DESC')
@@ -1229,7 +1226,7 @@ class AppointmentsController extends Controller
         $invoicearray = [];
         $records = $this->getFiltersData($records, $filename);
         if ($Appointments) {
-            $Regions = [];
+            $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
             $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
@@ -1255,12 +1252,12 @@ class AppointmentsController extends Controller
                     $consultancy_type = '';
                 }
                 if(Gate::allows('contact')){
-                    $phoneNumber = $appointment->patient;
+                    $phoneNumber = $appointment->phone;
                 }else{
                     $phoneNumber ='***********';
                 }
                 $records['data'][$index] = [
-                    'id' => $appointment->id,
+                    'id' => $appointment->app_id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
