@@ -110,15 +110,15 @@ class HomeController extends Controller
 
     public function getActivity(Request $request)
     {
-        $data = [];
-        $timeZone = 'Asia/Karachi';
-        $location_id = $this->getUserLocation();
-        [$start_date, $end_date] = $this->getDates($request);
-        $data = $this->recentActivities($data);
-        $data['location_id'] = auth()->id() == 1 ? [] : ACL::getUserCentres();
-        $data['start_date'] = $start_date;
-        $data['end_date'] = $end_date;
-        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+        $today = Carbon::today()->format('Y-m-d');
+
+        $data = [
+            'location_id' => auth()->id() == 1 ? [] : ACL::getUserCentres(),
+            'start_date' => $today,
+            'end_date' => $today,
+            'appointment_status_arrived' => config('constants.appointment_status_arrived'),
+            'recent_activities' => $this->recentActivities(),
+        ];
 
         return view('admin.activity', $data);
     }
@@ -2349,31 +2349,35 @@ class HomeController extends Controller
         return $data;
     }
 
-    private function recentActivities($data)
-    {
-        if (!Gate::allows('dashboard_recent_activities')) {
-            return $data['recent_activities'] = [
-                'finance_log' => [],
-                'appointment_log' => [],
-                'unauthorized' => true,
-            ];
-        }
-
-        $centres = ACL::getUserCentres();
-
-        $center_names = Locations::whereIn('id', $centres)->pluck('name')->toArray();
-        $activities = Activity::with([
-            'plan' => fn ($q) => $q->select('id', 'name')
-        ])->whereIn('location', $center_names)
-            ->whereIn('action', ['received', 'consumed'])
-            ->whereDate('created_at', Carbon::now()
-                ->format('Y-m-d'))->latest()->get();
-
-        return $data['recent_activities'] = [
-            'finance_log' => $activities,
+  private function recentActivities()
+{
+    if (!Gate::allows('dashboard_recent_activities')) {
+        return [
+            'finance_log' => [],
+            'appointment_log' => [],
+            'unauthorized' => true,
         ];
     }
 
+    $today = Carbon::today()->toDateString();
+
+    $centerNames = Locations::whereIn('id', ACL::getUserCentres())
+        ->pluck('name');
+
+    $activities = Activity::with([
+        'plan:id,name'  // eager load only required columns
+    ])
+    ->select('id', 'plan_id', 'location', 'action', 'created_at') // limit selected columns
+    ->whereIn('location', $centerNames)
+    ->whereIn('action', ['received', 'consumed'])
+    ->whereDate('created_at', $today)
+    ->latest()
+    ->get();
+
+    return [
+        'finance_log' => $activities,
+    ];
+}
     private function viewAppointmentLog()
     {
 
