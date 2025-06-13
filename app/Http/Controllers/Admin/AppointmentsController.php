@@ -854,13 +854,7 @@ class AppointmentsController extends Controller
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::with([
             'patient',
-            'doctor',
-            'city',
-            'location',
-            'service',
-            'appointment_type',
-            'appointment_status',
-            'appointment_status.parent',
+           
             'hasInvoices', // 👈 eager load invoice
         ])
        
@@ -905,11 +899,7 @@ class AppointmentsController extends Controller
         }
         $Appointments = $count_query->select(
         'appointments.*',
-        'appointments.name as patient_name',
-        'appointments.id as app_id',
-        'appointments.created_by as app_created_by',
-        'appointments.updated_by as app_updated_by',
-        'appointments.created_at as app_created_at'
+        
     )
     ->limit($i_display_length)
     ->offset($i_display_start)
