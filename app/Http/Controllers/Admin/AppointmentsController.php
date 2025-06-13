@@ -1177,7 +1177,7 @@ class AppointmentsController extends Controller
         if (Gate::allows('appointments_services')) {
             $resultQuery = Appointments::with(['patient','hasInvoice' => function ($q) use ($invoice_status) {
                 $q->where('invoice_status_id', $invoice_status->id);
-            }])->where('users.user_type_id', '=', config('constants.patient_id'))
+            }])
             ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
                 
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
