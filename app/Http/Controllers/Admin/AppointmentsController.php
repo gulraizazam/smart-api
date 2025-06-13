@@ -918,7 +918,7 @@ class AppointmentsController extends Controller
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
                 $invoice = Invoices::where([
-                    ['appointment_id', '=', $appointment->app_id],
+                    ['appointment_id', '=', $appointment->id],
                     ['invoice_status_id', '=', $invoice_status->id],
                 ])->first();
                 $invoicearray[] = $invoice;
