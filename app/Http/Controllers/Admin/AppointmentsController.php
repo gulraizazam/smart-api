@@ -1236,14 +1236,14 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                // $invoice = Invoices::where([
-                //     ['appointment_id', '=', $appointment->app_id],
-                //     ['invoice_status_id', '=', $invoice_status->id],
-                // ])->first();
-                // $invoicearray[] = $invoice;
-                // if ($invoice) {
-                //     $invoiceid = $invoice->id;
-                // }
+                $invoice = Invoices::where([
+                    ['appointment_id', '=', $appointment->app_id],
+                    ['invoice_status_id', '=', $invoice_status->id],
+                ])->first();
+                $invoicearray[] = $invoice;
+                if ($invoice) {
+                    $invoiceid = $invoice->id;
+                }
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
@@ -1284,8 +1284,8 @@ class AppointmentsController extends Controller
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
-                    'invoice_id' => 1,
-                    'invoice' => 1,
+                    'invoice_id' => $invoiceid,
+                    'invoice' => $invoice,
                 ];
                 $index++;
             }
