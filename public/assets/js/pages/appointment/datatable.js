@@ -381,7 +381,7 @@ let statusListener = function (appointmentStatusId) {
 }
 
 function actions(data) {
-console.log('ata',data);
+
     let id = data.id;
 
     let edit_url = route('admin.appointments.edit', { id: id });
@@ -391,7 +391,7 @@ console.log('ata',data);
 
     let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', { id: id, type: 'appointment' });
     let invoice_url = route('admin.appointments.invoicecreate', { id: id });
-    let invoice_display_url = route('admin.appointments.InvoiceDisplay', { id: data.invoice.id });
+    let invoice_display_url = route('admin.appointments.InvoiceDisplay', { id: data.invoice_id });
     let image_url = route('admin.appointmentsimage.imageindex', { id: id });
     let measurements_url = route('admin.appointmentsmeasurement.measurements', { id: id });
     let medicals_url = route('admin.appointmentsmedical.medicals', { id: id });
