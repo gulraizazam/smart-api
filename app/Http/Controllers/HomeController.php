@@ -2374,7 +2374,7 @@ class HomeController extends Controller
     ->get();
 
     return [
-        'finance_log' => $activities,
+        'finance_log' => $activities ?? [],
     ];
 }
 
