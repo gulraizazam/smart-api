@@ -1175,7 +1175,7 @@ class AppointmentsController extends Controller
         $records['data'] = [];
          $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         if (Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::with(['patient','hasInvoice' => function ($q) use ($invoice_status) {
+            $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
                 $q->where('invoice_status_id', $invoice_status->id);
             }])
             ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
