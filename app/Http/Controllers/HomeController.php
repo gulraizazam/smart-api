@@ -109,20 +109,19 @@ class HomeController extends Controller
     }
 
     public function getActivity(Request $request)
-    {
-        $today = Carbon::today()->format('Y-m-d');
+{
+    $today = Carbon::today()->format('Y-m-d');
 
-        $data = [
-            'location_id' => auth()->id() == 1 ? [] : ACL::getUserCentres(),
-            'start_date' => $today,
-            'end_date' => $today,
-            'appointment_status_arrived' => config('constants.appointment_status_arrived'),
-            'recent_activities' => $this->recentActivities(),
-        ];
+    $data = [
+        'location_id' => auth()->id() == 1 ? [] : ACL::getUserCentres(),
+        'start_date' => $today,
+        'end_date' => $today,
+        'appointment_status_arrived' => config('constants.appointment_status_arrived'),
+        'recent_activities' => $this->recentActivities(),
+    ];
 
-        return view('admin.activity', $data);
-    }
-
+    return view('admin.activity', $data);
+}
     public function datatable(Request $request)
     {
         if (!Gate::allows('dashboard_upcomings')) {
@@ -2349,7 +2348,7 @@ class HomeController extends Controller
         return $data;
     }
 
-  private function recentActivities()
+    private function recentActivities()
 {
     if (!Gate::allows('dashboard_recent_activities')) {
         return [
@@ -2378,6 +2377,7 @@ class HomeController extends Controller
         'finance_log' => $activities,
     ];
 }
+
     private function viewAppointmentLog()
     {
 
