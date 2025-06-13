@@ -1083,11 +1083,7 @@ class AppointmentsController extends Controller
             $where[] = [['city_id' => $filters['city_id']]];
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
-//        if (hasFilter($filters, 'phone')) {
-//            $phone = substr($filters['phone'], 1);
-//            $where[] = [['users.phone' => $phone]];
-//            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
-//        }
+
         if (hasFilter($filters, 'service_id')) {
             $service_id = GeneralFunctions::getServiceId($filters['service_id']);
             $service_check = Services::find($service_id);
@@ -1129,16 +1125,9 @@ class AppointmentsController extends Controller
             $where[] = ['appointments.created_at', '<=', $end_date_time];
             Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
         }
-        $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
+        
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
-        if (Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+        
         if (Gate::allows('appointments_services')) {
             $count_query = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
@@ -1147,24 +1136,8 @@ class AppointmentsController extends Controller
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (! Gate::allows('appointments_services') && ! Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where([
-                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-                ['appointments.appointment_type_id', '!=', $treatmentslug->id],
-            ])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+        
+        
         $count_query->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $count_query->where($where);
@@ -1200,14 +1173,7 @@ class AppointmentsController extends Controller
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $i_total_records);
         $records = [];
         $records['data'] = [];
-        if (Gate::allows('appointments_consultancy')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+        
         if (Gate::allows('appointments_services')) {
             $resultQuery = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
@@ -1216,24 +1182,8 @@ class AppointmentsController extends Controller
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (! Gate::allows('appointments_consultancy') && ! Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where([
-                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-                ['appointments.appointment_type_id', '!=', $treatmentslug->id],
-            ])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+        
+       
         $resultQuery->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $resultQuery->where($where);
@@ -1268,7 +1218,10 @@ class AppointmentsController extends Controller
         if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
             $orderBy = 'appointments.name';
         }
-        $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+        $Appointments = $resultQuery->select(
+        'appointments.*',
+       
+    )
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy('appointments.created_at', 'DESC')
@@ -1276,7 +1229,7 @@ class AppointmentsController extends Controller
         $invoicearray = [];
         $records = $this->getFiltersData($records, $filename);
         if ($Appointments) {
-            $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
+            $Regions = [];
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
             $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
@@ -1302,12 +1255,12 @@ class AppointmentsController extends Controller
                     $consultancy_type = '';
                 }
                 if(Gate::allows('contact')){
-                    $phoneNumber = $appointment->phone;
+                    $phoneNumber = $appointment->patient;
                 }else{
                     $phoneNumber ='***********';
                 }
                 $records['data'][$index] = [
-                    'id' => $appointment->app_id,
+                    'id' => $appointment->id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
