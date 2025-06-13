@@ -2348,35 +2348,30 @@ class HomeController extends Controller
         return $data;
     }
 
-    private function recentActivities()
-{
-    if (!Gate::allows('dashboard_recent_activities')) {
-        return [
-            'finance_log' => [],
-            'appointment_log' => [],
-            'unauthorized' => true,
+    private function recentActivities($data)
+    {
+        if (!Gate::allows('dashboard_recent_activities')) {
+            return $data['recent_activities'] = [
+                'finance_log' => [],
+                'appointment_log' => [],
+                'unauthorized' => true,
+            ];
+        }
+
+        $centres = ACL::getUserCentres();
+
+        $center_names = Locations::whereIn('id', $centres)->pluck('name')->toArray();
+        $activities = Activity::with([
+            'plan' => fn ($q) => $q->select('id', 'name')
+        ])->whereIn('location', $center_names)
+            ->whereIn('action', ['received', 'consumed'])
+            ->whereDate('created_at', Carbon::now()
+                ->format('Y-m-d'))->latest()->get();
+
+        return $data['recent_activities'] = [
+            'finance_log' => $activities,
         ];
     }
-
-    $today = Carbon::today()->toDateString();
-
-    $centerNames = Locations::whereIn('id', ACL::getUserCentres())
-        ->pluck('name');
-
-    $activities = Activity::with([
-        'plan:id,name'  // eager load only required columns
-    ])
-    ->select('id', 'plan_id', 'location', 'action', 'created_at') // limit selected columns
-    ->whereIn('location', $centerNames)
-    ->whereIn('action', ['received', 'consumed'])
-    ->whereDate('created_at', $today)
-    ->latest()
-    ->get();
-
-    return [
-        'finance_log' => $activities ?? [],
-    ];
-}
 
     private function viewAppointmentLog()
     {
