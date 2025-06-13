@@ -917,6 +917,7 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
+                dd($appointment);
                 $invoice = Invoices::where([
                     ['appointment_id', '=', $appointment->id],
                     ['invoice_status_id', '=', $invoice_status->id],
