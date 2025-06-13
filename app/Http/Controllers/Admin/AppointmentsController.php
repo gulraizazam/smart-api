@@ -959,7 +959,7 @@ class AppointmentsController extends Controller
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
                    
-                    'invoice' => $appointment->invoice,
+                    'invoice' => $appointment->hasInvoice,
                 ];
                 $index++;
             }
