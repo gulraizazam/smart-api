@@ -58,13 +58,14 @@ class PlanAppointmentCalculation
                 ['base_appointment_status_id', '=', $appointment_status?->id],
                 ['appointment_type_id', '=', $appointment_type?->id],
                 ['location_id', '=', $request?->location_id],
-            ])->orderBy('created_at', 'asc')->get();
+            ])->orderBy('created_at', 'desc')->get();
 
             // Making array for above data
             foreach ($appointment_info as $appointment) {
                 $appointmentArray_appointment[$appointment?->id] = [
                     'id' => $appointment?->id.'.'.'A',
                     'name' => $appointment?->service->name.' - '.Carbon::parse($appointment?->created_at)->format('F j,Y h:i A').' - '.$appointment->doctor->name,
+                    'doctor_id' => $appointment?->doctor_id
                 ];
                 $doctorids[] = $appointment?->doctor_id;
             }

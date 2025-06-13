@@ -13,9 +13,9 @@ class Bundles extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'price', 'services_price', 'type', 'start', 'end', 'apply_discount', 'total_services', 'active', 'tax_treatment_type_id', 'created_at', 'updated_at', 'account_id','bundle_type','base_service_session'];
+    protected $fillable = ['name', 'price', 'services_price', 'type', 'start', 'end', 'apply_discount', 'total_services', 'active', 'tax_treatment_type_id', 'created_at', 'updated_at', 'account_id', 'bundle_type', 'base_service_session'];
 
-    protected static $_fillable = ['name', 'price', 'services_price', 'type', 'start', 'end', 'apply_discount', 'total_services', 'active', 'tax_treatment_type_id','bundle_type'];
+    protected static $_fillable = ['name', 'price', 'services_price', 'type', 'start', 'end', 'apply_discount', 'total_services', 'active', 'tax_treatment_type_id', 'bundle_type'];
 
     protected $table = 'bundles';
 
@@ -78,7 +78,7 @@ class Bundles extends BaseModal
      */
     public static function getActiveSorted($bundleId = false, $get_all = false)
     {
-        if ($bundleId && ! is_array($bundleId)) {
+        if ($bundleId && !is_array($bundleId)) {
             $bundleId = [$bundleId];
         }
         if ($bundleId) {
@@ -93,7 +93,7 @@ class Bundles extends BaseModal
      */
     public static function getActiveOnly($bundleId = false)
     {
-        if ($bundleId && ! is_array($bundleId)) {
+        if ($bundleId && !is_array($bundleId)) {
             $bundleId = [$bundleId];
         }
         $query = self::where(['active' => 1]);
@@ -148,26 +148,26 @@ class Bundles extends BaseModal
                 return self::where($where)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
-                    ->orderBy('created_at','desc')
+                    ->orderBy('created_at', 'desc')
                     ->get();
             } else {
                 return self::where($where)
                     ->where('active', 1)
                     ->limit($iDisplayLength)
                     ->offset($iDisplayStart)
-                    ->orderBy('created_at','desc')
+                    ->orderBy('created_at', 'desc')
                     ->get();
             }
         } else {
             if (\Illuminate\Support\Facades\Gate::allows('view_inactive_packages')) {
                 return self::limit($iDisplayLength)
                     ->offset($iDisplayStart)
-                    ->orderBy('created_at','desc')
+                    ->orderBy('created_at', 'desc')
                     ->get();
             } else {
                 return self::where('active', 1)->limit($iDisplayLength)
                     ->offset($iDisplayStart)
-                    ->orderBy('created_at','desc')
+                    ->orderBy('created_at', 'desc')
                     ->get();
             }
         }
@@ -207,7 +207,7 @@ class Bundles extends BaseModal
             $where[] = [
                 'name',
                 'like',
-                '%'.$filters['name'].'%',
+                '%' . $filters['name'] . '%',
             ];
             Filters::put(Auth::User()->id, 'bundles', 'name', $filters['name']);
         } else {
@@ -218,7 +218,7 @@ class Bundles extends BaseModal
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::User()->id, 'bundles', 'name').'%',
+                        '%' . Filters::get(Auth::User()->id, 'bundles', 'name') . '%',
                     ];
                 }
             }
@@ -420,7 +420,9 @@ class Bundles extends BaseModal
                 $services[$key]['calculated_price'] = $services[$key]['service_price'];
             }
         } elseif ($services_price > $price) {
-            $ratio = (1 - round(($price / $services_price), 8));
+
+            $ratio = (1 - round((self::convertToInt($price) / self::convertToInt($services_price)), 8));
+
             foreach ($services as $key => $service) {
                 $services[$key]['calculated_price'] = round($services[$key]['service_price'] - ($services[$key]['service_price'] * $ratio), 2);
             }
@@ -433,6 +435,12 @@ class Bundles extends BaseModal
         }
 
         return $services;
+    }
+
+    public static function convertToInt($val)
+    {
+
+        return (int)(str_replace(',', '', $val));
     }
 
     /**
@@ -449,7 +457,7 @@ class Bundles extends BaseModal
         $data['account_id'] = $account_id;
         $data['type'] = 'multiple';
 
-        if (! isset($data['apply_discount'])) {
+        if (!isset($data['apply_discount'])) {
             $data['apply_discount'] = 0;
         } elseif ($data['apply_discount'] == '') {
             $data['apply_discount'] = 0;
@@ -513,21 +521,20 @@ class Bundles extends BaseModal
     }
     public static function createConfigurableRecord($request, $account_id)
     {
-       
+
         $data = $request->all();
-    
+
         $base_service_price = Services::whereId($data['base_service'])->first();
         if (is_array($data['services_name']) && count($data['services_name'])) {
             $data_pkg['total_services'] = count($data['services_name']) + 1;
             $data_pkg['services_price'] = 0.00;
-            foreach($data['services_name'] as $serv_id){
+            foreach ($data['services_name'] as $serv_id) {
                 $service_price = Services::find($serv_id);
                 $data_pkg['services_price'] += $service_price->price;
             }
-            
         }
         $total_base_services_price =  $base_service_price->price * (int)$data['sessions_buy'];
-        $total_services_price= $total_base_services_price+$data_pkg['services_price'];
+        $total_services_price = $total_base_services_price + $data_pkg['services_price'];
 
         $data_pkg['name'] = $data['name'];
         $data_pkg['services_price'] = $data_pkg['services_price'];
@@ -546,82 +553,82 @@ class Bundles extends BaseModal
         for ($i = 0; $i < $sessionCount; $i++) {
             BundleHasServices::createRecord([
                 'bundle_id' => $record->id,
-                'service_id' =>$data['base_service'],
-                'service_price' =>$base_service_price->price,
+                'service_id' => $data['base_service'],
+                'service_price' => $base_service_price->price,
                 'calculated_price' => $base_service_price->price,
                 'end_node' => 1,
-                'base_service'=>1
+                'base_service' => 1
             ], $record->id);
             BundleServicesPriceHistory::createRecord([
                 'bundle_id' => $record->id,
                 'bundle_price' => $record->price,
-                'service_id' =>$data['base_service'],
+                'service_id' => $data['base_service'],
                 //'service_price' => $data['service_price'][$key],
-                'service_price' =>$base_service_price->price,
+                'service_price' => $base_service_price->price,
                 'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
                 'created_by' => Auth::User()->id,
                 'updated_by' => Auth::User()->id,
             ], 1);
             $package_total_price += $base_service_price->price;
-            $package_services_price+= $base_service_price->price;
+            $package_services_price += $base_service_price->price;
         }
         $new_pkg_service_price = $package_services_price;
         //log request for Create for Audit Trail
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
         $sessions = $data['sessions'];
-        $bulk_record=[];
-        foreach($sessions as $key => $value) {
-           
+        $bulk_record = [];
+        foreach ($sessions as $key => $value) {
+
             $temp_array = [
                 'session' => $value,
-                'service_name' =>$data['services_name'][$key],
-                'discount_amount' => isset($data['configurable_amount'][$key]) ?$data['configurable_amount'][$key]: 0,
-                'discount_type'=>$data['disc_type'][$key],
+                'service_name' => $data['services_name'][$key],
+                'discount_amount' => isset($data['configurable_amount'][$key]) ? $data['configurable_amount'][$key] : 0,
+                'discount_type' => $data['disc_type'][$key],
             ];
             array_push($bulk_record, $temp_array);
         }
-      
+
         foreach ($bulk_record as $key => $session) {
-           
+
             for ($i = 0; $i < $session['session']; $i++) {
                 $service_price = Services::find($session['service_name']);
-                if( $session['discount_type'] == "complimentory"){
+                if ($session['discount_type'] == "complimentory") {
                     $discounted_price = 0;
-                }else{
-                    $discounted_price = ($session['discount_amount']/100)*$service_price->price;
+                } else {
+                    $discounted_price = ($session['discount_amount'] / 100) * $service_price->price;
                 }
-                if($discounted_price == 0){
-                    $newprice=0;
-                }else{
+                if ($discounted_price == 0) {
+                    $newprice = 0;
+                } else {
                     $newprice = $service_price->price - $discounted_price;
                 }
-                
-                $package_total_price+= $newprice;
-                $new_pkg_service_price+=$service_price->price;
+
+                $package_total_price += $newprice;
+                $new_pkg_service_price += $service_price->price;
                 BundleHasServices::createRecord([
                     'bundle_id' => $record->id,
-                    'service_id' =>$session['service_name'],
+                    'service_id' => $session['service_name'],
                     'service_price' =>  $newprice,
                     'calculated_price' =>  $newprice,
                     'end_node' => 1,
-                    'get_service'=>1,
-                    'discount_type'=>$session['discount_type'],
-                    'discount_amount'=>isset($session['discount_amount']) ?$session['discount_amount']: 0,
+                    'get_service' => 1,
+                    'discount_type' => $session['discount_type'],
+                    'discount_amount' => isset($session['discount_amount']) ? $session['discount_amount'] : 0,
                 ], $record->id);
                 BundleServicesPriceHistory::createRecord([
                     'bundle_id' => $record->id,
                     'bundle_price' => $record->price,
-                    'service_id' =>$session['service_name'],
+                    'service_id' => $session['service_name'],
                     //'service_price' => $data['service_price'][$key],
-                    'service_price' =>$service_price->price,
+                    'service_price' => $service_price->price,
                     'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
                     'created_by' => Auth::User()->id,
                     'updated_by' => Auth::User()->id,
                 ], 1);
             }
         }
-        Bundles::whereId($record->id)->update(['price' => $package_total_price,'services_price'=>$new_pkg_service_price]);
-      
+        Bundles::whereId($record->id)->update(['price' => $package_total_price, 'services_price' => $new_pkg_service_price]);
+
 
         return $record;
     }
@@ -635,7 +642,7 @@ class Bundles extends BaseModal
     {
         $bundle = Bundles::getData($id);
 
-        if (! $bundle) {
+        if (!$bundle) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
 
@@ -654,7 +661,6 @@ class Bundles extends BaseModal
         AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
 
         return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
-
     }
 
     /**
@@ -666,7 +672,7 @@ class Bundles extends BaseModal
     public static function inactiveRecord($id)
     {
         $bundle = Bundles::getData($id);
-        if (! $bundle) {
+        if (!$bundle) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $bundle->update(['active' => 0]);
@@ -684,7 +690,7 @@ class Bundles extends BaseModal
     public static function activeRecord($id)
     {
         $bundle = Bundles::getData($id);
-        if (! $bundle) {
+        if (!$bundle) {
             return collect(['status' => false, 'message' => 'Resource not found.']);
         }
         $record = $bundle->update(['active' => 1]);
@@ -708,7 +714,7 @@ class Bundles extends BaseModal
         $data['account_id'] = $account_id;
         $data['type'] = 'multiple';
 
-        if (! isset($data['apply_discount'])) {
+        if (!isset($data['apply_discount'])) {
             $data['apply_discount'] = 0;
         } elseif ($data['apply_discount'] == '') {
             $data['apply_discount'] = 0;
@@ -728,7 +734,7 @@ class Bundles extends BaseModal
             'account_id' => $account_id,
         ])->first();
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
 
@@ -793,8 +799,8 @@ class Bundles extends BaseModal
     }
     public static function updateConfRecord($id, $request, $account_id)
     {
-       
-      
+
+
         $old_data = (Bundles::find($id))->toArray();
 
         $data = $request->all();
@@ -802,20 +808,19 @@ class Bundles extends BaseModal
         $data['account_id'] = $account_id;
         $data['type'] = 'multiple';
 
-        if (! isset($data['apply_discount'])) {
+        if (!isset($data['apply_discount'])) {
             $data['apply_discount'] = 0;
         } elseif ($data['apply_discount'] == '') {
             $data['apply_discount'] = 0;
         }
-        
+
         if (is_array($data['edit_services_name']) && count($data['edit_services_name'])) {
             $data_pkg['total_services'] = count($data['edit_services_name']) + 1;
             $data_pkg['services_price'] = 0.00;
-            foreach($data['edit_services_name'] as $serv_id){
+            foreach ($data['edit_services_name'] as $serv_id) {
                 $service_price = Services::find($serv_id);
                 $data_pkg['services_price'] = $service_price->price;
             }
-            
         }
 
         $record = self::where([
@@ -823,96 +828,95 @@ class Bundles extends BaseModal
             'account_id' => $account_id,
         ])->first();
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
-        $data['base_service_session']= $request->edit_sessions_buy;
+        $data['base_service_session'] = $request->edit_sessions_buy;
         $record->update($data);
         $baseService = Services::findOrFail($data['edit_base_service']);
-        BundleHasServices::where('bundle_id',$record->id)->delete();
-        
-        $package_total_price=0;
+        BundleHasServices::where('bundle_id', $record->id)->delete();
+
+        $package_total_price = 0;
         $package_services_price = 0;
         for ($i = 0; $i < (int)$data['edit_sessions_buy']; $i++) {
 
             BundleHasServices::createRecord([
                 'bundle_id' => $record->id,
-                'service_id' =>$data['edit_base_service'],
-                'service_price' =>$baseService->price,
+                'service_id' => $data['edit_base_service'],
+                'service_price' => $baseService->price,
                 'calculated_price' => $baseService->price,
                 'end_node' => 1,
-                'base_service'=>1
+                'base_service' => 1
             ], $record->id);
             BundleServicesPriceHistory::createRecord([
                 'bundle_id' => $record->id,
                 'bundle_price' => $record->price,
-                'service_id' =>$data['edit_base_service'],
+                'service_id' => $data['edit_base_service'],
                 //'service_price' => $data['service_price'][$key],
-                'service_price' =>$baseService->price,
+                'service_price' => $baseService->price,
                 'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
                 'created_by' => Auth::User()->id,
                 'updated_by' => Auth::User()->id,
             ], 1);
             $package_total_price += $baseService->price;
-            $package_services_price +=$baseService->price;
-            
+            $package_services_price += $baseService->price;
         }
         $new_services_price = $package_services_price;
         $sessions = $data['edit_sessions'];
-            $bulkRecords = [];
-                
-                foreach($sessions as $key => $value) {
-                        $tempArray = [
-                            'session' => $value,
-                            'edit_services_name' => isset($data['edit_services_name'][$key]) ? $data['edit_services_name'][$key] : '', // Use index 0
-                            'discount_type' => isset($data['edit_disc_type'][$key]) ? $data['edit_disc_type'][$key] : '', // Use index 0
-                            'discount_amount' => isset($data['configurable_amount'][$key]) ?$data['configurable_amount'][$key]: 0,
-                        ];
+        $bulkRecords = [];
 
-                    $bulkRecords[] = $tempArray;
+        foreach ($sessions as $key => $value) {
+            $tempArray = [
+                'session' => $value,
+                'edit_services_name' => isset($data['edit_services_name'][$key]) ? $data['edit_services_name'][$key] : '', // Use index 0
+                'discount_type' => isset($data['edit_disc_type'][$key]) ? $data['edit_disc_type'][$key] : '', // Use index 0
+                'discount_amount' => isset($data['configurable_amount'][$key]) ? $data['configurable_amount'][$key] : 0,
+            ];
+
+            $bulkRecords[] = $tempArray;
+        }
+        foreach ($bulkRecords as $key => $session) {
+
+            for ($i = 0; $i < $session['session']; $i++) {
+                $service_price = Services::find($session['edit_services_name']);
+                if ($session['discount_type'] == "complimentory") {
+                    $discounted_price = 0;
+                } else {
+                    $discounted_price = ($session['discount_amount'] / 100) * $service_price->price;
                 }
-                foreach ($bulkRecords as $key => $session) {
-           
-                    for ($i = 0; $i < $session['session']; $i++) {
-                        $service_price = Services::find($session['edit_services_name']);
-                        if( $session['discount_type'] == "complimentory"){
-                            $discounted_price = 0;
-                        }else{
-                            $discounted_price = ($session['discount_amount']/100)*$service_price->price;
-                        }
-                        if($discounted_price == 0){
-                            $newprice=0;
-                        }else{
-                            $newprice = $service_price->price - $discounted_price;
-                        }
-                        
-                        $package_total_price+= $newprice;
-                        $new_services_price+=$service_price->price;
-                        BundleHasServices::createRecord([
-                            'bundle_id' => $record->id,
-                            'service_id' =>$session['edit_services_name'],
-                            'service_price' =>  $newprice,
-                            'calculated_price' =>  $newprice,
-                            'end_node' => 1,
-                            'get_service'=>1,
-                            'discount_type'=>$session['discount_type'],
-                            'discount_amount'=>isset($session['discount_amount']) ?$session['discount_amount']: 0,
-                        ], $record->id);
-                        BundleServicesPriceHistory::createRecord([
-                            'bundle_id' => $record->id,
-                            'bundle_price' => $record->price,
-                            'service_id' =>$session['edit_services_name'],
-                            //'service_price' => $data['service_price'][$key],
-                            'service_price' =>$service_price->price,
-                            'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
-                            'created_by' => Auth::User()->id,
-                            'updated_by' => Auth::User()->id,
-                        ], 1);
-                    }
+                if ($discounted_price == 0) {
+                    $newprice = 0;
+                } else {
+                    $newprice = $service_price->price - $discounted_price;
                 }
-                Bundles::whereId($record->id)->update(['price' => $package_total_price,'services_price'=>$new_services_price]);
-               
-                return $record;
+
+                $package_total_price += $newprice;
+                $new_services_price += $service_price->price;
+                BundleHasServices::createRecord([
+                    'bundle_id' => $record->id,
+                    'service_id' => $session['edit_services_name'],
+                    'service_price' =>  $newprice,
+                    'calculated_price' =>  $newprice,
+                    'end_node' => 1,
+                    'get_service' => 1,
+                    'discount_type' => $session['discount_type'],
+                    'discount_amount' => isset($session['discount_amount']) ? $session['discount_amount'] : 0,
+                ], $record->id);
+                BundleServicesPriceHistory::createRecord([
+                    'bundle_id' => $record->id,
+                    'bundle_price' => $record->price,
+                    'service_id' => $session['edit_services_name'],
+                    //'service_price' => $data['service_price'][$key],
+                    'service_price' => $service_price->price,
+                    'effective_from' => \Carbon\Carbon::now()->format('Y-m-d'),
+                    'created_by' => Auth::User()->id,
+                    'updated_by' => Auth::User()->id,
+                ], 1);
+            }
+        }
+        Bundles::whereId($record->id)->update(['price' => $package_total_price, 'services_price' => $new_services_price]);
+
+        return $record;
     }
     /**
      * Check if child records exist
@@ -945,6 +949,5 @@ class Bundles extends BaseModal
             ['account_id', '=', Auth::User()->account_id],
             ['active', '=', '1'],
         ])->OrderBy('sort_number', 'asc')->get()->pluck('name', 'id');
-
     }
 }

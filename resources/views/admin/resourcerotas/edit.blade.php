@@ -54,7 +54,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_end" class="form-control current-datepicker" name="end">
+                            <input type="text" id="edit_end" class="form-control endRota-datepicker" name="end">
                         </div>
 
                     </div>

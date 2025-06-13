@@ -75,6 +75,7 @@ use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
 use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
 use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
+use App\Models\MachineTypeHasServices;
 
 class AppointmentsController extends Controller
 {
@@ -721,7 +722,7 @@ class AppointmentsController extends Controller
      */
     private function getDefaultListing(Request $request)
     {
-       
+
 
         $where = [];
         /*
@@ -760,7 +761,7 @@ class AppointmentsController extends Controller
             $where[] = [
                 'users.phone',
                 'like',
-                '%'.GeneralFunctions::cleanNumber($filters['phone']).'%',
+                '%'.$filters['phone'].'%',
             ];
             Filters::put(Auth::User()->id, $filename, 'phone', $filters['phone']);
         }
@@ -826,12 +827,12 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
             Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
-        if (hasFilter($filters, 'phone')) {
-            $phone = substr($filters['phone'], 1);
-            $where[] = [['users.phone' => $phone]];
-            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
-        }
-       
+//        if (hasFilter($filters, 'phone')) {
+//            $phone = substr($filters['phone'], 1);
+//            $where[] = [['users.phone' => $phone]];
+//            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
+//        }
+
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
         if (Gate::allows('appointments_consultancy')) {
@@ -997,12 +998,18 @@ class AppointmentsController extends Controller
                 } else {
                     $consultancy_type = '';
                 }
+                if(Gate::allows('contact')){
+                    $phoneNumber = $appointment->phone;
+                }else{
+                    $phoneNumber ='***********';
+                }
                 $records['data'][$index] = [
                     'id' => $appointment->app_id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
-                    'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
+                    'phone'=> $phoneNumber,
+
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
@@ -1109,7 +1116,7 @@ class AppointmentsController extends Controller
             $where[] = [
                 'users.phone',
                 'like',
-                '%'.GeneralFunctions::cleanNumber($filters['phone']).'%',
+                '%'.$filters['phone'].'%',
             ];
             Filters::put(Auth::User()->id, $filename, 'phone', $filters['phone']);
         }
@@ -1141,11 +1148,11 @@ class AppointmentsController extends Controller
             $where[] = [['city_id' => $filters['city_id']]];
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
-        if (hasFilter($filters, 'phone')) {
-            $phone = substr($filters['phone'], 1);
-            $where[] = [['users.phone' => $phone]];
-            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
-        }
+//        if (hasFilter($filters, 'phone')) {
+//            $phone = substr($filters['phone'], 1);
+//            $where[] = [['users.phone' => $phone]];
+//            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
+//        }
         if (hasFilter($filters, 'service_id')) {
             $service_id = GeneralFunctions::getServiceId($filters['service_id']);
             $service_check = Services::find($service_id);
@@ -1359,12 +1366,17 @@ class AppointmentsController extends Controller
                 } else {
                     $consultancy_type = '';
                 }
+                if(Gate::allows('contact')){
+                    $phoneNumber = $appointment->phone;
+                }else{
+                    $phoneNumber ='***********';
+                }
                 $records['data'][$index] = [
                     'id' => $appointment->app_id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
-                    'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
+                    'phone' => $phoneNumber ?? '',
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'apt_scheduled_date' => $appointment->scheduled_date,
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
@@ -1428,6 +1440,8 @@ class AppointmentsController extends Controller
             'plans_create' => Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
+            'add_feedback' => Gate::allows('feedbacks_create'),
+
         ];
 
         return ApiHelper::apiDataTable($records);
@@ -1641,7 +1655,7 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
-        
+
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1766,15 +1780,16 @@ class AppointmentsController extends Controller
                 }
             } else {
                 $lead = Leads::whereId($request->lead_id)->first();
-                    $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
+                $appointment_data['email'] = $lead->email;
+                $patient = Patients::where(['phone' => $appointment_data['phone']])->orderBy('phone', 'desc')->first();
                 if (! $patient) {
                     $appointment_data['user_type_id'] = 3;
                     $patient = Patients::createRecord($appointment_data, 1);
                 } else {
-                    
                     $appointment_data['patient_id'] = $patient->id;
                     Patients::where(['id' => $patient->id])->update([
                         'name' => $appointment_data['name'],
+                        'email' => $appointment_data['email'],
                         'gender' => $appointment_data['gender'],
                         'referred_by' => $appointment_data['referred_by'] ?? null,
                     ]);
@@ -1791,8 +1806,8 @@ class AppointmentsController extends Controller
                 $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
                 $lead_service->update(['status' => 1]);
             }
-           
-            
+
+
             // Set Lead ID for Appointment
             $appointment_data['patient_id'] = $patient->id;
             $appointment_data['lead_id'] = $lead->id;
@@ -1865,6 +1880,8 @@ class AppointmentsController extends Controller
             // Send Promotion SMS
             $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
+            GeneralFunctions::saveActivityLogs('booked', 'Consultancy', $appointment_data,$appointment->id);
+
             /**
              * Dispatch Elastic Search Index
              */
@@ -1912,8 +1929,14 @@ class AppointmentsController extends Controller
 
     private function sendPromotionSMS($appointmentId, $patient_phone)
     {
-        // SEND SMS for Appointment Booked
-        $SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
+        $apt = Appointments::find($appointmentId);
+        if($apt->appointment_type_id==1){
+            $SMSTemplate = SMSTemplates::getBySlug('on-appointment', Auth::User()->account_id);
+        }
+        if($apt->appointment_type_id==2){
+            $SMSTemplate = SMSTemplates::getBySlug('treatment-on-appointment', Auth::User()->account_id);
+        }
+        //$SMSTemplate = SMSTemplates::getBySlug('promotion-sms', Auth::User()->account_id);
         if (! $SMSTemplate) {
             // SMS Promotion is disabled
             return [
@@ -2501,7 +2524,23 @@ class AppointmentsController extends Controller
             'consultancy_type' => config('constants.consultancy_type_array'),
         ]);
     }
+    public function editFeedback($id)
+    {
+        if (! Gate::allows('appointments_manage')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
 
+        $treatment = Appointments::with(['doctor','location','service'])
+        ->where('id', $id)
+        ->where('appointment_type_id', 2)
+        ->where('appointment_status_id', 2)
+        ->first();
+
+        return ApiHelper::apiResponse($this->success, 'Data found.', true, [
+            'appointment' => $treatment,
+
+        ]);
+    }
     /**
      * Update Appointment in storage.
      *
@@ -2558,10 +2597,14 @@ class AppointmentsController extends Controller
             $appointment_data['region_id'] = $city_info->region_id;
             $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
             if ($appointment->scheduled_date != $request->scheduled_date) {
+
                 $appointment_data['converted_by'] = Auth::user()->id;
+                Activity::where('appointment_id',$id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
+
             }
             if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
                 $appointment_data['converted_by'] = Auth::user()->id;
+
             }
             if ((string) $appointment->city_id !== $request->city_id || (string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id || (string) $patient->gender !== $request->gender) {
                 $appointment_data['updated_by'] = Auth::user()->id;
@@ -2670,6 +2713,7 @@ class AppointmentsController extends Controller
                     'appointment_id' => $appointment->id,
                 ])
             );
+
 
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {
@@ -2861,6 +2905,7 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
         $response = Appointments::DeleteRecord($id, Auth::User()->account_id);
+
         /**
          * Work need on destory
          */
@@ -3323,6 +3368,58 @@ class AppointmentsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+    public function loadConsultantDoctorsByLocation(Request $request)
+    {
+        try {
+            if ($request->location_id) {
+                if ($request->machine_type_allocation) {
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
+                    if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
+                        $reverse_process = true;
+                    } else {
+                        $reverse_process = false;
+                    }
+                    $doctorids = [];
+                    /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
+                    foreach ($doctors as $key => $doctor) {
+                        $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $request->location_id, Auth::User()->account_id, $reverse_process);
+                        if (in_array($request->service_id, $doctor_serivce)) {
+                            $doctorids[] = $key;
+                        }
+                    }
+                    $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
+                } else {
+
+                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
+
+                }
+                foreach ($doctors_no_final as $key => $doctor) {
+                    $resource = Resources::where('external_id', '=', $key)->first();
+
+                    //if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
+                        $doctor_rota = ResourceHasRota::where([
+                            ['resource_id', '=', $resource->id],
+                            ['is_consultancy', '=', '1'],
+                        ])->get();
+                        if (count($doctor_rota) == 0) {
+                            unset($doctors[$key]);
+                        }
+                    //}
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'dropdown' => $doctors,
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Record found', false, [
+                'dropdown' => null,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
     /*
      * Load Locations by City
      *
@@ -3853,12 +3950,12 @@ class AppointmentsController extends Controller
             ])
             ->select('bundles.id')
             ->get();
-            
+
         foreach ($bundleinfo as $bundleinfo) {
             $bundleid[] = $bundleinfo->id;
         }
         $package = Packages::find($request->package_id_create);
-       
+
         if ($package == null) {
             return response()->json([
                 'status' => true,
@@ -3868,22 +3965,22 @@ class AppointmentsController extends Controller
         }
         $packagebundles = PackageBundles::leftJoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
             ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
-            
+
             ->where('package_bundles.package_id', '=', $package->id)
             ->whereIn('package_bundles.bundle_id', $bundleid)
             ->select('package_bundles.*', 'discounts.name as discountname', 'bundles.name as bundlename')
-           
-            ->get(); 
-           
-            
+
+            ->get();
+
+
         $packageservices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
             ->where([
                 ['package_services.package_id', '=', $package->id],
                 ['package_services.service_id', '=', $appointmentinfo->service_id],
-                
+
             ])
             ->select('package_services.*', 'services.name as servicename')
-            
+
             ->get();
 
         return response()->json([
@@ -3918,7 +4015,7 @@ class AppointmentsController extends Controller
          $package_service = PackageService::find($request->package_service_id);
          $package = Packages::find($request->package_id_create);
          $package_bundle = PackageBundles::find($package_service->package_bundle_id);
-        
+
          $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)->where('type', '=', 'multiple')->first();
          $service = Services::find($package_service->service_id);
          if ($bundle) {
@@ -3932,32 +4029,32 @@ class AppointmentsController extends Controller
          } else {
              $package_access = 1;
          }
-        
+
          $cash = 0;
          if ($package_access == 1) {
-            
+
              $price = $package_service->tax_including_price;
              $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
              $remaining = 0;
              $settleamount_1 = $price - $cash;
              $settleamount = min($settleamount_1, $balance);
          } else {
-           
+
              if ( $package_service->price > ($package_bundle->net_amount - $balance_patient_in)) {
-               
+
                  $price = $package_service->price;
-                 
+
                  if($price < $balance){
                     $outstanding =0;
                  }else{
-                   
+
                     $outstanding = intval( $package_service->price - $balance) - $cash;
                  }
-                 
+
                  $settleamount_1 = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
                  $settleamount = min($settleamount_1, $balance);
              } else {
-               
+
                  $price = $package_service->price;
                  $outstanding = intval($price) - $cash - intval($balance);
                  $settleamount_1 = $price - $cash;
@@ -3968,7 +4065,7 @@ class AppointmentsController extends Controller
          if ($outstanding < 0) {
              $outstanding = 0;
          }
- 
+
          return response()->json([
              'status' => true,
              'amount' => $package_service->tax_exclusive_price,
@@ -4063,7 +4160,7 @@ class AppointmentsController extends Controller
         $paymentmode_settle = PaymentModes::where('payment_type', '=', Config::get('constants.payment_type_settle'))->first();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointmentinfo = Appointments::find($request->appointment_id);
-        
+
         if (isset($request->appointment_id_consultancy)) {
             // Now we need to work our tag appointment for upselling
             $tag_appoint = explode('.', $request->appointment_id_consultancy);
@@ -4248,7 +4345,7 @@ class AppointmentsController extends Controller
             $count++;
         }
         if ($package_advances->package_id != null) {
-            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp()]);
+            PackageService::where('id', '=', $request->package_service_id)->update(['is_consumed' => 1, 'updated_at' => Filters::getCurrentTimeStamp(),'consumed_at' => Filters::getCurrentTimeStamp()]);
             $packagesservice = PackageService::find($request->package_service_id);
             $package_service_log = PackageService::updateRecordInvoice($packagesservice);
             if ($request->cash > 0) {
@@ -4655,6 +4752,7 @@ class AppointmentsController extends Controller
         $message = 'Record has been created successfully.';
         $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
         GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
+        //GeneralFunctions::saveActivityLogs('booked', 'Treatment', $appointment_data);
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
@@ -4749,6 +4847,7 @@ class AppointmentsController extends Controller
 
     public function getScheduledServiceAppointments(Request $request)
     {
+
         $location_id = $request->location_id;
         $doctor_id = $request->doctor_id;
         $machine_id = $request->machine_id;
@@ -4758,10 +4857,12 @@ class AppointmentsController extends Controller
         $end = $request->end;
         $minTime = Resources::getMinTimeWithDrAndMachine($location_id, $doctor_id, $machine_id, $start, $end);
         if ($request->has('start') && $request->has('end')) {
+
             $doctor_rotas = Resources::getDoctorWithRotasWithSpecificDate($request->location_id, $request->doctor_id, $request->start, $request->end);
         } else {
             $doctor_rotas = collect();
         }
+
         if ($appointments) {
             $data = [];
             if ($request->doctor_id != '') {
@@ -4937,11 +5038,28 @@ class AppointmentsController extends Controller
     {
 
         if ($request->service_id) {
-            $services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
+            $child_services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
+            $resource = Resources::whereId($request->resource_id)->first();
+            $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+            ->where('service_id',$request->service_id)
+            ->first();
+            if($machine_services){
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'services' => $child_services,
+                ]);
+            }else{
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'services' => $services,
-            ]);
+                $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+                ->whereIn('service_id',array_keys($child_services))
+                ->pluck('service_id');
+
+                $available_services = array_filter($child_services, function ($service, $id) use ($machine_services) {
+                    return in_array($id, $machine_services->toArray()); // Convert collection to array
+                }, ARRAY_FILTER_USE_BOTH);
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'services' => $available_services,
+                ]);
+            }
         }
 
         return ApiHelper::apiResponse($this->success, 'Record not found', false);
@@ -5635,6 +5753,7 @@ class AppointmentsController extends Controller
 
     public function updateSchedule(Request $request)
     {
+
         $data = [];
         $appointment = Appointments::find($request->appointment_id);
         if ($appointment) {
@@ -5665,7 +5784,7 @@ class AppointmentsController extends Controller
                 if ($appointment->isDirty('scheduled_date')) {
                     $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
                 }
-
+                Activity::where('appointment_id',$request->appointment_id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
 

@@ -5,7 +5,7 @@ var table_columns = [
     {
         field: 'id',
         sortable: false,
-        width: 'auto',
+        width: '40',
         title: renderCheckbox(),
         template: function (data) {
             return childCheckbox(data);
@@ -16,22 +16,31 @@ var table_columns = [
         title: 'Name',
         width: 'auto',
         sortable: false,
+    }, {
+        field: 'status',
+        title: 'status',
+        width: 80,
+        sortable: false,
+        template: function (data) {
+            let status_url = route('admin.brands.status');
+            return statusesBrand(data, status_url, true);
+        }
     },
     {
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 'auto',
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
             return actions(data);
         }
-    }];
+    }
+];
 
 
 function actions(data) {
-
     let id = data.id;
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
@@ -73,7 +82,51 @@ function actions(data) {
     }
     return '';
 }
+function statusesBrand(data, status_url, is_column_name_change = false) {
 
+    let id = data.id;
+
+    let active = is_column_name_change == false ? data.active : data.status;
+    let status = '';
+console.log(permissions);
+    if (active) {
+        if (permissions.b_active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
+        else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox" checked="checked" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
+
+    } else {
+        if (permissions.b_active) {
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input value="1" onchange="updateStatus(`'+ status_url + '`, `' + id + '`, $(this));" type="checkbox" name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }else{
+            status += '<span class="switch switch-icon">\
+            <label>\
+                <input disabled type="checkbox"  name="select">\
+                <span></span>\
+            </label>\
+            </span>';
+        }
+    }
+
+    return status;
+}
 function editRow(url) {
     $.ajax({
         headers: {
@@ -102,7 +155,6 @@ function setEditData(response) {
 }
 
 function applyFilters(datatable) {
-
     $('#apply-filters').on('click', function() {
 
         let filters =  {
@@ -111,11 +163,9 @@ function applyFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function resetAllFilters(datatable) {
-
     $('#reset-filters').on('click', function() {
         let filters =  {
             delete: '',
@@ -124,7 +174,6 @@ function resetAllFilters(datatable) {
         }
         datatable.search(filters, 'search');
     });
-
 }
 
 function setFilters(filter_values, active_filters) {

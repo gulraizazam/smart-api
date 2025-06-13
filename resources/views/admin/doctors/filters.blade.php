@@ -36,7 +36,7 @@
         @endif
         <div class="col-lg-3 mb-lg-0 mb-6">
             <label>Phone:</label>
-            <input type="text" class="form-control filter-field" placeholder="eg: 03000000000" id="search_phone" />
+            <input type="number" class="form-control filter-field" placeholder="eg: 03000000000" id="search_phone" />
         </div>
 
         <div class="col-lg-3 mb-lg-0 mb-6">

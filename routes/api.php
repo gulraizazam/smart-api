@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\InventoryReportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
@@ -44,10 +45,13 @@ use App\Http\Controllers\Admin\AppointmentStatusesController;
 use App\Http\Controllers\Admin\CustomFormFeedbacksController;
 use App\Http\Controllers\Admin\UserOperatorSettingsController;
 use App\Http\Controllers\Admin\AppointmentMeasurementController;
+use App\Http\Controllers\Admin\MembershipsController;
+use App\Http\Controllers\Admin\MembershipTypesController;
 use App\Http\Controllers\Admin\Patients\MedicalHistoryController;
 use App\Http\Controllers\Admin\Patients\MeasurementHistoryController;
 use App\Http\Controllers\Admin\Patients\RefundsController as PatientRefundController;
 use App\Http\Controllers\Admin\Patients\CustomFormFeedbacksController as PatientCustomFormController;
+use App\Http\Controllers\FeedbackController;
 
 /*
 |-----------------------------------------viewDetail---------------------------------
@@ -210,7 +214,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('refunds/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refunds.refund_create');
     Route::get('refunds/detail/{id}', [RefundsController::class, 'detail'])->name('refunds.detail');
     Route::resource('refunds', RefundsController::class)->except('index');
-
+    Route::resource('feedbacks', FeedbackController::class)->except('index');
     //Discount route Start
     Route::post('discounts/datatable', [DiscountsController::class, 'datatable'])->name('discounts.datatable');
     Route::post('discounts/status', [DiscountsController::class, 'status'])->name('discounts.status');
@@ -227,7 +231,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('bundles/status', [BundlesController::class, 'status'])->name('bundles.status');
     Route::get('bundles/detail/{id}', [BundlesController::class, 'detail'])->name('bundles.detail');
     Route::resource('bundles', BundlesController::class)->except(['index', 'create', 'show']);
-    Route::get('bundles/editconf/{id}', [BundlesController::class,'editconf'])->name('bundles.editconf');
+    Route::get('bundles/editconf/{id}', [BundlesController::class, 'editconf'])->name('bundles.editconf');
     //Packages Route End
 
     //Centre Target
@@ -274,6 +278,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     //Invoice Management route end
 
     Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
+    Route::get('users/getpatientorder', [UsersController::class, 'getpatientidOrder'])->name('users.getpatient.order');
+    Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
     Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
     Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
     Route::get('users/get_cities', [UsersController::class, 'getUserCities'])->name('users.get_cities');
@@ -288,8 +294,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('packages/getdiscountinfo', [PackagesController::class, 'getdiscountinfo'])->name('packages.getdiscountinfo');
 
     Route::get('packages/getdiscountinfo_custom', [PackagesController::class, 'getdiscountinfocustom'])->name('packages.getdiscountinfo_custom');
-
-    Route::get('packages/savepackagesservice', [PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
+    Route::get('packages/savepackagesservice', [PackagesController::class, 'makePackagesServicesData'])->name('packages.savepackages_service');
+    //Route::get('packages/savepackagesservice', [PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
 
     Route::post('packages/deletepackagesservice', [PackagesController::class, 'deletepackagesservice'])->name('packages.deletepackages_service');
     Route::post('packages/deleteconfpackagesservice', [PackagesController::class, 'deleteconfpackagesservice'])->name('packages.deleteconfpackages_service');
@@ -372,6 +378,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('leads/phone/search', [LeadsController::class, 'phoneSearch'])->name('leads.phone.search');
     Route::resource('leads', LeadsController::class)->except('index');
     Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
+    Route::post('feedbacks/datatable', [FeedbackController::class, 'datatable'])->name('feedbacks.datatable');
     // Convert Lead
     Route::get('leads/convert/{id}', [LeadsController::class, 'convert'])->name('leads.convert');
     Route::get('lead_Create_popup', [LeadsController::class, 'make_pop'])->name('leads.create_popup');
@@ -379,6 +386,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Appointment routes*/
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
     Route::post('appointments/load-doctors', [AppointmentsController::class, 'loadDoctorsByLocation'])->name('appointments.load_doctors');
+    Route::post('appointments/load-consultant-doctors', [AppointmentsController::class, 'loadConsultantDoctorsByLocation'])->name('appointments.load_consultant_doctors');
     Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
     Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
     Route::resource('appointments', AppointmentsController::class);
@@ -502,6 +510,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::patch('warehouse/active/{id}', [WarehouseController::class, 'active'])->name('warehouse.active');
     Route::post('warehouse/status', [WarehouseController::class, 'status'])->name('warehouse.status');
     Route::get('warehouse/sort', [WarehouseController::class, 'sortorder'])->name('warehouse.sort');
+    Route::post('reports/inventory_reports/result', [InventoryReportController::class, 'reportResult'])->name('reports.inventory_report_result');
+    Route::post('reports/inventory_reports/stock', [InventoryReportController::class, 'stockReport'])->name('reports.inventory_report_stock');
     /*Warehouseroutes*/
 
     /*Brand routes*/
@@ -510,6 +520,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('brands/{id}/edit', [BrandsController::class, 'edit'])->name('brands.edit');
     Route::put('brands/{id}', [BrandsController::class, 'update'])->name('brands.update');
     Route::delete('brands/{id}', [BrandsController::class, 'destroy'])->name('brands.destroy');
+    Route::post('brands/status', [BrandsController::class, 'status'])->name('brands.status');
     /*Brand routes*/
 
     /*Product routes*/
@@ -518,8 +529,11 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('products', [ProductsController::class, 'store'])->name('products.store');
     Route::post('products/status', [ProductsController::class, 'status'])->name('products.status');
     Route::get('products/{id}/edit', [ProductsController::class, 'edit'])->name('products.edit');
+    Route::post('products/save_allocate', [ProductsController::class, 'saveAllocate'])->name('products.save_allocate');
+    Route::get('products/products/{id}', [ProductsController::class, 'displaylocation'])->name('products.location_manage');
     Route::get('products/{id}/saleprice', [ProductsController::class, 'editSalePrice'])->name('products.edit-sale-price');
     Route::post('products/stock-detail/{id}', [ProductsController::class, 'productStockDetail'])->name('products.stock-detail');
+    Route::post('products/inventory-detail/{id}', [ProductsController::class, 'productInventoryDetail'])->name('products.inventories');
     Route::put('products/{id}/{detail}', [ProductsController::class, 'update'])->name('products.update');
     Route::post('products/{id}/updatesaleprice', [ProductsController::class, 'updateSalePrice'])->name('products.update-sale-price');
     Route::post('products/{id}/addstock', [ProductsController::class, 'addStock'])->name('products.add-stock');
@@ -530,7 +544,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     /* Transfer Product */
     Route::post('transfer-product/datatable', [TransferProductsController::class, 'datatable'])->name('transfer_products.datatable');
-    Route::get('transfer-product/get-products', [TransferProductsController::class, 'getProducts'])->name('transfer_products.get_products');
+    Route::get('transfer-product/get-products', [TransferProductsController::class, 'getTransferProducts'])->name('transfer_products.get_products');
+    Route::get('transfer-product/fetch-products', [TransferProductsController::class, 'getProducts'])->name('transfer_products.fetch_products');
     Route::resource('transfer_product', TransferProductsController::class)->except('index');
     /* Transfer Product Route */
 
@@ -539,13 +554,19 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('orders/refund/datatable', [OrdersController::class, 'refunddatatable'])->name('orders.refund.datatable');
     Route::get('orders/getproducts', [OrdersController::class, 'getProducts'])->name('orders.getproducts');
     Route::get('orders/getdiscounts', [OrdersController::class, 'getDiscounts'])->name('orders.getdiscounts');
-
+    Route::get('orders/displayInvoice/{id}', [OrdersController::class, 'displayInvoiceAppointment'])->name('orders.invoiceDisplay');
+    Route::get('invoices/pdf/{id}/{download?}', [OrdersController::class, 'invoicePdf'])->name('orders.invoice_pdf');
+    Route::post('get-employees', [OrdersController::class, 'getEmployees'])->name('get-employees');
+    Route::post('get-doctors', [OrdersController::class, 'getDoctors'])->name('get-doctors');
+    Route::post('get-centre-doctors', [OrdersController::class, 'getCentreDoctors'])->name('get-centre-doctors');
     Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
     Route::get('orders/{id}/edit', [OrdersController::class, 'edit'])->name('orders.edit');
     Route::post('orders/update/{id}', [OrdersController::class, 'update'])->name('orders.update');
 
+
     Route::get('orders/refund/{id}/detail', [OrdersController::class, 'orderRefundDetail'])->name('orders.refund.detail');
     Route::post('orders/{id}/refund', [OrdersController::class, 'orderRefund'])->name('orders.refund');
+    //Route::delete('orders/refund/{id}', [OrdersController::class, 'orderRefundDestroy'])->name('orders.refund.destroy');
     Route::delete('orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
 
     /*Order routes*/
@@ -568,6 +589,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
     // Edit Service
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
+    Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');
 
     Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
 
@@ -586,7 +608,14 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     /*Route start for plans in appointment module*/
     Route::get('appointmentplans/{appointment_id}', [AppointmentsPlansController::class, 'create'])->name('appointmentplans.create');
     /*Route end for plans in appointment module*/
-
+    Route::resource('membershiptypes', MembershipTypesController::class)->except('index');
+    Route::post('membershiptypes/datatable', [MembershipTypesController::class, 'datatable'])->name('membershiptypes.datatable');
+    Route::post('membershiptypes/status', [MembershipTypesController::class, 'status'])->name('membershiptypes.status');
+    Route::resource('memberships', MembershipsController::class)->except('index');
+    Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
+    Route::post('patient/assignmembership', [PatientsController::class, 'assignMembership'])->name('patients.assignmembership');
+    Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
+    Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
 });
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {

@@ -31,7 +31,7 @@ var table_columns = [
         field: 'commission',
         title: 'Commission',
         width: 100,
-    },{
+    }, {
         field: 'locations',
         title: 'centre',
         width: 'auto',
@@ -43,7 +43,7 @@ var table_columns = [
             if (data.locations.length > 0) {
 
                 for (let i = 0; i < data.locations.length; i++) {
-                    locations += '<span><span class="label label-lg font-weight-bold label-light-info label-inline mb-2">'+data.locations[i]+'</span></span>';
+                    locations += '<span><span class="label label-lg font-weight-bold label-light-info label-inline mb-2">' + data.locations[i] + '</span></span>';
                 }
 
             }
@@ -60,15 +60,15 @@ var table_columns = [
 
             if (data.roles.length > 0) {
 
-              for (let i = 0; i < data.roles.length; i++) {
-                  roles += '<span><span class="label label-lg font-weight-bold label-light-info label-inline">'+data.roles[i]+'</span></span>&nbsp;';
-              }
+                for (let i = 0; i < data.roles.length; i++) {
+                    roles += '<span><span class="label label-lg font-weight-bold label-light-info label-inline">' + data.roles[i] + '</span></span>&nbsp;';
+                }
 
             }
 
             return roles;
         }
-    },{
+    }, {
         field: 'status',
         title: 'status',
         width: 90,
@@ -80,7 +80,7 @@ var table_columns = [
         field: 'created_at',
         title: 'created at',
         width: 'auto',
-    },  {
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -96,7 +96,7 @@ var table_columns = [
 function actions(data) {
 
     let id = data.id;
-    let url = route('admin.users.destroy', {id: id});
+    let url = route('admin.users.destroy', { id: id });
 
     let csrf = $('meta[name="csrf-token"]').attr('content');
 
@@ -112,7 +112,7 @@ function actions(data) {
                     </li>';
         if (permissions.edit) {
             actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow('+id+')" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="editRow('+ id + ')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
                     </a>\
@@ -120,7 +120,7 @@ function actions(data) {
         }
         if (permissions.change_password) {
             actions += '<li class="navi-item">\
-                <a href="javascript:void(0);"  onClick="changePassword('+id+');" class="navi-link">\
+                <a href="javascript:void(0);"  onClick="changePassword('+ id + ');" class="navi-link">\
                     <span class="navi-icon"><i class="la la-key"></i></span>\
                     <span class="navi-text">Change Password</span>\
                 </a>\
@@ -128,7 +128,7 @@ function actions(data) {
         }
         if (permissions.delete) {
             actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="deleteRow(`'+url+'`);" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="deleteRow(`'+ url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-trash"></i></span>\
                         <span class="navi-text">Delete</span>\
                     </a>\
@@ -153,7 +153,7 @@ function editRow(id) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.users.edit', {id: id}),
+        url: route('admin.users.edit', { id: id }),
         type: "GET",
         cache: false,
         success: function (response) {
@@ -179,7 +179,7 @@ function changePassword(id) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.users.change_password', {id: id}),
+        url: route('admin.users.change_password', { id: id }),
         type: "GET",
         cache: false,
         success: function (response) {
@@ -225,28 +225,33 @@ function setCreateData(response) {
 
     let roles = response.data.roles;
     let locations = response.data.locations;
+    let warehouse = response.data.warehouse;
     let roles_options = '<option value="">Select</option>';
     let location_options = '<option value="">Select</option>';
+    let warehouse_options = '<option value="">Select</option>';
 
-    for (let i = 0; i< roles.length; i++) {
+    for (let i = 0; i < roles.length; i++) {
 
-        roles_options += '<option value="'+roles[i].id+'">'+roles[i].name+'</option>';
+        roles_options += '<option value="' + roles[i].id + '">' + roles[i].name + '</option>';
     }
 
 
-    Object.values(locations).forEach(function(value, index) {
-
+    Object.values(locations).forEach(function (value, index) {
         location_options += '<option value="">Select</option>\
-            <optgroup label="'+value.name+'">';
-            Object.values(value.children).forEach(function(child, index) {
-                location_options += '<option value="'+child.id+'">'+child.name+'</option>';
-            });
+            <optgroup label="'+ value.name + '">';
+        Object.values(value.children).forEach(function (child, index) {
+            location_options += '<option value="' + child.id + '">' + child.name + '</option>';
+        });
 
         location_options += '</optgroup>';
     });
-
+    warehouse_options += '<option value="all">All Warehouse</option>';
+    Object.values(warehouse).forEach(function (value, index) {
+        warehouse_options += '<option value="' + value.id + '">' + value.name + '</option>';
+    });
     $("#add_user_roles").html(roles_options);
     $("#add_user_centers").html(location_options);
+    $("#add_user_warehouse").html(warehouse_options);
 }
 
 function setEditData(response) {
@@ -255,34 +260,42 @@ function setEditData(response) {
 
     let user_roles = response.data.user_roles;
     let user_has_locations = response.data.user_has_locations;
+    let warehouse = response.data.warehouse;
+    let user_has_warehouse = response.data.user_has_warehouse;
 
-    $("#modal_edit_user_form").attr("action", route('admin.users.update', {id: user.id}));
+
+    $("#modal_edit_user_form").attr("action", route('admin.users.update', { id: user.id }));
 
 
     let roles = response.data.roles;
     let locations = response.data.locations;
     let roles_options = '<option value="">Select</option>';
     let location_options = '<option value="">Select</option>';
+    let warehouse_options = '<option value="">Select</option>';
 
-    Object.entries(roles).forEach(function(role, index) {
+    Object.entries(roles).forEach(function (role, index) {
 
-        roles_options += '<option value="'+role[0]+'">'+role[1]+'</option>';
+        roles_options += '<option value="' + role[0] + '">' + role[1] + '</option>';
     });
 
 
-    Object.values(locations).forEach(function(value, index) {
+    Object.values(locations).forEach(function (value, index) {
+        location_options += '<optgroup label="' + value.name + '">';
+        Object.values(value.children).forEach(function (child, index) {
 
-        location_options += '<optgroup label="'+value.name+'">';
-            Object.values(value.children).forEach(function(child, index) {
-
-                location_options += '<option value="'+child.id+'">'+child.name+'</option>';
-            });
-
+            location_options += '<option value="' + child.id + '">' + child.name + '</option>';
+        });
         location_options += '</optgroup>';
+    });
+
+    warehouse_options += '<option value="all">All Warehouse</option>';
+    Object.values(warehouse).forEach(function (value, index) {
+        warehouse_options += '<option value="' + value.id + '">' + value.name + '</option>';
     });
 
     $("#edit_user_roles").html(roles_options);
     $("#edit_user_centers").html(location_options);
+    $("#edit_user_warehouse").html(warehouse_options);
 
     $("#edit_user_name").val(user.name);
     $("#edit_user_email").val(user.email);
@@ -299,15 +312,20 @@ function setEditData(response) {
 
     $('#edit_user_roles').val(user_roles).change();
 
-
     $("#edit_user_centers").val(user_has_locations).change();
+    if(user_has_warehouse.length == warehouse.length){
+        $("#edit_user_warehouse").val(['all']).change();
+    } else {
+        $("#edit_user_warehouse").val(user_has_warehouse).change();
+    }
+
 }
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#apply-filters').on('click', function () {
 
-        let filters =  {
+        let filters = {
             delete: '',
             name: $("#search_name").val(),
             email: $("#search_email").val(),
@@ -327,8 +345,8 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $('#reset-filters').on('click', function() {
-        let filters =  {
+    $('#reset-filters').on('click', function () {
+        let filters = {
             delete: '',
             name: '',
             commission: '',
@@ -356,18 +374,18 @@ function setFilters(filter_values, active_filters) {
     let role_options = '<option value="">All</option>';
     let status_options = '<option value="">All</option>';
 
-    Object.entries(status).forEach(function(value, index) {
-        status_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+    Object.entries(status).forEach(function (value, index) {
+        status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
-    Object.entries(locations).forEach(function(value, index) {
+    Object.entries(locations).forEach(function (value, index) {
 
-        location_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        location_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
-    Object.entries(roles).forEach(function(value, index) {
+    Object.entries(roles).forEach(function (value, index) {
 
-        role_options += '<option value="'+value[0]+'">'+value[1]+'</option>';
+        role_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
     });
 
     $("#search_role").html(role_options);
@@ -404,9 +422,9 @@ function hideShowAdvanceFilters(active_filters) {
     }
 }
 
-jQuery(document).ready( function () {
+jQuery(document).ready(function () {
 
-    $("#add_user_password").keyup( function () {
+    $("#add_user_password").keyup(function () {
         $(".pass-msg").remove();
         $("#add_user_password").removeClass("is-invalid");
     });

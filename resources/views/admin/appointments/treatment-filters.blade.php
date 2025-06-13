@@ -65,7 +65,7 @@
 
         <div class="filterouterdiv  mb-6" >
             <label>Phone:</label>
-            <input  type="text"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
+            <input  type="number"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
         </div>
         <div class="filterouterdiv mb-6 center-filter">
             <label>Centre:</label>

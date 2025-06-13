@@ -1,7 +1,8 @@
 @extends('admin.layouts.master')
 @section('title', 'General Revenue Reports')
 @section('content')
-
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
     @push('css')
         <style>
             .table-wrapper {
@@ -160,7 +161,7 @@
                                                     @endif--}}
 
                                                         @if(Gate::allows('finance_general_revenue_reports_conversion_report'))
-                                                            <option value="conversion_report">Conversion Report
+                                                            <option value="services_sold">Services sold report
                                                             </option>
                                                         @endif
                                                 </select>
@@ -288,7 +289,25 @@
     @include('admin.settings.edit')
 
     @push('js')
-
+    <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+   
+   <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+   <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
+   <script>
+    $("#servicesSoldTable").DataTable({
+           dom: 'Bfrtip',
+           buttons: [
+               'excelHtml5',
+               'csvHtml5',
+               'pdfHtml5',
+           ],
+           "ordering": false,
+           "pageLength": 50
+       });
+</script>
         <script>
             $("#location_id_com").on('change',function(){
                 $("#location_id_com-report").val($("#location_id_com").val());
@@ -449,6 +468,12 @@
                     $("#appointment_type_id_E").hide();
                     $("#machine").hide();
                     $('#discount').hide();
+                } else if (type_p == 'services_sold') {
+                    $("#location_id_E").show();
+                    $("#location_id_D").hide();
+                    
+                    $("#service_id_E").show();
+                   
                 } else if (type_p == "collection_by_service") {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
@@ -520,6 +545,7 @@
             }
 
         </script>
+
 
     @endpush
 

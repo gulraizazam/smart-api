@@ -52,7 +52,7 @@
                             <select id="edit_gender_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="gender">
                             </select>
                         </div>
-
+                       
                     </div>
                 </div>
 

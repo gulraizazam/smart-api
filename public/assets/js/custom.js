@@ -4,6 +4,16 @@ $(document).keydown(function (event) {
         $('.modal').modal('hide');
     }
 });
+$(document).ready(function () {
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.dropdown-menu').length) {
+            $('.dropdown-menu[x-placement="top-end"]').removeClass('show');
+            $('.dropdown-menu[x-placement="top-end"]').hide();
+            $('.dropdown-menu[x-placement="bottom-end"]').removeClass('show');
+            $('.dropdown-menu[x-placement="bottom-end"]').hide();
+        }
+    });
+});
 
 let inModalNotChangeSelectBoxArr = ['/admin/discounts'];
 
@@ -17,7 +27,120 @@ $('#created_at').datepicker({
         rightArrow: '<i class="la la-angle-right"></i>',
     },
 }).datepicker("setDate", new Date());
+
 $(document).ready(function () {
+    $('#collection_centre').on('change', function () {
+        var currentVal = $(this).val();
+        initCollectionByCentre(currentVal);
+    });
+
+    $('#revenue_centre').on('change', function () {
+        var currentVal = $(this).val();
+        initRevenueByCentre(currentVal);
+    });
+
+    $('#revenue_service_cate').on('change', function () {
+        var currentVal = $(this).val();
+        InitRevenueByServiceCategory(currentVal);
+    });
+
+    $('#revenue_service').on('change', function () {
+        var currentVal = $(this).val();
+        initRevenueByService(currentVal);
+    });
+
+    $('#consultancy_status').on('change', function () {
+        var currentVal = $(this).val();
+        if (currentVal == 'thismonth') {
+            initConsultancyByStatus('thismonth', '1');
+        } else if (currentVal == 'yesterday') {
+            initConsultancyByStatus('yesterday', '1');
+        } else if (currentVal == 'last7days') {
+            initConsultancyByStatus('last7days', '1');
+        } else if (currentVal == 'week') {
+            initConsultancyByStatus('week', '1');
+        } else {
+            initConsultancyByStatus('today', '1');
+        }
+    });
+
+    $('#treatment_status').on('change', function () {
+        var currentVal = $(this).val();
+        if (currentVal == 'thismonth') {
+            initTreatmentByStatus('thismonth', '2');
+        } else if (currentVal == 'yesterday') {
+            initTreatmentByStatus('yesterday', '2');
+        } else if (currentVal == 'last7days') {
+            initTreatmentByStatus('last7days', '2');
+        } else if (currentVal == 'week') {
+            initTreatmentByStatus('week', '2');
+        } else {
+            initTreatmentByStatus('today', '2');
+        }
+    });
+
+    $('#center_wise_arrival').on('change', function () {
+        var currentVal = $(this).val();
+        if (currentVal == 'thismonth') {
+            initUserWiseArrival('thismonth', 'user');
+        } else if (currentVal == 'yesterday') {
+            initUserWiseArrival('yesterday', 'user');
+        } else if (currentVal == 'last7days') {
+            initUserWiseArrival('last7days', 'user');
+        } else if (currentVal == 'week') {
+            initUserWiseArrival('week', 'user');
+        } else if (currentVal == 'lastmonth') {
+            initUserWiseArrival('lastmonth', 'user');
+        } else {
+            initUserWiseArrival('today', 'user');
+        }
+    });
+
+    $('#initCentreWiseArrival').on('change', function () {
+        var currentVal = $(this).val();
+        if (currentVal == 'lastmonth') {
+            initCentreWiseArrival('lastmonth', 'centre');
+        } else if (currentVal == 'thismonth') {
+            initCentreWiseArrival('thismonth', 'centre');
+        } else if (currentVal == 'yesterday') {
+            initCentreWiseArrival('yesterday', 'centre');
+        } else if (currentVal == 'last7days') {
+            initCentreWiseArrival('last7days', 'centre');
+        } else if (currentVal == 'week') {
+            initCentreWiseArrival('week', 'centre');
+        } else {
+            initCentreWiseArrival('today', 'centre');
+        }
+    });
+
+    $('#dr_wise_con').on('change', function () {
+        var currentVal = $(this).val();
+        if (currentVal == 'thismonth') {
+            initDoctorWiseConversion('thismonth', '', '', false);
+        } else if (currentVal == 'yesterday') {
+            initDoctorWiseConversion('yesterday', '', '', false);
+        } else if (currentVal == 'last7days') {
+            initDoctorWiseConversion('last7days', '', '', false);
+        } else if (currentVal == 'week') {
+            initDoctorWiseConversion('week', '', '', false);
+        } else {
+            initDoctorWiseConversion('today', '', '', false);
+        }
+    });
+    $('#dr_wise_fed').on('change', function () {
+        var currentVal = $(this).val();
+        if (currentVal == 'thismonth') {
+            initDoctorWiseFeedback('thismonth', '', '', false);
+        } else if (currentVal == 'yesterday') {
+            initDoctorWiseFeedback('yesterday', '', '', false);
+        } else if (currentVal == 'last7days') {
+            initDoctorWiseFeedback('last7days', '', '', false);
+        } else if (currentVal == 'week') {
+            initDoctorWiseFeedback('week', '', '', false);
+        } else {
+            initDoctorWiseFeedback('today', '', '', false);
+        }
+    });
     $(document).on("change", ".select2", function () {
         if ($(this).val() != '') {
             $(this).parents(".fv-row").find(".fv-plugins-message-container").find(".fv-help-block").hide();
@@ -29,10 +152,21 @@ $(document).ready(function () {
     });
 
     $(document).on("click", ".popup-close", function () {
+        reInitTable();
         $(this).parents(".modal").modal("toggle");
         $("#modal_allocate_doctors_form").find("#services").empty();
         $("#modal_allocate_discounts_form").find("#services").empty();
+        $("#modal_create_order_form").find('form').trigger('reset');
+        $("#modal_edit_transfer_products_form").find('form').trigger('reset');
+        $("#modal_add_product_stock").find('form').trigger('reset');
+        $("#modal_add_products_form").find('form').trigger('reset');
+        $("#add_order_product").empty();
+        $('#packages_add').find('#patient_membership').val('');
+        $('#packages_add').find('#discount_value_1').val('');
+        $('#packages_add').find("#add_appointment_id").empty();
+        $('#packages_add').find('#add_appointment_id').val(null).trigger('change');
     });
+
     $('.select2').select2();
     $('.to-from-datepicker').datepicker({
         todayHighlight: true,
@@ -59,7 +193,17 @@ $(document).ready(function () {
             rightArrow: '<i class="la la-angle-right"></i>',
         },
     }).datepicker("setDate", new Date());
-
+    $('.endRota-datepicker').datepicker({
+        todayHighlight: true,
+        orientation: 'bottom',
+        //startDate: new Date(),
+        "setDate": "7/11/2011",
+        format: 'yyyy-mm-dd',
+        templates: {
+            leftArrow: '<i class="la la-angle-left"></i>',
+            rightArrow: '<i class="la la-angle-right"></i>',
+        },
+    });
     $('.timepicker').timepicker({ timeFormat: 'h:mm:ss p' }).timepicker("setTime", new Date());
 
     $('#date_range').daterangepicker({
@@ -147,7 +291,8 @@ $(document).ready(function () {
 
     });
 
-    patientSearch();
+    patientSearch('user_search');
+    orderPatientSearch('user_search')
     leadSearch('lead_search_id')
 
     $(".package_id").select2({
@@ -290,6 +435,7 @@ function customDatePicker() {
 
 function addUsers() {
     $(".suggesstion-box").hide();
+    $(".croxcli").hide();
     $('.patient_id').val(null).trigger('change');
     $('.patient_search_id').val(null).trigger('change');
     $('.search_field').val('').change();
@@ -584,9 +730,13 @@ function reInitTable(page = null) {
             if (typeof datatable !== 'undefined') {
                 machineTypesFilters();
             }
+        } else if (page == "warehouse") {
+            if (typeof datatable !== 'undefined') {
+                warehouseFilters();
+            }
         } else {
             datatable.reload();
-            /* $('#kt_datatable').KTDatatable('reload'); */
+            //$('#kt_datatable').KTDatatable('reload');
         }
 
     }, 400);
@@ -876,6 +1026,20 @@ function machineTypesFilters() {
     datatable.search(filters, 'search');
 }
 
+function warehouseFilters() {
+    let filters = {
+        delete: '',
+        name: $("#search_name").val(),
+        manager_name: $("#search_manager_name").val(),
+        manager_phone: $("#search_manager_phone").val(),
+        status: $("#search_status").val(),
+        city: $("#search_city").val(),
+        created_at: $('#date_range').val(),
+        filter: 'filter',
+    }
+    datatable.search(filters, 'search');
+}
+
 function reloadTable(table_class) {
     patientDatatable[table_class].search({ datatable_reload: 'reload' }, 'search');
 }
@@ -894,6 +1058,8 @@ function resetFilters() {
         $(".select-all-checkboxes").prop("checked", false)
         $(".delete-records").addClass("d-none");
     }
+
+    $('.croxcli').hide()
 }
 
 function advanceFilters() {
@@ -1075,7 +1241,6 @@ function switchComplimentary($id) {
 function showException(error) {
     if (debug) {
         toastr.error(error);
-        console.log(error);
     }
 }
 
@@ -1126,14 +1291,14 @@ function makeArray(object) {
 }
 
 function phoneClip(data) {
-    if(data.phone == "***********"){
+    if (data.phone == "***********") {
         return '<a  href="javascript:void(0);" class="clipboard">' + data.phone + '</a>';
-    
-    }else{
+
+    } else {
         return '<a title="Click to Copy" href="javascript:void(0);" class="clipboard" data-toggle="tooltip" title="" data-clipboard-text="' + data.phone + '" data-original-title="Click to Copy" aria-describedby="tooltip' + data.id + '">' + data.phone + '</a>';
-    
+
     }
-   
+
 }
 
 function makePhoneNumber(phoneNo, permission, type = 0) {
@@ -1184,8 +1349,10 @@ function get_query() {
     return result;
 }
 function patientSearch(search_id = 'patient_id', flag = 1) {
+   
     let debounceTimer;
     $("." + search_id).on("keyup", function () {
+
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();
         if ($(this).val().length < 2) {
@@ -1211,19 +1378,72 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
                             });
                             $(".suggestion-list").html(html);
                             $(".suggesstion-box").show();
+                            $(".croxcli").show();
                         } else {
                             $(".suggesstion-box").hide();
                         }
                     }
                 });
-            }, 500);
+            }, 700);
         } else {
             $(".suggesstion-box").hide();
+            $(".croxcli").hide();
         }
     });
+    $(".croxcli").hide();
+    return false;
+}
+function orderPatientSearch(search_id = 'patient_id', flag = 1) {
+   
+    let debounceTimer;
+    $("." + search_id).on("keyup", function () {
+
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.order'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                let membershipCode = patient.membership_code || 'No-Membership';
+                                let membershipStatus = patient.membership_status || 'Inactive';
+                
+                                html += '<li onClick="selectUser(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">'
+                                    + patient.name + ' - ' + patient.id + ' - ' + membershipCode + ' - ' + membershipStatus + '</li>';
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                            $(".croxcli").show();
+                        } else {
+                            $(".suggesstion-box").hide();
+                        }
+                    }
+                });
+            }, 700);
+        } else {
+            $(".suggesstion-box").hide();
+            $(".croxcli").hide();
+        }
+    });
+    $(".croxcli").hide();
     return false;
 }
 function patientSearchRefund(search_id = 'patient_id', flag = 1) {
+
     $("." + search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box-refund").show();
@@ -1262,12 +1482,103 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
     return false;
 }
 
+function patientSearchPlan(search_id = 'patient_id', flag = 1) {
+  
+    let debounceTimer;
+    $("." + search_id).on("keyup", function () {
+
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box-plan").show();
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box-plan").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectUserPlan(`' + patient.name + '`, `' + patient.id + '`, `' + search_id + '`, `' + flag + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>'
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box-plan").show();
+                            $(".croxcli").show();
+                        } else {
+                            $(".suggesstion-box-plan").hide();
+                        }
+                    }
+                });
+            }, 500);
+        } else {
+            $(".suggesstion-box-plan").hide();
+            $(".croxcli").hide();
+        }
+    });
+    $(".croxcli").hide();
+    return false;
+}
+function productSearch(from_id, from_key, id = null, type = null) {
+    if (from_id != '') {
+        $.ajax({
+            type: "GET",
+            url: route('admin.transfer_products.fetch_products'),
+            dataType: 'json',
+            data: {
+                from_key: from_key,
+                from_id: from_id,
+                type: type,
+            },
+            success: function (response) {
+                let html = '';
+                $("#" + id + "_transfer_product").html(html);
+                let products = response.data.products;
+                if (products.length) {
+                    html = '<option value="">Select Product</option>';
+                    products.forEach(function (product) {
+                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name +' - '+product.available_quantity+' products available' + '</option>';
+                    });
+                } else {
+                    html = '<option value="">No Product Found</option>';
+                }
+                $("#add_transfer_product").html(html);
+                
+            }
+        });
+    }
+    return false;
+}
+
+function selectProduct(name, product_id, quantity, product_type, warehouse_id, location_id) {
+    $("#quantity").val(quantity);
+}
+
 function selectUser(name, user_id, search_id, flag = 1) {
     $("." + search_id).parent('div').find('.search_field').val(user_id).change();
     $("#add_patient_id").val(user_id);
     // $(".search_field").val(user_id).change();
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
+    $("." + search_id).focus();
+    if (flag == 1) {
+        getServices('add');
+    }
+}
+function selectUserPlan(name, user_id, search_id, flag = 1) {
+    $("." + search_id).parent('div').find('.search_field').val(user_id).change();
+    $("#add_patients_id").val(user_id);
+    $("." + search_id).val(name);
+    $(".suggesstion-box-plan").hide();
     $("." + search_id).focus();
     if (flag == 1) {
         getServices('add');
@@ -1297,7 +1608,7 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
         if ($(this).val() != '') {
             let form_type = $(this).parents("form").find('.form_type').val();
             clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(function () {                
+            debounceTimer = setTimeout(function () {
                 $.ajax({
                     type: "GET",
                     url: route('admin.leads.getlead.id'),
@@ -1305,7 +1616,6 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                     delay: 250,
                     data: { search: that },
                     success: function (response) {
-                        console.log('res', response);
                         let html = '';
                         let leads = response.data.leads;
                         let haveObjleads = Object.keys(leads).length;
@@ -1327,13 +1637,14 @@ function leadSearch(search_id = 'lead_search_id', flag = 1) {
                         }
                     }
                 });
-            },500)
+            }, 500)
         } else {
             $(".suggesstion-box").hide();
         }
     });
     return false;
 }
+
 
 function selectLead(name, lead_id, search_id, flag = 1) {
     $("." + search_id).parent('div').find('.search_field').val(lead_id).change();

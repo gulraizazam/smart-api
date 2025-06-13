@@ -381,6 +381,7 @@ function actions(data) {
     let edit_url = route('admin.appointments.edit', {id: id});
     let edit_service_url = route('admin.appointments.edit_service', {id: id});
     let detail_url = route('admin.appointments.detail', {id: id});
+    let feedback_url = route('admin.appointments.feedback.index', {id: id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
 
     let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: id, type: 'appointment'});
@@ -430,6 +431,7 @@ function actions(data) {
         }
 
         if (permissions.invoice_display) {
+
             if(data.invoice) {
                 actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
@@ -448,6 +450,18 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
+            if( permissions.add_feedback){
+                if(data.appointment_type == 2 && data.appointment_status==2 ) {
+                    actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="addFeedback(`'+feedback_url+'`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-plus"></i></span>\
+                        <span class="navi-text">Add Feedback</span>\
+                    </a>\
+                </li>';
+                }
+            }
+
+
         actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-eye"></i></span>\
@@ -688,7 +702,35 @@ function viewDetail(url) {
 
 
 }
+function addFeedback(url) {
 
+    $("#modal_appointment_feedback").modal("show");
+
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            console.log('res', response);
+            $('#add_patients_name').val(response.data.appointment.name);
+            $('#treatment_name').val(response.data.appointment.service.name);
+            $('#add_doctor_name').val(response.data.appointment.doctor.name);
+            $('#location').val(response.data.appointment.location.name);
+            $('#scheduled_date').val(response.data.appointment.scheduled_date);
+            $('#add_patients_id').val(response.data.appointment.patient_id);
+            $('#add_treatment_id').val(response.data.appointment.id);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+
+}
 function setAppointmentDetailData(response) {
 
     try {
@@ -771,7 +813,7 @@ function editRow(url, id, $class = 'detail-actions') {
 }
 
 function setEditData(response) {
-
+console.log(response);
     try {
 
         let appointment = response.data.appointment;
@@ -785,32 +827,32 @@ function setEditData(response) {
         let setting = response.data.setting;
         let genders = response.data.genders;
 
-        let type_option = '<option value="">All</option>';
+        let type_option = '';
         Object.entries(consultancy_types).forEach(function (consultancy_type) {
             type_option += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
         });
 
-        let service_option = '<option value="">All</option>';
+        let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
             service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
         });
 
-        let city_option = '<option value="">All</option>';
+        let city_option = '<option value="">Select a City</option>';
         Object.entries(cities).forEach(function (city) {
             city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });
 
-        let location_option = '<option value="">All</option>';
+        let location_option = '<option value="">Select a Location</option>';
         Object.entries(locations).forEach(function (location) {
             location_option  += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
 
-        let doctor_option = '<option value="">All</option>';
+        let doctor_option = '<option value="">Select a Doctor</option>';
         Object.entries(doctors).forEach(function (doctor) {
             doctor_option  += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
         });
 
-        let gender_option = '<option value="">All</option>';
+        let gender_option = '<option value="">Select a Gender</option>';
         Object.entries(genders).forEach(function (gender) {
             gender_option  += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
@@ -870,32 +912,32 @@ function setTreatmentEditData(response) {
         let genders = response.data.genders;
 
 
-        let service_option = '<option value="">All</option>';
+        let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
             service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
         });
 
-        let city_option = '<option value="">All</option>';
+        let city_option = '<option value="">Select a City</option>';
         Object.entries(cities).forEach(function (city) {
             city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });
 
-        let location_option = '<option value="">All</option>';
+        let location_option = '<option value="">Select a Location</option>';
         Object.entries(locations).forEach(function (location) {
             location_option  += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
 
-        let doctor_option = '<option value="">All</option>';
+        let doctor_option = '<option value="">Select a Doctor</option>';
         Object.entries(doctors).forEach(function (doctor) {
             doctor_option  += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
         });
 
-        let gender_option = '<option value="">All</option>';
+        let gender_option = '<option value="">Select a Gender</option>';
         Object.entries(genders).forEach(function (gender) {
             gender_option  += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
 
-        let machine_option = '<option value="">All</option>';
+        let machine_option = '<option value="">Select a Machine</option>';
         Object.entries(machines).forEach(function (machine) {
             machine_option  += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
         });

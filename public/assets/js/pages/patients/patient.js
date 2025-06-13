@@ -8,6 +8,7 @@ var table_columns = [
         width: 80,
         title: renderCheckbox(),
         template: function (data) {
+
             return childCheckbox(data);
         }
     },
@@ -17,19 +18,29 @@ var table_columns = [
         width: 'auto',
         sortable: false,
         template: function (data) {
+
             return makePatientId(data.id);
         }
-    },{
+    }, {
         field: 'name',
         title: 'Name',
         width: 'auto',
         sortable: false,
-    },{
-        field: 'email',
-        title: 'Email',
+    }, {
+        field: 'membership',
+        title: 'Membership',
         width: 'auto',
         sortable: false,
-    },{
+        template: function (data) {
+
+            if (data.membership == null) {
+                return 'No Membership';
+            }
+            var end_date = moment(data.membership.end_date);
+            var isExpired = end_date.isBefore(moment());
+            return data.membership.code + ' - ' + (isExpired ? 'Expired' : (data.membership.active === 1 ? 'Active' : 'Inactive'));
+        }
+    }, {
         field: 'phone',
         title: 'Phone',
         width: 90,
@@ -40,7 +51,7 @@ var table_columns = [
             }
             return '***********';
         }
-    },{
+    }, {
         field: 'gender',
         title: 'Gender',
         width: 60,
@@ -48,7 +59,7 @@ var table_columns = [
         template: function (data) {
             return getGender(data.gender);
         }
-    },{
+    }, {
         field: 'created_at',
         title: 'Created At',
         width: 'auto',
@@ -81,11 +92,11 @@ var table_columns = [
 function actions(data) {
 
     let id = data.id;
-
-    let url = route('admin.patients.edit', {id: id});
-    let delete_url = route('admin.patients.destroy', {id: id});
-    let view_url = route('admin.patients.preview', {id: id});
-
+    let url = route('admin.patients.edit', { id: id });
+    let delete_url = route('admin.patients.destroy', { id: id });
+    let view_url = route('admin.patients.preview', { id: id });
+    let assign_membership_url = route('admin.patients.preview', { id: id });
+    let cancel_url = route('admin.memberships.cancel', { id: id });
     if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
             <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -98,7 +109,19 @@ function actions(data) {
                         </li>';
         if (permissions.edit) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="editRow(`'+url+'`, `'+id+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="assignMembership(`'+ assign_membership_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Assign Membership</span>\
+                        </a>\
+                    </li>';
+            actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="cancelMembership(`' + cancel_url + '`);" class="navi-link">\
+                    <span class="navi-icon"><i class="la la-cross"></i></span>\
+                    <span class="navi-text">Cancel Membership</span>\
+                    </a>\
+                </li>';
+            actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="editRow(`'+ url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
@@ -115,7 +138,7 @@ function actions(data) {
 
         if (permissions.manage) {
             actions += '<li class="navi-item">\
-                            <a href="'+view_url+'" class="navi-link">\
+                            <a href="'+ view_url + '" class="navi-link">\
                             <span class="navi-icon"><i class="la la-eye"></i></span>\
                             <span class="navi-text">View</span>\
                             </a>\
@@ -134,12 +157,12 @@ function actions(data) {
 function editRow(url, id) {
 
     $("#modal_edit_patients").modal("show");
-    $("#modal_edit_patients_form").attr("action", route('admin.patients.update', {id: id}));
+    $("#modal_edit_patients_form").attr("action", route('admin.patients.update', { id: id }));
 
     $.ajax({
-        // headers: {
-        //     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        // },
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
         url: url,
         type: "GET",
         cache: false,
@@ -155,18 +178,71 @@ function editRow(url, id) {
 
 
 }
+function assignMembership(url, id) {
+    $("#modal_edit_memberships").modal("show");
+    $("#modal_edit_memberships_form").attr("action", route('admin.patients.assignmembership', { id: id }));
+
+}
+function cancelMembership(url) {
+
+    swal.fire({
+        title: 'Are you sure you want to cancel?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, Cancel!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+
+        if (result.value) {
+
+            sendCancelMembershipRequest(url)
+
+        }
+    });
+}
+function sendCancelMembershipRequest(route) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route,
+        type: 'post',
+        cache: false,
+        success: function (response) {
+            console.log(response);
+            if (response.status) {
+                toastr.success(response.message);
+
+                reInitTable();
+            } else {
+                toastr.error(response.message);
+            }
+        },
+        error: function (xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
 
 function setEditData(response) {
 
     let genders = response.data.gender;
     let patient = response.data.patient;
+
     let gender_option = '<option value="">All</option>';
 
     Object.entries(genders).forEach(function (gender) {
-        gender_option += '<option value="'+gender[0]+'">'+gender[1]+'</option>';
+        gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
     });
 
+
     $("#edit_gender_id").html(gender_option);
+
     $("#edit_name").val(patient.name);
     $("#edit_email").val(patient.email);
     $("#edit_old_phone").val(patient.phone);
@@ -210,7 +286,7 @@ function setPatientData(response) {
     let gender_option = '<option value="">All</option>';
 
     Object.entries(genders).forEach(function (gender) {
-        gender_option += '<option value="'+gender[0]+'">'+gender[1]+'</option>';
+        gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
     });
     $("#add_gender_id").html(gender_option);
 
@@ -218,15 +294,16 @@ function setPatientData(response) {
 
 function applyFilters(datatable) {
 
-    $('#apply-filters').on('click', function() {
+    $('#apply-filters').on('click', function () {
 
-        let filters =  {
+        let filters = {
             delete: '',
             patient_id: $("#search_patient_id").val(),
             name: $("#search_name").val(),
             email: $("#search_email").val(),
             phone: $("#search_phone").val(),
             gender: $("#search_gender").val(),
+            membership: $("#search_membership").val(),
             created_at: $("#date_range").val(),
             status: $("#search_status").val(),
             filter: 'filter',
@@ -238,11 +315,12 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $('#reset-filters').on('click', function() {
-        let filters =  {
+    $('#reset-filters').on('click', function () {
+        let filters = {
             delete: '',
             patient_id: '',
             name: '',
+            membership: '',
             email: '',
             phone: '',
             gender: '',
@@ -261,21 +339,25 @@ function setFilters(filter_values, active_filters) {
 
         let status = filter_values.status;
         let genders = filter_values.gender;
-
+        let memberships = filter_values.memberships;
         let status_options = '<option value="">All</option>';
         let gender_options = '<option value="">All</option>';
-
+        let membership_options = '<option value="">All</option>';
         Object.entries(genders).forEach(function (gender, index) {
             gender_options += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
+        Object.entries(memberships).forEach(function (membership, index) {
 
+            membership_options += '<option value="' + membership[1] + '">' + membership[0] + '</option>';
+        });
         Object.entries(status).forEach(function (value, index) {
             status_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
         });
 
         $("#search_status").html(status_options);
         $("#search_gender").html(gender_options);
-
+        $("#search_membership").html(membership_options);
+        $("#search_membership").val(active_filters.memberships);
         $("#search_name").val(active_filters.name);
         $("#search_status").val(active_filters.status);
         $("#search_gender").val(active_filters.gender);
@@ -303,7 +385,11 @@ function hideShowAdvanceFilters(active_filters) {
 }
 
 
-jQuery(document).ready( function () {
+jQuery(document).ready(function () {
     $("#date_range").val("");
 })
 
+function searchPatient() {
+    $('#search_patient_id').val($('.patient_id').val());
+    $('.patient_id').val() ? $('.croxcli').show() : $('.croxcli').hide();
+}

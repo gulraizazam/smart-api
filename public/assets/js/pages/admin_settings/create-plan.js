@@ -6,6 +6,7 @@ function patient_search_createpalan() {
             dataType: 'json',
             delay: 250,
             data: function (params) {
+
                 return {
                     search: params.term // search term
                 };
@@ -128,142 +129,142 @@ $(document).ready(function () {
         $("#add_appointment_id").empty();
         $('#add_appointment_id').val(null).trigger('change');
         getAppointments($(this).val());
-        
+
     });
 
 
     /*save data for both predefined discounts and keyup trigger*/
-    $("#AddPackage").click(function () {
-        showSpinner();
+    // $("#AddPackage").click(function () {
+    //     showSpinner();
 
-        $('#wrongMessage').hide();
-        $('#inputfieldMessage').hide();
-        $('#percentageMessage').hide();
-        $('#AlreadyExitMessage').hide();
-        $(this).attr("disabled", true);
-        var random_id = $('#random_id_1').val();
-        var service_id = $('#service_id_1').val(); //Basicailly it is bundle id
-        var discount_id = $('#discount_id_1').val();
-        var net_amount = $('#net_amount_1').val();
-        var discount_type = $('#discount_type_1').val();
-        var discount_price = $('#discount_value_1').val();
-        var discount_slug = $("#slug_1").val();
-        var package_total = $('#package_total_1').val();
+    //     $('#wrongMessage').hide();
+    //     $('#inputfieldMessage').hide();
+    //     $('#percentageMessage').hide();
+    //     $('#AlreadyExitMessage').hide();
+    //     $(this).attr("disabled", true);
+    //     var random_id = $('#random_id_1').val();
+    //     var service_id = $('#service_id_1').val(); //Basicailly it is bundle id
+    //     var discount_id = $('#discount_id_1').val();
+    //     var net_amount = $('#net_amount_1').val();
+    //     var discount_type = $('#discount_type_1').val();
+    //     var discount_price = $('#discount_value_1').val();
+    //     var discount_slug = $("#slug_1").val();
+    //     var package_total = $('#package_total_1').val();
 
-        var is_exclusive = $('#is_exclusive').val();
-        var location_id = $('#location_id_1').val();
+    //     var is_exclusive = $('#is_exclusive').val();
+    //     var location_id = $('#location_id_1').val();
 
-        if (service_id && net_amount && location_id) {
-            if (discount_slug == 'custom' && discount_id != '') {
-                if (discount_price == '') {
-                    $('#inputfieldMessage').show();
-                    return false;
-                }
-                if (discount_type == 'Percentage') {
-                    if (discount_price > 100) {
-                        $('#percentageMessage').show();
-                        return false;
-                    }
-                }
-            }
+    //     if (service_id && net_amount && location_id) {
+    //         if (discount_slug == 'custom' && discount_id != '') {
+    //             if (discount_price == '') {
+    //                 $('#inputfieldMessage').show();
+    //                 return false;
+    //             }
+    //             if (discount_type == 'Percentage') {
+    //                 if (discount_price > 100) {
+    //                     $('#percentageMessage').show();
+    //                     return false;
+    //                 }
+    //             }
+    //         }
 
-            var formData = {
-                'random_id': random_id,
-                'bundle_id': service_id, //Basicailly it is bundle id
-                'discount_id': discount_id,
-                'net_amount': net_amount,
-                'discount_type': discount_type,
-                'discount_price': discount_price,
-                'package_total': package_total,
-                'is_exclusive': is_exclusive,
-                'location_id': location_id,
-                'package_bundles[]': []
-            };
+    //         var formData = {
+    //             'random_id': random_id,
+    //             'bundle_id': service_id, //Basicailly it is bundle id
+    //             'discount_id': discount_id,
+    //             'net_amount': net_amount,
+    //             'discount_type': discount_type,
+    //             'discount_price': discount_price,
+    //             'package_total': package_total,
+    //             'is_exclusive': is_exclusive,
+    //             'location_id': location_id,
+    //             'package_bundles[]': []
+    //         };
 
-            $(".package_bundles").each(function () {
-                formData['package_bundles[]'].push($(this).val());
-            });
+    //         $(".package_bundles").each(function () {
+    //             formData['package_bundles[]'].push($(this).val());
+    //         });
 
-            $.ajax({
-                type: 'get',
-                url: route('admin.packages.savepackages_service'),
-                data: formData,
-                success: function (resposne) {
-                    
-                  
-                    let consume = 'No';
-                    if (resposne.status == '1') {
-                        
-                        $('#table_1').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.myarray.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.myarray.record.id + ")'>" + resposne.myarray.service_name + "</a></td>" +
-                            "<td>" + resposne.myarray.service_price.toLocaleString() + "</td>" +
-                            "<td>" + resposne.myarray.discount_name + "</td>" +
-                            "<td>" + resposne.myarray.discount_type + "</td>" +
-                            "<td>" + resposne.myarray.discount_price + "</td>" +
-                            "<td>" + resposne.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.myarray.record.tax_price + "</td>" +
-                            "<td>" + resposne.myarray.record.tax_including_price.toLocaleString() + "</td>" +
-                            "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.myarray.record.id + "' />" +
-                            "<button class='btn btn-xs btn-danger' onClick='deleteModel(" + resposne.myarray.record.id + ")'>Delete</button>" +
-                            "</td>" +
-                            "</tr>");
+    //         $.ajax({
+    //             type: 'get',
+    //             url: route('admin.packages.savepackages_service'),
+    //             data: formData,
+    //             success: function (resposne) {
 
-                        jQuery.each(resposne.myarray.record_detail, function (i, record_detail) {
-                            if (record_detail.is_consumed == '0') {
-                                consume = 'No';
-                            } else {
-                                consume = 'Yes';
-                            }
-                            $('#table_1').append("<tr class='inner_records_hr HR_" + resposne.myarray.record.id + " " + resposne.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
-                        });
-                        
-                        $("#package_total_1").val(resposne.myarray.total);
-                        toggle(resposne.myarray.record.id);
 
-                       
+    //                 let consume = 'No';
+    //                 if (resposne.status == '1') {
 
-                        keyfunction_grandtotal();
+    //                     $('#table_1').append("" +
+    //                         "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.myarray.record.id + "'>" +
+    //                         "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.myarray.record.id + ")'>" + resposne.myarray.service_name + "</a></td>" +
+    //                         "<td>" + resposne.myarray.service_price.toLocaleString() + "</td>" +
+    //                         "<td>" + resposne.myarray.discount_name + "</td>" +
+    //                         "<td>" + resposne.myarray.discount_type + "</td>" +
+    //                         "<td>" + resposne.myarray.discount_price + "</td>" +
+    //                         "<td>" + resposne.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+    //                         "<td>" + resposne.myarray.record.tax_price + "</td>" +
+    //                         "<td>" + resposne.myarray.record.tax_including_price.toLocaleString() + "</td>" +
+    //                         "<td>" +
+    //                         "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.myarray.record.id + "' />" +
+    //                         "<button class='btn btn-xs btn-danger' onClick='deleteModel(" + resposne.myarray.record.id + ")'>Delete</button>" +
+    //                         "</td>" +
+    //                         "</tr>");
 
-                        var rows = $('#table_1 tbody tr').length;
+    //                     jQuery.each(resposne.myarray.record_detail, function (i, record_detail) {
+    //                         if (record_detail.is_consumed == '0') {
+    //                             consume = 'No';
+    //                         } else {
+    //                             consume = 'Yes';
+    //                         }
+    //                         $('#table_1').append("<tr class='inner_records_hr HR_" + resposne.myarray.record.id + " " + resposne.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax % : " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+    //                     });
 
-                        if (rows >= 3) {
-                            $("#location_id_1").prop("disabled", true);
-                        }
-                        /*we enable add button after all functionality enable*/
-                        $('#AddPackage_1').attr("disabled", false);
-                        $('#add_service_id').val('').change();
-                        $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    //                     $("#package_total_1").val(resposne.myarray.total);
+    //                     toggle(resposne.myarray.record.id);
 
-                        $('#add_discount_id').val('').change();
-                        $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
 
-                        $('#add_discount_type').val('').change();
-                        $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
 
-                        $('#discount_value_1').val('');
-                        $('#discount_value_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    //                     keyfunction_grandtotal();
 
-                        $('#net_amount_1').val('');
-                        $('#net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    //                     var rows = $('#table_1 tbody tr').length;
 
-                    } else {
-                        
-                        $('#AlreadyExitMessage').show();
-                        $('#AddPackage_1').attr("disabled", false);
-                    }
+    //                     if (rows >= 3) {
+    //                         $("#location_id_1").prop("disabled", true);
+    //                     }
+    //                     /*we enable add button after all functionality enable*/
+    //                     $('#AddPackage_1').attr("disabled", false);
+    //                     $('#add_service_id').val('').change();
+    //                     $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
 
-                    hideSpinnerRestForm();
-                }
-            });
-        } else {
-            hideSpinnerRestForm();
-            // toastr.error('Please fill out the required fields.')
-            $('#inputfieldMessage').show();
-            $(this).attr("disabled", false);
-        }
-    });
+    //                     $('#add_discount_id').val('').change();
+    //                     $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+
+    //                     $('#add_discount_type').val('').change();
+    //                     $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+
+    //                     $('#discount_value_1').val('');
+    //                     $('#discount_value_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+
+    //                     $('#net_amount_1').val('');
+    //                     $('#net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+
+    //                 } else {
+
+    //                     $('#AlreadyExitMessage').show();
+    //                     $('#AddPackage_1').attr("disabled", false);
+    //                 }
+
+    //                 hideSpinnerRestForm();
+    //             }
+    //         });
+    //     } else {
+    //         hideSpinnerRestForm();
+    //         // toastr.error('Please fill out the required fields.')
+    //         $('#inputfieldMessage').show();
+    //         $(this).attr("disabled", false);
+    //     }
+    // });
     /*End*/
 
     patientSearch('search_patient');
@@ -312,7 +313,7 @@ var table_columns = [
         title: 'Centre',
         sortable: false,
         width: 'auto',
-    },  {
+    }, {
         field: 'total',
         title: 'Total',
         sortable: false,
@@ -341,7 +342,7 @@ var table_columns = [
         title: 'Refund',
         sortable: false,
         width: 60,
-    },{
+    }, {
         field: 'session_count',
         title: 'Session count',
         sortable: false,
@@ -375,6 +376,7 @@ function actions(data) {
 
         let edit_url = route('admin.packages.edit', { id: id });
         let display_url = route('admin.packages.display', { id: id });
+        let details_url = route('admin.packages.view.package', { id: id });
         let delete_url = route('admin.packages.destroy', { id: id });
         let sms_log_url = route('admin.packages.sms_logs', { id: id });
         let log_url = route('admin.packages.log', { id: id, type: 'web' });
@@ -398,14 +400,22 @@ function actions(data) {
                     </li>';
 
             if (permissions.create) {
+
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="viewPlan(`' + display_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye"></i></span>\
                         <span class="navi-text">Display</span>\
                     </a>\
                 </li>';
+
+                actions += '<li class="navi-item">\
+                <a href="' + details_url + '" class="navi-link">\
+                    <span class="navi-icon"><i class="fa fa-info" aria-hidden="true"></i></span>\
+                    <span class="navi-text">Details</span>\
+                </a>\
+            </li>';
             }
-           
+
             if (permissions.log) {
                 actions += '<li class="navi-item">\
                         <a href="'+ log_url + '" class="navi-link">\
@@ -445,6 +455,10 @@ function actions(data) {
 
 
 function editRow(url) {
+    total_amountArray = [];
+    edit_amountArray = [];
+    ExistingTotal = 0;
+    $('.error-msg').html('');
     $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     $("#edit_discount_id").html('<option value="">Select Discount</option>');
     $("#edit_discount_type").attr('disabled', true);
@@ -462,6 +476,7 @@ function editRow(url) {
         type: "GET",
         cache: false,
         success: function (response) {
+
             setEditData(response);
 
         },
@@ -498,6 +513,7 @@ function refund(url) {
         type: "GET",
         cache: false,
         success: function (response) {
+
             refundData(response);
 
         },
@@ -550,7 +566,7 @@ function refundData(response) {
         $("#date_backend").val(refund.date_backend);
         $("#refund_payment_mode_id").html(payment_options);
         $("#received_amount").val(refund.cash_amount);
-        
+
     } catch (error) {
         showException(error);
     }
@@ -558,9 +574,7 @@ function refundData(response) {
 }
 
 function setEditData(response) {
-   
     try {
-
         let appointmentArray = response.data.appointmentArray;
         let end_previous_date = response.data.end_previous_date;
         let grand_total = response.data.grand_total;
@@ -571,38 +585,35 @@ function setEditData(response) {
         let packagebundles = response.data.packagebundles;
         let packageservices = response.data.packageservices;
         let paymentmodes = response.data.paymentmodes;
+        let users = response.data.users;
         let range = response.data.range;
         let total_price = response.data.total_price;
-
         let patient = package.user;
         let location = package.location;
-
         let history_options = noRecordFoundTable(5);
-
+        let membership = response.data.membership;
+        let selectedUserId = response.data.selectedUserId;
         if (packageadvances.length) {
-
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
-
                 if (packageadvance.cash_amount != '0') {
-
                     let selector = 'history_cash_row_' + packageadvance.id;
                     history_options += '<tr id="' + selector + '">';
-
                     if (packageadvance.is_tax == 1 && packageadvance.cash_flow == 'out') {
                         history_options += '<td>Tax</td>';
                     } else {
                         history_options += '<td>' + packageadvance?.paymentmode?.name + '</td>';
                     }
-                    if(packageadvance.is_refund==1){
+
+                    if (packageadvance.is_refund == 1) {
                         history_options += '<td>out / refund</td>';
-                    }else if(packageadvance.is_setteled==1){
+                    } else if (packageadvance.is_setteled == 1) {
                         history_options += '<td>out / settled</td>';
                     }
-                    else{
+                    else {
                         history_options += '<td>' + packageadvance.cash_flow + '</td>';
                     }
-                        
+
                     history_options += '<td>' + packageadvance.cash_amount + '</td>';
                     history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
 
@@ -630,10 +641,10 @@ function setEditData(response) {
         if (packagebundles.length) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
-               
+
                 var del_icon;
                 //if(packagebundle.net_amount > 0){
-                    del_icon="<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+                del_icon = "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
                 // }else{
                 //     del_icon="<td></td>";
                 // }
@@ -670,7 +681,7 @@ function setEditData(response) {
 
                 service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
                 //service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
-                  service_options +=  '<td>'+packagebundle.tax_price+'</td>';
+                service_options += '<td>' + packagebundle.tax_price + '</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
                 // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
                 // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
@@ -687,16 +698,15 @@ function setEditData(response) {
                         } else {
                             consume = 'Yes';
                         }
-                        // setTimeout(() => {
-                        //     $("#cc-"+packagebundle.id).text(consume);    
-                        // }, 500);
                         service_options += '<tr class="' + packagebundle.id + '" style="display: none">';
                         service_options += '<td></td>';
                         service_options += '<td>' + packageservice.service.name + '</td>';
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
                         service_options += '<td>Tax:' + packageservice.tax_price + '</td>';
                         service_options += '<td>Total Amount:' + packageservice.tax_including_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed:' + consume + '</td>';
+                        service_options += '<td colspan="2">Is Consumed:' + consume + '</td>';
+                        service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
+
                         service_options += '</tr>';
                     }
 
@@ -712,7 +722,15 @@ function setEditData(response) {
         }
 
         let serviceOptions = '<option value="">Select Service</option>';
-
+        let userOptions = '<option value="">Select</option>';
+        if (users) {
+            
+            Object.entries(users).forEach(function ([id, name]) {
+                let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
+                userOptions += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
+            });
+        }
+        
         if (locationhasservice.length) {
             Object.values(locationhasservice).forEach(function (packageservice) {
                 serviceOptions += '<option value="' + packageservice?.id + '">' + packageservice?.name + '</option>';
@@ -727,6 +745,7 @@ function setEditData(response) {
 
 
         $("#edit_appointment_id").html(appointment_options);
+        $("#edit-membership-name").text(membership);
         $("#edit_service_id").html(serviceOptions);
 
         appointmentCheck(package);
@@ -736,16 +755,16 @@ function setEditData(response) {
         $(".edit_plan_history").html(history_options);
 
         $("#edit_payment_mode_id").html(payment_options);
-
+        $("#edit_sold_by").html(userOptions);
         $("#edit-patient-name").text(patient?.name)
         $("#edit-location-name").text(location?.name)
         $("#edit_random_id").val(package?.random_id)
         $("#edit_parent_id").val(package?.patient_id)
         $("#edit_location_id").val(package?.location?.id)
         $("#edit_random_id_1").val(package?.random_id)
-        $("#edit_package_total_1").val(total_price)
+        $("#edit_package_total_1").val(total_price.toFixed(2));
         $("#edit_grand_total_1").val(grand_total)
-
+        $('#edit_cash_amount_1').prop('disabled', true);
 
     } catch (error) {
         showException(error);
@@ -949,7 +968,6 @@ function setSmsLogs(response) {
 }
 
 function viewPlan($route) {
-
     $("#modal_display").modal("show");
 
     $.ajax({
@@ -971,13 +989,14 @@ function viewPlan($route) {
 }
 
 function displayData(response) {
-    
+
     try {
 
         let packageadvances = response.data.packageadvances;
         let package = response.data.package;
         let packagebundles = response.data.packagebundles;
         let packageservices = response.data.packageservices;
+        let membership = response.data.membership;
 
         $("#package_pdf").attr("href", route('admin.packages.package_pdf', package.id))
 
@@ -988,15 +1007,15 @@ function displayData(response) {
             history_options = '';
             Object.values(packageadvances).forEach(function (packageadvance) {
 
-                if (packageadvance.cash_amount != '0' && packageadvance.is_tax == 0) {
+                if (packageadvance.cash_amount != '0') {
                     history_options += '<tr>';
                     history_options += '<td>' + packageadvance.paymentmode.name + '</td>';
-                    if(packageadvance.is_refund==1){
+                    if (packageadvance.is_refund == 1) {
                         history_options += '<td>out / refund</td>';
-                    }else if(packageadvance.is_setteled==1){
+                    } else if (packageadvance.is_setteled == 1) {
                         history_options += '<td>out / settled</td>';
                     }
-                    else{
+                    else {
                         history_options += '<td>' + packageadvance.cash_flow + '</td>';
                     }
                     history_options += '<td>' + packageadvance.cash_amount + '</td>';
@@ -1008,7 +1027,7 @@ function displayData(response) {
 
 
         let service_options = noRecordFoundTable(9);
-        
+
         if (packagebundles.length) {
             service_options = '';
             Object.values(packagebundles).forEach(function (packagebundle) {
@@ -1043,7 +1062,7 @@ function displayData(response) {
                 service_options += '</td>';
 
                 service_options += '<td>' + packagebundle.tax_exclusive_net_amount + '</td>';
-              
+
                 service_options += '<td>' + packagebundle.tax_price + '</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
 
@@ -1064,9 +1083,11 @@ function displayData(response) {
                         service_options += '<td></td>';
                         service_options += '<td>' + packageservice.service.name + '</td>';
                         service_options += '<td>Amount : ' + packageservice.tax_exclusive_price + '</td>';
-                       
+
                         service_options += '<td>Tax Amt. : ' + packageservice.tax_price + '</td>';
-                        service_options += '<td colspan="4">Is Consumed : ' + consume + '</td>';
+                        service_options += '<td colspan="2">Is Consumed : ' + consume + '</td>';
+                         service_options += '<td colspan="2">Consumed At: ' + (packageservice.consumed_at ?? 'N/A') + '</td>';
+
                         service_options += '</tr>';
                     }
 
@@ -1075,7 +1096,7 @@ function displayData(response) {
         }
 
         $(".display_plans").html(service_options);
-
+        $("#membership_name").text(membership);
 
 
         $(".plan_history").html(history_options);
@@ -1195,14 +1216,21 @@ function hideShowAdvanceFilters(active_filters) {
 
 
 function createPlan(url, id) {
+    total_amountArray = [];
+    edit_amountArray = [];
+    ExistingTotal = 0;
     $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     setTimeout(function () {
         $("#add_discount_id").html('<option value="">Select Discount</option>');
-        $("#add_patient_id").val('');
+        $("#add_patients_id").val('');
         $(".search_patient").val('');
         $("#net_amount_1").val('');
         $("#package_total_1").val('');
         $("#grand_total_1").val('');
+        $('#packages_add').find('#patient_membership').val('');
+        $('#packages_add').find('#discount_value_1').val('');
+        $('#packages_add').find("#add_appointment_id").empty();
+        $('#packages_add').find('#add_appointment_id').val(null).trigger('change');
     }, 500)
 
     $("#add_discount_type").attr('disabled', true);
@@ -1273,6 +1301,7 @@ function setPlanData(response) {
 
     $("#add_plan_location_id").html(location_options).val(appointmentinformation?.location_id);
     $("#random_id_1").val(random_id);
+    $('#cash_amount_1').prop('disabled', true);
 
     getServices();
 
@@ -1306,6 +1335,7 @@ function getServices() {
             $("#modal_edit_regions").modal("show");
 
             setServices(response);
+           
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -1317,7 +1347,7 @@ function getServices() {
 
 function setServices(response) {
 
-    getAppointments($("#add_patient_id").val());
+    getAppointments($("#add_patients_id").val());
 
     try {
 
@@ -1335,7 +1365,23 @@ function setServices(response) {
     }
 
 }
+function setSoldBy(response) {
+    try {
+        let users = response.data.users;
+        let selectedUserId = response.data.selected_doctor_id; // Get selected user ID from response
+        let user_options = '<option value=""> Select </option>';
 
+        Object.entries(users).forEach(function ([id, name]) {
+            let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
+            user_options += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
+        });
+
+        $("#add_sold_by").html(user_options);
+
+    } catch (error) {
+        showException(error);
+    }
+}
 function getAppointments(patient) {
     let location = $("#add_plan_location_id").val();
 
@@ -1356,10 +1402,8 @@ function getAppointments(patient) {
             type: "GET",
             cache: false,
             success: function (response) {
-                //  $("#modal_edit_regions").modal("show");
-
                 setAppointments(response);
-
+                    setSoldBy(response);
             },
             error: function (xhr, ajaxOptions, thrownError) {
                 errorMessage(xhr);
@@ -1377,6 +1421,7 @@ function setAppointments(response) {
 
         let appointments = response.data.appointments;
         let appointment_options = '';
+        let membership = response.data.membership;
 
         if (appointments.length) {
 
@@ -1387,7 +1432,8 @@ function setAppointments(response) {
             $("#add_appointment_id").html(appointment_options);
 
         }
-
+        $("#patient_membership").val(membership);
+        $("#patient_membership").attr('disabled', true);
     } catch (error) {
         showException(error);
     }
@@ -1395,12 +1441,16 @@ function setAppointments(response) {
 
 /*Add Plan functions*/
 function getServiceDiscount($this, type = '') {
-
     hideMessages();
     var service_id = $this.val();
-    var patient_id = $('#add_patient_id').val();
+    var patient_id = $('#add_patients_id').val();
     var location_id = $('#add_plan_location_id').val();
     //$("#"+type+"add_discount_id").val('0').trigger('change');
+    if (service_id == "") {
+        $("#add_service_id_error").show()
+    } else {
+        $("#add_service_id_error").hide()
+    }
     setTimeout(function () {
         $('#discount_value_1').val('');
         $("#discount_value_1").attr('disabled', true);
@@ -1431,7 +1481,7 @@ function getServiceDiscount($this, type = '') {
 
                     $("#" + type + "add_discount_id").html(options);
 
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
 
                 } else {
@@ -1440,7 +1490,7 @@ function getServiceDiscount($this, type = '') {
 
                     $("#add_discount_id").html(options);
 
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
 
                 }
@@ -1465,16 +1515,17 @@ function getServiceDiscount($this, type = '') {
 }
 
 function getDiscountInfo($this) {
-
     hideMessages();
-
+    $("#add_discount_type_error").hide()
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
     setTimeout(function () {
         $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
+    if (discount_id == "") {
+        $("#AddPackage").prop('disabled', false);
+    }
     if (service_id == null && (discount_id == null || discount_id == '')) {
-        
         $("#add_discount_type").prop("disabled", false);
         $("#add_discount_type").val('').trigger('change');
         $("#discount_value_1").prop("disabled", false);
@@ -1482,9 +1533,7 @@ function getDiscountInfo($this) {
         $("#net_amount_1").prop("disabled", false);
         $("#net_amount_1").val('');
         $("#slug_1").val('not_custom');
-
     } else if ((discount_id == null || discount_id == '') && service_id != null) {
-
         $("#add_discount_type").prop("disabled", true);
         $("#add_discount_type").val('').trigger('change');
         $("#discount_value_1").prop("disabled", true);
@@ -1497,13 +1546,8 @@ function getDiscountInfo($this) {
             } else {
                 getServiceDiscount($("#add_service_id"));
             }
-
         }, 100);
-
-
-
     } else if (service_id == null && discount_id == '0') {
-
         $("#add_discount_type").prop("disabled", false);
         $("#add_discount_type").val('').trigger('change');
         $("#discount_value_1").prop("disabled", false);
@@ -1511,9 +1555,9 @@ function getDiscountInfo($this) {
         $("#net_amount_1").prop("disabled", false);
         $("#net_amount_1").val('');
         $("#slug_1").val('not_custom');
-
     } else if (service_id && discount_id == '0') {
         $("#slug_1").val('not_custom');
+
         $.ajax({
             type: 'get',
             url: route('admin.packages.getserviceinfo_discount_zero'),
@@ -1521,20 +1565,21 @@ function getDiscountInfo($this) {
                 'bundle_id': service_id, //Basicailly it is bundle id
             },
             success: function (resposne) {
-                
                 if (resposne.status) {
                     $("#add_discount_type").prop("disabled", true);
                     $("#add_discount_type").val('').trigger('change');
                     $("#discount_value_1").prop("disabled", true);
                     $("#discount_value_1").val('');
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
+
                 } else {
                     $('#wrongMessage').show();
                 }
             },
         });
     } else {
+
         if (service_id && discount_id != '0') {
             $.ajax({
                 type: 'get',
@@ -1544,41 +1589,65 @@ function getDiscountInfo($this) {
                     'discount_id': discount_id
                 },
                 success: function (resposne) {
-                   
+
                     if (resposne.status) {
 
                         if (resposne.data.custom_checked == 0) {
                             $("#add_discount_type").val(resposne.data.discount_type).change();
-                            if(resposne.data.discount_type == "Configurable"){
-                                $("#select_discount_type").css("display","none");
-                                $("#configurable_discount_type").css("display","block");
-                                $("#discount_value_div").css("display","none");
-                                $("#price_div").css("display","none");
-                            }else{
-                                $("#select_discount_type").css("display","block");
-                                $("#configurable_discount_type").css("display","none");
-                                $("#discount_value_div").css("display","block");
+                            $("#edit_discount_type").prop("disabled", true);
+                            if (resposne.data.discount_type == "Configurable") {
+                                $("#select_discount_type").css("display", "none");
+                                $("#configurable_discount_type").css("display", "block");
+                                $("#discount_value_div").css("display", "none");
+                                $("#price_div").css("display", "none");
+                            } else {
+                                $("#select_discount_type").css("display", "block");
+                                $("#configurable_discount_type").css("display", "none");
+                                $("#discount_value_div").css("display", "block");
                                 $("#add_discount_type").prop("disabled", true);
                             }
-                            
                             $("#discount_value_1").val(resposne.data.discount_price);
                             $("#discount_value_1").prop("disabled", true);
-                            $("#net_amount_1").val(resposne.data.net_amount);
+                            $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#net_amount_1").prop("disabled", true);
                             $("#slug_1").val('not_custom');
+                            if (resposne.data.discount_type == 'Percentage') {
+                                if (resposne.data.discount_price > 100) {
+                                    $('#percentageMessage').show();
+
+                                    return false;
+                                } else {
+                                    $('#percentageMessage').hide();
+
+                                }
+                            } else {
+
+                                if (resposne.data.discount_price > resposne.data.net_amount) {
+                                    setTimeout(function () {
+                                        $("#AddPackage").attr('disabled', 'disabled');
+                                        $("#discount_value_1").val('');
+                                    }, 500);
+                                } else {
+                                    setTimeout(function () {
+                                        $("#AddPackage").removeAttr('disabled');
+                                    }, 500);
+
+                                }
+                            }
                         } else {
-                          
                             $("#add_discount_type").prop("disabled", false);
                             $("#add_discount_type").val('').trigger('change');
-                            $("#discount_value_1").prop("disabled", false);
-                            $("#discount_value_1").val('');
-                            $("#net_amount_1").prop("disabled", true);
-                            $("#net_amount_1").val('');
+
+                            // $("#discount_value_1").prop("disabled", false);
+                            // $("#discount_value_1").val('');
+                            // $("#net_amount_1").prop("disabled", true);
+                            // $("#net_amount_1").val('');
                             $("#slug_1").val('custom');
                         }
                     } else {
                         $('#wrongMessage').show();
                     }
+
                     inputSpinner(false);
                 },
             });
@@ -1591,61 +1660,76 @@ function editDiscountValue($this) {
     //inputSpinner(true, 'EditPackage')
     hideMessages();
 
-    var service_id = $('#edit_service_id').val();//Basicailly it is bundle id
-    var discount_id = $('#edit_discount_id').val();
-    var discount_type = $('#edit_discount_type').val();
-    var discount_value = $this.val();
-
-    if (discount_type == 'Percentage') {
-        if (discount_value > 100) {
-            $('#edit_percentageMessage').show();
-            inputSpinner(false, 'EditPackage')
-            return false;
-        } else {
-            $('#edit_percentageMessage').hide();
-            inputSpinner(false, 'EditPackage')
+    if ($("#edit_discount_value_1").val() < 0) {
+        $("#edit_discount_value_1").val('');
+    } else {
+        var service_id = $('#edit_service_id').val();//Basicailly it is bundle id
+        var discount_id = $('#edit_discount_id').val();
+        var discount_type = $('#edit_discount_type').val();
+        var discount_value = $this.val();
+        if (discount_value.includes('.')) {
+            var parts = discount_value.split('.');
+            if (parts.length > 1 && parts[1].length > 2) {
+                alert("Maximum 2 digits allowed after the decimal point.");
+                discount_value = discount_value.slice(0, -1);
+                $("#edit_discount_value_1").val(discount_value)
+            } else {
+                $("#edit_discount_value_1").val(discount_value);
+            }
         }
-    }
-
-    if (service_id && discount_id && discount_value && discount_type) {
-
-        $.ajax({
-            type: 'get',
-            url: route('admin.packages.getdiscountinfo_custom'),
-            data: {
-                'service_id': service_id,//Basicailly it is bundle id
-                'discount_id': discount_id,
-                'discount_value': discount_value,
-                'discount_type': discount_type,
-            },
-            success: function (resposne) {
-               
-                if (resposne.status) {
-                    $("#edit_net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
-                    $("#edit_net_amount_1").prop("disabled", true, 'EditPackage');
-                    inputSpinner(false)
-                } else {
-                    $("#EditPackage").attr("disabled", true);
-                    $('#edit_DiscountRange').show();
-                    //inputSpinner(false, 'EditPackage')
-                }
-            },
-            error: function () {
+        if (discount_type == 'Percentage') {
+            if (discount_value > 100) {
+                $('#edit_percentageMessage').show();
+                inputSpinner(false, 'EditPackage')
+                return false;
+            } else {
+                $('#edit_percentageMessage').hide();
                 inputSpinner(false, 'EditPackage')
             }
-        });
+        }
+
+        if (service_id && discount_id && discount_type) {
+
+            $.ajax({
+                type: 'get',
+                url: route('admin.packages.getdiscountinfo_custom'),
+                data: {
+                    'service_id': service_id,//Basicailly it is bundle id
+                    'discount_id': discount_id,
+                    'discount_value': discount_value ?? 0,
+                    'discount_type': discount_type,
+                },
+                success: function (resposne) {
+                    if (resposne.status) {
+                        $("#edit_net_amount_1").val(parseFloat(resposne.data.net_amount).toFixed(2));
+                        $("#edit_net_amount_1").prop("disabled", true, 'EditPackage');
+                        $("#EditPackage").attr("disabled", false);
+                        inputSpinner(false)
+                    } else {
+                        $("#EditPackage").attr("disabled", true);
+                        $('#edit_DiscountRange').show();
+
+                        //inputSpinner(false, 'EditPackage')
+                    }
+                },
+                error: function () {
+                    inputSpinner(false, 'EditPackage')
+                }
+            });
+        }
     }
 
 }
 
 function changeDiscount($this) {
+
     hideMessages();
 
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
     var discount_id = $('#add_discount_id').val();
     var discount_value = $('#discount_value_1').val();
     var discount_type = $this.val();
-
+    $("#edit_discount_value_1").val(0);
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
@@ -1666,7 +1750,7 @@ function changeDiscount($this) {
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#net_amount_1").val(resposne.data.net_amount);
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
                     $("#net_amount_1").prop("disabled", true);
                 } else {
                     $('#DiscountRange').show();
@@ -1684,7 +1768,7 @@ function changeDiscount($this) {
 /*Edit plan functions*/
 
 function editServiceDiscount($this, type = '') {
-
+    $('#service_id').html('');
     hideMessages();
 
     var service_id = $this.val();
@@ -1711,26 +1795,18 @@ function editServiceDiscount($this, type = '') {
             success: function (resposne) {
 
                 if (resposne.status) {
-
                     let discounts = resposne.data.discounts;
-
                     let options = '<option value="" >Select Discount</option>';
-
                     jQuery.each(discounts, function (i, discount) {
                         options += '<option value="' + discount.id + '">' + discount.name + '</option>';
                     });
-
                     $("#edit_discount_id").html(options);
-
                     $("#edit_net_amount_1").val(resposne.data.net_amount);
                     $("#edit_net_amount_1").prop("disabled", true);
 
                 } else {
-
                     let options = '<option value="" >Select Discount</option>';
-
                     $("#edit_discount_id").html(options);
-
                     $("#edit_net_amount_1").val(resposne.data.net_amount);
                     $("#edit_net_amount_1").prop("disabled", true);
 
@@ -1742,6 +1818,7 @@ function editServiceDiscount($this, type = '') {
     if ((service_id == null || service_id == '') && patient_id != '') {
         $("#edit_discount_id").html('<option value="">Select Discount</option>');
         $("#edit_discount_type").attr('disabled', true);
+        $("#edit_discount_value_1").attr('disabled', true);
         setTimeout(function () {
             $('#edit_discount_value_1').val('');
             $("#edit_discount_type").val('').change();
@@ -1757,10 +1834,14 @@ function editServiceDiscount($this, type = '') {
 
 function editDiscountInfo($this) {
 
+    $('#edit_DiscountRange').hide();
     hideMessages();
 
     var service_id = $('#edit_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
+    if (discount_id == "") {
+        $("#EditPackage").prop('disabled', false);
+    }
     setTimeout(function () {
         $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
@@ -1773,6 +1854,7 @@ function editDiscountInfo($this) {
         $("#edit_net_amount_1").prop("disabled", false);
         $("#edit_net_amount_1").val('');
         $("#edit_slug_1").val('not_custom');
+
 
     } else if ((discount_id == null || discount_id == '') && service_id != null) {
 
@@ -1809,6 +1891,7 @@ function editDiscountInfo($this) {
                 'bundle_id': service_id, //Basicailly it is bundle id
             },
             success: function (resposne) {
+
                 if (resposne.status) {
                     $("#edit_discount_type").prop("disabled", true);
                     $("#edit_discount_type").val('').trigger('change');
@@ -1831,33 +1914,51 @@ function editDiscountInfo($this) {
                     'discount_id': discount_id
                 },
                 success: function (resposne) {
+
                     if (resposne.status) {
 
                         if (resposne.data.custom_checked == 0) {
                             $("#edit_discount_type").val(resposne.data.discount_type).change();
-                            if(resposne.data.discount_type == "Configurable"){
-                                $("#select_edit_discount_type").css("display","none");
-                                $("#edit_configurable_discount_type").css("display","block");
-                                $("#edit_discount_value_div").css("display","none");
-                                $("#edit_price_div").css("display","none");
-                            }else{
-                                $("#select_edit_discount_type").css("display","block");
-                                $("#edit_configurable_discount_type").css("display","none");
+                            $("#edit_discount_type").prop("disabled", true);
+                            if (resposne.data.discount_type == "Configurable") {
+                                $("#select_edit_discount_type").css("display", "none");
+                                $("#edit_configurable_discount_type").css("display", "block");
+                                $("#edit_discount_value_div").css("display", "none");
+                                $("#edit_price_div").css("display", "none");
+                            } else {
+                                $("#select_edit_discount_type").css("display", "block");
+                                $("#edit_configurable_discount_type").css("display", "none");
                                 $("#edit_discount_type_configurable").prop("disabled", true);
                             }
-                            
+
                             $("#edit_discount_value_1").val(resposne.data.discount_price);
                             $("#edit_discount_value_1").prop("disabled", true);
-                            $("#edit_net_amount_1").val(resposne.data.net_amount);
+                            $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#edit_net_amount_1").prop("disabled", true);
                             $("#edit_slug_1").val('not_custom');
+
+                            if (resposne.data.discount_type == 'Percentage') {
+                                if (resposne.data.discount_price > 100) {
+                                    $('#edit_percentageMessage').show();
+
+                                    return false;
+                                } else {
+                                    $('#edit_percentageMessage').hide();
+                                    $("#EditPackage").prop("disabled", false);
+                                }
+                            } else {
+                                $('#edit_DiscountRange').show();
+                                $("#edit_discount_value_1").val('');
+                            }
                         } else {
                             $("#edit_discount_type").prop("disabled", false);
                             $("#edit_discount_type").val('').trigger('change');
-                            $("#edit_discount_value_1").prop("disabled", false);
-                            $("#edit_discount_value_1").val('');
+                            // $("#edit_discount_value_1").prop("disabled", false);
+                            // $("#edit_discount_value_1").val('');
+                            $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#edit_net_amount_1").prop("disabled", true);
-                            $("#edit_net_amount_1").val('');
+
+                            // $("#edit_net_amount_1").val('');
                             $("#edit_slug_1").val('custom');
                         }
                     } else {
@@ -1871,34 +1972,49 @@ function editDiscountInfo($this) {
 }
 
 function getDiscountValue($this) {
-    //inputSpinner(true, 'AddPackage')
-    hideMessages();
 
+    hideMessages();
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
+    if (discount_value.includes('.')) {
+        var parts = discount_value.split('.');
+        if (parts.length > 1 && parts[1].length > 2) {
+            alert("Maximum 2 digits allowed after the decimal point.");
+            discount_value = discount_value.slice(0, -1);
+            $("#discount_value_1").val(discount_value)
+        } else {
+            $("#discount_value_1").val(discount_value);
+        }
+    }
+
+    if (discount_value != "") {
+        $("#add_discount_value_error").hide()
+    } else {
+        $("#add_discount_value_error").show()
+    }
+
 
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
-            inputSpinner(false, 'AddPackage')
+
             return false;
         } else {
             $('#percentageMessage').hide();
-            inputSpinner(false, 'AddPackage')
+
         }
     }
 
-    if (service_id && discount_id && discount_value && discount_type) {
-
+    if (service_id && discount_id && discount_type) {
         $.ajax({
             type: 'get',
             url: route('admin.packages.getdiscountinfo_custom'),
             data: {
                 'service_id': service_id,//Basicailly it is bundle id
                 'discount_id': discount_id,
-                'discount_value': discount_value,
+                'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
             },
             success: function (resposne) {
@@ -1910,24 +2026,55 @@ function getDiscountValue($this) {
                     $("#AddPackage").attr("disabled", true);
                     $('#DiscountRange').show();
                     //inputSpinner(false, 'AddPackage')
+
                 }
             },
             error: function () {
-                inputSpinner(false, 'AddPackage')
+
             }
         });
     }
 
 }
 
-function changeDiscount($this) {
-    hideMessages();
+function changeDiscount($this, type) {
 
-    var service_id = $('#add_service_id').val();//Basicailly it is bundle id
-    var discount_id = $('#add_discount_id').val();
-    var discount_value = $('#discount_value_1').val();
+    $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
+    if (discount_type != "") {
+        $('#add_discount_type_error').hide();
+    } else {
+        $('#add_discount_type_error').show();
+    }
+    if (type && type != 'undefined') {
+        if (type == 'edit') {
+            if ($this.val()) {
+                $('#edit_discount_value_1').prop('disabled', false);
+            } else {
+                $('#edit_discount_value_1').val('');
+                $('#edit_discount_value_1').prop('disabled', true);
+            }
 
+            var discount_value = $('#edit_discount_value_1').val();
+            var service_id = $('#edit_service_id').val();//Basicailly it is bundle id
+            var discount_id = $('#edit_discount_id').val();
+        }
+    } else {
+        if (discount_type) {
+            $('#discount_value_1').prop('disabled', false);
+        } else {
+            $('#discount_value_1').val('');
+            $('#discount_value_1').prop('disabled', true);
+
+        }
+
+        var discount_value = $('#discount_value_1').val();
+        var service_id = $('#add_service_id').val();//Basicailly it is bundle id
+        var discount_id = $('#add_discount_id').val();
+    }
+
+
+    hideMessages();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
@@ -1936,25 +2083,51 @@ function changeDiscount($this) {
             $('#percentageMessage').hide();
         }
     }
-    if (service_id && discount_id && discount_value && discount_type) {
+    $('#DiscountRange').hide();
+    if (service_id && discount_id) {
         $.ajax({
             type: 'get',
             url: route('admin.packages.getdiscountinfo_custom'),
             data: {
                 'service_id': service_id, //Basicailly it is bundle id
                 'discount_id': discount_id,
-                'discount_value': discount_value,
+                'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
             },
             success: function (resposne) {
                 if (resposne.status) {
-                    $("#net_amount_1").val(resposne.data.net_amount);
-                    $("#net_amount_1").prop("disabled", true);
-                } else {
-                    $('#DiscountRange').show();
-                    $("#net_amount_1").val('');
-                    $("#net_amount_1").prop("disabled", true);
+                    if (type && type != 'undefined') {
+                        if (type == 'edit') {
+                            $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
+                            $("#edit_net_amount_1").prop("disabled", true);
 
+                        } else {
+
+                        } $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
+                        $("#net_amount_1").prop("disabled", true);
+                    } else {
+                        $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
+                        $("#net_amount_1").prop("disabled", true);
+                    }
+                } else {
+
+                    $('#DiscountRange').show();
+
+                    if (type && type != 'undefined') {
+                        if (type == 'edit') {
+
+                            $("#edit_net_amount_1").prop("disabled", true);
+                            $("#EditPackage").prop("disabled", true);
+                        } else {
+                            $("#net_amount_1").val('');
+                            $("#net_amount_1").prop("disabled", true);
+                            $("#EditPackage").prop("disabled", false);
+                        }
+                    } else {
+
+                        $("#net_amount_1").prop("disabled", true);
+                        $("#EditPackage").prop("disabled", false);
+                    }
                 }
             },
         });
@@ -1972,12 +2145,12 @@ function keyfunction_grandtotal() {
     var cash_amount = $('#cash_amount_1').val();
     var total = $('#package_total_1').val();
 
-    if (cash_amount && total) {
+    if (total) {
         $.ajax({
             type: 'GET',
             url: route('admin.packages.getgrandtotal'),
             data: {
-                'cash_amount': cash_amount,
+                'cash_amount': cash_amount ?? 0,
                 'total': total,
             },
             success: function (resposne) {
@@ -2006,17 +2179,19 @@ function edit_keyfunction_grandtotal() {
     var total = $('#edit_package_total_1').val();
     var random_id = $('#edit_random_id').val();
 
-    if (cash_amount && total) {
+    if (total) {
         $.ajax({
             type: 'GET',
             url: route('admin.packages.getgrandtotal_update'),
             data: {
-                'cash_amount': cash_amount,
+                'cash_amount': cash_amount ?? 0,
                 'total': total,
                 'random_id': random_id
             },
             success: function (resposne) {
+
                 if (resposne.status) {
+
                     $("#edit_grand_total_1").val(resposne?.data?.grand_total ?? 0);
                 } else {
                     $('#edit_wrongMessage').show();
@@ -2024,7 +2199,17 @@ function edit_keyfunction_grandtotal() {
             },
         });
     } else {
-        $('#edit_inputfieldMessage').show();
+        // $('#edit_inputfieldMessage').show();
+    }
+}
+
+function checkpaymentMode() {
+    if ($('#edit_payment_mode_id').val()) {
+        $('#edit_cash_amount_1').prop('disabled', false);
+    } else {
+        $('#edit_cash_amount_1').val(0);
+        $('#edit_cash_amount_1').prop('disabled', true);
+        edit_keyfunction_grandtotal();
     }
 }
 
@@ -2033,7 +2218,13 @@ function edit_keyfunction_grandtotal() {
 function toggle(id) {
     $("." + id).toggle();
 }
-
+function checkAppointmentVal() {
+    if ($("#edit_appointment_id").val() != "") {
+        $("#edit_appointment_id_error").hide()
+    } else {
+        $("#edit_appointment_id_error").show()
+    }
+}
 /*Delete The record*/
 function deletePlanRow(id, type = '') {
 
@@ -2076,7 +2267,7 @@ function deleteConfPlanRow(id, type = '') {
 function deletePlan(id, type) {
 
     var package_total = $('#' + type + 'package_total_1').val();
-
+    $('#edit_payment_mode_id').val('').change();
     $.ajax({
         type: 'post',
         url: route('admin.packages.deletepackages_service'),
@@ -2086,12 +2277,26 @@ function deletePlan(id, type) {
             'package_total': package_total
         },
         success: function (resposne) {
-   
+
             if (resposne.status) {
 
+                ExistingTotal = resposne.data.old_total;
+
+                var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + resposne.data.id + '"]').index();
+                var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + resposne.data.id + '"] + tr:not([id="table_1"])').length;
+
+                removeElementsFromIndex(edit_amountArray, RowIndex, RowNextIndex + 1);
+
+
                 $('.HR_' + resposne.data.id).remove();
-                if (resposne?.data?.total > 1) {
-                    $("#" + type + "package_total_1").val(resposne?.data?.total ?? 0);
+
+                $('.modal.fade.show tr[class="' + resposne.data.id + '"]').remove();
+
+                var packageTotal = resposne?.data?.total.replace(/,/g, '');
+                var totalWithoutCommas = parseInt(packageTotal, 10);
+
+                if (totalWithoutCommas > 1) {
+                    $("#" + type + "package_total_1").val(totalWithoutCommas ?? 0);
                 } else {
                     $("#" + type + "package_total_1").val(0);
                 }
@@ -2109,17 +2314,17 @@ function deletePlan(id, type) {
                 }
 
             } else {
-               
-                if(resposne.data.del==1){
-                    
-                    $('#edit_consume' ).show();
+
+                if (resposne.data.del == 1) {
+
+                    $('#edit_consume').show();
                     setTimeout(() => {
-                        $('#edit_consume' ).hide();
+                        $('#edit_consume').hide();
                     }, 2000);
-                }else{
+                } else {
                     $('#' + type + 'wrongMessage').show();
                 }
-               
+
             }
         }
     });
@@ -2138,7 +2343,7 @@ function deleteConfPlan(id, type) {
             'package_total': package_total
         },
         success: function (resposne) {
-   
+
             if (resposne.status) {
 
                 $('.HR_' + resposne.data.id).remove();
@@ -2161,17 +2366,17 @@ function deleteConfPlan(id, type) {
                 }
 
             } else {
-               
-                if(resposne.data.del==1){
-                    
-                    $('#edit_consume' ).show();
+
+                if (resposne.data.del == 1) {
+
+                    $('#edit_consume').show();
                     setTimeout(() => {
-                        $('#edit_consume' ).hide();
+                        $('#edit_consume').hide();
                     }, 2000);
-                }else{
+                } else {
                     $('#' + type + 'wrongMessage').show();
                 }
-               
+
             }
         }
     });
@@ -2196,12 +2401,49 @@ function hideMessages() {
     $('#edit_datanotexist').hide();
 }
 
-
+var total_amountArray = [];
+var edit_amountArray = [];
+var ExistingTotal = 0;
 jQuery(document).ready(function () {
-
-    /*save data for both predefined discounts and keyup trigger*/
+    patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
-        hideMessages();
+        
+        $('.create-plan-error').html('');
+
+        if (!$('#add_plan_location_id').val()) {
+            $('#add_plan_location_id_error').html('Please select centre');
+            return false;
+        }
+
+        if (!$('#add_patients_id').val()) {
+            $('#add_patient_id_error').html('Please select patient');
+            return false;
+        }
+
+        if (!$('#add_appointment_id').val()) {
+            $('#add_appointment_id_error').html('Please select appointment');
+            return false;
+        }
+
+        if (!$('#add_service_id').val()) {
+            $('#add_service_id_error').html('Please select service');
+            return false;
+        }
+        if (!$('#add_sold_by').val()) {
+            $('#add_sold_by_errorr').html('Please select sold by');
+            return false;
+        }
+        if ($('#add_discount_id').val()) {
+            if (!$('#add_discount_type').val()) {
+                $('#add_discount_type_error').html('Please select discount type');
+                return false;
+            } else if (!$('#discount_value_1').val()) {
+                $('#add_discount_value_error').html('Please add discount value');
+                return false;
+            }
+        }
+
+        // hideMessages();
 
         $(this).attr("disabled", true);
         var random_id = $('#random_id_1').val();
@@ -2212,7 +2454,7 @@ jQuery(document).ready(function () {
         var discount_price = $('#discount_value_1').val();
         var discount_slug = $("#slug_1").val();
         var package_total = $('#package_total_1').val();
-
+        var sold_by = $('#add_sold_by').val();
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_plan_location_id').val();
 
@@ -2245,7 +2487,8 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
-                'package_bundles[]': []
+                'package_bundles[]': [],
+                'sold_by': sold_by
             };
 
             $(".package_bundles").each(function () {
@@ -2259,69 +2502,57 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
                    
                     let consume = 'No';
-                    var total_amount = 0;
                     if (resposne.status) {
-                        
-                            $("#package_total_1").val(resposne.data.myarray.total ?? 0);
-                                $('#plan_services').append("" +
-                                    "<tr id='table_1' class='HR_" + random_id + " HR_" +resposne.data.myarray.record.id + "'>" +
-                                    "<td><a href='javascript:void(0)' onClick='toggle(" +resposne.data.myarray.record.id + ")'>" +resposne.data.myarray.service_name + "</a></td>" +
-                                    "<td>" +resposne.data.myarray.service_price.toLocaleString() + "</td>" +
-                                    "<td>" +resposne.data.myarray.discount_name + "</td>" +
-                                    "<td>" +resposne.data.myarray.discount_type + "</td>" +
-                                    "<td>" +resposne.data.myarray.discount_price + "</td>" +
-                                    "<td>" +resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                                    "<td>" +resposne.data.myarray.record.tax_price + "</td>" +
-                                    "<td>" +resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
-                                    "<td>" +
-                                    "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" +resposne.data.myarray.record.id + "' />" +
-                                    "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" +resposne.data.myarray.record.id + ")'>" + trashBtn() + "</button>" +
-                                    "</td>" +
-                                    "</tr>");
-                                    jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
-                                        if (record_detail.is_consumed == '0') {
-                                            consume = 'No';
-                                        } else {
-                                            consume = 'Yes';
-                                        }
-                                        $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
-                                    });
-                           
-                        
-                        
 
-                        
+                        total_amountArray.push(parseFloat(resposne.data.servicesData.bundlesData.net_amount));
+                        if (resposne.data.servicesData.packageServicesData.length) {
+                            for (var i = 0; i < resposne.data.servicesData.packageServicesData.length; i++) {
+                                total_amountArray.push(0);
+                            }
+                        }
 
-                        // toggle(resposne.data.myarray.record.id);
+                        var sum = 0;
+                        if (total_amountArray.length) {
+                            sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+                        }
+                        let totalAmount = resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString();
+                        let grandTotal = totalAmount.replace(/,/g, '');
+                        $("#package_total_1").val(sum.toFixed(2) ?? 0);
+                        $('#plan_services').append("" +
+                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
+                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.bundlesData.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
+                            "<td>" + resposne.data.servicesData.service_price.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_name + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_type + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
+                            "<td>" + grandTotal + "</td>" +
+                            "<td  class='d-none'>" +
+                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
+                            "</td>" +
+                            "<td>" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
+                            "<input type='hidden' class='package_bundles_sold_by' name='sold_by[]' value='" + resposne.data.servicesData.sold_by + "' />" +
+                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ")'>" + trashBtn() + "</button>" +
+                            "</td>" +
+                            "</tr>");
+                        jQuery.each(resposne.data.servicesData.packageServicesData, function (i, packageServicesData) {
+                            if (packageServicesData.is_consumed == '0') {
+                                consume = 'No';
+                            } else {
+                                consume = 'Yes';
+                            }
+                            $('#plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax  : " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + (packageServicesData.consumed_at ?? 'N/A') + "</td></tr>");
+                        });
                         keyfunction_grandtotal();
-
                         var rows = $('#plan_services tbody tr').length;
-
                         if (rows >= 3) {
                             $("#add_plan_location_id").prop("disabled", true);
                         }
-                        // $('#add_service_id').val(null).change();
-                        // $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#add_discount_id').val('').change();
-                        // $('#add_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#add_discount_type').val('').change();
-                        // $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#add_discount_value_1').val('');
-                        // $('#add_discount_value_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#net_amount_1').val('');
-                        // $('#net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        /*we enable add button after all functionality enable*/
-                        // $('#AddPackage_1').attr("disabled", false);
-
                     } else {
                         $('#AlreadyExitMessage').show();
-                        // $('#AddPackage_1').attr("disabled", false);
                     }
 
                     hideSpinner("-add");
@@ -2338,13 +2569,24 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
+
+
+
     /*function for final package information save*/
     $("#AddPackageFinal").click(function () {
+      
+        $('.create-plan-error').html('');
+        if ($('#payment_mode_id_1').val()) {
+            if (!$('#cash_amount_1').val()) {
+                $('#cash_amount_error').html('Please enter cash mount');
+                return false;
+            }
+        }
 
         hideMessages();
 
         var random_id = $('#random_id_1').val();
-        var patient_id = $('#add_patient_id').val();
+        var patient_id = $('#add_patients_id').val();
         var total = $('#package_total_1').val();
         var payment_mode_id = $('#payment_mode_id_1').val();
         var cash_amount = $('#cash_amount_1').val();
@@ -2365,12 +2607,27 @@ jQuery(document).ready(function () {
             'is_exclusive': is_exclusive,
             'appointment_id': appointment_id,
             // 'base_service_id':base_service_id,
-            'package_bundles[]': []
+            package_bundles: []
         };
 
-        $(".package_bundles").each(function () {
-            formData['package_bundles[]'].push($(this).val());
+
+        $('#plan_services').find('tr:not(.inner_records_hr)').each(function () {
+            formData['package_bundles'].push({
+
+                serviceName: $(this).find('td:first-child a').text(),
+                RegularPrice: $(this).find('td:nth-child(2)').text(),
+                DiscountName: $(this).find('td:nth-child(3)').text(),
+                Type: $(this).find('td:nth-child(4)').text(),
+                DiscountValue: $(this).find('td:nth-child(5)').text(),
+                Amount: $(this).find('td:nth-child(6)').text(),
+                Tax: $(this).find('td:nth-child(7)').text(),
+                Total: $(this).find('td:nth-child(8)').text(),
+                bundleId: $(this).find('td:nth-child(9)').find('input').val(),
+                sold_by: $(this).find('td:nth-child(10)').find("input[name='sold_by[]']").val()
+
+            });
         });
+        console.log('formData', formData);
         var status = 0;
         if (cash_amount > 0) {
             var status = 1;
@@ -2380,6 +2637,7 @@ jQuery(document).ready(function () {
             toastr.error("Please select the payment mode");
             return false;
         }
+
         if (random_id && (patient_id > 0) && total && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total && location_id) {
 
             showSpinner("-save");
@@ -2391,11 +2649,13 @@ jQuery(document).ready(function () {
                 success: function (resposne) {
 
                     if (resposne.status) {
+
                         $('#successMessage').show();
                         toastr.success(" Plan successfully created")
                         closePopup('modal_appointment_plan_section');
                         reInitTable();
                     } else {
+
                         $('#wrongMessage').show();
                     }
 
@@ -2413,17 +2673,28 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
-    $("#cash_amount_1").keyup(function () {
+    $('#cash_amount_1').keyup(function () {
         keyfunction_grandtotal();
     });
 
     $("#edit_cash_amount_1").keyup(function () {
-        edit_keyfunction_grandtotal();
+        if ($("#edit_cash_amount_1").val() < 0) {
+            $("#edit_cash_amount_1").val('');
+        } else {
+            edit_keyfunction_grandtotal();
+        }
+        // errorMessageElement.textContent = "";
     });
 
 
     /*save data for both predefined discounts and keyup trigger*/
     $("#EditPackage").click(function () {
+
+        $('.error-msg').html('');
+        if (!$('#edit_appointment_id').val()) {
+            $('#edit_appointment_id_error').html('Please select appointment');
+            return false;
+        }
         hideMessages();
 
         $(this).attr("disabled", true);
@@ -2435,18 +2706,37 @@ jQuery(document).ready(function () {
         var discount_price = $('#edit_discount_value_1').val();
         var discount_slug = $("#edit_slug_1").val();
         var package_total = $('#edit_package_total_1').val();
-
         var is_exclusive = $('#edit_is_exclusive').val();
         var location_id = $('#edit_location_id').val();
+        var sold_by = $('#edit_sold_by').val();
+        if (!service_id) {
+            $('#service_id').html('Please select service');
+            $(this).attr("disabled", false);
+            hideSpinner("-edit-add");
+            return false;
+        }
+        
+        if (discount_id) {
+            if (!discount_type) {
+                $('#discount_type_error').html('Please select discount type');
+                $(this).attr("disabled", false);
+                hideSpinner("-edit-add");
+                return false;
+            } else if (!discount_price) {
+                $('#discount_payment_error').html('Please enter discount value');
+                $(this).attr("disabled", false);
+                hideSpinner("-edit-add");
+                return false;
+            }
+        }
 
         if (service_id && net_amount && location_id) {
-
             showSpinner("-edit-add");
-
             if (discount_slug == 'custom' && discount_id != '') {
                 if (discount_price == '') {
                     hideSpinner("-edit-add");
-                    $('#edit_inputfieldMessage').show();
+                    $('#discount_payment').html('Please enter discount value');
+                    // $('#edit_inputfieldMessage').show();
                     return false;
                 }
                 if (discount_type == 'Percentage') {
@@ -2467,75 +2757,100 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
-                'package_bundles[]': []
+                'package_bundles[]': [],
+                'sold_by': sold_by
+                 
             };
 
             $(".package_bundles").each(function () {
                 formData['package_bundles[]'].push($(this).val());
             });
-
             $.ajax({
                 type: 'get',
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                  
-                    let consume = 'No';
-                    let total_amount;
-                    let single_amount;
-                    if (resposne.status) {
-                      
-                        
-                        $("#edit_package_total_1").val(resposne?.data?.myarray?.total ?? 0);
+                    console.log(resposne);
 
+                    let consume = 'No';
+
+                    if (resposne.data.servicesData.packageBundle.length && !$('.modal.show #edit_plan_services tr[id="table_1"]').length) {
+                        for (var i = 0; i < resposne.data.servicesData.packageBundle.length; i++) {
+                            edit_amountArray.push(0);
+                        }
+                        if (resposne.data.servicesData.packageServices.length) {
+                            for (var i = 0; i < resposne.data.servicesData.packageServices.length; i++) {
+                                edit_amountArray.push(0);
+                            }
+                        }
+                    }
+
+                    edit_amountArray.push(parseFloat(resposne.data.servicesData.bundlesData.net_amount));
+                    if (resposne.data.servicesData.packageServices.length) {
+                        ExistingTotal = parseFloat(resposne.data.servicesData.total);
+                    } else {
+                        ExistingTotal = 0;
+                    }
+
+
+                    if (resposne.data.servicesData.packageServicesData.length) {
+                        for (var i = 0; i < resposne.data.servicesData.packageServicesData.length; i++) {
+                            edit_amountArray.push(0);
+                        }
+                    }
+
+                    var editsum = 0;
+                    if (edit_amountArray.length) {
+                        editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+                    }
+                    var grandsum = editsum + ExistingTotal;
+
+                    if (resposne.status) {
+                        let totalAmount = resposne.data.servicesData.bundlesData.tax_including_price.toLocaleString();
+                        let grandTotal = totalAmount.replace(/,/g, '');
+
+                        if (resposne.data.servicesData.packageBundle.length == 0 && $('#edit_plan_services').find('tr[class="text-center"]').length) {
+                            $('#edit_plan_services').empty();
+                        }
+                        $("#edit_package_total_1").val(grandsum.toFixed(2) ?? 0);
                         $('#edit_plan_services').append("" +
-                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.myarray.record.id + "'>" +
-                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.myarray.record.id + ")'>" + resposne.data.myarray.service_name + "</a></td>" +
-                            "<td>" + resposne.data.myarray.service_price.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_name + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_type + "</td>" +
-                            "<td>" + resposne.data.myarray.discount_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_price + "</td>" +
-                            "<td>" + resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
+                            "<tr id='table_1' class='HR_" + random_id + " HR_" + resposne.data.servicesData.bundlesData.id + "'>" +
+                            "<td><a href='javascript:void(0)' onClick='toggle(" + resposne.data.servicesData.bundlesData.id + ")'>" + resposne.data.servicesData.service_name + "</a></td>" +
+                            "<td>" + resposne.data.servicesData.service_price.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_name + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_type + "</td>" +
+                            "<td>" + resposne.data.servicesData.discount_price + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
+                            "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
+                            "<td>" + grandTotal + "</td>" +
+                            "<td  class='d-none'>" +
+                            "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
+
+                            "</td>" +
                             "<td>" +
-                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.myarray.record.id + "' />" +
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + resposne.data.myarray.record.id + ", `edit_`)'>" + trashBtn() + "</button>" +
+                            "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
+                            "<input type='hidden' class='package_bundles_sold_by' name='sold_by[]' value='" + resposne.data.servicesData.sold_by + "' />" +
+                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ", `edit_`)'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
 
-                        jQuery.each(resposne.data.myarray.record_detail, function (i, record_detail) {
-                            if (record_detail.is_consumed == '0') {
+                        jQuery.each(resposne.data.servicesData.packageServicesData, function (i, packageServicesData) {
+                            if (packageServicesData.is_consumed == '0') {
                                 consume = 'No';
                             } else {
                                 consume = 'Yes';
                             }
-                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.myarray.record.id + " " + resposne.data.myarray.record.id + "'><td></td><td>" + record_detail.name + "</td><td>Amount : " + record_detail.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + record_detail.tax_price + "</td><td>Total Amount : " + record_detail.tax_including_price.toLocaleString() + "</td><td colspan='4'>Is Consume : " + consume + "</td></tr>");
+                            $('#edit_plan_services').append("<tr class='inner_records_hr HR_" + resposne.data.servicesData.bundlesData.id + " " + resposne.data.servicesData.bundlesData.id + "'><td></td><td>" + packageServicesData.name + "</td><td>Amount : " + packageServicesData.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + packageServicesData.tax_price + "</td><td>Total Amount : " + packageServicesData.tax_including_price.toLocaleString() + "</td><td colspan='2'>Is Consume : " + consume + "</td><td colspan='2'>Consumed At : " + (packageServicesData.consumed_at ?? 'N/A') + "</td></tr>");
                         });
-                    
+
                         edit_keyfunction_grandtotal();
-                        // $('#edit_service_id').val('').change();
-                        // $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_discount_id').val('').change();
-                        // $('#edit_discount_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_discount_type').val('').change();
-                        // $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_discount_value_1').val('');
-                        // $('#edit_discount_value_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
-                        // $('#edit_net_amount_1').val('');
-                        // $('#edit_net_amount_1').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-
                     } else {
-                        if(resposne.data.setteled==1){
+                        if (resposne.data.setteled == 1) {
                             $('#casesetteled').show();
-                        }else{
+                        } else {
                             $('#edit_AlreadyExitMessage').show();
                         }
-                        
+
                     }
 
                     hideSpinner("-edit-add");
@@ -2554,9 +2869,8 @@ jQuery(document).ready(function () {
 
     /*function for final package information save*/
     $("#EditPackageFinal").click(function () {
-
+        $('.error-msg').html('');
         hideMessages();
-
         var random_id = $('#edit_random_id_1').val();
         var patient_id = $('#edit_parent_id').val();
         var total = $('#edit_package_total_1').val();
@@ -2566,7 +2880,6 @@ jQuery(document).ready(function () {
         var location_id = $('#edit_location_id').val();
         var is_exclusive = $('#edit_is_exclusive').val();
         var appointment_id = $('#edit_appointment_id').val();
-
         var formData = {
             'random_id': random_id,
             'patient_id': patient_id,
@@ -2577,56 +2890,77 @@ jQuery(document).ready(function () {
             'grand_total': grand_total,
             'is_exclusive': is_exclusive,
             'appointment_id': appointment_id,
-            'package_bundles[]': []
+            package_bundles: []
         };
 
-        $(".package_bundles").each(function () {
-            formData['package_bundles[]'].push($(this).val());
+        $('#edit_plan_services').find('tr[id="table_1"]:not(.inner_records_hr)').each(function () {
+            formData['package_bundles'].push({
+                serviceName: $(this).find('td:first-child a').text(),
+                RegularPrice: $(this).find('td:nth-child(2)').text(),
+                DiscountName: $(this).find('td:nth-child(3)').text(),
+                Type: $(this).find('td:nth-child(4)').text(),
+                DiscountValue: $(this).find('td:nth-child(5)').text(),
+                Amount: $(this).find('td:nth-child(6)').text(),
+                Tax: $(this).find('td:nth-child(7)').text(),
+                Total: $(this).find('td:nth-child(8)').text(),
+                bundleId: $(this).find('td:nth-child(9)').find('input').val(),
+                sold_by: $(this).find('td:nth-child(10)').find("input[name='sold_by[]']").val()
+
+            });
         });
+
         var status = 0;
         if (cash_amount > 0) {
             var status = 1;
         }
 
         if (payment_mode_id == '' && cash_amount > 0) {
-            toastr.error("Please select the payment mode");
+            // toastr.error("Please select the payment mode");
+            $('#payment_mode_id').html('Please select payment mode');
             return false;
         }
 
-        // if(total <= 0){
-        //     toastr.error("Please add atleast one session");
-        //     return false;
-        // }
+        if (payment_mode_id && cash_amount == '') {
+            $('#cash_amount_error').html('Please enter cash amount');
+            return false;
+        }
+
+        if (total <= 0) {
+            toastr.error("Please add atleast one service");
+            return false;
+        }
 
         if (random_id && (patient_id > 0) && total && status == 1 ? payment_mode_id : true && cash_amount >= 0 && grand_total && location_id) {
-
             showSpinner("-edit-save");
-
             $.ajax({
                 type: 'get',
                 url: route('admin.packages.updatepackages'),
                 data: formData,
                 success: function (resposne) {
-
                     if (resposne.status) {
                         $('#successMessage').show();
                         toastr.success(resposne.message)
                         closePopup('update_plane_form');
-                        reInitTable();
+                        current_url = window.location.href;
+                        if (!window.location.href.includes("view-package")) {
+                            reInitTable();
+                        }
                     } else {
-                        if(resposne.data.setteled==1){
+                        if (resposne.data?.setteled == 1) {
                             $('#casesetteledamount').show();
-                        }else{
+                        } else {
                             $('#edit_wrongMessage').show();
                             toastr.error(resposne.message)
                         }
-                       
-                       
                     }
 
                     hideSpinner("-edit-save");
                 },
-                error: function () {
+                error: function (response) {
+                    errors = response?.responseJSON?.errors;
+                    if (errors) {
+                        errors.appointment_id ? $('#appointment_id').html(errors.appointment_id) : $('#appointment_id').html('');
+                    }
                     hideSpinner("-edit-save");
                 }
             });
@@ -2639,5 +2973,75 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
+    $('.plan_search_patient').keyup(function () {
+        $('.plan_search_patient').val() ? $('.plan_search_patient_croxcli').show() : $('.plan_search_patient_croxcli').hide();
+    })
+
+    $('.plan_search_patient_croxcli').on('click', function () {
+        $('.plan_search_patient').val('');
+        $('.suggesstion-box').hide();
+        $('.plan_search_patient_croxcli').hide();
+    })
+
+    $('.index_search_patient').keyup(function () {
+        $('.index_search_patient').val() ? $('.index_search_patient_croxcli').show() : $('.index_search_patient_croxcli').hide();
+    })
+
+    $('.index_search_patient_croxcli').on('click', function () {
+        $('.index_search_patient').val('');
+        $('.suggesstion-box').hide();
+        $('.index_search_patient_croxcli').hide();
+    })
+
+    $('#payment_mode_id_1').on('change', function () {
+        if ($('#payment_mode_id_1').val()) {
+            $('#cash_amount_1').prop('disabled', false);
+        } else {
+            $('#cash_amount_1').val('');
+            $('#cash_amount_1').prop('disabled', true);
+            keyfunction_grandtotal();
+        }
+    });
+
 });
 
+function removeElementsFromIndex(arr, index, numElements) {
+    arr.splice(index, numElements);
+}
+
+
+function deletePlanRowTem(id, type = "") {
+    var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
+    var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"] + tr:not([id="table_1"])').length;
+
+    var ArrayIndex = RowIndex + RowNextIndex;
+    removeElementsFromIndex(total_amountArray, RowIndex, RowNextIndex + 1);
+    removeElementsFromIndex(edit_amountArray, RowIndex, RowNextIndex + 1);
+    var sum = 0;
+    if (total_amountArray.length) {
+        sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+    }
+    var Editsum = 0;
+    if (edit_amountArray.length) {
+        Editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+    }
+    jQuery('.modal.show #package_total_1').val(sum.toFixed(2));
+    jQuery('.modal.show #grand_total_1').val((sum).toFixed(2));
+    jQuery('.modal.show #payment_mode_id_1').val('').change();
+    var currentRowPrice = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').find('td:nth-child(8)').text();
+
+
+    if (jQuery('.modal.show #edit_grand_total_1').val()) {
+        var CashReceivedRemain = jQuery('.modal.show #edit_grand_total_1').val().replace(',', '');
+    }
+    jQuery('.modal.show #edit_grand_total_1').val(Math.round(CashReceivedRemain - currentRowPrice));
+
+    jQuery('.modal.show #edit_package_total_1').val((Editsum + ExistingTotal).toFixed(2));
+    jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
+    jQuery('#cash_amount_1').val('');
+    if (!jQuery('.modal.show #edit_centre_target_location #edit_plan_services tr').length) {
+        jQuery('.modal.show #edit_payment_mode_id').val('').change();
+        jQuery('.modal.show #edit_grand_total_1').val('');
+        jQuery('.modal.show #edit_cash_amount_1').val('');
+    }
+}

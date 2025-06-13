@@ -2,33 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
-use App\Helpers\Filters;
-use App\Helpers\GeneralFunctions;
-use App\Models\Activity;
-use App\Models\AppointmentLog;
-use App\Models\Appointments;
-use App\Models\AppointmentStatuses;
-use App\Models\AuditTrailActions;
-use App\Models\AuditTrails;
-use App\Models\AuditTrailTables;
-use App\Models\Invoices;
-use App\Models\InvoiceStatuses;
-use App\Models\Leads;
-use App\Models\Locations;
-use App\Models\PackageAdvances;
-use App\Models\Regions;
-use App\Models\Services;
 use App\Models\User;
+use App\Models\Leads;
+use App\Models\Regions;
+use App\Helpers\Filters;
+use App\Models\Activity;
+use App\Models\Invoices;
+use App\Models\Services;
+use App\Models\Locations;
+use App\Models\AuditTrails;
+use App\Models\Appointments;
+use Illuminate\Http\Request;
+use App\Models\AppointmentLog;
+use Illuminate\Support\Carbon;
+use App\HelperModule\ApiHelper;
+use App\Models\InvoiceStatuses;
+use App\Models\PackageAdvances;
+use App\Models\AuditTrailTables;
 use App\Models\UserHasLocations;
 use App\Reports\dashboardreport;
-use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Config;
+use App\Helpers\GeneralFunctions;
+use App\Models\AuditTrailActions;
 use Illuminate\Support\Facades\DB;
+use App\Models\AppointmentStatuses;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Config;
 
 class HomeController extends Controller
 {
@@ -112,14 +112,12 @@ class HomeController extends Controller
     {
         $data = [];
         $timeZone = 'Asia/Karachi';
-        $location_id = $this->getUserLocation();
-        [$start_date, $end_date] = $this->getDates($request);
+        $today = Carbon::today()->format('Y-m-d');
+        $start_date =$today;
+        $end_date = $today;
+
         $data = $this->recentActivities($data);
-        if (auth()->id() == 1) {
-            $data['location_id'] = [];
-        } else {
-            $data['location_id'] = ACL::getUserCentres();
-        }
+        $data['location_id'] = auth()->id() == 1 ? [] : ACL::getUserCentres();
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
         $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
@@ -129,14 +127,14 @@ class HomeController extends Controller
 
     public function datatable(Request $request)
     {
-        if (! Gate::allows('dashboard_upcomings')) {
+        if (!Gate::allows('dashboard_upcomings')) {
             return [];
         }
         $filter = $this->getTableFilter($request->all());
 
         $today = Carbon::now()->format('Y-m-d');
 
-        $todayTime = Carbon::now()->timezone('Asia/Karachi')->format('H:i').':00';
+        $todayTime = Carbon::now()->timezone('Asia/Karachi')->format('H:i') . ':00';
 
         if ($request->has('sort')) {
 
@@ -195,7 +193,6 @@ class HomeController extends Controller
             ];
 
             $countQuery->where($where);
-
         } elseif (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
@@ -261,7 +258,6 @@ class HomeController extends Controller
             ];
 
             $resultQuery->where($where);
-
         } elseif (hasFilter($filter, 'type') && $filter['type'] == 'month') {
 
             $end_month = Carbon::parse($today)->addMonth()->format('Y-m-d');
@@ -289,7 +285,6 @@ class HomeController extends Controller
 
             $todayData = $todayResult->whereDate('scheduled_date', $today)
                 ->where('appointments.scheduled_time', '>=', $todayTime)->pluck('appointments.id')->toArray();
-
         }
 
         $Appointments = $resultQuery->orWhereIn('appointments.id', $todayData)->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
@@ -336,7 +331,7 @@ class HomeController extends Controller
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
                     'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
-                    'scheduled_date' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
+                    'scheduled_date' => ($appointment->scheduled_date) ? \Carbon\Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
                     'region_id' => (array_key_exists($appointment->region_id, $Regions)) ? $Regions[$appointment->region_id]->name : 'N/A',
@@ -385,7 +380,7 @@ class HomeController extends Controller
     {
 
         $data['collection'] = 0;
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['collection'] = null;
 
             return $data;
@@ -410,6 +405,10 @@ class HomeController extends Controller
                 $data['todaycollection'][] = $total;
                 break;
             case 'month':
+                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
+                $data['todaycollection'][] = $total;
+                break;
+            case 'thismonth':
                 [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
                 $data['todaycollection'][] = $total;
                 break;
@@ -484,9 +483,19 @@ class HomeController extends Controller
                     }
                     break;
             }
-
         }
+        $day = $request->type ?? 'today';
+        $dataArray = $data[$day];
 
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+        $data[$day] = $dataArray;
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
             'total' => number_format($total ?? 0, 2),
@@ -553,7 +562,6 @@ class HomeController extends Controller
                     }
                     break;
             }
-
         }
 
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
@@ -592,7 +600,7 @@ class HomeController extends Controller
 
                 foreach ($todayRecords as $key => $todayRecord) {
                     $parent_services = Services::with('parent')->where('id', $todayRecord->service_id)->first();
-                   
+
                     $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
                     $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
 
@@ -760,6 +768,20 @@ class HomeController extends Controller
             }
         }
 
+        $day = $request->type == null ? "today" : $request->type;
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+
+        $data[$day] = $dataArray;
+
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
             'colors' => $colors,
@@ -803,9 +825,9 @@ class HomeController extends Controller
                         foreach ($packagesadvances as $packagesadvance) {
                             if (
                                 $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
+                                $packagesadvance->is_adjustment == '0' &&
+                                $packagesadvance->is_tax == '0' &&
+                                $packagesadvance->is_cancel == '0'
                             ) {
                                 switch ($packagesadvance->cash_flow) {
                                     case 'in':
@@ -877,7 +899,6 @@ class HomeController extends Controller
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1237,7 +1258,6 @@ class HomeController extends Controller
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1359,7 +1379,6 @@ class HomeController extends Controller
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1405,9 +1424,9 @@ class HomeController extends Controller
                         foreach ($packagesadvances as $packagesadvance) {
                             if (
                                 $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
+                                $packagesadvance->is_adjustment == '0' &&
+                                $packagesadvance->is_tax == '0' &&
+                                $packagesadvance->is_cancel == '0'
                             ) {
                                 switch ($packagesadvance->cash_flow) {
                                     case 'in':
@@ -1479,7 +1498,6 @@ class HomeController extends Controller
                                     if ($refund_out) {
                                         $total_refund_out += $refund_out;
                                     }
-
                                 }
                             }
                         }
@@ -1536,7 +1554,7 @@ class HomeController extends Controller
             $todayRecords = $todayRecords->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                 ->groupBy('location_id')
                 ->get();
-               
+
             $total = 0;
             $data[0] = [
                 'Task',
@@ -1555,7 +1573,7 @@ class HomeController extends Controller
                         foreach ($todayRecords as $todayRecord) {
                             if ($todayRecord->location_id == $location->id) {
                                 $data[] = [
-                                    $location->city->name.' - '.$location->name,
+                                    $location->city->name . ' - ' . $location->name,
                                     $todayRecord->total_price,
                                 ];
                                 $total += $todayRecord->total_price;
@@ -1564,7 +1582,18 @@ class HomeController extends Controller
                     }
                 }
             }
+            $dataArray = $data;
 
+            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+            // Step 2 and 3: Calculate the percentage for each slice
+            for ($i = 1; $i < count($dataArray); $i++) {
+                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+            }
+
+            $data = $dataArray;
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
                 'total' => number_format($total ?? 0, 2),
@@ -1615,7 +1644,7 @@ class HomeController extends Controller
                         foreach ($todayRecords as $todayRecord) {
                             if ($todayRecord->location_id == $location->id) {
                                 $data[] = [
-                                    $location->city->name.' - '.$location->name,
+                                    $location->city->name . ' - ' . $location->name,
                                     $todayRecord->total_price,
                                 ];
                                 $total += $todayRecord->total_price;
@@ -1775,7 +1804,6 @@ class HomeController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-
             }
 
             if ($request->type == 'week') {
@@ -1870,6 +1898,23 @@ class HomeController extends Controller
                 }
             }
         }
+
+        $day = $request->type == null ? "today" : $request->type;
+
+        $dataArray = $data[$day];
+
+        // Step 1: Calculate the total value
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+
+        $data[$day] = $dataArray;
+
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -2020,7 +2065,6 @@ class HomeController extends Controller
                         $data['yesterday'][] = $record;
                     }
                 }
-
             }
 
             if ($request->type == 'week') {
@@ -2147,6 +2191,10 @@ class HomeController extends Controller
                 $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
                 $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
                 break;
+            case 'thismonth':
+                $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
+                break;
             case 'lastmonth':
                 $start_date = Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d');
                 $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
@@ -2175,7 +2223,7 @@ class HomeController extends Controller
     private function consultancies($data, $start_date, $end_date)
     {
 
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['all_consultancies'] = null;
             $data['done_consultancies'] = null;
 
@@ -2194,7 +2242,7 @@ class HomeController extends Controller
     private function treatments($data, $start_date, $end_date)
     {
 
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['all_treatments'] = null;
             $data['done_treatments'] = null;
 
@@ -2216,7 +2264,7 @@ class HomeController extends Controller
     private function leads($data, $location_id, $start, $end)
     {
 
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['leads'] = false;
             $data['totalLeads'] = false;
 
@@ -2226,12 +2274,12 @@ class HomeController extends Controller
         $where[] = [
             'leads.created_at',
             '>=',
-            $start.' 00:00:00',
+            $start . ' 00:00:00',
         ];
         $where[] = [
             'leads.created_at',
             '<=',
-            $end.' 23:59:59',
+            $end . ' 23:59:59',
         ];
 
         $query = Leads::join('users', 'users.id', '=', 'leads.patient_id')
@@ -2265,33 +2313,29 @@ class HomeController extends Controller
     private function salesByCentre(Request $request, $data)
     {
         $data['revenue'] = 0;
-        if (! Gate::allows('dashboard_states')) {
+        if (!Gate::allows('dashboard_states')) {
             $data['revenue'] = null;
-
             return $data;
         }
+
         $locations = ACL::getUserCentres();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         [$start_date, $end_date] = $this->getDates($request);
-        
-        $where[] = [
-            'created_at',
-            '>=',
-            $start_date.' 00:00:00',
-        ];
-        $where[] = [
-            'created_at',
-            '<=',
-            $end_date.' 23:59:59',
-        ];
+        $where[] = ['created_at', '>=', $start_date . ' 00:00:00',];
+        $where[] = ['created_at', '<=', $end_date . ' 23:59:59'];
+
         $todayRecords = \App\Models\Invoices::where($where)
             ->whereIn('location_id', ACL::getUserCentres())
             ->where('invoice_status_id', '=', $invoicestatus->id);
+
+
         if ($request->get('performance') == '1') {
             $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
         }
+
         $todayRecords = $todayRecords->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
             ->groupBy('location_id')->get();
+
         if ($locations) {
             foreach ($locations as $location) {
                 if ($todayRecords) {
@@ -2309,18 +2353,23 @@ class HomeController extends Controller
 
     private function recentActivities($data)
     {
-
-        if (! Gate::allows('dashboard_recent_activities')) {
+        if (!Gate::allows('dashboard_recent_activities')) {
             return $data['recent_activities'] = [
                 'finance_log' => [],
                 'appointment_log' => [],
                 'unauthorized' => true,
             ];
         }
+
         $centres = ACL::getUserCentres();
 
         $center_names = Locations::whereIn('id', $centres)->pluck('name')->toArray();
-        $activities = Activity::whereIn('location', $center_names)->whereDate('created_at', Carbon::now()->format('Y-m-d'))->latest()->get();
+        $activities = Activity::with([
+            'plan' => fn ($q) => $q->select('id', 'name')
+        ])->whereIn('location', $center_names)
+            ->whereIn('action', ['received', 'consumed'])
+            ->whereDate('created_at', Carbon::now()
+                ->format('Y-m-d'))->latest()->get();
 
         return $data['recent_activities'] = [
             'finance_log' => $activities,
@@ -2352,11 +2401,9 @@ class HomeController extends Controller
             }
 
             return $query->get();
-
         } catch (\Exception $e) {
             return collect();
         }
-
     }
 
     private function viewLog()
@@ -2445,20 +2492,18 @@ class HomeController extends Controller
                         break;
                 }
 
-                if (! isset($data[$audit_trail->id]['scheduled_date'])) {
+                if (!isset($data[$audit_trail->id]['scheduled_date'])) {
 
                     unset($data[$audit_trail->id]);
                 }
 
-                if (! isset($data[$audit_trail->id]['appointment_type_id'])) {
+                if (!isset($data[$audit_trail->id]['appointment_type_id'])) {
 
                     unset($data[$audit_trail->id]);
                 }
-
             }
         }
 
         return $data;
-
     }
 }

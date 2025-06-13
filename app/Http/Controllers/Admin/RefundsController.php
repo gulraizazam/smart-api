@@ -225,8 +225,13 @@ class RefundsController extends Controller
             ['cash_amount', '>', 0],
             ['package_id', '=', $package_information->id],
         ])->orderBy('created_at', 'desc')->first();
-     
-        $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
+      
+        if($package_advance_last_in){
+            $date_backend = date('Y-m-d', strtotime($package_advance_last_in->created_at));
+        }else{
+            return response()->json(['status'=>404,'msg'=>'No balance found against this plan','data'=>$package_information->id]);
+        }
+        
         /*end*/
 
         /*first need to tax percentage*/
@@ -353,10 +358,21 @@ class RefundsController extends Controller
     public function store(Request $request)
     {
        
+       
         if (! Gate::allows('refunds_refund')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-
+        $package_advance_last_in = PackageAdvances::where([
+            ['cash_flow', '=', 'in'],
+            ['is_setteled', '=', '0'],
+            ['cash_amount', '>', 0],
+            ['package_id', '=', $request->package_id],
+        ])->orderBy('created_at', 'desc')->first();
+      
+        if(!$package_advance_last_in)
+        {
+            return ApiHelper::apiResponse($this->success, 'No balance available', false);
+        }
         $validator = $this->verifyFields($request);
        
         if ($validator->fails()) {
@@ -404,14 +420,19 @@ class RefundsController extends Controller
      */
     protected function verifyFields(Request $request)
     {
-        return $validator = Validator::make($request->all(), [
+        $rules = [
             'refund_amount' => ['required', 'numeric', 'regex:/^[0-9]+$/'],
             'refund_note' => 'required',
-            'package_id' =>'required',
-            'payment_mode_id' =>'required',
-
-            
-        ]);
+            'package_id' => 'required',
+            'payment_mode_id' => 'required',
+            'created_at' => ['required', 'date', 'date_format:Y-m-d'],
+        ];
+        $customMessages = [
+            'created_at.required' => 'The created at field is required.',
+            'created_at.date_format' => 'The Date field format is incorrect.',
+        ];
+    
+        return Validator::make($request->all(), $rules, $customMessages);
     }
 
     /**

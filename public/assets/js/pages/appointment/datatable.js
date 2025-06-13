@@ -8,44 +8,45 @@ var table_columns = [
         width: 60,
         sortable: false,
         template: function (data) {
-            let detail_url = route('admin.appointments.detail', {id: data.id});
-            return '<a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`)">'+data.Patient_ID+'</a>';
+            let detail_url = route('admin.appointments.detail', { id: data.id });
+            return '<a href="javascript:void(0);" onclick="viewDetail(`' + detail_url + '`)">' + data.Patient_ID + '</a>';
         }
-    },{
+    }, {
         field: 'name',
         title: 'Patient',
         width: 80
-    },{
+    }, {
         field: 'phone',
         title: 'Phone',
         width: 90,
         template: function (data) {
+            console.log(data);
             return phoneClip(data);
         }
-    },{
+    }, {
         field: 'scheduled_date',
         title: 'Scheduled',
         width: 80,
         template: function (data) {
             if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
-                return '<span>'+data.scheduled_date+'</span>';
+                return '<span>' + data.scheduled_date + '</span>';
             } else {
-                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId +','+data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ',' + data.doctorId + ',' + data.locationId + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
             }
         }
-    },{
+    }, {
         field: 'service_id',
         title: 'Service',
         width: 'auto',
-    },{
+    }, {
         field: 'appointment_type_id',
         title: 'Type',
         width: 85,
-    },{
+    }, {
         field: 'doctor_id',
         title: 'Doctor',
         width: 90,
-    },{
+    }, {
         field: 'appointment_status_id',
         title: 'Status',
         width: 80,
@@ -57,49 +58,52 @@ var table_columns = [
             if (permissions.status) {
                 if (data.scheduled_date == '-') {
                     return '<span>Un-Scheduled</span>';
-                } else {
+                }else if (data.appointment_status_id === 'Arrived') {
+                    return '<span style="color:#8950FC;">' + data.appointment_status_id + '</span>';
+                }
+                 else {
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
                 }
             } else {
-                return '<span class="badge badge-dark">'+data.appointment_status_id+'</span>';
+                return '<span class="badge badge-dark">' + data.appointment_status_id + '</span>';
             }
         }
-    },{
+    }, {
         field: 'location_id',
         title: 'Centre',
         width: 'auto',
-    },{
+    }, {
         field: 'city_id',
         title: 'City',
         width: 'auto',
-    },{
+    }, {
         field: 'region_id',
         title: 'Region',
         width: 'auto',
-    },{
+    }, {
         field: 'consultancy_type',
         title: 'Consultancy Type',
         width: 'auto',
-    },{
+    }, {
         field: 'created_at',
         title: 'Created At',
         width: 'auto',
         template: function (data) {
             return formatDate(data.created_at);
         }
-    },{
+    }, {
         field: 'created_by',
         title: 'Created By',
         width: 'auto',
-    },{
+    }, {
         field: 'updated_by',
         title: 'Updated By',
         width: 'auto',
-    },{
+    }, {
         field: 'converted_by',
         title: 'Rescheduled By',
         width: 'auto',
-    },{
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
@@ -123,15 +127,15 @@ function editStatus(id) {
         // },
         url: route('admin.appointments.showappointmentstatus'),
         type: "GET",
-        data: {id: id},
+        data: { id: id },
         cache: false,
-        success: function(response) {
+        success: function (response) {
 
             if (response.status) {
                 setStatusData(response, id);
             }
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
@@ -153,14 +157,14 @@ function setStatusData(response, id) {
         let base_status_option = '<option value="">Select Status</option>';
         if (base_appointment_statuses) {
             Object.entries(base_appointment_statuses).forEach(function (base_status) {
-                base_status_option += '<option value="'+base_status[0]+'">'+base_status[1]+'</option>';
+                base_status_option += '<option value="' + base_status[0] + '">' + base_status[1] + '</option>';
             });
         }
 
         let appoint_status_option = '<option value="">Select Child Status</option>';
         if (appointment_statuses) {
             Object.entries(appointment_statuses).forEach(function (appointment_status) {
-                appoint_status_option += '<option value="'+appointment_status[0]+'">'+appointment_status[1]+'</option>';
+                appoint_status_option += '<option value="' + appointment_status[0] + '">' + appointment_status[1] + '</option>';
             });
         }
 
@@ -194,14 +198,14 @@ function setStatusData(response, id) {
                 $("#reason").val(appointments?.reason);
             }
         } else {
-            if(base_appointments[appointments.appointment_status?.parent_id]?.is_comment == 0
+            if (base_appointments[appointments.appointment_status?.parent_id]?.is_comment == 0
                 && appointments?.appointment_status?.is_comment == 0) {
             } else {
                 $("#appointment_reason").hide();
                 $("#appointment_status_id_section").hide();
 
             }
-            if(base_appointments[appointments.appointment_status.parent_id].is_comment == 0
+            if (base_appointments[appointments.appointment_status.parent_id].is_comment == 0
                 && appointments?.appointment_status?.is_comment == 0) {
                 $("#appointment_reason").hide();
             } else {
@@ -217,7 +221,7 @@ function setStatusData(response, id) {
     }
 }
 
-function editSchedule(id,doc_id,loc_id) {
+function editSchedule(id, doc_id, loc_id) {
 
     $("#modal_change_appointment_schedule").modal("show");
     $("#schedule_appointment_id").val(id)
@@ -230,16 +234,16 @@ function editSchedule(id,doc_id,loc_id) {
         },
         url: route('admin.appointments.get_schedule'),
         type: "GET",
-        data: {id: id},
+        data: { id: id },
         cache: false,
-        success: function(response) {
+        success: function (response) {
             if (response.status) {
                 let appointment = response.data.appointment;
                 $("#schedule_date").val(appointment?.scheduled_date);
                 $("#schedule_time").val(appointment?.scheduled_time);
             }
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
         }
     });
@@ -260,7 +264,7 @@ let loadChildStatuses = function (appointmentStatusId) {
     statusValidate.addField('reason', extraValidate);
     statusValidate.removeField('appointment_status_id', '');
     statusValidate.removeField('reason', '');
-    if(appointmentStatusId != '') {
+    if (appointmentStatusId != '') {
         resetDropdowns();
         $("input[type=submit]").attr('disabled', true);
         $.ajax({
@@ -273,8 +277,8 @@ let loadChildStatuses = function (appointmentStatusId) {
                 appointment_status_id: appointmentStatusId
             },
             cache: false,
-            success: function(response) {
-                if(response.status) {
+            success: function (response) {
+                if (response.status) {
                     if (response.data.dropdown) {
                         setChildStatusData(response);
                         $('.appointment_status_id').show();
@@ -288,10 +292,10 @@ let loadChildStatuses = function (appointmentStatusId) {
                 } else {
                     resetDropdowns();
                 }
-                if(parseInt(response.count) > 1) {
+                if (parseInt(response.count) > 1) {
                     $('.appointment_status_id').show();
                 }
-                if(response.status && response.data.appointment_status.is_comment == '1') {
+                if (response.status && response.data.appointment_status.is_comment == '1') {
                     $('.reason').show();
                     statusValidate.addField('reason', extraValidate);
                 } else {
@@ -314,16 +318,16 @@ let loadChildStatuses = function (appointmentStatusId) {
 function setChildStatusData(response) {
 
     let dropdowns = response.data.dropdown;
-    let  child_options = '<option value="">Select Child Status</option>';
+    let child_options = '<option value="">Select Child Status</option>';
     if (dropdowns) {
         Object.entries(dropdowns).forEach(function (dropdown) {
-            child_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+            child_options += '<option value="' + dropdown[0] + '">' + dropdown[1] + '</option>';
         });
     }
     $('#appointment_status_id').html(child_options);
 }
 
-var resetDropdowns = function() {
+var resetDropdowns = function () {
     resetReason();
     resetChildStatuses();
 }
@@ -343,7 +347,7 @@ let statusListener = function (appointmentStatusId) {
 
     statusValidate.addField('reason', extraValidate);
     statusValidate.removeField('reason', '');
-    if(appointmentStatusId != '') {
+    if (appointmentStatusId != '') {
         $("input[type=submit]").attr('disabled', true);
         $.ajax({
             headers: {
@@ -356,8 +360,8 @@ let statusListener = function (appointmentStatusId) {
                 base_appointment_status_id: $('#base_appointment_status_id').val()
             },
             cache: false,
-            success: function(response) {
-                if(response.status && (response.data.appointment_status.is_comment == '1' || response.data.base_appointment_status.is_comment == '1')) {
+            success: function (response) {
+                if (response.status && (response.data.appointment_status.is_comment == '1' || response.data.base_appointment_status.is_comment == '1')) {
                     $('.reason').show();
                     statusValidate.addField('reason', extraValidate);
                 } else {
@@ -380,21 +384,21 @@ function actions(data) {
 
     let id = data.id;
 
-    let edit_url = route('admin.appointments.edit', {id: id});
-    let edit_service_url = route('admin.appointments.edit_service', {id: id});
-    let detail_url = route('admin.appointments.detail', {id: id});
-    let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
+    let edit_url = route('admin.appointments.edit', { id: id });
+    let edit_service_url = route('admin.appointments.edit_service', { id: id });
+    let detail_url = route('admin.appointments.detail', { id: id });
+    let sms_logs_url = route('admin.appointments.sms_logs', { id: id });
 
-    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', {id: id, type: 'appointment'});
-    let invoice_url = route('admin.appointments.invoicecreate', {id: id});
-    let invoice_display_url = route('admin.appointments.InvoiceDisplay', {id: data.invoice_id});
-    let image_url = route('admin.appointmentsimage.imageindex', {id: id});
-    let measurements_url = route('admin.appointmentsmeasurement.measurements', {id: id});
-    let medicals_url = route('admin.appointmentsmedical.medicals', {id: id});
-    let plan_url = route('admin.appointmentplans.create', {id: id});
-    let delete_url = route('admin.appointments.destroy', {id: id});
-    let patient_url = route('admin.patients.preview', {id: data.patient_id});
-    let viewlog_url = route('admin.appointments.loadPage', {id: id, type: 'web'});
+    let consultancy_invoice_url = route('admin.appointments.invoice-create-consultancy', { id: id, type: 'appointment' });
+    let invoice_url = route('admin.appointments.invoicecreate', { id: id });
+    let invoice_display_url = route('admin.appointments.InvoiceDisplay', { id: data.invoice_id });
+    let image_url = route('admin.appointmentsimage.imageindex', { id: id });
+    let measurements_url = route('admin.appointmentsmeasurement.measurements', { id: id });
+    let medicals_url = route('admin.appointmentsmedical.medicals', { id: id });
+    let plan_url = route('admin.appointmentplans.create', { id: id });
+    let delete_url = route('admin.appointments.destroy', { id: id });
+    let patient_url = route('admin.patients.preview', { id: data.patient_id });
+    let viewlog_url = route('admin.appointments.loadPage', { id: id, type: 'web' });
 
     if (
         permissions.edit
@@ -414,7 +418,7 @@ function actions(data) {
         let actions = '<div class="dropdown dropdown-inline action-dots">';
 
         if (permissions.invoice) {
-            if(!data.invoice) {
+            if (!data.invoice) {
                 if (data.appointment_type == 2) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
@@ -422,7 +426,7 @@ function actions(data) {
                         </a>';
                 }
 
-                if(data.appointment_type == 1) {
+                if (data.appointment_type == 1) {
                     actions += '<a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-warning btn-sm">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
                         </a>';
@@ -434,14 +438,14 @@ function actions(data) {
         }
 
         if (permissions.invoice_display) {
-            if(data.invoice) {
+            if (data.invoice) {
                 actions += '<a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-info btn-sm">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                         </a>';
 
             }
         }
-        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="d-lg-inline-flex d-none btn btn-icon btn-success btn-sm ml-2">\
+        actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_logs_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-success btn-sm ml-2">\
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                     </a>';
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -454,20 +458,20 @@ function actions(data) {
                         Choose an action: \
                         </li>';
         actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="viewDetail(`'+detail_url+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="viewDetail(`'+ detail_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-eye"></i></span>\
                             <span class="navi-text">Detail</span>\
                         </a>\
                     </li>';
         if (permissions.edit) {
-            if(data.appointment_type==1) {
+            if (data.appointment_type == 1) {
                 actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`, `' + id + '`, `detail-actions`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Edit</span>\
                         </a>\
                     </li>';
-            } else if(data.appointment_type==2) {
+            } else if (data.appointment_type == 2) {
                 actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`' + edit_service_url + '`, `' + id + '`, `treatment-detail-actions`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
@@ -476,10 +480,10 @@ function actions(data) {
                     </li>';
             }
         }
-        if(data.appointment_type==1) {
+        if (data.appointment_type == 1) {
             if (permissions.consultancy) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+ data.cityId + ', ' + data.locationId + ', ' + data.doctorId + ')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
                         <span class="navi-text">View On Calendar</span>\
                     </a>\
@@ -487,10 +491,10 @@ function actions(data) {
             }
         }
 
-        if(data.appointment_type==2) {
+        if (data.appointment_type == 2) {
             if (permissions.treatment) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+ data.cityId + ', ' + data.locationId + ', ' + data.doctorId + ', ' + data.resource_id + ')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-medkit"></i></span>\
                         <span class="navi-text">View On Calendar</span>\
                     </a>\
@@ -500,12 +504,11 @@ function actions(data) {
 
 
 
-        if(data.cancelled_appointment_status == null && (data.cancelled_appointment_status?.id != data.appointment_status_id))
-        {
-            if(data.appointment_type==1) {
+        if (data.cancelled_appointment_status == null && (data.cancelled_appointment_status?.id != data.appointment_status_id)) {
+            if (data.appointment_type == 1) {
                 if (permissions.consultancy) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+',\'2023-01-01\')" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+ data.cityId + ', ' + data.locationId + ', ' + data.doctorId + ',\'2023-01-01\')" class="navi-link">\
                             <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
                             <span class="navi-text">Consultancy</span>\
                         </a>\
@@ -513,10 +516,10 @@ function actions(data) {
                 }
             }
 
-            if(data.appointment_type==2) {
+            if (data.appointment_type == 2) {
                 if (permissions.treatment) {
                     actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+',\'2023-01-01\')" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+ data.cityId + ', ' + data.locationId + ', ' + data.doctorId + ', ' + data.resource_id + ',\'2023-01-01\')" class="navi-link">\
                             <span class="navi-icon"><i class="la la-medkit"></i></span>\
                             <span class="navi-text">Treatment</span>\
                         </a>\
@@ -525,10 +528,10 @@ function actions(data) {
             }
         }
 
-        if(data.appointment_type==2) {
+        if (data.appointment_type == 2) {
             if (permissions.image_manage) {
                 actions += '<li class="navi-item">\
-                        <a href="'+image_url+'" target="_blank" class="navi-link">\
+                        <a href="'+ image_url + '" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-image"></i></span>\
                             <span class="navi-text">Images</span>\
                         </a>\
@@ -537,7 +540,7 @@ function actions(data) {
 
             if (permissions.measurement_manage) {
                 actions += '<li class="navi-item">\
-                        <a href="'+measurements_url+'" target="_blank" class="navi-link">\
+                        <a href="'+ measurements_url + '" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-ruler-horizontal"></i></span>\
                             <span class="navi-text">Measurements</span>\
                         </a>\
@@ -545,10 +548,10 @@ function actions(data) {
             }
         }
 
-        if(data.appointment_type==1) {
+        if (data.appointment_type == 1) {
             if (permissions.medical_form_manage) {
                 actions += '<li class="navi-item">\
-                        <a href="'+medicals_url+'" target="_blank" class="navi-link">\
+                        <a href="'+ medicals_url + '" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-medkit"></i></span>\
                             <span class="navi-text">Medical</span>\
                         </a>\
@@ -558,7 +561,7 @@ function actions(data) {
 
         if (permissions.plans_create) {
             actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_url+'`, `'+id+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="createAppointmentPlan(`'+ plan_url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-paper-plane"></i></span>\
                             <span class="navi-text">Create Plan</span>\
                         </a>\
@@ -567,7 +570,7 @@ function actions(data) {
 
         if (permissions.patient_card) {
             actions += '<li class="navi-item">\
-                        <a target="_blank" href="'+patient_url+'" class="navi-link">\
+                        <a target="_blank" href="'+ patient_url + '" class="navi-link">\
                             <span class="navi-icon"><i class="la la-user"></i></span>\
                             <span class="navi-text">Patient Card</span>\
                         </a>\
@@ -576,7 +579,7 @@ function actions(data) {
 
         if (permissions.log) {
             actions += '<li class="navi-item">\
-                        <a href="'+viewlog_url+'" target="_blank" class="navi-link">\
+                        <a href="'+ viewlog_url + '" target="_blank" class="navi-link">\
                             <span class="navi-icon"><i class="la la-history"></i></span>\
                             <span class="navi-text">Log</span>\
                         </a>\
@@ -598,8 +601,8 @@ function actions(data) {
         //}
 
         if (permissions.invoice_display) {
-            if(data.invoice) {
-            actions += '<li class="navi-item d-lg-none">\
+            if (data.invoice) {
+                actions += '<li class="navi-item d-lg-none">\
                         <a title="View Invoice" href="javascript:void(0);" onclick="displayInvoice(`' + invoice_display_url + '`, `' + id + '`);"  class="navi-link">\
                             <span class="navi-icon"><i class="la la-file-invoice-dollar"></i></span>\
                             <span class="navi-text">View Invoice</span>\
@@ -609,7 +612,7 @@ function actions(data) {
         }
 
         actions += '<li class="navi-item  d-lg-none">\
-                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="navi-link">\
+                        <a href="javascript:void(0);" onclick="viewSmsLogs(`'+ sms_logs_url + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-sms"></i></span>\
                             <span class="navi-text">SMS Logs</span>\
                         </a>\
@@ -617,7 +620,7 @@ function actions(data) {
 
 
         if (permissions.invoice) {
-            if(!data.invoice) {
+            if (!data.invoice) {
                 if (data.appointment_type == 2) {
                     actions += '<li class="navi-item d-lg-none">\
                         <a title="Create Invoice" href="javascript:void(0);" onclick="createTreatmentInvoice(`' + invoice_url + '`);"  class="navi-link">\
@@ -627,7 +630,7 @@ function actions(data) {
                     </li>';
                 }
 
-                if(data.appointment_type == 1) {
+                if (data.appointment_type == 1) {
                     actions += '<li class="navi-item d-lg-none">\
                         <a title="Create Invoice" href="javascript:void(0);" onclick="createConsultancyInvoice(`' + consultancy_invoice_url + '`);"   class="navi-link">\
                             <span class="navi-icon"><i class="la la-file"></i></span>\
@@ -661,14 +664,14 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
     $("." + type + "-section").removeClass("d-none");
 
     $(".change-tab").removeClass("nav-bar-active");
-    $("." +type+ "-tab").addClass("nav-bar-active");
+    $("." + type + "-tab").addClass("nav-bar-active");
 
     setQueryStringParameter('tab', type);
     //setQueryStringParameter('city_id', city_id);
     setQueryStringParameter('location_id', location_id);
     setQueryStringParameter('doctor_id', doctor_id);
     setQueryStringParameter('reload', 'false');
-    $(".change-label").text($("." +type+ "-tab").text());
+    $(".change-label").text($("." + type + "-tab").text());
 
     if (type === 'treatment') {
 
@@ -676,13 +679,13 @@ function goToConsultancy(type, city_id, location_id, doctor_id, resource_id) {
 
         $("#treatment_city_filter").val(city_id).trigger("change");
 
-        setTimeout( function () {
+        setTimeout(function () {
             $("#treatment_resource_filter").val(resource_id).trigger("change");
-        },1100);
+        }, 1100);
 
-        setTimeout( function () {
+        setTimeout(function () {
             $("#treatment_doctor_filter").val(doctor_id).trigger("change");
-        },1200);
+        }, 1200);
 
 
     }
@@ -767,10 +770,10 @@ function editRow(url, id, $class = 'detail-actions') {
 
     if ($class === 'detail-actions') {
         $("#modal_edit_appointment").modal("show");
-        $("#modal_edit_appointment_form").attr("action", route('admin.appointments.update', {id: id}));
+        $("#modal_edit_appointment_form").attr("action", route('admin.appointments.update', { id: id }));
     } else {
         $("#modal_treatment_edit").modal("show");
-        $("#modal_edit_treatment_form").attr("action", route('admin.appointments.update', {id: id}));
+        $("#modal_edit_treatment_form").attr("action", route('admin.appointments.update', { id: id }));
     }
 
     $.ajax({
@@ -811,34 +814,34 @@ function setEditData(response) {
         let setting = response.data.setting;
         let genders = response.data.genders;
 
-        let type_option = '<option value="">All</option>';
+        let type_option = '';
         Object.entries(consultancy_types).forEach(function (consultancy_type) {
             type_option += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
         });
 
-        let service_option = '<option value="">All</option>';
+        let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
             service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
         });
 
-        let city_option = '<option value="">All</option>';
+        let city_option = '<option value="">Select a City</option>';
         Object.entries(cities).forEach(function (city) {
             city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });
 
-        let location_option = '<option value="">All</option>';
+        let location_option = '<option value="">Select a Location</option>';
         Object.entries(locations).forEach(function (location) {
-            location_option  += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            location_option += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
 
-        let doctor_option = '<option value="">All</option>';
+        let doctor_option = '<option value="">Select a Doctor</option>';
         Object.entries(doctors).forEach(function (doctor) {
-            doctor_option  += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
+            doctor_option += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
         });
 
-        let gender_option = '<option value="">All</option>';
+        let gender_option = '<option value="">Select a Gender</option>';
         Object.entries(genders).forEach(function (gender) {
-            gender_option  += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
+            gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
 
         $("#edit_consultancy_type").html(type_option).val(appointment.consultancy_type);
@@ -897,34 +900,34 @@ function setTreatmentEditData(response) {
         let genders = response.data.genders;
 
 
-        let service_option = '<option value="">All</option>';
+        let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
             service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
         });
 
-        let city_option = '<option value="">All</option>';
+        let city_option = '<option value="">Select a City</option>';
         Object.entries(cities).forEach(function (city) {
             city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
         });
 
-        let location_option = '<option value="">All</option>';
+        let location_option = '<option value="">Select a Location</option>';
         Object.entries(locations).forEach(function (location) {
-            location_option  += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            location_option += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
 
-        let doctor_option = '<option value="">All</option>';
+        let doctor_option = '<option value="">Select a Doctor</option>';
         Object.entries(doctors).forEach(function (doctor) {
-            doctor_option  += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
+            doctor_option += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
         });
 
-        let gender_option = '<option value="">All</option>';
+        let gender_option = '<option value="">Select a Gender</option>';
         Object.entries(genders).forEach(function (gender) {
-            gender_option  += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
+            gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
 
-        let machine_option = '<option value="">All</option>';
+        let machine_option = '<option value="">Select a Machine</option>';
         Object.entries(machines).forEach(function (machine) {
-            machine_option  += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
+            machine_option += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
         });
 
         $("#edit_treatment_service_id").html(service_option).val(appointment.service_id);
@@ -997,7 +1000,7 @@ function setSmsLogs(response) {
         let SMSLogs = response.data.SMSLogs;
         let sms_statuses = response.data.sms_statuses;
 
-        let statuses =  makeArray(sms_statuses);
+        let statuses = makeArray(sms_statuses);
 
         let rows = noRecordFoundTable(6);
 
@@ -1006,7 +1009,7 @@ function setSmsLogs(response) {
             rows = '';
             Object.values(SMSLogs).forEach(function (smsLog, index) {
 
-                if(smsLog.invoice_id === null) {
+                if (smsLog.invoice_id === null) {
                     rows += '<tr>';
                     rows += '<td>' + smsLog.to + '</td>';
                     rows += '<td><a href="javascript:void(0);" onclick="toggleText($(this))">';
@@ -1015,22 +1018,22 @@ function setSmsLogs(response) {
                     rows += '<span class="full_text" style="display:none; text-underline: none;"><pre>' + smsLog.text + '</pre></span>';
                     '</a></td>';
 
-                    if(smsLog.status) {
-                        rows += '<td id="smsRow{'+smsLog.id+'">Yes</td>';
+                    if (smsLog.status) {
+                        rows += '<td id="smsRow{' + smsLog.id + '">Yes</td>';
                     } else {
-                        rows += '<td><span class="text-center" id="spanRow'+smsLog.id+'">No</span>\
-                        <br/><a id="clickRow'+smsLog.id+'" href="javascript:void(0)" onclick="resendSMS('+smsLog.id+', `'+sent_url+'`);" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
+                        rows += '<td><span class="text-center" id="spanRow' + smsLog.id + '">No</span>\
+                        <br/><a id="clickRow'+ smsLog.id + '" href="javascript:void(0)" onclick="resendSMS(' + smsLog.id + ', `' + sent_url + '`);" class="btn btn-sm btn-success spinner-button" data-toggle="tooltip" title="Resend SMS">' +
                             '<i class="la la-send-o"></i></a></td>';
                     }
 
-                    if(smsLog.is_refund == "Yes") {
+                    if (smsLog.is_refund == "Yes") {
                         rows += '<td>smsLog.is_refund</td>';
                     } else {
                         rows += '<td></td>';
                     }
 
                     if (typeof statuses[smsLog.log_type] !== 'undefined') {
-                        rows += '<td>'+statuses[smsLog.log_type]+'</td>';
+                        rows += '<td>' + statuses[smsLog.log_type] + '</td>';
                     } else {
                         rows += '<td>N/A</td>';
                     }
@@ -1051,8 +1054,12 @@ function setSmsLogs(response) {
 
 
 function applyFilters(datatable) {
-    $('#apply-filters').on('click', function() {
-        let filters =  {
+    $('#apply-filters').on('click', function () {
+        if ($("#appoint_search_phone").val() !== "" && ($("#appoint_search_phone").val().length < 10 || $("#appoint_search_phone").val().length > 13)) {
+            toastr.error("Please enter valid phone number");
+            return;
+        }
+        let filters = {
             delete: '',
             patient_id: $("#appointment_patient_id").val(),
             phone: $("#appoint_search_phone").val(),
@@ -1073,10 +1080,10 @@ function applyFilters(datatable) {
             updated_by: $("#appoint_search_updated_by").val(),
             filter: 'filter',
         }
-        if($("#appoint_search_service").val() == 13){
+        if ($("#appoint_search_service").val() == 13) {
             resetFilters(datatable);
         }
-        else{
+        else {
             datatable.search(filters, 'search');
         }
 
@@ -1085,8 +1092,8 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
 
-    $('#reset-filters').on('click', function() {
-        let filters =  {
+    $('#reset-filters').on('click', function () {
+        let filters = {
             delete: '',
             patient_id: '',
             name: '',
@@ -1114,28 +1121,28 @@ function resetAllFilters(datatable) {
 function resetFilters(datatable) {
 
 
-        let filters =  {
-            delete: '',
-            patient_id: '',
-            name: '',
-            phone: '',
-            date_from: '',
-            date_to: '',
-            appointment_type_id: '',
-            service_id: '',
-            region_id: '',
-            city_id: '',
-            location_id: '',
-            doctor_id: '',
-            appointment_status_id: '',
-            consultancy_type: '',
-            created_at: '',
-            created_by: '',
-            converted_by: '',
-            updated_by: '',
-            filter: 'filter_cancel',
-        }
-        datatable.search(filters, 'search');
+    let filters = {
+        delete: '',
+        patient_id: '',
+        name: '',
+        phone: '',
+        date_from: '',
+        date_to: '',
+        appointment_type_id: '',
+        service_id: '',
+        region_id: '',
+        city_id: '',
+        location_id: '',
+        doctor_id: '',
+        appointment_status_id: '',
+        consultancy_type: '',
+        created_at: '',
+        created_by: '',
+        converted_by: '',
+        updated_by: '',
+        filter: 'filter_cancel',
+    }
+    datatable.search(filters, 'search');
 
 
 }
@@ -1182,14 +1189,14 @@ function setFilters(filter_values, active_filters) {
         });
 
         let service_options = '';
-        Object.values(services).forEach(function(value, index) {
+        Object.values(services).forEach(function (value, index) {
             if (value.name == 'All Services') {
-                  service_options += '<option value="' + value.id + '" selected>' + value.name + '</option>';
+                service_options += '<option value="' + value.id + '" selected>' + value.name + '</option>';
             } else {
                 service_options += '<option value="' + value.id + '">' + value.name + '</option>';
             }
         });
-        
+
         let user_options = '<option value="">All</option>';
         Object.entries(users).forEach(function (user, index) {
             user_options += '<option value="' + user[0] + '">' + user[1] + '</option>';
@@ -1287,7 +1294,7 @@ function resetCustomFilters() {
 
     $('.appointment_patient_id').val(null).trigger('change');
     $(".filter-field").val('');
-   // $('.select2').val(null).trigger('change');
+    // $('.select2').val(null).trigger('change');
 
     setQueryStringParameter('type');
     setQueryStringParameter('from');
@@ -1334,7 +1341,7 @@ function createConsultancyInvoice(url) {
         url: url,
         type: 'GET',
         cache: false,
-        success: function(response) {
+        success: function (response) {
 
             $("#create_consultancy_invoice").html(response)
 
@@ -1342,7 +1349,7 @@ function createConsultancyInvoice(url) {
             $("#addinvoice").show();
             customDatePicker();
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
         }
     });
@@ -1358,14 +1365,14 @@ function createTreatmentInvoice(url) {
         url: url,
         type: 'GET',
         cache: false,
-        success: function(response) {
+        success: function (response) {
 
             $("#create_treatment_invoice").html(response)
 
             $("#modal_create_treatment_invoice").modal("show");
             customDatePicker();
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
         }
     });
@@ -1381,13 +1388,13 @@ function displayInvoice(url) {
         url: url,
         type: 'GET',
         cache: false,
-        success: function(response) {
+        success: function (response) {
 
             $("#display_invoice").html(response)
 
             $("#modal_display_invoice").modal("show");
         },
-        error: function(xhr, ajaxOptions, thrownError) {
+        error: function (xhr, ajaxOptions, thrownError) {
             toastr.error("Unable to process the request");
         }
     });
@@ -1432,7 +1439,7 @@ var AppointScheduleValidation = function () {
         validate.on('core.form.invalid', function (e) {
             select2Validation();
         });
-        validate.on('core.form.valid', function(event) {
+        validate.on('core.form.valid', function (event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
 
                 if (response.status) {
@@ -1448,13 +1455,13 @@ var AppointScheduleValidation = function () {
 
     return {
         // public functions
-        init: function() {
+        init: function () {
             Validation();
         }
     };
 }();
 
-jQuery(document).ready(function() {
+jQuery(document).ready(function () {
     AppointScheduleValidation.init();
     $("#date_range").val("");
 });

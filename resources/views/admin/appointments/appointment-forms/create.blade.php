@@ -44,7 +44,7 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5 consultancy-service">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Consultancy <span class="text text-danger">*</span> </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span> </label>
                             <select id="create_consultancy_service" class="form-control select2" name="service_id"></select>
                         </div>
 

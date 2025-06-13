@@ -10,6 +10,7 @@ use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Helpers\GeneralFunctions;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Gate;
 
 class Patients extends BaseModal
 {
@@ -101,6 +102,7 @@ class Patients extends BaseModal
                 'account_id' => $account_id,
                 'id' => $name,
             ])->select('name', 'id', 'phone')->get();
+            
         }
         if ($users->count() > 0) {
             return $users;
@@ -125,7 +127,67 @@ class Patients extends BaseModal
             ])->select('name', 'id', 'phone')->get();
         }
     }
+    public static function getPatientidAjaxOrder($name, $account_id)
+{
+    // Initialize the result collection
+    $users = collect();
+    
+    // Handle searching by patient ID (C- or numeric ID)
+    if (stripos($name, 'C-') !== false) {
+        $name = str_replace(['C-', 'c-'], '', $name);
+        $users = self::where([
+            'user_type_id' => '3',
+            'active' => '1',
+            'account_id' => $account_id,
+            'id' => $name,
+        ])->select('name', 'id', 'phone')->get();
+    }
+    
+    if (is_numeric($name)) {
+        $users = self::where([
+            'user_type_id' => '3',
+            'active' => '1',
+            'account_id' => $account_id,
+            'id' => $name,
+        ])->select('name', 'id', 'phone')->get();
+    }
 
+    // If no patient found by ID, search by name
+    if ($users->count() == 0) {
+        $name = GeneralFunctions::patientSearch($name);
+        $phone_numeric = GeneralFunctions::clearnString($name);
+        if (is_numeric($phone_numeric)) {
+            $phone = GeneralFunctions::cleanNumber($name);
+            $users = self::where([
+                'user_type_id' => '3',
+                'active' => '1',
+                'account_id' => $account_id,
+                'phone' => 'LIKE', "%{$phone}%"
+            ])->select('name', 'id', 'phone')->get();
+        } else {
+            $users = self::where([
+                'user_type_id' => '3',
+                'active' => '1',
+                'account_id' => $account_id,
+                'name' => 'LIKE', "%{$name}%"
+            ])->select('name', 'id', 'phone')->get();
+        }
+    }
+
+    // Add membership data to users
+    foreach ($users as $user) {
+        $membership = Membership::where('patient_id', $user->id)->first(); // Assuming `patient_id` is the foreign key
+        if ($membership) {
+            $user->membership_code = $membership->code;
+            $user->membership_status = $membership->end_date >= now() ? 'Active' : 'Inactive';
+        } else {
+            $user->membership_code = 'N/A';
+            $user->membership_status = 'Inactive';
+        }
+    }
+
+    return $users;
+}
     public static function getPatientPhoneAjax($phone, $account_id)
     {
         if (is_numeric($phone)) {
@@ -152,6 +214,12 @@ class Patients extends BaseModal
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function membership()
+    {
+        return $this->hasOne(Membership::class, 'patient_id');
+    }
+
 
     /**
      * Get the User that owns the Patient.
@@ -184,88 +252,88 @@ class Patients extends BaseModal
         return self::where($where)->first();
     }
 
-        /**
-         * Create Record
-         *
-         * @param data
-         * @return (mixed)
-         */
-        public static function createRecord($data, $flag = 0)
-        {
-            if ($flag == 1) {
-                $patient = Patients::where(['phone' => $data['phone']])->first();
-                if (! $patient) {
-                    $record = Patients::create($data);
-                    AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
-                    return $record;
-                } else {
-                    if ($flag == 1) {
-                        return 'Patient is already exist';
-                    } else {
-                        return $patient;
-                    }
-                }
-            } else {
+    /**
+     * Create Record
+     *
+     * @param data
+     * @return (mixed)
+     */
+    public static function createRecord($data, $flag = 0)
+    {
+        if ($flag == 1) {
+            $patient = Patients::where(['phone' => $data['phone']])->first();
+            if (!$patient) {
                 $record = Patients::create($data);
                 AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
                 return $record;
+            } else {
+                if ($flag == 1) {
+                    return 'Patient is already exist';
+                } else {
+                    return $patient;
+                }
             }
-        }
+        } else {
+            $record = Patients::create($data);
+            AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
-        /**
-         * update Record
-         *
-         * @param data
-         * @return (mixed)
-         */
-        public static function updateRecord($id, $data, $appointmentData = false, $patientData = false)
-        {
-            if ($appointmentData) {
-                if ($appointmentData['patient_id'] != 0) {
-                    $old_data = (Patients::find($appointmentData['patient_id']))->toArray();
+            return $record;
+        }
+    }
+
+    /**
+     * update Record
+     *
+     * @param data
+     * @return (mixed)
+     */
+    public static function updateRecord($id, $data, $appointmentData = false, $patientData = false)
+    {
+        if ($appointmentData) {
+            if ($appointmentData['patient_id'] != 0) {
+                $old_data = (Patients::find($appointmentData['patient_id']))->toArray();
+            }
+            if (isset($appointmentData['patient_id_1'])) {
+                if ($appointmentData['patient_id'] == 0) {
+                    $appointmentData['patient_id'] = $appointmentData['patient_id_1'];
+                    $patientData['patient_id'] = $patientData['patient_id_1'];
                 }
-                if (isset($appointmentData['patient_id_1'])) {
-                    if ($appointmentData['patient_id'] == 0) {
-                        $appointmentData['patient_id'] = $appointmentData['patient_id_1'];
-                        $patientData['patient_id'] = $patientData['patient_id_1'];
-                    }
-                }
-                $record = Patients::find($appointmentData['patient_id']);
-                /* $record = Patients::updateOrCreate(array(
+            }
+            $record = Patients::find($appointmentData['patient_id']);
+            /* $record = Patients::updateOrCreate(array(
                      'id' => $appointmentData['patient_id'],
                      'phone' => $appointmentData['phone'],
                      'user_type_id' => Config::get('constants.patient_id'),
                      'account_id' => Auth::User()->account_id
                  ), $patientData);*/
-                $is_exist = Patients::find($appointmentData['patient_id']);
-                if ($is_exist) {
-                    AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $is_exist, $appointmentData['patient_id']);
-                } else {
-                    AuditTrails::addEventLogger(self::$_table, 'create', $record, self::$_fillable, $record);
-                }
-
-                return $record;
+            $is_exist = Patients::find($appointmentData['patient_id']);
+            if ($is_exist) {
+                AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $is_exist, $appointmentData['patient_id']);
             } else {
-                $old_data = (Patients::find($id))->toArray();
-                $record = self::where(['id' => $id])->first();
-                if (! $record) {
-                    return null;
-                }
-                $record->update($data);
-                AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $old_data, $id);
-
-                return $record;
+                AuditTrails::addEventLogger(self::$_table, 'create', $record, self::$_fillable, $record);
             }
+
+            return $record;
+        } else {
+            $old_data = (Patients::find($id))->toArray();
+            $record = self::where(['id' => $id])->first();
+            if (!$record) {
+                return null;
+            }
+            $record->update($data);
+            AuditTrails::EditEventLogger(self::$_table, 'edit', $record, self::$_fillable, $old_data, $id);
+
+            return $record;
         }
+    }
 
     /**
      * Get active and sorted data only.
      */
     public static function getActiveOnly($patientId = false)
     {
-        if ($patientId && ! is_array($patientId)) {
+        if ($patientId && !is_array($patientId)) {
             $patientId = [$patientId];
         }
         $query = self::where(['user_type_id' => self::$USER_TYPE, 'active' => 1]);
@@ -284,22 +352,23 @@ class Patients extends BaseModal
      */
     public static function getTotalRecords(Request $request, $account_id, $apply_filter, $filename)
     {
-
+        $query = self::query();
+        $filters = getFilters($request->all());
         $where = self::filters_patients($request, $account_id, $apply_filter, $filename);
 
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::where($where)->count();
-            } else {
-                return self::where($where)->where(['active' => 1])->count();
-            }
-        } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::count();
-            } else {
-                return self::where(['active' => 1])->count();
-            }
+            $query->where($where);
         }
+        if (!Gate::allows('view_inactive_patients')) {
+            $query->where(['active' => 1]);
+        }
+        if (isset($filters['membership'])) {
+            $query->whereHas('membership', function ($q) use ($filters) {
+                $q->where('membership_type_id', $filters['membership']);
+            });
+        }
+
+        return $query->count();
     }
 
     /**
@@ -313,26 +382,30 @@ class Patients extends BaseModal
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $apply_filter, $filename)
     {
 
+        $filters = getFilters($request->all());
+
         $where = self::filters_patients($request, $account_id, $apply_filter, $filename);
-
-        [$orderBy, $order] = getSortBy($request);
-
-        if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            } else {
-                return self::where(['active' => 1])->where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            }
-
-            //return self::where($where)->limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-        } else {
-            //return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy($orderBy, $order)->select('*', 'id as patient_id')->get();
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_patients')) {
-                return self::limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            } else {
-                return self::where(['active' => 1])->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'DESC')->select('*', 'id as patient_id')->get();
-            }
+        $query = self::with('membership');
+        if (isset($filters['membership'])) {
+            Filters::put(Auth::user()->id, $filename, 'memberships', $filters['membership']);
+            $query->whereHas('membership', function ($q) use ($filters) {
+                $q->where('membership_type_id', $filters['membership']);
+            });
         }
+        if (count($where)) {
+            $query->where($where);
+        }
+
+        if (!Gate::allows('view_inactive_patients')) {
+            $query->where(['active' => 1]);
+        }
+
+        $query->select('*', 'id as patient_id')
+            ->orderBy('created_at', 'DESC')
+            ->limit($iDisplayLength)
+            ->offset($iDisplayStart);
+
+        return $query->get();
     }
 
     /**
@@ -346,7 +419,7 @@ class Patients extends BaseModal
 
         $patient = self::getData($id);
 
-        if (! $patient) {
+        if (!$patient) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
@@ -383,7 +456,7 @@ class Patients extends BaseModal
     {
         $patient = self::getData($id);
 
-        if (! $patient) {
+        if (!$patient) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
@@ -411,7 +484,7 @@ class Patients extends BaseModal
 
         $patient = self::getData($id);
 
-        if (! $patient) {
+        if (!$patient) {
             return [
                 'status' => false,
                 'message' => 'Resource not found.',
@@ -426,7 +499,6 @@ class Patients extends BaseModal
             'status' => true,
             'message' => 'Record has been activated successfully.',
         ];
-
     }
 
     /**
@@ -501,7 +573,7 @@ class Patients extends BaseModal
             $where[] = [
                 'id',
                 'like',
-                '%'.GeneralFunctions::patientSearch($filters['patient_id']).'%',
+                '%' . GeneralFunctions::patientSearch($filters['patient_id']) . '%',
             ];
             Filters::put(Auth::user()->id, $filename, 'patient_id', $filters['patient_id']);
         } else {
@@ -512,7 +584,7 @@ class Patients extends BaseModal
                     $where[] = [
                         'id',
                         'like',
-                        '%'.Filters::get(Auth::user()->id, $filename, 'patient_id').'%',
+                        '%' . Filters::get(Auth::user()->id, $filename, 'patient_id') . '%',
                     ];
                 }
             }
@@ -522,7 +594,7 @@ class Patients extends BaseModal
             $where[] = [
                 'name',
                 'like',
-                '%'.$filters['name'].'%',
+                '%' . $filters['name'] . '%',
             ];
             Filters::put(Auth::user()->id, $filename, 'name', $filters['name']);
         } else {
@@ -533,7 +605,7 @@ class Patients extends BaseModal
                     $where[] = [
                         'name',
                         'like',
-                        '%'.Filters::get(Auth::user()->id, $filename, 'name').'%',
+                        '%' . Filters::get(Auth::user()->id, $filename, 'name') . '%',
                     ];
                 }
             }
@@ -543,7 +615,7 @@ class Patients extends BaseModal
             $where[] = [
                 'email',
                 'like',
-                '%'.$filters['email'].'%',
+                '%' . $filters['email'] . '%',
             ];
             Filters::put(Auth::user()->id, $filename, 'email', $filters['email']);
         } else {
@@ -554,7 +626,7 @@ class Patients extends BaseModal
                     $where[] = [
                         'email',
                         'like',
-                        '%'.Filters::get(Auth::user()->id, $filename, 'email').'%',
+                        '%' . Filters::get(Auth::user()->id, $filename, 'email') . '%',
                     ];
                 }
             }
@@ -564,7 +636,7 @@ class Patients extends BaseModal
             $where[] = [
                 'gender',
                 'like',
-                '%'.$filters['gender'].'%',
+                '%' . $filters['gender'] . '%',
             ];
             Filters::put(Auth::user()->id, $filename, 'gender', $filters['gender']);
         } else {
@@ -575,7 +647,7 @@ class Patients extends BaseModal
                     $where[] = [
                         'gender',
                         'like',
-                        '%'.Filters::get(Auth::user()->id, $filename, 'gender').'%',
+                        '%' . Filters::get(Auth::user()->id, $filename, 'gender') . '%',
                     ];
                 }
             }
@@ -585,7 +657,7 @@ class Patients extends BaseModal
             $where[] = [
                 'phone',
                 'like',
-                '%'.GeneralFunctions::cleanNumber($filters['phone']).'%',
+                '%' . GeneralFunctions::cleanNumber($filters['phone']) . '%',
             ];
             Filters::put(Auth::user()->id, $filename, 'phone', $filters['phone']);
         } else {
@@ -596,9 +668,9 @@ class Patients extends BaseModal
                     $where[] = [
                         'users.phone',
                         'like',
-                        '%'.GeneralFunctions::cleanNumber(
+                        '%' . GeneralFunctions::cleanNumber(
                             Filters::get(Auth::User()->id, $filename, 'phone')
-                        ).'%',
+                        ) . '%',
                     ];
                 }
             }

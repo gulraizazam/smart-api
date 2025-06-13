@@ -7,6 +7,7 @@ use App\Helpers\ACL;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Helpers\GeneralFunctions;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
 

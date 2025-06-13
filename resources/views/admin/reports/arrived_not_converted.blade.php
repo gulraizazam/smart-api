@@ -89,15 +89,15 @@
                     ?>
                     <tr>
                         <td>{{$patient->id}}</td>
-                        <td>{{$patient->name}}</td>
+                        <td>{{$patient->name ?? 'N/A'}}</td>
                         @if(Gate::allows('contact'))
                             <td>{{$patient->phone}}</td>
                         @else
                         <td>***********</td>
                         @endif
                         <td>{{$service->name}}</td>
-                        <td>{{$doct->name}}</td>
-                        <td>{{$loc->name}}</td>
+                        <td>{{$doct->name ?? 'N/A'}}</td>
+                        <td>{{$loc->name ?? 'N/A'}}</td>
                         <td>{{$patient->scheduled_date}}</td> 
                     </tr>
                 @endforeach

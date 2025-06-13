@@ -104,7 +104,7 @@
                     <div class="row mt-5">
                         <div class="fv-row col-md-12">
                             <table class="table table-bordered">
-                                <thead class=text-center">
+                                <thead class="text-center">
                                     <tr>
                                         <th>Service Name</th>
                                         <th>Service Price</th>

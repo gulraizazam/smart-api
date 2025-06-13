@@ -21,8 +21,6 @@
     <!--end::Modal header-->
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
-
-
         <div id="edit_duplicateErr" class="alert alert-danger display-hide" style="display: none;">
             <button class="close" data-close="alert"></button>
             Duplicate record found, please select another one.
@@ -69,24 +67,23 @@
         </div>
 
         <form id="update_plane_form">
-
-            <input type="hidden" name="random_id_1" id="edit_random_id_1" class="form-control" >
+            <input type="hidden" name="random_id_1" id="edit_random_id_1" class="form-control">
             <input type="hidden" name="random_id" id="edit_random_id" class="form-control">
             <input type="hidden" name="slug" id="slug" class="form-control">
             <input type="hidden" id="edit_parent_id" name="parent_id">
             <input type="hidden" id="edit_location_id" name="location_id">
             <input type="hidden" name="slug_1" id="edit_slug_1" class="form-control">
-
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_discounts_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
-
                 <div class="form-group">
                     <div class="row">
-
-                        <div class="fv-row col-md-3 mt-5 select2-search">
+                        <div class="fv-row col-md-2 mt-5 select2-search">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name</label>
                             <h3 id="edit-patient-name"></h3>
                         </div>
-
+                        <div class="fv-row col-md-2 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Membership </label>
+                            <h4 id="edit-membership-name" style="font-size:15px"></h4>
+                        </div>
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Location</label>
                             <h3 id="edit-location-name"></h3>
@@ -94,21 +91,23 @@
 
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
-                            <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
+                            <select id="edit_appointment_id" onchange="checkAppointmentVal()" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id" required>
                                 <option value="">Select Appointment</option>
                             </select>
-                        </div>    
+                            <small class="text-danger error-class"><b id='edit_appointment_id_error' class="error-msg"></b></small>
+                        </div>
+
                     </div>
                 </div>
 
                 <div class="form-group">
                     <div class="row">
-
                         <div class="fv-row col-md-4 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Services <span class="text text-danger">*</span></label>
                             <select id="edit_service_id" onchange="editServiceDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="service_id">
                                 <option value="">Select Service</option>
                             </select>
+                            <small class="text-danger error-class"><b id='service_id' class="error-msg"></b></small>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
@@ -120,97 +119,103 @@
 
                         <div class="fv-row col-md-4 mt-5" id="select_edit_discount_type">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <select id="edit_discount_type" onchange="changeDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                            <select id="edit_discount_type" onchange="changeDiscount($(this),'edit');" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
                                 <option value="">Select Discount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
                             </select>
-                        </div>
-                        
-                        <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
-                            <input type="text" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1">
+                            <small class="text-danger error-class"><b id='discount_type_error' class="error-msg"></b></small>
                         </div>
 
-                        <div class="fv-row col-md-4 mt-5">
+                        <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
+                            <input type="number" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1" min="0" oninput="validity.valid||(value='');" disabled step=".001">
+                            <small class="text-danger error-class"><b id='discount_payment_error' class="error-msg"></b></small>
+                        </div>
+
+                        <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price</label>
                             <div class="blockui input-spinner" style="display: none; background: transparent; box-shadow: none; position: absolute;margin-top: 28px;margin-left: 15%;">
                                 <span>Please wait...</span>
-                                <span><div class="spinner spinner-primary"></div></span>
+                                <span>
+                                    <div class="spinner spinner-primary"></div>
+                                </span>
                             </div>
                             <input type="text" readonly name="net_amount_1" class="form-control" id="edit_net_amount_1">
 
                         </div>
-
-                        <div class="fv-row col-md-4 mt-5">
+                        <div class="fv-row col-md-3 mt-5" id="edit_sold_by_div">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
+                        <select  id="edit_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
+                            <option value="">Select </option>
+                        </select>
+                        <small class="text-danger ml-1 mt-1"><b id="edit_sold_by_errorr" class="create-plan-error"></b></small>
+                    </div>
+                        <div class="fv-row col-md-2 mt-5">
                             <div class="text-center mt-10">
                                 <button type="button" id="EditPackage" class="btn btn-primary float-right spinner-button-edit-add">
                                     <span class="indicator-label">Add</span>
                                 </button>
                             </div>
                         </div>
-
                     </div>
-
                 </div>
 
                 <hr>
 
                 <div class="table-responsive add_center_target_table">
                     <table id="edit_centre_target_location" class="table table-striped table-bordered table-advance table-hover">
-
                         <thead>
-                        <tr>
-                            <th>Service Name</th>
-                            <th>Regular Price</th>
-                            <th>Discount Name</th>
-                            <th>Type</th>
-                            <th>Discount Value</th>
-                            <th>Amount</th>
-                            <th>Tax </th>
-                            <th>Total.</th>
-                            <!-- <th>Is Consumed</th> -->
-                            <th>Action</th>
-                        </tr>
+                            <tr>
+                                <th>Service Name</th>
+                                <th>Regular Price</th>
+                                <th>Discount Name</th>
+                                <th>Type</th>
+                                <th>Discount Value</th>
+                                <th>Amount</th>
+                                <th>Tax </th>
+                                <th>Total.</th>
+                                <!-- <th>Is Consumed</th> -->
+                                <th>Action</th>
+                            </tr>
                         </thead>
 
-                        <tbody id="edit_plan_services"><tr class="text-center"><td colspan="8">No record found</td></tr></tbody>
-
+                        <tbody id="edit_plan_services">
+                            <tr class="text-center service_not_found">
+                                <td colspan="8">No record found</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
 
                 <div class="form-group">
                     <div class="row">
-
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Total </label>
                             <input type="text" id="edit_package_total_1" readonly class="form-control" name="package_total_1" value="0">
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger">*</span></label>
-                            <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Payment Mode <span class="text text-danger"></span></label>
+                            <select id="edit_payment_mode_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="payment_mode_id" onchange="checkpaymentMode()">
                                 <option value="">Select Payment Mode</option>
                             </select>
+                            <small class="text-danger error-class"><b id='payment_mode_id' class="error-msg"></b></small>
                         </div>
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Amount</label>
-                            <input type="text" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount">
+                            <input type="number" min="0" id="edit_cash_amount_1" class="form-control" value="0" name="cash_amount" disabled oninput="validity.valid||(value='');" disabled>
+                            <small class="text-danger error-class"><b id='cash_amount_error' class="error-msg"></b></small>
                         </div>
-
 
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Cash Received Remain</label>
                             <input type="text" readonly min="0" name="total_price" value="0" class="form-control" id="edit_grand_total_1">
                         </div>
-
                     </div>
-
                 </div>
-
                 <hr>
-
             </div>
             <!--end::Scroll-->
             <!--begin::Actions-->
@@ -230,23 +235,23 @@
                 <table id="edit_plan_history" class="table table-bordered table-advance">
 
                     <thead>
-                    <tr>
-                        <th>Payment Mode</th>
-                        <th>Cash Flow</th>
-                        <th>Cash Amount</th>
-                        <th>Created At</th>
-                        <th>Action</th>
-                    </tr>
+                        <tr>
+                            <th>Payment Mode</th>
+                            <th>Cash Flow</th>
+                            <th>Cash Amount</th>
+                            <th>Created At</th>
+                            <th>Action</th>
+                        </tr>
                     </thead>
 
                     <tbody class="edit_plan_history">
-                    <tr>
-                        <td id="edit_payment_mode"></td>
-                        <td id="edit_cash_flow"></td>
-                        <td id="edit_cash_amount"></td>
-                        <td id="edit_Created_at"></td>
-                        <td id="edit_action"></td>
-                    </tr>
+                        <tr>
+                            <td id="edit_payment_mode"></td>
+                            <td id="edit_cash_flow"></td>
+                            <td id="edit_cash_amount"></td>
+                            <td id="edit_Created_at"></td>
+                            <td id="edit_action"></td>
+                        </tr>
                     </tbody>
 
                 </table>
@@ -257,6 +262,3 @@
     <!--end::Modal body-->
 </div>
 <!--end::Modal content-->
-
-
-

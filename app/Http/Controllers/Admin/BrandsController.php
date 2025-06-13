@@ -32,7 +32,7 @@ class BrandsController extends Controller
      */
     public function index()
     {
-        if (! Gate::allows('brand_manage')) {
+        if (!Gate::allows('brand_manage')) {
             return abort(401);
         }
 
@@ -47,25 +47,33 @@ class BrandsController extends Controller
     public function datatable(Request $request)
     {
         try {
-
             $records = [];
             $records['data'] = [];
+            $filename = 'warehouse';
 
-            if (isset($request->input('query')['search'])) {
-                $apply_filter = $request->input('query')['search'];
-                if (isset($apply_filter['delete'])) {
-                    $ids = explode(',', $apply_filter['delete']);
-                    $brands = Brand::getBulkData($ids);
-                    if ($brands) {
-                        foreach ($brands as $brand) {
+            $filters = getFilters($request->all());
+
+            $apply_filter = checkFilters($filters, $filename);
+
+            if (isset($filters['delete'])) {
+                $ids = explode(',', $filters['delete']);
+                $brands = Brand::getBulkData($ids);
+                if (!$brands->isEmpty()) {
+                    $is_child = false;
+                    foreach ($brands as $brand) {
+                        if (!Brand::isChildExists($brand->id, Auth::User()->account_id)) {
                             $brand->delete();
+                            $is_child = true;
                         }
                     }
-                    $records['status'] = true;
-                    $records['message'] = 'Records has been deleted successfully!';
+                    if (!$is_child) {
+                        $records['status'] = false;
+                        $records['message'] = 'Child records exist, unable to delete resource!';
+                    } else {
+                        $records['status'] = true;
+                        $records['message'] = 'Records has been deleted successfully!';
+                    }
                 }
-            } else {
-                $apply_filter = false;
             }
 
             // Get Total Records
@@ -81,6 +89,7 @@ class BrandsController extends Controller
                 'manage' => Gate::allows('brand_manage'),
                 'delete' => Gate::allows('brand_destroy'),
                 'create' => Gate::allows('brand_create'),
+                'b_active'=>Gate::allows('brand_active'),
             ];
             $records['active_filters'] = $apply_filter;
             $records['filter_values'] = [
@@ -109,7 +118,7 @@ class BrandsController extends Controller
     public function store(Request $request)
     {
         try {
-            if (! Gate::allows('brand_create')) {
+            if (!Gate::allows('brand_create')) {
                 return abort(401);
             }
             $validator = $this->verifyFields($request);
@@ -146,11 +155,11 @@ class BrandsController extends Controller
     public function edit($id)
     {
         try {
-            if (! Gate::allows('brand_edit')) {
+            if (!Gate::allows('brand_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $brand = Brand::getData($id);
-            if (! $brand) {
+            if (!$brand) {
                 return ApiHelper::apiResponse($this->success, 'No Record Found!', false);
             }
 
@@ -168,7 +177,7 @@ class BrandsController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (! Gate::allows('brand_edit')) {
+            if (!Gate::allows('brand_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $validator = $this->verifyFields($request);
@@ -193,7 +202,7 @@ class BrandsController extends Controller
     public function destroy($id)
     {
         try {
-            if (! Gate::allows('brand_destroy')) {
+            if (!Gate::allows('brand_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
             $response = Brand::DeleteRecord($id);
@@ -202,5 +211,17 @@ class BrandsController extends Controller
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
+    }
+    public function status(Request $request)
+    {
+        if (!Gate::allows('product_active')) {
+            return abort(401);
+        }
+
+        $response = Brand::activeRecord($request->id, $request->status);
+        if ($response) {
+            return ApiHelper::apiResponse($this->success, 'Status has been changed successfully.');
+        }
+        return ApiHelper::apiResponse($this->success, 'Brand not found.', false);
     }
 }

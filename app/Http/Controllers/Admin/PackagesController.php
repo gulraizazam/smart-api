@@ -51,7 +51,11 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Models\DoctorHasLocations;
+use App\Models\Membership;
+use App\Models\RoleHasUsers;
 use Illuminate\Support\Facades\Log;
+
 
 class PackagesController extends Controller
 {
@@ -75,7 +79,7 @@ class PackagesController extends Controller
      */
     public function index()
     {
-        if (! Gate::allows('plans_manage')) {
+        if (!Gate::allows('plans_manage')) {
             return abort(401);
         }
 
@@ -89,13 +93,13 @@ class PackagesController extends Controller
      */
     public function create()
     {
-        if (! Gate::allows('plans_create')) {
+        if (!Gate::allows('plans_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
 
-        $random_id = md5(time().rand(0001, 9999).rand(78599, 99999));
+        $random_id = md5(time() . rand(0001, 9999) . rand(78599, 99999));
 
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
 
@@ -124,11 +128,12 @@ class PackagesController extends Controller
         if ($service_has_location) {
 
             $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
-
+            
+            
             return ApiHelper::apiResponse($this->success, 'Recode found', true, [
                 'service' => $locationhasservice,
+               
             ]);
-
         }
 
         return ApiHelper::apiResponse($this->success, 'Recode not found', false);
@@ -153,41 +158,37 @@ class PackagesController extends Controller
             $discount_data = Discounts::find($discount_id);
 
             if ($discount_data->slug == 'custom') {
-               
+
 
                 return ApiHelper::apiResponse($this->success, 'custom', true, [
                     'custom_checked' => 1,
                 ]);
-
             } else {
-               
+
                 if ($discount_data->type == Config::get('constants.Fixed')) {
-                   
+
                     $discount_type = Config::get('constants.Fixed');
                     $discount_price = $discount_data->amount;
                     $net_amount = ($service_data->price) - ($discount_data->amount);
+                } else if ($discount_data->type == Config::get('constants.Percentage')) {
 
-                } else if($discount_data->type == Config::get('constants.Percentage')) {
-                   
                     $discount_type = Config::get('constants.Percentage');
                     $discount_price = $discount_data->amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
-                }
-                else if($discount_data->type == "Configurable") {
-                   
+                } else if ($discount_data->type == "Configurable") {
+
                     $discount_type = "Configurable";
                     $discount_price = $discount_data->amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }
                 return ApiHelper::apiResponse($this->success, 'Record Found', true, [
-                    'discount_type' => $discount_type,
+                    'discount_type' => $net_amount < 0 ? '' : $discount_type,
                     'discount_price' => $discount_price,
-                    'net_amount' => $net_amount,
+                    'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
                     'custom_checked' => 0,
                 ]);
-
             }
         }
 
@@ -202,24 +203,24 @@ class PackagesController extends Controller
     public function savepackages_service(Request $request)
     {
 
-     
+
         $status = true;
         $service_data = Bundles::find($request->bundle_id);
-        $find_package = Packages::where('random_id',$request->random_id)->first();
-        if($find_package){
+        $find_package = Packages::where('random_id', $request->random_id)->first();
+        if ($find_package) {
             $check_is_setteled = PackageAdvances::where([
                 ['cash_flow', '=', 'out'],
                 ['cash_amount', '>', 0],
                 ['is_setteled', '=', '1'],
                 ['package_id', '=', $find_package->id],
             ])->first();
-            if($check_is_setteled){
-                return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false,['setteled'=>1]);
+            if ($check_is_setteled) {
+                return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false, ['setteled' => 1]);
             }
         }
         $find_discount = Discounts::find($request->discount_id);
-        
-        if($find_discount && $find_discount->type=="Configurable"){
+
+        if ($find_discount && $find_discount->type == "Configurable") {
             if ($request->is_exclusive == '') {
                 $request->merge(['is_exclusive' => 1]);
             }
@@ -245,12 +246,12 @@ class PackagesController extends Controller
                 $data = $request->all();
                 $location_information = Locations::find($request->location_id);
                 $discount_info = Discounts::find($request->discount_id);
-                $base_services = BaseDiscountService::where('discount_id' , $request->discount_id)->get();
-                $discounted_services = GetDiscountService::where('discount_id' , $request->discount_id)->get();
+                $base_services = BaseDiscountService::where('discount_id', $request->discount_id)->get();
+                $discounted_services = GetDiscountService::where('discount_id', $request->discount_id)->get();
                 $merged_services = $base_services->merge($discounted_services);
-                foreach($merged_services as $ds){
+                foreach ($merged_services as $ds) {
                     $service_data1 = Bundles::whereId($ds->bundle_id)->first();
-                   
+
                     $data['qty'] = '1';
                     $data['bundle_id'] = $service_data1->id;
                     $data['service_price'] = $service_data1->price;
@@ -259,56 +260,55 @@ class PackagesController extends Controller
                     }
                     if ($service_data1->tax_treatment_type_id == Config::get('constants.tax_both')) {
                         if ($request->is_exclusive == '1') {
-                            $data['tax_exclusive_net_amount'] =$ds->discount_type =="complimentory" ? 0 : $request->net_amount;
-                            $data['tax_percenatage'] =$ds->discount_type =="complimentory" ? 0 : $location_information->tax_percentage;
-                            $data['tax_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
-                            $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+                            $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : $request->net_amount;
+                            $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
+                            $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
+                            $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
                             $data['is_exclusive'] = 1;
                         } else {
-                            $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $request->net_amount;
-                            $data['tax_percenatage'] =$ds->discount_type =="complimentory" ? 0 : $location_information->tax_percentage;
-                            $data['tax_exclusive_net_amount'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
-                            $data['tax_price'] = $ds->discount_type =="complimentory" ? 0 :ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
-        
+                            $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $request->net_amount;
+                            $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
+                            $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+
                             $data['is_exclusive'] = 0;
                         }
                     } elseif ($service_data1->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
-                        $data['tax_exclusive_net_amount'] =$ds->discount_type =="complimentory" ? 0 : $request->net_amount;
-                        $data['tax_percenatage'] = $ds->discount_type =="complimentory" ? 0 :$location_information->tax_percentage;
-                        $data['tax_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
-                        $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
-        
+                        $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : $request->net_amount;
+                        $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information->tax_percentage;
+                        $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
+                        $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+
                         $data['is_exclusive'] = 1;
                     } else {
-                       
-                        if($ds->discount_type =="complimentory"){
-                            $data['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $request->net_amount;
-                            $data['tax_percenatage'] =$ds->discount_type =="complimentory" ? 0 : $location_information?->tax_percentage ?? '00.00';
-                            $data['tax_exclusive_net_amount'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
-                            $data['tax_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
-            
+
+                        if ($ds->discount_type == "complimentory") {
+                            $data['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $request->net_amount;
+                            $data['tax_percenatage'] = $ds->discount_type == "complimentory" ? 0 : $location_information?->tax_percentage ?? '00.00';
+                            $data['tax_exclusive_net_amount'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                            $data['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+
                             $data['is_exclusive'] = 0;
-                        }elseif($ds->discount_type =="custom"){
-                            $amount_after_discount = ($ds->discount_amount/100) * $service_data1->price;
-                            
+                        } elseif ($ds->discount_type == "custom") {
+                            $amount_after_discount = ($ds->discount_amount / 100) * $service_data1->price;
+
                             $data['tax_including_price'] = $service_data1->price - $amount_after_discount;
-                            $data['discount_type'] =$ds->discount_type;
-                            $data['discount_price'] =$ds->discount_amount;
-                            $data['tax_percenatage'] =$location_information?->tax_percentage ?? '00.00';
+                            $data['discount_type'] = $ds->discount_type;
+                            $data['discount_price'] = $ds->discount_amount;
+                            $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
                             $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
-                            $data['tax_price'] =ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
-            
+                            $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+
                             $data['is_exclusive'] = 0;
-                        }else{
-                            
+                        } else {
+
                             $data['tax_including_price'] = $request->net_amount;
-                            $data['tax_percenatage'] =$location_information?->tax_percentage ?? '00.00';
+                            $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
                             $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
-                            $data['tax_price'] =ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
-            
+                            $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+
                             $data['is_exclusive'] = 0;
                         }
-                       
                     }
                     if ($request->discount_id == '0' || $request->discount_id == '') {
                         $data['discount_id'] = null;
@@ -327,96 +327,93 @@ class PackagesController extends Controller
                     }
                     $calculated_services = Bundles::calculatePrices($calculable_servcies, $data['service_price'], $data['net_amount']);
                     foreach ($calculated_services as $detail) {
-                        if($ds->discount_type=="complimentory"){
+                        if ($ds->discount_type == "complimentory") {
                             $data_service['random_id'] = $request->random_id;
                             $data_service['package_bundle_id'] = $packagesbundly->id;
                             $data_service['service_id'] = $detail['service_id'];
-                            $data_service['price'] =  0 ;
+                            $data_service['price'] =  0;
                             $data_service['orignal_price'] = 0;
-                        }elseif($ds->discount_type=="custom"){
-                           
-                            $amount_after_discount = ($ds->discount_amount/100) * $service_data1->price;
+                        } elseif ($ds->discount_type == "custom") {
+
+                            $amount_after_discount = ($ds->discount_amount / 100) * $service_data1->price;
                             $data_service['random_id'] = $request->random_id;
                             $data_service['package_bundle_id'] = $packagesbundly->id;
                             $data_service['service_id'] = $detail['service_id'];
                             $data_service['price'] = $service_data1->price - $amount_after_discount;
-                            $data_service['orignal_price'] =$service_data1->price;
-                        }else{
+                            $data_service['orignal_price'] = $service_data1->price;
+                        } else {
                             $data_service['random_id'] = $request->random_id;
                             $data_service['package_bundle_id'] = $packagesbundly->id;
                             $data_service['service_id'] = $detail['service_id'];
                             $data_service['price'] = $detail['calculated_price'];
-                            $data_service['orignal_price'] =$detail['service_price'];
+                            $data_service['orignal_price'] = $detail['service_price'];
                         }
-                        
+
                         /*Checked it exclusive or not*/
                         if ($service_data1->tax_treatment_type_id == Config::get('constants.tax_both')) {
                             if ($request->is_exclusive == '1') {
-                                $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : $detail['calculated_price'];
+                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
                                 $data_service['tax_percenatage'] = $location_information->tax_percentage;
                                 $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                                $data_service['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                                $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
                                 $data_service['is_exclusive'] = 1;
                             } else {
-                                $data_service['tax_including_price'] = $ds->discount_type =="complimentory" ? 0 :$detail['calculated_price'];
+                                $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
                                 $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                                $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
-                                $data_service['tax_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
-        
+                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+
                                 $data_service['is_exclusive'] = 0;
                             }
                         } elseif ($service_data1->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
-                            $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : $detail['calculated_price'];
+                            $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
                             $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                            $data_service['tax_price'] = $ds->discount_type =="complimentory" ? 0 :ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                            $data_service['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
-        
+                            $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
+                            $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+
                             $data_service['is_exclusive'] = 1;
                         } else {
-                            if($ds->discount_type =="complimentory"){
-                                $data_service['tax_including_price'] =0;
+                            if ($ds->discount_type == "complimentory") {
+                                $data_service['tax_including_price'] = 0;
                                 $data_service['tax_percenatage'] = 0;
-                                $data_service['tax_exclusive_price'] =0;
+                                $data_service['tax_exclusive_price'] = 0;
                                 $data_service['tax_price'] = 0;
-        
-                                $data_service['is_exclusive'] = 0;
 
-                            }else if($ds->discount_type =="custom"){
-                                $amount_after_discount = ($ds->discount_amount/100) * $service_data1->price;
+                                $data_service['is_exclusive'] = 0;
+                            } else if ($ds->discount_type == "custom") {
+                                $amount_after_discount = ($ds->discount_amount / 100) * $service_data1->price;
                                 $data_service['tax_including_price'] = $service_data1->price - $amount_after_discount;
                                 $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                                $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
-                                $data_service['tax_price'] = $ds->discount_type =="complimentory" ? 0 :ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
                                 $data_service['is_exclusive'] = 0;
-                            }else{
-                                $data_service['tax_including_price'] =$ds->discount_type =="complimentory" ? 0 : $detail['calculated_price'];
+                            } else {
+                                $data_service['tax_including_price'] = $ds->discount_type == "complimentory" ? 0 : $detail['calculated_price'];
                                 $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                                $data_service['tax_exclusive_price'] =$ds->discount_type =="complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
-                                $data_service['tax_price'] = $ds->discount_type =="complimentory" ? 0 :ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+                                $data_service['tax_exclusive_price'] = $ds->discount_type == "complimentory" ? 0 : ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                                $data_service['tax_price'] = $ds->discount_type == "complimentory" ? 0 : ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
                                 $data_service['is_exclusive'] = 0;
                             }
-                            
                         }
                         $data_service['created_at'] = Filters::getCurrentTimeStamp();
                         $data_service['updated_at'] = Filters::getCurrentTimeStamp();
                         $packageservice = PackageService::createPackageService($data_service);
-
                     }
-                     $total = str_replace(',', '', $request->package_total);
-                   
-           
+                    $total = str_replace(',', '', $request->package_total);
+
+
                     if ($total == '') {
                         $total = 0;
                     }
-                    
+
                     $total = number_format((float) $total + (float) $packagesbundly->tax_including_price);
                     /*Set variables for return to show information*/
                     $net_amount = $packagesbundly->net_amount;
                     $service_name = $packagesbundly->bundle->name;
                     $service_price = $packagesbundly->service_price;
-    
+
                     /*use user giving attributes for custom package*/
-    
+
                     if ($request->discount_id == '0' || $request->discount_id == null) {
                         $discount_name = '-';
                         $discount_type = '-';
@@ -443,82 +440,93 @@ class PackagesController extends Controller
                         'net_amount' => $net_amount,
                         'total' =>  str_replace(',', '', $total),
                     ];
-
-
                 }
-              
+
                 $grand_total = str_replace(',', '', $request->package_total);
                 if ($grand_total == '') {
                     $grand_total = 0;
                 }
-                $package_id = Packages::where('random_id',$request->random_id)->first();
-                if($package_id){
-                    $sum_services_price = PackageBundles::where('package_id',$package_id->id)->sum('tax_including_price');
-                    
+                $package_id = Packages::where('random_id', $request->random_id)->first();
+                if ($package_id) {
+                    $sum_services_price = PackageBundles::where('package_id', $package_id->id)->sum('tax_including_price');
+
                     $grand_total =  (float) $sum_services_price;
                     $myarray[0]['grand_total'] =  $grand_total;
-                    
-                }else{
-                    $sum_services_price = PackageBundles::where('random_id',$request->random_id)->sum('tax_including_price');
+                } else {
+                    $sum_services_price = PackageBundles::where('random_id', $request->random_id)->sum('tax_including_price');
                     $grand_total =  (float) $sum_services_price;
                     $myarray[0]['grand_total'] =  $grand_total;
                 }
-                   
+
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'myarray' => $myarray,
                 ]);
             }
-    
+
             return ApiHelper::apiResponse($this->success, 'No Record found', false);
+        } else {
 
-       }else{
 
-      
-        /*Total belongs to total Amount that increase when we enter new bundle*/
-        $total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
-        if ($total == '') {
-            $total = 0;
-        }
-        if ($request->is_exclusive == '') {
-            $request->merge(['is_exclusive' => 1]);
-        }
-        if ($request->get('package_bundles')) {
-            $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
-            if ($package_bundles) {
-                foreach ($package_bundles as $bundle) {
-                    if ($service_data->tax_treatment_type_id == 1) {
+            /*Total belongs to total Amount that increase when we enter new bundle*/
+            $total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
+            if ($total == '') {
+                $total = 0;
+            }
+            if ($request->is_exclusive == '') {
+                $request->merge(['is_exclusive' => 1]);
+            }
+            if ($request->get('package_bundles')) {
+                $package_bundles = PackageBundles::whereIn('id', $request->get('package_bundles'))->get();
+                if ($package_bundles) {
+                    foreach ($package_bundles as $bundle) {
+                        if ($service_data->tax_treatment_type_id == 1) {
 
-                        if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int) $request->is_exclusive)) {
+                            if ($bundle->bundle_id == $request->bundle_id && ($bundle->net_amount != $request->net_amount || $bundle->is_exclusive != (int) $request->is_exclusive)) {
 
-                            $status = false;
-                        }
-                    } else { /*this is commented because we want to add services with different prices*/
-                        if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
-                            //$status = false;
-                            $status = true;
+                                $status = false;
+                            }
+                        } else { /*this is commented because we want to add services with different prices*/
+                            if ($bundle->bundle_id == $request->bundle_id && $bundle->net_amount != $request->net_amount) {
+                                //$status = false;
+                                $status = true;
+                            }
                         }
                     }
                 }
             }
-        }
 
-        if ($status == true) {
-            /*First we need to make the data to save in package bundle*/
-            $data = $request->all();
-            $location_information = Locations::find($request->location_id);
+            if ($status == true) {
+                /*First we need to make the data to save in package bundle*/
+                $data = $request->all();
+                $location_information = Locations::find($request->location_id);
 
-            $discount_info = Discounts::find($request->discount_id);
+                $discount_info = Discounts::find($request->discount_id);
 
-            $data['qty'] = '1';
-            $data['bundle_id'] = $service_data->id;
-            $data['service_price'] = $service_data->price;
+                $data['qty'] = '1';
+                $data['bundle_id'] = $service_data->id;
+                $data['service_price'] = $service_data->price;
 
-            if ($discount_info) {
-                $data['discount_name'] = $discount_info->name;
-            }
-            /*Checked it exclusive or not*/
-            if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
-                if ($request->is_exclusive == '1') {
+                if ($discount_info) {
+                    $data['discount_name'] = $discount_info->name;
+                }
+                /*Checked it exclusive or not*/
+                if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                    if ($request->is_exclusive == '1') {
+                        $data['tax_exclusive_net_amount'] = $request->net_amount;
+                        $data['tax_percenatage'] = $location_information->tax_percentage;
+                        $data['tax_price'] = ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
+                        $data['tax_including_price'] = ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+
+                        $data['is_exclusive'] = 1;
+                    } else {
+                        $data['tax_including_price'] = $request->net_amount;
+                        $data['tax_percenatage'] = $location_information->tax_percentage;
+                        $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
+                        $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+
+                        $data['is_exclusive'] = 0;
+                    }
+                } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                     $data['tax_exclusive_net_amount'] = $request->net_amount;
                     $data['tax_percenatage'] = $location_information->tax_percentage;
                     $data['tax_price'] = ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
@@ -527,65 +535,64 @@ class PackagesController extends Controller
                     $data['is_exclusive'] = 1;
                 } else {
                     $data['tax_including_price'] = $request->net_amount;
-                    $data['tax_percenatage'] = $location_information->tax_percentage;
+                    $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
                     $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
                     $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
 
                     $data['is_exclusive'] = 0;
                 }
-            } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
-                $data['tax_exclusive_net_amount'] = $request->net_amount;
-                $data['tax_percenatage'] = $location_information->tax_percentage;
-                $data['tax_price'] = ceil($data['tax_exclusive_net_amount'] * ($location_information->tax_percentage / 100));
-                $data['tax_including_price'] = ceil($data['tax_exclusive_net_amount'] + (($data['tax_exclusive_net_amount'] * $data['tax_percenatage']) / 100));
+                /*In case If you not select any discount*/
+                if ($request->discount_id == '0' || $request->discount_id == '') {
+                    $data['discount_id'] = null;
+                }
+                $data['created_at'] = Filters::getCurrentTimeStamp();
+                $data['updated_at'] = Filters::getCurrentTimeStamp();
+                /*date is develop to save package bundle*/
 
-                $data['is_exclusive'] = 1;
-            } else {
-                $data['tax_including_price'] = $request->net_amount;
-                $data['tax_percenatage'] = $location_information?->tax_percentage ?? '00.00';
-                $data['tax_exclusive_net_amount'] = ceil((100 * $data['tax_including_price']) / ($data['tax_percenatage'] + 100));
-                $data['tax_price'] = ceil($data['tax_including_price'] - $data['tax_exclusive_net_amount']);
+                /*Save package bundle information*/
+                $packagesbundly = PackageBundles::createPackagebundle($data);
 
-                $data['is_exclusive'] = 0;
-            }
-            /*In case If you not select any discount*/
-            if ($request->discount_id == '0' || $request->discount_id == '') {
-                $data['discount_id'] = null;
-            }
-            $data['created_at'] = Filters::getCurrentTimeStamp();
-            $data['updated_at'] = Filters::getCurrentTimeStamp();
-            /*date is develop to save package bundle*/
+                /*Get the package service information*/
+                $bundle_details = BundleHasServices::where('bundle_id', '=', $packagesbundly->bundle_id)->get();
+                $calculable_servcies = [];
 
-            /*Save package bundle information*/
-            $packagesbundly = PackageBundles::createPackagebundle($data);
+                foreach ($bundle_details as $detail) {
+                    $calculable_servcies[] = [
+                        'service_price' => $detail->calculated_price,
+                        'calculated_price' => $detail->calculated_price,
+                        'service_id' => $detail->service_id,
+                    ];
+                }
+                /*calculate price of services according to their prices*/
+                $calculated_services = Bundles::calculatePrices($calculable_servcies, $data['service_price'], $data['net_amount']);
 
-            /*Get the package service information*/
-            $bundle_details = BundleHasServices::where('bundle_id', '=', $packagesbundly->bundle_id)->get();
+                /*Second we need to make the data to save in package services*/
+                foreach ($calculated_services as $detail) {
 
-            $calculable_servcies = [];
+                    $data_service['random_id'] = $request->random_id;
+                    $data_service['package_bundle_id'] = $packagesbundly->id;
+                    $data_service['service_id'] = $detail['service_id'];
+                    $data_service['price'] = $detail['calculated_price'];
+                    $data_service['orignal_price'] = $detail['service_price'];
 
-            foreach ($bundle_details as $detail) {
-                $calculable_servcies[] = [
-                    'service_price' => $detail->calculated_price,
-                    'calculated_price' => $detail->calculated_price,
-                    'service_id' => $detail->service_id,
-                ];
-            }
-            /*calculate price of services according to their prices*/
-            $calculated_services = Bundles::calculatePrices($calculable_servcies, $data['service_price'], $data['net_amount']);
+                    /*Checked it exclusive or not*/
+                    if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                        if ($request->is_exclusive == '1') {
+                            $data_service['tax_exclusive_price'] = $detail['calculated_price'];
+                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                            $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
+                            $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
 
-            /*Second we need to make the data to save in package services*/
-            foreach ($calculated_services as $detail) {
+                            $data_service['is_exclusive'] = 1;
+                        } else {
+                            $data_service['tax_including_price'] = $detail['calculated_price'];
+                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                            $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                            $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
 
-                $data_service['random_id'] = $request->random_id;
-                $data_service['package_bundle_id'] = $packagesbundly->id;
-                $data_service['service_id'] = $detail['service_id'];
-                $data_service['price'] = $detail['calculated_price'];
-                $data_service['orignal_price'] = $detail['service_price'];
-
-                /*Checked it exclusive or not*/
-                if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
-                    if ($request->is_exclusive == '1') {
+                            $data_service['is_exclusive'] = 0;
+                        }
+                    } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
                         $data_service['tax_exclusive_price'] = $detail['calculated_price'];
                         $data_service['tax_percenatage'] = $location_information->tax_percentage;
                         $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
@@ -600,72 +607,222 @@ class PackagesController extends Controller
 
                         $data_service['is_exclusive'] = 0;
                     }
-                } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
-                    $data_service['tax_exclusive_price'] = $detail['calculated_price'];
-                    $data_service['tax_percenatage'] = $location_information->tax_percentage;
-                    $data_service['tax_price'] = ceil($detail['calculated_price'] * ($location_information->tax_percentage / 100));
-                    $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                    $data_service['created_at'] = Filters::getCurrentTimeStamp();
+                    $data_service['updated_at'] = Filters::getCurrentTimeStamp();
 
+                    $packageservice = PackageService::createPackageService($data_service);
+                }
+                /*calculate package value to return*/
+                $total = number_format((float) $total + (float) $packagesbundly->tax_including_price);
+
+                /*Set variables for return to show information*/
+                $net_amount = $packagesbundly->net_amount;
+                $service_name = $packagesbundly->bundle->name;
+                $service_price = $packagesbundly->service_price;
+
+                /*use user giving attributes for custom package*/
+
+                if ($request->discount_id == '0' || $request->discount_id == null) {
+                    $discount_name = '-';
+                    $discount_type = '-';
+                    $discount_price = '0.00';
+                } else {
+                    $discount_name = $packagesbundly->discount_name;
+                    $discount_type = $packagesbundly->discount_type;
+                    $discount_price = $packagesbundly->discount_price;
+                }
+                $package_service = Services::join('package_services', 'services.id', '=', 'package_services.service_id')
+                    ->select('package_services.*', 'services.name')
+                    ->where('package_services.package_bundle_id', '=', $packagesbundly->id)
+                    ->get();
+                $package_bundles = PackageBundles::find($packagesbundly->id);
+                $myarray = [
+                    'record' => $package_bundles,
+                    'record_detail' => $package_service,
+                    'random_id' => $request->random_id,
+                    'service_name' => $service_name,
+                    'service_price' => $service_price,
+                    'discount_name' => $discount_name,
+                    'discount_type' => $discount_type,
+                    'discount_price' => $discount_price,
+                    'net_amount' => $net_amount,
+                    'total' => $total,
+                ];
+
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'myarray' => $myarray,
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'No Record found', false);
+        }
+    }
+    public function makePackagesServicesData(Request $request)
+    {
+        $soldBy = $request->sold_by;
+        $bundle = Bundles::find($request->bundle_id);
+        $discount = Discounts::find($request->discount_id);
+        $allBundleServices = BundleHasServices::where('bundle_id', $request->bundle_id)->get();
+        $packageBundleData = $request->all();
+        $locationDetail = Locations::find($request->location_id);
+        $bundleId = $bundle->id;
+        $total = 0;
+        $packageBundleData = [
+            'qty' => '1',
+            'bundle_id' => $bundleId,
+            'service_price' => $bundle->price,
+            'service_name' => $bundle->name,
+            'net_amount' => $request->net_amount,
+          
+        ];
+        if ($discount) {
+            $packageBundleData['discount_name'] = $discount->name;
+            $packageBundleData['discount_price'] = $request->discount_price;
+            $packageBundleData['discount_type'] = $request->discount_type;
+            $packageBundleData['discount_id'] = $discount->id;
+        }
+        $taxTreatmentType = $bundle->tax_treatment_type_id;
+        $taxPercentage = $locationDetail->tax_percentage;
+        $isExclusive = $request->is_exclusive == '1';
+        $netAmount =  $request->net_amount;
+        $packageBundleData['is_exclusive'] = $isExclusive;
+        $packageBundleData['tax_percenatage'] = $taxPercentage;
+        switch ($taxTreatmentType) {
+            case Config::get('constants.tax_both'):
+                if ($isExclusive) {
+                    $packageBundleData['tax_exclusive_net_amount'] = $netAmount;
+                    $packageBundleData['tax_price'] = ceil($netAmount * ($taxPercentage / 100));
+                    $packageBundleData['tax_including_price'] = ceil($netAmount + ($netAmount * $taxPercentage / 100));
+                } else {
+                    $packageBundleData['tax_including_price'] = $netAmount;
+                    $packageBundleData['tax_exclusive_net_amount'] = ceil((100 * $netAmount) / ($taxPercentage + 100));
+                    $packageBundleData['tax_price'] = ceil($netAmount - $packageBundleData['tax_exclusive_net_amount']);
+                }
+                break;
+            case Config::get('constants.tax_is_exclusive'):
+                $packageBundleData['tax_exclusive_net_amount'] = $netAmount;
+                $packageBundleData['tax_price'] = ceil($packageBundleData['tax_exclusive_net_amount'] * ($taxPercentage / 100));
+                $packageBundleData['tax_including_price'] = ceil($packageBundleData['tax_exclusive_net_amount'] + ($packageBundleData['tax_exclusive_net_amount'] * $taxPercentage / 100));
+                break;
+            default:
+                $packageBundleData['tax_including_price'] = $netAmount;
+                $packageBundleData['tax_percenatage'] = $locationDetail?->tax_percentage ?? '00.00';
+                $packageBundleData['tax_exclusive_net_amount'] = ceil((100 * $netAmount) / ($packageBundleData['tax_percenatage'] + 100));
+                $packageBundleData['tax_price'] = ceil($netAmount - $packageBundleData['tax_exclusive_net_amount']);
+                $packageBundleData['is_exclusive'] = 0;
+                break;
+        }
+        $packageBundleData['bundle_id'] = $bundleId;
+        $randomNumber = rand(1000, 9999);
+        $generateRandomId = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
+        $packageBundleData['id'] = $generateRandomId;
+        $bundleServices = [];
+        foreach ($allBundleServices as $bundleService) {
+            $serviceName = Services::find($bundleService->service_id);
+            $bundleServices[] = [
+                'service_price' => $bundleService->calculated_price,
+                'calculated_price' => $bundleService->calculated_price,
+                'service_id' => $bundleService->service_id,
+                'name' => $serviceName->name,
+                'is_consumed' => 0,
+                'tax_exclusive_price' => ceil((100 * $netAmount) / ($packageBundleData['tax_percenatage'] + 100)),
+                'tax_price' => $packageBundleData['tax_price'],
+                'tax_including_price' => $packageBundleData['tax_including_price']
+            ];
+        }
+        $calculatedServiceprices = Bundles::calculatePrices(
+            $bundleServices,
+            $packageBundleData['service_price'],
+            $packageBundleData['net_amount']
+        );
+        $allDataServices = [];
+        foreach ($calculatedServiceprices as $detail) {
+            $data_service = [
+                'random_id' => $request->random_id,
+                'service_id' => $detail['service_id'],
+                'name' => $detail['name'],
+                'price' => $detail['calculated_price'],
+                'orignal_price' => $detail['service_price'],
+                'created_at' => Filters::getCurrentTimeStamp(),
+                'updated_at' => Filters::getCurrentTimeStamp(),
+            ];
+
+            /*Checked it exclusive or not*/
+            if ($bundle->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                if ($request->is_exclusive == '1') {
+                    $data_service['tax_exclusive_price'] = $detail['calculated_price'];
+                    $data_service['tax_percenatage'] = $locationDetail->tax_percentage;
+                    $data_service['tax_price'] = ceil($detail['calculated_price'] * ($locationDetail->tax_percentage / 100));
+                    $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
                     $data_service['is_exclusive'] = 1;
                 } else {
                     $data_service['tax_including_price'] = $detail['calculated_price'];
-                    $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                    $data_service['tax_percenatage'] = $locationDetail->tax_percentage;
                     $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
                     $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
-
                     $data_service['is_exclusive'] = 0;
                 }
-                $data_service['created_at'] = Filters::getCurrentTimeStamp();
-                $data_service['updated_at'] = Filters::getCurrentTimeStamp();
-                $packageservice = PackageService::createPackageService($data_service);
-            }
-            /*calculate package value to return*/
-            $total = number_format((float) $total + (float) $packagesbundly->tax_including_price);
-
-            /*Set variables for return to show information*/
-            $net_amount = $packagesbundly->net_amount;
-            $service_name = $packagesbundly->bundle->name;
-            $service_price = $packagesbundly->service_price;
-
-            /*use user giving attributes for custom package*/
-
-            if ($request->discount_id == '0' || $request->discount_id == null) {
-                $discount_name = '-';
-                $discount_type = '-';
-                $discount_price = '0.00';
+            } elseif ($bundle->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                $data_service['tax_exclusive_price'] = $detail['calculated_price'];
+                $data_service['tax_percenatage'] = $locationDetail->tax_percentage;
+                $data_service['tax_price'] = ceil($detail['calculated_price'] * ($locationDetail->tax_percentage / 100));
+                $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+                $data_service['is_exclusive'] = 1;
             } else {
-                $discount_name = $packagesbundly->discount_name;
-                $discount_type = $packagesbundly->discount_type;
-                $discount_price = $packagesbundly->discount_price;
+                $data_service['tax_including_price'] = $detail['calculated_price'];
+                $data_service['tax_percenatage'] = $locationDetail->tax_percentage;
+                $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+                $data_service['is_exclusive'] = 0;
             }
-            $package_service = Services::join('package_services', 'services.id', '=', 'package_services.service_id')
-                ->select('package_services.*', 'services.name')
-                ->where('package_services.package_bundle_id', '=', $packagesbundly->id)
-                ->get();
-            $package_bundles = PackageBundles::find($packagesbundly->id);
-            $myarray = [
-                'record' => $package_bundles,
-                'record_detail' => $package_service,
-                'random_id' => $request->random_id,
-                'service_name' => $service_name,
-                'service_price' => $service_price,
-                'discount_name' => $discount_name,
-                'discount_type' => $discount_type,
-                'discount_price' => $discount_price,
-                'net_amount' => $net_amount,
-                'total' => $total,
-            ];
-
-            return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'myarray' => $myarray,
-            ]);
+            $data_service['is_consumed'] = 0;
+            $allDataServices[] = $data_service;
         }
-
-        return ApiHelper::apiResponse($this->success, 'No Record found', false);
-       }
+        $previousServicesTotal = PackageService::where('random_id', $request->random_id)->sum('tax_including_price');
+        if ($previousServicesTotal > 0) {
+            $newServicePrice = str_replace(',', '', number_format((float) $total + (float) $packageBundleData['tax_including_price']));
+            $total = $previousServicesTotal;
+        } else {
+            $total = number_format((float) $total + (float) $packageBundleData['tax_including_price']);
+        }
+        $net_amount = $packageBundleData['net_amount'];
+        $service_name = $packageBundleData['service_name'];
+        $service_price = $packageBundleData['service_price'];
+        if (
+            $request->discount_id == '0' || $request->discount_id == null
+        ) {
+            $discount_name = '-';
+            $discount_type = '-';
+            $discount_price = '0.00';
+        } else {
+            $discount_name = $packageBundleData['discount_name'];
+            $discount_type = $packageBundleData['discount_type'];
+            $discount_price = $packageBundleData['discount_price'];
+        }
         
-    }
+        $packageServices = PackageService::where('random_id', $request->random_id)->get();
+        $packageBundle = PackageBundles::where('random_id', $request->random_id)->get();
+        $servicesData = [
+            'bundlesData' => $packageBundleData,
+            'packageServicesData' => $allDataServices,
+            'packageServices' => $packageServices,
+            'packageBundle' => $packageBundle,
+            'random_id' => $request->random_id,
+            'service_name' => $service_name,
+            'service_price' => $service_price,
+            'discount_name' => $discount_name,
+            'discount_type' => $discount_type,
+            'discount_price' => $discount_price,
+            'net_amount' => $net_amount,
+            'total' => $total,
+            'sold_by' => $soldBy,  
+        ];
 
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'servicesData' =>
+            $servicesData,
+        ]);
+    }
     /**
      * get discount information for custom package.
      *
@@ -719,9 +876,11 @@ class PackagesController extends Controller
                 $net_amount = ($service_data->price) - ($discount_price_in_percentage);
             }
         }
+
         if ($status == true) {
+
             return ApiHelper::apiResponse($this->success, 'Net Amount', true, [
-                'net_amount' => $net_amount,
+                'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
             ]);
         }
 
@@ -735,15 +894,14 @@ class PackagesController extends Controller
      */
     public function deletepackagesservice(Request $request)
     {
-       
+
         $status = PackageService::where([
             ['package_bundle_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
         if ($status) {
 
-            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false,['del'=>1]);
-
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false, ['del' => 1]);
         } else {
 
             $packageService = PackageBundles::find($request->id);
@@ -752,12 +910,12 @@ class PackagesController extends Controller
             }
             $package_total = str_replace(',', '', $request->package_total); //filter_var($request->package_total, FILTER_SANITIZE_NUMBER_INT);
 
-            $total = $package_total - $packageService->tax_including_price;
+            $total = number_format(round(($package_total - $packageService->tax_including_price)));
 
             PackageService::where('package_bundle_id', '=', $request->id)->delete();
 
             PackageBundles::find($request->id)->forcedelete();
-
+            $old_total = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
                     $record = Packages::find($packageService->package_id);
@@ -768,24 +926,24 @@ class PackagesController extends Controller
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'total' => $total,
                 'id' => $request->id,
+                'old_total' => $old_total
             ]);
         }
     }
     public function deleteconfpackagesservice(Request $request)
     {
-       
+
         $status = PackageService::where([
             ['base_service_id', '=', $request->id],
             ['is_consumed', '=', '1'],
         ])->first();
         if ($status) {
 
-            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false,['del'=>1]);
-
+            return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false, ['del' => 1]);
         } else {
 
-            $packageService = PackageBundles::where('base_service_id',$request->id)->first();
-           
+            $packageService = PackageBundles::where('base_service_id', $request->id)->first();
+
             if ($request->package_total == '') {
                 $request->merge(['package_total' => 0]);
             }
@@ -795,7 +953,7 @@ class PackagesController extends Controller
 
             PackageService::where('base_service_id', '=', $request->id)->delete();
 
-            PackageBundles::where('base_service_id',$request->id)->forcedelete();
+            PackageBundles::where('base_service_id', $request->id)->forcedelete();
 
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
@@ -852,10 +1010,13 @@ class PackagesController extends Controller
                     $PlanAppointmentCalculation->saveinvoice($appointment_id);
                 }
             } else {
+
                 return response()->json([
                     'status' => false,
                 ]);
             }
+
+
             /*save Package information and also update random id in package service table*/
             $data_package = $request->all();
             $data_package['total_price'] = filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
@@ -865,9 +1026,13 @@ class PackagesController extends Controller
             $data_package['appointment_id'] = $appointment_id;
             $data_package['created_at'] = Filters::getCurrentTimeStamp();
             $data_package['updated_at'] = Filters::getCurrentTimeStamp();
-            $package = Packages::createRecord($data_package, $request);
-            /*End*/
-            if ($request->cash_amount == '0') {
+
+            $package = Packages::create($data_package);
+            $package->update(['name' => sprintf('%05d', $package->id)]);
+            $packagebundle = self::storeRecord($package, $request);
+
+            if ($request->cash_amount == null || $request->cash_amount == '0') {
+
                 // Commit Transaction
                 DB::commit();
 
@@ -875,6 +1040,7 @@ class PackagesController extends Controller
                     'status' => true,
                 ]);
             } else {
+
                 /*Save data in package advances*/
                 $data_packageAdvances['cash_flow'] = 'in';
                 $data_packageAdvances['cash_amount'] = $request->cash_amount;
@@ -913,10 +1079,7 @@ class PackagesController extends Controller
                 ]);
             }
         } catch (\Exception $e) {
-            dd($e);
-            // Rollback Transaction
             DB::rollback();
-
             return response()->json([
                 'status' => false,
             ]);
@@ -931,7 +1094,7 @@ class PackagesController extends Controller
      */
     public function getserviceinfo(Request $request)
     {
-       
+
         /*because now we not give any discount to package if package have no permission to use. for this we introduce that empty collection */
         $discounts = Collection::make();
         /*end*/
@@ -940,7 +1103,7 @@ class PackagesController extends Controller
         $bundle = Bundles::find($request->bundle_id);
 
         if ($bundle && $bundle->type == 'single') {
-            
+
 
             $bundleService = BundleHasServices::where([
                 'bundle_id' => $bundle->id,
@@ -956,9 +1119,8 @@ class PackagesController extends Controller
                 ['discount_type', '=', 'Treatment'],
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-
         } else {
-            
+
             if ($bundle && $bundle->apply_discount == '1') {
                 $bundleServices = BundleHasServices::where([
                     'bundle_id' => $bundle->id,
@@ -971,7 +1133,7 @@ class PackagesController extends Controller
                 $uniq_array = [];
                 foreach ($discountIds as $discountId) {
                     foreach ($discountId as $singledata) {
-                        if (! in_array($singledata, $uniq_array)) {
+                        if (!in_array($singledata, $uniq_array)) {
                             $uniq_array[] = $singledata;
                         }
                     }
@@ -1007,7 +1169,7 @@ class PackagesController extends Controller
                 /*Now checked birthday valid or not*/
                 if ($patient_info->dob) {
 
-                    $patientbirthday = Carbon::parse($patient_info->dob)->format($today_3->year.'-'.'m-d');
+                    $patientbirthday = Carbon::parse($patient_info->dob)->format($today_3->year . '-' . 'm-d');
 
                     if (($patientbirthday >= $predate) && ($patientbirthday <= $postdate)) {
                     } else {
@@ -1108,7 +1270,6 @@ class PackagesController extends Controller
             return ApiHelper::apiResponse($this->success, 'Records found', true, [
                 'net_amount' => $service_data->price,
             ]);
-
         }
 
         return ApiHelper::apiResponse($this->success, 'No record found', false);
@@ -1141,14 +1302,10 @@ class PackagesController extends Controller
     {
 
         $filename = 'packages';
-
         $filters = getFilters($request->all());
-
         $apply_filter = checkFilters($filters, $filename);
-
         $records = [];
         $records['data'] = [];
-
         if (hasFilter($filters, 'delete')) {
             $ids = explode(',', $filters['delete']);
             $packages = Packages::getBulkData($ids);
@@ -1156,7 +1313,7 @@ class PackagesController extends Controller
             if ($packages) {
                 foreach ($packages as $package) {
                     // Check if child records exists or not, If exist then disallow to delete it.
-                    if (! Packages::isChildExists($package->id, Auth::User()->account_id)) {
+                    if (!Packages::isChildExists($package->id, Auth::User()->account_id)) {
                         $any_deleted = true;
                         $package->delete();
                     }
@@ -1184,7 +1341,8 @@ class PackagesController extends Controller
         $records = $this->getFiltersData($records);
         if ($packages) {
             foreach ($packages as $package) {
-                $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+                // $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+                $packageservices_price = PackageBundles::where('package_id', '=', $package->id)->sum('tax_including_price');
                 $session_count = count(PackageService::where('package_id', '=', $package->id)->get());
                 /*We discuss in future what happen next*/
                 $cash_receive = PackageAdvances::where([
@@ -1229,11 +1387,11 @@ class PackagesController extends Controller
                     'patient_id' => GeneralFunctions::patientSearchStringAdd($package->user?->id),
                     'name' => $package->user?->name ?? '',
                     'package_id' => $package?->name ?? '',
-                    'location_id' => $package->location->city->name.'-'.$package->location->name,
+                    'location_id' => $package->location->city->name . '-' . $package->location->name,
                     'session_count' => $session_count,
                     'total' => number_format($packageservices_price),
-                    'cash_receive' => number_format($cash_receive ),
-                    'refunded' => number_format($package_is_refunded_amount ),
+                    'cash_receive' => number_format($cash_receive),
+                    'refunded' => number_format($package_is_refunded_amount),
                     'settle_amount' => number_format($settle_amount_with_tax),
                     'refund' => $refund_status,
                     'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
@@ -1328,7 +1486,6 @@ class PackagesController extends Controller
         $records['active_filters'] = $filters;
 
         return $records;
-
     }
 
     /**
@@ -1339,7 +1496,7 @@ class PackagesController extends Controller
      */
     public function status(Request $request)
     {
-        if (! Gate::allows('plans_inactive')) {
+        if (!Gate::allows('plans_inactive')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -1381,7 +1538,8 @@ class PackagesController extends Controller
      */
     public function edit($id)
     {
-        if (! Gate::allows('plans_edit')) {
+        
+        if (!Gate::allows('plans_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -1393,7 +1551,7 @@ class PackagesController extends Controller
             $total_price = PackageBundles::where('package_id', '=', $id)->sum('tax_including_price');
 
             $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
-           
+
             $packageservices = PackageService::with('service')->where('package_id', '=', $package->id)->get();
 
             $packageadvances = PackageAdvances::with('paymentmode')->where([
@@ -1467,12 +1625,62 @@ class PackagesController extends Controller
             $data = (object) $data;
 
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
+            $checkMembership = Membership::with('membershiptype')->where('patient_id', $package->patient_id)->first();
 
+            if ($checkMembership) {
+                if ($checkMembership->end_date < now()->format('Y-m-d')) {
+                    $checkMembership->is_expired = ' - Expired';
+                    $checkMembership->is_active = '';
+                } else {
+                    $checkMembership->is_expired = '';
+                    $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
+                }
+            }
+            $doctors = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
+    
+            // Fetch active doctors as an associative array
+            $users = User::whereIn('id', $doctors)
+                ->where('active', 1)
+                ->pluck('name', 'id') // Preserve user IDs
+                ->toArray();
+        
+            // Ensure 'from_id' is an array
+            $locationId = $package->location_id;
+    
+            // Fetch FDM users by getting the user_ids associated with the center (location_id)
+            $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+    
+            // Fetch the 'FDM' role and get its user ids
+            $findRole = DB::table('roles')->where('name', 'FDM')->first();
+            $roleId = $findRole->id;
+    
+            // Get users who have the FDM role
+            $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+    
+            // Get the intersection of users who are both FDM and belong to the center
+            $fdmUsers = array_intersect($findFDM, $roleHasUser);
+    
+            // Fetch FDM user details (id and name) from the users table
+            $FDMUsers = User::whereIn('id', $fdmUsers)
+                ->pluck('name', 'id') // Preserve user IDs
+                ->toArray();
+    
+            // Merge the arrays while preserving keys
+            $combinedUsers = $users + $FDMUsers;
+            $selectedUserId = null;
+            if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
+                $firstDoctorId = $appointmentArray[0]['doctor_id'];
+                if (array_key_exists($firstDoctorId, $combinedUsers)) {
+                    $selectedUserId = $firstDoctorId;
+                }
+            }
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
                 'packagebundles' => $packagebundles,
                 'packageservices' => $packageservices,
+                'users' => $combinedUsers,
+                'selectedUserId' => $selectedUserId,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
                 'grand_total' => $remaining_amount,
@@ -1483,8 +1691,8 @@ class PackagesController extends Controller
                 'appointmentArray' => $appointmentArray,
                 'discount_type' => config('constants.amount_types'),
                 'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
+                'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
             ]);
-
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -1498,13 +1706,16 @@ class PackagesController extends Controller
      */
     public function getgrandtotal_update(Request $request)
     {
+
         $package = Packages::where('random_id', '=', $request->random_id)->first();
+
         $packageadvances_cash_amount = PackageAdvances::where([
             ['package_id', '=', $package->id],
             ['cash_flow', '=', 'in'],
             ['is_cancel', '=', '0'],
             ['is_setteled', '=', '0'],
         ])->sum('cash_amount');
+
         $refunded = PackageAdvances::where([
             'package_id' => $package->id,
             'cash_flow' => 'out',
@@ -1517,15 +1728,16 @@ class PackagesController extends Controller
         ])->sum('cash_amount');
         $package_advances_cash_amount = $packageadvances_cash_amount;
         $package_total = str_replace(',', '', $request->total);
-       
+
         $total_with_refunded = $package_total + $refunded + $setteled;
-       
-        $grand_total = number_format(($total_with_refunded - $package_advances_cash_amount) - $request->cash_amount);
+        $grand_total = number_format(round(($total_with_refunded - $package_advances_cash_amount)) - $request->cash_amount);
         $package_id = Packages::whereId($package->id)->first();
+
         $package_id->update(['total_price' => $request->total, 'updated_at' => Filters::getCurrentTimeStamp()]);
 
         return ApiHelper::apiResponse($this->success, 'Record Updated', true, [
             'grand_total' => $grand_total,
+
         ]);
     }
 
@@ -1537,15 +1749,22 @@ class PackagesController extends Controller
     public function updatepackages(Request $request)
     {
 
-        $find_package = Packages::where('random_id',$request->random_id)->first();
+        $request->validate([
+            'appointment_id' => ['required', 'exists:appointments,id']
+        ], [
+            'appointment_id.required' => 'Please select appointment',
+            'appointment_id.exists' => 'Appointment not found',
+        ]);
+
+        $find_package = Packages::where('random_id', $request->random_id)->first();
         $check_is_setteled = PackageAdvances::where([
             ['cash_flow', '=', 'out'],
             ['cash_amount', '>', 0],
             ['is_setteled', '=', '1'],
             ['package_id', '=', $find_package->id],
         ])->first();
-        if($check_is_setteled){
-            return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false,['setteled'=>1]);
+        if ($check_is_setteled) {
+            return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false, ['setteled' => 1]);
         }
         DB::beginTransaction();
         try {
@@ -1576,11 +1795,13 @@ class PackagesController extends Controller
             $data_package['appointment_id'] = $appointment_id;
             $data_package['updated_at'] = Filters::getCurrentTimeStamp();
             $random_id = $request->random_id;
-
-            $package = Packages::updateRecord($data_package, $random_id, $request);
+            $package = Packages::where('random_id', '=', $random_id)->first();
+            $id = $package->id;
+            $package->update($data_package);
+            $packageBundle = self::storeRecord($package, $request);
 
             /*End*/
-            if ($request->cash_amount == '0') {
+            if ($request->cash_amount == null || $request->cash_amount == '0') {
 
                 // Commit Transaction
                 DB::commit();
@@ -1626,7 +1847,7 @@ class PackagesController extends Controller
             // Rollback Transaction
             DB::rollback();
 
-            return ApiHelper::apiResponse($this->success, $e->getMessage().' - '.$e->getFile().' - '.$e->getLine(), false);
+            return ApiHelper::apiResponse($this->success, $e->getMessage() . ' - ' . $e->getFile() . ' - ' . $e->getLine(), false);
         }
     }
     protected function verifyRefundsFields(Request $request)
@@ -1634,7 +1855,7 @@ class PackagesController extends Controller
         return $validator = Validator::make($request->all(), [
             'refund_amount' => 'required',
             'refund_note' => 'required',
-            'payment_mode_id' =>'required',
+            'payment_mode_id' => 'required',
 
 
         ]);
@@ -1647,14 +1868,13 @@ class PackagesController extends Controller
      */
     public function destroy($id)
     {
-        if (! Gate::allows('plans_destroy')) {
+        if (!Gate::allows('plans_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
         $response = Packages::deleteRecord($id);
 
         return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
-
     }
 
     /**
@@ -1665,7 +1885,7 @@ class PackagesController extends Controller
      */
     public function display($id)
     {
-        if (! Gate::allows('plans_manage')) {
+        if (!Gate::allows('plans_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
@@ -1704,6 +1924,18 @@ class PackagesController extends Controller
         $services = Services::getServices();
         $discount = Discounts::getDiscount(Auth::User()->account_id);
         $paymentmodes = PaymentModes::get()->pluck('name', 'id');
+        $checkMembership = Membership::with('membershiptype')->where('patient_id', $package->patient_id)->first();
+        if ($checkMembership) {
+            if ($checkMembership->end_date < now()->format('Y-m-d')) {
+                $checkMembership->is_expired = ' - Expired';
+                $checkMembership->is_active = '';
+            } else {
+                $checkMembership->is_expired = '';
+                $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
+            }
+        }
+
+
 
         return ApiHelper::apiResponse($this->success, 'Record found.', true, [
             'package' => $package,
@@ -1714,8 +1946,8 @@ class PackagesController extends Controller
             'discount' => $discount,
             'paymentmodes' => $paymentmodes,
             'grand_total' => $grand_total,
+            'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
         ]);
-
     }
 
     private function appointmentPackage($packageadvances)
@@ -1726,7 +1958,7 @@ class PackagesController extends Controller
             $packageAdvancesCollection = [];
             foreach ($packageadvances as $packageadvance) {
                 if ($packageadvance->cash_flow == 'out' && $packageadvance->is_tax == 0) {
-                    if (! is_null($packageadvance->refund_note)) {
+                    if (!is_null($packageadvance->refund_note)) {
                         $packageadvance->package_refund_price = number_format(PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id, $packageadvance->id));
                     } else {
                         $packageadvance->package_refund_price = number_format(PackageAdvances::getAppointmentPackage($packageadvance->appointment_id, $packageadvance->patient_id));
@@ -1739,7 +1971,6 @@ class PackagesController extends Controller
                 $packageadvance->created_at_formated = Carbon::parse($packageadvance->created_at)->format('F j,Y H:i A');
 
                 $packageAdvancesCollection[] = $packageadvance;
-
             }
 
             return $packageAdvancesCollection;
@@ -1757,7 +1988,7 @@ class PackagesController extends Controller
     public function package_pdf($id)
     {
 
-        if (! Gate::allows('plans_manage')) {
+        if (!Gate::allows('plans_manage')) {
             return abort(401);
         }
         $package = Packages::find($id);
@@ -1804,8 +2035,7 @@ class PackagesController extends Controller
         $pdf = App::make('dompdf.wrapper');
         $pdf->loadHTML($content);
 
-        return $pdf->stream('treatment-plans-invoice-C-'.$package->patient_id.'.pdf');
-
+        return $pdf->stream('treatment-plans-invoice-C-' . $package->patient_id . '.pdf');
     }
 
     /*
@@ -1878,7 +2108,6 @@ class PackagesController extends Controller
                 'id' => $request->package_advance_id,
                 'cash_receveive_remain' => $cash_receveive_remain,
             ]);
-
         }
 
         return ApiHelper::apiResponse($this->success, 'Unable to delete consume amount.', false);
@@ -1890,9 +2119,61 @@ class PackagesController extends Controller
     public function getappointmentinfo(Request $request)
     {
         $appointmentArray = PlanAppointmentCalculation::tagAppointments($request);
+        $checkMembership = Membership::with('membershiptype')->where('patient_id', $request->patient_id)->first();
 
-        return ApiHelper::apiResponse($this->success, 'Recode found', true, [
+        if ($checkMembership) {
+            if ($checkMembership->end_date < now()->format('Y-m-d')) {
+                $checkMembership->is_expired = ' - Expired';
+                $checkMembership->is_active = '';
+            } else {
+                $checkMembership->is_expired = '';
+                $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
+            }
+        }
+        $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
+    
+        // Fetch active doctors as an associative array
+        $users = User::whereIn('id', $doctors)
+            ->where('active', 1)
+            ->pluck('name', 'id') // Preserve user IDs
+            ->toArray();
+    
+        // Ensure 'from_id' is an array
+        $locationId = $request->location_id;
+
+        // Fetch FDM users by getting the user_ids associated with the center (location_id)
+        $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+
+        // Fetch the 'FDM' role and get its user ids
+        $findRole = DB::table('roles')->where('name', 'FDM')->first();
+        $roleId = $findRole->id;
+
+        // Get users who have the FDM role
+        $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+
+        // Get the intersection of users who are both FDM and belong to the center
+        $fdmUsers = array_intersect($findFDM, $roleHasUser);
+
+        // Fetch FDM user details (id and name) from the users table
+        $FDMUsers = User::whereIn('id', $fdmUsers)
+            ->pluck('name', 'id') // Preserve user IDs
+            ->toArray();
+
+        // Merge the arrays while preserving keys
+        $combinedUsers = $users + $FDMUsers;
+        $selectedUserId = null;
+        if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
+            $firstDoctorId = $appointmentArray[0]['doctor_id'];
+            if (array_key_exists($firstDoctorId, $combinedUsers)) {
+                $selectedUserId = $firstDoctorId;
+            }
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
+            'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
+            'users'=>$combinedUsers,
+            'selected_doctor_id'=>$selectedUserId
         ]);
     }
 
@@ -1901,7 +2182,7 @@ class PackagesController extends Controller
      */
     public function packagelog($id, $type)
     {
-        if (! Gate::allows('plans_log')) {
+        if (!Gate::allows('plans_log')) {
             return abort(401);
         }
 
@@ -1951,7 +2232,7 @@ class PackagesController extends Controller
                     $finance_log[$audittrail->id][$changes->field_name] = $result;
                 }
             }
-            if (! isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
+            if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
                 $type_2_detail = AuditTrailChanges::where('audit_trail_id', '=', $finance_log[$audittrail->id]['id'])->get();
 
@@ -1977,7 +2258,6 @@ class PackagesController extends Controller
         }
 
         return $this->packagelogexcel($id, $finance_log);
-
     }
 
     public function planDatatable(Request $request, $id)
@@ -2005,14 +2285,16 @@ class PackagesController extends Controller
         [$orderBy, $order] = getSortBy($request);
 
         $iTotalRecords = AuditTrails::whereIn('table_record_id', $find_ids)
-            ->where('audit_trail_table_name',
+            ->where(
+                'audit_trail_table_name',
                 Config::get('constants.package_advance_table_name_log')
             )->count();
 
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
         $audittrails = AuditTrails::whereIn('table_record_id', $find_ids)
-            ->where('audit_trail_table_name',
+            ->where(
+                'audit_trail_table_name',
                 Config::get('constants.package_advance_table_name_log')
             )->limit($iDisplayLength)->offset($iDisplayStart)->orderBy('created_at', 'asc')->get();
 
@@ -2043,7 +2325,7 @@ class PackagesController extends Controller
                     $finance_log[$audittrail->id][$changes->field_name] = $result;
                 }
             }
-            if (! isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
+            if (!isset($finance_log[$audittrail->id]['cash_flow']) && $action_array[$audittrail->audit_trail_action_name] != 'Delete') {
 
                 $type_2_detail = AuditTrailChanges::where('audit_trail_id', '=', $finance_log[$audittrail->id]['id'])->get();
 
@@ -2064,7 +2346,7 @@ class PackagesController extends Controller
             }
         }
 
-        if (! empty($finance_log)) {
+        if (!empty($finance_log)) {
 
             $records['data'] = $finance_log;
 
@@ -2087,7 +2369,7 @@ class PackagesController extends Controller
 
     public function packagelogexcel($id, $finance_log)
     {
-        if (! Gate::allows('plans_log')) {
+        if (!Gate::allows('plans_log')) {
             return abort(401);
         }
 
@@ -2126,35 +2408,35 @@ class PackagesController extends Controller
         $counter = 4;
 
         foreach ($finance_log as $log) {
-            if ((isset($log['package_id']) && $log['package_id'] == $id) || ! isset($log['package_id'])) {
-                $activeSheet->setCellValue('A'.$counter, $count++);
-                $activeSheet->setCellValue('B'.$counter, isset($log['cash_flow']) ? $log['cash_flow'] : '-');
-                $activeSheet->setCellValue('C'.$counter, isset($log['cash_amount']) ? $log['cash_amount'] : '-');
-                $activeSheet->setCellValue('D'.$counter, isset($log['is_refund']) ? $log['is_refund'] : '-');
-                $activeSheet->setCellValue('E'.$counter, isset($log['is_adjustment']) ? $log['is_adjustment'] : '-');
-                $activeSheet->setCellValue('F'.$counter, isset($log['is_tax']) ? $log['is_tax'] : '-');
-                $activeSheet->setCellValue('G'.$counter, isset($log['is_cancel']) ? $log['is_cancel'] : '-');
-                $activeSheet->setCellValue('H'.$counter, ($log['action'] == 'Delete') ? 'Yes' : '-');
-                $activeSheet->setCellValue('I'.$counter, isset($log['refund_note']) ? $log['refund_note'] : '-');
-                $activeSheet->setCellValue('J'.$counter, isset($log['payment_mode_id']) ? $log['payment_mode_id'] : '-');
-                $activeSheet->setCellValue('K'.$counter, isset($log['appointment_type_id']) ? $log['appointment_type_id'] : '-');
-                $activeSheet->setCellValue('L'.$counter, isset($log['location_id']) ? $log['location_id'] : '-');
-                $activeSheet->setCellValue('M'.$counter, isset($log['created_by']) ? $log['created_by'] : '-');
-                $activeSheet->setCellValue('N'.$counter, isset($log['cash_flow']) ? isset($log['updated_by']) ? $log['updated_by'] : '-' : $log['user_id']);
-                $activeSheet->setCellValue('O'.$counter, isset($log['package_id']) ? $log['package_id'] : '-');
-                $activeSheet->setCellValue('P'.$counter, isset($log['invoice_id']) ? $log['invoice_id'] : '-');
-                $activeSheet->setCellValue('Q'.$counter, isset($log['created_at']) ? $log['created_at'] == $log['created_at_orignal'] ? '-' : $log['created_at'] : '-');
-                $activeSheet->setCellValue('R'.$counter, isset($log['updated_at']) ? $log['updated_at'] == $log['updated_at_orignal'] ? '-' : $log['updated_at'] : '-');
+            if ((isset($log['package_id']) && $log['package_id'] == $id) || !isset($log['package_id'])) {
+                $activeSheet->setCellValue('A' . $counter, $count++);
+                $activeSheet->setCellValue('B' . $counter, isset($log['cash_flow']) ? $log['cash_flow'] : '-');
+                $activeSheet->setCellValue('C' . $counter, isset($log['cash_amount']) ? $log['cash_amount'] : '-');
+                $activeSheet->setCellValue('D' . $counter, isset($log['is_refund']) ? $log['is_refund'] : '-');
+                $activeSheet->setCellValue('E' . $counter, isset($log['is_adjustment']) ? $log['is_adjustment'] : '-');
+                $activeSheet->setCellValue('F' . $counter, isset($log['is_tax']) ? $log['is_tax'] : '-');
+                $activeSheet->setCellValue('G' . $counter, isset($log['is_cancel']) ? $log['is_cancel'] : '-');
+                $activeSheet->setCellValue('H' . $counter, ($log['action'] == 'Delete') ? 'Yes' : '-');
+                $activeSheet->setCellValue('I' . $counter, isset($log['refund_note']) ? $log['refund_note'] : '-');
+                $activeSheet->setCellValue('J' . $counter, isset($log['payment_mode_id']) ? $log['payment_mode_id'] : '-');
+                $activeSheet->setCellValue('K' . $counter, isset($log['appointment_type_id']) ? $log['appointment_type_id'] : '-');
+                $activeSheet->setCellValue('L' . $counter, isset($log['location_id']) ? $log['location_id'] : '-');
+                $activeSheet->setCellValue('M' . $counter, isset($log['created_by']) ? $log['created_by'] : '-');
+                $activeSheet->setCellValue('N' . $counter, isset($log['cash_flow']) ? isset($log['updated_by']) ? $log['updated_by'] : '-' : $log['user_id']);
+                $activeSheet->setCellValue('O' . $counter, isset($log['package_id']) ? $log['package_id'] : '-');
+                $activeSheet->setCellValue('P' . $counter, isset($log['invoice_id']) ? $log['invoice_id'] : '-');
+                $activeSheet->setCellValue('Q' . $counter, isset($log['created_at']) ? $log['created_at'] == $log['created_at_orignal'] ? '-' : $log['created_at'] : '-');
+                $activeSheet->setCellValue('R' . $counter, isset($log['updated_at']) ? $log['updated_at'] == $log['updated_at_orignal'] ? '-' : $log['updated_at'] : '-');
 
                 if ($log['action'] == 'Delete') {
-                    $activeSheet->setCellValue('S'.$counter, '-');
-                    $activeSheet->setCellValue('T'.$counter, '-');
+                    $activeSheet->setCellValue('S' . $counter, '-');
+                    $activeSheet->setCellValue('T' . $counter, '-');
                 } else {
-                    $activeSheet->setCellValue('S'.$counter, isset($log['created_at_orignal']) ? \Carbon\Carbon::parse($log['created_at_orignal'])->format('F j,Y h:i A') : '-');
-                    $activeSheet->setCellValue('T'.$counter, isset($log['updated_at_orignal']) ? \Carbon\Carbon::parse($log['updated_at_orignal'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('S' . $counter, isset($log['created_at_orignal']) ? \Carbon\Carbon::parse($log['created_at_orignal'])->format('F j,Y h:i A') : '-');
+                    $activeSheet->setCellValue('T' . $counter, isset($log['updated_at_orignal']) ? \Carbon\Carbon::parse($log['updated_at_orignal'])->format('F j,Y h:i A') : '-');
                 }
 
-                $activeSheet->setCellValue('U'.$counter, isset($log['deleted_at']) ? \Carbon\Carbon::parse($log['deleted_at'])->format('F j, Y h:i A') : '-');
+                $activeSheet->setCellValue('U' . $counter, isset($log['deleted_at']) ? \Carbon\Carbon::parse($log['deleted_at'])->format('F j, Y h:i A') : '-');
 
                 $counter++;
 
@@ -2162,32 +2444,29 @@ class PackagesController extends Controller
 
                     $countt = 1;
 
-                    $activeSheet->setCellValue('H'.$counter, '#')->getStyle('H'.$counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('I'.$counter, 'Field Name')->getStyle('I'.$counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('J'.$counter, 'Before')->getStyle('J'.$counter)->getFont()->setBold(true);
-                    $activeSheet->setCellValue('K'.$counter, 'After')->getStyle('K'.$counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('H' . $counter, '#')->getStyle('H' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('I' . $counter, 'Field Name')->getStyle('I' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('J' . $counter, 'Before')->getStyle('J' . $counter)->getFont()->setBold(true);
+                    $activeSheet->setCellValue('K' . $counter, 'After')->getStyle('K' . $counter)->getFont()->setBold(true);
 
                     $counter++;
 
                     foreach ($log['detail_log'] as $detail) {
-                        $activeSheet->setCellValue('H'.$counter, $countt++);
-                        $activeSheet->setCellValue('I'.$counter, isset($detail['field_name']) ? $detail['field_name'] : '-');
-                        $activeSheet->setCellValue('J'.$counter, isset($detail['field_before']) ? $detail['field_before'] : '-');
-                        $activeSheet->setCellValue('K'.$counter, isset($detail['field_after']) ? $detail['field_after'] : '-');
+                        $activeSheet->setCellValue('H' . $counter, $countt++);
+                        $activeSheet->setCellValue('I' . $counter, isset($detail['field_name']) ? $detail['field_name'] : '-');
+                        $activeSheet->setCellValue('J' . $counter, isset($detail['field_before']) ? $detail['field_before'] : '-');
+                        $activeSheet->setCellValue('K' . $counter, isset($detail['field_after']) ? $detail['field_after'] : '-');
 
                         $counter++;
                     }
-
                 }
-
             }
         }
 
         header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        header('Content-Disposition: attachment;filename="'.'PackageLog'.'.xlsx"'); /*-- $filename is  xsl filename ---*/
+        header('Content-Disposition: attachment;filename="' . 'PackageLog' . '.xlsx"'); /*-- $filename is  xsl filename ---*/
         header('Cache-Control: max-age=0');
         $Excel_writer->save('php://output');
-
     }
 
     /**
@@ -2281,8 +2560,8 @@ class PackagesController extends Controller
     }
     public function getPlans(Request $request)
     {
-        $plans  = Packages::where('patient_id',$request->patient_id)->pluck('name');
-        return response()->json(['stataus' =>1,'message'=>'plan found','plans'=>$plans]);
+        $plans  = Packages::where('patient_id', $request->patient_id)->pluck('name');
+        return response()->json(['stataus' => 1, 'message' => 'plan found', 'plans' => $plans]);
     }
     public function editRefund($id)
     {
@@ -2315,7 +2594,7 @@ class PackagesController extends Controller
             ['is_setteled', '=', '1'],
             ['is_tax', '=', '0'],
         ])->sum('cash_amount');
-       $amount_to_refund = $package_is_refunded_amount + $package_is_setteled;
+        $amount_to_refund = $package_is_refunded_amount + $package_is_setteled;
         /*Document charges*/
         $documentationcharges = Settings::where('slug', '=', 'sys-documentationcharges')->first();
         $package_cash_receive = PackageAdvances::where([
@@ -2356,7 +2635,6 @@ class PackagesController extends Controller
             $refund_1 = $package_service_originalPrice_consumed + $cosume_amount_tax + $documentationcharges->data;
 
             $refundable_amount = ceil(($package_cash_receive - $refund_1) - $amount_to_refund);
-
         }
 
         if ($refundable_amount > 0) {
@@ -2378,7 +2656,6 @@ class PackagesController extends Controller
             $cal_adjustment_final = $package_service_Price_consumed_tax + ($package_cash_receive - $refund_1);
             $is_adjustment_amount = ceil(($package_cash_receive - $cal_adjustment_final) - $return_tax_amount);
             $return_tax_amount = ceil($return_tax_amount);
-
         }
         if ($refundable_amount < 0) {
             $refundable_amount = 0;
@@ -2394,7 +2671,7 @@ class PackagesController extends Controller
         } else {
             $document = false;
         }
-        $paymentmodes = PaymentModes::where('name' , "!=" , "Settle Amount")->get()->pluck('name', 'id');
+        $paymentmodes = PaymentModes::where('name', "!=", "Settle Amount")->get()->pluck('name', 'id');
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'id' => $id,
             'refundable_amount' => $refundable_amount,
@@ -2405,118 +2682,223 @@ class PackagesController extends Controller
             'return_tax_amount' => $return_tax_amount,
             'date_backend' => $date_backend,
             'paymentmodes' => $paymentmodes,
-            'refunded_amount' =>$package_refunded_amount->cash_amount,
-            'record_id' =>$package_refunded_amount->id,
-            'package_setteled_amount'=>$package_setteled_amount,
+            'refunded_amount' => $package_refunded_amount->cash_amount,
+            'record_id' => $package_refunded_amount->id,
+            'package_setteled_amount' => $package_setteled_amount,
             'patient_name' => $patient->name,
-            'patient_id' =>$patient->id,
-            'plan'=>$package_information->name,
-            'created_date'=>Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d'),
-            'refund_note' =>$latest_package_refunded_amount->refund_note,
-            'payment_method_id' =>$latest_package_refunded_amount->payment_mode_id
+            'patient_id' => $patient->id,
+            'plan' => $package_information->name,
+            'created_date' => Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d'),
+            'refund_note' => $latest_package_refunded_amount->refund_note,
+            'payment_method_id' => $latest_package_refunded_amount->payment_mode_id
         ]);
     }
     public function updateRefund(Request $request)
     {
-        
 
-        $latest_refund = PackageAdvances::where([
-            ["package_id",'=',$request['package_id']],
-            ['is_refund','=',1],
-            ['cash_amount','>',0],
-            ['is_tax','=',0],
-        ]
+        $validator = $this->verifyFields($request);
+
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+        }
+        $latest_refund = PackageAdvances::where(
+            [
+                ["package_id", '=', $request['package_id']],
+                ['is_refund', '=', 1],
+                ['cash_amount', '>', 0],
+                ['is_tax', '=', 0],
+            ]
 
         )->latest()->first();
 
-       if($request['case_setteled'] == 'on'){
+        if ($request['case_setteled'] == 'on') {
 
-        $package_cash_receive = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'in'],
-            ['is_cancel', '=', '0'],
+            $package_cash_receive = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'in'],
+                ['is_cancel', '=', '0'],
 
-        ])->sum('cash_amount');
+            ])->sum('cash_amount');
 
-        $package_is_refunded_amount = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'out'],
-            ['is_refund', '=', '1'],
-            ['is_tax', '=', '0'],
-            ['is_setteled', '=', '0'],
-        ])->sum('cash_amount');
+            $package_is_refunded_amount = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'out'],
+                ['is_refund', '=', '1'],
+                ['is_tax', '=', '0'],
+                ['is_setteled', '=', '0'],
+            ])->sum('cash_amount');
 
-        $package_is_consumed_amount = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'out'],
-            ['is_refund', '=', '0'],
-            ['is_tax', '=', '0'],
-            ['is_setteled', '=', '0'],
-            ['is_adjustment', '=', '0'],
-        ])->sum('cash_amount');
+            $package_is_consumed_amount = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'out'],
+                ['is_refund', '=', '0'],
+                ['is_tax', '=', '0'],
+                ['is_setteled', '=', '0'],
+                ['is_adjustment', '=', '0'],
+            ])->sum('cash_amount');
 
-        $package_is_consumed_tax_amount = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'out'],
-            ['is_refund', '=', '0'],
-            ['is_tax', '=', '1'],
-            ['is_setteled', '=', '0'],
-        ])->sum('cash_amount');
-       
-        $consumed_amount_with_tax = $package_is_consumed_amount + $package_is_consumed_tax_amount;
+            $package_is_consumed_tax_amount = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'out'],
+                ['is_refund', '=', '0'],
+                ['is_tax', '=', '1'],
+                ['is_setteled', '=', '0'],
+            ])->sum('cash_amount');
 
-        $package_is_refunded_amount = PackageAdvances::where([
-            ['package_id', '=', $request->package_id],
-            ['cash_flow', '=', 'out'],
-            ['is_refund', '=', '1'],
-            ['is_tax', '=', '0'],
-        ])->sum('cash_amount');
-        $amount_after_refund = $consumed_amount_with_tax + $package_is_refunded_amount;
-        $amount_left = $package_cash_receive - $amount_after_refund;
-        $packageinformation = Packages::find($request->package_id);
-        $find_doc = Appointments::where('id',$packageinformation->appointment_id)->first();
-        if($amount_left > 0){
+            $consumed_amount_with_tax = $package_is_consumed_amount + $package_is_consumed_tax_amount;
 
-            $data_adjustment['cash_flow'] = 'out';
-            $data_adjustment['cash_amount'] = $amount_left;
-            $data_adjustment['is_adjustment'] = '0';
-            $data_adjustment['is_setteled'] = 1;
-            $data_adjustment['patient_id'] = $request->get('patient_id');
-            $data_adjustment['payment_mode_id'] = $request->payment_mode_id;
-            $data_adjustment['account_id'] = Auth::User()->account_id;
-            $data_adjustment['created_by'] = Auth::User()->id;
-            $data_adjustment['updated_by'] = Auth::User()->id;
-            $data_adjustment['package_id'] = $request->package_id;
-            $data_adjustment['patient_id'] = $packageinformation->patient_id;
-            $data_adjustment['location_id'] = $packageinformation->location_id;
-            $data_adjustment['appointment_id'] = $packageinformation->appointment_id;
-            $data_adjustment['created_at'] = $request['created_at'].' '.Carbon::now()->toTimeString();
-            $data_adjustment['updated_at'] = $request['created_at'].' '.Carbon::now()->toTimeString();
+            $package_is_refunded_amount = PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'out'],
+                ['is_refund', '=', '1'],
+                ['is_tax', '=', '0'],
+            ])->sum('cash_amount');
+            $amount_after_refund = $consumed_amount_with_tax + $package_is_refunded_amount;
+            $amount_left = $package_cash_receive - $amount_after_refund;
+            $packageinformation = Packages::find($request->package_id);
+            $find_doc = Appointments::where('id', $packageinformation->appointment_id)->first();
+            if ($amount_left > 0) {
 
-            PackageAdvances::create($data_adjustment);
-            $services = Services::where('name','Refund Settelment')->first();
-            $dataInvoice['total_price'] = $amount_left;
+                $data_adjustment['cash_flow'] = 'out';
+                $data_adjustment['cash_amount'] = $amount_left;
+                $data_adjustment['is_adjustment'] = '0';
+                $data_adjustment['is_setteled'] = 1;
+                $data_adjustment['patient_id'] = $request->get('patient_id');
+                $data_adjustment['payment_mode_id'] = $request->payment_mode_id;
+                $data_adjustment['account_id'] = Auth::User()->account_id;
+                $data_adjustment['created_by'] = Auth::User()->id;
+                $data_adjustment['updated_by'] = Auth::User()->id;
+                $data_adjustment['package_id'] = $request->package_id;
+                $data_adjustment['patient_id'] = $packageinformation->patient_id;
+                $data_adjustment['location_id'] = $packageinformation->location_id;
+                $data_adjustment['appointment_id'] = $packageinformation->appointment_id;
+                $data_adjustment['created_at'] = $request['created_at'] . ' ' . Carbon::now()->toTimeString();
+                $data_adjustment['updated_at'] = $request['created_at'] . ' ' . Carbon::now()->toTimeString();
+
+                PackageAdvances::create($data_adjustment);
+                $services = Services::where('name', 'Refund Settelment')->first();
+                $dataInvoice['total_price'] = $amount_left;
                 $dataInvoice['account_id'] = Auth::User()->account_id;
                 $dataInvoice['patient_id'] = $packageinformation->patient_id;
                 $dataInvoice['appointment_id'] = $packageinformation->appointment_id;
                 $dataInvoice['invoice_status_id'] = 3;
                 $dataInvoice['created_by'] = Auth::User()->id;
-                $dataInvoice['location_id'] =$packageinformation->location_id;
-                $dataInvoice['doctor_id'] =$find_doc->doctor_id;
+                $dataInvoice['location_id'] = $packageinformation->location_id;
+                $dataInvoice['doctor_id'] = $find_doc->doctor_id;
                 $dataInvoice['active'] = 1;
                 $dataInvoice['is_exclusive'] = 0;
-               $create_invoice =  Invoices::create($dataInvoice);
-               $dataInvoiceDetail['qty'] = 1;
-               $dataInvoiceDetail['service_id'] =$services->id;
-               $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
-               InvoiceDetails::create($dataInvoiceDetail);
-        }else{
-            $latest_refund->where('id',$request['record_id'])->update(['is_setteled' => 1]);
-       
+                $create_invoice =  Invoices::create($dataInvoice);
+                $dataInvoiceDetail['qty'] = 1;
+                $dataInvoiceDetail['service_id'] = $services->id;
+                $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
+                InvoiceDetails::create($dataInvoiceDetail);
+            } else {
+                $latest_refund->where('id', $request['record_id'])->update(['is_setteled' => 1]);
+            }
         }
+        $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id']]);
+        return ApiHelper::apiResponse($this->success, 'Record updated', true, []);
     }
-        $latest_refund->where('id',$request['record_id'])->update(['created_at' => $request['created_at'].' '.Carbon::now()->toTimeString() , 'cash_amount' => $request['refund_amount'],'payment_mode_id' => $request['payment_mode_id']]);
-        return ApiHelper::apiResponse($this->success, 'Record updated', true, [
-        ]);
+    protected function verifyFields(Request $request)
+    {
+        $rules = [
+            'refund_amount' => ['required', 'numeric', 'regex:/^[0-9]+$/'],
+            'refund_note' => 'required',
+            'package_id' => 'required',
+            'payment_mode_id' => 'required',
+            'created_at' => ['required', 'date', 'date_format:Y-m-d'],
+        ];
+        $customMessages = [
+            'created_at.required' => 'The created at field is required.',
+            'created_at.date_format' => 'The Date field format is incorrect.',
+        ];
+
+        return Validator::make($request->all(), $rules, $customMessages);
+    }
+    public function viewPackage($id)
+    {
+
+        $url = route('admin.packages.edit', $id);
+
+        return view('admin.packages.details', get_defined_vars());
+    }
+    public function storeRecord($package, $request)
+    {
+        $packageBundledata['random_id'] = $package->random_id;
+        $packageBundledata['is_allocate'] = 1;
+        if (isset($request['package_bundles'])) {
+            foreach ($request['package_bundles'] as $packageBundle) {
+                $packageBundledata['qty'] = 1;
+                $packageBundledata['discount_name'] = $packageBundle['DiscountName'];
+                $packageBundledata['discount_type'] = $packageBundle['Type'];
+                $packageBundledata['discount_price'] = $packageBundle['DiscountValue'];
+                $packageBundledata['service_price'] = str_replace(',', '', $packageBundle['RegularPrice']);
+                $packageBundledata['net_amount'] = str_replace(',', '', $packageBundle['RegularPrice']);
+                $packageBundledata['discount_id'] = 1;
+                $packageBundledata['bundle_id'] = $packageBundle['bundleId'];
+                $packageBundledata['package_id'] = $package->id;
+                $packageBundledata['tax_exclusive_net_amount'] = str_replace(',', '', $packageBundle['Amount']);
+                $packageBundledata['tax_percentage'] = 1;
+                $packageBundledata['tax_price'] = $packageBundle['Tax'];
+                $packageBundledata['tax_including_price'] = $packageBundle['Total'];
+                $packageBundledata['location_id'] = $request->location_id;
+                $packageBundleRecord = PackageBundles::create($packageBundledata);
+                $bundleServices = BundleHasServices::where('bundle_id', '=', $packageBundleRecord->bundle_id)->get();
+                $service_data = Bundles::find($packageBundle['bundleId']);
+                $calculable_servcies = [];
+                foreach ($bundleServices as $bundleService) {
+                    $calculable_servcies[] = [
+                        'service_price' => $bundleService->calculated_price,
+                        'calculated_price' => $bundleService->calculated_price,
+                        'service_id' => $bundleService->service_id,
+                    ];
+                }
+                $calculatedServicesPrice = Bundles::calculatePrices($calculable_servcies, str_replace(',', '', $packageBundle['RegularPrice']), $packageBundle['Total']);
+                $location_information = Locations::find($request->location_id);
+                foreach ($calculatedServicesPrice as $calculatedServicePrice) {
+                    $data_service['random_id'] = $request->random_id;
+                    $data_service['package_bundle_id'] = $packageBundleRecord->id;
+                    $data_service['service_id'] = $calculatedServicePrice['service_id'];
+                    $data_service['price'] = $calculatedServicePrice['calculated_price'];
+                    $data_service['orignal_price'] = $calculatedServicePrice['service_price'];
+                    if ($service_data->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                        if ($request->is_exclusive == '1') {
+                            $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
+                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                            $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));
+                            $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+
+                            $data_service['is_exclusive'] = 1;
+                        } else {
+                            $data_service['tax_including_price'] = $calculatedServicePrice['calculated_price'];
+                            $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                            $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                            $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+
+                            $data_service['is_exclusive'] = 0;
+                        }
+                    } elseif ($service_data->tax_treatment_type_id == Config::get('constants.tax_is_exclusive')) {
+                        $data_service['tax_exclusive_price'] = $calculatedServicePrice['calculated_price'];
+                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                        $data_service['tax_price'] = ceil($calculatedServicePrice['calculated_price'] * ($location_information->tax_percentage / 100));
+                        $data_service['tax_including_price'] = ceil($data_service['tax_exclusive_price'] + (($data_service['tax_exclusive_price'] * $data_service['tax_percenatage']) / 100));
+
+                        $data_service['is_exclusive'] = 1;
+                    } else {
+                        $data_service['tax_including_price'] = $calculatedServicePrice['calculated_price'];
+                        $data_service['tax_percenatage'] = $location_information->tax_percentage;
+                        $data_service['tax_exclusive_price'] = ceil((100 * $data_service['tax_including_price']) / ($data_service['tax_percenatage'] + 100));
+                        $data_service['tax_price'] = ceil($data_service['tax_including_price'] - $data_service['tax_exclusive_price']);
+
+                        $data_service['is_exclusive'] = 0;
+                    }
+                    $data_service['created_at'] = Filters::getCurrentTimeStamp();
+                    $data_service['updated_at'] = Filters::getCurrentTimeStamp();
+                    $data_service['sold_by'] =$packageBundle['sold_by'] ;
+                    $packageservice = PackageService::createPackageService($data_service);
+                }
+            }
+            return true;
+        }
     }
 }

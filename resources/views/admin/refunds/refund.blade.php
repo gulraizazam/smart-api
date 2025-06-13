@@ -46,7 +46,7 @@
                         </div>
                         <div class="fv-row col-md-6 mt-5">
                             <label for="add_plan_id" class="required fw-bold fs-6 mb-2 pl-0">Plans <span class="text text-danger">*</span></label>
-                            <select id="add_plan_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="plan_id_1" onchange="GetPlanDetail()">
+                            <select id="add_plan_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="plan" onchange="GetPlanDetail()">
                                 <option value="">Select Plan</option>
                             </select>
                         </div>

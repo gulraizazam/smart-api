@@ -1,12 +1,15 @@
 var central_wise_arrival_chart;
 var doc_wise_conversion_chart;
+var doc_wise_feedback_chart;
 var CENTRE_ID;
 var SELECTED_MONTH;
 var DOC_ID;
 
-function initCollectionByCentre(today, yesterday, last7days, week, thismonth, lastmonth) {
+function initCollectionByCentre(type) {
     $("#collection_by_centre_menu .active").removeClass('active');
     $("#collection_by_centre_menu").parent().addClass('active');
+    $("#collectionbycenter .loader-img-attended").css('display', '');
+    $("#collectionbycenter #collection-by-centre").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -15,50 +18,47 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
         url: route('admin.dashboard.collection_by_centre'),
         type: 'GET',
         data: {
-            'today': today,
-            'yesterday': yesterday,
-            'last7days': last7days,
-            'week': week,
-            'thismonth': thismonth,
-            'lastmonth': lastmonth,
+            'type': type
         },
         cache: false,
         success: function (response) {
-            if (today != '') {
+            $("#collectionbycenter .loader-img-attended").css('display', 'none');
+            $("#collectionbycenter #collection-by-centre").css('display', '');
+            if (type == "today") {
                 var pie = response.data.pie.today;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("Today");
             }
-            if (yesterday != '') {
+            if (type == "yesterday") {
                 $(".pie-income-title").text('Yesterday Income');
                 var pie = response.data.pie.yesterday;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("Yesterday");
             }
-            if (last7days != '') {
+            if (type == "last7days") {
                 $(".pie-income-title").text('Weekly Income');
                 var pie = response.data.pie.last7days;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("Last 7 Days");
             }
-            if (week != '') {
+            if (type == "week") {
                 $(".pie-income-title").text('Weekly Income');
                 var pie = response.data.pie.week;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("This Week");
             }
-            if (thismonth != '') {
+            if (type == "thismonth") {
                 $(".pie-income-title").text('Monthly Income');
                 var pie = response.data.pie.thismonth;
                 let total = response.data.total;
                 $(".total-pie-chart").text(total);
                 $(".collection_by_centre_dropdown").text("This Month");
             }
-            if (lastmonth != '') {
+            if (type == "lastmonth") {
                 $(".pie-income-title").text('Last Month Income');
                 var pie = response.data.pie.lastmonth;
                 let total = response.data.total;
@@ -71,22 +71,14 @@ function initCollectionByCentre(today, yesterday, last7days, week, thismonth, la
 }
 
 function collectionCentreChart(pie) {
-
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
     });
 
     google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
-
-        var options = {
-            title: 'Collections',
-            colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-        };
-
         var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
-        chart.draw(data, options);
+        chart.draw(data);
     });
 
     if (pie.length > 1) {
@@ -97,6 +89,8 @@ function collectionCentreChart(pie) {
 function initRevenueByCentre(period) {
     $("#revenue_by_centre_menu .active").removeClass('active');
     $("#revenue_by_centre_menu").parent().addClass('active');
+    $("#revenue_by_centre .loader-img-attended").css('display', '');
+    $("#revenue_by_centre #revenue-centre").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -110,6 +104,8 @@ function initRevenueByCentre(period) {
         },
         cache: false,
         success: function (response) {
+            $("#revenue_by_centre .loader-img-attended").css('display', 'none');
+            $("#revenue_by_centre #revenue-centre").css('display', '');
             if (period == "today") {
                 $(".revenue-centre-title").text('Today Income');
                 let total = response.data.total;
@@ -164,16 +160,10 @@ function revenueCentreChart(pie) {
     });
 
     google.setOnLoadCallback(function () {
-
         var data = google.visualization.arrayToDataTable(pie);
 
-        var options = {
-            title: 'Revenue',
-            colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-        };
-
         var chart = new google.visualization.PieChart(document.getElementById('revenue-centre'));
-        chart.draw(data, options);
+        chart.draw(data);
     });
 
     if (pie.length > 1) {
@@ -182,10 +172,11 @@ function revenueCentreChart(pie) {
 
 }
 
-function initRevenueByService(today, yesterday, last7days, week, thismonth, lastmonth) {
+function initRevenueByService(type) {
     $("#revenue_by_service_menu .active").removeClass('active');
     $("#revenue_by_service_menu").parent().addClass('active');
-
+    $("#revenue_by_service .loader-img-attended").css('display', '');
+    $("#revenue_by_service #revenue-service").css('display', 'none');
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -194,51 +185,48 @@ function initRevenueByService(today, yesterday, last7days, week, thismonth, last
         type: 'GET',
         cache: false,
         data: {
-            'today': today,
-            'yesterday': yesterday,
-            'last7days': last7days,
-            'week': week,
-            'thismonth': thismonth,
-            'lastmonth': lastmonth,
+            'type': type,
         },
         success: function (response) {
+            $("#revenue_by_service .loader-img-attended").css('display', 'none');
+            $("#revenue_by_service #revenue-service").css('display', '');
             let colors = response.data.colors;
-            if (today != '') {
+            if (type == "today") {
                 $(".service-title").text('Today Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Today");
                 var pie = response.data.pie.today;
             }
-            if (yesterday != '') {
+            if (type == "yesterday") {
                 $(".service-title").text('Yesterday Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Yesterday");
                 var pie = response.data.pie.yesterday;
             }
-            if (last7days != '') {
+            if (type == "last7days") {
                 $(".service-title").text('Weekly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Last 7 Days");
                 var pie = response.data.pie.last7days;
             }
-            if (week != '') {
+            if (type == "week") {
                 $(".service-title").text('Weekly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("Week");
                 var pie = response.data.pie.week;
             }
-            if (thismonth != '') {
+            if (type == "thismonth") {
                 $(".service-title").text('Monthly Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
                 $(".revenue_by_service_dropdown").text("This Month");
-                var pie = response.data.pie.month;
+                var pie = response.data.pie.thismonth;
             }
-            if (lastmonth != '') {
+            if (type == "lastmonth") {
                 $(".service-title").text('Last Month Income');
                 let total = response.data.total;
                 $(".total-service").text(total);
@@ -324,7 +312,6 @@ function AppointmentByStatus(pie, colors) {
         var data = google.visualization.arrayToDataTable(pie);
 
         var options = {
-
             colors: colors
         };
 
@@ -380,7 +367,6 @@ function AppointmentByType(pie, colors) {
         var data = google.visualization.arrayToDataTable(pie);
 
         var options = {
-
             colors: colors
         };
 
@@ -395,6 +381,8 @@ function AppointmentByType(pie, colors) {
 function initConsultancyByStatus(period, type) {
     $("#appointment_by_status_menu .active").removeClass('active');
     $("#appointment_by_status_menu").parent().addClass('active');
+    $("#consultancy_status1 .loader-img-attended").css('display', '');
+    $("#consultancy_status1 #consultancy_by_status").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -405,7 +393,8 @@ function initConsultancyByStatus(period, type) {
         data: { 'period': period, 'type': type },
         cache: false,
         success: function (response) {
-
+            $("#consultancy_status1 .loader-img-attended").css('display', 'none');
+            $("#consultancy_status1 #consultancy_by_status").css('display', '');
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
@@ -431,16 +420,18 @@ function initConsultancyByStatus(period, type) {
                 var pie = response.data.pie.lastmonth;
                 $(".appointment_by_status_dropdown").text("Last Month");
             }
-            ConsultancyByStatus(pie, colors);
-
+            setTimeout(() => {
+                ConsultancyByStatus(pie, colors);
+            }, 500);
         },
-
     });
 }
 
 function initTreatmentByStatus(period, type) {
     $("#appointment_by_type_menu .active").removeClass('active');
     $("#appointment_by_type_menu").parent().addClass('active');
+    $("#treatment_status1 .loader-img-attended").css('display', '');
+    $("#treatment_status1 #treatment_by_status").css('display', 'none');
 
     $.ajax({
         headers: {
@@ -451,6 +442,8 @@ function initTreatmentByStatus(period, type) {
         data: { 'period': period, 'type': type },
         cache: false,
         success: function (response) {
+            $("#treatment_status1 .loader-img-attended").css('display', 'none');
+            $("#treatment_status1 #treatment_by_status").css('display', '');
             let colors = response.data.colors;
             if (period == "today") {
                 var pie = response.data.pie.today;
@@ -476,8 +469,10 @@ function initTreatmentByStatus(period, type) {
                 var pie = response.data.pie.lastmonth;
                 $(".appointment_by_type_dropdown").text("Last Month");
             }
-            TreatmentByStatus(pie, colors);
 
+            setTimeout(() => {
+                TreatmentByStatus(pie, colors);
+            }, 500);
         },
 
     });
@@ -517,10 +512,11 @@ function ConsultancyByStatus(pie, colors) {
     }
 }
 
-function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, lastmonth) {
+function InitRevenueByServiceCategory(type) {
     $("#revenue_by_service_category_menu .active").removeClass('active');
     $("#revenue_by_service_category_menu").parent().addClass('active');
-
+    $("#revenue_by_service_category .loader-img-attended").css('display', '');
+    $("#revenue_by_service_category #revenue-service-category").css('display', 'none');
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -529,43 +525,44 @@ function InitRevenueByServiceCategory(today, yesterday, last7days, thismonth, la
         type: 'GET',
         cache: false,
         data: {
-            'today': today,
-            'yesterday': yesterday,
-            'last7days': last7days,
-            'thismonth': thismonth,
-            'lastmonth': lastmonth,
+            'type': type,
         },
         success: function (response) {
-            let colors = response.data.colors;
-            if (today != '') {
+            $("#revenue_by_service_category .loader-img-attended").css('display', 'none');
+            $("#revenue_by_service_category #revenue-service-category").css('display', '');
+            let colors = response.data?.colors;
+            if (type == 'today') {
                 var pie = response.data.pie.today;
                 $(".revenue_by_service_category_dropdown").text("Today");
             }
-            if (yesterday != '') {
+            if (type == "yesterday") {
                 var pie = response.data.pie.yesterday;
                 $(".revenue_by_service_category_dropdown").text("Yesterday");
             }
-            if (last7days != '') {
-                var pie = response.data.pie.week;
+            if (type == "last7days") {
+                var pie = response.data.pie.last7days;
                 $(".revenue_by_service_category_dropdown").text("Last 7 Days");
             }
-            if (thismonth != '') {
-                var pie = response.data.pie.month;
+            if (type == "week") {
+                var pie = response.data.pie.week;
                 $(".revenue_by_service_category_dropdown").text("This Month");
             }
-            if (lastmonth != '') {
-                var pie = response.data.pie.lastmonth;
+            if (type == "thismonth") {
+                var pie = response.data.pie.thismonth;
                 $(".revenue_by_service_category_dropdown").text("Last Month");
             }
-            RevenueByServiceCategory(pie, colors);
+
+            RevenueByServiceCategory(pie);
         },
     });
 }
 
 function RevenueByServiceCategory(service, colors) {
+
     google.load('visualization', '1', {
         packages: ['corechart', 'bar', 'line']
     });
+
     google.setOnLoadCallback(function () {
         var data = google.visualization.arrayToDataTable(service);
         var options = {
@@ -574,6 +571,7 @@ function RevenueByServiceCategory(service, colors) {
         var chart = new google.visualization.PieChart(document.getElementById('revenue-service-category'));
         chart.draw(data, options);
     });
+
     if (typeof service !== 'undefined' && service.length > 1) {
         $("#revenue-service-category").css("height", "500px");
     }
@@ -622,12 +620,8 @@ function CollectionByServiceCategory(service, colors) {
     });
     google.setOnLoadCallback(function () {
         var data = google.visualization.arrayToDataTable(service);
-        var options = {
-            colors: ['#f6aa33', '#6e4ff5', '#2abe81', '#c7d2e7', '#593ae1', '#fe3995']
-        };
         var chart = new google.visualization.PieChart(document.getElementById('revenue-service-collection'));
-
-        chart.draw(data, options);
+        chart.draw(data);
     });
     if (typeof service !== 'undefined' && service.length > 1) {
         $("#revenue-service-collection").css("height", "500px");
@@ -635,12 +629,14 @@ function CollectionByServiceCategory(service, colors) {
 }
 
 function initCentreWiseArrival(period, centreID, time = '') {
-
+    $("#staff_wise_arrival .loader-img-attended").css('display', '');
+    $("#staff_wise_arrival #centre_wise_arrival").css('display', 'none');
+    $("#staff_wise_arrival #centre_wise_arrival_02").css('display', 'none');
     if (time != 'firsttime') {
         central_wise_arrival_chart.destroy();
     }
     if (centreID == 'centre') {
-        centreID = $('.btn.arrivalbtn').attr('data-id');
+        centreID = $('#centervise_center option:selected').val();
     }
     if (centreID == '' || centreID == 30 || centreID == 'All') {
         centreID = 'All';
@@ -657,7 +653,10 @@ function initCentreWiseArrival(period, centreID, time = '') {
             'centre_id': centreID
         },
         success: function (response) {
-            
+            $("#staff_wise_arrival .loader-img-attended").css('display', 'none');
+            $("#staff_wise_arrival #centre_wise_arrival").css('display', '');
+            $("#staff_wise_arrival #centre_wise_arrival_02").css('display', '');
+
             $('#table-body').html("");
             dropDownList('centre', period, centreID = '');
             var TABLE_HTML = "";
@@ -677,7 +676,7 @@ function initCentreWiseArrival(period, centreID, time = '') {
                 let str = barLenght[i];
                 let wordToRemove = "CUTERA ";
                 let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
-                if (total != 0) {
+                if (total != 0 && !isNaN(total)) {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
             }
@@ -685,10 +684,10 @@ function initCentreWiseArrival(period, centreID, time = '') {
             arrived_t -= walkin_t;
             total_t -= walkin_t;
 
-            if ((centreID == "All" || centreID == "") && total_t != 0) {
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'></td><td>" + arrived_t + "/" + total_t + "</td><td>" + walkin_t + "</td><td>" + ((arrived_t / total_t) * 100).toFixed(2) + "%</td></tr>";
+            let percentage = ((arrived_t / total_t) * 100).toFixed(2);
 
-            }
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + (isNaN(arrived_t) ? 0 : arrived_t) + "/" + (isNaN(total_t) ? 0 : total_t) + "</td><td>" + (isNaN(walkin_t) ? 0 : walkin_t) + "</td><td>" + (isNaN(percentage) ? 0 : percentage) + "%</td></tr>";
+
             jQuery('#table-body').append(TABLE_HTML);
             ConsultanciesByStatus(response);
         },
@@ -699,11 +698,15 @@ function initCentreWiseArrival(period, centreID, time = '') {
 }
 
 function initUserWiseArrival(period, userID, time = '') {
+    $("#staff_wise_arrival .loader-img-attended").css('display', '');
+    $("#staff_wise_arrival #centre_wise_arrival").css('display', 'none');
+    $("#staff_wise_arrival #centre_wise_arrival_02").css('display', 'none');
+
     if (time != 'firsttime') {
         central_wise_arrival_chart.destroy();
     }
     if (userID == 'user') {
-        userID = $('.btn.arrivalbtn').attr('data-id');
+        userID = $('#userwise_arrival option:selected').val();
     }
     if (userID == '' || userID == 'All') {
         userID = 'All';
@@ -721,6 +724,10 @@ function initUserWiseArrival(period, userID, time = '') {
             'user_id': userID
         },
         success: function (response) {
+            $("#staff_wise_arrival .loader-img-attended").css('display', 'none');
+            $("#staff_wise_arrival #centre_wise_arrival").css('display', '');
+            $("#staff_wise_arrival #centre_wise_arrival_02").css('display', '');
+
             jQuery('#table-body').html("");
             dropDownList('user', period);
             var TABLE_HTML = "";
@@ -764,7 +771,7 @@ function ConsultanciesByStatus(bar) {
             modifiedData = Data;
         }
     } else {
-        modifiedData = ['BHD KHI', 'Gulshan Johar', 'DHA KHI', 'JT LHR', 'Gulberg LHR', 'DHA LHR','Faisalabad'];
+        modifiedData = ['BHD KHI', 'Gulshan Johar', 'DHA KHI', 'JT LHR', 'Gulberg LHR', 'DHA LHR', 'Faisalabad'];
     }
     if (bar.data?.walkin != undefined) {
         for (var i = 0; i < bar.data.walkin.length; i++) {
@@ -783,16 +790,6 @@ function ConsultanciesByStatus(bar) {
             name: 'Walk-in',
             data: bar.data.walkin ?? []
         },],
-        noData: {
-            text: 'No Data',
-            align: 'center',
-            verticalAlign: 'top',
-            style: {
-                color: 'red',
-                fontSize: '14px',
-                fontFamily: undefined
-            }
-        },
         chart: {
             type: 'bar',
             height: 350,
@@ -819,84 +816,199 @@ function ConsultanciesByStatus(bar) {
     central_wise_arrival_chart.render();
 }
 
-function initDoctorWiseConversion(period, time = '') {
+function changeCenterDoct(period, center_id) {
+    initDoctorWiseConversion(period, center_id, '', true);
+}
+function changeCenterFeedback(period, center_id) {
+    initDoctorWiseFeedback(period, center_id, '', true);
+}
+function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = true) {
+    $("#doctor_wise_conversion_section .loader-img-attended").css('display', '');
+    $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', 'none');
+    $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', 'none');
     dropDownList('doctor', period);
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
+
     $('.loader-imgs').css('display', "block");
     SELECTED_MONTH = period;
-    var centre_id = $(".doctorwiseconversion").attr('data-id');
+    var centre_id = $('.selectcenter option:selected').val();
     CENTRE_ID = centre_id;
-    var doc_id = $(".doctorname").attr('data-id');
+
+    var doc_id = $("#doc_nav option:selected").val();
     DOC_ID = doc_id;
+
     let converted = 0;
     let arrived = 0;
     let avg_sum = 0;
     $('.arrivalbtn').text();
     $("#categories-table-body").html("");
-    if (centre_id == 'all' && doc_id == 'all-docs') {
+    if (nochangeDr) {
+        var TABLE_HTML = "<option value='all-docs'>All Doctors</option>";
         $.ajax({
-            url: route('admin.dashboard.all_doctor_wise_conversion'),
-            type: 'GET',
+            url: route('admin.getdoctors'),
+            type: "GET",
+            data: { 'centre_id': centre_id },
             cache: false,
-            data: {
-                'period': period,
-                'centre_id': centre_id
-            },
             success: function (response) {
-                $('.loader-imgs').css('display', "none");
-                var categories = response.data.categories
-                jQuery('#categories-table-body').html("");
-                var TABLE_HTML = "";
-                jQuery.each(categories, function (index, category) {
-                    arrived += category.total_arrival;
-                    converted += category.total_conversion;
-                    avg_sum += category.avg;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
-
+                jQuery('#doc_nav').html("");
+                jQuery.each(response.doctors, function (index, doctor) {
+                    TABLE_HTML += " <option value=" + doctor.id + " >" + doctor.name + "</option>";
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
-
-                jQuery('#categories-table-body').append(TABLE_HTML);
-                AllDoctorWiseConversion(response);
+                jQuery('#doc_nav').append(TABLE_HTML);
             },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-    } else {
-        $.ajax({
-            url: route('admin.dashboard.doctor_wise_conversion'),
-            type: 'GET',
-            cache: false,
-            data: {
-                'period': SELECTED_MONTH,
-                'centre_id': CENTRE_ID,
-                'doc_id': DOC_ID
-            },
-            success: function (response) {
-                $('.loader-imgs').css('display', "none");
-                var categories = response.data.categories;
-                jQuery('#categories-table-body').html("");
-                var TABLE_HTML = "";
-                jQuery.each(categories, function (index, category) {
-                    arrived += category.total_arrival;
-                    converted += category.total_conversion;
-                    avg_sum += category.avg;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
-
-                });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
-
-                jQuery('#categories-table-body').append(TABLE_HTML);
-                DoctorWiseConversion(response);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
         });
     }
+
+    // if (centre_id == 'all' && doc_id == 'all-docs') {
+    //     $.ajax({
+    //         url: route('admin.dashboard.all_doctor_wise_conversion'),
+    //         type: 'GET',
+    //         cache: false,
+    //         data: {
+    //             // 'period': period,
+    //             'period': $('#dr_wise_con option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_con option:selected').val(),
+    //             'centre_id': centre_id
+    //         },
+    //         success: function (response) {
+    //             $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
+    //             $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
+    //             $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
+
+    //             $('.loader-imgs').css('display', "none");
+    //             var categories = response.data.categories
+    //             jQuery('#categories-table-body').html("");
+    //             var TABLE_HTML = "";
+    //             jQuery.each(categories, function (index, category) {
+    //                 arrived += category.total_arrival;
+    //                 converted += category.total_conversion;
+    //                 avg_sum += category.avg;
+    //                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
+
+    //             });
+    //             var avg = ((converted / arrived) * 100).toFixed(2);
+    //             var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+    //             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+
+    //             jQuery('#categories-table-body').append(TABLE_HTML);
+    //             AllDoctorWiseConversion(response);
+    //         },
+    //         error: function (xhr, ajaxOptions, thrownError) {
+    //             errorMessage(xhr);
+    //         }
+    //     });
+    //     var TABLE_HTML = "<option value='all-docs'>All Doctors</option>";
+    //     $.ajax({
+    //         url: route('admin.getdoctors'),
+    //         type: "GET",
+    //         data: { 'centre_id': centre_id },
+    //         cache: false,
+    //         success: function (response) {
+    //             jQuery('#doc_nav').html("");
+    //             jQuery.each(response.doctors, function (index, doctor) {
+    //                 TABLE_HTML += " <option value=" + doctor.id + " >" + doctor.name + "</option>";
+    //             });
+    //             jQuery('#doc_nav').append(TABLE_HTML);
+    //         },
+    //     });
+    // } else {
+
+
+    var check_doc_id = doc_id == 'all-docs' ? '' : doc_id;
+
+    $.ajax({
+        url: route('admin.dashboard.doctor_wise_conversion'),
+        type: 'GET',
+        cache: false,
+        data: {
+            // 'period': period,
+            'period': $('#dr_wise_con option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_con option:selected').val(),
+            'centre_id': centre_id,
+            'doc_id': check_doc_id
+        },
+        success: function (response) {
+            $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
+            $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
+            $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
+
+            $('.loader-imgs').css('display', "none");
+            var categories = response.data.categories;
+            jQuery('#categories-table-body').html("");
+            var TABLE_HTML = "";
+            jQuery.each(categories, function (index, category) {
+                arrived += category.total_arrival;
+                converted += category.total_conversion;
+                avg_sum += category.avg;
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
+
+            });
+            var avg = ((converted / arrived) * 100).toFixed(2);
+            if (converted === 0) {
+                avgValue = 0;
+            } else {
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+            }
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+
+            jQuery('#categories-table-body').append(TABLE_HTML);
+            DoctorWiseConversion(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+    return false;
+
+    // }
+
+
+}
+function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true) {
+    $("#doctor_wise_feedback_section .loader-img-attended").css('display', '');
+    $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', 'none');
+
+    dropDownList('doctor', period);
+    if (time != 'firsttime') {
+        doc_wise_feedback_chart.destroy();
+    }
+
+    $('.loader-imgs').css('display', "block");
+    SELECTED_MONTH = period;
+    var centre_id = $('.selectcenterfeedback option:selected').val();
+    CENTRE_ID = centre_id;
+
+
+    $('.arrivalbtn').text();
+
+    $.ajax({
+        url: route('admin.dashboard.doctor_wise_feedback'),
+        type: 'GET',
+        cache: false,
+        data: {
+            // 'period': period,
+            'period': $('#dr_wise_fed option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_fed option:selected').val(),
+            'centre_id': centre_id,
+
+        },
+        success: function (response) {
+            console.log(response);
+            $("#doctor_wise_feedback_section .loader-img-attended").css('display', 'none');
+            $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', '');
+
+
+            $('.loader-imgs').css('display', "none");
+
+            DoctorWiseFeedback(response);
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+    return false;
+
+    // }
+
 
 }
 
@@ -905,9 +1017,6 @@ function GetDoctors(centre_id, time = '') {
         doc_wise_conversion_chart.destroy();
     }
     dropDownList('doctor', 'thismonth');
-    $('#doc_nav').empty();
-    $(".doctorname").attr('data-id', '');
-    $(".doctorname").html('Select doctor <i class="fa fa-angle-down"></i>');
     $("#categories-table-body").html('');
     let converted = 0;
     let arrived = 0;
@@ -932,7 +1041,9 @@ function GetDoctors(centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
+                var avg = ((converted / arrived) * 100).toFixed(2);
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 AllDoctorWiseConversion(response);
@@ -961,7 +1072,13 @@ function GetDoctors(centre_id, time = '') {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
                 });
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val / converted)).toFixed(2) + "</td></tr>";
+                var avg = ((converted / arrived) * 100).toFixed(2);
+                if (converted === 0) {
+                    avgValue = 0;
+                } else {
+                    var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+                }
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
                 jQuery('#categories-table-body').append(TABLE_HTML);
                 DoctorWiseConversion(response);
@@ -971,8 +1088,7 @@ function GetDoctors(centre_id, time = '') {
             }
         });
     }
-    var all = "all";
-    var TABLE_HTML = "";
+    var TABLE_HTML = " <option  value='all-docs'>All Doctors</option>";
     $.ajax({
         url: route('admin.getdoctors'),
         type: "GET",
@@ -982,22 +1098,23 @@ function GetDoctors(centre_id, time = '') {
             jQuery('#doc_nav').html("");
             jQuery.each(response.doctors, function (index, doctor) {
 
-                TABLE_HTML += " <li><a class='dropdown-item centre-item'  data-id=" + doctor.id + " onclick='LoadDocWiseConversion(" + doctor.id + ")'>" + doctor.name + "</a></li>";
+                TABLE_HTML += " <option  value=" + doctor.id + ">" + doctor.name + "</option>";
             });
             jQuery('#doc_nav').append(TABLE_HTML);
         },
     });
 }
-function LoadDocWiseConversion(doc_id,time = '') {
-   
+
+function LoadDocWiseConversion(doc_id, time = '') {
+    $("#doctor_wise_conversion_section .loader-img-attended").css('display', '');
+    $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', 'none');
+    $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', 'none');
+
     if (time != 'firsttime') {
         doc_wise_conversion_chart.destroy();
     }
     dropDownList('doctor', 'thismonth');
-    var DrName = $('#doc_nav').find('li').find('a[data-id=' + doc_id + ']').text();
-    jQuery('.btn.doctorname').html(DrName + '<i class="fa fa-angle-down"></i>')
-    jQuery('.btn.doctorname').attr('data-id', doc_id);
-    var centre_id = $(".doctorwiseconversion").attr('data-id');
+    var centre_id = $(".selectcenter option:selected").val();
     DOC_ID = doc_id;
     let converted = 0;
     let arrived = 0;
@@ -1007,11 +1124,16 @@ function LoadDocWiseConversion(doc_id,time = '') {
         type: 'GET',
         cache: false,
         data: {
-            'period': 'thismonth',
+            // 'period': 'thismonth',
+            'period': $('#dr_wise_con option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_con option:selected').val(),
             'doc_id': DOC_ID,
             'centre_id': centre_id
         },
         success: function (response) {
+            $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
+            $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
+            $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
+
             $("#doc_wise_conversion").html("");
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
@@ -1023,8 +1145,13 @@ function LoadDocWiseConversion(doc_id,time = '') {
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
 
             });
-
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + "</td><td>" + converted + "/" + arrived + "</td><td>" + ((converted / arrived) * 100).toFixed(2) + "%</td><td>" + ((response.data.sum_val /converted)).toFixed(2) + "</td></tr>";
+            var avg = ((converted / arrived) * 100).toFixed(2);
+            if (converted === 0) {
+                avgValue = 0;
+            } else {
+                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
+            }
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
@@ -1034,6 +1161,7 @@ function LoadDocWiseConversion(doc_id,time = '') {
         }
     });
 }
+
 function DoctorWiseConversion(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
@@ -1043,22 +1171,12 @@ function DoctorWiseConversion(bar) {
     let lables = bar.data.labels;
     var options = {
         series: [{
-            name: 'Total Appointments',
+            name: 'Total Appointments ' + `(${bar.data.total_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.total_appointments
         }, {
-            name: 'Converted',
+            name: 'Converted ' + `(${bar.data.converted_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.converted_appointments
         }],
-        noData: {
-            text: 'No Data',
-            align: 'center',
-            verticalAlign: 'top',
-            style: {
-                color: 'red',
-                fontSize: '14px',
-                fontFamily: undefined
-            }
-        },
         chart: {
             type: 'bar',
             height: 350,
@@ -1085,6 +1203,66 @@ function DoctorWiseConversion(bar) {
     doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
     doc_wise_conversion_chart.render();
 }
+function DoctorWiseFeedback(bar) {
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    let labels = bar.data.labels;
+    let totals = bar.data.total;
+
+    var options = {
+        series: [{
+            name: 'Rating ' + `(${bar.data.rating.reduce((a, b) => a + b, 0)})`,
+            data: bar.data.rating
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val, opts) {
+                return val + ' (' + totals[opts.dataPointIndex] + ')';
+            },
+            style: {
+                fontSize: '14px',
+                colors: ['#fff']
+            }
+        },
+        stroke: {
+            show: true,
+            width: 1,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: labels,
+        },
+        yaxis: {
+            min: 0,
+            max: 10,
+            tickAmount: 5,
+            labels: {
+                formatter: function (val) {
+                    return parseInt(val);
+                }
+            }
+        },
+        colors: [primary, success, warning]
+    };
+
+    $("#doc_wise_feedback_data").html("");
+    doc_wise_feedback_chart = new ApexCharts(document.querySelector("#doc_wise_feedback_data"), options);
+    doc_wise_feedback_chart.render();
+}
 function AllDoctorWiseConversion(bar) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
@@ -1102,25 +1280,15 @@ function AllDoctorWiseConversion(bar) {
     } else {
         modifiedData = lables;
     }
-    
+
     var options = {
         series: [{
-            name: 'Total Appointments',
+            name: 'Total Appointments ' + `(${bar.data.total_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.total_appointments
         }, {
-            name: 'Converted',
+            name: 'Converted ' + `(${bar.data.converted_appointments.reduce((a, b) => a + b, 0)})`,
             data: bar.data.converted_appointments
         }],
-        noData: {
-            text: 'No Data',
-            align: 'center',
-            verticalAlign: 'top',
-            style: {
-                color: 'red',
-                fontSize: '14px',
-                fontFamily: undefined
-            }
-        },
         chart: {
             type: 'bar',
             height: 350,
@@ -1147,6 +1315,7 @@ function AllDoctorWiseConversion(bar) {
     doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
     doc_wise_conversion_chart.render();
 }
+
 function initPatientFollowUp(period, centre_id, arrived = null) {
     if (centre_id == 'centre') {
         centre_id = $('.btn.arrivalbtn').attr('data-id');
@@ -1167,26 +1336,28 @@ function initPatientFollowUp(period, centre_id, arrived = null) {
             'arrived': arrived
         },
         success: function (response) {
-            $('.loader-img-unattended').css('display','none');
+            $('.loader-img-unattended').css('display', 'none');
             $('#patient-follow-up').html("");
             var TABLE_HTML = "";
             var balance = 0;
             let patientData = response.data.patient_data;
-            
-            if (patientData.length > 0) {
-                
-                for (let i = 0; i < patientData.length; i++) {
-                    
-                    let patient = patientData[i];
 
-                    balance = patient.cash_receive - patient.settle_amount_with_tax -patient.refunded_amounts;
-                    if(balance > 0){
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: "+(balance).toFixed(2)+"</td><td>" + formatDate(patient.created_at , 'MMM, DD yyyy ')+ "</td></tr>";
+            if (patientData.length > 0) {
+
+                for (let i = 0; i < patientData.length; i++) {
+
+                    let patient = patientData[i];
+                    let routeValue = route('admin.reports.follow_up', { patient_id: patient.patient_id, report_type: 'weekly' });
+
+                    balance = patient.cash_receive - patient.settle_amount_with_tax - patient.refunded_amounts;
+                    if (balance > 0) {
+                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'><a href='" + routeValue + "'>" + patient.patient_id + "</a></td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: " + (balance).toFixed(2) + "</td><td>" + formatDate(patient.created_at, 'MMM, DD yyyy ') + "</td></tr>";
                     }
                 }
-                    
+
             } else {
-                TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
+                // TABLE_HTML = "<tr><td colspan='5' style='font-size: 12px;font-weight: bold;text-align:center;'>No Data</td></tr>";
+                TABLE_HTML = "<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>";
             }
 
             $('#patient-follow-up').append(TABLE_HTML);
@@ -1208,7 +1379,7 @@ function initPatientFollowUpOneMonth() {
         cache: false,
         data: {},
         success: function (response) {
-            $('.loader-img-attended').css('display','none');
+            $('.loader-img-attended').css('display', 'none');
             $('#patient-follow-up-one-month').html("");
             var TABLE_HTML = "";
             var balance = 0;
@@ -1216,12 +1387,14 @@ function initPatientFollowUpOneMonth() {
             if (patientData.length > 0) {
                 for (let i = 0; i < patientData.length; i++) {
                     let patient = patientData[i];
-                    
+                    let routeValue = route('admin.reports.follow_up', { patient_id: patient.patient_id, report_type: 'monthly' });
+
                     balance = patient.cash_receive - patient.settle_amount_with_tax;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + patient.patient_id + "</td><td>" + patient.name + "</td><td>PKR: "+(balance).toFixed(2)+"</td><td>" + patient.scheduled_date + "</td></tr>";
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'><a href='" + routeValue + "'>" + patient.patient_id + "</a></td><td>" + patient.name + "</td><td>PKR: " + (balance).toFixed(2) + "</td><td>" + patient.scheduled_date + "</td></tr>";
                 }
             } else {
-                TABLE_HTML = "<tr><td colspan='5' style='color: #2b7bc1;font-weight: bold;text-align:center;'>No Data</td></tr>";
+                // TABLE_HTML = "<tr><td colspan='5' style='font-weight: bold;text-align:center;'>No Data</td></tr>";
+                TABLE_HTML = "<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>";
             }
 
             $('#patient-follow-up-one-month').append(TABLE_HTML);
@@ -1235,7 +1408,7 @@ function initPatientFollowUpOneMonth() {
 
 function dropDownList(report, period) {
     $("#" + report + "_wise_list .active").removeClass('active');
-    $("#" + report + "_wise_list li." + period + " a").addClass('active');console.log($("." + report + "_period"));
+    $("#" + report + "_wise_list li." + period + " a").addClass('active');
     if (period == "today") {
         $("." + report + "_period").html('Today <i class="fa fa-angle-down"></i>');
     }
@@ -1255,5 +1428,47 @@ function dropDownList(report, period) {
         $("." + report + "_period").html('Last Month <i class="fa fa-angle-down"></i>');
     }
 }
+$(document).ready(function () {
+    $('#centervise_center').select2();
+    $('#centervise_center').on('change', function () {
+        var selectedValue = $(this).val();
+        var period = 'thismonth';
+        initCentreWiseArrival($('#initCentreWiseArrival option:selected').val(), selectedValue, '')
+    });
 
+    $('#userwise_arrival').select2();
+    $('#userwise_arrival').on('change', function () {
+        var selectedValue = $(this).val();
+        var period = $('#center_wise_arrival').val();
+        initUserWiseArrival(period, selectedValue, '')
+    });
+
+    $('#doc_nav').select2();
+    $('#doc_nav').on('change', function () {
+        var selectedValue = $(this).val();
+        var period = 'thismonth';
+
+        LoadDocWiseConversion(selectedValue, '', '', true)
+    });
+
+
+    $('.selectcenter').select2();
+    $('.selectcenter').on('change', function () {
+        var selectedValue = $(this).val();
+        var period = 'thismonth';
+        changeCenterDoct(period, selectedValue)
+    });
+    $('.selectcenterfeedback').on('change', function () {
+        var selectedValue = $(this).val();
+        var period = 'thismonth';
+        changeCenterFeedback(period, selectedValue)
+    });
+    // $('#doc_nav').select2();
+    // $('#doc_nav').on('change', function () {
+    //     var selectedValue = $(this).val();
+    //     var period = 'thismonth';
+    //     initUserWiseArrival(period, selectedValue, '')
+    // });
+
+});
 

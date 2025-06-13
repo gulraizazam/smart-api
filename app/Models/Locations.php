@@ -749,7 +749,6 @@ class Locations extends BaseModal
             $locationids = [$locationids];
         }
         if ($locationids) {
-
             if ($get_slug) {
                 if ($order_by && $order) {
                     return self::where('account_id', '=', $account_id)->where('slug', '=', $get_slug)->whereIn('id', $locationids)->orderBy($order_by, $order)->get()->getDictionary();

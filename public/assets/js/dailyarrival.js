@@ -1,5 +1,17 @@
 jQuery(document).ready(function() {
     patientSearch('appointment_patient_id');
+    let patientId = $("#patient_id_url").val();
+    let reportType = $("#report_type_url").val();
+    $(".appointment_patient_id").val(patientId).trigger("keyup");
+    $("#report_types").val(reportType).trigger("change");
+
+    if(patientId !== ''){
+$("#date_range").val('');
+    }
+
+    setTimeout(function() {
+        $('.suggestion-list li:first').click();
+    }, 2000);
 })
 $('#date_range_arrival').daterangepicker({
     locale: {
@@ -9,13 +21,81 @@ $('#date_range_arrival').daterangepicker({
         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
         'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
         'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
-        'This Month': [moment().startOf('month'), moment().subtract(1, 'days')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
         'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
         'This Year': [moment().startOf('year'), moment().endOf('year')],
         'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
     },
     startDate: moment().startOf('month'),
     endDate: moment().subtract(1, 'days')
+}).val();
+$('#date_range_incentive').daterangepicker({
+    locale: {
+    },
+    ranges: {
+        // 'Today': [moment(), moment()],
+        // 'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+        // 'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+        // 'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        // 'This Year': [moment().startOf('year'), moment().endOf('year')],
+        // 'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().subtract(1, 'days')
+}).val();
+$('#date_range_appointments').daterangepicker({
+    locale: {
+    },
+    ranges: {
+         'Today': [moment(), moment()],
+         'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+         'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+         'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        // 'This Year': [moment().startOf('year'), moment().endOf('year')],
+        // 'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().subtract(1, 'days')
+}).val();
+$('#date_range_inv').daterangepicker({
+    locale: {
+    },
+    ranges: {
+
+
+        'This Month': [moment().startOf('month'), moment().endOf('month')],
+        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+
+    },
+    startDate: moment().startOf('month'),
+    endDate: moment().endOf('month')
+}).val();
+$('#date_range_ratings').daterangepicker({
+    locale: {
+    },
+    ranges: {
+
+        'Today': [moment(), moment()],
+        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+        'Last 7 Days': [moment().subtract(6, 'days'), moment().subtract(1, 'days')],
+        'Last 30 Days': [moment().subtract(29, 'days'), moment().subtract(1, 'days')],
+       'This Month': [moment().startOf('month'), moment().endOf('month')],
+       'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+         'This Year': [moment().startOf('year'), moment().endOf('year')],
+    },
+    startDate: moment().startOf('year'),
+    endDate: moment().endOf('year')
+}).val();
+$('#date_range_patients').daterangepicker({
+    locale: {
+    },
+
+    startDate: moment().startOf('year'),
+    endDate: moment().endOf('year')
 }).val();
 var loadConvertedReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
@@ -97,6 +177,273 @@ var loadStaffWiseArrivalReport = function (that) {
         }
     });
 };
+
+var loadIncentiveReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.incentive_report'),
+        type: "POST",
+        data: {
+
+            doctor_id: $('#doctor_id').val(),
+            date_range: $('#date_range_incentive').val(),
+            centre_id: $('#centre_id').val(),
+
+        },
+        success: function(response){
+            $('#incentive_content').html('');
+            $('#incentive_content').html(response);
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadAppointmentsReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.appointments_report'),
+        type: "POST",
+        data: {
+
+            time: $('#time_id').val(),
+            date_range: $('#date_range_appointments').val(),
+            centre_id: $('#centre_id').val(),
+            created_by:$("#created_by_id").val(),
+
+        },
+        success: function(response){
+            $('#apt_content').html('');
+            $('#apt_content').html(response);
+            $("#appointments_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadInventoryReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_inventory_report'),
+        type: "POST",
+        data: {
+
+           report_type:$("#report_type").val(),
+            date_range: $('#date_range_inv').val(),
+            centre_id: $('#centre_id').val(),
+            doctor_id:$("#doctor_id_filter").val(),
+            brand_id:$("#brand_id").val(),
+
+
+        },
+        success: function(response){
+            $('#inv_content').html('');
+            $('#inv_content').html(response);
+            $("#inv_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            $("#doc_sales_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadFeedbackReport  = function (that) {
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+    // if($("#centre_id").val() == ""){
+    //     alert("Please select a centre");
+    //     return false;
+    // }
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_feedback_report'),
+        type: "POST",
+        data: {
+
+
+            date_range: $('#date_range_ratings').val(),
+            centre_id: $('#centre_id').val(),
+            doctor_id:$("#feedback_doctor_id_filter").val(),
+            service_id:$("#service_id_filter").val(),
+
+
+        },
+        success: function(response){
+            $('#feedback_content').html('');
+            $('#feedback_content').html(response);
+            $("#feedback_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+               searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false
+            });
+            $("#doc_sales_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                "ordering": false,
+                "pageLength": 50
+            });
+            // $("#incentive_table").DataTable({
+            //     dom: 'Bfrtip',
+            //     buttons: [
+            //         'excelHtml5',
+            //         'csvHtml5',
+            //         'pdfHtml5',
+            //     ],
+            //     "ordering": false
+            // });
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadFutureTreatmentsReport  = function (that) {
+
+
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_future_treatments_report'),
+        type: "POST",
+        data: {
+
+
+            date_range: $('#date_range_patients').val(),
+            centre_id: $('#centre_id').val(),
+            patient_id:$("#order_patient_search").val(),
+            membership_id:$("#membership_type").val(),
+
+
+        },
+        success: function(response){
+            $('#patients_content').html('');
+            $('#patients_content').html(response);
+            $("#patients_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                 searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false,
+                "ordering": false
+            });
+
+
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
 var loadPatientFollowUpReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -169,6 +516,72 @@ var loadPatientFollowUpMonthReport = function (that) {
         }
     });
 };
+function getEmployees(locationId){
+
+    let url = route('admin.get-doctors');
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: locationId},
+        success: function (response) {
+
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Doctor</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#doctor_id_filter").html(emp_options);
+            }
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+}
+function getCentreDoctors(locationId){
+
+    let url = route('admin.get-centre-doctors');
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "POST",
+        cache: false,
+        data: {location_id: locationId},
+        success: function (response) {
+
+            if(response.status==false){
+                toastr.error(response.message);
+            }else{
+
+                 let employees = response.users;
+                let emp_options = '<option value="">Select Doctor</option>';
+                Object.entries(employees).forEach(function (value, index) {
+                    emp_options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                });
+                $("#feedback_doctor_id_filter").html(emp_options);
+            }
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+}
 function patientSearch(search_id = 'patient_id',flag=1) {
 
     $("." + search_id).on("keyup",function() {
@@ -214,4 +627,13 @@ function selectUser(name, user_id,  search_id) {
     $("." + search_id).val(name);
     $(".suggesstion-box").hide();
     $("." + search_id).focus();
+}
+function hideDoctor()
+{
+    var rType = $("#report_type").val();
+    if(rType == "doctor_sales_report"){
+        $("#doc_dropdown").show();
+    }else{
+        $("#doc_dropdown").hide();
+    }
 }

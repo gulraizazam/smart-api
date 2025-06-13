@@ -23,9 +23,11 @@ use App\Reports\dashboardreport;
 use App\Helpers\GeneralFunctions;
 use App\Models\DoctorHasLocations;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Role;
 use App\Models\AppointmentStatuses;
 use Illuminate\Support\Facades\Auth;
 use App\Models\AppointmentsDailyStats;
+use App\Models\Feedback;
 use Illuminate\Support\Facades\Config;
 use Symfony\Component\Routing\Generator\Dumper\GeneratorDumper;
 
@@ -63,55 +65,79 @@ class DashboardReportsController extends Controller
         ];
         $location_information = ACL::getUserCentres();
         if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            if ($request->get('today') != '') {
-                [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
-                if (count($today_records)) {
-                    foreach ($today_records as $record) {
-                        $data['today'][] = $record;
+            switch ($request->type) {
+                case 'today':
+                    [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
+                    if (count($today_records)) {
+                        foreach ($today_records as $record) {
+                            $data['today'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('yesterday') != '') {
-                [$yesterdayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
-                if (count($yesterdayRecords)) {
-                    foreach ($yesterdayRecords as $record) {
-                        $data['yesterday'][] = $record;
+                    break;
+
+                case ('yesterday'):
+                    [$yesterdayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
+                    if (count($yesterdayRecords)) {
+                        foreach ($yesterdayRecords as $record) {
+                            $data['yesterday'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('last7days') != '') {
-                [$last7dayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
-                if (count($last7dayRecords)) {
-                    foreach ($last7dayRecords as $record) {
-                        $data['last7days'][] = $record;
+                    break;
+                case ('last7days'):
+                    [$last7dayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
+                    if (count($last7dayRecords)) {
+                        foreach ($last7dayRecords as $record) {
+                            $data['last7days'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('week') != '') {
-                [$weekRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
-                if (count($weekRecords)) {
-                    foreach ($weekRecords as $record) {
-                        $data['week'][] = $record;
+                    break;
+                case ('week'):
+                    [$weekRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
+                    if (count($weekRecords)) {
+                        foreach ($weekRecords as $record) {
+                            $data['week'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('thismonth') != '') {
-                [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
-                if (count($thisMonthRecords)) {
-                    foreach ($thisMonthRecords as $record) {
-                        $data['thismonth'][] = $record;
+                    break;
+                case ('thismonth'):
+                    [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
+                    if (count($thisMonthRecords)) {
+                        foreach ($thisMonthRecords as $record) {
+                            $data['thismonth'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('lastmonth') != '') {
-                [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
-                if (count($thisMonthRecords)) {
-                    foreach ($thisMonthRecords as $record) {
-                        $data['lastmonth'][] = $record;
+                    break;
+                case ('lastmonth'):
+                    [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
+                    if (count($thisMonthRecords)) {
+                        foreach ($thisMonthRecords as $record) {
+                            $data['lastmonth'][] = $record;
+                        }
                     }
-                }
+                    break;
+                default:
+                    [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
+                    if (count($today_records)) {
+                        foreach ($today_records as $record) {
+                            $data['today'][] = $record;
+                        }
+                    }
+                    break;
             }
         }
+        $day = $request->type ?? 'today';
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
             'pie' => $data,
@@ -762,216 +788,316 @@ class DashboardReportsController extends Controller
                 'parent_id' => '0',
             ])->get();
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
-            if ($request->today) {
-                $today_records = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+            switch ($request->type) {
+                case "today":
+                    $today_records = Invoices::where('total_price', '>', 0)->join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
 
-                if ($request->get('performance')) {
-                    $today_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $prepareData = [];
-                foreach ($today_records as $key => $todayRecord) {
-                    $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
-                    $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
-                    $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+                    if ($request->get('performance')) {
+                        $today_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $prepareData = [];
+                    foreach ($today_records as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
 
-                    if (array_key_exists($service_id, $prepareData)) {
-                        $prepareData[$service_id]['total'] += $todayRecord->total_price;
-                    } else {
-                        $prepareData[$service_id] = [
-                            'id' => $service_id,
-                            'name' => $service_name,
-                            'total' => $todayRecord->total_price,
+                        if (array_key_exists($service_id, $prepareData)) {
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        } else {
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price,
+                            ];
+                        }
+                    }
+                    $today[0] = ['Task', 'Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $today[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total'],
                         ];
                     }
-                }
-                $today[0] = ['Task', 'Hours per Day'];
-                foreach ($prepareData as $todayRecord) {
-                    $today[$todayRecord['id']] = [
-                        $todayRecord['name'],
-                        $todayRecord['total'],
-                    ];
-                }
-                if (count($today) > 0) {
-                    foreach ($today as $record) {
-                        $data['today'][] = $record;
+                    if (count($today) > 0) {
+                        foreach ($today as $record) {
+                            $data['today'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->yesterday) {
-                $yesterdayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $yesterdayRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $yesterdayRecords = $yesterdayRecords->select('invoices.id', 'invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $yesterday = [];
-                $prepareData = [];
-                foreach ($yesterdayRecords as $key => $todayRecord) {
-                    $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
-                    $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
-                    $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+                    break;
 
-                    if (array_key_exists($service_id, $prepareData)) {
-                        $prepareData[$service_id]['total'] += $todayRecord->total_price;
-                    } else {
-                        $prepareData[$service_id] = [
-                            'id' => $service_id,
-                            'name' => $service_name,
-                            'total' => $todayRecord->total_price,
+                case "yesterday":
+                    $yesterdayRecords = Invoices::where('total_price', '>', 0)->leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $yesterdayRecords->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $yesterdayRecords = $yesterdayRecords->select('invoices.id', 'invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $yesterday = [];
+                    $prepareData = [];
+                    foreach ($yesterdayRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if (array_key_exists($service_id, $prepareData)) {
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        } else {
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price,
+                            ];
+                        }
+                    }
+                    $yesterday[0] = ['Task', 'Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $yesterday[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total'],
                         ];
                     }
-                }
-                $yesterday[0] = ['Task', 'Hours per Day'];
-                foreach ($prepareData as $todayRecord) {
-                    $yesterday[$todayRecord['id']] = [
-                        $todayRecord['name'],
-                        $todayRecord['total'],
-                    ];
-                }
-                if (count($yesterday) > 0) {
-                    foreach ($yesterday as $record) {
-                        $data['yesterday'][] = $record;
+                    if (count($yesterday) > 0) {
+                        foreach ($yesterday as $record) {
+                            $data['yesterday'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->last7days) {
-                $last7_days_records = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $last7days = [];
-                $prepareData = [];
-                foreach ($last7_days_records as $key => $todayRecord) {
-                    $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
-                    $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
-                    $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+                    break;
+                case "last7days":
+                    $last7_days_records = Invoices::where('total_price', '>', 0)->join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $last7days = [];
+                    $prepareData = [];
+                    foreach ($last7_days_records as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
 
-                    if (array_key_exists($service_id, $prepareData)) {
-                        $prepareData[$service_id]['total'] += $todayRecord->total_price;
-                    } else {
-                        $prepareData[$service_id] = [
-                            'id' => $service_id,
-                            'name' => $service_name,
-                            'total' => $todayRecord->total_price,
+                        if (array_key_exists($service_id, $prepareData)) {
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        } else {
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price,
+                            ];
+                        }
+                    }
+                    $last7days[0] = ['Task', 'Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $last7days[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total'],
                         ];
                     }
-                }
-                $last7days[0] = ['Task', 'Hours per Day'];
-                foreach ($prepareData as $todayRecord) {
-                    $last7days[$todayRecord['id']] = [
-                        $todayRecord['name'],
-                        $todayRecord['total'],
-                    ];
-                }
-                if (count($last7days) > 0) {
-                    foreach ($last7days as $record) {
-                        $data['week'][] = $record;
+                    if (count($last7days) > 0) {
+                        foreach ($last7days as $record) {
+                            $data['last7days'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->thismonth) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $thisMonth = [];
-                $prepareData = [];
-                foreach ($thisMonthRecords as $key => $todayRecord) {
-                    $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
-                    $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
-                    $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+                    break;
+                case "week":
+                    $last7_days_records = Invoices::where('total_price', '>', 0)->join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $last7days = [];
+                    $prepareData = [];
+                    foreach ($last7_days_records as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
 
-                    if (array_key_exists($service_id, $prepareData)) {
-                        $prepareData[$service_id]['total'] += $todayRecord->total_price;
-                    } else {
-                        $prepareData[$service_id] = [
-                            'id' => $service_id,
-                            'name' => $service_name,
-                            'total' => $todayRecord->total_price,
+                        if (array_key_exists($service_id, $prepareData)) {
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        } else {
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price,
+                            ];
+                        }
+                    }
+                    $last7days[0] = ['Task', 'Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $last7days[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total'],
                         ];
                     }
-                }
-                $thisMonth[0] = ['Task', 'Hours per Day'];
-                foreach ($prepareData as $todayRecord) {
-                    $thisMonth[$todayRecord['id']] = [
-                        $todayRecord['name'],
-                        $todayRecord['total'],
-                    ];
-                }
-                if (count($thisMonth) > 0) {
-                    foreach ($thisMonth as $record) {
-                        $data['month'][] = $record;
+                    if (count($last7days) > 0) {
+                        foreach ($last7days as $record) {
+                            $data['week'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->lastmonth) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $thisMonth = [];
-                $prepareData = [];
-                foreach ($thisMonthRecords as $key => $todayRecord) {
-                    $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
-                    $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
-                    $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+                    break;
+                case "thismonth":
+                    $thisMonthRecords = Invoices::where('total_price', '>', 0)->join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $thisMonth = [];
+                    $prepareData = [];
+                    foreach ($thisMonthRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
 
-                    if (array_key_exists($service_id, $prepareData)) {
-                        $prepareData[$service_id]['total'] += $todayRecord->total_price;
-                    } else {
-                        $prepareData[$service_id] = [
-                            'id' => $service_id,
-                            'name' => $service_name,
-                            'total' => $todayRecord->total_price,
+                        if (array_key_exists($service_id, $prepareData)) {
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        } else {
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price,
+                            ];
+                        }
+                    }
+                    $thisMonth[0] = ['Task', 'Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $thisMonth[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total'],
                         ];
                     }
-                }
-                $thisMonth[0] = ['Task', 'Hours per Day'];
-                foreach ($prepareData as $todayRecord) {
-                    $thisMonth[$todayRecord['id']] = [
-                        $todayRecord['name'],
-                        $todayRecord['total'],
-                    ];
-                }
-                if (count($thisMonth) > 0) {
-                    foreach ($thisMonth as $record) {
-                        $data['lastmonth'][] = $record;
+                    if (count($thisMonth) > 0) {
+                        foreach ($thisMonth as $record) {
+                            $data['thismonth'][] = $record;
+                        }
                     }
-                }
+                    break;
+                case "lastmonth":
+                    $thisMonthRecords = Invoices::where('total_price', '>', 0)->join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $thisMonth = [];
+                    $prepareData = [];
+                    foreach ($thisMonthRecords as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if (array_key_exists($service_id, $prepareData)) {
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        } else {
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price,
+                            ];
+                        }
+                    }
+                    $thisMonth[0] = ['Task', 'Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $thisMonth[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total'],
+                        ];
+                    }
+                    if (count($thisMonth) > 0) {
+                        foreach ($thisMonth as $record) {
+                            $data['lastmonth'][] = $record;
+                        }
+                    }
+                    break;
+                default:
+                    $today_records = Invoices::where('total_price', '>', 0)->join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+
+                    if ($request->get('performance')) {
+                        $today_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $prepareData = [];
+                    foreach ($today_records as $key => $todayRecord) {
+                        $parent_services = Services::with('parent')->where(['id' => $todayRecord->service_id])->first();
+                        $service_name = $parent_services->parent ? $parent_services->parent->name : $parent_services->name;
+                        $service_id = $parent_services->parent ? $parent_services->parent->id : $parent_services->id;
+
+                        if (array_key_exists($service_id, $prepareData)) {
+                            $prepareData[$service_id]['total'] += $todayRecord->total_price;
+                        } else {
+                            $prepareData[$service_id] = [
+                                'id' => $service_id,
+                                'name' => $service_name,
+                                'total' => $todayRecord->total_price,
+                            ];
+                        }
+                    }
+                    $today[0] = ['Task', 'Hours per Day'];
+                    foreach ($prepareData as $todayRecord) {
+                        $today[$todayRecord['id']] = [
+                            $todayRecord['name'],
+                            $todayRecord['total'],
+                        ];
+                    }
+                    if (count($today) > 0) {
+                        foreach ($today as $record) {
+                            $data['today'][] = $record;
+                        }
+                    }
+                    break;
             }
         }
+
+        $day = $request->type == null ? "today" : $request->type;
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -1058,15 +1184,15 @@ class DashboardReportsController extends Controller
             [$start_date, $end_date] = $this->getDates($request);
             $today_records = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
+                ->where('total_price', '>', 0)
                 ->whereIn('location_id', ACL::getUserCentres())
                 ->where(['invoice_status_id' => $invoicestatus->id]);
+
             if ($request->get('performance') == '1') {
                 $today_records = $today_records->where(['created_by' => Auth::User()->id]);
             }
-            $today_records = $today_records->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                ->groupBy('location_id')
-                ->get();
-                
+
+            $today_records = $today_records->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))->groupBy('location_id')->get();
             $total = 0;
             $data[0] = [
                 'Task',
@@ -1074,31 +1200,43 @@ class DashboardReportsController extends Controller
             ];
             if ($locations) {
                 foreach ($locations as $counter => $location) {
-                    
                     $location_detail = Locations::find($location);
-                   
-                    if ($counter == 0) {
-                        $data[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                    }
-                    if ($today_records) {
-                        foreach ($today_records as $todayRecord) {
-                            if ($todayRecord->location_id == $location_detail->id) {
-                                $data[] = [
-                                    $location_detail->city->name . ' - ' . $location_detail->name,
-                                    $todayRecord->total_price,
-                                ];
-                                
-                                $total += $todayRecord->total_price ;
-                               
-                                
+                    if ($location_detail) {
+                        if ($counter == 0) {
+                            $data[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                        }
+
+                        if ($today_records) {
+                            foreach ($today_records as $todayRecord) {
+                                if ($todayRecord->location_id == $location_detail->id) {
+                                    $data[] = [
+                                        $location_detail->city->name . ' - ' . $location_detail->name,
+                                        $todayRecord->total_price,
+                                    ];
+
+                                    $total += $todayRecord->total_price;
+                                }
                             }
                         }
                     }
                 }
             }
+
+            $dataArray = $data;
+
+            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+            // Step 2 and 3: Calculate the percentage for each slice
+            for ($i = 1; $i < count($dataArray); $i++) {
+                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+            }
+
+            $data = $dataArray;
 
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
@@ -1170,254 +1308,313 @@ class DashboardReportsController extends Controller
                 ['active', '=', '1'],
             ])->get();
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
-            if ($request->get('today')) {
-                $today_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+            switch ($request->type) {
+                case 'today':
+                    $today_records = Invoices::where('total_price', '>', '0')->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
 
-                if ($request->get('performance')) {
-                    $today_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $today[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($today_records) {
-                            foreach ($today_records as $todayRecord) {
-                                if ($todayRecord->service_id == $service->id) {
-                                    $today[$service->id] = [
-                                        $service->name,
-                                        $todayRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
+                    if ($request->get('performance')) {
+                        $today_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    if ($services) {
+                        $total = 0;
+                        foreach ($services as $service) {
+                            $today[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                            if ($today_records) {
+                                foreach ($today_records as $todayRecord) {
+                                    if ($todayRecord->service_id == $service->id) {
+                                        $today[$service->id] = [
+                                            $service->name,
+                                            $todayRecord->total_price,
+                                        ];
+                                        $colors[] = $service->color;
 
-                                    $total += $todayRecord->total_price;
+                                        $total += $todayRecord->total_price;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (count($today)) {
-                    foreach ($today as $record) {
-                        $data['today'][] = $record;
+                    if (count($today)) {
+                        foreach ($today as $record) {
+                            $data['today'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('yesterday')) {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $yesterdayRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $yesterdayRecords = $yesterdayRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $yesterday = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $yesterday[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($yesterdayRecords) {
-                            foreach ($yesterdayRecords as $yesterdayRecord) {
-                                if ($yesterdayRecord->service_id == $service->id) {
-                                    $yesterday[$service->id] = [
-                                        $service->name,
-                                        $yesterdayRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
+                    break;
+                case 'yesterday':
+                    $yesterdayRecords = Invoices::where('total_price', '>', '0')->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $yesterdayRecords->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $yesterdayRecords = $yesterdayRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $yesterday = [];
+                    if ($services) {
+                        $total = 0;
+                        foreach ($services as $service) {
+                            $yesterday[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                            if ($yesterdayRecords) {
+                                foreach ($yesterdayRecords as $yesterdayRecord) {
+                                    if ($yesterdayRecord->service_id == $service->id) {
+                                        $yesterday[$service->id] = [
+                                            $service->name,
+                                            $yesterdayRecord->total_price,
+                                        ];
+                                        $colors[] = $service->color;
 
-                                    $total += $yesterdayRecord->total_price;
+                                        $total += $yesterdayRecord->total_price;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (count($yesterday)) {
-                    foreach ($yesterday as $record) {
-                        $data['yesterday'][] = $record;
+                    if (count($yesterday)) {
+                        foreach ($yesterday as $record) {
+                            $data['yesterday'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('last7days')) {
-                $last7_days_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $last7days = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $last7days[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($last7_days_records) {
-                            foreach ($last7_days_records as $last7DaysRecord) {
-                                if ($last7DaysRecord->service_id == $service->id) {
-                                    $last7days[$service->id] = [
-                                        $service->name,
-                                        $last7DaysRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
+                    break;
+                case 'last7days':
+                    $last7_days_records = Invoices::where('total_price', '>', '0')->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $last7days = [];
+                    if ($services) {
+                        $total = 0;
+                        foreach ($services as $service) {
+                            $last7days[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                            if ($last7_days_records) {
+                                foreach ($last7_days_records as $last7DaysRecord) {
+                                    if ($last7DaysRecord->service_id == $service->id) {
+                                        $last7days[$service->id] = [
+                                            $service->name,
+                                            $last7DaysRecord->total_price,
+                                        ];
+                                        $colors[] = $service->color;
 
-                                    $total += $last7DaysRecord->total_price;
+                                        $total += $last7DaysRecord->total_price;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (count($last7days)) {
-                    foreach ($last7days as $record) {
-                        $data['last7days'][] = $record;
+                    if (count($last7days)) {
+                        foreach ($last7days as $record) {
+                            $data['last7days'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('week')) {
-                $last7_days_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $last7days = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $last7days[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($last7_days_records) {
-                            foreach ($last7_days_records as $last7DaysRecord) {
-                                if ($last7DaysRecord->service_id == $service->id) {
-                                    $last7days[$service->id] = [
-                                        $service->name,
-                                        $last7DaysRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
+                    break;
+                case 'week':
+                    $last7_days_records = Invoices::where('total_price', '>', '0')->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $last7days = [];
+                    if ($services) {
+                        $total = 0;
+                        foreach ($services as $service) {
+                            $last7days[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                            if ($last7_days_records) {
+                                foreach ($last7_days_records as $last7DaysRecord) {
+                                    if ($last7DaysRecord->service_id == $service->id) {
+                                        $last7days[$service->id] = [
+                                            $service->name,
+                                            $last7DaysRecord->total_price,
+                                        ];
+                                        $colors[] = $service->color;
 
-                                    $total += $last7DaysRecord->total_price;
+                                        $total += $last7DaysRecord->total_price;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (count($last7days)) {
-                    foreach ($last7days as $record) {
-                        $data['week'][] = $record;
+                    if (count($last7days)) {
+                        foreach ($last7days as $record) {
+                            $data['week'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('thismonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $thisMonth = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $thisMonth[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($thisMonthRecords) {
-                            foreach ($thisMonthRecords as $thisMonthRecord) {
-                                if ($thisMonthRecord->service_id == $service->id) {
-                                    $thisMonth[$service->id] = [
-                                        $service->name,
-                                        $thisMonthRecord->total_price,
-                                    ];
+                    break;
+                case 'thismonth':
+                    $thisMonthRecords = Invoices::where('total_price', '>', '0')->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $thisMonth = [];
+                    if ($services) {
+                        $total = 0;
+                        foreach ($services as $service) {
+                            $thisMonth[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                            if ($thisMonthRecords) {
+                                foreach ($thisMonthRecords as $thisMonthRecord) {
+                                    if ($thisMonthRecord->service_id == $service->id) {
+                                        $thisMonth[$service->id] = [
+                                            $service->name,
+                                            $thisMonthRecord->total_price,
+                                        ];
 
-                                    $colors[] = $service->color;
+                                        $colors[] = $service->color;
 
-                                    $total += $thisMonthRecord->total_price;
+                                        $total += $thisMonthRecord->total_price;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (count($thisMonth)) {
-                    foreach ($thisMonth as $record) {
-                        $data['month'][] = $record;
+                    if (count($thisMonth)) {
+                        foreach ($thisMonth as $record) {
+                            $data['thismonth'][] = $record;
+                        }
                     }
-                }
-            }
-            if ($request->get('lastmonth')) {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                    ->where(['invoices.invoice_status_id' => $invoicestatus->id])
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
-                if ($request->get('performance')) {
-                    $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $thisMonth = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $thisMonth[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($thisMonthRecords) {
-                            foreach ($thisMonthRecords as $thisMonthRecord) {
-                                if ($thisMonthRecord->service_id == $service->id) {
-                                    $thisMonth[$service->id] = [
-                                        $service->name,
-                                        $thisMonthRecord->total_price,
-                                    ];
+                    break;
+                case 'lastmonth':
+                    $thisMonthRecords = Invoices::where('total_price', '>', '0')->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
+                        ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    if ($request->get('performance')) {
+                        $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    $thisMonth = [];
+                    if ($services) {
+                        $total = 0;
+                        foreach ($services as $service) {
+                            $thisMonth[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                            if ($thisMonthRecords) {
+                                foreach ($thisMonthRecords as $thisMonthRecord) {
+                                    if ($thisMonthRecord->service_id == $service->id) {
+                                        $thisMonth[$service->id] = [
+                                            $service->name,
+                                            $thisMonthRecord->total_price,
+                                        ];
 
-                                    $colors[] = $service->color;
+                                        $colors[] = $service->color;
 
-                                    $total += $thisMonthRecord->total_price;
+                                        $total += $thisMonthRecord->total_price;
+                                    }
                                 }
                             }
                         }
                     }
-                }
-                if (count($thisMonth)) {
-                    foreach ($thisMonth as $record) {
-                        $data['lastmonth'][] = $record;
+                    if (count($thisMonth)) {
+                        foreach ($thisMonth as $record) {
+                            $data['lastmonth'][] = $record;
+                        }
                     }
-                }
+                    break;
+                default:
+                    $today_records = Invoices::where('total_price', '>', '0')->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
+                        ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
+                        ->where(['invoices.invoice_status_id' => $invoicestatus->id])
+                        ->whereIn('invoices.location_id', ACL::getUserCentres());
+
+                    if ($request->get('performance')) {
+                        $today_records->where(['invoices.created_by' => Auth::User()->id]);
+                    }
+                    $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                        ->groupBy('invoice_details.service_id')
+                        ->get();
+                    if ($services) {
+                        $total = 0;
+                        foreach ($services as $service) {
+                            $today[0] = [
+                                'Task',
+                                'Hours per Day',
+                            ];
+                            if ($today_records) {
+                                foreach ($today_records as $todayRecord) {
+                                    if ($todayRecord->service_id == $service->id) {
+                                        $today[$service->id] = [
+                                            $service->name,
+                                            $todayRecord->total_price,
+                                        ];
+                                        $colors[] = $service->color;
+
+                                        $total += $todayRecord->total_price;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (count($today)) {
+                        foreach ($today as $record) {
+                            $data['today'][] = $record;
+                        }
+                    }
+                    break;
             }
         }
+        $day = $request->type == null ? "today" : $request->type;
+        $dataArray = $data[$day];
+
+        // Step 1: Calculate the total value
+        $totalValue = 0;
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $totalValue += $dataArray[$i][1];
+        }
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -1729,10 +1926,7 @@ class DashboardReportsController extends Controller
                 break;
         }
 
-        return [
-            $start_date,
-            $end_date,
-        ];
+        return [$start_date, $end_date];
     }
 
     public function AppointmentByStatus(Request $request)
@@ -2017,6 +2211,20 @@ class DashboardReportsController extends Controller
             }
         }
 
+        $day = $request->period == null ? "today" : $request->period;
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+
+        $data[$day] = $dataArray;
+
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
             'colors' => $colors,
@@ -2278,7 +2486,7 @@ class DashboardReportsController extends Controller
             $service = Services::find($request->child_id);
 
             return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'child' => $service->name,
+                'child' => $service->name ?? 'N/A',
             ]);
         } else {
             return ApiHelper::apiResponse($this->success, 'service data', true, [
@@ -2293,57 +2501,80 @@ class DashboardReportsController extends Controller
         $total_apts = [];
         $arrived_apts = [];
         $walkin_apts = [];
+        $center_name = [];
+        try {
+            $role_id = Role::where(['name' => 'FDM'])->first()->id;
+            $period = $request->period == '' ? 'thismonth' : $request->period;
+            $fdm_users = RoleHasUsers::where(['role_id' => $role_id])->pluck('user_id')->toArray();
+            $center_id = $request->centre_id == 'All' ? ACL::getUserCentres() : [$request->centre_id];
 
-        $period = $request->period == '' ? 'thismonth' : $request->period;
-        $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id')->toArray();
-        $center_id = $request->centre_id == 'All' ? ACL::getUserCentres() : [$request->centre_id];
+            foreach ($center_id as $data) {
+                $location = Locations::find($data);
+                array_push($center_name, $location->name);
+            }
 
-        $periods = [
-            'yesterday' => [
-                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'last7days' => [
-                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'week' => [
-                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'thismonth' => [
-                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'lastmonth' => [
-                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
-            ],
-        ];
+            $periods = [
+                'today' => [
+                    'start_date' => Carbon::now()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->format('Y-m-d'),
+                ],
+                'yesterday' => [
+                    'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'last7days' => [
+                    'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'week' => [
+                    'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'thismonth' => [
+                    'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'lastmonth' => [
+                    'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                ],
+            ];
 
-        $stats = AppointmentsDailyStats::select('centre_id')
-            ->selectRaw('count(*) as total')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
-            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-            ->whereIn('centre_id', $center_id)
-            ->groupBy('centre_id')
-            ->get()->toArray();
+            $stats = AppointmentsDailyStats::select('centre_id')
+                ->selectRaw('count(*) as total')
+                ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
+                ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
+                ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                ->whereIn('centre_id', $center_id)
+                ->groupBy('centre_id')
+                ->get()->toArray();
 
-        foreach ($stats as $stat) {
-            $centre = Locations::where(['id' => $stat['centre_id']])->first();
-            array_push($lables, $centre['name']);
-            array_push($total_apts, $stat['total']);
-            array_push($arrived_apts, (int) $stat['arrived']);
-            array_push($walkin_apts, (int) $stat['walkin']);
+            if (!empty($stats)) {
+                foreach ($stats as $stat) {
+                    $centre = Locations::find($stat['centre_id']);
+                    array_push($lables, $centre['name']);
+                    array_push($total_apts, $stat['total']);
+                    array_push($arrived_apts, (int) $stat['arrived']);
+                    array_push($walkin_apts, (int) $stat['walkin']);
+                }
+            } else {
+                $lables = $center_name;
+            }
+
+            return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
+                'bar' => $lables,
+                'total' => $total_apts,
+                'arrived' => $arrived_apts,
+                'walkin' => $walkin_apts,
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
+                'bar' => [],
+                'total' => 0,
+                'arrived' => 0,
+                'walkin' => 0,
+            ]);
         }
-
-        return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
-            'bar' => $lables,
-            'total' => $total_apts,
-            'arrived' => $arrived_apts,
-            'walkin' => $walkin_apts,
-        ]);
     }
 
     public function CSRWiseArrival(Request $request)
@@ -2359,6 +2590,10 @@ class DashboardReportsController extends Controller
         $user_id = ($request->user_id == 'All') ? $csr : [$request->user_id];
 
         $periods = [
+            'today' => [
+                'start_date' => Carbon::now()->format('Y-m-d'),
+                'end_date' => Carbon::now()->format('Y-m-d'),
+            ],
             'yesterday' => [
                 'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
                 'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
@@ -2541,10 +2776,7 @@ class DashboardReportsController extends Controller
 
     public function DoctoreWiseConversion(Request $request)
     {
-        $where = [];
-        $total_apts = [];
-        $converted_apts = [];
-        $lables = [];
+        $where = $total_apts = $converted_apts = $lables = [];
         $appointments = array();
         $total = 0;
         $appointments_info = array();
@@ -2552,19 +2784,20 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
-        if($request->centre_id == 'all'){
-            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
-        }else{
-            $locations=[$request->centre_id];
+        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
+
+        if ($request->centre_id == 'all') {
+            $locations = Locations::whereNotIn('name', $where_not)->where('active', 1)->pluck('id');
+        } else {
+            $locations = [$request->centre_id];
         }
-        $consultant = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+        $consultant = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null && $request->doc_id != 0 && $request->doc_id != "all-docs", function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
-        
         })
-        ->distinct('user_id')
-        ->pluck('user_id');
-        $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+            ->distinct('user_id')
+            ->pluck('user_id');
+        $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
+        //dd($consultant, $request->doc_id, $request->doc_id != null && $request->doc_id != 0 && $request->doc_id != "All Doctors");
         // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
         //     ->join('users', 'resources.external_id', 'users.id')
         //     ->select('users.name', 'users.id')
@@ -2588,23 +2821,12 @@ class DashboardReportsController extends Controller
             ->whereIn('appointments.location_id', $locations)
             ->where('package_advances.cash_amount', '>', 0)
             ->select('appointments.*')
-            ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
-            ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
-            
-            // ->when($period == 'today', function ($query) use ($periods, $period) {
-            //     $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
-            // })
-            // ->when($period == 'yesterday', function ($query) use ($periods, $period) {
-            //     $query->whereDate('package_advances.created_at', $periods[$period]['start_date']);
-            // })
-            // ->when($period != 'today' && $period != 'yesterday', function ($query) use ($periods, $period) {
-            //     $query->whereBetween('package_advances.created_at', [
-            //         $periods[$period]['start_date'],
-            //         $periods[$period]['end_date']
-            //     ]);
-            // })
+            ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+            ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
+
             ->get();
-            //dd($converted_appointments);
+        //dd($converted_appointments);
+
 
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
@@ -2636,9 +2858,9 @@ class DashboardReportsController extends Controller
                     $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                         ->where(['cash_flow' => "in"])
                         ->where('cash_amount', '>', 0)
-                        ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
-                        ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
-                        
+                        ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+                        ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
+
                         ->get();
                     if (count($packagesadvances) > 0) {
                         $check = 0;
@@ -2676,9 +2898,9 @@ class DashboardReportsController extends Controller
                 }
             }
         }
-       
+
         foreach ($consultants as $doctor) {
-          
+
             array_push($lables, $doctor->name);
             $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
@@ -2700,10 +2922,9 @@ class DashboardReportsController extends Controller
             ->whereIn('doctor_id', $consultant)
             ->whereIn('appointments.location_id', $locations)
             ->selectRaw('count(*) as arrived, service_id,services.name')
-            ->whereBetween('appointments.scheduled_date', [
-                $periods[$period]['start_date'],
-                $periods[$period]['end_date']
-            ])
+            ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
+            ->where('appointments.scheduled_date', '<=', $periods[$period]['end_date'])
+
             ->groupBy('service_id')
             ->get();
         $maxConversion = collect($appointments_info)->filter(function ($appointment) {
@@ -2738,37 +2959,46 @@ class DashboardReportsController extends Controller
 
                 $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
-                if($request->doc_id){
+                if ($request->doc_id) {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    ->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
-                }else{
+                        ->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
+                        ->where('appointments.scheduled_date', '<=', $periods[$period]['end_date'])
+
+                        //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->count();
+                } else {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    //->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
+                        //->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
+                        ->where('appointments.scheduled_date', '<=', $periods[$period]['end_date'])
+                        ->count();
                 }
-               
             } else {
                 $name = [$arrive_category['name']][0];
                 $sum_conversion_total = 0;
                 $avg_valu = 0;
 
-                if($request->doc_id){
+                if ($request->doc_id) {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    ->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
-                }else{
+                        ->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
+                        ->where('appointments.scheduled_date', '<=', $periods[$period]['end_date'])
+
+                        // ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->count();
+                } else {
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
-                    //->whereIn('doctor_id', $consultant)
-                    ->whereIn('appointments.location_id', $locations)
-                    ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                    ->count();
+                        //->whereIn('doctor_id', $consultant)
+                        ->whereIn('appointments.location_id', $locations)
+                        ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
+                        ->where('appointments.scheduled_date', '<=', $periods[$period]['end_date'])
+
+                        //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        ->count();
                 }
             }
 
@@ -2779,7 +3009,7 @@ class DashboardReportsController extends Controller
                 'avg' => $avg_valu
             ];
         }
-
+        // dd($lables);
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
             'labels' => $lables,
             'total_appointments' => $total_apts,
@@ -2788,6 +3018,115 @@ class DashboardReportsController extends Controller
             'category_total' => $total_arrived_appointments,
             'sum_val' => $sum_conversion_spend2
 
+        ]);
+    }
+    public function DoctoreWiseFeedback(Request $request)
+    {
+        $period = $request->period;
+        $centreId = $request->centre_id;
+
+        $labels = [];
+        $ratings = [];
+
+        // Get date range from period
+        $dateRanges = GeneralFunctions::GetPeriods($period);
+        $dateRange = $dateRanges[$period] ?? null;
+
+        // Step 1: Get relevant location IDs
+        $whereNot = ['All Centres', 'All South Region', 'All Central Region'];
+        if ($centreId === 'all') {
+            $locationIds = Locations::whereNotIn('name', $whereNot)
+                ->where('active', 1)
+                ->pluck('id');
+        } else {
+            $locationIds = [$centreId];
+        }
+
+        // Step 2: Get doctors assigned to those locations
+        $doctorIds = DoctorHasLocations::whereIn('location_id', $locationIds)
+            ->when($request->doc_id && $request->doc_id !== '0' && $request->doc_id !== 'all-docs', function ($query) use ($request) {
+                return $query->where('user_id', $request->doc_id);
+            })
+            ->distinct()
+            ->pluck('user_id');
+
+        // Step 3: Get active doctor records
+        $doctors = User::whereIn('id', $doctorIds)
+            ->where('active', 1)
+            ->get();
+
+        // Step 4: Loop through each doctor and calculate average rating in date range
+        if($period == "all"){
+            $dateRange = null;
+        }
+        $doctorRatings = [];
+
+        foreach ($doctors as $doctor) {
+            if($centreId == 'all'){
+                $avgRating = Feedback::where('doctor_id', $doctor->id)
+                ->when($dateRange, function ($query) use ($dateRange) {
+                    $query->whereHas('appointment', function ($q) use ($dateRange) {
+                        $q->whereBetween('scheduled_date', [
+                            $dateRange['start_date'] . ' 00:00:00',
+                            $dateRange['end_date'] . ' 23:59:59'
+                        ]);
+                    });
+                })
+                ->avg('rating');
+                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)
+                        ->when($dateRange, function ($query) use ($dateRange) {
+                            $query->whereHas('appointment', function ($q) use ($dateRange) {
+                                $q->whereBetween('scheduled_date', [
+                                    $dateRange['start_date'] . ' 00:00:00',
+                                    $dateRange['end_date'] . ' 23:59:59'
+                                ]);
+                            });
+                        })->count();
+            }else{
+                $avgRating = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
+                ->when($dateRange, function ($query) use ($dateRange) {
+                    $query->whereHas('appointment', function ($q) use ($dateRange) {
+                        $q->whereBetween('scheduled_date', [
+                            $dateRange['start_date'] . ' 00:00:00',
+                            $dateRange['end_date'] . ' 23:59:59'
+                        ]);
+                    });
+                })
+                ->avg('rating');
+                    $totalFeedbacks = Feedback::where('doctor_id', $doctor->id)->where('location_id', $centreId)
+                        ->when($dateRange, function ($query) use ($dateRange) {
+                            $query->whereHas('appointment', function ($q) use ($dateRange) {
+                                $q->whereBetween('scheduled_date', [
+                                    $dateRange['start_date'] . ' 00:00:00',
+                                    $dateRange['end_date'] . ' 23:59:59'
+                                ]);
+                            });
+                        })->count();
+            }
+
+
+                    $doctorRatings[] = [
+                        'name' => $doctor->name,
+                        'rating' => round($avgRating ?? 0, 2),
+                        'total' => $totalFeedbacks,
+                    ];
+
+        }
+
+        // Sort by rating descending
+        usort($doctorRatings, function ($a, $b) {
+            return $b['rating'] <=> $a['rating'];
+        });
+
+        // Separate into labels and ratings
+       $labels = array_column($doctorRatings, 'name');
+        $ratings = array_column($doctorRatings, 'rating');
+        $totals = array_column($doctorRatings, 'total');
+
+        return ApiHelper::apiResponse($this->success, 'Doctor wise feedback data', true, [
+            'labels' => $labels,
+            'rating' => $ratings,
+            'total' => $totals
         ]);
     }
     public function AllDoctorsWiseConversion(Request $request)
@@ -2802,18 +3141,17 @@ class DashboardReportsController extends Controller
         $returnCategoryData = [];
         $total_arrived_appointments = 0;
         $periods = GeneralFunctions::GetPeriods();
-        $where_not = ['All Centres' , 'All South Region' , 'All Central Region'];
-        if($request->centre_id == 'all'){
-            $locations = Locations::whereNotIn('name' , $where_not)->where('active',1)->pluck('id');
-        }else{
-            $locations=$request->centre_id;
+        $where_not = ['All Centres', 'All South Region', 'All Central Region'];
+        if ($request->centre_id == 'all') {
+            $locations = Locations::whereNotIn('name', $where_not)->where(['active' => 1])->pluck('id');
+        } else {
+            $locations = $request->centre_id;
         }
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations) ->when($request->doc_id != null, function ($query) use ($request) {
+        $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null, function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
-        
         })
-        ->distinct('user_id')
-        ->pluck('user_id');
+            ->distinct('user_id')
+            ->pluck('user_id');
 
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
@@ -2843,12 +3181,12 @@ class DashboardReportsController extends Controller
                     'appointments.appointment_type_id' => 1
                 ])
                 ->whereIn('appointments.doctor_id', $consultants)
-                ->where('appointments.location_id', $location)
+                ->where(['appointments.location_id' => $location])
                 ->where('package_advances.cash_amount', '>', 0)
                 ->select('appointments.*')
-                ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
-                ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
-                
+                ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+                ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
+
                 ->get();
 
             if (count($converted_appointments)) {
@@ -2881,22 +3219,18 @@ class DashboardReportsController extends Controller
                         $packagesadvances = PackageAdvances::whereIn('id', $package_info)
                             ->where(['cash_flow' => "in"])
                             ->where('cash_amount', '>', 0)
-                            ->where('package_advances.created_at','>=',$periods[$period]['start_date'].' 00:00:00')
-                            ->where('package_advances.created_at','<=',$periods[$period]['end_date'].' 23:59:59')
-                            
+                            ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+                            ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
+
                             ->get();
-                            
+
                         if (count($packagesadvances) > 0) {
-                            $check = 0;
                             $first_advance = PackageAdvances::whereIn('id', $package_info)
                                 ->where('cash_amount', '>', 0)
                                 ->orderBy('created_at', 'asc')
                                 ->first();
                             $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
                             if (($date >= $periods[$period]['start_date']) && ($date <= $periods[$period]['end_date'])) {
-                                $check = 1;
-                            }
-                            if ($check == 1) {
                                 $appointments_info[$appointment->id]['converted'] = 'Yes';
                                 foreach ($packagesadvances as $packagesadvance) {
                                     $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
@@ -2924,17 +3258,14 @@ class DashboardReportsController extends Controller
             }
 
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
-                ->where('appointments.location_id', $location)
+                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2, 'appointments.location_id' => $location])
                 ->whereIn('appointments.doctor_id', $consultants)
                 ->count();
 
             array_push($converted_apts, collect($appointments_info)
-            ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
-            ->where('conversion_spend', '!=', "")->count());
+                ->whereIn('appointment_id', $converted_appointments->pluck('id')->toArray())
+                ->where('conversion_spend', '!=', "")->count());
             array_push($total_apts, $total_appointments);
-
-
 
             $maxConversion = collect($appointments_info)->filter(function ($appointment) {
                 if ($appointment['conversion_spend'] > 0) {
@@ -2970,10 +3301,8 @@ class DashboardReportsController extends Controller
 
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
-                       // ->whereIn('appointments.doctor_id', $consultants)
-                       ->where('scheduled_date','>=',$periods[$period]['start_date'])
-                       ->where('scheduled_date','<=',$periods[$period]['end_date'])
-                        //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                        // ->whereIn('appointments.doctor_id', $consultants)
+                        ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
                     $name = [$arrive_category['name']][0];
@@ -2983,8 +3312,8 @@ class DashboardReportsController extends Controller
                     $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
                         ->whereIn('appointments.location_id', $locations)
                         //->whereIn('appointments.doctor_id', $consultants)
-                        ->where('scheduled_date','>=',$periods[$period]['start_date'])
-                        ->where('scheduled_date','<=',$periods[$period]['end_date'])
+                        ->where('scheduled_date', '>=', $periods[$period]['start_date'])
+                        ->where('scheduled_date', '<=', $periods[$period]['end_date'])
                         //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 }
@@ -3013,9 +3342,9 @@ class DashboardReportsController extends Controller
         if ($request->centre_id == 'all') {
 
             $consultant = DoctorHasLocations::distinct('user_id')
-            ->pluck('user_id'); 
+                ->pluck('user_id');
 
-            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+            $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
 
             // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
             //     ->join('users', 'resources.external_id', 'users.id')
@@ -3025,9 +3354,9 @@ class DashboardReportsController extends Controller
             //     ->get();
         } else {
             $consultant = DoctorHasLocations::where('location_id', $request->centre_id)
-            ->distinct('user_id')
-            ->pluck('user_id');
-            $consultants = User::whereIn('id',$consultant)->where('active',1)->get();
+                ->distinct('user_id')
+                ->pluck('user_id');
+            $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
             // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
             //     ->join('users', 'resources.external_id', 'users.id')
             //     ->select('users.name', 'users.id')
@@ -3064,11 +3393,11 @@ class DashboardReportsController extends Controller
         if ($request->report_type == "monthly") {
             $where = [];
             if (isset($request->date_range) && $request->date_range) {
-                $where[] = ['appointments.scheduled_date', '>=', $start_date];
-                $where[] = ['appointments.scheduled_date', '<=', $end_date];
+                $where[] = ['created_at', '>=', $start_date . ' 00:00:00'];
+                $where[] = ['created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
-                $where[] = ['appointments.patient_id', '=', $request->patient_id,];
+                $where[] = ['patient_id', '=', $request->patient_id];
             }
             $data = $request->all();
             $patient_data = GeneralFunctions::LoadPatientFollowUpReportMonthly($data, $where);
@@ -3076,15 +3405,64 @@ class DashboardReportsController extends Controller
         } else {
             $where = [];
             if (isset($request->date_range) && $request->date_range) {
-                $where[] = ['package_advances.created_at', '>=', $start_date. ' 00:00:00'];
-                $where[] = ['package_advances.created_at', '<=', $end_date . ' 23:59:00'];
+                $where[] = ['created_at', '>=', $start_date . ' 00:00:00'];
+                $where[] = ['created_at', '<=', $end_date . ' 23:59:00'];
             }
             if ($request->patient_id) {
-                $where[] = ['package_advances.patient_id', '=', $request->patient_id];
+                $where[] = ['patient_id', '=', $request->patient_id];
             }
             $data = $request->all();
             $patient_data = GeneralFunctions::PatientFollowUpReport($data, $where);
             return view('admin.reports.patients_follow_up_report', get_defined_vars());
         }
     }
+    public function ViewFeedback($doctorId)
+{
+    // Get all parent services (services without a parent_id)
+    $parentServices = Services::where('parent_id',0)->get();
+
+    $feedbackData = [];
+
+    foreach ($parentServices as $service) {
+        // Average rating directly on the parent service
+        $parentRating = Feedback::where('doctor_id', $doctorId)
+            ->where('service_id', $service->id)
+            ->avg('rating');
+
+        // Get child services of this parent
+        $children = Services::where('parent_id', $service->id)->get();
+
+        $childRatings = [];
+
+        foreach ($children as $child) {
+            $avgRating = Feedback::where('doctor_id', $doctorId)
+                ->where('treatment_id', $child->id)
+                ->avg('rating');
+
+            // Only include child if it has a rating
+            if ($avgRating !== null) {
+                $childRatings[] = [
+                    'id' => $child->id,
+                    'name' => $child->name,
+                    'color' => $child->color,
+                    'avg_rating' => round($avgRating, 2),
+                ];
+            }
+        }
+
+        // Include the parent only if it or at least one child has a rating
+        if ($parentRating !== null || count($childRatings) > 0) {
+            $feedbackData[] = [
+                'id' => $service->id,
+                'name' => $service->name,
+                'color' => $service->color,
+                'avg_rating' => $parentRating !== null ? round($parentRating, 2) : 0,
+                'treatments' => $childRatings
+            ];
+        }
+    }
+
+    return view('admin.reports.feedbackBarChart', compact('feedbackData'));
+}
+
 }
