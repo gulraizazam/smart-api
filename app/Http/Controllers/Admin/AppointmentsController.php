@@ -1044,7 +1044,7 @@ class AppointmentsController extends Controller
             $end_date_time = null;
         }
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = [['users.id' => GeneralFunctions::patientSearch($filters['patient_id'])]];
+            $where[] = [['patient_id' => GeneralFunctions::patientSearch($filters['patient_id'])]];
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
         }
         if (hasFilter($filters, 'phone')) {
