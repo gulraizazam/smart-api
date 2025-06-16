@@ -848,19 +848,19 @@ class AppointmentsController extends Controller
         }
         if (Gate::allows('appointments_services')) {
             $count_query = Appointments::with('patient')->where('appointments.appointment_type_id', '=', $treatmentslug->id)
-                
+
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::with([
             'patient',
-            
+
             'hasInvoices', // 👈 eager load invoice
         ])
-       
+
         ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        
+
         $count_query->where('appointment_type_id', config('constants.appointment_type_consultancy'));
         if (count($where)) {
             $count_query->where($where);
@@ -893,13 +893,13 @@ class AppointmentsController extends Controller
         [$i_display_length, $i_display_start, $pages, $page] = getPaginationElement($request, $i_total_records);
         $records = [];
         $records['data'] = [];
-        
+
         if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
             $orderBy = 'appointments.name';
         }
         $Appointments = $count_query->select(
         'appointments.*',
-       
+
     )
     ->limit($i_display_length)
     ->offset($i_display_start)
@@ -917,7 +917,7 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                
+
                 $invoice = Invoices::where([
                     ['appointment_id', '=', $appointment->id],
                     ['invoice_status_id', '=', $invoice_status->id],
@@ -958,7 +958,7 @@ class AppointmentsController extends Controller
                     'appointment_type_id' => $appointment->appointment_type->name,
                     'appointment_type' => $appointment->appointment_type->id,
                     'consultancy_type' => $consultancy_type,
-                    'created_at' => Carbon::parse($appointment->app_created_at)->format('F j,Y h:i A'),
+                    'created_at' => Carbon::parse($appointment->created_at)->format('F j,Y h:i A'),
                     'created_by' => array_key_exists($appointment->created_by, $Users) ? $Users[$appointment->created_by]->name : 'N/A',
                     'converted_by' => array_key_exists($appointment->converted_by, $Users) ? $Users[$appointment->converted_by]->name : 'N/A',
                     'updated_by' => array_key_exists($appointment->updated_by, $Users) ? $Users[$appointment->updated_by]->name : 'N/A',
@@ -1125,9 +1125,9 @@ class AppointmentsController extends Controller
             $where[] = ['appointments.created_at', '<=', $end_date_time];
             Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
         }
-        
+
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
-        
+
         if (Gate::allows('appointments_services')) {
             $count_query = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
@@ -1136,8 +1136,8 @@ class AppointmentsController extends Controller
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        
-        
+
+
         $count_query->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $count_query->where($where);
@@ -1179,11 +1179,11 @@ class AppointmentsController extends Controller
                 $q->where('invoice_status_id', $invoice_status->id);
             }])
             ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
-                
+
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        
-       
+
+
         $resultQuery->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $resultQuery->where($where);
@@ -1229,7 +1229,7 @@ class AppointmentsController extends Controller
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-           
+
             // Default Un-scheduled Appointment Status
             $unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id, ['id']);
             $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly(Auth::User()->account_id);
