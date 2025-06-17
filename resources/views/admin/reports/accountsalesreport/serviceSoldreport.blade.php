@@ -49,7 +49,34 @@
                     </table>
                 </div>
             </div>
-
+        <div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm border-success">
+            <div class="card-body">
+                <h5 class="card-title text-success">Most Sold Service</h5>
+                @if($mostSold)
+                    <p class="mb-1"><strong>{{ $services[$mostSold->service_id]->name ?? 'N/A' }}</strong></p>
+                    <p class="mb-0">Sold: {{ $mostSold->total_sold }} times</p>
+                @else
+                    <p>No data available</p>
+                @endif
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm border-danger">
+            <div class="card-body">
+                <h5 class="card-title text-danger">Least Sold Service</h5>
+                @if($leastSold)
+                    <p class="mb-1"><strong>{{ $services[$leastSold->service_id]->name ?? 'N/A' }}</strong></p>
+                    <p class="mb-0">Sold: {{ $leastSold->total_sold }} times</p>
+                @else
+                    <p>No data available</p>
+                @endif
+            </div>
+        </div>
+    </div>
+</div>
             <div class="table-wrapper" id="topscroll">
                 <table class="table" id="servicesSoldTable">
                     <thead>
