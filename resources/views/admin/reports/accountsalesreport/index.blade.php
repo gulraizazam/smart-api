@@ -290,23 +290,21 @@
 
     @push('js')
     <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-   
+
    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
    <script>
-    $("#servicesSoldTable").DataTable({
-           dom: 'Bfrtip',
-           buttons: [
-               'excelHtml5',
-               'csvHtml5',
-               'pdfHtml5',
-           ],
-           "ordering": false,
-           "pageLength": 50
-       });
+    $(document).ready(function () {
+        $('#servicesSoldTable').DataTable({
+            paging: false,      // disable pagination
+            ordering: true,     // enable sorting
+            info: false,        // disable table info like "Showing 1 to X"
+            searching: false     // optional: set to false to hide search box
+        });
+    });
 </script>
         <script>
             $("#location_id_com").on('change',function(){
@@ -333,7 +331,7 @@
                 },
                 ranges   : {
                     'Today' : [moment(), moment()],
-                    
+
                 },
                 startDate: moment(),
                 endDate  :  moment()
@@ -346,13 +344,13 @@
                 }
                 var date_ranges;
                 if($("#date_range_fdm").val()!=undefined){
-                  
+
                     date_ranges = $("#date_range_fdm").val();
                 }else{
-                   
+
                     date_ranges = $("#date_range").val();
                 }
-                
+
                 showSpinner();
                 $.ajax({
                     headers: {
@@ -361,7 +359,7 @@
                     url: route('admin.reports.account_sales_report_load'),
                     type: "POST",
                     data: {
-                        
+
                         date_range: date_ranges,
                         patient_id: $('#patient_id').val(),
                         appointment_type_id: $('#appointment_type_id').val(),
@@ -396,9 +394,9 @@
             }
 
             var printReport = function (medium_type) {
-               
+
                 $('#date_range-report').val($('#date_range').val());
-               
+
                 $('#date_range_by-report').val($('#date_range_by').val());
                 $('#date_range_by_first-report').val($('#date_range_by_first').val());
                 $('#patient_id-report').val($('#patient_id').val());
@@ -471,9 +469,9 @@
                 } else if (type_p == 'services_sold') {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
-                    
+
                     $("#service_id_E").show();
-                   
+
                 } else if (type_p == "collection_by_service") {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
