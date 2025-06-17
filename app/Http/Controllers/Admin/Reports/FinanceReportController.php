@@ -2292,7 +2292,7 @@ class FinanceReportController extends Controller
         }
     }
 
-   public function serviceSoldreport(Request $request)
+public function serviceSoldreport(Request $request)
 {
     // Handle date range
     if ($request->get('date_range')) {
@@ -2304,19 +2304,20 @@ class FinanceReportController extends Controller
         $end_date = null;
     }
 
-    // Location logic
+    // Determine locations
     $locationId = (!empty($request->location_id) && $request->location_id[0] !== null)
         ? $request->location_id
         : ACL::getUserCentres();
 
+    $isAllCentres = ($request->location_id[0] == null); // All Centres selected
     $serviceId = $request->service_id;
 
-    // Main query
+    // Build query
     $soldServicesQuery = DB::table('appointments')
         ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
         ->where('appointments.appointment_type_id', 2)
         ->where('appointments.appointment_status_id', 2)
-        ->when($locationId, function ($query) use ($locationId) {
+        ->when(!$isAllCentres, function ($query) use ($locationId) {
             return $query->whereIn('appointments.location_id', $locationId);
         })
         ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
@@ -2325,34 +2326,37 @@ class FinanceReportController extends Controller
         ->when($serviceId, function ($query) use ($serviceId) {
             return $query->where('appointments.service_id', $serviceId);
         });
-        if ($request->location_id[0] == null) {
-            // All Centres selected: Group by service_id only
-            $soldServicesQuery->select(
-                'appointments.service_id',
-                DB::raw('COUNT(appointments.id) as total_sold')
-            )->groupBy('appointments.service_id');
-        } else {
-            // Specific centres selected: Group by service_id and location_id
-            $soldServicesQuery->select(
-                'appointments.service_id',
-                'appointments.location_id',
-                DB::raw('COUNT(appointments.id) as total_sold')
-            )->groupBy('appointments.service_id', 'appointments.location_id');
-        }
 
-
-    if (!$serviceId || ($request->location_id[0] !== null)) {
-        $soldServicesQuery->groupBy('appointments.service_id', 'appointments.location_id');
+    // Grouping
+    if ($isAllCentres) {
+        $soldServicesQuery->select(
+            'appointments.service_id',
+            DB::raw('COUNT(appointments.id) as total_sold')
+        )->groupBy('appointments.service_id');
     } else {
-        $soldServicesQuery->groupBy('appointments.service_id');
+        $soldServicesQuery->select(
+            'appointments.service_id',
+            'appointments.location_id',
+            DB::raw('COUNT(appointments.id) as total_sold')
+        )->groupBy('appointments.service_id', 'appointments.location_id');
     }
 
     $soldServices = $soldServicesQuery->get();
 
-    // Grouping changes, so fetch total sold per service
-    $mostSold = $soldServices->sortByDesc('total_sold')->first();
-    $leastSold = $soldServices->sortBy('total_sold')->first();
+    // Summary stats
+    $grouped = $isAllCentres
+        ? $soldServices
+        : $soldServices->groupBy('service_id')->map(function ($group) {
+            return (object)[
+                'service_id' => $group->first()->service_id,
+                'total_sold' => $group->sum('total_sold')
+            ];
+        });
 
+    $mostSold = $grouped->sortByDesc('total_sold')->first();
+    $leastSold = $grouped->sortBy('total_sold')->first();
+
+    // Services and locations
     $serviceIds = $soldServices->pluck('service_id')->unique();
     $services = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
 
@@ -2371,7 +2375,6 @@ class FinanceReportController extends Controller
         'locations'
     ));
 }
-
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
