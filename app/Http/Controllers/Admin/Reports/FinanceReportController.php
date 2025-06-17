@@ -2294,7 +2294,7 @@ class FinanceReportController extends Controller
 
    public function serviceSoldreport(Request $request)
 {
-
+    // Handle date range
     if ($request->get('date_range')) {
         $date_range = explode(' - ', $request->get('date_range'));
         $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
@@ -2304,12 +2304,14 @@ class FinanceReportController extends Controller
         $end_date = null;
     }
 
+    // Location logic
     $locationId = (!empty($request->location_id) && $request->location_id[0] !== null)
         ? $request->location_id
         : ACL::getUserCentres();
 
     $serviceId = $request->service_id;
 
+    // Main query
     $soldServicesQuery = DB::table('appointments')
         ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
         ->where('appointments.appointment_type_id', 2)
@@ -2324,25 +2326,28 @@ class FinanceReportController extends Controller
             return $query->where('appointments.service_id', $serviceId);
         });
 
-    // Conditionally group
-    if ($serviceId && $request->location_id[0] == null) {
-        // Only service selected, no location filtering
-        $soldServicesQuery->select(
-            'appointments.service_id',
-            DB::raw('COUNT(appointments.id) as total_sold')
-        )->groupBy('appointments.service_id');
+    // Grouping logic
+    $soldServicesQuery->select(
+        'appointments.service_id',
+        DB::raw('COUNT(appointments.id) as total_sold'),
+        DB::raw('MAX(appointments.location_id) as location_id')
+    );
+
+    if (!$serviceId || ($request->location_id[0] !== null)) {
+        $soldServicesQuery->groupBy('appointments.service_id', 'appointments.location_id');
     } else {
-        // Group by both service and location
-        $soldServicesQuery->select(
-            'appointments.service_id',
-            DB::raw('COUNT(appointments.id) as total_sold'),
-            'appointments.location_id'
-        )->groupBy('appointments.service_id', 'appointments.location_id');
+        $soldServicesQuery->groupBy('appointments.service_id');
     }
 
     $soldServices = $soldServicesQuery->get();
 
-    return view('admin.reports.accountsalesreport.serviceSoldreport',get_defined_vars());
+    return view('admin.reports.accountsalesreport.serviceSoldreport', compact(
+        'soldServices',
+        'start_date',
+        'end_date',
+        'locationId',
+        'serviceId'
+    ));
 }
 
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
