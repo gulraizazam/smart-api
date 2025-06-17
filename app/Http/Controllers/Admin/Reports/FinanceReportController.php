@@ -2325,13 +2325,21 @@ class FinanceReportController extends Controller
         ->when($serviceId, function ($query) use ($serviceId) {
             return $query->where('appointments.service_id', $serviceId);
         });
+        if ($request->location_id[0] == null) {
+            // All Centres selected: Group by service_id only
+            $soldServicesQuery->select(
+                'appointments.service_id',
+                DB::raw('COUNT(appointments.id) as total_sold')
+            )->groupBy('appointments.service_id');
+        } else {
+            // Specific centres selected: Group by service_id and location_id
+            $soldServicesQuery->select(
+                'appointments.service_id',
+                'appointments.location_id',
+                DB::raw('COUNT(appointments.id) as total_sold')
+            )->groupBy('appointments.service_id', 'appointments.location_id');
+        }
 
-    // Grouping logic
-    $soldServicesQuery->select(
-        'appointments.service_id',
-        DB::raw('COUNT(appointments.id) as total_sold'),
-        DB::raw('MAX(appointments.location_id) as location_id')
-    );
 
     if (!$serviceId || ($request->location_id[0] !== null)) {
         $soldServicesQuery->groupBy('appointments.service_id', 'appointments.location_id');
@@ -2340,10 +2348,17 @@ class FinanceReportController extends Controller
     }
 
     $soldServices = $soldServicesQuery->get();
+
+    // Grouping changes, so fetch total sold per service
     $mostSold = $soldServices->sortByDesc('total_sold')->first();
     $leastSold = $soldServices->sortBy('total_sold')->first();
 
-    $services = Services::whereIn('id', $soldServices->pluck('service_id')->unique())->get()->keyBy('id');
+    $serviceIds = $soldServices->pluck('service_id')->unique();
+    $services = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+
+    $locationIds = $soldServices->pluck('location_id')->filter()->unique();
+    $locations = Locations::whereIn('id', $locationIds)->get()->keyBy('id');
+
     return view('admin.reports.accountsalesreport.serviceSoldreport', compact(
         'soldServices',
         'start_date',
@@ -2351,8 +2366,9 @@ class FinanceReportController extends Controller
         'locationId',
         'serviceId',
         'mostSold',
-    'leastSold',
-    'services'
+        'leastSold',
+        'services',
+        'locations'
     ));
 }
 
