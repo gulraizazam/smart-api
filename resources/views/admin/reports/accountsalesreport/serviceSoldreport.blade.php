@@ -102,7 +102,7 @@
                         <thead>
                             <tr>
                                 <th>Service Name</th>
-                                @if(isset($soldServices[0]) && property_exists($soldServices[0], 'location_id'))
+                               @if(isset($soldServices[0]) && property_exists($soldServices[0], 'location_id'))
                                     <th>Centre</th>
                                 @endif
                                 <th>Sold</th>
@@ -125,8 +125,8 @@
                                         </td>
 
                                         @if(isset($reportRow->location_id))
-                                            <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
-                                        @endif
+    <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
+@endif
 
                                         <td>{{ $reportRow->total_sold }}</td>
                                         <td>{{ number_format($services[$reportRow->service_id]->price ?? 0, 2) }}</td>
