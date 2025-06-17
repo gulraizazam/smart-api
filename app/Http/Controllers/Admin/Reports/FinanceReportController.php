@@ -2340,13 +2340,19 @@ class FinanceReportController extends Controller
     }
 
     $soldServices = $soldServicesQuery->get();
+    $mostSold = $soldServices->sortByDesc('total_sold')->first();
+    $leastSold = $soldServices->sortBy('total_sold')->first();
 
+    $services = Services::whereIn('id', $soldServices->pluck('service_id')->unique())->get()->keyBy('id');
     return view('admin.reports.accountsalesreport.serviceSoldreport', compact(
         'soldServices',
         'start_date',
         'end_date',
         'locationId',
-        'serviceId'
+        'serviceId',
+        'mostSold',
+    'leastSold',
+    'services'
     ));
 }
 
