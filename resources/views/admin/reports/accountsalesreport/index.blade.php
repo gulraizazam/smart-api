@@ -379,12 +379,7 @@
                     },
                     success: function(response){
                         $('#content').html('');
-                        $('#servicesSoldTable').DataTable({
-                            paging: false,      // disable pagination
-                            ordering: true,     // enable sorting
-                            info: false,        // disable table info like "Showing 1 to X"
-                            searching: false     // optional: set to false to hide search box
-                        });
+
                         if($('#medium_type').val() == 'web') {
                             $('#content').html(response);
                         } else {
