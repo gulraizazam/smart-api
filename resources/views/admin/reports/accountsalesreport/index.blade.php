@@ -297,14 +297,16 @@
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
    <script>
-    $(document).ready(function () {
-        $('#servicesSoldTable').DataTable({
-            paging: false,      // disable pagination
-            ordering: true,     // enable sorting
-            info: false,        // disable table info like "Showing 1 to X"
-            searching: false     // optional: set to false to hide search box
-        });
-    });
+    $("#servicesSoldTable").DataTable({
+           dom: 'Bfrtip',
+           buttons: [
+               'excelHtml5',
+               'csvHtml5',
+               'pdfHtml5',
+           ],
+           "ordering": false,
+           "pageLength": 50
+       });
 </script>
         <script>
             $("#location_id_com").on('change',function(){
@@ -377,6 +379,12 @@
                     },
                     success: function(response){
                         $('#content').html('');
+                        $('#servicesSoldTable').DataTable({
+                            paging: false,      // disable pagination
+                            ordering: true,     // enable sorting
+                            info: false,        // disable table info like "Showing 1 to X"
+                            searching: false     // optional: set to false to hide search box
+                        });
                         if($('#medium_type').val() == 'web') {
                             $('#content').html(response);
                         } else {
