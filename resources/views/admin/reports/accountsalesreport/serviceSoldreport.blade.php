@@ -8,31 +8,14 @@
     @endif
 
     <style type="text/css">
-        @page {
-            margin: 10px 20px;
-        }
+        @page { margin: 10px 20px; }
         @media print {
-            table {
-                font-size: 12px;
-            }
-            .tr-root-group {
-                background-color: #F3F3F3;
-                color: rgba(0, 0, 0, 0.98);
-                font-weight: bold;
-            }
-            .tr-group {
-                font-weight: bold;
-            }
-            .bold-text {
-                font-weight: bold;
-            }
-            .error-text {
-                font-weight: bold;
-                color: #FF0000;
-            }
-            .ok-text {
-                color: #006400;
-            }
+            table { font-size: 12px; }
+            .tr-root-group { background-color: #F3F3F3; font-weight: bold; }
+            .tr-group { font-weight: bold; }
+            .bold-text { font-weight: bold; }
+            .error-text { font-weight: bold; color: #FF0000; }
+            .ok-text { color: #006400; }
         }
     </style>
 @endif
@@ -91,15 +74,21 @@
 
                             @foreach($soldServices as $reportRow)
                                 <tr>
-                                    <td><a href="{{ route('admin.service.barchart', [
-                                        'service_id' => $reportRow->service_id,
-                                        'start_date' => $start_date,
-                                        'end_date' =>$end_date,
-                                        'location_id' =>$locationId
-                                    ]) }}">{{ $services[$reportRow->service_id]->name ?? 'N/A' }}</a></td>
+                                    <td>
+                                        <a href="{{ route('admin.service.barchart', [
+                                            'service_id' => $reportRow->service_id,
+                                            'start_date' => $start_date,
+                                            'end_date' => $end_date,
+                                            'location_id' => $locationId
+                                        ]) }}">
+                                            {{ $services[$reportRow->service_id]->name ?? 'N/A' }}
+                                        </a>
+                                    </td>
 
                                     @if(isset($reportRow->location_id))
-                                        <td>{{ $locations[$reportRow->location_id]->name ?? 'N/A' }}</td>
+                                        <td>
+                                            {{ $locations[$reportRow->location_id]->name ?? 'All Centres' }}
+                                        </td>
                                     @endif
 
                                     <td>{{ $reportRow->total_sold }}</td>
@@ -116,8 +105,6 @@
             </div>
         </div>
     </div>
-
-    <div class="clear clearfix"></div>
 
     <script src="{{ url('js/admin/scrollbar/scrollbardev.js') }}" type="text/javascript"></script>
 </div>
