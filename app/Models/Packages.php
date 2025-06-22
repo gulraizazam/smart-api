@@ -26,6 +26,23 @@ class Packages extends BaseModal
      * get the data of patients from users table
      *
      * */
+    public function scopeFilterRequest($query, Request $request, $account_id, $id, $apply_filter, $filename)
+{
+    $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
+    if (!empty($where)) {
+        $query->where($where);
+    }
+    return $query;
+}
+
+// Scope to conditionally apply active filter
+public function scopeFilterActive($query)
+{
+    if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+        return $query->where('active', 1);
+    }
+    return $query;
+}
     public function user()
     {
         return $this->belongsTo(User::class, 'patient_id')->withTrashed();
@@ -277,26 +294,20 @@ class Packages extends BaseModal
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
      */
-    public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $id, $apply_filter, $filename)
-    {
+    public static function getRecords(Request $request, $start, $length, $account_id, $id, $apply_filter, $filename)
+{
+    [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
 
-        $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
-
-        [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
-        if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
-            return self::when(count($where), fn ($query) => $query->where($where))->whereIn('location_id', ACL::getUserCentres())
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
-        } else {
-            return self::when(count($where), fn ($query) => $query->where($where))->where('active', 1)->whereIn('location_id', ACL::getUserCentres())
-                ->limit($iDisplayLength)
-                ->offset($iDisplayStart)
-                ->orderby($orderBy, $order)
-                ->get();
-        }
-    }
+    return self::query()
+        ->with(['user', 'location.city']) // Eager loading to prevent N+1
+        ->filterRequest($request, $account_id, $id, $apply_filter, $filename)
+        ->filterActive()
+        ->whereIn('location_id', ACL::getUserCentres())
+        ->orderBy($orderBy, $order)
+        ->offset($start)
+        ->limit($length)
+        ->get();
+}
 
     public static function filters($request, $account_id, $id, $apply_filter, $filename)
     {
