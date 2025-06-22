@@ -1299,162 +1299,156 @@ class PackagesController extends Controller
      * @return \Illuminate\Http\JsonResponse
      */
     public function datatable(Request $request, $id = false)
-{
-    $filename = 'packages';
-    $filters = getFilters($request->all());
-    $apply_filter = checkFilters($filters, $filename);
-    $records['data'] = [];
+    {
 
-    // Handle delete request
-    if (hasFilter($filters, 'delete')) {
-        $records = $this->handleDelete($filters['delete'], $records);
-    }
+        $filename = 'packages';
+        $filters = getFilters($request->all());
+        $apply_filter = checkFilters($filters, $filename);
+        $records = [];
+        $records['data'] = [];
+        if (hasFilter($filters, 'delete')) {
+            $ids = explode(',', $filters['delete']);
+            $packages = Packages::getBulkData($ids);
+            $any_deleted = false;
+            if ($packages) {
+                foreach ($packages as $package) {
+                    // Check if child records exists or not, If exist then disallow to delete it.
+                    if (!Packages::isChildExists($package->id, Auth::User()->account_id)) {
+                        $any_deleted = true;
+                        $package->delete();
+                    }
+                }
+            }
 
-    $iTotalRecords = Packages::getTotalRecords($request, Auth::id(), $id, $apply_filter, $filename);
-    [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
-    [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-    $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::id(), $id, $apply_filter, $filename); // Avoid N+1
-    dd( $packages);
-    $records = $this->getFiltersData($records);
-
-    foreach ($packages as $package) {
-        $records['data'][] = $this->formatPackageData($package);
-    }
-
-    $records['meta'] = [
-        'field'   => $orderBy,
-        'page'    => $page,
-        'pages'   => $pages,
-        'perpage' => $iDisplayLength,
-        'total'   => $iTotalRecords,
-        'sort'    => $order,
-    ];
-
-    $records['permissions'] = $this->getPermissions($id);
-
-    return ApiHelper::apiDataTable($records);
-}
-private function handleDelete($deleteIds, $records)
-{
-    $ids = explode(',', $deleteIds);
-    $packages = Packages::getBulkData($ids);
-    $any_deleted = false;
-
-    foreach ($packages as $package) {
-        if (!Packages::isChildExists($package->id, Auth::id())) {
-            $package->delete();
-            $any_deleted = true;
+            if ($any_deleted) {
+                $records['status'] = true; // pass custom message(useful for getting status of group actions)
+                $records['message'] = 'One or more record has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
+            } else {
+                $records['status'] = false; // pass custom message(useful for getting status of group actions)
+                $records['message'] = 'Child records exist, unable to delete plan!'; // pass custom message(useful for getting status of group actions)
+            }
         }
-    }
 
-    $records['status'] = $any_deleted;
-    $records['message'] = $any_deleted
-        ? 'One or more records deleted successfully!'
-        : 'Child records exist, unable to delete package!';
+        // Get Total Records
+        $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
 
-    return $records;
-}
-private function formatPackageData($package)
-{
-    $cash_receive = PackageAdvances::where([
-        ['package_id', $package->id],
-        ['cash_flow', 'in'],
-        ['is_cancel', '0']
-    ])->sum('cash_amount');
+        [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
 
-    $refunded = PackageAdvances::where([
-        'package_id' => $package->id,
-        'cash_flow' => 'out',
-        'is_refund' => '1',
-        'is_tax' => '0',
-    ])->sum('cash_amount');
+        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-    $settle_amount = PackageAdvances::where([
-        ['package_id', $package->id],
-        ['cash_flow', 'out'],
-        ['is_cancel', '0'],
-        ['is_tax', '0'],
-        ['is_adjustment', '0'],
-        ['is_refund', '0'],
-        ['is_setteled', '0'],
-    ])->sum('cash_amount');
+        $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
 
-    $settle_tax_amount = PackageAdvances::where([
-        ['package_id', $package->id],
-        ['cash_flow', 'out'],
-        ['is_cancel', '0'],
-        ['is_tax', '1'],
-        ['is_adjustment', '0'],
-        ['is_refund', '0'],
-        ['is_setteled', '0'],
-    ])->sum('cash_amount');
+        $records = $this->getFiltersData($records);
+        if ($packages) {
+            foreach ($packages as $package) {
+                // $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
+                $packageservices_price = PackageBundles::where('package_id', '=', $package->id)->sum('tax_including_price');
+                $session_count = count(PackageService::where('package_id', '=', $package->id)->get());
+                /*We discuss in future what happen next*/
+                $cash_receive = PackageAdvances::where([
+                    ['package_id', '=', $package->id],
+                    ['cash_flow', '=', 'in'],
+                    ['is_cancel', '=', '0'],
 
-    return [
-        'id' => $package->id,
-        'patient_id' => GeneralFunctions::patientSearchStringAdd($package->user?->id),
-        'name' => $package->user->name ?? '',
-        'package_id' => $package->name,
-        'location_id' => optional($package->location->city)->name . '-' . optional($package->location)->name,
-        'session_count' => PackageService::where('package_id', $package->id)->count(),
-        'total' => number_format(PackageBundles::where('package_id', $package->id)->sum('tax_including_price')),
-        'cash_receive' => number_format($cash_receive),
-        'refunded' => number_format($refunded),
-        'settle_amount' => number_format($settle_amount + $settle_tax_amount),
-        'refund' => $package->is_refund ? 'Yes' : 'No',
-        'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
-        'active' => $package->active,
-    ];
-}
-private function getPermissions($id)
-{
-    $basePermissions = [
-        'plans_cash_edit', 'plans_cash_delete', 'plans_cash_edit_payment_mode',
-        'plans_cash_edit_amount', 'plans_cash_edit_date',
-        'patients_plan_cash_edit', 'patients_plan_cash_delete',
-    ];
+                ])->sum('cash_amount');
+                $package_is_refunded_amount = PackageAdvances::where([
+                    'package_id' => $package->id,
+                    'cash_flow' => 'out',
+                    'is_refund' => '1',
+                    'is_tax' => '0',
+                ])->sum('cash_amount');
 
-    if ($id) {
-        $extra = [
-            'edit' => 'patients_plan_edit',
-            'manage' => 'patients_plan_manage',
-            'delete' => 'patients_plan_destroy',
-            'active' => 'patients_plan_active',
-            'inactive' => 'patients_plan_inactive',
-            'create' => 'patients_plan_create',
-            'log' => 'patients_plan_log',
-            'sms_log' => 'patients_plan_sms_log',
-        ];
-    } else {
-        $extra = [
-            'edit' => 'plans_edit',
-            'delete' => 'plans_destroy',
-            'active' => 'plans_active',
-            'inactive' => 'plans_inactive',
-            'create' => 'plans_create',
-            'log' => 'plans_log',
-            'sms_log' => 'plans_sms_log',
-        ];
-    }
+                $settle_amount = PackageAdvances::where([
+                    ['package_id', '=', $package->id],
+                    ['cash_flow', '=', 'out'],
+                    ['is_cancel', '=', '0'],
+                    ['is_tax', '=', '0'],
+                    ['is_adjustment', '=', '0'],
+                    ['is_refund', '=', '0'],
+                    ['is_setteled', '=', '0'],
+                ])->sum('cash_amount');
+                $settle_tax_amount = PackageAdvances::where([
+                    ['package_id', '=', $package->id],
+                    ['cash_flow', '=', 'out'],
+                    ['is_cancel', '=', '0'],
+                    ['is_tax', '=', '1'],
+                    ['is_adjustment', '=', '0'],
+                    ['is_refund', '=', '0'],
+                    ['is_setteled', '=', '0'],
+                ])->sum('cash_amount');
+                $settle_amount_with_tax = $settle_amount + $settle_tax_amount;
+                if ($package->is_refund == '0') {
+                    $refund_status = 'No';
+                } else {
+                    $refund_status = 'Yes';
+                }
+                $records['data'][] = [
+                    'id' => $package->id,
+                    'patient_id' => GeneralFunctions::patientSearchStringAdd($package->user?->id),
+                    'name' => $package->user?->name ?? '',
+                    'package_id' => $package?->name ?? '',
+                    'location_id' => $package->location->city->name . '-' . $package->location->name,
+                    'session_count' => $session_count,
+                    'total' => number_format($packageservices_price),
+                    'cash_receive' => number_format($cash_receive),
+                    'refunded' => number_format($package_is_refunded_amount),
+                    'settle_amount' => number_format($settle_amount_with_tax),
+                    'refund' => $refund_status,
+                    'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
+                    'active' => $package->active,
+                ];
+            }
 
-    return array_merge(
-        $this->array_mapWithKeys($extra, fn($key, $perm) => [$key => Gate::allows($perm)]),
-        $this->array_mapWithKeys($basePermissions, fn($perm) => [$perm => Gate::allows($perm)])
-    );
-}
-
-private function array_mapWithKeys($array, $callback)
-{
-    $result = [];
-    foreach ($array as $key => $value) {
-        if (is_numeric($key)) {
-            $result[$value] = $callback($value);
-        } else {
-            $result[$key] = $callback($key, $value);
+            $records['meta'] = [
+                'field' => $orderBy,
+                'page' => $page,
+                'pages' => $pages,
+                'perpage' => $iDisplayLength,
+                'total' => $iTotalRecords,
+                'sort' => $order,
+            ];
         }
+
+        $records['permissions'] = [
+            'edit' => Gate::allows('plans_edit'),
+            'delete' => Gate::allows('plans_destroy'),
+            'active' => Gate::allows('plans_active'),
+            'inactive' => Gate::allows('plans_inactive'),
+            'create' => Gate::allows('plans_create'),
+            'log' => Gate::allows('plans_log'),
+            'sms_log' => Gate::allows('plans_sms_log'),
+            'plans_cash_edit' => Gate::allows('plans_cash_edit'),
+            'plans_cash_delete' => Gate::allows('plans_cash_delete'),
+            'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
+            'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
+            'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
+            'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
+            'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
+        ];
+
+        if ($id) {
+            $records['permissions'] = [
+                'edit' => Gate::allows('patients_plan_edit'),
+                'manage' => Gate::allows('patients_plan_manage'),
+                'delete' => Gate::allows('patients_plan_destroy'),
+                'active' => Gate::allows('patients_plan_active'),
+                'inactive' => Gate::allows('patients_plan_inactive'),
+                'create' => Gate::allows('patients_plan_create'),
+                'log' => Gate::allows('patients_plan_log'),
+                'sms_log' => Gate::allows('patients_plan_sms_log'),
+                'plans_cash_edit' => Gate::allows('plans_cash_edit'),
+                'plans_cash_delete' => Gate::allows('plans_cash_delete'),
+                'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
+                'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
+                'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
+                'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
+                'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
+            ];
+        }
+
+        return ApiHelper::apiDataTable($records);
     }
-    return $result;
-}
+
     private function getFiltersData($records)
     {
 
