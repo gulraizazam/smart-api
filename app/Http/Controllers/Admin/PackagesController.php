@@ -1303,7 +1303,7 @@ class PackagesController extends Controller
     $filename = 'packages';
     $filters = getFilters($request->all());
     $apply_filter = checkFilters($filters, $filename);
-    $records = ['data' => []];
+    $records['data'] = [];
 
     // Handle delete request
     if (hasFilter($filters, 'delete')) {
@@ -1314,8 +1314,7 @@ class PackagesController extends Controller
     [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
     [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-    $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::id(), $id, $apply_filter, $filename)
-        ->load(['user', 'location.city']); // Avoid N+1
+    $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::id(), $id, $apply_filter, $filename); // Avoid N+1
     dd( $packages);
     $records = $this->getFiltersData($records);
 
