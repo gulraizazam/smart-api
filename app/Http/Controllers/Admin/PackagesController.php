@@ -1316,7 +1316,7 @@ class PackagesController extends Controller
 
     $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::id(), $id, $apply_filter, $filename)
         ->load(['user', 'location.city']); // Avoid N+1
-
+    dd( $packages);
     $records = $this->getFiltersData($records);
 
     foreach ($packages as $package) {
