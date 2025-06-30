@@ -35,11 +35,11 @@ class dashboardreport
     };
 
     $query = PackageAdvances::with('paymentmode')
-        ->where($dateQuery)
-        ->where($whereConditions)
-        ->whereIn('location_id', array_keys($location_information))
-        ->get()
-        ->groupBy('location_id');
+    ->where(...$dateQuery) // FIXED
+    ->where($whereConditions)
+    ->whereIn('location_id', array_keys($location_information))
+    ->get()
+    ->groupBy('location_id');
 
     $report_data = [];
 
