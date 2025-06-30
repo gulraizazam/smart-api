@@ -121,7 +121,7 @@ class ActivitylogsReportController extends Controller
                 case 'consumed':
                     {
                         $activityType = $this->getActivityType($activity->activity_type);
-                        $consumedBy = $activity->user->name;
+                        $consumedBy = $activity->created_by;
                         $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
                         $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .  $consumedBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
