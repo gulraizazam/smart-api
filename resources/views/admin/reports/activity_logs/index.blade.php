@@ -80,6 +80,7 @@
                                                 <select class="form-control select2" id="activity_type" name="activity_type">
                                                     <option value="all">All Logs</option>
                                                     <option value="Consultancy">Consultancy Logs</option>
+                                                    <option value="Plan">Plan</option>
                                                 </select>
                                                 <span id="service_id_handler"></span>
                                             </div>

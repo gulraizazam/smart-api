@@ -75,6 +75,10 @@ class ActivitylogsReportController extends Controller
             ->orWhere(function ($query) use ($request) {
                 $query->where('action', 'deleted')
                       ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
+            })
+             ->orWhere(function ($query) use ($request) {
+                $query->where('action', 'received')
+                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
             });
         })
 
