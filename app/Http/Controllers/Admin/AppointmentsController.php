@@ -4283,6 +4283,7 @@ class AppointmentsController extends Controller
         $activity->action = 'consumed';
         $activity->patient = $patient->name;
         $activity->appointment_type = $servicename->name.' Treatment';
+        $activity->activity_type = 'Treatment';
         $activity->created_by = Auth::user()->name;
         $activity->invoice_id = $invoice->id;
         $activity->amount = $invoice_detail->net_amount;
