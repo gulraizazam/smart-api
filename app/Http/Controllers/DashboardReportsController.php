@@ -54,47 +54,96 @@ class DashboardReportsController extends Controller
     }
 
     public function collectionByCentre(Request $request)
-{
-    $data = [
-        'today' => [],
-        'yesterday' => [],
-        'last7days' => [],
-        'week' => [],
-        'thismonth' => [],
-        'lastmonth' => [],
-    ];
+    {
+        $data = [
+            'today' => [],
+            'yesterday' => [],
+            'last7days' => [],
+            'week' => [],
+            'thismonth' => [],
+            'lastmonth' => [],
+        ];
+        $location_information = ACL::getUserCentres();
+        if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
+            switch ($request->type) {
+                case 'today':
+                    [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
+                    if (count($today_records)) {
+                        foreach ($today_records as $record) {
+                            $data['today'][] = $record;
+                        }
+                    }
+                    break;
 
-    $type = $request->type ?? 'today';
-    $location_information = ACL::getUserCentres();
-
-    if (\Gate::allows('dashboard_collection_by_centre') || \Gate::allows('dashboard_my_collection_by_centre')) {
-        $records = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::id(), $type, $request);
-        foreach ($records as $record) {
-            $data[$type][] = $record;
+                case ('yesterday'):
+                    [$yesterdayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
+                    if (count($yesterdayRecords)) {
+                        foreach ($yesterdayRecords as $record) {
+                            $data['yesterday'][] = $record;
+                        }
+                    }
+                    break;
+                case ('last7days'):
+                    [$last7dayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
+                    if (count($last7dayRecords)) {
+                        foreach ($last7dayRecords as $record) {
+                            $data['last7days'][] = $record;
+                        }
+                    }
+                    break;
+                case ('week'):
+                    [$weekRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
+                    if (count($weekRecords)) {
+                        foreach ($weekRecords as $record) {
+                            $data['week'][] = $record;
+                        }
+                    }
+                    break;
+                case ('thismonth'):
+                    [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
+                    if (count($thisMonthRecords)) {
+                        foreach ($thisMonthRecords as $record) {
+                            $data['thismonth'][] = $record;
+                        }
+                    }
+                    break;
+                case ('lastmonth'):
+                    [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
+                    if (count($thisMonthRecords)) {
+                        foreach ($thisMonthRecords as $record) {
+                            $data['lastmonth'][] = $record;
+                        }
+                    }
+                    break;
+                default:
+                    [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
+                    if (count($today_records)) {
+                        foreach ($today_records as $record) {
+                            $data['today'][] = $record;
+                        }
+                    }
+                    break;
+            }
         }
+        $day = $request->type ?? 'today';
+        $dataArray = $data[$day];
+
+        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+
+        // Step 2 and 3: Calculate the percentage for each slice
+        for ($i = 1; $i < count($dataArray); $i++) {
+            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+
+            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+        }
+
+        $data[$day] = $dataArray;
+
+        return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
+            'pie' => $data,
+            'total' => number_format($total ?? 0, 2),
+        ]);
     }
-
-    $dataArray = $data[$type];
-
-    // Skip header or summary if exists in index 0
-    $totalValue = array_sum(
-    array_map(fn($item) => is_array($item) && isset($item['value']) ? $item['value'] : 0, $dataArray)
-);
-
-for ($i = 0; $i < count($dataArray); $i++) {
-    if (is_array($dataArray[$i]) && isset($dataArray[$i]['value'], $dataArray[$i]['centre'])) {
-        $percentage = $totalValue ? ($dataArray[$i]['value'] / $totalValue) * 100 : 0;
-        $dataArray[$i]['centre'] .= ' (' . number_format($percentage, 1) . '%)';
-    }
-}
-
-    $data[$type] = $dataArray;
-
-    return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
-        'pie' => $data,
-        'total' => number_format($totalValue, 2),
-    ]);
-}
 
     public function CollectionByServiceCategory(Request $request)
     {
