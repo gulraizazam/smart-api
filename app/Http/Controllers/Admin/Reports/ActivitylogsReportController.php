@@ -57,7 +57,7 @@ class ActivitylogsReportController extends Controller
             $isActivityTypePresent = true;
         }
 
-        $activities = Activity::with(['user', 'location', 'serviceR'])->where(function ($query) use ($request) {
+        $activities = Activity::with(['user',  'serviceR'])->where(function ($query) use ($request) {
             $query->where(function ($query) use ($request) {
                 $query->where('action', 'booked')
                       ->whereBetween('created_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
