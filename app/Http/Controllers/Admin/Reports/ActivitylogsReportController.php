@@ -109,7 +109,7 @@ class ActivitylogsReportController extends Controller
                 case 'received':
                     {
 
-                        $activityType = $this->getActivityType($activity->appointment_type);
+                        $activityType = $this->getActivityType($activity->appointment_type=="Plan");
                         $receivedBy = $activity->created_by ;
                         $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
