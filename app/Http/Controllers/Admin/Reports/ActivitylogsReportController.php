@@ -128,7 +128,7 @@ class ActivitylogsReportController extends Controller
                         $consumedBy = $activity->created_by;
                         $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .  $consumedBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
+                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .  $consumedBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->appointment_type.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patient. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->location. '</strong> on '. $activity->schedule_date;
                     }
                     break;
                 case 'rescheduled':
