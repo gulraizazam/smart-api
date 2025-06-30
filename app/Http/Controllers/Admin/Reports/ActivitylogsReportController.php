@@ -108,12 +108,14 @@ class ActivitylogsReportController extends Controller
                     break;
                 case 'received':
                     {
-
-                        $activityType = $this->getActivityType($activity->appointment_type=="Plan");
+                        if($activity->appointment_type=="Plan"){
+                             $activityType = $this->getActivityType($activity->appointment_type=="Plan");
                         $receivedBy = $activity->created_by ;
                         $data[$i]['colorClass']= $colorClasses[$i%4];
                         $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
                         $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .$receivedBy.'</strong>  '.$action.'  <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->amount.'</strong> from '.' <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patient. '</strong> against Plan ID: <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->planId. ' </strong>in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->location. '</strong> on '. $activity->created_at;
+                        }
+
                     }
                     break;
                 case 'consumed':
