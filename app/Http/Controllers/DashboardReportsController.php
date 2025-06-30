@@ -77,12 +77,16 @@ class DashboardReportsController extends Controller
     $dataArray = $data[$type];
 
     // Skip header or summary if exists in index 0
-    $totalValue = array_sum(array_column(array_slice($dataArray, 1), 'value'));
+    $totalValue = array_sum(
+    array_map(fn($item) => is_array($item) && isset($item['value']) ? $item['value'] : 0, $dataArray)
+);
 
-    for ($i = 1; $i < count($dataArray); $i++) {
+for ($i = 0; $i < count($dataArray); $i++) {
+    if (is_array($dataArray[$i]) && isset($dataArray[$i]['value'], $dataArray[$i]['centre'])) {
         $percentage = $totalValue ? ($dataArray[$i]['value'] / $totalValue) * 100 : 0;
         $dataArray[$i]['centre'] .= ' (' . number_format($percentage, 1) . '%)';
     }
+}
 
     $data[$type] = $dataArray;
 
