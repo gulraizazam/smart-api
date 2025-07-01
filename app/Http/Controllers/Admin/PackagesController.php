@@ -128,11 +128,11 @@ class PackagesController extends Controller
         if ($service_has_location) {
 
             $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
-            
-            
+
+
             return ApiHelper::apiResponse($this->success, 'Recode found', true, [
                 'service' => $locationhasservice,
-               
+
             ]);
         }
 
@@ -673,7 +673,7 @@ class PackagesController extends Controller
             'service_price' => $bundle->price,
             'service_name' => $bundle->name,
             'net_amount' => $request->net_amount,
-          
+
         ];
         if ($discount) {
             $packageBundleData['discount_name'] = $discount->name;
@@ -799,7 +799,7 @@ class PackagesController extends Controller
             $discount_type = $packageBundleData['discount_type'];
             $discount_price = $packageBundleData['discount_price'];
         }
-        
+
         $packageServices = PackageService::where('random_id', $request->random_id)->get();
         $packageBundle = PackageBundles::where('random_id', $request->random_id)->get();
         $servicesData = [
@@ -815,7 +815,7 @@ class PackagesController extends Controller
             'discount_price' => $discount_price,
             'net_amount' => $net_amount,
             'total' => $total,
-            'sold_by' => $soldBy,  
+            'sold_by' => $soldBy,
         ];
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -997,7 +997,7 @@ class PackagesController extends Controller
      */
     public function savepackages(Request $request)
     {
-        
+
         DB::beginTransaction();
         try {
             if (isset($request->appointment_id)) {
@@ -1538,7 +1538,7 @@ class PackagesController extends Controller
      */
     public function edit($id)
     {
-        
+
         if (!Gate::allows('plans_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -1637,34 +1637,34 @@ class PackagesController extends Controller
                 }
             }
             $doctors = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
-    
+
             // Fetch active doctors as an associative array
             $users = User::whereIn('id', $doctors)
                 ->where('active', 1)
                 ->pluck('name', 'id') // Preserve user IDs
                 ->toArray();
-        
+
             // Ensure 'from_id' is an array
             $locationId = $package->location_id;
-    
+
             // Fetch FDM users by getting the user_ids associated with the center (location_id)
             $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
-    
+
             // Fetch the 'FDM' role and get its user ids
             $findRole = DB::table('roles')->where('name', 'FDM')->first();
             $roleId = $findRole->id;
-    
+
             // Get users who have the FDM role
             $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-    
+
             // Get the intersection of users who are both FDM and belong to the center
             $fdmUsers = array_intersect($findFDM, $roleHasUser);
-    
+
             // Fetch FDM user details (id and name) from the users table
             $FDMUsers = User::whereIn('id', $fdmUsers)
                 ->pluck('name', 'id') // Preserve user IDs
                 ->toArray();
-    
+
             // Merge the arrays while preserving keys
             $combinedUsers = $users + $FDMUsers;
             $selectedUserId = null;
@@ -2131,13 +2131,13 @@ class PackagesController extends Controller
             }
         }
         $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
-    
+
         // Fetch active doctors as an associative array
         $users = User::whereIn('id', $doctors)
             ->where('active', 1)
             ->pluck('name', 'id') // Preserve user IDs
             ->toArray();
-    
+
         // Ensure 'from_id' is an array
         $locationId = $request->location_id;
 
@@ -2824,6 +2824,7 @@ class PackagesController extends Controller
     }
     public function storeRecord($package, $request)
     {
+        dd($request->all());
         $packageBundledata['random_id'] = $package->random_id;
         $packageBundledata['is_allocate'] = 1;
         if (isset($request['package_bundles'])) {
