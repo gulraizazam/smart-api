@@ -35,6 +35,7 @@ class UpsellingReportController extends Controller
         $doctorIds = DB::table('doctor_has_locations')
         ->where('location_id', $locationId)
         ->whereIn('user_id', $roleHasUsers)
+         ->distinct()
         ->pluck('user_id');
 dd( $doctorIds);
     if ($doctorIds->isEmpty()) {
