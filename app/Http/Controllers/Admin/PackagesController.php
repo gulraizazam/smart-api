@@ -2824,7 +2824,7 @@ class PackagesController extends Controller
     }
     public function storeRecord($package, $request)
     {
-        dd($request->all());
+
         $packageBundledata['random_id'] = $package->random_id;
         $packageBundledata['is_allocate'] = 1;
         if (isset($request['package_bundles'])) {
