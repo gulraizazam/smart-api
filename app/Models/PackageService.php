@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class PackageService extends Model
 {
-    protected static $_fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id'];
+    protected static $_fillable = ['random_id', 'package_id', 'package_bundle_id', 'service_id', 'is_consumed','consumed_at', 'price', 'orignal_price', 'is_exclusive', 'tax_exclusive_price', 'tax_percenatage', 'tax_price', 'tax_including_price','base_service_id','sold_by'];
 
     protected static $_table = 'package_services';
 
