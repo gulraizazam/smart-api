@@ -68,6 +68,7 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedbacksReportController;
 use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
+use App\Models\PackageService;
 
 /*
 |--------------------------------------------------------------------------
@@ -136,6 +137,13 @@ Route::get('getservices', function () {
         }
     }
     return view('deleted', compact('mergedServices'));
+});
+Route::get('testupdate', function () {
+    $packageService = PackageService::find(198286);
+    $packageService->sold_by = auth()->id(); // or any value
+    $packageService->save();
+
+\Log::info('Sold by updated to: ' . $packageService->sold_by);
 });
 Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
 
