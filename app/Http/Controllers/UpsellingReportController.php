@@ -46,17 +46,19 @@ class UpsellingReportController extends Controller
         ]);
     }
 
-    // Step 2: Build query with date filtering
     $reportQuery = PackageService::query()
         ->join('users', 'package_services.sold_by', '=', 'users.id')
-        ->whereIn('package_services.sold_by', $doctorIds);
+        ->join('packages', 'package_services.package_id', '=', 'packages.id') // Join packages
+        ->whereIn('package_services.sold_by', $doctorIds)
+        ->where('packages.location_id', $locationId); // Filter by location
 
-    // Apply date range filter on created_at for total_sold_amount
+    // Apply date range filter on created_at
     if ($startDate && $endDate) {
-        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate])->where('sold_by', '!=', null);
+        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate])
+            ->whereNotNull('sold_by');
     }
 
-    // Select fields and apply conditional sum on consumed_at
+    // Fetch report data
     $reportData = $reportQuery
         ->select(
             'users.name as doctor_name',
