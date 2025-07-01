@@ -30,7 +30,7 @@ class UpsellingReportController extends Controller
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         $role = Role::where('name', 'Aesthetic Doctor')->first();
         $roleHasUsers = $role->users()->pluck('id');
-
+        dd($startDate, $endDate);
         // Step 1: Get doctors for the location
         $doctorIds = DB::table('doctor_has_locations')
         ->where('location_id', $locationId)
