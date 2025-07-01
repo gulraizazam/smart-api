@@ -85,6 +85,10 @@ class PackageService extends Model
     {
         return $this->belongsTo('App\Models\Package', 'package_id')->withTrashed();
     }
+   public function soldBy()
+{
+    return $this->belongsTo(User::class, 'sold_by'); // or Doctor::class if you have a Doctor model
+}
 
     /*
      * Get relation for package bundle
