@@ -63,7 +63,7 @@ class PackageService extends Model
         $data['tax_exclusive_price'] = $data['tax_exclusive_price'];
         $data['tax_including_price'] = $data['tax_including_price'];
     }
-dd($data);
+
         $record = self::create($data);
 
         return $record;
