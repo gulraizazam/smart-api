@@ -87,8 +87,8 @@ $('#date_range_ratings').daterangepicker({
        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
          'This Year': [moment().startOf('year'), moment().endOf('year')],
     },
-    startDate: moment().startOf('year'),
-    endDate: moment().endOf('year')
+    startDate: moment().subtract(1, 'month').startOf('month'),
+    endDate: oment().subtract(1, 'month').endOf('month')
 }).val();
 $('#date_range_patients').daterangepicker({
     locale: {
