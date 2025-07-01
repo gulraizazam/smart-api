@@ -52,7 +52,7 @@ class UpsellingReportController extends Controller
 
     // Apply date range filter on created_at for total_sold_amount
     if ($startDate && $endDate) {
-        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate]);
+        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate])->where('sold_by', '!=', null);
     }
 
     // Select fields and apply conditional sum on consumed_at
