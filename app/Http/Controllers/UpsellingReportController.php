@@ -99,7 +99,8 @@ class UpsellingReportController extends Controller
     ")
 )
     ->groupBy('package_services.sold_by', 'users.name')
-    ->get();
+    ->toSql();
+    dd($reportData);
 
 
         return view('admin.reports.upsellingReport', compact('reportData'));
