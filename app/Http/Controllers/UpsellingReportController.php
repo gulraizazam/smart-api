@@ -21,6 +21,7 @@ class UpsellingReportController extends Controller
     }
     public function loadUpsellingReport(Request $request)
     {
+        DB::enableQueryLog(); // Enable query log for debugging
         $request->validate([
             'centre_id' => 'required|integer|exists:locations,id',
         ]);
@@ -99,8 +100,8 @@ class UpsellingReportController extends Controller
     ")
 )
     ->groupBy('package_services.sold_by', 'users.name')
-    ->toSql();
-    dd($reportData);
+    ->get();
+    dd(DB::getQueryLog()); // Debugging: Check the executed query
 
 
         return view('admin.reports.upsellingReport', compact('reportData'));
