@@ -66,32 +66,34 @@ class UpsellingReportController extends Controller
     $reportData = $reportQuery
     ->join('appointments', 'packages.appointment_id', '=', 'appointments.id') // Join appointments
     ->select(
-        'users.name as doctor_name',
-        'package_services.sold_by as doctor_id',
-        DB::raw("
-            SUM(
-                CASE
-                    WHEN appointments.doctor_id != package_services.sold_by
-                    THEN package_services.tax_including_price
-                    ELSE 0
-                END
-            ) as total_sold_amount
-        "),
-        DB::raw("
-            SUM(
-                CASE
-                    WHEN package_services.consumed_at IS NOT NULL
-                        AND appointments.doctor_id != package_services.sold_by
-                        " . ($startDate && $endDate ? "AND package_services.consumed_at BETWEEN '{$startDate}' AND '{$endDate}'" : "") . "
-                    THEN package_services.tax_including_price
-                    ELSE 0
-                END
-            ) as total_consumed_amount
-        ")
-    )
+    'users.name as doctor_name',
+    'package_services.sold_by as doctor_id',
+    DB::raw("
+        SUM(
+            CASE
+                WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                THEN package_services.tax_including_price
+                ELSE 0
+            END
+        ) as total_sold_amount
+    "),
+    DB::raw("
+        SUM(
+            CASE
+                WHEN package_services.consumed_at IS NOT NULL
+                    AND NOT (
+                        appointments.appointment_type_id = 1
+                        AND appointments.doctor_id = package_services.sold_by
+                    )
+                    " . ($startDate && $endDate ? "AND package_services.consumed_at BETWEEN '{$startDate}' AND '{$endDate}'" : "") . "
+                THEN package_services.tax_including_price
+                ELSE 0
+            END
+        ) as total_consumed_amount
+    ")
+)
     ->groupBy('package_services.sold_by', 'users.name')
     ->get();
-    dd($reportData);
 
 
         return view('admin.reports.upsellingReport', compact('reportData'));
