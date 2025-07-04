@@ -29,7 +29,7 @@ class UpsellingReportController extends Controller
         $dates = explode(' - ', $request->input('date_range'));
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
-        $role = Role::where('name', 'Aesthetic Doctor')->first();
+        //$role = Role::where('name', 'Aesthetic Doctor')->first();
         $roleHasUsers = User::whereHas('roles', function($query) {
             $query->where('name', 'Aesthetic Doctor');
         })->pluck('id');
@@ -40,7 +40,7 @@ class UpsellingReportController extends Controller
         ->whereIn('user_id', $roleHasUsers)
          ->distinct()
         ->pluck('user_id');
-        dd($doctorIds);
+        
 
     if ($doctorIds->isEmpty()) {
         return response()->json([
