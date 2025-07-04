@@ -29,7 +29,9 @@ class UpsellingReportController extends Controller
         $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
         $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         $role = Role::where('name', 'Aesthetic Doctor')->first();
-        $roleHasUsers = $role->users()->pluck('id');
+        $roleHasUsers = User::whereHas('roles', function($query) {
+            $query->where('name', 'Aesthetic Doctor');
+        })->pluck('id');
         
         // Step 1: Get doctors for the location
         $doctorIds = DB::table('doctor_has_locations')
