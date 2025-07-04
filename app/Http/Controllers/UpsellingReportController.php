@@ -33,7 +33,13 @@ class UpsellingReportController extends Controller
         $roleHasUsers = User::whereHas('roles', function($query) {
             $query->where('name', 'Aesthetic Doctor');
         })->pluck('id');
-        
+        $fdmUserIds = User::whereHas('roles', function ($q) {
+    $q->where('name', 'FDM');
+})
+->whereHas('user_has_locations', function ($q) use ($locationId) {
+    $q->where('location_id', $locationId);
+})
+->pluck('id');
         // Step 1: Get doctors for the location
         $doctorIds = DB::table('doctor_has_locations')
         ->where('location_id', $locationId)
@@ -41,19 +47,19 @@ class UpsellingReportController extends Controller
          ->distinct()
         ->pluck('user_id');
         
-
-    if ($doctorIds->isEmpty()) {
-        return response()->json([
-            'status' => 200,
-            'message' => 'No doctors found for the selected location.',
-            'data' => [],
-        ]);
-    }
+        $allSellerIds = $doctorIds->merge($fdmUserIds)->unique();
+        if ($allSellerIds->isEmpty()) {
+            return response()->json([
+                'status' => 200,
+                'message' => 'No doctors found for the selected location.',
+                'data' => [],
+            ]);
+        }
 
     $reportQuery = PackageService::query()
         ->join('users', 'package_services.sold_by', '=', 'users.id')
         ->join('packages', 'package_services.package_id', '=', 'packages.id') // Join packages
-        ->whereIn('package_services.sold_by', $doctorIds)
+       ->whereIn('package_services.sold_by', $allSellerIds)
         ->where('packages.location_id', $locationId); // Filter by location
 
     // Apply date range filter on created_at
