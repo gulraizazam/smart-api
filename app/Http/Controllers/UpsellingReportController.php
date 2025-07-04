@@ -40,6 +40,7 @@ class UpsellingReportController extends Controller
         ->whereIn('user_id', $roleHasUsers)
          ->distinct()
         ->pluck('user_id');
+        dd($doctorIds);
 
     if ($doctorIds->isEmpty()) {
         return response()->json([
