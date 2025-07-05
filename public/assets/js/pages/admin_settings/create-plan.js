@@ -2673,18 +2673,43 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
-    $('#cash_amount_1').keyup(function () {
-        keyfunction_grandtotal();
-    });
+   $('#cash_amount_1').on('input', function () {
+    let val = $(this).val();
 
-    $("#edit_cash_amount_1").keyup(function () {
-        if ($("#edit_cash_amount_1").val() < 0) {
-            $("#edit_cash_amount_1").val('');
-        } else {
-            edit_keyfunction_grandtotal();
-        }
-        // errorMessageElement.textContent = "";
-    });
+    // Reset if value starts with 0 but isn't "0" or a decimal like "0.5"
+    if (val.length > 1 && val.startsWith("0") && !val.startsWith("0.")) {
+        $(this).val('');
+        return;
+    }
+
+    // Reset if value is negative
+    if (parseFloat(val) < 0) {
+        $(this).val('');
+        return;
+    }
+
+    // Trigger your function if valid
+    keyfunction_grandtotal();
+});
+
+   $("#edit_cash_amount_1").on('input', function () {
+    let val = $(this).val();
+
+    // Reset if first character is 0 and length > 1 and doesn't start with "0."
+    if (val.length > 1 && val.startsWith("0") && !val.startsWith("0.")) {
+        $(this).val('');
+        return;
+    }
+
+    // Reset if value is negative
+    if (parseFloat(val) < 0) {
+        $(this).val('');
+        return;
+    }
+
+    // Call your function if value is valid
+    edit_keyfunction_grandtotal();
+});
 
 
     /*save data for both predefined discounts and keyup trigger*/
