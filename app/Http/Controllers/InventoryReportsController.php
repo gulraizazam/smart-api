@@ -182,6 +182,9 @@ class InventoryReportsController extends Controller
                 ->whereIn('prescribed_by', $doctorIds)
                 ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                     $query->whereBetween('orders.created_at', [$startDate, $endDate]);
+                })
+                ->when($locationId, function ($query) use ($locationId) {
+                    $query->whereIn('orders.location_id', $locationId);
                 });
 
             $orders = $ordersQuery->get();
