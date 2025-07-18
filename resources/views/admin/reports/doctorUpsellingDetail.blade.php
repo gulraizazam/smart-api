@@ -20,6 +20,11 @@
     border-radius: 6px;
 }
 </style>
+ <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Upselling Detail Report'])
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+
 <div id="doctor_detail_report">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>Upselling Details - {{ $doctorName }}</h4>
@@ -83,6 +88,8 @@
         </div>
     </div>
 </div>
-
+</div>
+    </div>
+</div>
 
 @endsection
