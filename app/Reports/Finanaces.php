@@ -1090,174 +1090,181 @@ class Finanaces
      * @return (mixed)
      */
     public static function generalrevenuereportdetail($data, $account_id)
-    {
+{
+    $where = [];
 
-        $where = [];
+    if (isset($data['date_range']) && $data['date_range']) {
+        $date_range = explode(' - ', $data['date_range']);
+        $start_date = date('Y-m-d', strtotime($date_range[0]));
+        $end_date = date('Y-m-d', strtotime($date_range[1]));
+    } else {
+        $start_date = null;
+        $end_date = null;
+    }
+    $gender = $data['gender'];
+    $where[] = [
+        'account_id',
+        '=',
+        $account_id,
+    ];
+    $location_information = ACL::getUserCentres();
+    $report_data = [];
+    foreach ($data['location_id_com'] as $location) {
+        $query = PackageAdvances::whereDate('created_at', '>=', $start_date)
+            ->whereDate('created_at', '<=', $end_date)
+            ->where('location_id', '=', $location)
+            ->where($where)
+            ->orderBy('created_at', 'asc');
 
-        if (isset($data['date_range']) && $data['date_range']) {
-            $date_range = explode(' - ', $data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
+        // Add gender filter condition
+        if ($gender !== 'all') {
+            $query->whereHas('user', function ($q) use ($gender) {
+                $q->where('gender', $gender);
+            });
         }
 
-        $where[] = [
-            'account_id',
-            '=',
-            $account_id,
-        ];
-        $location_information = ACL::getUserCentres();
-        $report_data = [];
-        foreach ($data['location_id_com'] as $location) {
-            $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
-                ->whereDate('created_at', '<=', $end_date)
-                ->where('location_id', '=', $location)
-                ->where($where)
-                ->orderBy('created_at', 'asc')
-                ->get();
+        $packagesadvances = $query->get();
 
-            $location_information = Locations::find($location);
+        $location_information = Locations::find($location);
 
-            if ($packagesadvances) {
-                $balance = 0;
-                $total_balance = 0;
-                $report_data[$location_information->id] = [
-                    'id' => $location_information->id,
-                    'name' => $location_information->name,
-                    'city' => $location_information->city->name,
-                    'region' => $location_information->region->name,
-                    'revenue_data' => [],
-                ];
+        if ($packagesadvances) {
+            $balance = 0;
+            $total_balance = 0;
+            $report_data[$location_information->id] = [
+                'id' => $location_information->id,
+                'name' => $location_information->name,
+                'city' => $location_information->city->name,
+                'region' => $location_information->region->name,
+                'revenue_data' => [],
+            ];
 
-                foreach ($packagesadvances as $packagesadvance) {
-                    if (
-                        ($packagesadvance->cash_flow == 'in' &&
-                            $packagesadvance->is_adjustment == '0' &&
-                            $packagesadvance->is_tax == '0' &&
-                            $packagesadvance->is_cancel == '0'
-                        )
-                        ||
-                        ($packagesadvance->cash_flow == 'out' &&
-                            $packagesadvance->is_refund == '1' &&
-                            $packagesadvance->is_tax == '0'
-                        )
+            foreach ($packagesadvances as $packagesadvance) {
+                if (
+                    ($packagesadvance->cash_flow == 'in' &&
+                        $packagesadvance->is_adjustment == '0' &&
+                        $packagesadvance->is_tax == '0' &&
+                        $packagesadvance->is_cancel == '0'
+                    )
+                    ||
+                    ($packagesadvance->cash_flow == 'out' &&
+                        $packagesadvance->is_refund == '1' &&
+                        $packagesadvance->is_tax == '0'
+                    )
 
-                    ) {
-                        switch ($packagesadvance->cash_flow) {
-                            case 'in':
-                                $balance = $balance + $packagesadvance->cash_amount;
-                                break;
-                            case 'out':
-                                $balance = $balance - $packagesadvance->cash_amount;
-                                break;
-                            default:
-                                break;
+                ) {
+                    switch ($packagesadvance->cash_flow) {
+                        case 'in':
+                            $balance = $balance + $packagesadvance->cash_amount;
+                            break;
+                        case 'out':
+                            $balance = $balance - $packagesadvance->cash_amount;
+                            break;
+                        default:
+                            break;
+                    }
+                    $total_balance = $balance;
+
+                    if ($packagesadvance->cash_amount != 0) {
+                        if ($packagesadvance->package_id) {
+                            $transtype = Config::get('constants.trans_type.advance_in');
                         }
-                        $total_balance = $balance;
-
-                        if ($packagesadvance->cash_amount != 0) {
-                            if ($packagesadvance->package_id) {
-                                $transtype = Config::get('constants.trans_type.advance_in');
-                            }
-                            if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                $transtype = Config::get('constants.trans_type.advance_in');
-                            }
-                            if ($packagesadvance->is_adjustment == '1') {
-                                $transtype = Config::get('constants.trans_type.adjustment');
-                            }
-                            if ($packagesadvance->is_cancel == '1') {
-                                $transtype = Config::get('constants.trans_type.invoice_cancel');
-                            }
-                            if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
-                                $transtype = Config::get('constants.trans_type.invoice_create');
-                            }
-                            if ($packagesadvance->is_refund == '1') {
-                                $transtype = Config::get('constants.trans_type.refund_in');
-                            }
-                            if ($packagesadvance->is_tax == '1') {
-                                $transtype = Config::get('constants.trans_type.tax_out');
-                            }
-                            if ($packagesadvance->cash_flow == 'in') {
-                                if ($packagesadvance->paymentmode->name == 'Cash') {
-                                    $revenue_cash_in = $packagesadvance->cash_amount;
-                                    $revenue_card_in = 0;
-                                    $revenue_bank_in = 0;
-                                    $refund_out = 0;
-                                }
-                                if ($packagesadvance->paymentmode->name == 'Card') {
-                                    $revenue_cash_in = 0;
-                                    $revenue_card_in = $packagesadvance->cash_amount;
-                                    $revenue_bank_in = 0;
-                                    $refund_out = 0;
-                                }
-                                if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer' || $packagesadvance->paymentmode->name == 'Bank') {
-                                    $revenue_cash_in = 0;
-                                    $revenue_card_in = 0;
-                                    $revenue_bank_in = $packagesadvance->cash_amount;
-                                    $refund_out = 0;
-                                }
-                            } else {
-                                $revenue_cash_in = 0;
+                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
+                            $transtype = Config::get('constants.trans_type.advance_in');
+                        }
+                        if ($packagesadvance->is_adjustment == '1') {
+                            $transtype = Config::get('constants.trans_type.adjustment');
+                        }
+                        if ($packagesadvance->is_cancel == '1') {
+                            $transtype = Config::get('constants.trans_type.invoice_cancel');
+                        }
+                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
+                            $transtype = Config::get('constants.trans_type.invoice_create');
+                        }
+                        if ($packagesadvance->is_refund == '1') {
+                            $transtype = Config::get('constants.trans_type.refund_in');
+                        }
+                        if ($packagesadvance->is_tax == '1') {
+                            $transtype = Config::get('constants.trans_type.tax_out');
+                        }
+                        if ($packagesadvance->cash_flow == 'in') {
+                            if ($packagesadvance->paymentmode->name == 'Cash') {
+                                $revenue_cash_in = $packagesadvance->cash_amount;
                                 $revenue_card_in = 0;
                                 $revenue_bank_in = 0;
-                                $refund_out = $packagesadvance->cash_amount;
+                                $refund_out = 0;
                             }
-                            if ($packagesadvance->cash_flow == 'out') {
+                            if ($packagesadvance->paymentmode->name == 'Card') {
+                                $revenue_cash_in = 0;
+                                $revenue_card_in = $packagesadvance->cash_amount;
+                                $revenue_bank_in = 0;
+                                $refund_out = 0;
+                            }
+                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer' || $packagesadvance->paymentmode->name == 'Bank') {
+                                $revenue_cash_in = 0;
+                                $revenue_card_in = 0;
+                                $revenue_bank_in = $packagesadvance->cash_amount;
+                                $refund_out = 0;
+                            }
+                        } else {
+                            $revenue_cash_in = 0;
+                            $revenue_card_in = 0;
+                            $revenue_bank_in = 0;
+                            $refund_out = $packagesadvance->cash_amount;
+                        }
+                        if ($packagesadvance->cash_flow == 'out') {
 
-                                if ($packagesadvance->paymentmode->name == 'Cash') {
-                                    $refund_cash_in = $packagesadvance->cash_amount;
-                                    $refund_card_in = 0;
-                                    $refund_bank_in = 0;
-                                    $refund_out = 0;
-                                }
-                                if ($packagesadvance->paymentmode->name == 'Card') {
-                                    $refund_cash_in = 0;
-                                    $refund_card_in = $packagesadvance->cash_amount;
-                                    $refund_bank_in = 0;
-                                    $refund_out = 0;
-                                }
-                                if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer' || $packagesadvance->paymentmode->name == 'Bank') {
-                                    $refund_cash_in = 0;
-                                    $refund_card_in = 0;
-                                    $refund_bank_in = $packagesadvance->cash_amount;
-                                    $refund_out = 0;
-                                }
-                            } else {
-                                $refund_cash_in = 0;
+                            if ($packagesadvance->paymentmode->name == 'Cash') {
+                                $refund_cash_in = $packagesadvance->cash_amount;
                                 $refund_card_in = 0;
                                 $refund_bank_in = 0;
-                                $refund_out = $packagesadvance->cash_amount;
+                                $refund_out = 0;
                             }
-                            $gender = $packagesadvance->user->gender ==1 ? 'Male' : 'Female';
-                            $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
-                                'patient_id' => $packagesadvance->patient_id,
-                                'patient' => $packagesadvance->user->name,
-                                'gender' => $gender,
-                                'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
-                                'transtype' => $transtype,
-                                'payment_mode_id' => $packagesadvance->payment_mode_id,
-                                'payment_mode' => $packagesadvance->paymentmode->name ?? 'Cash',
-                                'cash_flow' => $packagesadvance->cash_flow,
-                                'revenue_cash_in' => $revenue_cash_in,
-                                'revenue_card_in' => $revenue_card_in,
-                                'revenue_bank_in' => $revenue_bank_in,
-                                'refund_cash_in' => $refund_cash_in,
-                                'refund_card_in' =>  $refund_card_in,
-                                'refund_bank_in' => $refund_bank_in,
-                                'refund_out' => $refund_cash_in + $refund_card_in + $refund_bank_in,
-                                'Balance' => $balance,
-                                'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A'),
-                            ];
+                            if ($packagesadvance->paymentmode->name == 'Card') {
+                                $refund_cash_in = 0;
+                                $refund_card_in = $packagesadvance->cash_amount;
+                                $refund_bank_in = 0;
+                                $refund_out = 0;
+                            }
+                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer' || $packagesadvance->paymentmode->name == 'Bank') {
+                                $refund_cash_in = 0;
+                                $refund_card_in = 0;
+                                $refund_bank_in = $packagesadvance->cash_amount;
+                                $refund_out = 0;
+                            }
+                        } else {
+                            $refund_cash_in = 0;
+                            $refund_card_in = 0;
+                            $refund_bank_in = 0;
+                            $refund_out = $packagesadvance->cash_amount;
                         }
+                        $gender = $packagesadvance->user->gender == 1 ? 'Male' : 'Female';
+                        $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
+                            'patient_id' => $packagesadvance->patient_id,
+                            'patient' => $packagesadvance->user->name,
+                            'gender' => $gender,
+                            'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
+                            'transtype' => $transtype,
+                            'payment_mode_id' => $packagesadvance->payment_mode_id,
+                            'payment_mode' => $packagesadvance->paymentmode->name ?? 'Cash',
+                            'cash_flow' => $packagesadvance->cash_flow,
+                            'revenue_cash_in' => $revenue_cash_in,
+                            'revenue_card_in' => $revenue_card_in,
+                            'revenue_bank_in' => $revenue_bank_in,
+                            'refund_cash_in' => $refund_cash_in,
+                            'refund_card_in' =>  $refund_card_in,
+                            'refund_bank_in' => $refund_bank_in,
+                            'refund_out' => $refund_cash_in + $refund_card_in + $refund_bank_in,
+                            'Balance' => $balance,
+                            'created_at' => Carbon::parse($packagesadvance->created_at)->format('F j,Y h:i A'),
+                        ];
                     }
                 }
             }
         }
-
-        return $report_data;
     }
+
+    return $report_data;
+}
 
     /**
      * General Reveneue report summary

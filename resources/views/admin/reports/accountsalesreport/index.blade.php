@@ -207,7 +207,17 @@
                                                 {!! Form::select('location_id_com[]', $locations_com, (Auth::user()->hasRole('FDM')) ? array_keys($locations_com->toArray()) : null, ['id' => 'location_id_com','class' => 'form-control select2', 'multiple' => 'multiple']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
+                                                <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
+                                                 style="display: none;" id="gender_id" >
+                                                {!! Form::label('gender_id', 'Gender', ['class' => 'control-label']) !!}
 
+                                                <select class="form-control select2" id="gender_id_form" name="gender_id">
+                                                    <option value="all">All</option>
+                                                    <option value="1">Male</option>
+                                                    <option value="2">Female</option>
+                                                </select>
+                                                <span id="location_id_handler"></span>
+                                            </div>
                                             {!! Form::hidden('medium_type', 'web', ['id' => 'medium_type']) !!}
                                             <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
                                                  id="service_id_E">
@@ -364,7 +374,8 @@
                         report_type: $('#report_type').val(),
                         city_id: $('#city_id').val(),
                         machine_id: $('#machine_id').val(),
-                        discount_id:$('#discount_id').val()
+                        discount_id:$('#discount_id').val(),
+                        gender_id:$('#gender_id_form').val(),
                     },
                     success: function(response){
                         $('#content').html('');
@@ -425,6 +436,7 @@
                     $("#doctors_id").hide();
                     $("#machine").hide();
                     $('#discount').hide();
+                     $('#gender_id').show();
                 } else if (type_p == 'daily_employee_stats_summary') {
                     $("#machine").hide();
                     $('#discount').hide();
@@ -435,6 +447,7 @@
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#service_id_E").show();
+                     $('#gender_id').hide();
                 } else if (type_p == 'general_revenue_report_summary') {
                     $("#patient_id_E").hide();
                     $("#appointment_type_id_E").hide();
@@ -443,6 +456,7 @@
                     $("#user_id_E").hide();
                     $("#service_id_E").hide();
                     $("#region_id_E").show();
+                    $('#gender_id').hide();
                     $("#doctors_id").hide();
                     $("#machine").hide();
                     $('#discount').hide();
@@ -458,18 +472,20 @@
                     $("#appointment_type_id_E").hide();
                     $("#machine").hide();
                     $('#discount').hide();
+                    $('#gender_id').hide();
                 } else if (type_p == 'services_sold') {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
 
                     $("#service_id_E").show();
-
+                    $('#gender_id').hide();
                 } else if (type_p == "collection_by_service") {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#patient_id_E").hide();
                     $("#user_id_E").hide();
                     $("#doctors_id").hide();
+                    $('#gender_id').hide();
                     $("#region_id_E").show();
                     $("#city_id_E").hide();
                     $("#service_id_E").hide();
@@ -485,12 +501,14 @@
                     $("#service_id_E").show();
                     $("#region_id_E").hide();
                     $("#doctors_id").show();
+                    $('#gender_id').hide();
                     $("#machine").hide();
                     $('#discount').hide();
                 } else {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#patient_id_E").hide();
+                    $('#gender_id').hide();
                     $("#user_id_E").hide();
                     $("#doctors_id").hide();
                     $("#region_id_E").show();
