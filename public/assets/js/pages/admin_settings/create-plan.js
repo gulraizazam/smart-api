@@ -2738,7 +2738,10 @@ jQuery(document).ready(function () {
             hideSpinner("-edit-add");
             return false;
         }
-
+        if (!$('#edit_sold_by').val()) {
+            $('#edit_sold_by_errorr').html('Please select sold by');
+            return false;
+        }
         if (discount_id) {
             if (!discount_type) {
                 $('#discount_type_error').html('Please select discount type');
