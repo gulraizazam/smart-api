@@ -198,7 +198,7 @@
                                 <td style="color: #fff;"> {{number_format($t_cash,2)}}</td>
                                 <td style="color: #fff;"> {{number_format($t_card,2)}}</td>
                                 <td style="color: #fff;"> {{number_format( $t_bank,2)}}</td>
-
+<td style="color: #fff;"></td>
                                 <td style="color: #fff;"></td>
                             </tr>
 
