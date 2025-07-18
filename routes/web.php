@@ -595,6 +595,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('upselling', [UpsellingReportController::class, 'index'])->name('reports.upselling');
         Route::post('load_feedback_reports', [FeedbacksReportController::class, 'loadFeedbackReport'])->name('reports.load_feedback_report');
          Route::post('load_upselling_reports', [UpsellingReportController::class, 'loadUpsellingReport'])->name('reports.load_upselling_report');
+         Route::get('/doctor-upselling-detail/{doctorId}', [UpsellingReportController::class, 'doctorUpsellingDetail'])
+             ->name('doctor.upselling.detail');
         Route::post('load_future_treatments_report', [FeedbacksReportController::class, 'loadFutureTreatmentsReport'])->name('reports.load_future_treatments_report')->middleware('permission:followuppatient_manage');
         Route::post('load_inventory_reports', [InventoryReportsController::class, 'loadInventoryReport'])->name('reports.load_inventory_report');
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');

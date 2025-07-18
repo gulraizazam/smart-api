@@ -19,7 +19,7 @@ class UpsellingReportController extends Controller
 
         return view('admin.reports.upselling', get_defined_vars());
     }
-    public function loadUpsellingReport(Request $request)
+   public function loadUpsellingReport(Request $request)
 {
     $request->validate([
         'centre_id' => 'required|integer|exists:locations,id',
@@ -62,7 +62,6 @@ class UpsellingReportController extends Controller
         ->join('users', 'package_services.sold_by', '=', 'users.id')
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-        ->join('services', 'package_services.service_id', '=', 'services.id') // Join services table
         ->whereIn('package_services.sold_by', $allSellerIds)
         ->where('packages.location_id', $locationId);
 
@@ -72,13 +71,11 @@ class UpsellingReportController extends Controller
             ->whereNotNull('sold_by');
     }
 
-    // Fetch report data
+    // Fetch summary report data (only doctor names and total amounts)
     $reportData = $reportQuery
         ->select(
             'users.name as doctor_name',
             'package_services.sold_by as doctor_id',
-            'package_services.package_id',
-            'services.name as service_name',
             DB::raw("
                 SUM(
                     CASE
@@ -89,21 +86,68 @@ class UpsellingReportController extends Controller
                 ) as total_sold_amount
             ")
         )
-        ->groupBy('package_services.sold_by', 'users.name', 'package_services.package_id', 'services.name')
+        ->groupBy('package_services.sold_by', 'users.name')
         ->get();
 
-    // Group by doctor and aggregate services
-    $groupedData = $reportData->groupBy('doctor_id')->map(function ($doctorServices) {
-        $doctor = $doctorServices->first();
-        return [
-            'doctor_name' => $doctor->doctor_name,
-            'doctor_id' => $doctor->doctor_id,
-            'total_sold_amount' => $doctorServices->sum('total_sold_amount'),
-            'services_sold' => $doctorServices->pluck('service_name')->unique()->implode(', '),
-            'packages_sold' => $doctorServices->pluck('package_id')->unique()->implode(', ')
-        ];
-    })->values();
+    // Store filters in session for detail view
+    session(['upselling_filters' => [
+        'location_id' => $locationId,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'all_seller_ids' => $allSellerIds->toArray()
+    ]]);
 
-    return view('admin.reports.upsellingReport', compact('groupedData'));
+    return view('admin.reports.upsellingReport', compact('reportData'));
+}
+
+// New function for doctor detail view
+public function doctorUpsellingDetail($doctorId)
+{
+    $filters = session('upselling_filters');
+
+    if (!$filters) {
+        return redirect()->back()->with('error', 'Session expired. Please reload the report.');
+    }
+
+    $reportQuery = PackageService::query()
+        ->join('users', 'package_services.sold_by', '=', 'users.id')
+        ->join('packages', 'package_services.package_id', '=', 'packages.id')
+        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+        ->join('services', 'package_services.service_id', '=', 'services.id')
+        ->where('package_services.sold_by', $doctorId)
+        ->whereIn('package_services.sold_by', $filters['all_seller_ids'])
+        ->where('packages.location_id', $filters['location_id'])
+        ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
+        ->whereNotNull('sold_by');
+
+    $detailData = $reportQuery
+        ->select(
+            'users.name as doctor_name',
+            'package_services.package_id',
+            'services.name as service_name',
+            'package_services.tax_including_price',
+            'package_services.created_at',
+            DB::raw("
+                CASE
+                    WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                    THEN package_services.tax_including_price
+                    ELSE 0
+                END as actual_amount
+            ")
+        )
+        ->where(DB::raw("
+            CASE
+                WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                THEN package_services.tax_including_price
+                ELSE 0
+            END
+        "), '>', 0)
+        ->orderBy('package_services.created_at', 'desc')
+        ->get();
+
+    $doctorName = $detailData->first()->doctor_name ?? 'Unknown Doctor';
+    $totalAmount = $detailData->sum('actual_amount');
+
+    return view('admin.reports.doctorUpsellingDetail', compact('detailData', 'doctorName', 'totalAmount'));
 }
 }
