@@ -6,19 +6,21 @@
             <tr>
                 <th>Doctor</th>
                 <th>Total Sold Amount</th>
-                <th>Total Consumed Amount</th>
+                <th>Services Sold</th>
+                <th>Package IDs</th>
             </tr>
         </thead>
         <tbody>
-            @forelse($reportData as $report)
+            @forelse($groupedData as $report)
                 <tr>
-                   <td>{{ $report->doctor_name ?? 'Unknown' }}</td>
-                    <td>{{ number_format($report->total_sold_amount, 2) }}</td>
-                    <td>{{ number_format($report->total_consumed_amount, 2) }}</td>
+                    <td>{{ $report['doctor_name'] ?? 'Unknown' }}</td>
+                    <td>{{ number_format($report['total_sold_amount'], 2) }}</td>
+                    <td>{{ $report['services_sold'] }}</td>
+                    <td>{{ $report['packages_sold'] }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="3" class="text-center">No data available for this location.</td>
+                    <td colspan="4" class="text-center">No data available for this location.</td>
                 </tr>
             @endforelse
         </tbody>
