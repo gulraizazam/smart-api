@@ -1101,7 +1101,7 @@ class Finanaces
         $start_date = null;
         $end_date = null;
     }
-    $gender = $data['gender'];
+    $gender = $data['gender_id'];
     $where[] = [
         'account_id',
         '=',
