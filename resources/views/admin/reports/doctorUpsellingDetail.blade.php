@@ -1,3 +1,25 @@
+@extends('admin.layouts.master')
+@section('title', 'Upselling Report')
+@section('content')
+<style>
+.badge {
+    font-size: 0.9em;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.table-responsive {
+    border-radius: 8px;
+}
+
+.btn {
+    border-radius: 6px;
+}
+</style>
 <div id="doctor_detail_report">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>Upselling Details - {{ $doctorName }}</h4>
@@ -62,22 +84,5 @@
     </div>
 </div>
 
-<style>
-.badge {
-    font-size: 0.9em;
-}
 
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border: none;
-    border-radius: 8px;
-}
-
-.table-responsive {
-    border-radius: 8px;
-}
-
-.btn {
-    border-radius: 6px;
-}
-</style>
+@endsection
