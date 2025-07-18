@@ -15,7 +15,7 @@
                     <td>{{ $report->doctor_name ?? 'Unknown' }}</td>
                     <td>{{ number_format($report->total_sold_amount, 2) }}</td>
                     <td>
-                        <a href="{{ route('doctor.upselling.detail', $report->doctor_id) }}"
+                        <a href="{{ route('admin.doctor.upselling.detail', $report->doctor_id) }}"
                            class="btn btn-primary btn-sm">
                             View Details
                         </a>
