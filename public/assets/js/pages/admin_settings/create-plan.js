@@ -2740,6 +2740,8 @@ jQuery(document).ready(function () {
         }
         if (!$('#edit_sold_by').val()) {
             $('#edit_sold_by_errorr').html('Please select sold by');
+            $(this).attr("disabled", false);
+                hideSpinner("-edit-add");
             return false;
         }
         if (discount_id) {
