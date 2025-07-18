@@ -1230,10 +1230,11 @@ class Finanaces
                                 $refund_bank_in = 0;
                                 $refund_out = $packagesadvance->cash_amount;
                             }
-
+                            $gender = $packagesadvance->user->gender ==1 ? 'Male' : 'Female';
                             $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
                                 'patient_id' => $packagesadvance->patient_id,
                                 'patient' => $packagesadvance->user->name,
+                                'gender' => $gender,
                                 'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
                                 'transtype' => $transtype,
                                 'payment_mode_id' => $packagesadvance->payment_mode_id,
