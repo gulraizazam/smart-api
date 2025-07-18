@@ -724,13 +724,13 @@ function setEditData(response) {
         let serviceOptions = '<option value="">Select Service</option>';
         let userOptions = '<option value="">Select</option>';
         if (users) {
-            
+
             Object.entries(users).forEach(function ([id, name]) {
-                let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
-                userOptions += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
+                //let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
+                userOptions += '<option value="' + id + '> ' + name + ' </option>';
             });
         }
-        
+
         if (locationhasservice.length) {
             Object.values(locationhasservice).forEach(function (packageservice) {
                 serviceOptions += '<option value="' + packageservice?.id + '">' + packageservice?.name + '</option>';
@@ -1335,7 +1335,7 @@ function getServices() {
             $("#modal_edit_regions").modal("show");
 
             setServices(response);
-           
+
 
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -1368,12 +1368,10 @@ function setServices(response) {
 function setSoldBy(response) {
     try {
         let users = response.data.users;
-        let selectedUserId = response.data.selected_doctor_id; // Get selected user ID from response
         let user_options = '<option value=""> Select </option>';
 
         Object.entries(users).forEach(function ([id, name]) {
-            let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
-            user_options += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
+            user_options += '<option value="' + id + '"> ' + name + ' </option>';
         });
 
         $("#add_sold_by").html(user_options);
@@ -2407,7 +2405,7 @@ var ExistingTotal = 0;
 jQuery(document).ready(function () {
     patientSearchPlan('search_patient_refund');
     $("#AddPackage").click(function () {
-        
+
         $('.create-plan-error').html('');
 
         if (!$('#add_plan_location_id').val()) {
@@ -2500,7 +2498,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                   
+
                     let consume = 'No';
                     if (resposne.status) {
 
@@ -2574,7 +2572,7 @@ jQuery(document).ready(function () {
 
     /*function for final package information save*/
     $("#AddPackageFinal").click(function () {
-      
+
         $('.create-plan-error').html('');
         if ($('#payment_mode_id_1').val()) {
             if (!$('#cash_amount_1').val()) {
@@ -2740,7 +2738,7 @@ jQuery(document).ready(function () {
             hideSpinner("-edit-add");
             return false;
         }
-        
+
         if (discount_id) {
             if (!discount_type) {
                 $('#discount_type_error').html('Please select discount type');
@@ -2784,7 +2782,7 @@ jQuery(document).ready(function () {
                 'location_id': location_id,
                 'package_bundles[]': [],
                 'sold_by': sold_by
-                 
+
             };
 
             $(".package_bundles").each(function () {
