@@ -85,12 +85,13 @@
                 <table class="table">
                     <thead>
                     <th>Centre</th>
-                    <th>City</th>
-                    <th>Region</th>
+                   
                     <th>Cash </th>
                     <th>Card </th>
                     <th>Bank/Wire Transfer</th>
                     <th>Refund/Out</th>
+                    <th>Collection By Gender (Male)</th>
+                    <th>Collection By Gender (Female)</th>
                     <th>In Hand</th>
                     </thead>
                     <tbody>
@@ -104,6 +105,8 @@
                                 <td>{{number_format($reportRow['revenue_card_in'],2)}}</td>
                                 <td>{{number_format($reportRow['revenue_bank_in'],2)}}</td>
                                 <td>{{number_format($reportRow['refund_out'],2)}}</td>
+                                <td>{{number_format($reportRow['male_revenue'],2)}}</td>
+                                <td>{{number_format($reportRow['female_revenue'],2)}}</td>
                                 <td>{{number_format($reportRow['in_hand'],2)}}</td>
                             </tr>
                         @endforeach
@@ -145,6 +148,14 @@
                     </tr>
                     <tr>
                         <th>Refund</th>
+                        <td>{{number_format($total_refund,2)}}</td>
+                    </tr>
+                    <tr>
+                        <th>Collection By Gender (Male)</th>
+                        <td>{{number_format($total_refund,2)}}</td>
+                    </tr>
+                    <tr>
+                        <th>Collection By Gender (Female)</th>
                         <td>{{number_format($total_refund,2)}}</td>
                     </tr>
                     <tr>
