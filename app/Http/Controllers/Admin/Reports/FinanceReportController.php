@@ -1461,7 +1461,7 @@ class FinanceReportController extends Controller
             $end_date = null;
         }
         $report_data = Finanaces::generalrevenuereportsummary($request->all(), Auth::User()->account_id);
-
+        
         $total_revenue_cash_in = 0;
         $total_revenue_card_in = 0;
         $total_revenue_bank_in = 0;
