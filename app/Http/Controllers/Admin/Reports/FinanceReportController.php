@@ -2386,8 +2386,12 @@ public function serviceSoldreport(Request $request)
         'locations'
     ));
 }
-public static function revenueByGenderAndService($data, $account_id)
+public static function revenueByGenderAndService($request)
 {
+    // Extract data and account_id from request
+    $data = $request->all();
+    $account_id = $request->get('account_id') ?? auth()->user()->account_id ?? session('account_id');
+    
     if (isset($data['date_range']) && $data['date_range']) {
         $date_range = explode(' - ', $data['date_range']);
         $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -2397,8 +2401,16 @@ public static function revenueByGenderAndService($data, $account_id)
         $end_date = null;
     }
 
-    // Get package advances with all necessary relationships
-    $packagesadvances = PackageAdvances::with([
+    // Handle location filtering
+    $location_ids = $request->get('location_id', []);
+    if (!is_array($location_ids)) {
+        $location_ids = [$location_ids];
+    }
+    // Remove empty values
+    $location_ids = array_filter($location_ids);
+
+    // Build query with location filtering
+    $query = PackageAdvances::with([
         'package.appointment' => function($query) {
             $query->where('appointment_type_id', 1); // Only appointment type 1
         },
@@ -2415,9 +2427,16 @@ public static function revenueByGenderAndService($data, $account_id)
     ->where('is_adjustment', '0')
     ->where('is_tax', '0')
     ->where('is_cancel', '0')
-    ->where('cash_amount', '>', 0)
-    ->orderBy('created_at', 'asc')
-    ->get();
+    ->where('cash_amount', '>', 0);
+
+    // Add location filtering if location_ids provided
+    if (!empty($location_ids)) {
+        $query->whereHas('package', function($packageQuery) use ($location_ids) {
+            $packageQuery->whereIn('location_id', $location_ids);
+        });
+    }
+
+    $packagesadvances = $query->orderBy('created_at', 'asc')->get();
 
     $report_data = [];
 
@@ -2494,14 +2513,22 @@ public static function revenueByGenderAndService($data, $account_id)
         return strcmp($a['name'], $b['name']);
     });
 
-    // Fixed: Change variable name from 'report_data' to 'reportData' to match blade template
-    // Fixed: Add 'isLocationWise' variable that blade template expects
+    // Get location names for display if locations were filtered
+    $selected_locations = [];
+    if (!empty($location_ids)) {
+        $selected_locations = \App\Models\Locations::whereIn('id', $location_ids)
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
     return view('admin.reports.accountsalesreport.genderwiserevenue', compact(
         'start_date',
         'end_date'
     ))->with([
-        'reportData' => $report_data,  // Blade expects 'reportData'
-        'isLocationWise' => false      // Blade expects this variable
+        'reportData' => $report_data,
+        'isLocationWise' => false,
+        'selectedLocations' => $selected_locations,
+        'locationIds' => $location_ids
     ]);
 }
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
