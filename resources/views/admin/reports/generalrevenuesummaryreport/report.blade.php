@@ -118,6 +118,8 @@
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_card_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_bank_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_refund,2)}}</td>
+                            <td style="font-weight: bold;color: #fff;"></td>
+                            <td style="font-weight: bold;color: #fff;"></td>
                             <td style="font-weight: bold;color: #fff;">{{number_format(($total_revenue_cash_in+$total_revenue_card_in+$total_revenue_bank_in)-$total_refund,2)}}</td>
 
                         </tr>
