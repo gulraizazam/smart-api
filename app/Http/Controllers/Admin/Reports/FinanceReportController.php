@@ -172,7 +172,7 @@ class FinanceReportController extends Controller
                 return self::serviceSoldreport($request);
                 break;
              case 'gender_wise_revenue':
-                return self::genderWiseRevenue($request);
+                return self::revenueByGenderAndService($request);
                 break;
             default:
                 return self::collectionbyservice($request);
