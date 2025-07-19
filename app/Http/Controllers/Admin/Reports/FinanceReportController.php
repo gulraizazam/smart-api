@@ -171,6 +171,9 @@ class FinanceReportController extends Controller
             case 'services_sold':
                 return self::serviceSoldreport($request);
                 break;
+             case 'gender_wise_revenue':
+                return self::genderWiseRevenue($request);
+                break;
             default:
                 return self::collectionbyservice($request);
                 break;
@@ -2382,6 +2385,124 @@ public function serviceSoldreport(Request $request)
         'services',
         'locations'
     ));
+}
+public static function revenueByGenderAndService($data, $account_id)
+{
+    if (isset($data['date_range']) && $data['date_range']) {
+        $date_range = explode(' - ', $data['date_range']);
+        $start_date = date('Y-m-d', strtotime($date_range[0]));
+        $end_date = date('Y-m-d', strtotime($date_range[1]));
+    } else {
+        $start_date = null;
+        $end_date = null;
+    }
+
+    // Get package advances with all necessary relationships
+    $packagesadvances = PackageAdvances::with([
+        'package.appointment' => function($query) {
+            $query->where('appointment_type_id', 1); // Only appointment type 1
+        },
+        'package.appointment.service', // Service relationship
+        'package.appointment.patient:id,gender', // Patient (user) with gender
+    ])
+    ->whereHas('package.appointment', function($query) {
+        $query->where('appointment_type_id', 1);
+    })
+    ->whereDate('created_at', '>=', $start_date)
+    ->whereDate('created_at', '<=', $end_date)
+    ->where('account_id', $account_id)
+    ->where('cash_flow', 'in') // Only incoming cash
+    ->where('is_adjustment', '0')
+    ->where('is_tax', '0')
+    ->where('is_cancel', '0')
+    ->where('cash_amount', '>', 0)
+    ->orderBy('created_at', 'asc')
+    ->get();
+
+    $report_data = [];
+
+    foreach ($packagesadvances as $packageadvance) {
+        // Skip if no package or appointment
+        if (!$packageadvance->package || !$packageadvance->package->appointment) {
+            continue;
+        }
+
+        $appointment = $packageadvance->package->appointment;
+        
+        // Skip if no service
+        if (!$appointment->service) {
+            continue;
+        }
+
+        $service = $appointment->service;
+        $patient = $appointment->patient;
+        
+        // Determine gender
+        $gender = 'unknown';
+        if ($patient && isset($patient->gender)) {
+            if ($patient->gender == 1) {
+                $gender = 'male';
+            } elseif ($patient->gender == 2) {
+                $gender = 'female';
+            }
+        }
+
+        $service_id = $service->id;
+        $service_name = $service->name;
+
+        // Initialize service if not exists
+        if (!isset($report_data[$service_id])) {
+            $report_data[$service_id] = [
+                'id' => $service_id,
+                'name' => $service_name,
+                'male_revenue' => 0,
+                'female_revenue' => 0,
+                'unknown_gender_revenue' => 0,
+                'total_revenue' => 0,
+                'male_count' => 0,
+                'female_count' => 0,
+                'unknown_gender_count' => 0,
+                'total_count' => 0,
+            ];
+        }
+
+        // Add revenue based on gender
+        $amount = $packageadvance->cash_amount;
+        
+        switch ($gender) {
+            case 'male':
+                $report_data[$service_id]['male_revenue'] += $amount;
+                $report_data[$service_id]['male_count']++;
+                break;
+            case 'female':
+                $report_data[$service_id]['female_revenue'] += $amount;
+                $report_data[$service_id]['female_count']++;
+                break;
+            default:
+                $report_data[$service_id]['unknown_gender_revenue'] += $amount;
+                $report_data[$service_id]['unknown_gender_count']++;
+                break;
+        }
+
+        // Update totals
+        $report_data[$service_id]['total_revenue'] += $amount;
+        $report_data[$service_id]['total_count']++;
+    }
+
+    // Sort by service name
+    uasort($report_data, function($a, $b) {
+        return strcmp($a['name'], $b['name']);
+    });
+
+    // Fixed: Change variable name from 'report_data' to 'reportData' to match blade template
+    // Fixed: Add 'isLocationWise' variable that blade template expects
+    return view('admin.reports.accountsalesreport.genderwiserevenue', compact(
+        'start_date',
+        'end_date'
+    ))->with([
+        'reportData' => $report_data,  // Blade expects 'reportData'
+        'isLocationWise' => false      // Blade expects this variable
+    ]);
 }
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
     {

@@ -164,6 +164,10 @@
                                                             <option value="services_sold">Services sold report
                                                             </option>
                                                         @endif
+                                                         @if(Gate::allows('finance_general_revenue_reports_conversion_report'))
+                                                            <option value="gender_wise_revenue">Gender Wise Revenue Report
+                                                            </option>
+                                                        @endif
                                                 </select>
 
                                                 <span id="report_type_handler"></span>
