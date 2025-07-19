@@ -1461,10 +1461,12 @@ class FinanceReportController extends Controller
             $end_date = null;
         }
         $report_data = Finanaces::generalrevenuereportsummary($request->all(), Auth::User()->account_id);
-        
+
         $total_revenue_cash_in = 0;
         $total_revenue_card_in = 0;
         $total_revenue_bank_in = 0;
+        $total_revenue_male_in = 0;
+        $total_revenue_female_in =0;
         $total_refund = 0;
 
         if ($report_data) {
@@ -1481,19 +1483,25 @@ class FinanceReportController extends Controller
                 if ($reportrevenue['refund_out']) {
                     $total_refund += $reportrevenue['refund_out'];
                 }
+                if ($reportrevenue['male_revenue']) {
+                    $total_revenue_male_in += $reportrevenue['male_revenue'];
+                }
+                if ($reportrevenue['female_revenue']) {
+                    $total_revenue_female_in += $reportrevenue['female_revenue'];
+                }
             }
         }
         $total_revenue = $total_revenue_cash_in + $total_revenue_card_in + $total_revenue_bank_in;
 
         switch ($request->get('medium_type')) {
             case 'web':
-                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'));
+                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'));
                 break;
             case 'print':
-                return view('admin.reports.generalrevenuesummaryreport.reportprint', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'));
+                return view('admin.reports.generalrevenuesummaryreport.reportprint', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'));
                 break;
             case 'pdf':
-                $content = view('admin.reports.generalrevenuesummaryreport.reportpdf', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'))->render();
+                $content = view('admin.reports.generalrevenuesummaryreport.reportpdf', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A4', 'landscape');
@@ -1501,10 +1509,10 @@ class FinanceReportController extends Controller
                 return $pdf->stream('General Revenue Report', 'landscape');
                 break;
             case 'excel':
-                self::GeneralRevenueSummaryReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date);
+                self::GeneralRevenueSummaryReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date, $total_revenue_male_in, $total_revenue_female_in);
                 break;
             default:
-                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'));
+                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'));
                 break;
         }
     }
