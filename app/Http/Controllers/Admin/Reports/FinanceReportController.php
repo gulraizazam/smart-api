@@ -2386,12 +2386,8 @@ public function serviceSoldreport(Request $request)
         'locations'
     ));
 }
-public static function revenueByGenderAndService($request)
+public static function revenueByGenderAndService($data, $account_id)
 {
-    // Extract data and account_id from request
-    $data = $request->all();
-    $account_id = $request->get('account_id') ?? auth()->user()->account_id ?? session('account_id');
-    
     if (isset($data['date_range']) && $data['date_range']) {
         $date_range = explode(' - ', $data['date_range']);
         $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -2498,12 +2494,14 @@ public static function revenueByGenderAndService($request)
         return strcmp($a['name'], $b['name']);
     });
 
+    // Fixed: Change variable name from 'report_data' to 'reportData' to match blade template
+    // Fixed: Add 'isLocationWise' variable that blade template expects
     return view('admin.reports.accountsalesreport.genderwiserevenue', compact(
         'start_date',
         'end_date'
     ))->with([
-        'reportData' => $report_data,
-        'isLocationWise' => false
+        'reportData' => $report_data,  // Blade expects 'reportData'
+        'isLocationWise' => false      // Blade expects this variable
     ]);
 }
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)

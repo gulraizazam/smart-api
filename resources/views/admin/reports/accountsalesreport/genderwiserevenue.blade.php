@@ -216,6 +216,18 @@
                     <th>Date</th>
                     <td>{{ now()->format('Y-m-d') }}</td>
                 </tr>
+                @if(isset($selectedLocations) && count($selectedLocations) > 0)
+                <tr>
+                    <th>Locations</th>
+                    <td>
+                        @if(count($selectedLocations) <= 3)
+                            {{ implode(', ', $selectedLocations) }}
+                        @else
+                            {{ count($selectedLocations) }} locations selected
+                        @endif
+                    </td>
+                </tr>
+                @endif
             </table>
         </div>
     </div>
