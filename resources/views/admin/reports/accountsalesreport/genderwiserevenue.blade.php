@@ -8,9 +8,6 @@
     @endif
 @endif
 
-<!-- DataTables CSS -->
-<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
-
 <style>
     @page {
         margin: 10px 20px;
@@ -25,76 +22,174 @@
 
     .summary-box {
         flex: 1;
-        min-width: 200px;
+        min-width: 280px;
         background: #f9f9f9;
-        padding: 15px;
+        padding: 20px;
         border: 1px solid #ddd;
-        border-radius: 8px;
+        border-radius: 12px;
         text-align: center;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
     .summary-box h3 {
-        margin-bottom: 5px;
-        font-size: 16px;
+        margin-bottom: 10px;
+        font-size: 18px;
         color: #333;
+        font-weight: bold;
     }
 
     .summary-box p {
-        font-size: 14px;
+        font-size: 24px;
         font-weight: bold;
         color: #007bff;
-        margin: 5px 0;
+        margin: 10px 0;
     }
 
-    .gender-badge {
-        display: inline-block;
-        padding: 2px 8px;
+    .summary-box small {
+        color: #666;
+        font-size: 14px;
+    }
+
+    .service-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+    }
+
+    .service-card {
+        background: white;
+        border: 1px solid #e0e0e0;
         border-radius: 12px;
-        font-size: 12px;
+        padding: 20px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        transition: transform 0.2s ease;
+    }
+
+    .service-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .service-name {
+        font-size: 20px;
         font-weight: bold;
-        margin: 2px;
+        color: #333;
+        margin-bottom: 15px;
+        border-bottom: 2px solid #f0f0f0;
+        padding-bottom: 10px;
     }
 
-    .male-badge {
-        background-color: #007bff;
-        color: white;
+    .gender-revenue-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 12px 0;
+        padding: 10px;
+        border-radius: 8px;
     }
 
-    .female-badge {
-        background-color: #e83e8c;
-        color: white;
+    .male-row {
+        background-color: #e3f2fd;
     }
 
-    .unknown-badge {
-        background-color: #6c757d;
-        color: white;
+    .female-row {
+        background-color: #fce4ec;
     }
 
-    .revenue-breakdown {
+    .total-row {
+        background-color: #f5f5f5;
+        border: 2px solid #ddd;
+        font-weight: bold;
+    }
+
+    .gender-label {
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .male-label {
+        color: #1976d2;
+    }
+
+    .female-label {
+        color: #c2185b;
+    }
+
+    .total-label {
+        color: #333;
+    }
+
+    .revenue-amount {
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .transaction-count {
         font-size: 12px;
-        margin-top: 5px;
+        color: #666;
+        margin-left: 10px;
+    }
+
+    .grand-totals {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 30px;
+        border-radius: 15px;
+        margin: 30px 0;
+        text-align: center;
+    }
+
+    .grand-totals h2 {
+        margin-bottom: 20px;
+        font-size: 28px;
+    }
+
+    .grand-totals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .grand-total-item {
+        background: rgba(255,255,255,0.1);
+        padding: 15px;
+        border-radius: 10px;
+        backdrop-filter: blur(10px);
+    }
+
+    .grand-total-item h4 {
+        margin-bottom: 5px;
+        font-size: 16px;
+        opacity: 0.9;
+    }
+
+    .grand-total-item p {
+        font-size: 24px;
+        font-weight: bold;
+        margin: 0;
     }
 
     @media print {
+        .service-card {
+            break-inside: avoid;
+            box-shadow: none;
+            border: 1px solid #ccc;
+        }
+
+        .service-cards {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (max-width: 768px) {
+        .service-cards {
+            grid-template-columns: 1fr;
+        }
+
         .summary-box {
-            border: none;
+            min-width: 100%;
         }
-
-        table {
-            font-size: 10px;
-        }
-
-        .gender-badge {
-            font-size: 10px;
-        }
-    }
-
-    .text-right {
-        text-align: right;
-    }
-
-    .font-weight-bold {
-        font-weight: bold;
     }
 </style>
 
@@ -105,194 +200,103 @@
         </div>
     </div>
 
-    <!-- Summary Cards -->
+    <!-- Header Info -->
+    <div class="row" style="margin: 20px 0;">
+        <div class="col-md-2">
+            <img src="{{ asset('logo_final.png') }}" style="height: 120px;">
+        </div>
+        <div class="col-md-6">&nbsp;</div>
+        <div class="col-md-4">
+            <table class="table table-bordered">
+                <tr>
+                    <th width="25%">Duration</th>
+                    <td>From {{ $start_date ?? 'N/A' }} to {{ $end_date ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <th>Date</th>
+                    <td>{{ now()->format('Y-m-d') }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
     @if(count($reportData) > 0)
         @php
             $totalMaleRevenue = collect($reportData)->sum('male_revenue');
             $totalFemaleRevenue = collect($reportData)->sum('female_revenue');
-            $totalUnknownRevenue = collect($reportData)->sum('unknown_gender_revenue');
-            $grandTotal = $totalMaleRevenue + $totalFemaleRevenue + $totalUnknownRevenue;
+            $grandTotal = $totalMaleRevenue + $totalFemaleRevenue;
             
             $totalMaleCount = collect($reportData)->sum('male_count');
             $totalFemaleCount = collect($reportData)->sum('female_count');
-            $totalUnknownCount = collect($reportData)->sum('unknown_gender_count');
-            $totalTransactions = $totalMaleCount + $totalFemaleCount + $totalUnknownCount;
+            $totalTransactions = $totalMaleCount + $totalFemaleCount;
         @endphp
-        
-        <div class="card-summary">
-            <div class="summary-box">
-                <h3>Total Male Revenue</h3>
-                <p>{{ number_format($totalMaleRevenue, 2) }}</p>
-                <small>{{ $totalMaleCount }} transactions</small>
+
+        <!-- Grand Totals Section -->
+        <div class="grand-totals">
+            <h2>Overall Summary</h2>
+            <div class="grand-totals-grid">
+                <div class="grand-total-item">
+                    <h4>Total Male Revenue</h4>
+                    <p>{{ number_format($totalMaleRevenue, 2) }}</p>
+                    <small>{{ $totalMaleCount }} transactions</small>
+                </div>
+                <div class="grand-total-item">
+                    <h4>Total Female Revenue</h4>
+                    <p>{{ number_format($totalFemaleRevenue, 2) }}</p>
+                    <small>{{ $totalFemaleCount }} transactions</small>
+                </div>
+                <div class="grand-total-item">
+                    <h4>Grand Total</h4>
+                    <p>{{ number_format($grandTotal, 2) }}</p>
+                    <small>{{ $totalTransactions }} transactions</small>
+                </div>
             </div>
-            <div class="summary-box">
-                <h3>Total Female Revenue</h3>
-                <p>{{ number_format($totalFemaleRevenue, 2) }}</p>
-                <small>{{ $totalFemaleCount }} transactions</small>
-            </div>
-            <div class="summary-box">
-                <h3>Unknown Gender Revenue</h3>
-                <p>{{ number_format($totalUnknownRevenue, 2) }}</p>
-                <small>{{ $totalUnknownCount }} transactions</small>
-            </div>
-            <div class="summary-box">
-                <h3>Grand Total</h3>
-                <p>{{ number_format($grandTotal, 2) }}</p>
-                <small>{{ $totalTransactions }} transactions</small>
-            </div>
+        </div>
+
+        <!-- Service Cards -->
+        <div class="service-cards">
+            @foreach($reportData as $serviceData)
+                @if($serviceData['male_revenue'] > 0 || $serviceData['female_revenue'] > 0)
+                    <div class="service-card">
+                        <div class="service-name">
+                            {{ $serviceData['name'] }}
+                        </div>
+
+                        @if($serviceData['male_revenue'] > 0)
+                            <div class="gender-revenue-row male-row">
+                                <span class="gender-label male-label">👨 Male Revenue</span>
+                                <div>
+                                    <span class="revenue-amount male-label">{{ number_format($serviceData['male_revenue'], 2) }}</span>
+                                    <span class="transaction-count">({{ $serviceData['male_count'] }} transactions)</span>
+                                </div>
+                            </div>
+                        @endif
+
+                        @if($serviceData['female_revenue'] > 0)
+                            <div class="gender-revenue-row female-row">
+                                <span class="gender-label female-label">👩 Female Revenue</span>
+                                <div>
+                                    <span class="revenue-amount female-label">{{ number_format($serviceData['female_revenue'], 2) }}</span>
+                                    <span class="transaction-count">({{ $serviceData['female_count'] }} transactions)</span>
+                                </div>
+                            </div>
+                        @endif
+
+                        <div class="gender-revenue-row total-row">
+                            <span class="gender-label total-label">📊 Total Revenue</span>
+                            <div>
+                                <span class="revenue-amount total-label">{{ number_format($serviceData['total_revenue'], 2) }}</span>
+                                <span class="transaction-count">({{ $serviceData['total_count'] }} transactions)</span>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+            @endforeach
+        </div>
+    @else
+        <div style="text-align: center; padding: 50px; background: #f8f9fa; border-radius: 10px; margin: 20px 0;">
+            <h3>No Data Found</h3>
+            <p>No revenue records found for the selected date range.</p>
         </div>
     @endif
-
-    <div class="panel-body sn-table-body">
-        <div class="bordered">
-            <div class="sn-table-head">
-                <div class="row">
-                    <div class="col-md-2">
-                        <img src="{{ asset('logo_final.png') }}" style="height: 120px;">
-                    </div>
-                    <div class="col-md-6">&nbsp;</div>
-                    <div class="col-md-4">
-                        <table class="dark-th-table table table-bordered">
-                            <tr>
-                                <th width="25%">Duration</th>
-                                <td>From {{ $start_date ?? 'N/A' }} to {{ $end_date ?? 'N/A' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Date</th>
-                                <td>{{ now()->format('Y-m-d') }}</td>
-                            </tr>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="table-wrapper" id="topscroll">
-                    <table class="table" id="genderServiceRevenueTable">
-                        <thead>
-                            <tr>
-                                <th>Service Name</th>
-                                @if(isset($isLocationWise) && $isLocationWise)
-                                    <th>Centre</th>
-                                @endif
-                                <th class="text-right">Male Revenue</th>
-                                <th class="text-right">Female Revenue</th>
-                                <th class="text-right">Unknown Gender</th>
-                                <th class="text-right">Total Revenue</th>
-                                <th class="text-center">Gender Breakdown</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if(count($reportData) > 0)
-                                @if(isset($isLocationWise) && $isLocationWise)
-                                    {{-- Location-wise display --}}
-                                    @foreach($reportData as $locationData)
-                                        @if(count($locationData['services']) > 0)
-                                            <tr style="background-color: #f8f9fa; font-weight: bold;">
-                                                <td colspan="7">
-                                                    {{ $locationData['location_name'] }} - {{ $locationData['city'] }}, {{ $locationData['region'] }}
-                                                </td>
-                                            </tr>
-                                            @foreach($locationData['services'] as $serviceData)
-                                                <tr>
-                                                    <td style="padding-left: 20px;">{{ $serviceData['name'] }}</td>
-                                                    <td>{{ $locationData['location_name'] }}</td>
-                                                    <td class="text-right">{{ number_format($serviceData['male_revenue'], 2) }}</td>
-                                                    <td class="text-right">{{ number_format($serviceData['female_revenue'], 2) }}</td>
-                                                    <td class="text-right">{{ number_format($serviceData['unknown_gender_revenue'], 2) }}</td>
-                                                    <td class="text-right font-weight-bold">{{ number_format($serviceData['total_revenue'], 2) }}</td>
-                                                    <td class="text-center">
-                                                        @if($serviceData['male_count'] > 0)
-                                                            <span class="gender-badge male-badge">M: {{ $serviceData['male_count'] }}</span>
-                                                        @endif
-                                                        @if($serviceData['female_count'] > 0)
-                                                            <span class="gender-badge female-badge">F: {{ $serviceData['female_count'] }}</span>
-                                                        @endif
-                                                        @if($serviceData['unknown_gender_count'] > 0)
-                                                            <span class="gender-badge unknown-badge">U: {{ $serviceData['unknown_gender_count'] }}</span>
-                                                        @endif
-                                                    </td>
-                                                </tr>
-                                            @endforeach
-                                        @endif
-                                    @endforeach
-                                @else
-                                    {{-- Global service-wise display --}}
-                                    @foreach($reportData as $serviceData)
-                                        <tr>
-                                            <td>{{ $serviceData['name'] }}</td>
-                                            <td class="text-right">{{ number_format($serviceData['male_revenue'], 2) }}</td>
-                                            <td class="text-right">{{ number_format($serviceData['female_revenue'], 2) }}</td>
-                                            <td class="text-right">{{ number_format($serviceData['unknown_gender_revenue'], 2) }}</td>
-                                            <td class="text-right font-weight-bold">{{ number_format($serviceData['total_revenue'], 2) }}</td>
-                                            <td class="text-center">
-                                                @if($serviceData['male_count'] > 0)
-                                                    <span class="gender-badge male-badge">M: {{ $serviceData['male_count'] }}</span>
-                                                @endif
-                                                @if($serviceData['female_count'] > 0)
-                                                    <span class="gender-badge female-badge">F: {{ $serviceData['female_count'] }}</span>
-                                                @endif
-                                                @if($serviceData['unknown_gender_count'] > 0)
-                                                    <span class="gender-badge unknown-badge">U: {{ $serviceData['unknown_gender_count'] }}</span>
-                                                @endif
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                @endif
-
-                                {{-- Summary Row --}}
-                                <tr style="background-color: #e9ecef; font-weight: bold; border-top: 2px solid #dee2e6;">
-                                    <td>
-                                        @if(isset($isLocationWise) && $isLocationWise)
-                                            <strong>GRAND TOTAL</strong>
-                                        @else
-                                            <strong>TOTAL</strong>
-                                        @endif
-                                    </td>
-                                    @if(isset($isLocationWise) && $isLocationWise)
-                                        <td>-</td>
-                                    @endif
-                                    <td class="text-right">{{ number_format($totalMaleRevenue, 2) }}</td>
-                                    <td class="text-right">{{ number_format($totalFemaleRevenue, 2) }}</td>
-                                    <td class="text-right">{{ number_format($totalUnknownRevenue, 2) }}</td>
-                                    <td class="text-right font-weight-bold">{{ number_format($grandTotal, 2) }}</td>
-                                    <td class="text-center">
-                                        @if($totalMaleCount > 0)
-                                            <span class="gender-badge male-badge">M: {{ $totalMaleCount }}</span>
-                                        @endif
-                                        @if($totalFemaleCount > 0)
-                                            <span class="gender-badge female-badge">F: {{ $totalFemaleCount }}</span>
-                                        @endif
-                                        @if($totalUnknownCount > 0)
-                                            <span class="gender-badge unknown-badge">U: {{ $totalUnknownCount }}</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @else
-                                <tr>
-                                    <td colspan="7" class="text-center">No record found.</td>
-                                </tr>
-                            @endif
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-
-    <script>
-        $(document).ready(function () {
-            $('#genderServiceRevenueTable').DataTable({
-                paging: false,
-                ordering: true,
-                info: false,
-                searching: true,
-                columnDefs: [
-                    { targets: [2, 3, 4, 5], className: 'text-right' }, // Right align revenue columns
-                    { targets: [6], className: 'text-center' } // Center align gender breakdown column
-                ]
-            });
-        });
-    </script>
 </div>
