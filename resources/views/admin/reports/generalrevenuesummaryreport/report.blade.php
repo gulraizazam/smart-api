@@ -99,8 +99,7 @@
                         @foreach($report_data as $reportRow)
                             <tr>
                                 <td>{{$reportRow['name']}}</td>
-                                <td>{{$reportRow['city']}}</td>
-                                <td>{{$reportRow['region']}}</td>
+                               
                                 <td>{{number_format($reportRow['revenue_cash_in'],2)}}</td>
                                 <td>{{number_format($reportRow['revenue_card_in'],2)}}</td>
                                 <td>{{number_format($reportRow['revenue_bank_in'],2)}}</td>
