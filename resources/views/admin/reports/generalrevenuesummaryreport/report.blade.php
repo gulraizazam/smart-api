@@ -112,8 +112,7 @@
                         @endforeach
                         <tr style="background: #364150; color: #fff;">
                             <td style="font-weight: bold;color: #fff;">Total</td>
-                            <td></td>
-                            <td></td>
+                            
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_cash_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_card_in,2)}}</td>
                             <td style="font-weight: bold;color: #fff;">{{number_format($total_revenue_bank_in,2)}}</td>
