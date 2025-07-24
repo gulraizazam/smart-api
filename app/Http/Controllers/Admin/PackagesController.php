@@ -1268,8 +1268,15 @@ class PackagesController extends Controller
     }
     public function getvoucherinfo(Request $request)
     {
+        $voucherIds = DiscountWidget::loadPlanVoucherByLocationService($request->location_id, $request->bundle_id, Auth::User()->account_id);
+       
+        $vouchers = Vouchers::whereIn('id', $voucherIds)->where([
+            ['active', '=', '1'],
+        ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
 
-       dd($request->all());
+        return ApiHelper::apiResponse($this->success, 'Records found', true, [
+            'vouchers' => $vouchers,
+        ]);
     }
     /**
      * Get service info whan discount not selected
