@@ -345,7 +345,18 @@ class DiscountWidget
         */
         // 2. Find All Regions
         $singleLocation = Locations::find($location_id);
-        $regionlocation = VoucherHasLocations::where('location_id',$location_id)->get();
+        $regionlocation = VoucherHasLocations::where([
+            'location_id' => Locations::where([
+                'slug' => 'region',
+                'account_id' => $account_id,
+                'region_id' => $singleLocation->region_id,
+            ])->select('id')->first() ? Locations::where([
+                'slug' => 'region',
+                'account_id' => $account_id,
+                'region_id' => $singleLocation->region_id,
+            ])->select('id')->first()->id : null,
+        ])->get();
+        
         // $regionLocation = DiscountHasLocations::whereHas('location', function ($query) use ($account_id, $singleLocation) {
         //     $query->where([
         //         'slug' => 'region',
@@ -368,7 +379,7 @@ class DiscountWidget
                     'region_id' => $singleLocation->region_id,
                 ])->select('id')->first()->id,
             ])->get();
-           dd($regionvouchers);
+           
             if ($regionvouchers->count()) {
                 foreach ($regionvouchers as $regionvoucher) {
                     if (! in_array($regionvoucher->voucher_id, $discount_array)) {
@@ -412,6 +423,7 @@ class DiscountWidget
             ])->select('id')->first()->id,
             'location_id' => $location_id,
         ])->get();
+        dd($centrediscounts);
         if ($centrediscounts->count()) {
             foreach ($centrediscounts as $centrediscount) {
                 if (! in_array($centrediscount->discount_id, $discount_array)) {
