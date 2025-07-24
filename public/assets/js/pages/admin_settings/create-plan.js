@@ -1577,43 +1577,7 @@ function getDiscountInfo($this) {
                 }
             },
         });
-        $.ajax({
-            type: 'get',
-            url: route('admin.packages.getvoucherinfo'),
-            data: {
-                'bundle_id': service_id, //Basically it is bundle id
-                'location_id': location_id,
-                'patient_id': patient_id
-            },
-            success: function (resposne) {
-                $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-                if (resposne.status) {
-
-                    let discounts = resposne.data.discounts;
-
-                    let options = '<option value="" >Select Discount</option>';
-
-                    jQuery.each(discounts, function (i, discount) {
-                        options += '<option value="' + discount.id + '">' + discount.name + '</option>';
-                    });
-
-                    $("#" + type + "add_discount_id").html(options);
-
-                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
-                    $("#net_amount_1").prop("disabled", true);
-
-                } else {
-
-                    let options = '<option value="" >Select Discount</option>';
-
-                    $("#add_discount_id").html(options);
-
-                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
-                    $("#net_amount_1").prop("disabled", true);
-
-                }
-            },
-        });
+      
     } else {
 
         if (service_id && discount_id != '0') {
@@ -1845,6 +1809,43 @@ function editServiceDiscount($this, type = '') {
                     $("#edit_discount_id").html(options);
                     $("#edit_net_amount_1").val(resposne.data.net_amount);
                     $("#edit_net_amount_1").prop("disabled", true);
+
+                }
+            },
+        });
+        $.ajax({
+            type: 'get',
+            url: route('admin.packages.getvoucherinfo'),
+            data: {
+                'bundle_id': service_id, //Basically it is bundle id
+                'location_id': location_id,
+                'patient_id': patient_id
+            },
+            success: function (resposne) {
+                $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+                if (resposne.status) {
+
+                    let discounts = resposne.data.discounts;
+
+                    let options = '<option value="" >Select Discount</option>';
+
+                    jQuery.each(discounts, function (i, discount) {
+                        options += '<option value="' + discount.id + '">' + discount.name + '</option>';
+                    });
+
+                    $("#" + type + "add_discount_id").html(options);
+
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
+                    $("#net_amount_1").prop("disabled", true);
+
+                } else {
+
+                    let options = '<option value="" >Select Discount</option>';
+
+                    $("#add_discount_id").html(options);
+
+                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
+                    $("#net_amount_1").prop("disabled", true);
 
                 }
             },
