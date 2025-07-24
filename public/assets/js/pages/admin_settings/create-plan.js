@@ -1813,29 +1813,29 @@ function editServiceDiscount($this, type = '') {
                 }
             },
         });
-        $.ajax({
-            type: 'get',
-            url: route('admin.packages.getvoucherinfo'),
-            data: {
-                'bundle_id': service_id, //Basically it is bundle id
-                'location_id': location_id,
-                'patient_id': patient_id
-            },
-            success: function (resposne) {
-                if (resposne.status) {
-                    let vouchers = resposne.data.vouchers;
-                    let options = '<option value="" >Select Voucher</option>';
-                    jQuery.each(vouchers, function (i, voucher) {
-                        options += '<option value="' + voucher.id + '">' + voucher.name + '</option>';
-                    });
-                    console.log(options);
-                    $("#edit_voucher_id").append(options);
-                    $("#edit_net_amount_1").val(resposne.data.amount);
-                    $("#edit_net_amount_1").prop("disabled", true);
+        // $.ajax({
+        //     type: 'get',
+        //     url: route('admin.packages.getvoucherinfo'),
+        //     data: {
+        //         'bundle_id': service_id, //Basically it is bundle id
+        //         'location_id': location_id,
+        //         'patient_id': patient_id
+        //     },
+        //     success: function (resposne) {
+        //         if (resposne.status) {
+        //             let vouchers = resposne.data.vouchers;
+        //             let options = '<option value="" >Select Voucher</option>';
+        //             jQuery.each(vouchers, function (i, voucher) {
+        //                 options += '<option value="' + voucher.id + '">' + voucher.name + '</option>';
+        //             });
+                    
+        //             $("#edit_voucher_id").append(options);
+        //             $("#edit_net_amount_1").val(resposne.data.amount);
+        //             $("#edit_net_amount_1").prop("disabled", true);
 
-                } 
-            },
-        });
+        //         } 
+        //     },
+        // });
     }
 
     if ((service_id == null || service_id == '') && patient_id != '') {
