@@ -1,13 +1,13 @@
 
 var AddValidation = function () {
     // Private functions
-    var AddPatientValidation = function () {
-        let modal_id = 'modal_add_patients_form';
-        let form = document.getElementById(modal_id);
-        let validate = FormValidation.formValidation(
-            form,
-            {
-                fields: {
+    var validation = function () {
+        let modal_id = 'modal_add_vouchers_form';
+    let form = document.getElementById(modal_id);
+    let validate = FormValidation.formValidation(
+        form,
+        {
+            fields: {
                     name: {
                         validators: {
                             notEmpty: {
@@ -15,26 +15,20 @@ var AddValidation = function () {
                             }
                         }
                     },
-                    phone: {
+                    
+
+                    start: {
                         validators: {
                             notEmpty: {
-                                message: 'The phone field is required'
-                            },
-                            stringLength: {
-                                min: 10,
-                                max: 12,
-                                message: 'The phone number must be between 10 and 12 characters'
-                            },
-                            regexp: {
-                                regexp: /^\d+$/,
-                                message: 'The phone number must contain only digits (0-9)'
+                                message: 'The start field is required'
                             }
                         }
                     },
-                    gender: {
+
+                    end: {
                         validators: {
                             notEmpty: {
-                                message: 'The gender field is required'
+                                message: 'The end field is required'
                             }
                         }
                     },
@@ -50,12 +44,11 @@ var AddValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-            select2Validation();
+           select2Validation();
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
+                if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
                     reInitTable();
@@ -67,17 +60,16 @@ var AddValidation = function () {
     }
 
     return {
-        // public functions
         init: function() {
-            AddPatientValidation();
+            validation();
         }
     };
 }();
 
 var EditValidation = function () {
     // Private functions
-    var Validation = function () {
-        let modal_id = 'modal_edit_patients_form';
+    var validation = function () {
+        let modal_id = 'modal_edit_vouchers_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
@@ -90,26 +82,20 @@ var EditValidation = function () {
                             }
                         }
                     },
-                    phone: {
+                    
+
+                    start: {
                         validators: {
                             notEmpty: {
-                                message: 'The phone field is required'
-                            },
-                            stringLength: {
-                                min: 10,
-                                max: 12,
-                                message: 'The phone number must be between 10 and 12 characters'
-                            },
-                            regexp: {
-                                regexp: /^\d+$/,
-                                message: 'The phone number must contain only digits (0-9)'
+                                message: 'The start field is required'
                             }
                         }
                     },
-                    gender: {
+
+                    end: {
                         validators: {
                             notEmpty: {
-                                message: 'The gender field is required'
+                                message: 'The end field is required'
                             }
                         }
                     },
@@ -125,15 +111,14 @@ var EditValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-            select2Validation();
+           select2Validation();
         });
         validate.on('core.form.valid', function(event) {
             submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
+                if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable('patient');
+                    reInitTable('discount');
                 } else {
                     toastr.error(response.message);
                 }
@@ -142,29 +127,35 @@ var EditValidation = function () {
     }
 
     return {
-        // public functions
         init: function() {
-            Validation();
+            validation();
         }
     };
 }();
-var AssignMembershipValidation = function () {
+
+var AllocateValidation = function () {
     // Private functions
-    var AssignValidation = function () {
-        let modal_id = 'modal_edit_memberships_form';
+    var validation = function () {
+        let modal_id = 'modal_allocate_vouchers_form';
         let form = document.getElementById(modal_id);
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    membership_code: {
+                    location_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The Code field is required'
+                                message: 'The centre field is required'
                             }
                         }
                     },
-                   
+                    service_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The service field is required'
+                            }
+                        }
+                    },
                 },
 
                 plugins: {
@@ -177,91 +168,78 @@ var AssignMembershipValidation = function () {
             }
         );
         validate.on('core.form.invalid', function (e) {
-            select2Validation();
+           select2Validation();
         });
         validate.on('core.form.valid', function(event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
+            submitData(function (response) {
+                if (response.status == true) {
                     toastr.success(response.message);
-                    closePopup(modal_id);
-                    reInitTable('patient');
                 } else {
                     toastr.error(response.message);
                 }
-            }, form);
+            });
         });
     }
 
     return {
-        // public functions
         init: function() {
-            AssignValidation();
+            validation();
         }
     };
 }();
-var AssignVoucherValidation = function () {
-    // Private functions
-    var AssignValidation = function () {
-        let modal_id = 'modal_edit_vouchers_form';
-        let form = document.getElementById(modal_id);
-        let validate = FormValidation.formValidation(
-            form,
-            {
-                fields: {
-                    voucher_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The Voucher field is required'
-                            }
-                        }
-                    },
-                    amount: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The amount field is required'
-                            }
-                        }
-                    },
-                   
-                },
 
-                plugins: {
-                    trigger: new FormValidation.plugins.Trigger(),
-                    // Bootstrap Framework Integration
-                    bootstrap: new FormValidation.plugins.Bootstrap(),
-                    // Validate fields when clicking the Submit button
-                    submitButton: new FormValidation.plugins.SubmitButton(),
-                }
-            }
-        );
-        validate.on('core.form.invalid', function (e) {
-            select2Validation();
-        });
-        validate.on('core.form.valid', function(event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
-                    toastr.success(response.message);
-                    closePopup(modal_id);
-                    reInitTable('patient');
-                } else {
-                    toastr.error(response.message);
-                }
-            }, form);
-        });
-    }
-
-    return {
-        // public functions
-        init: function() {
-            AssignValidation();
-        }
-    };
-}();
 jQuery(document).ready(function() {
     AddValidation.init();
     EditValidation.init();
-    AssignMembershipValidation.init();
-    AssignVoucherValidation.init();
+    AllocateValidation.init();
 });
+
+function submitData(callback) {
+
+    let ids = [];
+    ids.push($("#locations").val());
+    ids.push($("#services").val());
+
+    showSpinner();
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.vouchers.save_Dervice'),
+        type: "POST",
+        data: {voucher_id: $("#voucher_id").val(), id: ids.join(',')},
+        cache: false,
+        success: function (response) {
+            if (response.status == true) {
+                var data = response.data;
+                $('#allocate_services').append(serviceLocation(data.record.id, data.record_locaiton_name, data.record_service_name));
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                hideSpinnerRestForm();
+            } else {
+                callback({
+                    'status': response.status,
+                    'message': response.message,
+                });
+                hideSpinnerRestForm();
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            if (xhr.status == '401') {
+                callback({
+                    'status': 0,
+                    'message': 'You are not authorized to access this resource',
+                });
+                hideSpinnerRestForm();
+            } else {
+                callback({
+                    'status': 0,
+                    'message': 'Unable to process your request, please try again later.',
+                });
+                hideSpinnerRestForm();
+            }
+        }
+    });
+}

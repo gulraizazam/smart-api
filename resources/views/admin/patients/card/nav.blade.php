@@ -20,7 +20,16 @@
             </a>
         </div>
     @endcan
-
+    @can('patients_appointment_manage')
+        <div class="navi-item mb-2">
+            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'vouchers-form');" class="change-tab vouchers-form-tab navi-link py-4">
+                <span class="navi-icon mr-2">
+                    <i class="la la-clock"></i>
+                </span>
+                <span class="navi-text font-size-lg">Vouchers</span>
+            </a>
+        </div>
+    @endcan
     @can("patients_customform_manage")
         <div class="navi-item mb-2">
             <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'custom-form');" class="change-tab custom-form-tab navi-link py-4">
@@ -145,7 +154,17 @@
                     </a>
                 </li>
             @endcan
-            @can("patients_customform_manage")
+            @can('patients_appointment_manage')
+                <li class="horizontal-nav-bar-li">
+                    <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'voucher-form');" class="change-tab voucher-form-tab navi-link py-4">
+                         <span class="text-muted mb-2 fa_icon">
+                             <i class="la la-clock"></i>
+                        </span>
+                        <p class="navi-text">Vouchers</p>
+                    </a>
+                </li>
+            @endcan
+            <!-- @can("patients_customform_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'custom-form');" class="change-tab custom-form-tab navi-link py-4">
 
@@ -156,8 +175,8 @@
 
                     </a>
                 </li>
-            @endcan
-            @can("appointments_medical_form_manage")
+            @endcan -->
+            <!-- @can("appointments_medical_form_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'medical-form');" class="change-tab medical-form-tab navi-link py-4">
                          <span class="text-muted mb-2 fa_icon">
@@ -166,8 +185,8 @@
                         <p class="navi-text">Medical History Form</p>
                     </a>
                 </li>
-            @endcan
-            @can("appointments_measurement_manage")
+            @endcan -->
+            <!-- @can("appointments_measurement_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'measurement-form');" class="change-tab measurement-form-tab navi-link py-4">
                         <span class="text-muted mb-2 fa_icon">
@@ -176,7 +195,7 @@
                         <p class="navi-text">Measurement History Form</p>
                     </a>
                 </li>
-            @endcan
+            @endcan -->
             @can("patients_document_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'document-form');" class="change-tab document-form-tab navi-link py-4">
