@@ -1120,7 +1120,7 @@ class PackagesController extends Controller
                 ['discount_type', '=', 'Treatment'],
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-            $vouchers = Vouchers::whereIn('id', $voucherIds)->where([
+            $vouchers = Voucher::whereIn('id', $voucherIds)->where([
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
         } else {

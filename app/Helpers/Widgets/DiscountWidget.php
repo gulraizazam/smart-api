@@ -379,7 +379,7 @@ class DiscountWidget
                     'region_id' => $singleLocation->region_id,
                 ])->select('id')->first()->id,
             ])->get();
-            dd($regionvouchers);   
+           
             if ($regionvouchers->count()) {
                 foreach ($regionvouchers as $regionvoucher) {
                     if (! in_array($regionvoucher->voucher_id, $discount_array)) {
