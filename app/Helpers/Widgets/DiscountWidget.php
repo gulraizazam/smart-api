@@ -443,12 +443,12 @@ class DiscountWidget
           
         if ($centreservicediscounts->count()) {
             foreach ($centreservicediscounts as $centreservicediscount) {
-                if (! in_array($centreservicediscount->discount_id, $discount_array)) {
-                    $discount_array[] = $centreservicediscount->discount_id;
+                if (! in_array($centreservicediscount->voucher_id, $discount_array)) {
+                    $discount_array[] = $centreservicediscount->voucher_id;
                 }
             }
         }
-        dd($discount_array);
+       
         return $discount_array;
     }
     /*
