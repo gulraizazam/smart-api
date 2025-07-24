@@ -22,6 +22,7 @@ use App\Helpers\JazzSMSAPI;
 use App\Models\AuditTrails;
 use App\Models\Appointments;
 use App\Models\PaymentModes;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Composer\Package\Package;
 use App\Helpers\TelenorSMSAPI;
