@@ -1822,32 +1822,17 @@ function editServiceDiscount($this, type = '') {
                 'patient_id': patient_id
             },
             success: function (resposne) {
-                $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
                 if (resposne.status) {
-
-                    let discounts = resposne.data.discounts;
-
-                    let options = '<option value="" >Select Discount</option>';
-
-                    jQuery.each(discounts, function (i, discount) {
-                        options += '<option value="' + discount.id + '">' + discount.name + '</option>';
+                    let vouchers = resposne.data.vouchers;
+                    let options = '<option value="" >Select Voucher</option>';
+                    jQuery.each(vouchers, function (i, voucher) {
+                        options += '<option value="' + voucher.id + '">' + voucher.name + '</option>';
                     });
+                    $("#edit_voucher_id").append(options);
+                    $("#edit_net_amount_1").val(resposne.data.amount);
+                    $("#edit_net_amount_1").prop("disabled", true);
 
-                    $("#" + type + "add_discount_id").html(options);
-
-                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
-                    $("#net_amount_1").prop("disabled", true);
-
-                } else {
-
-                    let options = '<option value="" >Select Discount</option>';
-
-                    $("#add_discount_id").html(options);
-
-                    $("#net_amount_1").val((resposne.data.net_amount).toFixed(2));
-                    $("#net_amount_1").prop("disabled", true);
-
-                }
+                } 
             },
         });
     }
