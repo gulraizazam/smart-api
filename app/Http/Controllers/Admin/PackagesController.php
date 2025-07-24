@@ -1124,7 +1124,7 @@ class PackagesController extends Controller
             $vouchers = Voucher::whereIn('id', $voucherIds)->where([
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-            dd($vouchers);
+            dd($voucherIds);
         } else {
            
             if ($bundle && $bundle->apply_discount == '1') {
