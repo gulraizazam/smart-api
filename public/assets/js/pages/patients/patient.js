@@ -96,6 +96,7 @@ function actions(data) {
     let delete_url = route('admin.patients.destroy', { id: id });
     let view_url = route('admin.patients.preview', { id: id });
     let assign_membership_url = route('admin.patients.preview', { id: id });
+    let assign_voucher_url = route('admin.patients.preview', { id: id });
     let cancel_url = route('admin.memberships.cancel', { id: id });
     if (permissions.edit || permissions.delete) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -120,6 +121,12 @@ function actions(data) {
                     <span class="navi-text">Cancel Membership</span>\
                     </a>\
                 </li>';
+                actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="addVoucher(`'+ assign_voucher_url + '`, `' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                            <span class="navi-text">Add Voucher</span>\
+                        </a>\
+                    </li>';
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`'+ url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
@@ -181,6 +188,36 @@ function editRow(url, id) {
 function assignMembership(url, id) {
     $("#modal_edit_memberships").modal("show");
     $("#modal_edit_memberships_form").attr("action", route('admin.patients.assignmembership', { id: id }));
+
+}
+function addVoucher(url, id) {
+    $('#edit_voucher_id').empty();
+    $("#edit_amount").val('');
+    var getVouchersUrl = route('admin.vouchers.getListing');
+    $('#edit_voucher_id').append('<option value="">Select a Voucher</option>');
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: getVouchersUrl,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            Object.keys(response.data).forEach(function(voucherName) {
+                var voucherId = response.data[voucherName];
+                $('#edit_voucher_id').append(
+                    `<option value="${voucherId}">${voucherName}</option>`
+                );
+            });
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+            reInitValidation(EditValidation);
+        }
+    });
+    $("#modal_edit_vouchers").modal("show");
+    $("#modal_edit_vouchers_form").attr("action", route('admin.patients.assignvoucher', { id: id }));
 
 }
 function cancelMembership(url) {

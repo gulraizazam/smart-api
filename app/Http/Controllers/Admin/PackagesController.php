@@ -1104,7 +1104,7 @@ class PackagesController extends Controller
 
         if ($bundle && $bundle->type == 'single') {
 
-
+            
             $bundleService = BundleHasServices::where([
                 'bundle_id' => $bundle->id,
             ])->first();
@@ -1114,13 +1114,17 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-
+            $voucherIds = DiscountWidget::loadPlanVoucherByLocationService($location_id, $service_id, Auth::User()->account_id);
+            dd($voucherIds);
             $discounts = Discounts::whereIn('id', $discountIds)->where([
                 ['discount_type', '=', 'Treatment'],
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
+            $vouchers = Vouchers::whereIn('id', $voucherIds)->where([
+                ['active', '=', '1'],
+            ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
         } else {
-
+           
             if ($bundle && $bundle->apply_discount == '1') {
                 $bundleServices = BundleHasServices::where([
                     'bundle_id' => $bundle->id,

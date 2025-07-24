@@ -1,11 +1,11 @@
 @extends('admin.layouts.master')
-@section('title', 'Patients')
+@section('title', 'Vouchers')
 @section('content')
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Patients List', 'title' => 'Patients'])
+    @include('admin.partials.breadcrumb', ['module' => 'Vouchers List', 'title' => 'Vouchers'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -31,13 +31,12 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Patients</h3>
-
+                            <h3 class="card-label">Vouchers</h3>
                         </div>
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('patients_destroy'))
+                            @if(Gate::allows('vouchers_destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -46,12 +45,12 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            {{-- @if(Gate::allows('patients_create'))
-                                <a href="javascript:void(0);" onclick="createPatient('{{ route('admin.patients.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_patients">
+                            @if(Gate::allows('vouchers_create'))
+                                <a href="javascript:void(0);" onclick="createVoucher('{{ route('admin.vouchers.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_voucher">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
-                            @endif --}}
+                        @endif
 
                         <!--end::Button-->
                         </div>
@@ -60,8 +59,8 @@
 
                     <div class="card-body">
                         <!--begin::Search Form-->
-                        @include('admin.patients.filters')
-                        <!--end::Search Form-->
+                    @include('admin.discounts.filters')
+                    <!--end::Search Form-->
 
                         <!--begin: Datatable-->
                         <div class="datatable datatable-bordered datatable-head-custom" id="kt_datatable"></div>
@@ -76,62 +75,43 @@
     </div>
     <!--end::Content-->
 
-    <div class="modal fade" id="modal_add_patients" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_add_voucher" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="patients_add">
+        <div class="modal-dialog modal-dialog-centered form-popup medium_modal" id="voucher_add">
 
-            @include('admin.patients.create')
+            @include('admin.vouchers.create')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
-    <div class="modal fade" id="modal_edit_patients" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_edit_voucher" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="edit_patients">
+        <div class="modal-dialog modal-dialog-centered form-popup medium_modal" id="voucher_edit">
 
-            @include('admin.patients.edit')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div> 
-    <div class="modal fade" id="modal_edit_memberships" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="edit_memberships">
-
-            @include('admin.patients.assignmembership')
-
-        </div>
-        <!--end::Modal dialog-->
-    </div>
-    <div class="modal fade" id="modal_edit_vouchers" tabindex="-1" aria-hidden="true">
-        <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="edit_vouchers">
-
-            @include('admin.patients.assignVoucher')
+            @include('admin.vouchers.edit')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
-    <div class="modal fade" id="modal_import_leads" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_allocate_voucher" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->
-        <div class="modal-dialog modal-dialog-centered form-popup" id="import_leads">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="voucher_allocate">
 
-            @include('admin.leads.import')
+            @include('admin.vouchers.allocate')
 
         </div>
         <!--end::Modal dialog-->
     </div>
 
-    @push('js')
-
-        <script src="{{asset('assets/js/pages/crud/forms/validation/patients/patient.js')}}"></script>
-
-    @endpush
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/patients/patient.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/vouchers.js')}}"></script>
+    @endpush
+
+    @push('js')
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/vouchers.js')}}"></script>
     @endpush
 
 @endsection
