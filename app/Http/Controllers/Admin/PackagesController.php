@@ -1272,7 +1272,7 @@ class PackagesController extends Controller
        
         $vouchers = Voucher::whereIn('id', $voucherIds)->where([
             ['active', '=', '1'],
-        ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
+        ])->get();
 
         return ApiHelper::apiResponse($this->success, 'Records found', true, [
             'vouchers' => $vouchers,
