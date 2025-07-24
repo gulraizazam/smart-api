@@ -296,7 +296,7 @@ class DiscountWidget
                 'account_id' => $account_id,
             ])->select('id')->first()->id,
         ])->get();
-             
+         dd($rootlocation);    
         if ($rootlocation->count()) {
             //      Find All Services
             $rootvouchers = VoucherHasLocations::where([
