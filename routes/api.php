@@ -322,7 +322,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('packages/updatepackages', [PackagesController::class, 'updatepackages'])->name('packages.updatepackages');
 
     Route::get('packages/getserviceinfo', [PackagesController::class, 'getserviceinfo'])->name('packages.getserviceinfo');
-
+    Route::get('packages/getvoucherinfo', [PackagesController::class, 'getvoucherinfo'])->name('packages.getvoucherinfo');
     Route::get('packages/display/{id}', [PackagesController::class, 'display'])->name('packages.display');
 
     Route::get('packages/getservice', [PackagesController::class, 'getservices'])->name('packages.getservice');
