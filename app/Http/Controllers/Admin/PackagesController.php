@@ -1124,6 +1124,7 @@ class PackagesController extends Controller
             $vouchers = Voucher::whereIn('id', $voucherIds)->where([
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
+            dd($vouchers);
         } else {
            
             if ($bundle && $bundle->apply_discount == '1') {
@@ -1269,7 +1270,7 @@ class PackagesController extends Controller
                 }
             }
         }
-        dd($vouchers);
+       
         if (count($vouchers) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
