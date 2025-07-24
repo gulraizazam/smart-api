@@ -1828,6 +1828,7 @@ function editServiceDiscount($this, type = '') {
                     jQuery.each(vouchers, function (i, voucher) {
                         options += '<option value="' + voucher.id + '">' + voucher.name + '</option>';
                     });
+                    console.log(options);
                     $("#edit_voucher_id").append(options);
                     $("#edit_net_amount_1").val(resposne.data.amount);
                     $("#edit_net_amount_1").prop("disabled", true);
