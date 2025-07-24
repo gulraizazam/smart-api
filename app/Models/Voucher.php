@@ -13,7 +13,7 @@ class Voucher extends Model
 
     public function voucherHasLocations()
     {
-        return $this->hasMany(voucherHasLocations::class, 'voucher_id', 'id');
+        return $this->hasMany(VoucherHasLocations::class, 'voucher_id', 'id');
     }
 
 
