@@ -28,7 +28,7 @@ class Voucher extends Model
     }
     public function userVouchers()
     {
-        return $this->hasMany(userVouchers::class, 'voucher_id');
+        return $this->hasMany(UserVouchers::class, 'voucher_id');
     }
     public static function updateVoucher($data, $id)
     {
