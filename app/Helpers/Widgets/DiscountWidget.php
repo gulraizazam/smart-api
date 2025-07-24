@@ -440,7 +440,7 @@ class DiscountWidget
         ])
             ->whereIn('service_id', $serviceWithParents)
             ->get();
-            dd($centreservicediscounts);
+          
         if ($centreservicediscounts->count()) {
             foreach ($centreservicediscounts as $centreservicediscount) {
                 if (! in_array($centreservicediscount->discount_id, $discount_array)) {
@@ -448,7 +448,7 @@ class DiscountWidget
                 }
             }
         }
-
+        dd($discount_array);
         return $discount_array;
     }
     /*
