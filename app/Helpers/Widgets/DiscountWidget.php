@@ -346,7 +346,6 @@ class DiscountWidget
         // 2. Find All Regions
         $singleLocation = Locations::find($location_id);
         $regionlocation = VoucherHasLocations::where('location_id',$location_id)->get();
-         dd($regionlocation);
         // $regionLocation = DiscountHasLocations::whereHas('location', function ($query) use ($account_id, $singleLocation) {
         //     $query->where([
         //         'slug' => 'region',
@@ -369,7 +368,7 @@ class DiscountWidget
                     'region_id' => $singleLocation->region_id,
                 ])->select('id')->first()->id,
             ])->get();
-           
+           dd($regionvouchers);
             if ($regionvouchers->count()) {
                 foreach ($regionvouchers as $regionvoucher) {
                     if (! in_array($regionvoucher->voucher_id, $discount_array)) {
