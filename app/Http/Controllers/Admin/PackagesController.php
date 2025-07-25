@@ -1120,7 +1120,7 @@ class PackagesController extends Controller
                 // ['discount_type', '=', 'Treatment'],
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-           dd($discounts);
+           
             
         } else {
            
