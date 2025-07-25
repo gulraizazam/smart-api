@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Admin;
 use PHPUnit\Exception;
 use App\Helpers\Filters;
 use App\Models\Locations;
-use App\Models\Voucher;
+use App\Models\Discounts;
 use App\Helpers\NodesTree;
 use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
-use App\Models\VoucherHasLocations;
+use App\Models\DiscountHasLocations;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use App\Helpers\Widgets\ServiceWidget;
@@ -99,8 +99,9 @@ class VouchersController extends Controller
             }
 
             if ($request->start <= $request->end) {
-                
-                if (Voucher::createVoucher($data)) {
+                $data['type'] = 'Fixed';
+                $data['discount_type'] = 'voucher';
+                if (Discounts::createDiscount($data)) {
 
                     return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
@@ -159,7 +160,8 @@ class VouchersController extends Controller
 
             $where = $this->applyFilters($filters, $apply_filter, $filename);
 
-            $total_query = Voucher::select('id');
+            $total_query = Discounts::select('id')
+            ->where('discount_type', 'voucher');
             if (count($where)) {
                
                 $total_query->where($where);
@@ -171,7 +173,7 @@ class VouchersController extends Controller
 
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $query = Voucher::select('*');
+            $query = Discounts::select('*')->where('discount_type', 'voucher');
             if ($request->get('startdate') && $request->get('startdate') != '') {
                 $query->whereDate('start', '>=', $request->get('startdate'));
             }
@@ -411,7 +413,7 @@ class VouchersController extends Controller
 
         try {
 
-            $voucher = Voucher::getData($id);
+            $voucher = Discounts::getData($id);
 
             if ($voucher == null) {
 
@@ -482,7 +484,7 @@ class VouchersController extends Controller
 
         if ($request->start <= $request->end) {
             
-            if (Voucher::updateVoucher($data, $id)) {
+            if (Discounts::updateDiscount($data, $id)) {
 
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
             }
@@ -507,9 +509,9 @@ class VouchersController extends Controller
         try {
 
             if ($request->status == 1) {
-                $response = Voucher::activeRecord($request->id);
+                $response = Discounts::activeRecord($request->id);
             } else {
-                $response = Voucher::inactiveRecord($request->id);
+                $response = Discounts::inactiveRecord($request->id);
             }
 
             if ($response) {
@@ -536,7 +538,7 @@ class VouchersController extends Controller
 
         try {
 
-            $record = Voucher::deleteRecord($id);
+            $record = Discounts::deleteRecord($id);
             if ($record) {
                 return ApiHelper::apiResponse($this->success, $record);
             } else {
@@ -554,22 +556,22 @@ class VouchersController extends Controller
      */
     public function displayDlocation($id)
     {
-        if (!Gate::allows('vouchers_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         try {
 
-            $voucher = Voucher::find($id);
+            $discount = Discounts::find($id);
 
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
 
-            $voucher_has_location = VoucherHasLocations::with(['service', 'location.city'])->where('voucher_id', '=', $voucher->id)->get();
+            $discount_has_location = DiscountHasLocations::with(['service', 'location.city'])->where('discount_id', '=', $discount->id)->get();
 
             return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
-                'voucher' => $voucher,
+                'discount' => $discount,
                 'location' => $location,
-                'voucher_has_location' => $voucher_has_location,
+                'discount_has_location' => $discount_has_location,
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -583,14 +585,19 @@ class VouchersController extends Controller
      */
     public function getDservices(Request $request)
     {
-        if (!Gate::allows('vouchers_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
-        $voucher_info = Voucher::find($request->voucher_id);
-       
-        $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
-        
-        
+        $discount_info = Discounts::find($request->discount_id);
+        if ($discount_info->discount_type == Config::get('constants.Service')) {
+            $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
+        } else {
+            $serive = ServiceWidget::generateServiceArrayConsultancy($request, Auth::User()->account_id);
+        }
+        if ($discount_info->type == "Configurable") {
+            $serive = BaseDiscountService::join('services', 'services.id', 'base_discount_services.service_id')
+                ->select('services.name', 'services.id')->where('discount_id', $request->discount_id)->take(1)->get()->toArray();
+        }
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $serive,
@@ -599,7 +606,7 @@ class VouchersController extends Controller
     }
     public function getDiscountServices(Request $request)
     {
-        if (!Gate::allows('vouchers_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -615,7 +622,7 @@ class VouchersController extends Controller
      */
     public function saveDservices(Request $request)
     {
-        if (!Gate::allows('vouchers_allocate')) {
+        if (!Gate::allows('discounts_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -623,19 +630,19 @@ class VouchersController extends Controller
         $myArray = explode(',', $myString);
         $data = [];
 
-        $data['voucher_id'] = $request->voucher_id;
+        $data['discount_id'] = $request->discount_id;
         $data['location_id'] = $myArray[0];
         $data['service_id'] = $myArray[1];
 
-        $checked = VoucherHasLocations::where([
+        $checked = DiscountHasLocations::where([
             ['location_id', '=', $myArray[0]],
             ['service_id', '=', $myArray[1]],
-            ['voucher_id', '=', $request->voucher_id],
+            ['discount_id', '=', $request->discount_id],
         ])->count();
 
         if ($checked == '0') {
 
-            $record = VoucherHasLocations::create($data);
+            $record = DiscountHasLocations::create($data);
 
             $record_location_name = $record->location->city->name . '-' . $record->location->name;
             $record_service_name = $record->service->name;
@@ -647,6 +654,7 @@ class VouchersController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'Duplicate record found.', false);
     }
+
 
     /**
      * delete serive
@@ -660,7 +668,7 @@ class VouchersController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        VoucherHasLocations::find($request->id)->delete();
+        DiscountHasLocations::find($request->id)->delete();
 
         return ApiHelper::apiResponse($this->success, 'Row deleted', true, [
             'id' => $request->id,
@@ -668,7 +676,7 @@ class VouchersController extends Controller
     }
     public function getListing()
     {
-        $vouchers = Voucher::pluck('id','name')->toArray();
+        $vouchers = Discounts::pluck('id','name')->toArray();
         return response()->json(['data'=> $vouchers]);
         
     }

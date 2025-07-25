@@ -1196,7 +1196,7 @@ class PackagesController extends Controller
         /*end*/
         $Discount_array = [];
         $Voucher_array = [];
-        dd($vouchers);
+       
         if (count($discounts) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
@@ -1238,13 +1238,6 @@ class PackagesController extends Controller
                     }
                     $discounts = $discounts->toArray();
                   
-                    // $select_discount = ["discount_type" => "Percentage","discount_price" => 0.0,"id" => 0,"net_amount" => 0.0];
-                    // return response()->json(array(
-                    //     'status' => true,
-                    //     'discounts' => $discounts,
-                    //     'checked_custom' => '0',
-                    //     'dis_price_info' => $select_discount,
-                    // ));
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
 
                     return ApiHelper::apiResponse($this->success, 'Records found.', true, [
