@@ -183,6 +183,12 @@ class PackagesController extends Controller
                     $discount_price = $discount_data->amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
+                }else if ($discount_data->discount_type == "voucher") {
+
+                    $discount_type = "voucher";
+                    $discount_price = 1000;
+                    $discount_price_cal = $service_data->price * (($discount_price) / 100);
+                    $net_amount = ($service_data->price) - ($discount_price_cal);
                 }
                 return ApiHelper::apiResponse($this->success, 'Record Found', true, [
                     'discount_type' => $net_amount < 0 ? '' : $discount_type,
