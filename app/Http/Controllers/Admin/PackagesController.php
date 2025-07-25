@@ -1115,7 +1115,11 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-           
+            $voucherIds = DiscountWidget::loadPlanVoucherByLocationService($request->location_id, $request->bundle_id, Auth::User()->account_id);
+       
+            $vouchers = Voucher::whereIn('id', $voucherIds)->where([
+                ['active', '=', '1'],
+            ])->get();
             $discounts = Discounts::whereIn('id', $discountIds)->where([
                 ['discount_type', '=', 'Treatment'],
                 ['active', '=', '1'],
@@ -1153,7 +1157,7 @@ class PackagesController extends Controller
         }
 
         $temp_discounts = [];
-      
+        $temp_vouchers = [];
 
         /*Now Checked Brithday promotion valid or not*/
         foreach ($discounts as $key => $discount) {
@@ -1191,7 +1195,7 @@ class PackagesController extends Controller
         
         /*end*/
         $Discount_array = [];
-       
+        $Voucher_array = [];
         if (count($discounts) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
@@ -1260,7 +1264,52 @@ class PackagesController extends Controller
             }
             
         }
-       
+        if (count($vouchers) > 0) {
+            
+           
+                foreach ($vouchers as $voucher) {
+                    $voucher_data = UserVoucher::where('voucher_id', '=', $voucher->id)->where('user_id', '=', $request->patient_id)->first();
+                    
+                }
+
+                $select_discount = [];
+                $lowest = false;
+                if (count($Discount_array) > 0) {
+                    foreach ($Discount_array as $value) {
+                        if ($lowest === false || $value['net_amount'] < $lowest) {
+                            $lowest = $value['net_amount'];
+                            $select_discount = $value;
+                        }
+                    }
+                    $discounts = $discounts->toArray();
+                    // $select_discount = ["discount_type" => "Percentage","discount_price" => 0.0,"id" => 0,"net_amount" => 0.0];
+                    // return response()->json(array(
+                    //     'status' => true,
+                    //     'discounts' => $discounts,
+                    //     'checked_custom' => '0',
+                    //     'dis_price_info' => $select_discount,
+                    // ));
+                    $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
+                    dd($discounts);
+                    return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+                        'discounts' => $discounts,
+                        'checked_custom' => '0',
+                        'dis_price_info' => $select_discount,
+                        'net_amount' => $service_data->price,
+                    ]);
+                } else {
+                    $discounts = $discounts->toArray();
+                    $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
+
+                    return ApiHelper::apiResponse($this->success, 'Records found.', true, [
+                        'discounts' => $discounts,
+                        'checked_custom' => '1',
+                        'net_amount' => $service_data->price,
+                    ]);
+                }
+           
+            
+        }
         
         return ApiHelper::apiResponse($this->success, 'Records found.', false, [
             'net_amount' => isset($bundle) ? $bundle->price : 0,
