@@ -589,15 +589,10 @@ class VouchersController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $discount_info = Discounts::find($request->discount_id);
-        if ($discount_info->discount_type == Config::get('constants.Service')) {
-            $serive = ServiceWidget::generateServiceArrayArray($request, Auth::User()->account_id);
-        } else {
+        
             $serive = ServiceWidget::generateServiceArrayConsultancy($request, Auth::User()->account_id);
-        }
-        if ($discount_info->type == "Configurable") {
-            $serive = BaseDiscountService::join('services', 'services.id', 'base_discount_services.service_id')
-                ->select('services.name', 'services.id')->where('discount_id', $request->discount_id)->take(1)->get()->toArray();
-        }
+        
+        
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'services' => $serive,
@@ -630,14 +625,14 @@ class VouchersController extends Controller
         $myArray = explode(',', $myString);
         $data = [];
 
-        $data['discount_id'] = $request->discount_id;
+        $data['discount_id'] = $request->voucher_id;
         $data['location_id'] = $myArray[0];
         $data['service_id'] = $myArray[1];
 
         $checked = DiscountHasLocations::where([
             ['location_id', '=', $myArray[0]],
             ['service_id', '=', $myArray[1]],
-            ['discount_id', '=', $request->discount_id],
+            ['discount_id', '=', $request->voucher_id],
         ])->count();
 
         if ($checked == '0') {
