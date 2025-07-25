@@ -1198,6 +1198,7 @@ class PackagesController extends Controller
                 foreach ($discounts as $discount) {
                     if ($discount->slug != 'custom') {
                         if ($discount->type == Config::get('constants.Fixed')) {
+                            dd($discount->name);
                             $discount_type = $discount->type;
                             $discount_price = $discount->amount;
                             $net_amount = ($service_data->price) - ($discount_price);
@@ -1266,18 +1267,7 @@ class PackagesController extends Controller
             'net_amount' => isset($bundle) ? $bundle->price : 0,
         ]);
     }
-    public function getvoucherinfo(Request $request)
-    {
-        $voucherIds = DiscountWidget::loadPlanVoucherByLocationService($request->location_id, $request->bundle_id, Auth::User()->account_id);
-       
-        $vouchers = Voucher::whereIn('id', $voucherIds)->where([
-            ['active', '=', '1'],
-        ])->get();
-
-        return ApiHelper::apiResponse($this->success, 'Records found', true, [
-            'vouchers' => $vouchers,
-        ]);
-    }
+   
     /**
      * Get service info whan discount not selected
      *
