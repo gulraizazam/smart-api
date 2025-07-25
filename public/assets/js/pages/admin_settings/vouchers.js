@@ -168,15 +168,15 @@ function setAllocateData(response) {
         $('.HR_SERVICES').remove()
         $('#allocate_services').append(location_services)
 
-        $("#voucher_id").val(voucher.id);
+        $("#voucher_id").val(discount.id);
 
         $("#locations").html(location_options);
 
        
-        $("#edit_start").val(voucher.start);
-        $("#edit_end").val(voucher.end);
+        $("#edit_start").val(discount.start);
+        $("#edit_end").val(discount.end);
 
-        $("#edit_active").prop("checked", voucher.active);
+        $("#edit_active").prop("checked", discount.active);
 
     } catch (error) {
         showException(error);
