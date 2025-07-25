@@ -1117,10 +1117,10 @@ class PackagesController extends Controller
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
             
             $discounts = Discounts::whereIn('id', $discountIds)->where([
-                ['discount_type', '=', 'Treatment'],
+                // ['discount_type', '=', 'Treatment'],
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-            dd($discounts);
+           dd($discounts);
             
         } else {
            
