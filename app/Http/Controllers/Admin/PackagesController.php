@@ -1120,7 +1120,7 @@ class PackagesController extends Controller
                 ['discount_type', '=', 'Treatment'],
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-           
+            dd($discounts);
             
         } else {
            
@@ -1191,7 +1191,7 @@ class PackagesController extends Controller
         
         /*end*/
         $Discount_array = [];
-        dd($discounts);
+       
         if (count($discounts) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
