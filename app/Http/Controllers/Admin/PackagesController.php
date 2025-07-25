@@ -1196,7 +1196,7 @@ class PackagesController extends Controller
         /*end*/
         $Discount_array = [];
         $Voucher_array = [];
-        dd($discounts);
+        dd($vouchers);
         if (count($discounts) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
