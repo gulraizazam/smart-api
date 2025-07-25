@@ -1191,14 +1191,14 @@ class PackagesController extends Controller
         
         /*end*/
         $Discount_array = [];
-       
+        dd($discounts);
         if (count($discounts) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
                 foreach ($discounts as $discount) {
                     if ($discount->slug != 'custom') {
                         if ($discount->type == Config::get('constants.Fixed')) {
-                            dd($discount->name);
+                            
                             $discount_type = $discount->type;
                             $discount_price = $discount->amount;
                             $net_amount = ($service_data->price) - ($discount_price);
