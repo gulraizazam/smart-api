@@ -1236,6 +1236,7 @@ class PackagesController extends Controller
                         }
                     }
                     $discounts = $discounts->toArray();
+                    dd($discounts);
                     // $select_discount = ["discount_type" => "Percentage","discount_price" => 0.0,"id" => 0,"net_amount" => 0.0];
                     // return response()->json(array(
                     //     'status' => true,
@@ -1264,6 +1265,7 @@ class PackagesController extends Controller
             }
             
         }
+        
         if (count($vouchers) > 0) {
             
            
@@ -1290,7 +1292,7 @@ class PackagesController extends Controller
                     //     'dis_price_info' => $select_discount,
                     // ));
                     $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
-                    dd($discounts);
+                   
                     return ApiHelper::apiResponse($this->success, 'Records found.', true, [
                         'discounts' => $discounts,
                         'checked_custom' => '0',
