@@ -137,9 +137,9 @@ function setAllocateData(response) {
     
     try {
 
-        let voucher = response.data.voucher;
+        let discount = response.data.discount;
         let locations = response.data.location;
-        let voucher_locations = response.data.voucher_has_location;
+        let discount_locations = response.data.discount_has_location;
 
         let location_options = '<option value="">Select Centre</option>';
         let location_services = '';
@@ -155,7 +155,7 @@ function setAllocateData(response) {
             location_options += '</optgroup>';
         });
 
-    Object.values(voucher_locations).forEach(function(value, index) {
+    Object.values(discount_locations).forEach(function(value, index) {
         
         let location_name = value.location.city.name +"-"+ value.location.name;
         location_services += serviceLocation(value.id, location_name, value.service.name);
