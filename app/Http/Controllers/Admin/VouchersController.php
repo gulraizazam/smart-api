@@ -671,7 +671,7 @@ class VouchersController extends Controller
     }
     public function getListing()
     {
-        $vouchers = Discounts::pluck('id','name')->toArray();
+        $vouchers = Discounts::where('discount_type', 'voucher')->pluck('id','name')->toArray();
         return response()->json(['data'=> $vouchers]);
         
     }
