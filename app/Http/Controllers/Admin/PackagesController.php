@@ -851,9 +851,14 @@ class PackagesController extends Controller
         if ($discount_data->slug == 'custom') {
             $discount_id = $request->discount_id;
         } else {
-            $request->discount_value = $discount_data->amount;
+            if($discount_data->discount_type == "voucher"){
+                $discountValue = UserVouchers::where("user_id", $request->user_id)->where("voucher_id", $discount_id)->first();
+                $request->discount_value = $discountValue->amount;
+            }else{
+                $request->discount_value = $discount_data->amount;
+            }
         }
-        if ($discount_data->type == 'Fixed') {
+        if ($discount_data->type == 'Fixed' && $discount_data->discount_type != 'voucher') {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 if ($request->discount_value > $discount_data->amount || $request->discount_value > $service_data->price) {
                     return false;
@@ -872,6 +877,12 @@ class PackagesController extends Controller
                 $amount_after_per = ($request->discount_value / 100) * $service_data->price;
                 $net_amount = $service_data->price - $amount_after_per;
             }
+        }else if($discount_data->type == 'Fixed' && $discount_data->discount_type == 'voucher'){
+            $discountValue = UserVouchers::where("user_id", $request->user_id)->where("voucher_id", $discount_id)->first();
+            $discount_type = Config::get('constants.Fixed');
+            $discount_price = $discountValue->amount;
+            $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
+            $net_amount = ($service_data->price) - ($discount_price);
         } else {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
