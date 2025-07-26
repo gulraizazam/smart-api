@@ -157,7 +157,7 @@ class PackagesController extends Controller
             $discount_id = $request->discount_id;
 
             $discount_data = Discounts::find($discount_id);
-            $discountinfo = Discounts::find($discount_id);
+           dd($discount_data);
             if ($discount_data->slug == 'custom') {
 
 
