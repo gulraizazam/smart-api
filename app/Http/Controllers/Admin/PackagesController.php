@@ -151,13 +151,13 @@ class PackagesController extends Controller
         if ($request->discount_id) {
 
             $service_id = $request->service_id;
-
+            $patient_id = $request->patient_id;
             $service_data = Bundles::find($service_id);
 
             $discount_id = $request->discount_id;
 
             $discount_data = Discounts::find($discount_id);
-
+            $discountinfo = Discounts::find($discount_id);
             if ($discount_data->slug == 'custom') {
 
 
