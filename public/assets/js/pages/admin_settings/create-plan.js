@@ -1953,9 +1953,13 @@ function editDiscountInfo($this) {
                                 }
                             } else {
 
-                                
-                                $('#edit_DiscountRange').show();
-                                $("#edit_discount_value_1").val('');
+                                if(resposne.data.discount_is_voucher){
+                                    $('#edit_DiscountRange').hide();
+                                    $("#edit_discount_value_1").val(resposne.data.discount_price);
+                                }else{
+                                    $('#edit_DiscountRange').show();
+                                    $("#edit_discount_value_1").val('');
+                                }
                             }
                         } else {
                             $("#edit_discount_type").prop("disabled", false);
