@@ -186,11 +186,16 @@ class PackagesController extends Controller
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }else if ($discount_data->discount_type == "voucher") {
                     $patientVoucher = UserVouchers::where("user_id", $patient_id)->where("voucher_id", $discount_id)->first();
-                    dd($patientVoucher);
-                    $discount_type = "voucher";
-                    $discount_price = 1000;
-                    $discount_price_cal = $service_data->price * (($discount_price) / 100);
-                    $net_amount = ($service_data->price) - ($discount_price_cal);
+                    if ($patientVoucher) {
+                        $discount_type = "voucher";
+                        $discount_price = $patientVoucher->amount;
+                        $discount_price_cal = $service_data->price * (($discount_price) / 100);
+                        $net_amount = ($service_data->price) - ($discount_price_cal);
+                    }else{
+                        $discount_type = "";
+                        $discount_price = 0;
+                        $net_amount = $service_data->price;
+                    }
                 }
                 return ApiHelper::apiResponse($this->success, 'Record Found', true, [
                     'discount_type' => $net_amount < 0 ? '' : $discount_type,
