@@ -1908,14 +1908,14 @@ function editDiscountInfo($this) {
         });
     } else {
         if (service_id && discount_id != '0') {
-            alert($('#edit_patient_id').val());
+            
             $.ajax({
                 type: 'get',
                 url: route('admin.packages.getdiscountinfo'),
                 data: {
                     'service_id': service_id,
                     'discount_id': discount_id,
-                    
+                    'patient_id': $('#edit_parent_id').val()
                 },
                 success: function (resposne) {
 
