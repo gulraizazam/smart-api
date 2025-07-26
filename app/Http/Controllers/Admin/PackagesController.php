@@ -31,7 +31,7 @@ use App\Models\PackageBundles;
 use App\Models\PackageService;
 use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
-use App\Models\UserVoucher;
+use App\Models\UserVouchers;
 use App\Models\UserHasLocations;
 use App\Helpers\GeneralFunctions;
 use App\Models\AuditTrailChanges;
@@ -185,7 +185,7 @@ class PackagesController extends Controller
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }else if ($discount_data->discount_type == "voucher") {
-                    $patientVoucher = UserVoucher::where("user_id", $patient_id)->where("voucher_id", $discount_id)->first();
+                    $patientVoucher = UserVouchers::where("user_id", $patient_id)->where("voucher_id", $discount_id)->first();
                     dd($patientVoucher);
                     $discount_type = "voucher";
                     $discount_price = 1000;
