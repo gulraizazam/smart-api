@@ -187,7 +187,7 @@ class PackagesController extends Controller
                 }else if ($discount_data->discount_type == "voucher") {
                     $patientVoucher = UserVouchers::where("user_id", $patient_id)->where("voucher_id", $discount_id)->first();
                     if ($patientVoucher) {
-                        $discount_type = "voucher";
+                        $discount_type = "Fixed";
                         $discount_price = $patientVoucher->amount;
                         $discount_price_cal = $service_data->price * (($discount_price) / 100);
                         $net_amount = ($service_data->price) - ($discount_price_cal);
