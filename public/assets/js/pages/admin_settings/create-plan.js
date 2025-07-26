@@ -2042,7 +2042,7 @@ function getDiscountValue($this) {
 }
 
 function changeDiscount($this, type) {
-    alert(type);
+   
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
     if (discount_type != "") {
@@ -2062,6 +2062,7 @@ function changeDiscount($this, type) {
             var discount_value = $('#edit_discount_value_1').val();
             var service_id = $('#edit_service_id').val();//Basicailly it is bundle id
             var discount_id = $('#edit_discount_id').val();
+            var patient_id = $('#edit_parent_id').val();
         }
     } else {
         if (discount_type) {
@@ -2097,6 +2098,7 @@ function changeDiscount($this, type) {
                 'discount_id': discount_id,
                 'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
