@@ -460,7 +460,7 @@ function editRow(url) {
     ExistingTotal = 0;
     $('.error-msg').html('');
     $('#edit_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
-    $("#edit_discount_id").html('<option value="">Select Discount</option>');
+    $("#edit_discount_id").html('<option value="">Select Discount/Voucher</option>');
     $("#edit_discount_type").attr('disabled', true);
     $("#edit_discount_value_1").val('');
     $("#edit_discount_value_1").attr('disabled', true);
@@ -1798,16 +1798,16 @@ function editServiceDiscount($this, type = '') {
 
                 if (resposne.status) {
                     let discounts = resposne.data.discounts;
-                    let options = '<option value="" >Select Discount</option>';
+                    let options = '<option value="" >Select Discount/Voucher</option>';
                     jQuery.each(discounts, function (i, discount) {
-                        options += '<option value="' + discount.id + '">' + discount.name + '</option>';
+                        options += '<option value="' + discount.id + '">' + discount.name+' ('+discount.discount_type+')' + '</option>';
                     });
                     $("#edit_discount_id").html(options);
                     $("#edit_net_amount_1").val(resposne.data.net_amount);
                     $("#edit_net_amount_1").prop("disabled", true);
 
                 } else {
-                    let options = '<option value="" >Select Discount</option>';
+                    let options = '<option value="" >Select Discount/Voucher</option>';
                     $("#edit_discount_id").html(options);
                     $("#edit_net_amount_1").val(resposne.data.net_amount);
                     $("#edit_net_amount_1").prop("disabled", true);
@@ -1819,7 +1819,7 @@ function editServiceDiscount($this, type = '') {
     }
 
     if ((service_id == null || service_id == '') && patient_id != '') {
-        $("#edit_discount_id").html('<option value="">Select Discount</option>');
+        $("#edit_discount_id").html('<option value="">Select Discount/Voucher</option>');
         $("#edit_discount_type").attr('disabled', true);
         $("#edit_discount_value_1").attr('disabled', true);
         setTimeout(function () {
