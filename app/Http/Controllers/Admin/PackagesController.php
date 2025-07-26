@@ -191,7 +191,10 @@ class PackagesController extends Controller
                         $discount_price = $patientVoucher->amount;
                         $discount_is_voucher = true;
                         $net_amount = ($service_data->price) - ($discount_price);
-                        dd($net_amount,$service_data->price, $discount_price);
+                        if($net_amount < 0){
+                            $net_amount =0;
+                        }
+                      
                     }else{
                         $discount_type = "";
                         $discount_price = 0;
