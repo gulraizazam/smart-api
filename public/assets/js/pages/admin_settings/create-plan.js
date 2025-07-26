@@ -1908,6 +1908,7 @@ function editDiscountInfo($this) {
         });
     } else {
         if (service_id && discount_id != '0') {
+            alert("here");
             $.ajax({
                 type: 'get',
                 url: route('admin.packages.getdiscountinfo'),
