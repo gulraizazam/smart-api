@@ -890,6 +890,9 @@ class PackagesController extends Controller
             $discount_price = $discountValue->amount;
             $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
             $net_amount = ($service_data->price) - ($discount_price);
+            if($net_amount < 0){
+                $net_amount =0;
+            }
         } else {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
