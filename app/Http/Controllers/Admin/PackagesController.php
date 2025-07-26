@@ -157,7 +157,7 @@ class PackagesController extends Controller
             $discount_id = $request->discount_id;
 
             $discount_data = Discounts::find($discount_id);
-           dd($discount_data);
+           
             if ($discount_data->slug == 'custom') {
 
 
@@ -166,18 +166,18 @@ class PackagesController extends Controller
                 ]);
             } else {
 
-                if ($discount_data->type == Config::get('constants.Fixed')) {
+                if ($discount_data->type == Config::get('constants.Fixed') && $discount_data->discount_type !="voucher") {
 
                     $discount_type = Config::get('constants.Fixed');
                     $discount_price = $discount_data->amount;
                     $net_amount = ($service_data->price) - ($discount_data->amount);
-                } else if ($discount_data->type == Config::get('constants.Percentage')) {
+                } else if ($discount_data->type == Config::get('constants.Percentage') && $discount_data->discount_type !="voucher") {
 
                     $discount_type = Config::get('constants.Percentage');
                     $discount_price = $discount_data->amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
-                } else if ($discount_data->type == "Configurable") {
+                } else if ($discount_data->type == "Configurable" && $discount_data->discount_type !="voucher") {
 
                     $discount_type = "Configurable";
                     $discount_price = $discount_data->amount;
