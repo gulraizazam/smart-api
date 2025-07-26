@@ -150,7 +150,7 @@ class PackagesController extends Controller
     {
 
         if ($request->discount_id) {
-
+            $discount_is_voucher = false;
             $service_id = $request->service_id;
             $patient_id = $request->patient_id;
             $service_data = Bundles::find($service_id);
@@ -189,10 +189,12 @@ class PackagesController extends Controller
                     if ($patientVoucher) {
                         $discount_type = Config::get('constants.Fixed');
                         $discount_price = $patientVoucher->amount;
+                        $discount_is_voucher = true;
                         $net_amount = ($service_data->price) - ($discount_price);
                     }else{
                         $discount_type = "";
                         $discount_price = 0;
+                        $discount_is_voucher = false;
                         $net_amount = $service_data->price;
                     }
                 }
@@ -201,6 +203,7 @@ class PackagesController extends Controller
                     'discount_price' => $discount_price,
                     'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
                     'custom_checked' => 0,
+                    'discount_is_voucher' => $discount_is_voucher,
                 ]);
             }
         }

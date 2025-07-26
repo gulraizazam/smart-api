@@ -1953,7 +1953,7 @@ function editDiscountInfo($this) {
                                 }
                             } else {
 
-                                console.log('discount_type2',resposne.data.discount_type);
+                                
                                 $('#edit_DiscountRange').show();
                                 $("#edit_discount_value_1").val('');
                             }
