@@ -184,7 +184,7 @@ class PackagesController extends Controller
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
                 }else if ($discount_data->discount_type == "voucher") {
-
+dd($discount_data->here);
                     $discount_type = "voucher";
                     $discount_price = 1000;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
