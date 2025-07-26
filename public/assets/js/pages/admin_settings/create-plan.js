@@ -1941,7 +1941,7 @@ function editDiscountInfo($this) {
                             $("#edit_net_amount_1").val((resposne.data.net_amount).toFixed(2));
                             $("#edit_net_amount_1").prop("disabled", true);
                             $("#edit_slug_1").val('not_custom');
-                            console.log('discount_type2',resposne.data.discount_type);
+                           
                             if (resposne.data.discount_type == 'Percentage') {
                                 if (resposne.data.discount_price > 100) {
                                     $('#edit_percentageMessage').show();
@@ -1952,6 +1952,8 @@ function editDiscountInfo($this) {
                                     $("#EditPackage").prop("disabled", false);
                                 }
                             } else {
+
+                                console.log('discount_type2',resposne.data.discount_type);
                                 $('#edit_DiscountRange').show();
                                 $("#edit_discount_value_1").val('');
                             }
