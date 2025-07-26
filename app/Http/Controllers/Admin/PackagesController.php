@@ -189,8 +189,9 @@ class PackagesController extends Controller
                     if ($patientVoucher) {
                         $discount_type = "Fixed";
                         $discount_price = (int) $patientVoucher->amount;
-                        dd($discount_price);
+                        
                         $discount_price_cal = $service_data->price * (($discount_price) / 100);
+                        dd($discount_price_cal);
                         $net_amount = ($service_data->price) - ($discount_price_cal);
                       
                     }else{
