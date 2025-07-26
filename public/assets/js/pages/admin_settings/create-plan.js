@@ -1586,7 +1586,8 @@ function getDiscountInfo($this) {
                 url: route('admin.packages.getdiscountinfo'),
                 data: {
                     'service_id': service_id,
-                    'discount_id': discount_id
+                    'discount_id': discount_id,
+                   
                 },
                 success: function (resposne) {
 
@@ -1912,7 +1913,8 @@ function editDiscountInfo($this) {
                 url: route('admin.packages.getdiscountinfo'),
                 data: {
                     'service_id': service_id,
-                    'discount_id': discount_id
+                    'discount_id': discount_id,
+                    'patient_id': $('#edit_patient_id').val()
                 },
                 success: function (resposne) {
 
