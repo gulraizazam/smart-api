@@ -111,14 +111,14 @@
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts/Vouchers</label>
                             <select id="edit_discount_id" onchange="editDiscountInfo($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
                                 <option value="">Select Discount</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5" id="select_edit_discount_type">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount/Voucher Type</label>
                             <select id="edit_discount_type" onchange="changeDiscount($(this),'edit');" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
                                 <option value="">Select Discount Type</option>
                                 <option value="Fixed">Fixed</option>
@@ -128,7 +128,7 @@
                         </div>
 
                         <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount/Voucher Value </label>
                             <input type="number" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1" min="0" oninput="validity.valid||(value='');" disabled step=".001">
                             <small class="text-danger error-class"><b id='discount_payment_error' class="error-msg"></b></small>
                         </div>

@@ -92,15 +92,15 @@
                         <small class="text-danger ml-1 mt-1"><b id="add_service_id_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-4 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Discounts <span class="text text-danger"></span></label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Discounts/Vouchers <span class="text text-danger"></span></label>
                         <select onchange="getDiscountInfo($(this));" id="add_discount_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id_1">
-                            <option value="">Select Discount</option>
+                            <option value="">Select Discount/Voucher</option>
                         </select>
                     </div>
                     <div class="fv-row col-md-4 mt-5" id="select_discount_type">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Discount/Voucher Type</label>
                         <select id="add_discount_type" onchange="changeDiscount($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type_1">
-                            <option value="">Select Discount Type</option>
+                            <option value="">Select Discount/Voucher Type</option>
                             <option value="Fixed">Fixed</option>
                             <option value="Percentage">Percentage</option>
                         </select>
@@ -108,7 +108,7 @@
                     </div>
 
                     <div class="fv-row col-md-4 mt-5" id="discount_value_div">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Discount/Voucher Value </label>
                         <input type="number" onkeyup="getDiscountValue($(this));" name="discount_value" class="form-control" id="discount_value_1" disabled min="0" oninput="validity.valid||(value='');" step=".001">
                         <small class="text-danger ml-1 mt-1"><b id="add_discount_value_error" class="create-plan-error"></b></small>
                     </div>
