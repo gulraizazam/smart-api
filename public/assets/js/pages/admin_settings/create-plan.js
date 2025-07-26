@@ -2042,7 +2042,7 @@ function getDiscountValue($this) {
 }
 
 function changeDiscount($this, type) {
-
+    alert(type);
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
     if (discount_type != "") {
