@@ -899,7 +899,8 @@ class PackagesController extends Controller
                     $net_amount =0;
                 }
             }else{
-                $net_amount =0;
+                $discount_price=0;
+                $net_amount = ($service_data->price) - ($discount_price);
             }
             
         } else {
