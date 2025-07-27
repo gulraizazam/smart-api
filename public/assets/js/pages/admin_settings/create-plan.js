@@ -1668,6 +1668,7 @@ function editDiscountValue($this) {
         var discount_id = $('#edit_discount_id').val();
         var discount_type = $('#edit_discount_type').val();
         var discount_value = $this.val();
+        var patient_id = $('#edit_patient_id').val();
         if (discount_value.includes('.')) {
             var parts = discount_value.split('.');
             if (parts.length > 1 && parts[1].length > 2) {
@@ -1700,6 +1701,7 @@ function editDiscountValue($this) {
                     'discount_id': discount_id,
                     'discount_value': discount_value ?? 0,
                     'discount_type': discount_type,
+                    'patient_id': patient_id
                 },
                 success: function (resposne) {
                     if (resposne.status) {
@@ -1731,6 +1733,7 @@ function changeDiscount($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_value = $('#discount_value_1').val();
     var discount_type = $this.val();
+    var patient_id = $('#add_patients_id').val();
     $("#edit_discount_value_1").val(0);
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
@@ -1749,6 +1752,7 @@ function changeDiscount($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value,
                 'discount_type': discount_type,
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -1989,6 +1993,7 @@ function getDiscountValue($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
+    var patient_id = $('#add_patients_id').val();
     if (discount_value.includes('.')) {
         var parts = discount_value.split('.');
         if (parts.length > 1 && parts[1].length > 2) {
@@ -2027,6 +2032,7 @@ function getDiscountValue($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value ?? 0,
                 'discount_type': discount_type,
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
