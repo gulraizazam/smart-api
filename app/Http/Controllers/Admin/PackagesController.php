@@ -1159,7 +1159,7 @@ class PackagesController extends Controller
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
             $checkUserDicounts = UserVouchers::where('user_id', $request->patient_id)->pluck('voucher_id')->toArray();
-            $discounts = Discounts::whereIn('id', $discountIds)->whereNotIn('id', $checkUserDicounts)->where([
+            $discounts = Discounts::whereIn('id', $discountIds)->whereIn('id', $checkUserDicounts)->where([
                 ['active', '=', '1'],
             ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
            
@@ -1186,7 +1186,7 @@ class PackagesController extends Controller
                     }
                 }
                
-                $discounts = Discounts::whereIn('id', $uniq_array)->whereNotIn('id', $checkUserDicounts)->where([
+                $discounts = Discounts::whereIn('id', $uniq_array)->whereIn('id', $checkUserDicounts)->where([
                     ['active', '=', '1'],
                 ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
                 
