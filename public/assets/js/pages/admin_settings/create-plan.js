@@ -1626,7 +1626,7 @@ function getDiscountInfo($this) {
                             } else {
 
                                 if (resposne.data.discount_price > resposne.data.net_amount) {
-                                  console.log(resposne.data);
+                                 
                                 if(resposne.data.discount_is_voucher == 1){
                                     setTimeout(function () {
                                         $("#AddPackage").removeAttr('disabled');
@@ -1638,7 +1638,7 @@ function getDiscountInfo($this) {
                                         $("#AddPackage").attr('disabled', 'disabled');
                                         $("#discount_value_1").val('');
                                     }, 500);
-                                    
+
                                 }
                                     
                                 } else {
