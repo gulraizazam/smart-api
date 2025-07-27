@@ -829,7 +829,7 @@ function getDiscountValue($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
-
+    var patient_id = $('#add_patients_id').val();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
@@ -851,7 +851,8 @@ function getDiscountValue($this) {
                 'service_id': service_id,//Basicailly it is bundle id
                 'discount_id': discount_id,
                 'discount_value': discount_value,
-                'discount_type': discount_type,
+                'discount_type': discount_type, 
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -883,7 +884,7 @@ function editDiscountValue($this) {
     var discount_id = $('#edit_discount_id').val();
     var discount_type = $('#edit_discount_type').val();
     var discount_value = $this.val();
-
+    var patient_id = $('#edit_patients_id').val();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#edit_percentageMessage').show();
@@ -906,6 +907,7 @@ function editDiscountValue($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value,
                 'discount_type': discount_type,
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
