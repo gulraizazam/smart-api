@@ -252,6 +252,7 @@ function getDiscountInfo($this) {
 
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
+    var patient_id = $('#add_patients_id').val();
     setTimeout(function () {
         $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
@@ -319,7 +320,8 @@ function getDiscountInfo($this) {
                 url: route('admin.packages.getdiscountinfo'),
                 data: {
                     'service_id': service_id,
-                    'discount_id': discount_id
+                    'discount_id': discount_id,
+                    'patient_id': patient_id
                 },
                 success: function (resposne) {
                     if (resposne.status) {
