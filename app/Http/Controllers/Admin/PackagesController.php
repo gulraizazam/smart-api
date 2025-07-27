@@ -898,6 +898,8 @@ class PackagesController extends Controller
                 if($net_amount < 0){
                     $net_amount =0;
                 }
+            }else{
+                $net_amount =0;
             }
             
         } else {
