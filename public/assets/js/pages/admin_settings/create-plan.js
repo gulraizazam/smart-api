@@ -1660,7 +1660,7 @@ function getDiscountInfo($this) {
 }
 
 function editDiscountValue($this) {
-    //inputSpinner(true, 'EditPackage')
+    alert('editDiscountValue');
     hideMessages();
 
     if ($("#edit_discount_value_1").val() < 0) {
@@ -1728,7 +1728,7 @@ function editDiscountValue($this) {
 }
 
 function changeDiscount($this) {
-
+    alert('changeDiscount');
     hideMessages();
 
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
@@ -1989,7 +1989,7 @@ function editDiscountInfo($this) {
 }
 
 function getDiscountValue($this) {
-
+    alert('getDiscountValue');
     hideMessages();
     var service_id = $('#add_service_id').val();//Basicailly it is bundle id
     var discount_id = $('#add_discount_id').val();
@@ -2057,7 +2057,7 @@ function getDiscountValue($this) {
 }
 
 function changeDiscount($this, type) {
-   
+    alert('changeDiscount1');
     $("#edit_discount_value_1").val("");
     var discount_type = $this.val();
     if (discount_type != "") {
