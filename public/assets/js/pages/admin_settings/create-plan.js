@@ -1626,11 +1626,13 @@ function getDiscountInfo($this) {
                             } else {
 
                                 if (resposne.data.discount_price > resposne.data.net_amount) {
+                                    console.log("here");
                                     setTimeout(function () {
                                         $("#AddPackage").attr('disabled', 'disabled');
                                         $("#discount_value_1").val('');
                                     }, 500);
                                 } else {
+                                    console.log("herewww");
                                     setTimeout(function () {
                                         $("#AddPackage").removeAttr('disabled');
                                     }, 500);
