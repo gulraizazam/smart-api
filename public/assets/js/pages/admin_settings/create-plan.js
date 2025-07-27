@@ -1627,11 +1627,20 @@ function getDiscountInfo($this) {
 
                                 if (resposne.data.discount_price > resposne.data.net_amount) {
                                   console.log(resposne.data);
-                                
+                                if(resposne.data.discount_is_voucher == 1){
+                                    setTimeout(function () {
+                                        $("#AddPackage").removeAttr('disabled');
+                                        $("#discount_value_1").val(resposne.data.discount_price);
+                                    }, 500);
+                                }
+                                else{
                                     setTimeout(function () {
                                         $("#AddPackage").attr('disabled', 'disabled');
                                         $("#discount_value_1").val('');
                                     }, 500);
+                                    
+                                }
+                                    
                                 } else {
                                     
                                     setTimeout(function () {
