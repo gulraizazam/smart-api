@@ -2768,6 +2768,7 @@ jQuery(document).ready(function () {
         var is_exclusive = $('#edit_is_exclusive').val();
         var location_id = $('#edit_location_id').val();
         var sold_by = $('#edit_sold_by').val();
+        var user_id = $('#edit_parent_id').val();
         if (!service_id) {
             $('#service_id').html('Please select service');
             $(this).attr("disabled", false);
@@ -2823,7 +2824,8 @@ jQuery(document).ready(function () {
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
                 'package_bundles[]': [],
-                'sold_by': sold_by
+                'sold_by': sold_by,
+                'user_id': user_id
 
             };
 
