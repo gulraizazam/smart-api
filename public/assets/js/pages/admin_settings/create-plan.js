@@ -2837,8 +2837,8 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                  $("#edit_discount_id").val('');
-                  $("#edit_discount_type").val('');
+                  $("#edit_discount_id").val('').change();
+                  $("#edit_discount_type").val('').change();
                   $("#edit_discount_value_1").val('');
 
                     let consume = 'No';
