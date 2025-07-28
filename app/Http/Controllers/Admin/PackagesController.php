@@ -223,7 +223,7 @@ class PackagesController extends Controller
     public function savepackages_service(Request $request)
     {
 
-
+        dd($request->all());    
         $status = true;
         $service_data = Bundles::find($request->bundle_id);
         $find_package = Packages::where('random_id', $request->random_id)->first();
