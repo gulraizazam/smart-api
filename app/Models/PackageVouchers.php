@@ -25,8 +25,5 @@ class PackageVouchers extends Model
     {
         return $this->belongsTo(Voucher::class);
     }
-    public function package()
-    {
-        return $this->belongsTo(Package::class);
-    }
+    
 }
