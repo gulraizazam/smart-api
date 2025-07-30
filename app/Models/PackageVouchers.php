@@ -12,6 +12,7 @@ class PackageVouchers extends Model
 {
     use HasFactory;
     protected $fillable = [
+        'package_random_id',
         'package_id',
         'voucher_id',
         'user_id',
