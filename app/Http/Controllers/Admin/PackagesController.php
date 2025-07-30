@@ -702,13 +702,14 @@ class PackagesController extends Controller
             $packageBundleData['discount_price'] = $request->discount_price;
             $packageBundleData['discount_type'] = $request->discount_type;
             $packageBundleData['discount_id'] = $discount->id;
-           
+           dd($request->random_id);
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
             if($userVoucher){
                 $amountLeft = $userVoucher->amount -  $request->discount_price;
                 if($amountLeft < 0){
                    $amountLeft = 0;
                 }
+              
                 $userVoucher->amount = $amountLeft;
                 $userVoucher->update();
                 PackageVouchers::create([
