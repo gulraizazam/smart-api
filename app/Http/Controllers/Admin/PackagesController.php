@@ -679,7 +679,7 @@ class PackagesController extends Controller
     }
     public function makePackagesServicesData(Request $request)
     {
-     
+        
         $soldBy = $request->sold_by;
         $bundle = Bundles::find($request->bundle_id);
         $discount = Discounts::find($request->discount_id);
@@ -701,7 +701,7 @@ class PackagesController extends Controller
             $packageBundleData['discount_price'] = $request->discount_price;
             $packageBundleData['discount_type'] = $request->discount_type;
             $packageBundleData['discount_id'] = $discount->id;
-
+           
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
             if($userVoucher){
                 $amountLeft = $userVoucher->amount -  $request->discount_price;
@@ -710,6 +710,12 @@ class PackagesController extends Controller
                 }
                 $userVoucher->amount = $amountLeft;
                 $userVoucher->update();
+                PackageVouchers::create([
+                    'package_id' => $request->random_id,
+                    'voucher_id' => $discount->id,
+                    'user_id' => $request->user_id,
+                    'amount' => $request->discount_price,
+                ]);
             }
         }
         $taxTreatmentType = $bundle->tax_treatment_type_id;
