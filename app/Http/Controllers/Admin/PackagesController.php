@@ -980,7 +980,7 @@ class PackagesController extends Controller
             if ($findPackage) {
                 $packageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->where('main_service_id',$packageService->bundle_id)->first();
                 if($packageVoucher){
-                    dd($packageVoucher);
+                   
                     $packageVoucherAmount = $packageVoucher->amount;
                     $findUserVoucher = UserVouchers::where('voucher_id',$packageVoucher->voucher_id)->where('user_id',$findPackage->patient_id)->first();
                     if($findUserVoucher){
@@ -990,6 +990,7 @@ class PackagesController extends Controller
                 }
 
             }
+            dd('done');
             if ($request->package_total == '') {
                 $request->merge(['package_total' => 0]);
             }
