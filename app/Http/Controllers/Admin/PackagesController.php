@@ -990,7 +990,7 @@ class PackagesController extends Controller
                 }
 
             }
-            dd('done');
+            
             if ($request->package_total == '') {
                 $request->merge(['package_total' => 0]);
             }
