@@ -3080,6 +3080,26 @@ function removeElementsFromIndex(arr, index, numElements) {
 
 
 function deletePlanRowTem(id, type = "") {
+
+    $.ajax({
+        type: 'get',
+        url: route('admin.packages.deleteplanrowtem'),
+        data: {
+            'id': id,
+            'random_id': $('#random_id_1').val()
+        },
+        success: function (response) {
+            if (response.status) {
+                toastr.success(response.message);
+                reInitTable();
+            } else {
+                toastr.error(response.message);
+            }
+        },
+        error: function (response) {
+            toastr.error(response.message);
+        }
+    });
     var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
     var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"] + tr:not([id="table_1"])').length;
 
