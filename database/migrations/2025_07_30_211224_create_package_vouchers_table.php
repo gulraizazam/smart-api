@@ -20,6 +20,7 @@ class CreatePackageVouchersTable extends Migration
             $table->unsignedBigInteger('user_id')->nullable();
             $table->decimal('amount', 10, 2)->default(0);
             $table->unsignedBigInteger('service_id')->nullable();
+            $table->unsignedBigInteger('main_service_id')->nullable();
             $table->timestamps();
         });
     }

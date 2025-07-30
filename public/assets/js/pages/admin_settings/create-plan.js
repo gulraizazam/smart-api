@@ -2308,7 +2308,8 @@ function deletePlan(id, type) {
         data: {
             '_token': $('input[name=_token]').val(),
             'id': id,
-            'package_total': package_total
+            'package_total': package_total,
+            'random_id': $('#edit_random_id_1').val()
         },
         success: function (resposne) {
 
