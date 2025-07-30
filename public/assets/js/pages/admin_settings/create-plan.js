@@ -3090,14 +3090,13 @@ function deletePlanRowTem(id, type = "") {
         },
         success: function (response) {
             if (response.status) {
-                toastr.success(response.message);
-                reInitTable();
+               
             } else {
-                toastr.error(response.message);
+                
             }
         },
         error: function (response) {
-            toastr.error(response.message);
+            
         }
     });
     var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();

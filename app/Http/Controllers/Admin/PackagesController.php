@@ -2983,6 +2983,20 @@ class PackagesController extends Controller
         }
     }
     public function deleteplanrowtem(Request $request){
-        dd($request->all());
+       $voucher = PackageVouchers::where('service_id', $request->service_id)->first();
+
+       if($voucher){
+        $checkUser = UserVouchers::where('voucher_id', $voucher->voucher_id)->where('user_id', $voucher->user_id)->first();
+        if($checkUser){
+            $newAmount = $checkUser->amount + $voucher->amount;
+            $checkUser->amount = $newAmount;
+            $checkUser->update();
+        }
+        $voucher->delete();
+       }
+       return response()->json([
+        'status' => true,
+        'message' => 'Record deleted successfully',
+       ]);
     }
 }
