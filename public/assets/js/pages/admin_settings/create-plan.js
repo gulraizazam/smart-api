@@ -2492,7 +2492,7 @@ jQuery(document).ready(function () {
         var sold_by = $('#add_sold_by').val();
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_plan_location_id').val();
-
+        var user_id = $('#add_patients_id').val();
         if (service_id && net_amount && location_id) {
 
             showSpinner("-add");
@@ -2522,6 +2522,7 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
+                'user_id': user_id,
                 'package_bundles[]': [],
                 'sold_by': sold_by
             };
