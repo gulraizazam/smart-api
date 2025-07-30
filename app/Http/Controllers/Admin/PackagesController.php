@@ -757,7 +757,8 @@ class PackagesController extends Controller
                     'voucher_id' => $discount->id,
                     'user_id' => $request->user_id,
                     'amount' => $request->discount_price,
-                    'service_id' =>$generateRandomId
+                    'service_id' =>$generateRandomId,
+                    'main_service_id'=>$request->bundle_id
                 ]);
             }
             
@@ -975,6 +976,19 @@ class PackagesController extends Controller
         } else {
 
             $packageService = PackageBundles::find($request->id);
+            $findPackage = Packages::find($packageService->package_id);
+            if ($findPackage) {
+                $packageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->where('main_service_id',$packageService->bundle_id)->first();
+                if($packageVoucher){
+                    $packageVoucherAmount = $packageVoucher->amount;
+                    $findUserVoucher = UserVouchers::where('voucher_id',$packageVoucher->voucher_id)->where('user_id',$findPackage->patient_id)->first();
+                    if($findUserVoucher){
+                        $findUserVoucher->update(['amount' => $findUserVoucher->amount + $packageVoucherAmount]);
+                    }
+                    $packageVoucher->delete();
+                }
+
+            }
             if ($request->package_total == '') {
                 $request->merge(['package_total' => 0]);
             }
@@ -985,6 +999,10 @@ class PackagesController extends Controller
             PackageService::where('package_bundle_id', '=', $request->id)->delete();
 
             PackageBundles::find($request->id)->forcedelete();
+            $checkPackageVoucher = PackageVoucher::where('package_random_id',$packageService->random_id)->first();
+            if($checkPackageVoucher){
+                $checkPackageVoucher->delete();
+            }
             $old_total = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
