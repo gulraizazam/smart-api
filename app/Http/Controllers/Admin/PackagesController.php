@@ -2983,7 +2983,7 @@ class PackagesController extends Controller
         }
     }
     public function deleteplanrowtem(Request $request){
-       $voucher = PackageVouchers::where('service_id', $request->id)->where('random_id', $request->random_id)->first();
+       $voucher = PackageVouchers::where('service_id', $request->id)->where('package_random_id', $request->random_id)->first();
 
        if($voucher){
         $checkUser = UserVouchers::where('voucher_id', $voucher->voucher_id)->where('user_id', $voucher->user_id)->first();
