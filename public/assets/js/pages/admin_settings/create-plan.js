@@ -2901,7 +2901,7 @@ jQuery(document).ready(function () {
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.servicesData.bundlesData.id + "' />" +
                             "<input type='hidden' class='package_bundles_sold_by' name='sold_by[]' value='" + resposne.data.servicesData.sold_by + "' />" +
-                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTem(" + resposne.data.servicesData.bundlesData.id + ", `edit_`)'>" + trashBtn() + "</button>" +
+                            "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRowTemEdit(" + resposne.data.servicesData.bundlesData.id + ", `edit_`)'>" + trashBtn() + "</button>" +
                             "</td>" +
                             "</tr>");
 
@@ -3080,7 +3080,60 @@ function removeElementsFromIndex(arr, index, numElements) {
     arr.splice(index, numElements);
 }
 
+function deletePlanRowTemEdit(id, type = "") {
 
+    $.ajax({
+        type: 'get',
+        url: route('admin.packages.deleteplanrowtem'),
+        data: {
+            'id': id,
+            'random_id': $('#edit_random_id_1').val(),
+        },
+        success: function (response) {
+            if (response.status) {
+               
+            } else {
+                
+            }
+        },
+        error: function (response) {
+            
+        }
+    });
+    var RowIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').index();
+    var RowNextIndex = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"] + tr:not([id="table_1"])').length;
+
+    var ArrayIndex = RowIndex + RowNextIndex;
+    removeElementsFromIndex(total_amountArray, RowIndex, RowNextIndex + 1);
+    removeElementsFromIndex(edit_amountArray, RowIndex, RowNextIndex + 1);
+    var sum = 0;
+    if (total_amountArray.length) {
+        sum = total_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+    }
+    var Editsum = 0;
+    if (edit_amountArray.length) {
+        Editsum = edit_amountArray.reduce((partialSum, a) => partialSum + a, 0);
+    }
+    jQuery('.modal.show #package_total_1').val(sum.toFixed(2));
+    jQuery('.modal.show #grand_total_1').val((sum).toFixed(2));
+    jQuery('.modal.show #payment_mode_id_1').val('').change();
+    var currentRowPrice = jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[id="table_1"][class*="HR_' + id + '"]').find('td:nth-child(8)').text();
+
+
+    if (jQuery('.modal.show #edit_grand_total_1').val()) {
+        var CashReceivedRemain = jQuery('.modal.show #edit_grand_total_1').val().replace(',', '');
+    }
+    jQuery('.modal.show #edit_grand_total_1').val(Math.round(CashReceivedRemain - currentRowPrice));
+
+    jQuery('.modal.show #edit_package_total_1').val((Editsum + ExistingTotal).toFixed(2));
+    jQuery('.modal.show #appointment_detail, .modal.show #edit_centre_target_location').find('#plan_services, #edit_plan_services').find('tr[class*="HR_' + id + '"]').remove();
+    jQuery('#cash_amount_1').val('');
+    if (!jQuery('.modal.show #edit_centre_target_location #edit_plan_services tr').length) {
+        jQuery('.modal.show #edit_payment_mode_id').val('').change();
+        jQuery('.modal.show #edit_grand_total_1').val('');
+        jQuery('.modal.show #edit_cash_amount_1').val('');
+    }
+}
 function deletePlanRowTem(id, type = "") {
 
     $.ajax({
@@ -3088,7 +3141,7 @@ function deletePlanRowTem(id, type = "") {
         url: route('admin.packages.deleteplanrowtem'),
         data: {
             'id': id,
-            'random_id': $('#edit_random_id_1').val()
+            'random_id': $('#random_id_1').val(),
         },
         success: function (response) {
             if (response.status) {
