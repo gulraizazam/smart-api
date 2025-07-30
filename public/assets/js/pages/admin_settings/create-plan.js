@@ -3086,7 +3086,7 @@ function deletePlanRowTem(id, type = "") {
         url: route('admin.packages.deleteplanrowtem'),
         data: {
             'id': id,
-            'random_id': $('#random_id_1').val()
+            'random_id': $('#edit_random_id_1').val()
         },
         success: function (response) {
             if (response.status) {
