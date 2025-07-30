@@ -713,7 +713,7 @@ class PackagesController extends Controller
               
                 $userVoucher->amount = $amountLeft;
                 $userVoucher->update();
-                dd($r_ID);
+               
                 PackageVouchers::create([
                     'package_id' => $r_ID,
                     'voucher_id' => $discount->id,
