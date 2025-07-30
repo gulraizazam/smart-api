@@ -15,7 +15,7 @@ class CreatePackageVouchersTable extends Migration
     {
         Schema::create('package_vouchers', function (Blueprint $table) {
             $table->id();
-            $table->string('package_id')->nullable();
+            $table->string('package_random_id')->nullable();
             $table->unsignedBigInteger('voucher_id')->nullable();
             $table->unsignedBigInteger('user_id')->nullable();
             $table->decimal('amount', 10, 2)->default(0);

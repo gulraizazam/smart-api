@@ -715,7 +715,7 @@ class PackagesController extends Controller
                 $userVoucher->update();
                
                 PackageVouchers::create([
-                    'package_id' => $r_ID,
+                    'package_random_id' => $r_ID,
                     'voucher_id' => $discount->id,
                     'user_id' => $request->user_id,
                     'amount' => $request->discount_price,
