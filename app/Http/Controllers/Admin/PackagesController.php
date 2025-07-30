@@ -704,24 +704,7 @@ class PackagesController extends Controller
             $packageBundleData['discount_type'] = $request->discount_type;
             $packageBundleData['discount_id'] = $discount->id;
           
-            $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
-            if($userVoucher){
-                $amountLeft = $userVoucher->amount -  $request->discount_price;
-                if($amountLeft < 0){
-                   $amountLeft = 0;
-                }
-              
-                $userVoucher->amount = $amountLeft;
-                $userVoucher->update();
-               
-                PackageVouchers::create([
-                    'package_random_id' => $r_ID,
-                    'voucher_id' => $discount->id,
-                    'user_id' => $request->user_id,
-                    'amount' => $request->discount_price,
-                    'service_id' =>$request->bundle_id
-                ]);
-            }
+            
         }
         $taxTreatmentType = $bundle->tax_treatment_type_id;
         $taxPercentage = $locationDetail->tax_percentage;
@@ -758,6 +741,27 @@ class PackagesController extends Controller
         $randomNumber = rand(1000, 9999);
         $generateRandomId = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
         $packageBundleData['id'] = $generateRandomId;
+        if($discount){
+            $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
+            if($userVoucher){
+                $amountLeft = $userVoucher->amount -  $request->discount_price;
+                if($amountLeft < 0){
+                   $amountLeft = 0;
+                }
+              
+                $userVoucher->amount = $amountLeft;
+                $userVoucher->update();
+               
+                PackageVouchers::create([
+                    'package_random_id' => $r_ID,
+                    'voucher_id' => $discount->id,
+                    'user_id' => $request->user_id,
+                    'amount' => $request->discount_price,
+                    'service_id' =>$generateRandomId
+                ]);
+            }
+            
+        }
         $bundleServices = [];
         foreach ($allBundleServices as $bundleService) {
             $serviceName = Services::find($bundleService->service_id);
