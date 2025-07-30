@@ -719,6 +719,7 @@ class PackagesController extends Controller
                     'voucher_id' => $discount->id,
                     'user_id' => $request->user_id,
                     'amount' => $request->discount_price,
+                    'service_id' =>$request->bundle_id
                 ]);
             }
         }
@@ -2976,5 +2977,8 @@ class PackagesController extends Controller
             }
             return true;
         }
+    }
+    public function deleteplanrowtem(Request $request){
+        dd($request->all());
     }
 }

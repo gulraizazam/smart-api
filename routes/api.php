@@ -304,7 +304,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('packages/status', [PackagesController::class, 'status'])->name('packages.status');
 
     Route::get('packages/getdiscountinfo', [PackagesController::class, 'getdiscountinfo'])->name('packages.getdiscountinfo');
-
+Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanrowtem'])->name('packages.deleteplanrowtem');
     Route::get('packages/getdiscountinfo_custom', [PackagesController::class, 'getdiscountinfocustom'])->name('packages.getdiscountinfo_custom');
     Route::get('packages/savepackagesservice', [PackagesController::class, 'makePackagesServicesData'])->name('packages.savepackages_service');
     //Route::get('packages/savepackagesservice', [PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
