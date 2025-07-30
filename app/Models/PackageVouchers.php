@@ -17,7 +17,8 @@ class PackageVouchers extends Model
         'voucher_id',
         'user_id',
         'amount',
-        'service_id'
+        'service_id',
+        'main_service_id'
     ];
     public function user()
     {
