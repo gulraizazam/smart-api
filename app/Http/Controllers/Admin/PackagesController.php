@@ -686,7 +686,7 @@ class PackagesController extends Controller
         $discount = Discounts::find($request->discount_id);
         $allBundleServices = BundleHasServices::where('bundle_id', $request->bundle_id)->get();
         $packageBundleData = $request->all();
-      
+        $r_ID = $request->random_id;
         $locationDetail = Locations::find($request->location_id);
         $bundleId = $bundle->id;
         $total = 0;
@@ -713,9 +713,9 @@ class PackagesController extends Controller
               
                 $userVoucher->amount = $amountLeft;
                 $userVoucher->update();
-                dd($packageBundleData['random_id']);
+                dd($r_ID);
                 PackageVouchers::create([
-                    'package_id' => $packageBundleData['random_id'],
+                    'package_id' => $r_ID,
                     'voucher_id' => $discount->id,
                     'user_id' => $request->user_id,
                     'amount' => $request->discount_price,
