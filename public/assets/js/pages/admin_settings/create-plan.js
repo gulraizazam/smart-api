@@ -3188,3 +3188,72 @@ function deletePlanRowTem(id, type = "") {
         jQuery('.modal.show #edit_cash_amount_1').val('');
     }
 }
+function resetVoucherAdd() {
+        // First, get the package_bundles array before resetting the form
+    const packageBundles = getPackageBundlesArray();
+    
+    // Send the array to Laravel backend via AJAX
+    if (packageBundles.length > 0) {
+        sendPackageBundlesToLaravel(packageBundles);
+    }
+}
+// Modified resetVoucherAdd function with package_bundles handling
+function resetVoucherAdd() {
+    // First, get the package_bundles array before resetting the form
+    const packageBundles = getPackageBundlesArray();
+    
+    // Send the array to Laravel backend via AJAX
+    if (packageBundles.length > 0) {
+        sendPackageBundlesToLaravel(packageBundles);
+    }
+    
+    // Reset the form
+    resetForm();
+    
+    // Clear validation errors
+    clearValidationErrors();
+    
+    // Close the popup/modal
+    closePopup();
+}
+
+// Function to extract package_bundles array from hidden fields
+function getPackageBundlesArray() {
+    const packageBundles = [];
+    
+    // Method 1: Using querySelectorAll (Vanilla JS)
+    document.querySelectorAll('input[name="package_bundles[]"]').forEach(function(input) {
+        if (input.value.trim() !== '') {
+            packageBundles.push(input.value);
+        }
+    });
+    
+    
+    
+    return packageBundles;
+}
+function sendPackageBundlesToLaravelJQuery(packageBundles) {
+    var random_id = $('#edit_random_id_1').val();
+    $.ajaxSetup({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        }
+    });
+    
+    $.ajax({
+        url: route('admin.packages.resetvoucherpacakgebundles'),
+        method: 'POST',
+        data: {
+            package_bundles: packageBundles,
+            random_id: random_id
+        },
+        dataType: 'json',
+        success: function(response) {
+            console.log('Package bundles sent successfully:', response);
+        },
+        error: function(xhr, status, error) {
+            console.error('Error sending package bundles:', error);
+            console.log('Response:', xhr.responseText);
+        }
+    });
+}
