@@ -3217,7 +3217,7 @@ function resetVoucherEdit() {
     if (packageBundles.length > 0) {
         sendPackageBundlesToLaravel(packageBundles);
     }
-    
+    alert("reset");
    
 }
 // Function to extract package_bundles array from hidden fields
