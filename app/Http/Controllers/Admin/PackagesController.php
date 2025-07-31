@@ -3040,7 +3040,7 @@ class PackagesController extends Controller
 
         // Update user vouchers
         foreach ($voucherAmounts as $data) {
-            UserVoucher::where('user_id', $data['user_id'])
+            UserVouchers::where('user_id', $data['user_id'])
                     ->where('voucher_id', $data['voucher_id'])
                     ->increment('amount', $data['amount']);
         }
