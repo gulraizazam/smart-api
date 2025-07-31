@@ -3207,16 +3207,19 @@ function resetVoucherAdd() {
         sendPackageBundlesToLaravel(packageBundles);
     }
     
-    // Reset the form
-    resetForm();
     
-    // Clear validation errors
-    clearValidationErrors();
-    
-    // Close the popup/modal
-    closePopup();
 }
-
+function resetVoucherEdit() {
+    // First, get the package_bundles array before resetting the form
+    const packageBundles = getPackageBundlesArray();
+    
+    // Send the array to Laravel backend via AJAX
+    if (packageBundles.length > 0) {
+        sendPackageBundlesToLaravel(packageBundles);
+    }
+    
+   
+}
 // Function to extract package_bundles array from hidden fields
 function getPackageBundlesArray() {
     const packageBundles = [];
