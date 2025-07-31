@@ -3210,14 +3210,16 @@ function resetVoucherAdd() {
     
 }
 function resetVoucherEdit() {
-   alert("reset");
+   
     const packageBundles = getPackageBundlesArray();
     console.log(packageBundles);
     // Send the array to Laravel backend via AJAX
     if (packageBundles.length > 0) {
         sendPackageBundlesToLaravel(packageBundles);
+    }else{
+        alert("No package bundles found");
     }
-    alert("reset");
+   
    
 }
 // Function to extract package_bundles array from hidden fields
