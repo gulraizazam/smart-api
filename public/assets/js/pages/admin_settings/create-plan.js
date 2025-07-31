@@ -3188,24 +3188,32 @@ function deletePlanRowTem(id, type = "") {
         jQuery('.modal.show #edit_cash_amount_1').val('');
     }
 }
-function resetVoucherAdd() {
-        // First, get the package_bundles array before resetting the form
-    const packageBundles = getPackageBundlesArray();
-    
-    // Send the array to Laravel backend via AJAX
-    if (packageBundles.length > 0) {
-        sendPackageBundlesToLaravel(packageBundles);
-    }
-}
+
 // Modified resetVoucherAdd function with package_bundles handling
-function resetVoucherAdd() {
-    // First, get the package_bundles array before resetting the form
-    const packageBundles = getPackageBundlesArray();
-    
-    // Send the array to Laravel backend via AJAX
-    if (packageBundles.length > 0) {
-        sendPackageBundlesToLaravel(packageBundles);
+function resetVoucherAdd(event) {
+    // Prevent the default button behavior (form submission/page reload)
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
+    
+    try {
+        const packageBundles = getPackageBundlesArray();
+        if (packageBundles.length > 0) {
+            sendPackageBundlesToLaravel(packageBundles);
+        } else {
+            
+            hideModal();
+        }
+        
+    } catch (error) {
+        console.error("Error in resetVoucherEdit:", error);
+        alert("Error: " + error.message);
+        // Hide modal even on error
+        hideModal();
+    }
+    
+    return false; // Additional prevention of default behavior
     
     
 }
@@ -3310,7 +3318,65 @@ function sendPackageBundlesToLaravelJQuery(packageBundles) {
         hideModal();
     }
 }
-
+function sendPackageBundlesToLaravel(packageBundles) {
+    try {
+        var random_id = $('#random_id_1').val();
+        
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        
+        $.ajax({
+            url: route('admin.packages.resetvoucherpacakgebundles'),
+            method: 'POST',
+            data: {
+                package_bundles: packageBundles,
+                random_id: random_id
+            },
+            dataType: 'json',
+            beforeSend: function() {
+                console.log("AJAX request starting...");
+                // Optional: Show loading indicator
+                // showLoadingIndicator();
+            },
+            success: function(response) {
+                console.log('Package bundles sent successfully:', response);
+                
+                // Hide modal on successful response
+                hideModal();
+                
+                // Reload the page after modal is hidden
+                setTimeout(function() {
+                    location.reload();
+                }, 500); // Small delay to ensure modal closes smoothly
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error Details:');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response Text:', xhr.responseText);
+                
+                // Show error message
+                alert('Error processing request: ' + error);
+                
+                // Hide modal even on error
+                hideModal();
+            },
+            complete: function() {
+                console.log("AJAX request completed");
+                // Optional: Hide loading indicator
+                // hideLoadingIndicator();
+            }
+        });
+        
+    } catch (error) {
+        console.error("Error in AJAX function:", error);
+        alert("AJAX Setup Error: " + error.message);
+        hideModal();
+    }
+}
 // Function to hide modal - works with different modal types
 function hideModal() {
     try {
