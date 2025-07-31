@@ -3020,7 +3020,7 @@ class PackagesController extends Controller
         'message' => 'Record deleted successfully',
        ]);
     }
-    public function resetvoucherpacakgebundlesSimple(Request $request)
+    public function resetvoucherpacakgebundles(Request $request)
     {
         $servicesIds = $request->package_bundles;
         $randomId = $request->random_id;
