@@ -3216,57 +3216,44 @@ function resetVoucherEdit(event) {
         event.stopPropagation();
     }
     
-    console.log("Reset function started");
-    
     try {
         const packageBundles = getPackageBundlesArray();
         console.log("Package bundles found:", packageBundles);
         
-        // Send the array to Laravel backend via AJAX
+        // Send the array to Laravel backend via AJAX if bundles exist
         if (packageBundles.length > 0) {
-            sendPackageBundlesToLaravelJQuery(packageBundles); // Fixed function name
+            sendPackageBundlesToLaravelJQuery(packageBundles);
         } else {
-            console.log("No package bundles found");
-            alert("No package bundles found");
+            console.log("No package bundles found - hiding modal without AJAX");
+            // No package bundles, just hide modal
+            hideModal();
         }
         
     } catch (error) {
         console.error("Error in resetVoucherEdit:", error);
         alert("Error: " + error.message);
+        // Hide modal even on error
+        hideModal();
     }
     
-    console.log("Reset function completed");
     return false; // Additional prevention of default behavior
 }
 
-// Function to extract package_bundles array from hidden fields
 function getPackageBundlesArray() {
     const packageBundles = [];
-    
-    console.log("Looking for package bundle inputs...");
-    
-    // Method 1: Using querySelectorAll (Vanilla JS)
     const inputs = document.querySelectorAll('input[name="package_bundles[]"]');
-    console.log("Found inputs:", inputs.length);
     
     inputs.forEach(function(input, index) {
-        console.log(`Input ${index}:`, input.value);
         if (input.value.trim() !== '') {
             packageBundles.push(input.value);
         }
     });
-    
-    console.log("Extracted package bundles:", packageBundles);
     return packageBundles;
 }
 
-// Fixed AJAX function (you were calling wrong function name)
 function sendPackageBundlesToLaravelJQuery(packageBundles) {
-    console.log("Starting AJAX call...");
-    
     try {
         var random_id = $('#edit_random_id_1').val();
-        console.log("Random ID:", random_id);
         
         $.ajaxSetup({
             headers: {
@@ -3284,28 +3271,108 @@ function sendPackageBundlesToLaravelJQuery(packageBundles) {
             dataType: 'json',
             beforeSend: function() {
                 console.log("AJAX request starting...");
+                // Optional: Show loading indicator
+                // showLoadingIndicator();
             },
             success: function(response) {
                 console.log('Package bundles sent successfully:', response);
-                alert('Success: ' + JSON.stringify(response));
+                
+                // Hide modal on successful response
+                hideModal();
+                
+                // Reload the page after modal is hidden
+                setTimeout(function() {
+                    location.reload();
+                }, 500); // Small delay to ensure modal closes smoothly
             },
             error: function(xhr, status, error) {
                 console.error('AJAX Error Details:');
                 console.error('Status:', status);
                 console.error('Error:', error);
                 console.error('Response Text:', xhr.responseText);
-                console.error('Status Code:', xhr.status);
                 
-                // Show error in alert for debugging
-                alert('AJAX Error:\nStatus: ' + status + '\nError: ' + error + '\nResponse: ' + xhr.responseText);
+                // Show error message
+                alert('Error processing request: ' + error);
+                
+                // Hide modal even on error
+                hideModal();
             },
             complete: function() {
                 console.log("AJAX request completed");
+                // Optional: Hide loading indicator
+                // hideLoadingIndicator();
             }
         });
         
     } catch (error) {
         console.error("Error in AJAX function:", error);
         alert("AJAX Setup Error: " + error.message);
+        hideModal();
+    }
+}
+
+// Function to hide modal - works with different modal types
+function hideModal() {
+    try {
+        // Method 1: Bootstrap 5 Modal
+        const modal = document.querySelector('.modal.show');
+        if (modal) {
+            const modalInstance = bootstrap.Modal.getInstance(modal);
+            if (modalInstance) {
+                modalInstance.hide();
+                console.log("Bootstrap modal hidden");
+                return;
+            }
+        }
+        
+        // Method 2: jQuery Bootstrap Modal
+        const $modal = $('.modal:visible');
+        if ($modal.length > 0) {
+            $modal.modal('hide');
+            console.log("jQuery Bootstrap modal hidden");
+            return;
+        }
+        
+        // Method 3: Custom modal with specific ID (adjust as needed)
+        const customModal = document.getElementById('kt_modal_edit_voucher') || 
+                           document.getElementById('editVoucherModal') ||
+                           document.querySelector('[data-kt-users-modal-action="cancel"]').closest('.modal');
+        
+        if (customModal) {
+            // Try Bootstrap instance first
+            const modalInstance = bootstrap.Modal.getInstance(customModal);
+            if (modalInstance) {
+                modalInstance.hide();
+            } else {
+                // Fallback to hiding manually
+                customModal.style.display = 'none';
+                customModal.classList.remove('show');
+                // Remove backdrop
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                document.body.classList.remove('modal-open');
+            }
+            console.log("Custom modal hidden");
+            return;
+        }
+        
+        // Method 4: If using popup-close class
+        const popupClose = document.querySelector('.popup-close');
+        if (popupClose) {
+            const popup = popupClose.closest('.popup, .modal, .overlay');
+            if (popup) {
+                popup.style.display = 'none';
+                popup.classList.remove('show', 'open');
+                console.log("Popup hidden using popup-close");
+                return;
+            }
+        }
+        
+        console.log("No modal found to hide");
+        
+    } catch (error) {
+        console.error("Error hiding modal:", error);
     }
 }

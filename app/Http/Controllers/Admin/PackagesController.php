@@ -3020,7 +3020,36 @@ class PackagesController extends Controller
         'message' => 'Record deleted successfully',
        ]);
     }
-    public function resetvoucherpacakgebundles(Request $request){
-        dd($request->all());
+    public function resetvoucherpacakgebundlesSimple(Request $request)
+    {
+        $servicesIds = $request->package_bundles;
+        $randomId = $request->random_id;
+        
+        $vouchers = PackageVouchers::where('package_random_id', $randomId)
+                                ->whereIn('service_id', $servicesIds)
+                                ->get();
+        
+       
+        $voucherAmounts = [];
+        foreach ($vouchers as $voucher) {
+            $key = $voucher->user_id . '_' . $voucher->voucher_id;
+            $voucherAmounts[$key]['user_id'] = $voucher->user_id;
+            $voucherAmounts[$key]['voucher_id'] = $voucher->voucher_id;
+            $voucherAmounts[$key]['amount'] = ($voucherAmounts[$key]['amount'] ?? 0) + $voucher->amount;
+        }
+
+        // Update user vouchers
+        foreach ($voucherAmounts as $data) {
+            UserVoucher::where('user_id', $data['user_id'])
+                    ->where('voucher_id', $data['voucher_id'])
+                    ->increment('amount', $data['amount']);
+        }
+
+        // Delete package vouchers
+        PackageVouchers::where('package_random_id', $randomId)
+                    ->whereIn('service_id', $servicesIds)
+                    ->delete();
+
+        return response()->json(['success' => true]);
     }
 }
