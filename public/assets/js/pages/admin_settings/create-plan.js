@@ -3203,14 +3203,14 @@ function resetVoucherAdd(event) {
             sendPackageBundlesToLaravel(packageBundles);
         } else {
             
-            hideModal();
+            $('#modal_add_plan').modal('hide');
         }
         
     } catch (error) {
         console.error("Error in resetVoucherEdit:", error);
         alert("Error: " + error.message);
         // Hide modal even on error
-        hideModal();
+        $('#modal_add_plan').modal('hide');
     }
     
     return false; // Additional prevention of default behavior
@@ -3234,14 +3234,14 @@ function resetVoucherEdit(event) {
         } else {
             console.log("No package bundles found - hiding modal without AJAX");
             // No package bundles, just hide modal
-            hideModal();
+            $('#modal_edit_plan').modal('hide');
         }
         
     } catch (error) {
         console.error("Error in resetVoucherEdit:", error);
         alert("Error: " + error.message);
         // Hide modal even on error
-        hideModal();
+        $('#modal_edit_plan').modal('hide');
     }
     
     return false; // Additional prevention of default behavior
@@ -3286,7 +3286,7 @@ function sendPackageBundlesToLaravelJQuery(packageBundles) {
                 console.log('Package bundles sent successfully:', response);
                 
                 // Hide modal on successful response
-                hideModal();
+                $('#modal_edit_plan').modal('hide');
                 
                 // Reload the page after modal is hidden
                 setTimeout(function() {
@@ -3303,7 +3303,7 @@ function sendPackageBundlesToLaravelJQuery(packageBundles) {
                 alert('Error processing request: ' + error);
                 
                 // Hide modal even on error
-                hideModal();
+                $('#modal_edit_plan').modal('hide');
             },
             complete: function() {
                 console.log("AJAX request completed");
@@ -3315,7 +3315,7 @@ function sendPackageBundlesToLaravelJQuery(packageBundles) {
     } catch (error) {
         console.error("Error in AJAX function:", error);
         alert("AJAX Setup Error: " + error.message);
-        hideModal();
+        $('#modal_edit_plan').modal('hide');
     }
 }
 function sendPackageBundlesToLaravel(packageBundles) {
@@ -3345,7 +3345,7 @@ function sendPackageBundlesToLaravel(packageBundles) {
                 console.log('Package bundles sent successfully:', response);
                 
                 // Hide modal on successful response
-                hideModal();
+                $('#modal_add_plan').modal('hide');
                 
                 // Reload the page after modal is hidden
                 setTimeout(function() {
@@ -3362,7 +3362,7 @@ function sendPackageBundlesToLaravel(packageBundles) {
                 alert('Error processing request: ' + error);
                 
                 // Hide modal even on error
-                hideModal();
+               $('#modal_add_plan').modal('hide');
             },
             complete: function() {
                 console.log("AJAX request completed");
@@ -3374,7 +3374,7 @@ function sendPackageBundlesToLaravel(packageBundles) {
     } catch (error) {
         console.error("Error in AJAX function:", error);
         alert("AJAX Setup Error: " + error.message);
-        hideModal();
+        $('#modal_add_plan').modal('hide');
     }
 }
 // Function to hide modal - works with different modal types
