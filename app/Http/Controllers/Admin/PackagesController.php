@@ -699,8 +699,13 @@ class PackagesController extends Controller
 
         ];
         if ($discount) {
+            if( $request->discount_price  >  $bundle->price){
+                $newDiscountPrice =$request->discount_price - $bundle->price;
+            }else{
+                $newDiscountPrice = $request->discount_price;
+            }
             $packageBundleData['discount_name'] = $discount->name;
-            $packageBundleData['discount_price'] = $request->discount_price;
+            $packageBundleData['discount_price'] = $newDiscountPrice;
             $packageBundleData['discount_type'] = $request->discount_type;
             $packageBundleData['discount_id'] = $discount->id;
           
@@ -743,9 +748,9 @@ class PackagesController extends Controller
         $packageBundleData['id'] = $generateRandomId;
         if($discount){
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
-          
+           
             if($userVoucher){
-                $amountLeft = $userVoucher->amount -  $request->discount_price;
+                $amountLeft = $userVoucher->amount -  $bundle->price;
                 if($amountLeft < 0){
                    $amountLeft = 0;
                 }
@@ -757,7 +762,7 @@ class PackagesController extends Controller
                     'package_random_id' => $r_ID,
                     'voucher_id' => $discount->id,
                     'user_id' => $request->user_id,
-                    'amount' => $request->discount_price,
+                    'amount' => $bundle->price,
                     'service_id' =>$generateRandomId,
                     'main_service_id'=>$request->bundle_id
                 ]);
