@@ -185,7 +185,7 @@
         </div>
         <hr>
         <div class="text-center">
-            <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel" onclick="resetVoucherAdd()">Cancel</button>
+            <button type="button" class="btn btn-light me-3"  onclick="resetVoucherAdd(event)">Cancel</button>
             <button id="AddPackageFinal" type="submit" class="btn btn-primary spinner-button-save">
                 <span class="indicator-label">Save</span>
             </button>
