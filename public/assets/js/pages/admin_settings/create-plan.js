@@ -3209,56 +3209,103 @@ function resetVoucherAdd() {
     
     
 }
-function resetVoucherEdit() {
-   
-    const packageBundles = getPackageBundlesArray();
-    console.log(packageBundles);
-    // Send the array to Laravel backend via AJAX
-    if (packageBundles.length > 0) {
-        sendPackageBundlesToLaravel(packageBundles);
-    }else{
-        alert("No package bundles found");
+function resetVoucherEdit(event) {
+    // Prevent the default button behavior (form submission/page reload)
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
-   debugger;
-   
+    
+    console.log("Reset function started");
+    
+    try {
+        const packageBundles = getPackageBundlesArray();
+        console.log("Package bundles found:", packageBundles);
+        
+        // Send the array to Laravel backend via AJAX
+        if (packageBundles.length > 0) {
+            sendPackageBundlesToLaravelJQuery(packageBundles); // Fixed function name
+        } else {
+            console.log("No package bundles found");
+            alert("No package bundles found");
+        }
+        
+    } catch (error) {
+        console.error("Error in resetVoucherEdit:", error);
+        alert("Error: " + error.message);
+    }
+    
+    console.log("Reset function completed");
+    return false; // Additional prevention of default behavior
 }
+
 // Function to extract package_bundles array from hidden fields
 function getPackageBundlesArray() {
     const packageBundles = [];
     
+    console.log("Looking for package bundle inputs...");
+    
     // Method 1: Using querySelectorAll (Vanilla JS)
-    document.querySelectorAll('input[name="package_bundles[]"]').forEach(function(input) {
+    const inputs = document.querySelectorAll('input[name="package_bundles[]"]');
+    console.log("Found inputs:", inputs.length);
+    
+    inputs.forEach(function(input, index) {
+        console.log(`Input ${index}:`, input.value);
         if (input.value.trim() !== '') {
             packageBundles.push(input.value);
         }
     });
     
-    
-    
+    console.log("Extracted package bundles:", packageBundles);
     return packageBundles;
 }
+
+// Fixed AJAX function (you were calling wrong function name)
 function sendPackageBundlesToLaravelJQuery(packageBundles) {
-    var random_id = $('#edit_random_id_1').val();
-    $.ajaxSetup({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        }
-    });
+    console.log("Starting AJAX call...");
     
-    $.ajax({
-        url: route('admin.packages.resetvoucherpacakgebundles'),
-        method: 'POST',
-        data: {
-            package_bundles: packageBundles,
-            random_id: random_id
-        },
-        dataType: 'json',
-        success: function(response) {
-            console.log('Package bundles sent successfully:', response);
-        },
-        error: function(xhr, status, error) {
-            console.error('Error sending package bundles:', error);
-            console.log('Response:', xhr.responseText);
-        }
-    });
+    try {
+        var random_id = $('#edit_random_id_1').val();
+        console.log("Random ID:", random_id);
+        
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        
+        $.ajax({
+            url: route('admin.packages.resetvoucherpacakgebundles'),
+            method: 'POST',
+            data: {
+                package_bundles: packageBundles,
+                random_id: random_id
+            },
+            dataType: 'json',
+            beforeSend: function() {
+                console.log("AJAX request starting...");
+            },
+            success: function(response) {
+                console.log('Package bundles sent successfully:', response);
+                alert('Success: ' + JSON.stringify(response));
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error Details:');
+                console.error('Status:', status);
+                console.error('Error:', error);
+                console.error('Response Text:', xhr.responseText);
+                console.error('Status Code:', xhr.status);
+                
+                // Show error in alert for debugging
+                alert('AJAX Error:\nStatus: ' + status + '\nError: ' + error + '\nResponse: ' + xhr.responseText);
+            },
+            complete: function() {
+                console.log("AJAX request completed");
+            }
+        });
+        
+    } catch (error) {
+        console.error("Error in AJAX function:", error);
+        alert("AJAX Setup Error: " + error.message);
+    }
 }

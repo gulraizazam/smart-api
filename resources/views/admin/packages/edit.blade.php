@@ -221,7 +221,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button class="btn btn-light me-3 " onclick="resetVoucherEdit()">Cancel</button>
+                <button type="button" class="btn btn-light me-3 " onclick="resetVoucherEdit()">Cancel</button>
                 <button id="EditPackageFinal" type="button" class="btn btn-primary spinner-button-edit-save">
                     <span class="indicator-label">save</span>
                 </button>
