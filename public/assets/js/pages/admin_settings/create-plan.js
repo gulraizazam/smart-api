@@ -3212,7 +3212,7 @@ function resetVoucherAdd() {
 function resetVoucherEdit() {
    alert("reset");
     const packageBundles = getPackageBundlesArray();
-    
+    console.log(packageBundles);
     // Send the array to Laravel backend via AJAX
     if (packageBundles.length > 0) {
         sendPackageBundlesToLaravel(packageBundles);
