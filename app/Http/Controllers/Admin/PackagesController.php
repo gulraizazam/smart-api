@@ -757,12 +757,17 @@ class PackagesController extends Controller
               
                 $userVoucher->amount = $amountLeft;
                 $userVoucher->update();
-               
+                if($amountLeft < 0){
+                    $amountForVoucher =$request->discount_price;
+
+                }else{
+                    $amountForVoucher =$bundle->price;
+                }
                 PackageVouchers::create([
                     'package_random_id' => $r_ID,
                     'voucher_id' => $discount->id,
                     'user_id' => $request->user_id,
-                    'amount' => $bundle->price,
+                    'amount' => $amountForVoucher,
                     'service_id' =>$generateRandomId,
                     'main_service_id'=>$request->bundle_id
                 ]);
