@@ -31,7 +31,7 @@ class UpsellingReportController extends Controller
     $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
     $roleHasUsers = User::whereHas('roles', function($query) {
-        $query->where('name', 'Aesthetic Doctor');
+        $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
     })->pluck('id');
 
     $fdmUserIds = User::whereHas('roles', function ($q) {
