@@ -21,6 +21,7 @@ use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\PatientsController;
+use App\Http\Controllers\UpsellingReportController;
 use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
