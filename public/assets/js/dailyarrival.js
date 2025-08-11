@@ -87,8 +87,8 @@ $('#date_range_ratings').daterangepicker({
        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
          'This Year': [moment().startOf('year'), moment().endOf('year')],
     },
-    startDate: moment().startOf('year'),
-    endDate: moment().endOf('year')
+    startDate: moment().subtract(1, 'month').startOf('month'),
+    endDate: moment().subtract(1, 'month').endOf('month')
 }).val();
 $('#date_range_patients').daterangepicker({
     locale: {
@@ -138,14 +138,7 @@ var loadConvertedReport = function (that) {
     });
 };
 
-function hideShowCreatedBy()
-{
-    if($("#report_type").val()=="consultancy"){
-        $("#created_by").show();
-    }else{
-        $("#created_by").hide();
-    }
-}
+
 var loadStaffWiseArrivalReport = function (that) {
     if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
         return false;
@@ -158,7 +151,6 @@ var loadStaffWiseArrivalReport = function (that) {
         url: route('admin.reports.staff_wise_arrival_report'),
         type: "POST",
         data: {
-            report_type:$("#report_type").val(),
             location_id: $('#location_id').val(),
             doctor_id: $('#doctors_list').val(),
             date_range: $('#date_range_arrival').val(),
@@ -431,6 +423,55 @@ var loadFutureTreatmentsReport  = function (that) {
             $('#patients_content').html('');
             $('#patients_content').html(response);
             $("#patients_table").DataTable({
+                dom: 'Bfrtip',
+                buttons: [
+                    'excelHtml5',
+                    'csvHtml5',
+                    'pdfHtml5',
+                ],
+                 searching: false,     // Disable search box
+                paging: false,        // Disable pagination
+                info: false,
+                "ordering": false
+            });
+
+
+            hideSpinner();
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            hideSpinner();
+            return false;
+        }
+    });
+};
+var loadUpsellingReport  = function (that) {
+
+
+    if (typeof that.prop("disabled") !== 'undefined' && that.prop("disabled") === true) {
+        return false;
+    }
+
+    showSpinner();
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.reports.load_upselling_report'),
+        type: "POST",
+        data: {
+
+
+            date_range: $('#date_range_ratings').val(),
+            centre_id: $('#centre_id').val(),
+
+
+
+        },
+        success: function(response){
+            $('#upselling_content').html('');
+            $('#upselling_content').html(response);
+            $("#upselling_table").DataTable({
                 dom: 'Bfrtip',
                 buttons: [
                     'excelHtml5',
