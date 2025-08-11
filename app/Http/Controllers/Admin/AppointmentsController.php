@@ -852,13 +852,12 @@ class AppointmentsController extends Controller
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::with([
-            'patient',
+            $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
+                $q->where('invoice_status_id', $invoice_status->id);
+            }])
+            ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
 
-            'hasInvoices', // 👈 eager load invoice
-        ])
-
-        ->whereIn('appointments.location_id', ACL::getUserCentres());
+                ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
 
         $count_query->where('appointment_type_id', config('constants.appointment_type_consultancy'));
@@ -918,14 +917,14 @@ class AppointmentsController extends Controller
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
 
-                $invoice = Invoices::where([
-                    ['appointment_id', '=', $appointment->id],
-                    ['invoice_status_id', '=', $invoice_status->id],
-                ])->first();
-                $invoicearray[] = $invoice;
-                if ($invoice) {
-                    $invoiceid = $invoice->id;
-                }
+                // $invoice = Invoices::where([
+                //     ['appointment_id', '=', $appointment->id],
+                //     ['invoice_status_id', '=', $invoice_status->id],
+                // ])->first();
+                // $invoicearray[] = $invoice;
+                // if ($invoice) {
+                //     $invoiceid = $invoice->id;
+                // }
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
