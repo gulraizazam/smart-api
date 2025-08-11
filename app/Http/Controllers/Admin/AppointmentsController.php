@@ -851,6 +851,7 @@ class AppointmentsController extends Controller
 
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
+        $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
             $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
                 $q->where('invoice_status_id', $invoice_status->id);
