@@ -754,7 +754,7 @@ class AppointmentsController extends Controller
             }
         }
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = [['users.id' => GeneralFunctions::patientSearch($filters['patient_id'])]];
+            $where[] = [['patient_id' => GeneralFunctions::patientSearch($filters['patient_id'])]];
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
         }
         if (hasFilter($filters, 'phone')) {
@@ -827,48 +827,40 @@ class AppointmentsController extends Controller
             Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
             Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
         }
-//        if (hasFilter($filters, 'phone')) {
-//            $phone = substr($filters['phone'], 1);
-//            $where[] = [['users.phone' => $phone]];
-//            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
-//        }
+
 
         $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
         if (Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
+           $count_query = Appointments::with([
+            'patient',
+            'doctor',
+            'city',
+            'location',
+            'service',
+            'appointment_type',
+            'appointment_status',
+            'appointment_status.parent',
+            'hasInvoices', // 👈 eager load invoice
+        ])
+        ->where('appointments.appointment_type_id', $consultancyslug->id)
+        ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_services')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $treatmentslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
+            $count_query = Appointments::with('patient')->where('appointments.appointment_type_id', '=', $treatmentslug->id)
+
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
+            $count_query = Appointments::with([
+            'patient',
+
+            'hasInvoices', // 👈 eager load invoice
+        ])
+
+        ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (! Gate::allows('appointments_services') && ! Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where([
-                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-                ['appointments.appointment_type_id', '!=', $treatmentslug->id],
-            ])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+
         $count_query->where('appointment_type_id', config('constants.appointment_type_consultancy'));
         if (count($where)) {
             $count_query->where($where);
@@ -901,80 +893,22 @@ class AppointmentsController extends Controller
         [$i_display_length, $i_display_start, $pages, $page] = getPaginationElement($request, $i_total_records);
         $records = [];
         $records['data'] = [];
-        if (Gate::allows('appointments_consultancy')) {
-            $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (Gate::allows('appointments_services')) {
-            $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $treatmentslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
-            $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (! Gate::allows('appointments_consultancy') && ! Gate::allows('appointments_services')) {
-            $result_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id');
-                    // ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where([
-                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-                ['appointments.appointment_type_id', '!=', $treatmentslug->id],
-            ])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        $result_query->where('appointment_type_id', config('constants.appointment_type_consultancy'));
-        if (count($where)) {
-            $result_query->where($where);
-        }
-        if (hasFilter($filters, 'location_id')) {
-            $ids = explode(',', $filters['location_id']);
-            if (count($ids) > 1) {
-                $result_query->whereIn('location_id', $ids);
-            } else {
-                $result_query->where('location_id', $ids);
-            }
-            Filters::put(Auth::User()->id, $filename, 'location_id', $filters['location_id']);
-        }
-        if (hasFilter($filters, 'name')) {
-            $result_query->where(function ($query) use ($filters) {
-                $query->where(
-                    'users.name',
-                    'like',
-                    '%'.$filters['name'].'%'
-                );
-                $query->orWhere(
-                    'appointments.name',
-                    'like',
-                    '%'.$filters['name'].'%'
-                );
-            });
-            Filters::put(Auth::User()->id, $filename, 'name', $filters['name']);
-        }
+
         if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
             $orderBy = 'appointments.name';
         }
-        $Appointments = $result_query->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
-            ->limit($i_display_length)
-            ->offset($i_display_start)
-            ->orderBy('appointments.created_at', 'DESC')
-            ->get();
+        $Appointments = $count_query->select(
+        'appointments.*',
+
+    )
+    ->limit($i_display_length)
+    ->offset($i_display_start)
+    ->orderBy('appointments.created_at', 'DESC')
+    ->get();
         $invoicearray = [];
         $records = $this->getFiltersData($records, $filename);
         if ($Appointments) {
-            $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
+            $Regions = [];
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
             $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
@@ -983,8 +917,9 @@ class AppointmentsController extends Controller
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
+
                 $invoice = Invoices::where([
-                    ['appointment_id', '=', $appointment->app_id],
+                    ['appointment_id', '=', $appointment->id],
                     ['invoice_status_id', '=', $invoice_status->id],
                 ])->first();
                 $invoicearray[] = $invoice;
@@ -999,12 +934,12 @@ class AppointmentsController extends Controller
                     $consultancy_type = '';
                 }
                 if(Gate::allows('contact')){
-                    $phoneNumber = $appointment->phone;
+                    $phoneNumber = $appointment->patient->phone;
                 }else{
                     $phoneNumber ='***********';
                 }
                 $records['data'][$index] = [
-                    'id' => $appointment->app_id,
+                    'id' => $appointment->id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
@@ -1023,10 +958,10 @@ class AppointmentsController extends Controller
                     'appointment_type_id' => $appointment->appointment_type->name,
                     'appointment_type' => $appointment->appointment_type->id,
                     'consultancy_type' => $consultancy_type,
-                    'created_at' => Carbon::parse($appointment->app_created_at)->format('F j,Y h:i A'),
-                    'created_by' => array_key_exists($appointment->app_created_by, $Users) ? $Users[$appointment->app_created_by]->name : 'N/A',
+                    'created_at' => Carbon::parse($appointment->created_at)->format('F j,Y h:i A'),
+                    'created_by' => array_key_exists($appointment->created_by, $Users) ? $Users[$appointment->created_by]->name : 'N/A',
                     'converted_by' => array_key_exists($appointment->converted_by, $Users) ? $Users[$appointment->converted_by]->name : 'N/A',
-                    'updated_by' => array_key_exists($appointment->app_updated_by, $Users) ? $Users[$appointment->app_updated_by]->name : 'N/A',
+                    'updated_by' => array_key_exists($appointment->updated_by, $Users) ? $Users[$appointment->updated_by]->name : 'N/A',
                     'unscheduled_appointment_status' => $unscheduled_appointment_status,
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
@@ -1109,7 +1044,7 @@ class AppointmentsController extends Controller
             $end_date_time = null;
         }
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = [['users.id' => GeneralFunctions::patientSearch($filters['patient_id'])]];
+            $where[] = [['patient_id' => GeneralFunctions::patientSearch($filters['patient_id'])]];
             Filters::put(Auth::User()->id, $filename, 'patient_id', GeneralFunctions::patientSearch($filters['patient_id']));
         }
         if (hasFilter($filters, 'phone')) {
@@ -1148,11 +1083,7 @@ class AppointmentsController extends Controller
             $where[] = [['city_id' => $filters['city_id']]];
             Filters::put(Auth::User()->id, $filename, 'city_id', $filters['city_id']);
         }
-//        if (hasFilter($filters, 'phone')) {
-//            $phone = substr($filters['phone'], 1);
-//            $where[] = [['users.phone' => $phone]];
-//            Filters::put(Auth::User()->id, $filename, 'phone', $phone);
-//        }
+
         if (hasFilter($filters, 'service_id')) {
             $service_id = GeneralFunctions::getServiceId($filters['service_id']);
             $service_check = Services::find($service_id);
@@ -1194,16 +1125,9 @@ class AppointmentsController extends Controller
             $where[] = ['appointments.created_at', '<=', $end_date_time];
             Filters::put(Auth::User()->id, $filename, 'created_at', $filters['created_at']);
         }
-        $consultancyslug = AppointmentTypes::where('slug', '=', 'consultancy')->first();
+
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
-        if (Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+
         if (Gate::allows('appointments_services')) {
             $count_query = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
@@ -1212,24 +1136,8 @@ class AppointmentsController extends Controller
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (! Gate::allows('appointments_services') && ! Gate::allows('appointments_consultancy')) {
-            $count_query = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where([
-                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-                ['appointments.appointment_type_id', '!=', $treatmentslug->id],
-            ])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+
+
         $count_query->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $count_query->where($where);
@@ -1265,40 +1173,17 @@ class AppointmentsController extends Controller
         [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $i_total_records);
         $records = [];
         $records['data'] = [];
-        if (Gate::allows('appointments_consultancy')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $consultancyslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+         $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         if (Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where('appointments.appointment_type_id', '=', $treatmentslug->id)
-                ->whereIn('appointments.city_id', ACL::getUserCities())
+            $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
+                $q->where('invoice_status_id', $invoice_status->id);
+            }])
+            ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
+
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
-        if (! Gate::allows('appointments_consultancy') && ! Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::join('users', function ($join) {
-                $join->on('users.id', '=', 'appointments.patient_id')
-                    ->where('users.user_type_id', '=', config('constants.patient_id'));
-            })->where([
-                ['appointments.appointment_type_id', '!=', $consultancyslug->id],
-                ['appointments.appointment_type_id', '!=', $treatmentslug->id],
-            ])
-                ->whereIn('appointments.city_id', ACL::getUserCities())
-                ->whereIn('appointments.location_id', ACL::getUserCentres());
-        }
+
+
         $resultQuery->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $resultQuery->where($where);
@@ -1344,21 +1229,21 @@ class AppointmentsController extends Controller
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-            $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
+
             // Default Un-scheduled Appointment Status
             $unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id, ['id']);
             $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly(Auth::User()->account_id);
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                $invoice = Invoices::where([
-                    ['appointment_id', '=', $appointment->app_id],
-                    ['invoice_status_id', '=', $invoice_status->id],
-                ])->first();
-                $invoicearray[] = $invoice;
-                if ($invoice) {
-                    $invoiceid = $invoice->id;
-                }
+                // $invoice = Invoices::where([
+                //     ['appointment_id', '=', $appointment->app_id],
+                //     ['invoice_status_id', '=', $invoice_status->id],
+                // ])->first();
+                // $invoicearray[] = $invoice;
+                // if ($invoice) {
+                //     $invoiceid = $invoice->id;
+                // }
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
@@ -1367,7 +1252,7 @@ class AppointmentsController extends Controller
                     $consultancy_type = '';
                 }
                 if(Gate::allows('contact')){
-                    $phoneNumber = $appointment->phone;
+                    $phoneNumber = $appointment->patient->phone;
                 }else{
                     $phoneNumber ='***********';
                 }
@@ -1399,8 +1284,8 @@ class AppointmentsController extends Controller
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
-                    'invoice_id' => $invoiceid,
-                    'invoice' => $invoice,
+                    'invoice_id' => $appointment->invoice->id ?? 0,
+                    'invoice' => $appointment->invoice ?? null,
                 ];
                 $index++;
             }
@@ -4398,6 +4283,8 @@ class AppointmentsController extends Controller
         $activity->action = 'consumed';
         $activity->patient = $patient->name;
         $activity->appointment_type = $servicename->name.' Treatment';
+        $activity->activity_type = 'Treatment';
+        $activity->schedule_date = $appointmentinfo->scheduled_date;
         $activity->created_by = Auth::user()->name;
         $activity->invoice_id = $invoice->id;
         $activity->amount = $invoice_detail->net_amount;
