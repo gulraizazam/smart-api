@@ -856,7 +856,7 @@ class AppointmentsController extends Controller
             $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
                 $q->where('invoice_status_id', $invoice_status->id);
             }])
-            ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
+            ->where('appointments.appointment_type_id', '=', $consultancyslug->id)
 
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
