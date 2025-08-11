@@ -1,0 +1,95 @@
+@extends('admin.layouts.master')
+@section('title', 'Upselling Report')
+@section('content')
+<style>
+.badge {
+    font-size: 0.9em;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.table-responsive {
+    border-radius: 8px;
+}
+
+.btn {
+    border-radius: 6px;
+}
+</style>
+ <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Upselling Detail Report'])
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
+
+<div id="doctor_detail_report">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>Upselling Details - {{ $doctorName }}</h4>
+        <a href="{{ url()->previous() }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Summary
+        </a>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Sold Amount</h5>
+                    <h3 class="text-primary">{{ number_format($totalAmount, 2) }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Total Services Sold</h5>
+                    <h3 class="text-success">{{ $detailData->count() }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Services Sold Details</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Package ID</th>
+                            <th>Service Name</th>
+                            <th>Price</th>
+                            <th>Date Sold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($detailData as $detail)
+                            <tr>
+                                <td>
+                                    <span class="badge badge-info">{{ $detail->package_id }}</span>
+                                </td>
+                                <td>{{ $detail->service_name }}</td>
+                                <td>{{ number_format($detail->actual_amount, 2) }}</td>
+                                <td>{{ \Carbon\Carbon::parse($detail->created_at)->format('M d, Y h:i A') }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center">No services found for this doctor.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+    </div>
+</div>
+
+@endsection
