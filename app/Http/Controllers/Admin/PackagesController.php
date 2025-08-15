@@ -735,10 +735,11 @@ class PackagesController extends Controller
                 $packageBundleData['tax_including_price'] = ceil($packageBundleData['tax_exclusive_net_amount'] + ($packageBundleData['tax_exclusive_net_amount'] * $taxPercentage / 100));
                 break;
             default:
-            dd( $netAmount,$locationDetail?->tax_percentage,$packageBundleData['tax_percenatage']);
+           
                 $packageBundleData['tax_including_price'] = $netAmount;
                 $packageBundleData['tax_percenatage'] = $locationDetail?->tax_percentage ?? '00.00';
                 $packageBundleData['tax_exclusive_net_amount'] = ceil((100 * $netAmount) / ($packageBundleData['tax_percenatage'] + 100));
+                dd( $packageBundleData['tax_exclusive_net_amount']);
                 $packageBundleData['tax_price'] = ceil($netAmount - $packageBundleData['tax_exclusive_net_amount']);
                 $packageBundleData['is_exclusive'] = 0;
                 break;
