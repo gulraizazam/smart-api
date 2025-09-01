@@ -727,7 +727,7 @@ function setEditData(response) {
             
             Object.entries(users).forEach(function ([id, name]) {
                 let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
-                userOptions += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
+                userOptions += '<option value="' + id + '" > ' + name + ' </option>';
             });
         }
         
@@ -1373,7 +1373,7 @@ function setSoldBy(response) {
 
         Object.entries(users).forEach(function ([id, name]) {
             let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
-            user_options += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
+            user_options += '<option value="' + id + '" > ' + name + ' </option>';
         });
 
         $("#add_sold_by").html(user_options);
