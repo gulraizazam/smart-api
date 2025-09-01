@@ -37,16 +37,7 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
-                                             id="locations">
-                                            {!! Form::label('report_type', 'Report Type:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="report_type" name="report_type" onchange="hideShowCreatedBy()">
-                                               <option value="consultancy">Consultancy</option>
-                                               <option value="treatment">Treatment</option>
-                                            </select>
-                                            <span id="location_id_handler"></span>
-                                        </div>
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('location_id')) has-error @endif"
+                                        <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
                                             <select class="form-control select2" id="location_id" name="service_id">
@@ -63,7 +54,7 @@
                                                 {!! Form::text('date_range', null, ['id' => 'date_range_arrival', 'class' => 'form-control']) !!}
                                             </div>
                                         </div>
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="created_by" >
+                                        <div class="form-group col-md-2 sn-select @if($errors->has('created_by')) has-error @endif" id="users" >
                                            {!! Form::label('created_by', 'Created By', ['class' => 'control-label']) !!}
                                            <select class="form-control select2" id="created_by" name="created_by">
                                                <option value="">All</option>
