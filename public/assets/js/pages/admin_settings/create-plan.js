@@ -1369,7 +1369,7 @@ function setSoldBy(response) {
     try {
         let users = response.data.users;
         let selectedUserId = response.data.selected_doctor_id; // Get selected user ID from response
-        let userOptions = '<option value="">Select</option>';
+        let user_options = '<option value="">Select</option>';
 
         Object.entries(users).forEach(function ([id, name]) {
             let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
