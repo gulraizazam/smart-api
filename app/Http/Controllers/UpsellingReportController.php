@@ -319,6 +319,10 @@ public function getDoctorUpsellingData(Request $request)
                 'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d 00:00:00'),
                 'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
             ],
+            'lastmonth' => [
+                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
+            ],
         ];
 
         $startDate = $periods[$period]['start_date'];
