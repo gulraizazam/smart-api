@@ -277,7 +277,15 @@ public function consultantRevenueDetail($consultantId)
 
     $consultantName = $detailData->first()->consultant_name ?? 'Unknown Consultant';
     $totalAmount = $detailData->sum('actual_amount');
+    
+    // Count unique consultations (appointments) instead of service records
+    $uniqueConsultations = $detailData->unique('package_id')->count();
+    
+    // Alternative: Count unique appointments if you want true appointment count
+    // $uniqueAppointments = $detailData->unique(function($item) {
+    //     return $item->patient_id . '-' . $item->scheduled_date;
+    // })->count();
 
-    return view('admin.reports.consultantRevenueDetail', compact('detailData', 'consultantName', 'totalAmount'));
+    return view('admin.reports.consultantRevenueDetail', compact('detailData', 'consultantName', 'totalAmount', 'uniqueConsultations'));
 }
 }
