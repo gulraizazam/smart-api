@@ -254,6 +254,9 @@ public function consultantRevenueDetail($consultantId)
             'services.name as service_name',
             'package_services.tax_including_price',
             'package_services.created_at',
+            'appointments.patient_id',
+            'appointments.name as patient_name',
+            'appointments.scheduled_date',
             DB::raw("
                 CASE
                     WHEN (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
