@@ -19,6 +19,12 @@ class UpsellingReportController extends Controller
 
         return view('admin.reports.upselling', get_defined_vars());
     }
+    public function consultantRevenueReport()
+    {
+        $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
+
+        return view('admin.reports.consultant_revenue', get_defined_vars());
+    }
    public function loadUpsellingReport(Request $request)
 {
     $request->validate([
@@ -149,5 +155,126 @@ public function doctorUpsellingDetail($doctorId)
     $totalAmount = $detailData->sum('actual_amount');
 
     return view('admin.reports.doctorUpsellingDetail', compact('detailData', 'doctorName', 'totalAmount'));
+}
+public function loadConsultantRevenueReport(Request $request)
+{
+    $request->validate([
+        'centre_id' => 'required|integer|exists:locations,id',
+    ]);
+
+    $locationId = $request->centre_id;
+    $dates = explode(' - ', $request->input('date_range'));
+    $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
+    $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
+
+    // Step 1: Get only Consultant users
+    $consultantUserIds = User::whereHas('roles', function($query) {
+        $query->where('name', 'Consultant');
+    })->pluck('id');
+
+    // Step 2: Get consultants assigned to the specific location
+    $consultantIds = DB::table('doctor_has_locations')
+        ->where('location_id', $locationId)
+        ->whereIn('user_id', $consultantUserIds)
+        ->distinct()
+        ->pluck('user_id');
+
+    if ($consultantIds->isEmpty()) {
+        return response()->json([
+            'status' => 200,
+            'message' => 'No consultants found for the selected location.',
+            'data' => [],
+        ]);
+    }
+
+    $reportQuery = PackageService::query()
+        ->join('users', 'package_services.sold_by', '=', 'users.id')
+        ->join('packages', 'package_services.package_id', '=', 'packages.id')
+        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+        ->whereIn('package_services.sold_by', $consultantIds)
+        ->where('packages.location_id', $locationId);
+
+    // Apply date range filter on created_at
+    if ($startDate && $endDate) {
+        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate])
+            ->whereNotNull('sold_by');
+    }
+
+    // Fetch consultant revenue data (opposite logic - primary consultation revenue)
+    $reportData = $reportQuery
+        ->select(
+            'users.name as consultant_name',
+            'package_services.sold_by as consultant_id',
+            DB::raw("
+                SUM(
+                    CASE
+                        WHEN (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                        THEN package_services.tax_including_price
+                        ELSE 0
+                    END
+                ) as total_consultation_revenue
+            ")
+        )
+        ->groupBy('package_services.sold_by', 'users.name')
+        ->get();
+
+    // Store filters in session for detail view
+    session(['consultant_revenue_filters' => [
+        'location_id' => $locationId,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'consultant_ids' => $consultantIds->toArray()
+    ]]);
+
+    return view('admin.reports.consultantRevenueReport', compact('reportData'));
+}
+public function consultantRevenueDetail($consultantId)
+{
+    $filters = session('consultant_revenue_filters');
+
+    if (!$filters) {
+        return redirect()->back()->with('error', 'Session expired. Please reload the report.');
+    }
+
+    $reportQuery = PackageService::query()
+        ->join('users', 'package_services.sold_by', '=', 'users.id')
+        ->join('packages', 'package_services.package_id', '=', 'packages.id')
+        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+        ->join('services', 'package_services.service_id', '=', 'services.id')
+        ->where('package_services.sold_by', $consultantId)
+        ->whereIn('package_services.sold_by', $filters['consultant_ids'])
+        ->where('packages.location_id', $filters['location_id'])
+        ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
+        ->whereNotNull('sold_by');
+
+    $detailData = $reportQuery
+        ->select(
+            'users.name as consultant_name',
+            'package_services.package_id',
+            'services.name as service_name',
+            'package_services.tax_including_price',
+            'package_services.created_at',
+            DB::raw("
+                CASE
+                    WHEN (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                    THEN package_services.tax_including_price
+                    ELSE 0
+                END as actual_amount
+            ")
+        )
+        ->where(DB::raw("
+            CASE
+                WHEN (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                THEN package_services.tax_including_price
+                ELSE 0
+            END
+        "), '>', 0)
+        ->orderBy('package_services.created_at', 'desc')
+        ->get();
+
+    $consultantName = $detailData->first()->consultant_name ?? 'Unknown Consultant';
+    $totalAmount = $detailData->sum('actual_amount');
+
+    return view('admin.reports.consultantRevenueDetail', compact('detailData', 'consultantName', 'totalAmount'));
 }
 }
