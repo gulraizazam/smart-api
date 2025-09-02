@@ -596,10 +596,14 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('feedbacks_reports', [FeedbacksReportController::class, 'feedbackReport'])->name('reports.feedback_report');
         Route::get('future_treatments', [FeedbacksReportController::class, 'futureTreatmentsReport'])->name('reports.future_treatments');
         Route::get('upselling', [UpsellingReportController::class, 'index'])->name('reports.upselling');
+        Route::get('consultant_revenue', [UpsellingReportController::class, 'consultantRevenueReport'])->name('reports.consultant_revenue');
         Route::post('load_feedback_reports', [FeedbacksReportController::class, 'loadFeedbackReport'])->name('reports.load_feedback_report');
          Route::post('load_upselling_reports', [UpsellingReportController::class, 'loadUpsellingReport'])->name('reports.load_upselling_report');
+         Route::post('load_consultant_revenue_reports', [UpsellingReportController::class, 'loadConsultantRevenueReport'])->name('reports.load_consultant_revenue_report');
          Route::get('/doctor-upselling-detail/{doctorId}', [UpsellingReportController::class, 'doctorUpsellingDetail'])
              ->name('doctor.upselling.detail');
+             Route::get('/consultant-revenue-detail/{consultantId}', [UpsellingReportController::class, 'consultantRevenueDetail'])
+             ->name('consultant.revenue.detail');
         Route::post('load_future_treatments_report', [FeedbacksReportController::class, 'loadFutureTreatmentsReport'])->name('reports.load_future_treatments_report')->middleware('permission:followuppatient_manage');
         Route::post('load_inventory_reports', [InventoryReportsController::class, 'loadInventoryReport'])->name('reports.load_inventory_report');
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
