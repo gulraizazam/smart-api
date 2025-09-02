@@ -826,38 +826,51 @@
                                 <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
                                     <span class="dashboard-counter text-uppercase">Doctor Upselling</span>
                                     <ul class="nav nav-tabs d-flex align-items-center  doc_upselling_ul">
-                                        <li style="border-bottom: none;">
-                                            <div class="actions action-style p-3 mr-3">
-                                                @php
-                                                $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
-                                                $locations = \App\Helpers\ACL::getUserCentres();
-                                                $centres = \App\Models\Locations::whereIn('id', $locations)
-                                                ->whereNotIn('name', $centres_array)
-                                                ->where('active', 1)
-                                                ->get();
-                                                @endphp
-                                                <div class="btn-group">
-                                                    <select class="form-control btndropdown btn_Report doctorUpselling selectcenterupselling"
-                                                        id="doctor_upselling_centre_select"
-                                                        data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style p-3 mr-3">
+                                            @php
+                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
+                                            $locations = \App\Helpers\ACL::getUserCentres();
+                                            $centres = \App\Models\Locations::whereIn('id', $locations)
+                                            ->whereNotIn('name', $centres_array)
+                                            ->where('active', 1)
+                                            ->get();
+                                            @endphp
+                                            <div class="btn-group">
+                                                <select class="form-control btndropdown btn_Report doctorUpselling selectcenterupselling"
+                                                    id="doctor_upselling_centre_select"
+                                                    data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
+                                                    @php
+                                                    $hasMultipleCentres = (Auth::user()->hasRole('Administrator') || 
+                                                                        Auth::user()->hasRole('Super-Admin') || 
+                                                                        Auth::user()->hasRole('Head of Operations') || 
+                                                                        Auth::user()->hasRole('Finance')) || 
+                                                                        count($centres) > 1;
+                                                    $autoSelectCentre = !$hasMultipleCentres && count($centres) == 1;
+                                                    @endphp
+                                                    
+                                                    @if ($hasMultipleCentres)
                                                         <option value="" disabled selected>Select Centre</option>
-                                                        @if (Auth::user()->hasRole('Administrator') ||
-                                                        Auth::user()->hasRole('Super-Admin') ||
-                                                        Auth::user()->hasRole('Head of Operations') ||
-                                                        Auth::user()->hasRole('Finance'))
-                                                        <option value="all" data-period="thismonth">
-                                                            All Centres
-                                                        </option>
-                                                        @endif
-                                                        @foreach ($centres as $centre)
-                                                        <option value="{{ $centre->id }}" data-period="thismonth">
-                                                            {{ $centre->name }}
-                                                        </option>
-                                                        @endforeach
-                                                    </select>
-                                                </div>
+                                                    @endif
+                                                    
+                                                    @if (Auth::user()->hasRole('Administrator') ||
+                                                    Auth::user()->hasRole('Super-Admin') ||
+                                                    Auth::user()->hasRole('Head of Operations') ||
+                                                    Auth::user()->hasRole('Finance'))
+                                                    <option value="all" data-period="thismonth" {{ !$hasMultipleCentres ? 'selected' : '' }}>
+                                                        All Centres
+                                                    </option>
+                                                    @endif
+                                                    @foreach ($centres as $centre)
+                                                    <option value="{{ $centre->id }}" data-period="thismonth" 
+                                                            {{ $autoSelectCentre ? 'selected' : '' }}>
+                                                        {{ $centre->name }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
                                             </div>
-                                        </li>
+                                        </div>
+                                    </li>
 
                                         <li style="border-bottom: none;">
                                             <div class="actions date_action_dropdown action-style py-3 mr-0">
@@ -929,6 +942,14 @@
 <script src="{{ asset('assets/js/home.js') }}"></script>
 <script>
 $(document).ready(function() {
+    // Auto-load data on page load if a centre is pre-selected
+    const initialCentreId = $('#doctor_upselling_centre_select').val();
+    const initialPeriod = $('#dr_wise_upselling_period').val();
+    
+    if (initialCentreId) {
+        loadDoctorUpsellingData(initialCentreId, initialPeriod);
+    }
+    
     // Handle centre selection change
     $('#doctor_upselling_centre_select').on('change', function() {
         const centreId = $(this).val();
