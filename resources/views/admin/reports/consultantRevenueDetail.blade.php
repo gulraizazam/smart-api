@@ -62,8 +62,11 @@
                     <thead>
                         <tr>
                             <th>Package ID</th>
+                            <th>Patient ID</th>
+                            <th>Patient Name</th>
                             <th>Service Name</th>
                             <th>Price</th>
+                            <th>Appointment Date</th>
                             <th>Date of Consultation</th>
                         </tr>
                     </thead>
@@ -73,13 +76,18 @@
                                 <td>
                                     <span class="badge badge-info">{{ $detail->package_id }}</span>
                                 </td>
+                                <td>
+                                    <span class="badge badge-secondary">{{ $detail->patient_id }}</span>
+                                </td>
+                                <td>{{ $detail->patient_name ?? 'N/A' }}</td>
                                 <td>{{ $detail->service_name }}</td>
                                 <td>{{ number_format($detail->actual_amount, 2) }}</td>
+                                <td>{{ \Carbon\Carbon::parse($detail->scheduled_date)->format('M d, Y h:i A') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($detail->created_at)->format('M d, Y h:i A') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center">No consultation services found for this consultant.</td>
+                                <td colspan="7" class="text-center">No consultation services found for this consultant.</td>
                             </tr>
                         @endforelse
                     </tbody>
