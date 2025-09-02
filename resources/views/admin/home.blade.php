@@ -830,6 +830,139 @@
 <script src="{{ asset('assets/js/pie.js') }}"></script>
 <script src="{{ asset('assets/js/home.js') }}"></script>
 <script>
+$(document).ready(function() {
+    // Auto-load data on page load if a centre is pre-selected
+    const initialCentreId = $('#doctor_upselling_centre_select').val();
+    const initialPeriod = $('#dr_wise_upselling_period').val();
+    
+    if (initialCentreId) {
+        loadDoctorUpsellingData(initialCentreId, initialPeriod);
+    }
+    
+    // Handle centre selection change
+    $('#doctor_upselling_centre_select').on('change', function() {
+        const centreId = $(this).val();
+        const period = $('#dr_wise_upselling_period').val();
+        
+        if (centreId) {
+            loadDoctorUpsellingData(centreId, period);
+        } else {
+            resetTable();
+        }
+    });
+    
+    // Handle period change
+    $('#dr_wise_upselling_period').on('change', function() {
+        const centreId = $('#doctor_upselling_centre_select').val();
+        const period = $(this).val();
+        
+        if (centreId) {
+            loadDoctorUpsellingData(centreId, period);
+        }
+    });
+});
+
+function loadDoctorUpsellingData(centreId, period) {
+    // Show loader
+    $('.loader-img-upselling').show();
+    
+    // Hide table content
+    $('#doctor_upselling_tbody').html('');
+    $('#doctor_upselling_tfoot').hide();
+    
+    $.ajax({
+        url: '{{ route("admin.dashboard.doctor.upselling.data") }}',
+        method: 'GET',
+        data: {
+            centre_id: centreId,
+            period: period
+        },
+        success: function(response) {
+            $('.loader-img-upselling').hide();
+            
+            if (response.success && response.data.length > 0) {
+                populateTable(response.data);
+            } else {
+                showNoDataMessage();
+            }
+        },
+        error: function(xhr, status, error) {
+            $('.loader-img-upselling').hide();
+            console.error('Error loading doctor upselling data:', error);
+            showErrorMessage();
+        }
+    });
+}
+
+function populateTable(data) {
+    let tbody = '';
+    let totalSoldAmount = 0;
+    let totalConsumedAmount = 0;
+    
+    data.forEach(function(doctor) {
+        totalSoldAmount += parseFloat(doctor.total_sold_amount || 0);
+        totalConsumedAmount += parseFloat(doctor.total_consumed_amount || 0);
+        
+        tbody += `
+            <tr>
+                <td class="font-weight-bold">${doctor.doctor_name}</td>
+                <td class="text-right">${formatCurrency(doctor.total_sold_amount)}</td>
+                <td class="text-right">${formatCurrency(doctor.total_consumed_amount || 0)}</td>
+                
+            </tr>
+        `;
+    });
+    
+    $('#doctor_upselling_tbody').html(tbody);
+    $('#total_sold_amount').text(formatCurrency(totalSoldAmount));
+    $('#total_consumed_amount').text(formatCurrency(totalConsumedAmount));
+    $('#doctor_upselling_tfoot').show();
+}
+
+function showNoDataMessage() {
+    $('#doctor_upselling_tbody').html(`
+        <tr>
+            <td colspan="4" class="text-center text-muted py-5">
+                <i class="fas fa-exclamation-triangle mb-2"></i><br>
+                No upselling data found for the selected criteria
+            </td>
+        </tr>
+    `);
+    $('#doctor_upselling_tfoot').hide();
+}
+
+function showErrorMessage() {
+    $('#doctor_upselling_tbody').html(`
+        <tr>
+            <td colspan="4" class="text-center text-danger py-5">
+                <i class="fas fa-exclamation-circle mb-2"></i><br>
+                Error loading data. Please try again.
+            </td>
+        </tr>
+    `);
+    $('#doctor_upselling_tfoot').hide();
+}
+
+function resetTable() {
+    $('#doctor_upselling_tbody').html(`
+        <tr id="no_data_row">
+            <td colspan="4" class="text-center text-muted py-5">
+                <i class="fas fa-info-circle mb-2"></i><br>
+                Select a centre to view doctor upselling data
+            </td>
+        </tr>
+    `);
+    $('#doctor_upselling_tfoot').hide();
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount || 0);
+}
+</script>
+<script>
     jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function() {
                 var dataID = jQuery(this).attr('data-id');
                 var dataText = jQuery(this).text();
