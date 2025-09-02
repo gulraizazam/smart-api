@@ -880,8 +880,8 @@
 
                                 <div class="row pt-7">
                                     <div class="col-12">
-                                        <div class="table-responsive" style="min-height: 400px;">
-                                            <table class="table table-striped table-hover" id="doctor_upselling_table">
+                                        <div class="table-responsive" style="min-height: 400px;padding:20px">
+                                            <table class="table" id="doctor_upselling_table">
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th class="text-left">Doctor Name</th>
