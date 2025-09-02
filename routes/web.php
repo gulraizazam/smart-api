@@ -613,7 +613,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
          Route::post('load_upselling_reports', [UpsellingReportController::class, 'loadUpsellingReport'])->name('reports.load_upselling_report');
          Route::get('/doctor-upselling-detail/{doctorId}', [UpsellingReportController::class, 'doctorUpsellingDetail'])
              ->name('doctor.upselling.detail');
-             Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('admin.dashboard.doctor.upselling.data');
+             Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('dashboard.doctor.upselling.data');
          //////Dashboard Stats//////
         Route::get('dashboard/collection-by-centre', [DashboardReportsController::class, 'collectionByCentre'])->name('dashboard.collection_by_centre');
         Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
