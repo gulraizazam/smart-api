@@ -20,10 +20,10 @@
     border-radius: 6px;
 }
 </style>
- <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
     @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Upselling Detail Report'])
-        <div class="d-flex flex-column-fluid">
-            <div class="container">
+    <div class="d-flex flex-column-fluid">
+        <div class="container">
 
 <div id="doctor_detail_report">
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -46,7 +46,8 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Total Services Sold</h5>
-                    <h3 class="text-success">{{ $detailData->count() }}</h3>
+                    <h3 class="text-success">{{ $uniqueUpsellings }}</h3>
+                    <small class="text-muted">{{ $detailData->count() }} service records</small>
                 </div>
             </div>
         </div>
@@ -62,8 +63,11 @@
                     <thead>
                         <tr>
                             <th>Package ID</th>
+                            <th>Patient ID</th>
+                            <th>Patient Name</th>
                             <th>Service Name</th>
                             <th>Price</th>
+                            <th>Appointment Date</th>
                             <th>Date Sold</th>
                         </tr>
                     </thead>
@@ -73,13 +77,18 @@
                                 <td>
                                     <span class="badge badge-info">{{ $detail->package_id }}</span>
                                 </td>
+                                <td>
+                                    <span class="badge badge-secondary">{{ $detail->patient_id }}</span>
+                                </td>
+                                <td>{{ $detail->patient_name ?? 'N/A' }}</td>
                                 <td>{{ $detail->service_name }}</td>
                                 <td>{{ number_format($detail->actual_amount, 2) }}</td>
+                                <td>{{ \Carbon\Carbon::parse($detail->scheduled_date)->format('M d, Y h:i A') }}</td>
                                 <td>{{ \Carbon\Carbon::parse($detail->created_at)->format('M d, Y h:i A') }}</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="text-center">No services found for this doctor.</td>
+                                <td colspan="7" class="text-center">No services found for this doctor.</td>
                             </tr>
                         @endforelse
                     </tbody>
