@@ -319,10 +319,6 @@ public function getDoctorUpsellingData(Request $request)
                 'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d 00:00:00'),
                 'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
             ],
-            'lastmonth' => [
-                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
-            ],
         ];
 
         $startDate = $periods[$period]['start_date'];
@@ -400,7 +396,17 @@ public function getDoctorUpsellingData(Request $request)
                         END
                     ) as total_sold_amount
                 "),
-                DB::raw("0 as total_consumed_amount") // Placeholder for consumed amount
+                DB::raw("
+                    SUM(
+                        CASE
+                            WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                            AND package_services.is_consumed = 1
+                            AND package_services.consumed_at BETWEEN '{$startDate}' AND '{$endDate}'
+                            THEN package_services.tax_including_price
+                            ELSE 0
+                        END
+                    ) as total_consumed_amount
+                ")
             )
             ->groupBy('package_services.sold_by', 'users.name')
             ->havingRaw('total_sold_amount > 0') // Only include doctors with actual upselling
@@ -423,5 +429,8 @@ public function getDoctorUpsellingData(Request $request)
         ], 500);
     }
 }
+
+// You'll also need to add this route in your web.php:
+// Route::get('/admin/dashboard/doctor/upselling/data', [YourController::class, 'getDoctorUpsellingData'])->name('admin.dashboard.doctor.upselling.data');
 
 }
