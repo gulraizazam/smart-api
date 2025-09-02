@@ -922,7 +922,7 @@
                                             </table>
                                         </div>
                                     </div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-upselling" style="display: none;">
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-upselling" style="display: none;height: 100px;">
                                 </div>
                             </div>
                         </div>
