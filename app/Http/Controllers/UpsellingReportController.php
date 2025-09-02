@@ -133,6 +133,9 @@ public function doctorUpsellingDetail($doctorId)
             'services.name as service_name',
             'package_services.tax_including_price',
             'package_services.created_at',
+            'appointments.patient_id',
+            'appointments.name as patient_name',
+            'appointments.scheduled_date',
             DB::raw("
                 CASE
                     WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
@@ -153,8 +156,11 @@ public function doctorUpsellingDetail($doctorId)
 
     $doctorName = $detailData->first()->doctor_name ?? 'Unknown Doctor';
     $totalAmount = $detailData->sum('actual_amount');
+    
+    // Count unique upselling packages instead of service records
+    $uniqueUpsellings = $detailData->unique('package_id')->count();
 
-    return view('admin.reports.doctorUpsellingDetail', compact('detailData', 'doctorName', 'totalAmount'));
+    return view('admin.reports.doctorUpsellingDetail', compact('detailData', 'doctorName', 'totalAmount', 'uniqueUpsellings'));
 }
 public function loadConsultantRevenueReport(Request $request)
 {
