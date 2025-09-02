@@ -1,5 +1,5 @@
 @extends('admin.layouts.master')
-@section('title', 'Upselling Report')
+@section('title', 'Consultant Revenue Report')
 @section('content')
 <style>
 .badge {
@@ -20,42 +20,42 @@
     border-radius: 6px;
 }
 </style>
-<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Upselling Detail Report'])
-    <div class="d-flex flex-column-fluid">
-        <div class="container">
+ <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Consultant Revenue Detail Report'])
+        <div class="d-flex flex-column-fluid">
+            <div class="container">
 
-<div id="doctor_detail_report">
+<div id="consultant_detail_report">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h4>Upselling Details - {{ $doctorName }}</h4>
+        <h4>Consultation Revenue Details - {{ $consultantName }}</h4>
         <a href="{{ url()->previous() }}" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Summary
         </a>
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Total Sold Amount</h5>
+                    <h5 class="card-title">Total Consultation Revenue</h5>
                     <h3 class="text-primary">{{ number_format($totalAmount, 2) }}</h3>
                 </div>
             </div>
         </div>
-        <!-- <div class="col-md-6">
+        <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
-                    <h5 class="card-title">Total Services Sold</h5>
-                    <h3 class="text-success">{{ $uniqueUpsellings }}</h3>
+                    <h5 class="card-title">Total Consultations</h5>
+                    <h3 class="text-success">{{ $uniqueConsultations }}</h3>
                     <small class="text-muted">{{ $detailData->count() }} service records</small>
                 </div>
             </div>
-        </div> -->
+        </div>
     </div>
 
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">Services Sold Details</h5>
+            <h5 class="mb-0">Consultation Services Details</h5>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -68,7 +68,7 @@
                             <th>Service Name</th>
                             <th>Price</th>
                             <th>Appointment Date</th>
-                            <th>Date Sold</th>
+                            <th>Sold Date</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -88,7 +88,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center">No services found for this doctor.</td>
+                                <td colspan="7" class="text-center">No consultation services found for this consultant.</td>
                             </tr>
                         @endforelse
                     </tbody>

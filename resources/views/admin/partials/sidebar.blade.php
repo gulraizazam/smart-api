@@ -332,7 +332,16 @@
                                 </a>
                             </li>
                             @endcan
-
+                            @can('discounts_manage')
+                            <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.vouchers.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Vouchers</span>
+                                </a>
+                            </li>
+                            @endcan
                         </ul>
                     </div>
 
@@ -1135,6 +1144,21 @@
                                         <span></span>
                                     </i>
                                     <span class="menu-text">Doctors Upselling Report </span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    @endcan
+                    @can('consultant_revenue_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.consultant_revenue') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.consultant_revenue') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Consultants Revenue Report </span>
                                 </a>
                             </li>
                         </ul>
