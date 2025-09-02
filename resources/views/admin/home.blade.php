@@ -1172,65 +1172,104 @@
             }
 
             function BarChart(service) {
-                const primary = '#6993FF';
-                const success = '#1BC5BD';
-                const info = '#8950FC';
-                const warning = '#FFA800';
-                const danger = '#F64E60';
-                let locations = service.data.bar;
-                let modifiedLocations;
-                if (locations.length > 0) {
-                    if (locations.some(str => str.includes('CUTERA,'))) {
-                        modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
-                    } else {
-                        modifiedLocations = locations;
-                    }
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    
+    // Debug logging
+    console.log('Chart data received:', service.data);
+    
+    let locations = service.data.bar;
+    let modifiedLocations;
+    
+    if (locations && locations.length > 0) {
+        if (locations.some(str => str.includes('CUTERA,'))) {
+            modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
+        } else {
+            modifiedLocations = locations;
+        }
+    } else {
+        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore',
+            'Gulberg Lahore', 'DHA Lahore'
+        ];
+    }
 
-                } else {
-                    modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore',
-                        'Gulberg Lahore', 'DHA Lahore'
-                    ];
-                }
-                for (var i = 0; i < service.data.walkin.length; i++) {
-                    service.data.total[i] -= service.data.walkin[i];
-                    service.data.arrived[i] -= service.data.walkin[i];
-                }
-                var options = {
-                    series: [{
-                        name: 'Total Appointments',
-                        data: service.data.total
-                    }, {
-                        name: 'Arrived',
-                        data: service.data.arrived
-                    }, {
-                        name: 'Walk-in',
-                        data: service.data.walkin
-                    }],
-                    chart: {
-                        type: 'bar',
-                        height: 350,
+    // Create copies of arrays to avoid modifying original data
+    let totalData = [...(service.data.total || [])];
+    let arrivedData = [...(service.data.arrived || [])];
+    let walkinData = [...(service.data.walkin || [])];
+    
+    // Ensure all arrays have the same length
+    const maxLength = Math.max(totalData.length, arrivedData.length, walkinData.length);
+    
+    // Pad arrays with zeros if needed
+    while (totalData.length < maxLength) totalData.push(0);
+    while (arrivedData.length < maxLength) arrivedData.push(0);
+    while (walkinData.length < maxLength) walkinData.push(0);
+    
+    // Adjust data: subtract walkin from total and arrived
+    for (var i = 0; i < walkinData.length; i++) {
+        totalData[i] = Math.max(0, totalData[i] - walkinData[i]);
+        arrivedData[i] = Math.max(0, arrivedData[i] - walkinData[i]);
+    }
 
-                    },
-                    plotOptions: {
-                        bar: {
-                            horizontal: false,
-                            columnWidth: '55%',
-                            endingShape: 'rounded'
-                        },
-                    },
-                    stroke: {
-                        show: true,
-                        width: 1,
-                        colors: ['transparent']
-                    },
-                    xaxis: {
-                        categories: service.data.bar,
-                    },
-                    colors: [primary, success, warning]
-                };
-                var chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
-                chart.render();
-            }
+    // Clear any existing chart
+    if (centre_wise_arrival) {
+        centre_wise_arrival.destroy();
+    }
+
+    var options = {
+        series: [{
+            name: 'Total Appointments',
+            data: totalData
+        }, {
+            name: 'Arrived',
+            data: arrivedData
+        }, {
+            name: 'Walk-in',
+            data: walkinData
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 1,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: modifiedLocations,
+        },
+        colors: [primary, success, warning],
+        dataLabels: {
+            enabled: false
+        },
+        legend: {
+            show: true
+        }
+    };
+    
+    // Create new chart instance
+    centre_wise_arrival = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+    centre_wise_arrival.render();
+    
+    console.log('Chart rendered with data:', {
+        categories: modifiedLocations,
+        total: totalData,
+        arrived: arrivedData,
+        walkin: walkinData
+    });
+}
 
             $(document).on('click', '.planIdText', function () {
                 $('.planIdText').tooltip();
