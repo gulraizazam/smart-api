@@ -819,6 +819,102 @@
                     </div>
                 </div>
                 @endif
+                @if (\Illuminate\Support\Facades\Gate::allows('dashboard_doctor_wise_feedback'))
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="doctor_upselling_section">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card-body p-0">
+                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase">Doctor Upselling</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center  doc_upselling_ul">
+                                        <li style="border-bottom: none;">
+                                            <div class="actions action-style p-3 mr-3">
+                                                @php
+                                                $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
+                                                $locations = \App\Helpers\ACL::getUserCentres();
+                                                $centres = \App\Models\Locations::whereIn('id', $locations)
+                                                ->whereNotIn('name', $centres_array)
+                                                ->where('active', 1)
+                                                ->get();
+                                                @endphp
+                                                <div class="btn-group">
+                                                    <select class="form-control btndropdown btn_Report doctorUpselling selectcenterupselling"
+                                                        id="doctor_upselling_centre_select"
+                                                        data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
+                                                        <option value="" disabled selected>Select Centre</option>
+                                                        @if (Auth::user()->hasRole('Administrator') ||
+                                                        Auth::user()->hasRole('Super-Admin') ||
+                                                        Auth::user()->hasRole('Head of Operations') ||
+                                                        Auth::user()->hasRole('Finance'))
+                                                        <option value="all" data-period="thismonth">
+                                                            All Centres
+                                                        </option>
+                                                        @endif
+                                                        @foreach ($centres as $centre)
+                                                        <option value="{{ $centre->id }}" data-period="thismonth">
+                                                            {{ $centre->name }}
+                                                        </option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </li>
+
+                                        <li style="border-bottom: none;">
+                                            <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                <select id="dr_wise_upselling_period" class="form-control" name="type">
+                                                    <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                    <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                    <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This Week</option>
+                                                    <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
+                                                </select>
+                                            </div>
+                                        </li>
+                                    </ul>
+
+                                    <div class="d-none flex-column text-right">
+                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                        <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-7">
+                                    <div class="col-12">
+                                        <div class="table-responsive" style="min-height: 400px;">
+                                            <table class="table table-striped table-hover" id="doctor_upselling_table">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th class="text-left">Doctor Name</th>
+                                                        <th class="text-right">Sold Amount</th>
+                                                        <th class="text-right">Consumed Amount</th>
+                                                        <th class="text-center">Action</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="doctor_upselling_tbody">
+                                                    <tr id="no_data_row">
+                                                        <td colspan="4" class="text-center text-muted py-5">
+                                                            <i class="fas fa-info-circle mb-2"></i><br>
+                                                            Select a centre to view doctor upselling data
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot id="doctor_upselling_tfoot" style="display: none;">
+                                                    <tr class="font-weight-bold bg-light">
+                                                        <td>Total</td>
+                                                        <td class="text-right" id="total_sold_amount">0.00</td>
+                                                        <td class="text-right" id="total_consumed_amount">0.00</td>
+                                                        <td></td>
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-upselling" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                @endif
             </div>
         </div>
     </div>
@@ -830,6 +926,137 @@
 <script src="{{ asset('assets/js/jsapi.js') }}"></script>
 <script src="{{ asset('assets/js/pie.js') }}"></script>
 <script src="{{ asset('assets/js/home.js') }}"></script>
+<script>
+$(document).ready(function() {
+    // Handle centre selection change
+    $('#doctor_upselling_centre_select').on('change', function() {
+        const centreId = $(this).val();
+        const period = $('#dr_wise_upselling_period').val();
+        
+        if (centreId) {
+            loadDoctorUpsellingData(centreId, period);
+        } else {
+            resetTable();
+        }
+    });
+    
+    // Handle period change
+    $('#dr_wise_upselling_period').on('change', function() {
+        const centreId = $('#doctor_upselling_centre_select').val();
+        const period = $(this).val();
+        
+        if (centreId) {
+            loadDoctorUpsellingData(centreId, period);
+        }
+    });
+});
+
+function loadDoctorUpsellingData(centreId, period) {
+    // Show loader
+    $('.loader-img-upselling').show();
+    
+    // Hide table content
+    $('#doctor_upselling_tbody').html('');
+    $('#doctor_upselling_tfoot').hide();
+    
+    $.ajax({
+        url: '{{ route("admin.dashboard.doctor.upselling.data") }}',
+        method: 'GET',
+        data: {
+            centre_id: centreId,
+            period: period
+        },
+        success: function(response) {
+            $('.loader-img-upselling').hide();
+            
+            if (response.success && response.data.length > 0) {
+                populateTable(response.data);
+            } else {
+                showNoDataMessage();
+            }
+        },
+        error: function(xhr, status, error) {
+            $('.loader-img-upselling').hide();
+            console.error('Error loading doctor upselling data:', error);
+            showErrorMessage();
+        }
+    });
+}
+
+function populateTable(data) {
+    let tbody = '';
+    let totalSoldAmount = 0;
+    let totalConsumedAmount = 0;
+    
+    data.forEach(function(doctor) {
+        totalSoldAmount += parseFloat(doctor.total_sold_amount || 0);
+        totalConsumedAmount += parseFloat(doctor.total_consumed_amount || 0);
+        
+        tbody += `
+            <tr>
+                <td class="font-weight-bold">${doctor.doctor_name}</td>
+                <td class="text-right">${formatCurrency(doctor.total_sold_amount)}</td>
+                <td class="text-right">${formatCurrency(doctor.total_consumed_amount || 0)}</td>
+                <td class="text-center">
+                    <a href="{{ url('admin/doctor/upselling/detail') }}/${doctor.doctor_id}" 
+                       class="btn btn-sm btn-primary">
+                        <i class="fas fa-eye"></i> Details
+                    </a>
+                </td>
+            </tr>
+        `;
+    });
+    
+    $('#doctor_upselling_tbody').html(tbody);
+    $('#total_sold_amount').text(formatCurrency(totalSoldAmount));
+    $('#total_consumed_amount').text(formatCurrency(totalConsumedAmount));
+    $('#doctor_upselling_tfoot').show();
+}
+
+function showNoDataMessage() {
+    $('#doctor_upselling_tbody').html(`
+        <tr>
+            <td colspan="4" class="text-center text-muted py-5">
+                <i class="fas fa-exclamation-triangle mb-2"></i><br>
+                No upselling data found for the selected criteria
+            </td>
+        </tr>
+    `);
+    $('#doctor_upselling_tfoot').hide();
+}
+
+function showErrorMessage() {
+    $('#doctor_upselling_tbody').html(`
+        <tr>
+            <td colspan="4" class="text-center text-danger py-5">
+                <i class="fas fa-exclamation-circle mb-2"></i><br>
+                Error loading data. Please try again.
+            </td>
+        </tr>
+    `);
+    $('#doctor_upselling_tfoot').hide();
+}
+
+function resetTable() {
+    $('#doctor_upselling_tbody').html(`
+        <tr id="no_data_row">
+            <td colspan="4" class="text-center text-muted py-5">
+                <i class="fas fa-info-circle mb-2"></i><br>
+                Select a centre to view doctor upselling data
+            </td>
+        </tr>
+    `);
+    $('#doctor_upselling_tfoot').hide();
+}
+
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(amount || 0);
+}
+</script>
+
 <script>
     jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function() {
                 var dataID = jQuery(this).attr('data-id');
