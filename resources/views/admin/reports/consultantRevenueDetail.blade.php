@@ -68,7 +68,7 @@
                             <th>Service Name</th>
                             <th>Price</th>
                             <th>Appointment Date</th>
-                            <th>Date of Consultation</th>
+                            <th>Sold Date</th>
                         </tr>
                     </thead>
                     <tbody>
