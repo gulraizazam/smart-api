@@ -818,6 +818,116 @@
                     </div>
                 </div>
                 @endif
+                @if (\Illuminate\Support\Facades\Gate::allows('dashboard_upselling_report'))
+                    <div class="col-lg-12 col-xxl-12 custom_tabs_style" id="doctor_upselling_section">
+                        <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;">
+                            <div class="card-body p-0">
+                                <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
+                                    <span class="dashboard-counter text-uppercase">Doctor Upselling</span>
+                                    <ul class="nav nav-tabs d-flex align-items-center  doc_upselling_ul">
+                                    <li style="border-bottom: none;">
+                                        <div class="actions action-style p-3 mr-3">
+                                            @php
+                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
+                                            $locations = \App\Helpers\ACL::getUserCentres();
+                                            $centres = \App\Models\Locations::whereIn('id', $locations)
+                                            ->whereNotIn('name', $centres_array)
+                                            ->where('active', 1)
+                                            ->get();
+                                            @endphp
+                                            <div class="btn-group">
+                                                <select class="form-control btndropdown btn_Report doctorUpselling selectcenterupselling"
+                                                    id="doctor_upselling_centre_select"
+                                                    data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
+                                                    @php
+                                                    $hasMultipleCentres = (Auth::user()->hasRole('Administrator') || 
+                                                                        Auth::user()->hasRole('Super-Admin') || 
+                                                                        Auth::user()->hasRole('Head of Operations') || 
+                                                                        Auth::user()->hasRole('Finance')) || 
+                                                                        count($centres) > 1;
+                                                    $autoSelectCentre = !$hasMultipleCentres && count($centres) == 1;
+                                                    @endphp
+                                                    
+                                                    @if ($hasMultipleCentres)
+                                                        <option value="" disabled selected>Select Centre</option>
+                                                    @endif
+                                                    
+                                                    @if (Auth::user()->hasRole('Administrator') ||
+                                                    Auth::user()->hasRole('Super-Admin') ||
+                                                    Auth::user()->hasRole('Head of Operations') ||
+                                                    Auth::user()->hasRole('Finance'))
+                                                    <option value="all" data-period="thismonth" {{ !$hasMultipleCentres ? 'selected' : '' }}>
+                                                        All Centres
+                                                    </option>
+                                                    @endif
+                                                    @foreach ($centres as $centre)
+                                                    <option value="{{ $centre->id }}" data-period="thismonth" 
+                                                            {{ $autoSelectCentre ? 'selected' : '' }}>
+                                                        {{ $centre->name }}
+                                                    </option>
+                                                    @endforeach
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </li>
+
+                                        <li style="border-bottom: none;">
+                                            <div class="actions date_action_dropdown action-style py-3 mr-0">
+                                                <select id="dr_wise_upselling_period" class="form-control" name="type">
+                                                    <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
+                                                    <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
+                                                    <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This Week</option>
+                                                    <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
+                                                    <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option>
+                                                </select>
+                                            </div>
+                                        </li>
+                                    </ul>
+
+                                    <div class="d-none flex-column text-right">
+                                        <span class="text-dark-75 font-weight-bolder font-size-h3 total-appointment-by-status"></span>
+                                        <span class="text-muted font-weight-bold mt-2 appointment-by-status-title"></span>
+                                    </div>
+                                </div>
+
+                                <div class="row pt-7">
+                                    <div class="col-12">
+                                        <div class="table-responsive" style="min-height: 400px;padding:20px">
+                                            <table class="table" id="doctor_upselling_table">
+                                                <thead class="thead-light">
+                                                    <tr>
+                                                        <th class="text-left">Doctor Name</th>
+                                                        <th class="text-right">Sold Amount</th>
+                                                        <th class="text-right">Consumed Amount</th>
+                                                        
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="doctor_upselling_tbody">
+                                                    <tr id="no_data_row">
+                                                        <td colspan="4" class="text-center text-muted py-5">
+                                                            <i class="fas fa-info-circle mb-2"></i><br>
+                                                            Select a centre to view doctor upselling data
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                                <tfoot id="doctor_upselling_tfoot" style="display: none;">
+                                                    <tr class="font-weight-bold bg-light">
+                                                        <td>Total</td>
+                                                        <td class="text-right" id="total_sold_amount">0.00</td>
+                                                        <td class="text-right" id="total_consumed_amount">0.00</td>
+                                                        
+                                                    </tr>
+                                                </tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-upselling" style="display: none;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                @endif
             </div>
         </div>
     </div>
