@@ -998,12 +998,7 @@ function populateTable(data) {
                 <td class="font-weight-bold">${doctor.doctor_name}</td>
                 <td class="text-right">${formatCurrency(doctor.total_sold_amount)}</td>
                 <td class="text-right">${formatCurrency(doctor.total_consumed_amount || 0)}</td>
-                <td class="text-center">
-                    <a href="{{ url('admin/doctor/upselling/detail') }}/${doctor.doctor_id}" 
-                       class="btn btn-sm btn-primary">
-                        <i class="fas fa-eye"></i> Details
-                    </a>
-                </td>
+                
             </tr>
         `;
     });
