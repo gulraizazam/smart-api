@@ -34,7 +34,7 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Total Sold Amount</h5>
@@ -42,7 +42,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
+        <!-- <div class="col-md-6">
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Total Services Sold</h5>
@@ -50,7 +50,7 @@
                     <small class="text-muted">{{ $detailData->count() }} service records</small>
                 </div>
             </div>
-        </div>
+        </div> -->
     </div>
 
     <div class="card">
