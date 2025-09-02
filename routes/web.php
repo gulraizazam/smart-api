@@ -603,6 +603,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
          Route::get('reports/doctor_wise_conversion', [FinanceReportController::class, 'doctorWiseConversion'])->name('reports.doctorWiseConversion')->middleware('permission:staff_wise_arrival_manage');
          Route::get('upselling', [UpsellingReportController::class, 'index'])->name('reports.upselling');
+         Route::get('consultant_revenue', [UpsellingReportController::class, 'consultantRevenueReport'])->name('reports.consultant_revenue');
+         Route::post('load_consultant_revenue_reports', [UpsellingReportController::class, 'loadConsultantRevenueReport'])->name('reports.load_consultant_revenue_report');
          Route::post('reports/incentive_report', [FinanceReportController::class, 'loadIncentiveReport'])->name('reports.incentive_report');
          Route::get('reports/appointments', [FinanceReportController::class, 'appointmentsReport'])->name('reports.appointmentsReport');
          Route::post('reports/appointments_report', [FinanceReportController::class, 'loadAppointmentsReport'])->name('reports.appointments_report');
