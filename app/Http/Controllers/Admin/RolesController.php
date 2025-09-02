@@ -372,7 +372,8 @@ class RolesController extends Controller
             'doctor_wise_feedback'=>"Manage Feedback",
             'unattended_report' => 'Unattended Payments',
             'overdue_treatments' => 'Overdue Treatments',
-            'appointments_report'=>'Appointments Report'
+            'appointments_report'=>'Appointments Report',
+            'upselling_report'=>'Doctors Upselling Report',
         ];
     }
 
