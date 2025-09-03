@@ -26,14 +26,7 @@
         <div class="container">
 
 <div id="consultant_revenue_report">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4>Consultant Revenue Report for Selected Location</h4>
-        <a href="{{ route('admin.upselling.report') }}" 
-           class="btn btn-primary btn-sm">
-            <i class="fas fa-chart-line"></i> Back to Sales Report
-        </a>
-    </div>
-
+    
     <div class="alert alert-success">
         <i class="fas fa-user-md"></i>
         <strong>Consultant Revenue Report:</strong> Shows revenue attributed to doctors who <strong>performed</strong> the appointments, regardless of who sold the services.
