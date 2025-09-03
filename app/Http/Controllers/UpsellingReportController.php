@@ -448,10 +448,10 @@ public function doctorConsultantBreakdown($sellerId)
     }
 
     $reportQuery = PackageService::query()
-        ->join('users as appointment_doctors', 'appointments.doctor_id', '=', 'appointment_doctors.id')
-        ->join('users as sellers', 'package_services.sold_by', '=', 'sellers.id')
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+        ->join('users as appointment_doctors', 'appointments.doctor_id', '=', 'appointment_doctors.id')
+        ->join('users as sellers', 'package_services.sold_by', '=', 'sellers.id')
         ->where('package_services.sold_by', $sellerId)
         ->whereIn('package_services.sold_by', $filters['all_seller_ids'])
         ->where('packages.location_id', $filters['location_id'])
