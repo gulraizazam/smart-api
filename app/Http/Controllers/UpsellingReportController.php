@@ -540,14 +540,33 @@ public function consultantSellerDetail($consultantId, $sellerId)
         return redirect()->back()->with('error', 'Consultant or seller not found.');
     }
 
+    // First, let's check what column exists in appointments table
+    // Try different possible column names for the doctor/consultant
+    $appointmentColumns = \Schema::getColumnListing('appointments');
+    
+    $doctorColumn = null;
+    if (in_array('doctor_id', $appointmentColumns)) {
+        $doctorColumn = 'doctor_id';
+    } elseif (in_array('user_id', $appointmentColumns)) {
+        $doctorColumn = 'user_id';
+    } elseif (in_array('consultant_id', $appointmentColumns)) {
+        $doctorColumn = 'consultant_id';
+    } elseif (in_array('assigned_doctor_id', $appointmentColumns)) {
+        $doctorColumn = 'assigned_doctor_id';
+    }
+    
+    if (!$doctorColumn) {
+        return redirect()->back()->with('error', 'Unable to identify doctor column in appointments table.');
+    }
+
     $reportQuery = PackageService::query()
-        ->join('users as appointment_doctors', 'appointments.doctor_id', '=', 'appointment_doctors.id')
-        ->join('users as sellers', 'package_services.sold_by', '=', 'sellers.id')
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+        ->join('users as appointment_doctors', "appointments.{$doctorColumn}", '=', 'appointment_doctors.id')
+        ->join('users as sellers', 'package_services.sold_by', '=', 'sellers.id')
         ->join('services', 'package_services.service_id', '=', 'services.id')
         ->where('package_services.sold_by', $sellerId)
-        ->where('appointments.doctor_id', $consultantId)
+        ->where("appointments.{$doctorColumn}", $consultantId)
         ->whereIn('package_services.sold_by', $filters['all_seller_ids'])
         ->where('packages.location_id', $filters['location_id'])
         ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
@@ -557,7 +576,7 @@ public function consultantSellerDetail($consultantId, $sellerId)
         ->select(
             'appointment_doctors.name as consultant_name',
             'sellers.name as seller_name',
-            'appointments.doctor_id as consultant_id',
+            "appointments.{$doctorColumn} as consultant_id",
             'package_services.sold_by as seller_id',
             'package_services.package_id',
             'services.name as service_name',
@@ -570,14 +589,14 @@ public function consultantSellerDetail($consultantId, $sellerId)
             'package_services.consumed_at',
             DB::raw("
                 CASE
-                    WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                    WHEN NOT (appointments.appointment_type_id = 1 AND appointments.{$doctorColumn} = package_services.sold_by)
                     THEN package_services.tax_including_price
                     ELSE 0
                 END as actual_amount
             "),
             DB::raw("
                 CASE
-                    WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                    WHEN NOT (appointments.appointment_type_id = 1 AND appointments.{$doctorColumn} = package_services.sold_by)
                     AND package_services.is_consumed = 1
                     AND package_services.consumed_at BETWEEN '{$filters['start_date']}' AND '{$filters['end_date']}'
                     THEN package_services.tax_including_price
@@ -587,7 +606,7 @@ public function consultantSellerDetail($consultantId, $sellerId)
         )
         ->where(DB::raw("
             CASE
-                WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
+                WHEN NOT (appointments.appointment_type_id = 1 AND appointments.{$doctorColumn} = package_services.sold_by)
                 THEN package_services.tax_including_price
                 ELSE 0
             END
