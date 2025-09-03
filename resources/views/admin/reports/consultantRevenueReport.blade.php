@@ -46,11 +46,11 @@
         <tbody>
             @forelse($reportData as $report)
                 <tr>
-                    <td>{{ $report->doctor_name ?? 'Unknown' }}</td>
-                    <td>{{ number_format($report->total_upselling_revenue, 2) }}</td>
+                    <td>{{ $report->consultant_name ?? 'Unknown' }}</td>
+                    <td>{{ number_format($report->total_consultation_revenue, 2) }}</td>
                     <td>{{ number_format($report->total_consumed_amount, 2) }}</td>
                     <td>
-                        <a href="{{ route('admin.consultant.revenue.detail', $report->doctor_id) }}"
+                        <a href="{{ route('admin.consultant.revenue.detail', $report->consultant_id) }}"
                            class="btn btn-success btn-sm">
                             <i class="fas fa-eye"></i> View Details
                         </a>
