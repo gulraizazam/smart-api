@@ -174,10 +174,10 @@ public function loadConsultantRevenueReport(Request $request)
     $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
     $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
 
-    // Step 1: Get only Consultant users
+    // Step 1: Get only Consultant and Lifestyle Consultant users who are active
     $consultantUserIds = User::whereHas('roles', function($query) {
-        $query->where('name', 'Consultant');
-    })->pluck('id');
+        $query->where('name', 'Consultant')->orWhere('name', 'Lifestyle Consultant');
+    })->where('active', 1)->pluck('id');
 
     // Step 2: Get consultants assigned to the specific location
     $consultantIds = DB::table('doctor_has_locations')
