@@ -39,7 +39,7 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-6">
             <div class="card bg-primary text-white">
                 <div class="card-body">
                     <h5 class="card-title">Total Amount</h5>
@@ -48,7 +48,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-6">
             <div class="card bg-success text-white">
                 <div class="card-body">
                     <h5 class="card-title">Consumed Amount</h5>
@@ -59,24 +59,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-info text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Unique Packages</h5>
-                    <h3>{{ $uniquePackages }}</h3>
-                    <small>{{ $detailData->count() }} service records</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card bg-warning text-white">
-                <div class="card-body">
-                    <h5 class="card-title">Unique Patients</h5>
-                    <h3>{{ $uniquePatients }}</h3>
-                    <small>patients served</small>
-                </div>
-            </div>
-        </div>
+        
     </div>
 
     <div class="card">
