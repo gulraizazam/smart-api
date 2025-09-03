@@ -1,27 +1,12 @@
-@extends('admin.layouts.master')
-@section('title', 'Consultant Revenue Report')
-@section('content')
-<style>
-.badge {
-    font-size: 0.9em;
-}
-
-.card {
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    border: none;
-    border-radius: 8px;
-}
-
-
-
-.btn {
-    border-radius: 6px;
-}
-</style>
-
-
 <div id="consultant_revenue_report">
-    
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4>Doctor Sales Report for Selected Location</h4>
+        <a href="{{ route('admin.consultant.revenue.report') }}" 
+           class="btn btn-success btn-sm">
+            <i class="fas fa-user-md"></i> View Consultant Revenue
+        </a>
+    </div>
+
     <div class="alert alert-success">
         <i class="fas fa-user-md"></i>
         <strong>Consultant Revenue Report:</strong> Shows revenue attributed to doctors who <strong>performed</strong> the appointments, regardless of who sold the services.
@@ -59,6 +44,3 @@
         </tbody>
     </table>
 </div>
-
-
-@endsection
