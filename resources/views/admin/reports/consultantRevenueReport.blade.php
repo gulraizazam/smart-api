@@ -12,9 +12,7 @@
     border-radius: 8px;
 }
 
-.table-responsive {
-    border-radius: 8px;
-}
+
 
 .btn {
     border-radius: 6px;
@@ -34,7 +32,7 @@
         <small class="text-muted">This helps evaluate which consultants generate the most upselling opportunities for their patients.</small>
     </div>
 
-    <table class="table table-striped">
+    <table class="table">
         <thead>
             <tr>
                 <th>Consultant (Appointment Doctor)</th>
