@@ -21,11 +21,11 @@ use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\InvoicesController;
 use App\Http\Controllers\Admin\PackagesController;
 use App\Http\Controllers\Admin\PatientsController;
-use App\Http\Controllers\UpsellingReportController;
 use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Admin\VouchersController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\UserTypesController;
@@ -69,6 +69,8 @@ use App\Http\Controllers\FeedbackController;
 use App\Http\Controllers\FeedbacksReportController;
 use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
+use App\Http\Controllers\UpsellingReportController;
+use App\Models\PackageService;
 
 /*
 |--------------------------------------------------------------------------
@@ -137,6 +139,13 @@ Route::get('getservices', function () {
         }
     }
     return view('deleted', compact('mergedServices'));
+});
+Route::get('testupdate', function () {
+    $packageService = PackageService::find(198286);
+    $packageService->sold_by = auth()->id(); // or any value
+    $packageService->save();
+
+\Log::info('Sold by updated to: ' . $packageService->sold_by);
 });
 Route::get('followup', [DashboardReportsController::class, 'FollowUp'])->name('dashboard.followup');
 
@@ -269,6 +278,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         //Discount route Start
         Route::resource('discounts', DiscountsController::class)->only('index')->middleware('permission:discounts_manage');
+        Route::resource('vouchers', VouchersController::class)->only('index')->middleware('permission:discounts_manage');
+        Route::get('vouchers/getListing', [VouchersController::class, 'getListing'])->name('vouchers.getListing')->middleware('permission:discounts_manage');
         //Discount route end
 
         //Packages route Start
@@ -296,7 +307,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('view-package/{id}', [PackagesController::class, 'viewPackage'])->name('packages.view.package');
 
         Route::resource('packages', PackagesController::class)->only('index')->middleware('permission:plans_manage');
-
+        Route::post('packages/resetvoucherpacakgebundles', [PackagesController::class, 'resetvoucherpacakgebundles'])->name('packages.resetvoucherpacakgebundles');
         // Package Route end
 
         // Non Refunds Route start
@@ -584,7 +595,16 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('inventory_reports', [InventoryReportsController::class, 'inventoryReport'])->name('reports.inventory_report');
         Route::get('feedbacks_reports', [FeedbacksReportController::class, 'feedbackReport'])->name('reports.feedback_report');
         Route::get('future_treatments', [FeedbacksReportController::class, 'futureTreatmentsReport'])->name('reports.future_treatments');
+        Route::get('upselling', [UpsellingReportController::class, 'index'])->name('reports.upselling');
+        Route::get('consultant_revenue', [UpsellingReportController::class, 'consultantRevenueReport'])->name('reports.consultant_revenue');
         Route::post('load_feedback_reports', [FeedbacksReportController::class, 'loadFeedbackReport'])->name('reports.load_feedback_report');
+         Route::post('load_upselling_reports', [UpsellingReportController::class, 'loadUpsellingReport'])->name('reports.load_upselling_report');
+         Route::post('load_consultant_revenue_reports', [UpsellingReportController::class, 'loadConsultantRevenueReport'])->name('reports.load_consultant_revenue_report');
+         Route::get('/doctor-upselling-detail/{doctorId}', [UpsellingReportController::class, 'doctorUpsellingDetail'])
+             ->name('doctor.upselling.detail');
+             Route::get('/consultant-revenue-detail/{consultantId}', [UpsellingReportController::class, 'consultantRevenueDetail'])
+             ->name('consultant.revenue.detail');
+             Route::get('/admin/consultant/revenue/report', [UpsellingReportController::class, 'loadConsultantRevenueReport'])->name('consultant.revenue.report');
         Route::post('load_future_treatments_report', [FeedbacksReportController::class, 'loadFutureTreatmentsReport'])->name('reports.load_future_treatments_report')->middleware('permission:followuppatient_manage');
         Route::post('load_inventory_reports', [InventoryReportsController::class, 'loadInventoryReport'])->name('reports.load_inventory_report');
         Route::get('operation_reports/operations-report', [OperationsReportController::class, 'report'])->name('reports.operations_report')->middleware('permission:operations_reports_manage');
@@ -595,6 +615,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('reports/load_dailyarrival_report', [FinanceReportController::class, 'LoadDailyArrival'])->name('reports.load_dailyarrival_report');
         Route::post('reports/load_membership_report', [MembershipReportsController::class, 'loadMembershipReport'])->name('reports.load_membership_report');
         Route::get('memberships/export', [MembershipReportsController::class, 'Export'])->name('memberships.export.excel');
+        Route::get('/admin/doctor/consultant/breakdown/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('doctor.consultant.breakdown');
+Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [UpsellingReportController::class, 'consultantSellerDetail'])->name('consultant.seller.detail');
         Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
         Route::get('reports/activity_logs', [ActivitylogsReportController::class, 'index'])->name('reports.activity_logs');
         Route::post('reports/activity_logs', [ActivitylogsReportController::class, 'fetchActivityReport'])->name('reports.load_activity_report');
@@ -602,18 +624,11 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('reports/staff_wise_arrival', [FinanceReportController::class, 'staffWiseArrival'])->name('reports.staff_wise_arrival')->middleware('permission:staff_wise_arrival_manage');
         Route::post('reports/staff_wise_arrival_report', [FinanceReportController::class, 'staffWiseArrivalReport'])->name('reports.staff_wise_arrival_report');
          Route::get('reports/doctor_wise_conversion', [FinanceReportController::class, 'doctorWiseConversion'])->name('reports.doctorWiseConversion')->middleware('permission:staff_wise_arrival_manage');
-         Route::get('upselling', [UpsellingReportController::class, 'index'])->name('reports.upselling');
-         Route::get('consultant_revenue', [UpsellingReportController::class, 'consultantRevenueReport'])->name('reports.consultant_revenue');
-         Route::post('load_consultant_revenue_reports', [UpsellingReportController::class, 'loadConsultantRevenueReport'])->name('reports.load_consultant_revenue_report');
-         Route::get('/consultant-revenue-detail/{consultantId}', [UpsellingReportController::class, 'consultantRevenueDetail'])
-         ->name('consultant.revenue.detail');
+
          Route::post('reports/incentive_report', [FinanceReportController::class, 'loadIncentiveReport'])->name('reports.incentive_report');
          Route::get('reports/appointments', [FinanceReportController::class, 'appointmentsReport'])->name('reports.appointmentsReport');
          Route::post('reports/appointments_report', [FinanceReportController::class, 'loadAppointmentsReport'])->name('reports.appointments_report');
-         Route::post('load_upselling_reports', [UpsellingReportController::class, 'loadUpsellingReport'])->name('reports.load_upselling_report');
-         Route::get('/doctor-upselling-detail/{doctorId}', [UpsellingReportController::class, 'doctorUpsellingDetail'])
-             ->name('doctor.upselling.detail');
-             Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('dashboard.doctor.upselling.data');
+
          //////Dashboard Stats//////
         Route::get('dashboard/collection-by-centre', [DashboardReportsController::class, 'collectionByCentre'])->name('dashboard.collection_by_centre');
         Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
@@ -642,6 +657,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
         Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
         Route::get('dashboard/doctore_wise_feedback', [DashboardReportsController::class, 'DoctoreWiseFeedback'])->name('dashboard.doctor_wise_feedback');
+        Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('dashboard.doctor.upselling.data');
+        Route::get('dashboard/doctore_wise_upselling', [DashboardReportsController::class, 'DoctoreWiseUpselling'])->name('dashboard.doctor_wise_upselling');
         Route::get('dashboard/feedback/view/{id}', [DashboardReportsController::class, 'ViewFeedback'])->name('feedback.view');
         Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
         Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');

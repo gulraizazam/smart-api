@@ -1,0 +1,199 @@
+@extends('admin.layouts.master')
+@section('title', 'Doctor Consultant Breakdown')
+@section('content')
+<style>
+.badge {
+    font-size: 0.9em;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border: none;
+    border-radius: 8px;
+}
+
+.table-responsive {
+    border-radius: 8px;
+}
+
+.btn {
+    border-radius: 6px;
+}
+
+.stats-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.percentage-bar {
+    background: rgba(255,255,255,0.2);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+}
+
+.percentage-fill {
+    background: #fff;
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+</style>
+<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Doctor Consultant Breakdown'])
+    <div class="d-flex flex-column-fluid">
+        <div class="container">
+
+<div id="doctor_consultant_breakdown">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>Consultant Breakdown for {{ $sellerName }}</h4>
+        <a href="{{ url()->previous() }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Report
+        </a>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle"></i>
+        <strong>Breakdown Analysis:</strong> Shows which consultants' appointments generated the upselling revenue for <strong>{{ $sellerName }}</strong>.
+        <br>
+        <small class="text-muted">This helps understand which consultant-seller combinations are most effective.</small>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Sold Amount</h5>
+                    <h3>{{ number_format($totalSoldAmount, 2) }}</h3>
+                    <small>by {{ $sellerName }}</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Consumed</h5>
+                    <h3>{{ number_format($totalConsumedAmount, 2) }}</h3>
+                    <small>{{ $totalConsumedAmount > 0 ? number_format(($totalConsumedAmount/$totalSoldAmount)*100, 1) : 0 }}% consumed</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Total Packages</h5>
+                    <h3>{{ $totalPackages }}</h3>
+                    <small>packages sold</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Consultants</h5>
+                    <h3>{{ $totalConsultants }}</h3>
+                    <small>contributing consultants</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Consultant Breakdown Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Consultant Contribution Breakdown</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Consultant Name</th>
+                            <th>Amount Sold</th>
+                            <th>Consumed Amount</th>
+                            
+                            <th>Contribution %</th>
+                           
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse($consultantBreakdown as $consultant)
+                            @php
+                                $contributionPercentage = $totalSoldAmount > 0 ? ($consultant->total_amount / $totalSoldAmount) * 100 : 0;
+                                $consumptionRate = $consultant->total_amount > 0 ? ($consultant->total_consumed_amount / $consultant->total_amount) * 100 : 0;
+                            @endphp
+                            <tr>
+                                <td class="font-weight-bold">
+                                    <i class="fas fa-user-md text-primary mr-2"></i>
+                                    {{ $consultant->consultant_name }}
+                                </td>
+                                <td>
+                                    <strong>{{ number_format($consultant->total_amount, 2) }}</strong>
+                                </td>
+                                <td>
+                                    <span class="text-success font-weight-bold">
+                                        {{ number_format($consultant->total_consumed_amount, 2) }}
+                                    </span>
+                                </td>
+                                
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <span class="mr-2 font-weight-bold">{{ number_format($contributionPercentage, 1) }}%</span>
+                                        <div class="percentage-bar flex-grow-1">
+                                            <div class="percentage-fill" style="width: {{ $contributionPercentage }}%"></div>
+                                        </div>
+                                    </div>
+                                </td>
+                                
+                                <td>
+                                    <a href="{{ route('admin.consultant.seller.detail', [$consultant->consultant_id, $sellerId]) }}" 
+                                       class="btn btn-sm btn-primary">
+                                        <i class="fas fa-search"></i> View Details
+                                    </a>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    <i class="fas fa-exclamation-triangle mb-2"></i><br>
+                                    No consultant breakdown data found for {{ $sellerName }}.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if($consultantBreakdown->isNotEmpty())
+    <!-- Additional Insights -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">Top Contributing Consultant</h6>
+                </div>
+                <div class="card-body">
+                    @php $topConsultant = $consultantBreakdown->first(); @endphp
+                    <div class="d-flex justify-content-between">
+                        <span><strong>{{ $topConsultant->consultant_name }}</strong></span>
+                        <span class="text-success">{{ number_format($topConsultant->total_amount, 2) }}</span>
+                    </div>
+                    <small class="text-muted">
+                        {{ number_format(($topConsultant->total_amount / $totalSoldAmount) * 100, 1) }}% of total revenue
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    @endif
+</div>
+</div>
+    </div>
+</div>
+
+@endsection
