@@ -112,9 +112,9 @@
                             <th>Consultant Name</th>
                             <th>Amount Sold</th>
                             <th>Consumed Amount</th>
-                            <th>Packages</th>
+                            
                             <th>Contribution %</th>
-                            <th>Consumption Rate</th>
+                           
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -137,9 +137,7 @@
                                         {{ number_format($consultant->total_consumed_amount, 2) }}
                                     </span>
                                 </td>
-                                <td>
-                                    <span class="badge badge-info">{{ $consultant->total_packages }}</span>
-                                </td>
+                                
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <span class="mr-2 font-weight-bold">{{ number_format($contributionPercentage, 1) }}%</span>
@@ -148,15 +146,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td>
-                                    @if($consumptionRate > 70)
-                                        <span class="badge badge-success">{{ number_format($consumptionRate, 1) }}%</span>
-                                    @elseif($consumptionRate > 40)
-                                        <span class="badge badge-warning">{{ number_format($consumptionRate, 1) }}%</span>
-                                    @else
-                                        <span class="badge badge-danger">{{ number_format($consumptionRate, 1) }}%</span>
-                                    @endif
-                                </td>
+                                
                                 <td>
                                     <a href="{{ route('admin.consultant.seller.detail', [$consultant->consultant_id, $sellerId]) }}" 
                                        class="btn btn-sm btn-primary">
