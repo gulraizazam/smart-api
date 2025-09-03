@@ -1,10 +1,7 @@
 <div id="doctor_sales_report">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4>Doctor Sales Report for Selected Location</h4>
-        <a href="{{ route('admin.consultant.revenue.report') }}" 
-           class="btn btn-success btn-sm">
-            <i class="fas fa-user-md"></i> View Consultant Revenue
-        </a>
+        
     </div>
 
     <div class="alert alert-info">
