@@ -413,7 +413,7 @@ public function getDoctorUpsellingData(Request $request)
                 ")
             )
             ->groupBy('package_services.sold_by', 'users.name')
-            ->havingRaw('total_sold_amount > 0') // Only include doctors with actual upselling
+//->havingRaw('total_sold_amount > 0') // Only include doctors with actual upselling
             ->orderBy('total_sold_amount', 'desc')
             ->get();
 
