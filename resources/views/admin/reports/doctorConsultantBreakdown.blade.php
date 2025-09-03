@@ -171,7 +171,7 @@
     @if($consultantBreakdown->isNotEmpty())
     <!-- Additional Insights -->
     <div class="row mt-4">
-        <div class="col-md-6">
+        <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
                     <h6 class="mb-0">Top Contributing Consultant</h6>
@@ -188,22 +188,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Average per Consultant</h6>
-                </div>
-                <div class="card-body">
-                    <div class="d-flex justify-content-between">
-                        <span><strong>Average Revenue</strong></span>
-                        <span class="text-info">{{ number_format($totalSoldAmount / $totalConsultants, 2) }}</span>
-                    </div>
-                    <small class="text-muted">
-                        {{ number_format($totalPackages / $totalConsultants, 1) }} packages per consultant on average
-                    </small>
-                </div>
-            </div>
-        </div>
+        
     </div>
     @endif
 </div>
