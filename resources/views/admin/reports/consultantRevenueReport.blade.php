@@ -18,10 +18,7 @@
     border-radius: 6px;
 }
 </style>
-<div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Consultant Revenue Report'])
-    <div class="d-flex flex-column-fluid">
-        <div class="container">
+
 
 <div id="consultant_revenue_report">
     
@@ -62,8 +59,6 @@
         </tbody>
     </table>
 </div>
-</div>
-    </div>
-</div>
+
 
 @endsection
