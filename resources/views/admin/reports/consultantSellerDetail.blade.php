@@ -149,45 +149,7 @@
         </div>
     </div>
 
-    @if($detailData->isNotEmpty())
-    <!-- Performance Insights -->
-    <div class="row mt-4">
-        <div class="col-md-12">
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Partnership Performance Insights</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <h5 class="text-primary">{{ number_format($totalAmount / $uniquePatients, 2) }}</h5>
-                                <small class="text-muted">Average revenue per patient</small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                <h5 class="text-success">{{ number_format($uniquePackages / $uniquePatients, 1) }}</h5>
-                                <small class="text-muted">Packages per patient</small>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center">
-                                @php
-                                    $consumptionRate = $totalAmount > 0 ? ($totalConsumedAmount / $totalAmount) * 100 : 0;
-                                @endphp
-                                <h5 class="{{ $consumptionRate > 70 ? 'text-success' : ($consumptionRate > 40 ? 'text-warning' : 'text-danger') }}">
-                                    {{ number_format($consumptionRate, 1) }}%
-                                </h5>
-                                <small class="text-muted">Consumption rate</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
+   
 </div>
 </div>
     </div>
