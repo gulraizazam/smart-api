@@ -423,6 +423,7 @@ public function getDoctorUpsellingData(Request $request)
 
         // First, get all active users (doctors, consultants, FDMs) for the location
         $allActiveUsers = User::whereIn('id', $allSellerIds)
+        ->where('active', 1)
             ->select('id', 'name')
             ->get()
             ->keyBy('id');
