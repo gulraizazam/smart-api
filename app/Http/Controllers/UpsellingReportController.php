@@ -151,7 +151,7 @@ public function doctorUpsellingDetail($doctorId)
                 THEN package_services.tax_including_price
                 ELSE 0
             END
-        "))
+        "), '>', 0)
         ->orderBy('package_services.created_at', 'desc')
         ->get();
 
@@ -421,7 +421,14 @@ public function getDoctorUpsellingData(Request $request)
             ]);
         }
 
-        $reportQuery = PackageService::query()
+        // First, get all active users (doctors, consultants, FDMs) for the location
+        $allActiveUsers = User::whereIn('id', $allSellerIds)
+            ->select('id', 'name')
+            ->get()
+            ->keyBy('id');
+
+        // Then get the sales data
+        $salesQuery = PackageService::query()
             ->join('users', 'package_services.sold_by', '=', 'users.id')
             ->join('packages', 'package_services.package_id', '=', 'packages.id')
             ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
@@ -429,18 +436,17 @@ public function getDoctorUpsellingData(Request $request)
             ->whereBetween('package_services.created_at', [$startDate, $endDate])
             ->whereNotNull('sold_by');
 
-        // Apply location filter
+        // Apply location filter for sales data
         if ($centreId !== 'all') {
-            $reportQuery->where('packages.location_id', $centreId);
+            $salesQuery->where('packages.location_id', $centreId);
         } else {
             $userLocations = \App\Helpers\ACL::getUserCentres();
-            $reportQuery->whereIn('packages.location_id', $userLocations);
+            $salesQuery->whereIn('packages.location_id', $userLocations);
         }
 
-        // Fetch upselling data (only non-primary consultation sales)
-        $reportData = $reportQuery
+        // Get sales data grouped by seller
+        $salesData = $salesQuery
             ->select(
-                'users.name as doctor_name',
                 'package_services.sold_by as doctor_id',
                 DB::raw("
                     SUM(
@@ -463,10 +469,21 @@ public function getDoctorUpsellingData(Request $request)
                     ) as total_consumed_amount
                 ")
             )
-            ->groupBy('package_services.sold_by', 'users.name')
-//->havingRaw('total_sold_amount > 0') // Only include doctors with actual upselling
-            ->orderBy('total_sold_amount', 'desc')
-            ->get();
+            ->groupBy('package_services.sold_by')
+            ->get()
+            ->keyBy('doctor_id');
+
+        // Combine all users with their sales data
+        $reportData = $allActiveUsers->map(function ($user) use ($salesData) {
+            $userSales = $salesData->get($user->id);
+            
+            return (object)[
+                'doctor_id' => $user->id,
+                'doctor_name' => $user->name,
+                'total_sold_amount' => $userSales ? $userSales->total_sold_amount : 0,
+                'total_consumed_amount' => $userSales ? $userSales->total_consumed_amount : 0,
+            ];
+        })->sortByDesc('total_sold_amount')->values();
 
         return response()->json([
             'success' => true,
