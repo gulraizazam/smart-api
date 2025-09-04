@@ -151,7 +151,7 @@ public function doctorUpsellingDetail($doctorId)
                 THEN package_services.tax_including_price
                 ELSE 0
             END
-        "), '>', 0)
+        "))
         ->orderBy('package_services.created_at', 'desc')
         ->get();
 
