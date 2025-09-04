@@ -891,22 +891,31 @@
                                 </div>
 
                                 <div class="row pt-7">
-                                    <div class="col-12">
-                                        <div class="table-responsive" style="min-height: 400px;padding:20px">
+                                    <div class="col-7">
+                                        <div id="doctor_upselling_chart" style="min-height: 400px;">
+                                            <div class="d-flex align-items-center justify-content-center" style="height: 400px;" id="doctor_upselling_placeholder">
+                                                <div class="text-center text-muted">
+                                                    <i class="fas fa-info-circle mb-2"></i><br>
+                                                    Select a centre to view doctor upselling data
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-5">
+                                        <div class="table-responsive" style="overflow-y: scroll; height: 475px;">
                                             <table class="table" id="doctor_upselling_table">
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th class="text-left">Doctor Name</th>
                                                         <th class="text-right">Sold Amount</th>
                                                         <th class="text-right">Consumed Amount</th>
-                                                        
                                                     </tr>
                                                 </thead>
                                                 <tbody id="doctor_upselling_tbody">
                                                     <tr id="no_data_row">
-                                                        <td colspan="4" class="text-center text-muted py-5">
+                                                        <td colspan="3" class="text-center text-muted py-5">
                                                             <i class="fas fa-info-circle mb-2"></i><br>
-                                                            Select a centre to view doctor upselling data
+                                                            Select a centre to view data
                                                         </td>
                                                     </tr>
                                                 </tbody>
@@ -915,7 +924,6 @@
                                                         <td>Total</td>
                                                         <td class="text-right" id="total_sold_amount">0.00</td>
                                                         <td class="text-right" id="total_consumed_amount">0.00</td>
-                                                        
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -1018,7 +1026,6 @@ function populateTable(data) {
                 <td class="font-weight-bold">${doctor.doctor_name}</td>
                 <td class="text-right">${formatCurrency(doctor.total_sold_amount)}</td>
                 <td class="text-right">${formatCurrency(doctor.total_consumed_amount || 0)}</td>
-                
             </tr>
         `;
     });
@@ -1027,42 +1034,152 @@ function populateTable(data) {
     $('#total_sold_amount').text(formatCurrency(totalSoldAmount));
     $('#total_consumed_amount').text(formatCurrency(totalConsumedAmount));
     $('#doctor_upselling_tfoot').show();
+    
+    // Generate chart
+    generateDoctorUpsellingChart(data);
+}
+
+function generateDoctorUpsellingChart(data) {
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const warning = '#FFA800';
+    
+    let doctorNames = data.map(doctor => doctor.doctor_name);
+    let soldAmounts = data.map(doctor => parseFloat(doctor.total_sold_amount || 0));
+    let consumedAmounts = data.map(doctor => parseFloat(doctor.total_consumed_amount || 0));
+    
+    // Hide placeholder and show chart
+    $('#doctor_upselling_placeholder').hide();
+    
+    var options = {
+        series: [{
+            name: 'Sold Amount',
+            data: soldAmounts
+        }, {
+            name: 'Consumed Amount', 
+            data: consumedAmounts
+        }],
+        chart: {
+            type: 'bar',
+            height: 400,
+            toolbar: {
+                show: true
+            }
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            }
+        },
+        dataLabels: {
+            enabled: false
+        },
+        stroke: {
+            show: true,
+            width: 2,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: doctorNames,
+            labels: {
+                rotate: -45,
+                maxHeight: 120
+            }
+        },
+        yaxis: {
+            title: {
+                text: 'Amount'
+            },
+            labels: {
+                formatter: function (val) {
+                    return formatCurrency(val);
+                }
+            }
+        },
+        colors: [primary, success],
+        fill: {
+            opacity: 1
+        },
+        tooltip: {
+            y: {
+                formatter: function (val) {
+                    return formatCurrency(val);
+                }
+            }
+        },
+        legend: {
+            show: true,
+            position: 'top'
+        }
+    };
+    
+    // Clear any existing chart
+    $('#doctor_upselling_chart').empty();
+    
+    var chart = new ApexCharts(document.querySelector("#doctor_upselling_chart"), options);
+    chart.render();
 }
 
 function showNoDataMessage() {
     $('#doctor_upselling_tbody').html(`
         <tr>
-            <td colspan="4" class="text-center text-muted py-5">
+            <td colspan="3" class="text-center text-muted py-5">
                 <i class="fas fa-exclamation-triangle mb-2"></i><br>
                 No upselling data found for the selected criteria
             </td>
         </tr>
     `);
     $('#doctor_upselling_tfoot').hide();
+    
+    // Show placeholder and clear chart
+    $('#doctor_upselling_chart').empty();
+    $('#doctor_upselling_placeholder').show();
+    $('#doctor_upselling_placeholder .text-center').html(`
+        <i class="fas fa-exclamation-triangle mb-2"></i><br>
+        No upselling data found for the selected criteria
+    `);
 }
 
 function showErrorMessage() {
     $('#doctor_upselling_tbody').html(`
         <tr>
-            <td colspan="4" class="text-center text-danger py-5">
+            <td colspan="3" class="text-center text-danger py-5">
                 <i class="fas fa-exclamation-circle mb-2"></i><br>
                 Error loading data. Please try again.
             </td>
         </tr>
     `);
     $('#doctor_upselling_tfoot').hide();
+    
+    // Show placeholder and clear chart
+    $('#doctor_upselling_chart').empty();
+    $('#doctor_upselling_placeholder').show();
+    $('#doctor_upselling_placeholder .text-center').html(`
+        <i class="fas fa-exclamation-circle mb-2"></i><br>
+        Error loading data. Please try again.
+    `);
 }
 
 function resetTable() {
     $('#doctor_upselling_tbody').html(`
         <tr id="no_data_row">
-            <td colspan="4" class="text-center text-muted py-5">
+            <td colspan="3" class="text-center text-muted py-5">
                 <i class="fas fa-info-circle mb-2"></i><br>
                 Select a centre to view doctor upselling data
             </td>
         </tr>
     `);
     $('#doctor_upselling_tfoot').hide();
+    
+    // Show placeholder and clear chart
+    $('#doctor_upselling_chart').empty();
+    $('#doctor_upselling_placeholder').show();
+    $('#doctor_upselling_placeholder .text-center').html(`
+        <i class="fas fa-info-circle mb-2"></i><br>
+        Select a centre to view doctor upselling data
+    `);
 }
 
 function formatCurrency(amount) {
