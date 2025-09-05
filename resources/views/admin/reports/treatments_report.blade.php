@@ -29,11 +29,11 @@
                     <table class="table border">
                         <thead>
                             <tr class="">
-                                <td class="bg-light">Total Scheduled Treatments</td>
+                                <td class="bg-light">Total Scheduled Appointments</td>
                                 <td class="bg-light" style="text-align:right;">{{$totalScheduled ?? 0}}</td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light">Total Arrived Treatments</td>
+                                <td class="border-top bg-light">Total Arrived Appointments</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$totalArrived ?? 0}}</td>
                             </tr>
                            
