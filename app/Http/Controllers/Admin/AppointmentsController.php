@@ -4798,6 +4798,7 @@ class AppointmentsController extends Controller
         $doctor_id = $request->doctor_id;
         $machine_id = $request->machine_id;
         $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
+       
         $resources = Resources::getRoomsResourceRotaWithoutDays($request->location_id);
         $start = $request->start;
         $end = $request->end;
@@ -4822,7 +4823,7 @@ class AppointmentsController extends Controller
                         'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
                         'duration' => $appointment->service->duration,
                         'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
-                        'overlap' => false,
+                        'overlap' => true,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
                         'color' => ($request->doctor_id == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
