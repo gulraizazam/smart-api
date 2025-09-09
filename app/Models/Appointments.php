@@ -407,13 +407,20 @@ class Appointments extends Model
             ->when($request->location_id, function ($query) use ($request) {
                 return $query->where('location_id', '=', $request->get('location_id'));
             })
-            // Changed logic: if machine_id exists, get all appointments for that machine
             ->when($request->machine_id, function ($query) use ($request) {
-                return $query->where('resource_id', '=', $request->machine_id);
-            })
-            // Optional: if you also want to filter by specific doctor when no machine is specified
-            ->when(!$request->machine_id && $request->doctor_id, function ($query) use ($request) {
-                return $query->where('doctor_id', '=', $request->doctor_id);
+                if ($request->doctor_id) {
+                    // Get appointments for the specific doctor OR any doctor on this machine
+                    return $query->where(function ($q) use ($request) {
+                        $q->where(function ($subQ) use ($request) {
+                            $subQ->where('resource_id', '=', $request->machine_id)
+                                 ->where('doctor_id', '=', $request->doctor_id);
+                        })
+                        ->orWhere('resource_id', '=', $request->machine_id);
+                    });
+                } else {
+                    // Get all appointments for this machine
+                    return $query->where('resource_id', '=', $request->machine_id);
+                }
             })
             ->whereNotNull('scheduled_date')
             ->whereNotNull('scheduled_time')
