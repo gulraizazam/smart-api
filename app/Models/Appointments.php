@@ -387,46 +387,38 @@ class Appointments extends Model
      */
     public static function getScheduledAppointments(Request $request, $appointment_type_id, $account_id, $skip_doctor = false)
     {
+
         DB::enableQueryLog();
         $where = [];
         $where[] = ['account_id', '=', $account_id];
         $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
-    
+
         if ($cancelled_appointment_status) {
             $where[] = ['base_appointment_status_id', '!=', $cancelled_appointment_status->id];
         }
-    
+
         if ($appointment_type_id) {
             $where[] = ['appointment_type_id', '=', $appointment_type_id];
         }
-    
-        $appointments = self::where($where)
+
+        return self::where($where)
             ->when($request->start, function ($query) use ($request) {
                 return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
             })
             ->when($request->location_id, function ($query) use ($request) {
                 return $query->where('location_id', '=', $request->get('location_id'));
             })
-            ->when($request->machine_id, function ($query) use ($request) {
-                if ($request->doctor_id) {
-                    // Get appointments for the specific doctor OR any doctor on this machine
-                    return $query->where(function ($q) use ($request) {
-                        $q->where(function ($subQ) use ($request) {
-                            $subQ->where('resource_id', '=', $request->machine_id)
-                                 ->where('doctor_id', '=', $request->doctor_id);
-                        })
-                        ->orWhere('resource_id', '=', $request->machine_id);
-                    });
-                } else {
-                    // Get all appointments for this machine
-                    return $query->where('resource_id', '=', $request->machine_id);
-                }
+            ->when($request->machine_id || $request->doctor_id, function ($query) use ($request) {
+                return $query->where(function ($q) use ($request) {
+                    $q->where('resource_id', '=', $request->machine_id)
+                        ->orWhere('doctor_id', '=', $request->doctor_id);
+                });
             })
             ->whereNotNull('scheduled_date')
             ->whereNotNull('scheduled_time')
             ->get();
-    return $appointments;
-        // dd(DB::getQueryLog());
+
+        
     }
 
     /**
