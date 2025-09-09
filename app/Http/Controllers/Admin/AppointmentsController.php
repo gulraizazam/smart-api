@@ -4800,7 +4800,6 @@ class AppointmentsController extends Controller
         $account_id = Auth::User()->account_id;
         $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
         $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_service'), Auth::User()->account_id, true);
-        dd($appointments);
         $resources = Resources::getRoomsResourceRotaWithoutDays($request->location_id);
         $start = $request->start;
         $end = $request->end;

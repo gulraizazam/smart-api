@@ -403,7 +403,7 @@ class Appointments extends Model
 
         return self::where($where)
             ->when($request->start, function ($query) use ($request) {
-                return $query->where('scheduled_date', '=','2025-09-09');
+                return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
             })
             ->when($request->location_id, function ($query) use ($request) {
                 return $query->where('location_id', '=', $request->get('location_id'));
@@ -418,10 +418,10 @@ class Appointments extends Model
             ->whereNotNull('scheduled_time')
             ->get();
 
-        return self::where($where)
-            ->whereNotNull('scheduled_date')
-            ->whereNotNull('scheduled_time')
-            ->get();
+        // return self::where($where)
+        //     ->whereNotNull('scheduled_date')
+        //     ->whereNotNull('scheduled_time')
+        //     ->get();
     }
 
     /**
