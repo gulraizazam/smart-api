@@ -4823,7 +4823,7 @@ class AppointmentsController extends Controller
                         'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
                         'duration' => $appointment->service->duration,
                         'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
-                        'overlap' => true,
+                        'overlap' => false,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
                         'color' => ($request->doctor_id == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
