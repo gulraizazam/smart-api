@@ -401,7 +401,7 @@ class Appointments extends Model
             $where[] = ['appointment_type_id', '=', $appointment_type_id];
         }
 
-        return self::where($where)
+        $appointments = self::where($where)
             ->when($request->start, function ($query) use ($request) {
                 return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
             })
