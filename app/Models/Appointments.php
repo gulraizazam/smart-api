@@ -388,7 +388,7 @@ class Appointments extends Model
     public static function getScheduledAppointments(Request $request, $appointment_type_id, $account_id, $skip_doctor = false)
     {
 
-        DB::enableQueryLog();
+        
         $where = [];
         $where[] = ['account_id', '=', $account_id];
         $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
