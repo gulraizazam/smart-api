@@ -135,8 +135,7 @@
                     <tr>
                         <td>{{ $reportRow['patient_id'] }}</td>
                         <td>{{$reportRow['patient']}}</td>
-                        <td>{{$reportRow['city']}}</td>
-                        <td>{{$reportRow['region']}}</td>
+                        
                         <td>{{$reportRow['gender']}}</td>
                         <td>{{$reportRow['transtype']}}</td>
                         <td>@if($reportRow['revenue_cash_in'])
