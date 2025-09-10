@@ -99,7 +99,10 @@
         <tr class="shdoc-header">
             <th>ID</th>
             <th>Patient Name</th>
+            <th>City</th>
+            <th>Region</th>
             <th>Gender</th>
+            
             <th>Transaction type</th>
             <th>Cash</th>
             <th>Card</th>
@@ -111,16 +114,16 @@
             @foreach($report_data as $reportlocation)
                 <tr>
                     <td>{{$reportlocation['name']}}</td>
-                    
-                    
-                    <td>{{$reportlocation['transtype']}}</td>
+                    <td>{{$reportlocation['city']}}</td>
+                    <td>{{$reportlocation['region']}}</td>
+                    <td></td>
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
                     <td></td>
                 </tr>
                 @foreach($reportlocation['revenue_data'] as $reportRow)
-                @dd($reportRow);
 
                     @php
                         $total_revenue_cash_location += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
@@ -132,6 +135,8 @@
                     <tr>
                         <td>{{ $reportRow['patient_id'] }}</td>
                         <td>{{$reportRow['patient']}}</td>
+                        <td>{{$reportRow['city']}}</td>
+                        <td>{{$reportRow['region']}}</td>
                         <td>{{$reportRow['gender']}}</td>
                         <td>{{$reportRow['transtype']}}</td>
                         <td>@if($reportRow['revenue_cash_in'])
@@ -159,7 +164,7 @@
                 <tr style="background: #364150;color: #fff;">
                     <td>{{$reportlocation['name']}}</td>
                     <td>Total</td>
-                    <td>{{$reportlocation['gender']}}</td>
+                    <td></td>
                     <td>{{number_format($total_revenue_cash_location,2)}}</td>
                     <td>{{number_format($total_revenue_card_location,2)}}</td>
                     <td>{{number_format($total_revenue_bank_location,2)}}</td>
