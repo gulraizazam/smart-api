@@ -2437,7 +2437,7 @@ public static function revenueByGenderAndService($request)
     }
 
     $packagesadvances = $query->orderBy('created_at', 'asc')->get();
-
+    dd($packagesadvances);
     $report_data = [];
 
     foreach ($packagesadvances as $packageadvance) {
