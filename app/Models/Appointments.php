@@ -418,7 +418,10 @@ class Appointments extends Model
             ->whereNotNull('scheduled_time')
             ->get();
 
-        
+        return self::where($where)
+            ->whereNotNull('scheduled_date')
+            ->whereNotNull('scheduled_time')
+            ->get();
     }
 
     /**
