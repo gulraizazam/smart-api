@@ -1288,7 +1288,7 @@ class FinanceReportController extends Controller
         }
 
         $total_revenue = $total_revenue_cash_in + $total_revenue_card_in + $total_revenue_bank_in;
-
+        dd($report_data);
         switch ($request->get('medium_type')) {
             case 'web':
                 return view('admin.reports.generalrevenuereport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'));
