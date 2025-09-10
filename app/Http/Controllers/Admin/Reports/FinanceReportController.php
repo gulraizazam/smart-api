@@ -171,6 +171,9 @@ class FinanceReportController extends Controller
             case 'services_sold':
                 return self::serviceSoldreport($request);
                 break;
+             case 'gender_wise_revenue':
+                return self::revenueByGenderAndService($request);
+                break;
             default:
                 return self::collectionbyservice($request);
                 break;
@@ -1465,6 +1468,8 @@ class FinanceReportController extends Controller
         $total_revenue_cash_in = 0;
         $total_revenue_card_in = 0;
         $total_revenue_bank_in = 0;
+        $total_revenue_male_in = 0;
+        $total_revenue_female_in =0;
         $total_refund = 0;
 
         if ($report_data) {
@@ -1481,19 +1486,25 @@ class FinanceReportController extends Controller
                 if ($reportrevenue['refund_out']) {
                     $total_refund += $reportrevenue['refund_out'];
                 }
+                if ($reportrevenue['male_revenue']) {
+                    $total_revenue_male_in += $reportrevenue['male_revenue'];
+                }
+                if ($reportrevenue['female_revenue']) {
+                    $total_revenue_female_in += $reportrevenue['female_revenue'];
+                }
             }
         }
         $total_revenue = $total_revenue_cash_in + $total_revenue_card_in + $total_revenue_bank_in;
 
         switch ($request->get('medium_type')) {
             case 'web':
-                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'));
+                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'));
                 break;
             case 'print':
-                return view('admin.reports.generalrevenuesummaryreport.reportprint', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'));
+                return view('admin.reports.generalrevenuesummaryreport.reportprint', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'));
                 break;
             case 'pdf':
-                $content = view('admin.reports.generalrevenuesummaryreport.reportpdf', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'))->render();
+                $content = view('admin.reports.generalrevenuesummaryreport.reportpdf', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'))->render();
                 $pdf = App::make('dompdf.wrapper');
                 $pdf->loadHTML($content);
                 $pdf->setPaper('A4', 'landscape');
@@ -1501,10 +1512,10 @@ class FinanceReportController extends Controller
                 return $pdf->stream('General Revenue Report', 'landscape');
                 break;
             case 'excel':
-                self::GeneralRevenueSummaryReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date);
+                self::GeneralRevenueSummaryReportExcel($report_data, $total_revenue_cash_in, $total_revenue_card_in, $total_revenue_bank_in, $total_refund, $total_revenue, $start_date, $end_date, $total_revenue_male_in, $total_revenue_female_in);
                 break;
             default:
-                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date'));
+                return view('admin.reports.generalrevenuesummaryreport.report', compact('report_data', 'total_revenue_cash_in', 'total_revenue_card_in', 'total_revenue_bank_in', 'total_refund', 'total_revenue', 'start_date', 'end_date', 'total_revenue_male_in', 'total_revenue_female_in'));
                 break;
         }
     }
@@ -2292,9 +2303,9 @@ class FinanceReportController extends Controller
         }
     }
 
-   public function serviceSoldreport(Request $request)
+public function serviceSoldreport(Request $request)
 {
-
+    // Handle date range
     if ($request->get('date_range')) {
         $date_range = explode(' - ', $request->get('date_range'));
         $start_date = date('Y-m-d 00:00:00', strtotime($date_range[0]));
@@ -2304,17 +2315,20 @@ class FinanceReportController extends Controller
         $end_date = null;
     }
 
+    // Determine locations
     $locationId = (!empty($request->location_id) && $request->location_id[0] !== null)
         ? $request->location_id
         : ACL::getUserCentres();
 
+    $isAllCentres = ($request->location_id[0] == null); // All Centres selected
     $serviceId = $request->service_id;
 
+    // Build query
     $soldServicesQuery = DB::table('appointments')
         ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
         ->where('appointments.appointment_type_id', 2)
         ->where('appointments.appointment_status_id', 2)
-        ->when($locationId, function ($query) use ($locationId) {
+        ->when(!$isAllCentres, function ($query) use ($locationId) {
             return $query->whereIn('appointments.location_id', $locationId);
         })
         ->when($start_date && $end_date, function ($query) use ($start_date, $end_date) {
@@ -2324,27 +2338,199 @@ class FinanceReportController extends Controller
             return $query->where('appointments.service_id', $serviceId);
         });
 
-    // Conditionally group
-    if ($serviceId && $request->location_id[0] == null) {
-        // Only service selected, no location filtering
+    // Grouping
+    if ($isAllCentres) {
         $soldServicesQuery->select(
             'appointments.service_id',
             DB::raw('COUNT(appointments.id) as total_sold')
         )->groupBy('appointments.service_id');
     } else {
-        // Group by both service and location
         $soldServicesQuery->select(
             'appointments.service_id',
-            DB::raw('COUNT(appointments.id) as total_sold'),
-            'appointments.location_id'
+            'appointments.location_id',
+            DB::raw('COUNT(appointments.id) as total_sold')
         )->groupBy('appointments.service_id', 'appointments.location_id');
     }
 
     $soldServices = $soldServicesQuery->get();
 
-    return view('admin.reports.accountsalesreport.serviceSoldreport',get_defined_vars());
-}
+    // Summary stats
+    $grouped = $isAllCentres
+        ? $soldServices
+        : $soldServices->groupBy('service_id')->map(function ($group) {
+            return (object)[
+                'service_id' => $group->first()->service_id,
+                'total_sold' => $group->sum('total_sold')
+            ];
+        });
 
+    $mostSold = $grouped->sortByDesc('total_sold')->first();
+    $leastSold = $grouped->sortBy('total_sold')->first();
+
+    // Services and locations
+    $serviceIds = $soldServices->pluck('service_id')->unique();
+    $services = Services::whereIn('id', $serviceIds)->get()->keyBy('id');
+
+    $locationIds = $soldServices->pluck('location_id')->filter()->unique();
+    $locations = Locations::whereIn('id', $locationIds)->get()->keyBy('id');
+
+    return view('admin.reports.accountsalesreport.serviceSoldreport', compact(
+        'soldServices',
+        'start_date',
+        'end_date',
+        'locationId',
+        'serviceId',
+        'mostSold',
+        'leastSold',
+        'services',
+        'locations'
+    ));
+}
+public static function revenueByGenderAndService($request)
+{
+    // Extract data and account_id from request
+    $data = $request->all();
+    $account_id = $request->get('account_id') ?? auth()->user()->account_id ?? session('account_id');
+    
+    if (isset($data['date_range']) && $data['date_range']) {
+        $date_range = explode(' - ', $data['date_range']);
+        $start_date = date('Y-m-d', strtotime($date_range[0]));
+        $end_date = date('Y-m-d', strtotime($date_range[1]));
+    } else {
+        $start_date = null;
+        $end_date = null;
+    }
+
+    // Handle location filtering
+    $location_ids = $request->get('location_id', []);
+    if (!is_array($location_ids)) {
+        $location_ids = [$location_ids];
+    }
+    // Remove empty values
+    $location_ids = array_filter($location_ids);
+
+    // Build query with location filtering
+    $query = PackageAdvances::with([
+        'package.appointment' => function($query) {
+            $query->where('appointment_type_id', 1); // Only appointment type 1
+        },
+        'package.appointment.service', // Service relationship
+        'package.appointment.patient:id,gender', // Patient (user) with gender
+    ])
+    ->whereHas('package.appointment', function($query) {
+        $query->where('appointment_type_id', 1);
+    })
+    ->whereDate('created_at', '>=', $start_date)
+    ->whereDate('created_at', '<=', $end_date)
+    ->where('account_id', $account_id)
+    ->where('cash_flow', 'in') // Only incoming cash
+    ->where('is_adjustment', '0')
+    ->where('is_tax', '0')
+    ->where('is_cancel', '0')
+    ->where('cash_amount', '>', 0);
+
+    // Add location filtering if location_ids provided
+    if (!empty($location_ids)) {
+        $query->whereHas('package', function($packageQuery) use ($location_ids) {
+            $packageQuery->whereIn('location_id', $location_ids);
+        });
+    }
+
+    $packagesadvances = $query->orderBy('created_at', 'asc')->get();
+
+    $report_data = [];
+
+    foreach ($packagesadvances as $packageadvance) {
+        // Skip if no package or appointment
+        if (!$packageadvance->package || !$packageadvance->package->appointment) {
+            continue;
+        }
+
+        $appointment = $packageadvance->package->appointment;
+        
+        // Skip if no service
+        if (!$appointment->service) {
+            continue;
+        }
+
+        $service = $appointment->service;
+        $patient = $appointment->patient;
+        
+        // Determine gender
+        $gender = 'unknown';
+        if ($patient && isset($patient->gender)) {
+            if ($patient->gender == 1) {
+                $gender = 'male';
+            } elseif ($patient->gender == 2) {
+                $gender = 'female';
+            }
+        }
+
+        $service_id = $service->id;
+        $service_name = $service->name;
+
+        // Initialize service if not exists
+        if (!isset($report_data[$service_id])) {
+            $report_data[$service_id] = [
+                'id' => $service_id,
+                'name' => $service_name,
+                'male_revenue' => 0,
+                'female_revenue' => 0,
+                'unknown_gender_revenue' => 0,
+                'total_revenue' => 0,
+                'male_count' => 0,
+                'female_count' => 0,
+                'unknown_gender_count' => 0,
+                'total_count' => 0,
+            ];
+        }
+
+        // Add revenue based on gender
+        $amount = $packageadvance->cash_amount;
+        
+        switch ($gender) {
+            case 'male':
+                $report_data[$service_id]['male_revenue'] += $amount;
+                $report_data[$service_id]['male_count']++;
+                break;
+            case 'female':
+                $report_data[$service_id]['female_revenue'] += $amount;
+                $report_data[$service_id]['female_count']++;
+                break;
+            default:
+                $report_data[$service_id]['unknown_gender_revenue'] += $amount;
+                $report_data[$service_id]['unknown_gender_count']++;
+                break;
+        }
+
+        // Update totals
+        $report_data[$service_id]['total_revenue'] += $amount;
+        $report_data[$service_id]['total_count']++;
+    }
+
+    // Sort by service name
+    uasort($report_data, function($a, $b) {
+        return strcmp($a['name'], $b['name']);
+    });
+
+    // Get location names for display if locations were filtered
+    $selected_locations = [];
+    if (!empty($location_ids)) {
+        $selected_locations = \App\Models\Locations::whereIn('id', $location_ids)
+            ->pluck('name', 'id')
+            ->toArray();
+    }
+
+    return view('admin.reports.accountsalesreport.genderwiserevenue', compact(
+        'start_date',
+        'end_date'
+    ))->with([
+        'reportData' => $report_data,
+        'isLocationWise' => false,
+        'selectedLocations' => $selected_locations,
+        'locationIds' => $location_ids
+    ]);
+}
     private static function conversionreportexcel($reportData, $start_date, $end_date, $converted)
     {
         $spreadsheet = new Spreadsheet();  /*----Spreadsheet object-----*/
@@ -2935,8 +3121,6 @@ class FinanceReportController extends Controller
     public function staffWiseArrivalReport(Request $request)
     {
         $where = [];
-        $reportType = $request->report_type;
-        
         if (isset($request->date_range) && $request->date_range) {
             $date_range = explode(' - ', $request->date_range);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -2945,7 +3129,6 @@ class FinanceReportController extends Controller
             $start_date = null;
             $end_date = null;
         }
-        
         $locations = $request->location_id == null ? ACL::getUserCentres() : [$request->location_id];
 
         if ($request->created_by && $request->created_by != null) {
@@ -2953,63 +3136,35 @@ class FinanceReportController extends Controller
         }
         $records = [];
         $records['data'] = [];
-        if($reportType =='consultancy'){
-            $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
-            if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services') || Gate::allows('appointments_consultancy')) {
-                $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
-            }
-            if (count($where)) {
-                $resultQuery->where($where);
-            }
-            if ($request->created_by == null) {
-                $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
-                    ->whereIn('centre_id', $locations)
-                    ->whereBetween('scheduled_date', [$start_date, $end_date])
-                    ->count();
-            } else {
-                $walkin_customers = 0;
-            }
 
-            $Appointments = $resultQuery->with(['user', 'appointment' => function ($q) {
-                $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
-                    ->orderBy('appointments.created_at', 'DESC');
-            }])
-                ->whereBetween('scheduled_date', [$start_date, $end_date])
-                ->get();
-
-            $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
-            $user = User::where(['id' => $request->created_by])->first()->name ?? '';
-            $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
-
-            return view('admin.reports.staff_wise_arrived', get_defined_vars());
-        }else{
-            $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
-            $query = Appointments::query()
-                ->where('appointment_type_id', 2)
-                ->whereIn('location_id', $locations);
-
-            // Apply date filter
-            if ($start_date && $end_date) {
-                $query->whereBetween('scheduled_date', [$start_date, $end_date]);
-            }
-
-            // Clone the base query to use it multiple times
-            $scheduledAppointmentsQuery = clone $query;
-            $arrivedAppointmentsQuery = clone $query;
-
-            // Total scheduled appointments
-            $totalScheduled = $scheduledAppointmentsQuery->count();
-
-            // Total arrived appointments (status_id = 2)
-            $totalArrived = $arrivedAppointmentsQuery->where('appointment_status_id', 2)->count();
-
-            // Percentage calculation
-            $percentageArrived = $totalScheduled > 0 ? round(($totalArrived / $totalScheduled) * 100, 2) : 0;
-            $percentageArrived = $percentageArrived .'%';
-            // Result
-            return view('admin.reports.treatments_report', get_defined_vars());
+        $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
+        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services') || Gate::allows('appointments_consultancy')) {
+            $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
         }
-        
+        if (count($where)) {
+            $resultQuery->where($where);
+        }
+        if ($request->created_by == null) {
+            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
+                ->whereIn('centre_id', $locations)
+                ->whereBetween('scheduled_date', [$start_date, $end_date])
+                ->count();
+        } else {
+            $walkin_customers = 0;
+        }
+
+        $Appointments = $resultQuery->with(['user', 'appointment' => function ($q) {
+            $q->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+                ->orderBy('appointments.created_at', 'DESC');
+        }])
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
+            ->get();
+
+        $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
+        $user = User::where(['id' => $request->created_by])->first()->name ?? '';
+        $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
+
+        return view('admin.reports.staff_wise_arrived', get_defined_vars());
     }
 
     public function loadIncentiveReport(Request $request)
