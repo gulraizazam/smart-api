@@ -112,7 +112,7 @@
                 <tr>
                     <td>{{$reportlocation['name']}}</td>
                     
-                    <td>{{$reportlocation['gender']}}</td>
+                    
                     <td>{{$reportlocation['transtype']}}</td>
                     <td></td>
                     <td></td>
