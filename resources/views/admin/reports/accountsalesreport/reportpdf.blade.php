@@ -93,6 +93,7 @@
             <th>Centre</th>
             <th>Service</th>
             <th>Patient</th>
+            <th>Gender</th>
             <th>Created by</th>
             <th>Service Price</th>
             <th>Discount Name</th>
@@ -113,6 +114,7 @@
                     <td>{{ (array_key_exists($reportRow->location_id, $filters['locations'])) ? $filters['locations'][$reportRow->location_id]->name : '-' }}</td>
                     <td>{{ (array_key_exists($reportRow->service_id, $filters['services'])) ? $filters['services'][$reportRow->service_id]->name : '-' }}</td>
                     <td> {{ $reportRow->patient->name }}</td>
+                    <td> {{ $reportRow->gender ?? '-' }}</td>
                     <td> {{ $reportRow->user->name }}</td>
                     <td style="text-align: right;">
                         <?php
