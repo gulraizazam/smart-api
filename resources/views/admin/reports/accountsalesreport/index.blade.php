@@ -164,6 +164,10 @@
                                                             <option value="services_sold">Services sold report
                                                             </option>
                                                         @endif
+                                                         @if(Gate::allows('finance_general_revenue_reports_conversion_report'))
+                                                            <option value="gender_wise_revenue">Gender Wise Revenue Report
+                                                            </option>
+                                                        @endif
                                                 </select>
 
                                                 <span id="report_type_handler"></span>
@@ -207,7 +211,17 @@
                                                 {!! Form::select('location_id_com[]', $locations_com, (Auth::user()->hasRole('FDM')) ? array_keys($locations_com->toArray()) : null, ['id' => 'location_id_com','class' => 'form-control select2', 'multiple' => 'multiple']) !!}
                                                 <span id="location_id_handler"></span>
                                             </div>
+                                                <div class="form-group col-md-3 sn-select @if($errors->has('location_id')) has-error @endif"
+                                                 style="display: none;" id="gender_id" >
+                                                {!! Form::label('gender_id', 'Gender', ['class' => 'control-label']) !!}
 
+                                                <select class="form-control select2" id="gender_id_form" name="gender_id">
+                                                    <option value="all">All</option>
+                                                    <option value="1">Male</option>
+                                                    <option value="2">Female</option>
+                                                </select>
+                                                <span id="location_id_handler"></span>
+                                            </div>
                                             {!! Form::hidden('medium_type', 'web', ['id' => 'medium_type']) !!}
                                             <div class="form-group col-md-3 sn-select @if($errors->has('service_id')) has-error @endif"
                                                  id="service_id_E">
@@ -290,24 +304,13 @@
 
     @push('js')
     <script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
-   
+
    <script src="https://cdn.datatables.net/buttons/2.3.6/js/dataTables.buttons.min.js"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
    <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-   <script>
-    $("#servicesSoldTable").DataTable({
-           dom: 'Bfrtip',
-           buttons: [
-               'excelHtml5',
-               'csvHtml5',
-               'pdfHtml5',
-           ],
-           "ordering": false,
-           "pageLength": 50
-       });
-</script>
+
         <script>
             $("#location_id_com").on('change',function(){
                 $("#location_id_com-report").val($("#location_id_com").val());
@@ -333,7 +336,7 @@
                 },
                 ranges   : {
                     'Today' : [moment(), moment()],
-                    
+
                 },
                 startDate: moment(),
                 endDate  :  moment()
@@ -346,13 +349,13 @@
                 }
                 var date_ranges;
                 if($("#date_range_fdm").val()!=undefined){
-                  
+
                     date_ranges = $("#date_range_fdm").val();
                 }else{
-                   
+
                     date_ranges = $("#date_range").val();
                 }
-                
+
                 showSpinner();
                 $.ajax({
                     headers: {
@@ -361,7 +364,7 @@
                     url: route('admin.reports.account_sales_report_load'),
                     type: "POST",
                     data: {
-                        
+
                         date_range: date_ranges,
                         patient_id: $('#patient_id').val(),
                         appointment_type_id: $('#appointment_type_id').val(),
@@ -375,10 +378,12 @@
                         report_type: $('#report_type').val(),
                         city_id: $('#city_id').val(),
                         machine_id: $('#machine_id').val(),
-                        discount_id:$('#discount_id').val()
+                        discount_id:$('#discount_id').val(),
+                        gender_id:$('#gender_id_form').val(),
                     },
                     success: function(response){
                         $('#content').html('');
+
                         if($('#medium_type').val() == 'web') {
                             $('#content').html(response);
                         } else {
@@ -396,9 +401,9 @@
             }
 
             var printReport = function (medium_type) {
-               
+
                 $('#date_range-report').val($('#date_range').val());
-               
+
                 $('#date_range_by-report').val($('#date_range_by').val());
                 $('#date_range_by_first-report').val($('#date_range_by_first').val());
                 $('#patient_id-report').val($('#patient_id').val());
@@ -435,6 +440,7 @@
                     $("#doctors_id").hide();
                     $("#machine").hide();
                     $('#discount').hide();
+                     $('#gender_id').show();
                 } else if (type_p == 'daily_employee_stats_summary') {
                     $("#machine").hide();
                     $('#discount').hide();
@@ -445,6 +451,7 @@
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#service_id_E").show();
+                     $('#gender_id').hide();
                 } else if (type_p == 'general_revenue_report_summary') {
                     $("#patient_id_E").hide();
                     $("#appointment_type_id_E").hide();
@@ -453,6 +460,7 @@
                     $("#user_id_E").hide();
                     $("#service_id_E").hide();
                     $("#region_id_E").show();
+                    $('#gender_id').hide();
                     $("#doctors_id").hide();
                     $("#machine").hide();
                     $('#discount').hide();
@@ -468,18 +476,20 @@
                     $("#appointment_type_id_E").hide();
                     $("#machine").hide();
                     $('#discount').hide();
+                    $('#gender_id').hide();
                 } else if (type_p == 'services_sold') {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
-                    
+
                     $("#service_id_E").show();
-                   
+                    $('#gender_id').hide();
                 } else if (type_p == "collection_by_service") {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#patient_id_E").hide();
                     $("#user_id_E").hide();
                     $("#doctors_id").hide();
+                    $('#gender_id').hide();
                     $("#region_id_E").show();
                     $("#city_id_E").hide();
                     $("#service_id_E").hide();
@@ -495,12 +505,14 @@
                     $("#service_id_E").show();
                     $("#region_id_E").hide();
                     $("#doctors_id").show();
+                    $('#gender_id').hide();
                     $("#machine").hide();
                     $('#discount').hide();
                 } else {
                     $("#location_id_E").show();
                     $("#location_id_D").hide();
                     $("#patient_id_E").hide();
+                    $('#gender_id').hide();
                     $("#user_id_E").hide();
                     $("#doctors_id").hide();
                     $("#region_id_E").show();
