@@ -28,7 +28,7 @@
 
         /* Header Styles */
         .report-header {
-            background: #364150;
+            background:rgb(184, 188, 193);
             color: white;
             padding: 25px;
             margin-bottom: 20px;
@@ -373,8 +373,7 @@
             <div class="header-flex">
                 <div class="header-left">
                     <img src="https://crm2.cutera.pk/public/assets/media/new_logo.png" alt="Cutera Aesthetics" class="logo">
-                    <div class="company-name">CUTERA AESTHETICS</div>
-                    <div class="company-tagline">Premium Healthcare Solutions</div>
+                   
                 </div>
                 <div class="header-right">
                     <div class="report-meta">
