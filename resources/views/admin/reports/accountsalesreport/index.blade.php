@@ -280,7 +280,7 @@
                                             {!! Form::hidden('report_type', null, ['id' => 'report_type-report']) !!}
                                             {!! Form::hidden('converted', null, ['id' => 'converted_type-report']) !!}
                                             {!! Form::hidden('discount_id', '', ['id' => 'discount_id-report']) !!}
-                                            {!! Form::hidden('gender_id', '', ['id' => 'gender_id-report']) !!}
+                                            {!! Form::hidden('gender_id', null, ['id' => 'gender_id-report']) !!}
                                             {!! Form::close() !!}
 
 
