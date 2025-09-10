@@ -111,7 +111,7 @@
             @foreach($report_data as $reportlocation)
                 <tr>
                     <td>{{$reportlocation['name']}}</td>
-                    <td>{{$reportlocation['patient']}}</td>
+                    
                     <td>{{$reportlocation['gender']}}</td>
                     <td>{{$reportlocation['transtype']}}</td>
                     <td></td>
