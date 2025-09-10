@@ -2417,9 +2417,9 @@ public static function revenueByGenderAndService($request)
         'package.appointment.service', // Service relationship
         'package.appointment.patient:id,gender', // Patient (user) with gender
     ])
-    ->whereHas('package.appointment', function($query) {
-        $query->where('appointment_type_id', 1);
-    })
+    // ->whereHas('package.appointment', function($query) {
+    //     $query->where('appointment_type_id', 1);
+    // })
     ->whereDate('created_at', '>=', $start_date)
     ->whereDate('created_at', '<=', $end_date)
     ->where('account_id', $account_id)
