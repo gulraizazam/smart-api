@@ -120,6 +120,7 @@
                     <td></td>
                 </tr>
                 @foreach($reportlocation['revenue_data'] as $reportRow)
+                @dd($reportRow);
 
                     @php
                         $total_revenue_cash_location += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
