@@ -1091,9 +1091,8 @@ class Finanaces
      */
     public static function generalrevenuereportdetail($data, $account_id)
     {
-
         $where = [];
-
+    
         if (isset($data['date_range']) && $data['date_range']) {
             $date_range = explode(' - ', $data['date_range']);
             $start_date = date('Y-m-d', strtotime($date_range[0]));
@@ -1102,7 +1101,7 @@ class Finanaces
             $start_date = null;
             $end_date = null;
         }
-
+        $gender = $data['gender_id'];
         $where[] = [
             'account_id',
             '=',
@@ -1111,15 +1110,23 @@ class Finanaces
         $location_information = ACL::getUserCentres();
         $report_data = [];
         foreach ($data['location_id_com'] as $location) {
-            $packagesadvances = PackageAdvances::whereDate('created_at', '>=', $start_date)
+            $query = PackageAdvances::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
                 ->where('location_id', '=', $location)
                 ->where($where)
-                ->orderBy('created_at', 'asc')
-                ->get();
-
+                ->orderBy('created_at', 'asc');
+    
+            // Add gender filter condition
+            if ($gender !== 'all') {
+                $query->whereHas('user', function ($q) use ($gender) {
+                    $q->where('gender', $gender);
+                });
+            }
+    
+            $packagesadvances = $query->get();
+    
             $location_information = Locations::find($location);
-
+    
             if ($packagesadvances) {
                 $balance = 0;
                 $total_balance = 0;
@@ -1130,7 +1137,7 @@ class Finanaces
                     'region' => $location_information->region->name,
                     'revenue_data' => [],
                 ];
-
+    
                 foreach ($packagesadvances as $packagesadvance) {
                     if (
                         ($packagesadvance->cash_flow == 'in' &&
@@ -1143,7 +1150,7 @@ class Finanaces
                             $packagesadvance->is_refund == '1' &&
                             $packagesadvance->is_tax == '0'
                         )
-
+    
                     ) {
                         switch ($packagesadvance->cash_flow) {
                             case 'in':
@@ -1156,7 +1163,7 @@ class Finanaces
                                 break;
                         }
                         $total_balance = $balance;
-
+    
                         if ($packagesadvance->cash_amount != 0) {
                             if ($packagesadvance->package_id) {
                                 $transtype = Config::get('constants.trans_type.advance_in');
@@ -1205,7 +1212,7 @@ class Finanaces
                                 $refund_out = $packagesadvance->cash_amount;
                             }
                             if ($packagesadvance->cash_flow == 'out') {
-
+    
                                 if ($packagesadvance->paymentmode->name == 'Cash') {
                                     $refund_cash_in = $packagesadvance->cash_amount;
                                     $refund_card_in = 0;
@@ -1230,10 +1237,11 @@ class Finanaces
                                 $refund_bank_in = 0;
                                 $refund_out = $packagesadvance->cash_amount;
                             }
-
+                            $gender = $packagesadvance->user->gender == 1 ? 'Male' : 'Female';
                             $report_data[$location_information->id]['revenue_data'][$packagesadvance->id] = [
                                 'patient_id' => $packagesadvance->patient_id,
                                 'patient' => $packagesadvance->user->name,
+                                'gender' => $gender,
                                 'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvance->user->phone),
                                 'transtype' => $transtype,
                                 'payment_mode_id' => $packagesadvance->payment_mode_id,
@@ -1254,7 +1262,7 @@ class Finanaces
                 }
             }
         }
-
+    
         return $report_data;
     }
 
