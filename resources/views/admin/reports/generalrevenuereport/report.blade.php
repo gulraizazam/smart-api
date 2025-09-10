@@ -178,9 +178,9 @@
                                 
                             @endforeach
                             @php
-                                $t_cash = $total_revenue_cash_location1 - $total_refund_cash_location1;
-                                $t_card = $total_revenue_card_location1 - $total_refund_card_location1;
-                                $t_bank = $total_revenue_bank_location1 - $total_refund_bank_location1;
+                                $t_cash = $total_revenue_cash_location1;
+                                $t_card = $total_revenue_card_location1;
+                                $t_bank = $total_revenue_bank_location1;
                                 $total_revenue_cash_location +=$t_cash;
                                 $total_revenue_card_location +=$t_card ;
                                 $total_revenue_bank_location +=$t_bank;
