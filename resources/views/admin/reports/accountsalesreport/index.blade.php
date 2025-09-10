@@ -422,7 +422,7 @@
                 $('#referred_by-report').val($('#referred_by').val());
                 $('#medium_type-report').val(medium_type);
                 $('#report_type-report').val($('#report_type').val());
-                $('#gender_id-report').val($('#gender_id').val());
+                $('#gender_id-report').val($('#gender_id_form').val());
                 $('#report-form').submit();
               
             }
