@@ -102,16 +102,17 @@
                     <thead>
                     <th>ID</th>
                     <th>Patient Name</th>
+                    <th>Gender</th>
                     <th>Transaction type</th>
                     <th>Cash</th>
                     <th>Card </th>
                     <th>Bank/Wire Transfer</th>
-                    
+
                     <th>Created At</th>
                     </thead>
                     <tbody>
                     @if($report_data)
-                    
+
                         @foreach($report_data as $reportlocation)
                         @php
                             $total_revenue_cash_location1 = 0;
@@ -120,7 +121,7 @@
                             $total_refund_cash_location1 = 0;
                             $total_refund_card_location1= 0;
                             $total_refund_bank_location1 = 0;
-                            
+
                         @endphp
 
                         <tr style="background:#2fa0d3;color: #fff;">
@@ -131,11 +132,12 @@
                                 <td style="color: #fff;"></td>
                                 <td style="color: #fff;"></td>
                                 <td style="color: #fff;"></td>
+                                <td style="color: #fff;"></td>
                             @foreach($reportlocation['revenue_data'] as $reportRow)
 
                                 @php
-                                
-                                   
+
+
                                     $total_revenue_cash_location1 += $reportRow['revenue_cash_in']?$reportRow['revenue_cash_in']:0;
                                     $total_revenue_card_location1 += $reportRow['revenue_card_in']?$reportRow['revenue_card_in']:0;
                                     $total_revenue_bank_location1 += $reportRow['revenue_bank_in']?$reportRow['revenue_bank_in']:0;
@@ -148,6 +150,7 @@
                                 <tr>
                                     <td>{{$reportRow['patient_id'] }}</td>
                                     <td>{{$reportRow['patient']}}</td>
+                                      <td>{{$reportRow['gender']}}</td>
                                     <td>{{$reportRow['transtype']}}</td>
                                     <td>@if($reportRow['revenue_cash_in'])
                                      {{number_format($reportRow['revenue_cash_in'],2)}}
@@ -172,35 +175,36 @@
                                          ({{number_format($reportRow['refund_bank_in'],2)}})
                                         @endif
                                     </td>
-                                   
+
                                     <td>{{$reportRow['created_at']}}</td>
                                 </tr>
-                                
+
                             @endforeach
                             @php
-                                $t_cash = $total_revenue_cash_location1;
-                                $t_card = $total_revenue_card_location1;
-                                $t_bank = $total_revenue_bank_location1;
+                                $t_cash = $total_revenue_cash_location1 - $total_refund_cash_location1;
+                                $t_card = $total_revenue_card_location1 - $total_refund_card_location1;
+                                $t_bank = $total_revenue_bank_location1 - $total_refund_bank_location1;
                                 $total_revenue_cash_location +=$t_cash;
                                 $total_revenue_card_location +=$t_card ;
                                 $total_revenue_bank_location +=$t_bank;
                                 $total_refund_cash_location += $total_refund_cash_location1;
                                 $total_refund_card_location +=$total_refund_card_location1;
                                 $total_refund_bank_location +=$total_refund_bank_location1;
-                                @endphp    
+                                @endphp
                                 <tr style="background:#364150;color: #fff;">
                                 <td style="color: #fff;"> {{$reportlocation['name']}}</td>
                                 <td style="color: #fff;">Total</td>
                                 <td style="color: #fff;"></td>
+                                <td style="color: #fff;"></td>
                                 <td style="color: #fff;"> {{number_format($t_cash,2)}}</td>
                                 <td style="color: #fff;"> {{number_format($t_card,2)}}</td>
                                 <td style="color: #fff;"> {{number_format( $t_bank,2)}}</td>
-                                
+
                                 <td style="color: #fff;"></td>
                             </tr>
 
                             @php
-                                
+
                                 $t_revenue = $t_cash + $t_card + $t_bank;
                                 $inhandBalance = $total_revenue -$total_refund;
                             @endphp
@@ -253,7 +257,7 @@
                         <td> ({{number_format($total_refund,2)}})
                     </td>
                     </tr>
-                    
+
                     <tr>
                         <th>Net Sales</th>
                         <td> {{number_format($inhandBalance,2)}}</td>
