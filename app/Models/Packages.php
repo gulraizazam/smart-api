@@ -55,7 +55,7 @@ class Packages extends BaseModal
 
     public function appointment()
     {
-        $this->belongsTo(Appointments::class);
+       return  $this->belongsTo(Appointments::class);
     }
 
     /*
