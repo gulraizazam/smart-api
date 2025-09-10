@@ -1342,12 +1342,13 @@ class FinanceReportController extends Controller
 
         $activeSheet->setCellValue('A4', 'ID')->getStyle('A4')->getFont()->setBold(true);
         $activeSheet->setCellValue('B4', 'Patient Name')->getStyle('B4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('C4', 'Transaction Type')->getStyle('C4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('D4', 'Revenue Cash In')->getStyle('D4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('E4', 'Revenue Card In')->getStyle('E4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('F4', 'Revenue Bank/Wire In')->getStyle('F4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('G4', 'Refund/Out')->getStyle('G4')->getFont()->setBold(true);
-        $activeSheet->setCellValue('H4', 'Created At')->getStyle('H4')->getFont()->setBold(true);
+        $activeSheet->setCellValue('C4', 'Gender')->getStyle('C4')->getFont()->setBold(true);
+        $activeSheet->setCellValue('D4', 'Transaction Type')->getStyle('D4')->getFont()->setBold(true);
+        $activeSheet->setCellValue('E4', 'Revenue Cash In')->getStyle('E4')->getFont()->setBold(true);
+        $activeSheet->setCellValue('F4', 'Revenue Card In')->getStyle('F4')->getFont()->setBold(true);
+        $activeSheet->setCellValue('G4', 'Revenue Bank/Wire In')->getStyle('G4')->getFont()->setBold(true);
+        $activeSheet->setCellValue('H4', 'Refund/Out')->getStyle('H4')->getFont()->setBold(true);
+        $activeSheet->setCellValue('I4', 'Created At')->getStyle('I4')->getFont()->setBold(true);
 
         $activeSheet->setCellValue('A5', '');
 
@@ -1377,20 +1378,21 @@ class FinanceReportController extends Controller
 
                     $activeSheet->setCellValue('A' . $counter, $reportRow['patient_id']);
                     $activeSheet->setCellValue('B' . $counter, $reportRow['patient']);
-                    $activeSheet->setCellValue('C' . $counter, $reportRow['transtype']);
+                    $activeSheet->setCellValue('C' . $counter, $reportRow['gender']);
+                    $activeSheet->setCellValue('D' . $counter, $reportRow['transtype']);
                     if ($reportRow['revenue_cash_in']) {
-                        $activeSheet->setCellValue('D' . $counter, number_format($reportRow['revenue_cash_in'], 2));
+                        $activeSheet->setCellValue('E' . $counter, number_format($reportRow['revenue_cash_in'], 2));
                     }
                     if ($reportRow['revenue_card_in']) {
-                        $activeSheet->setCellValue('E' . $counter, number_format($reportRow['revenue_card_in'], 2));
+                        $activeSheet->setCellValue('F' . $counter, number_format($reportRow['revenue_card_in'], 2));
                     }
                     if ($reportRow['revenue_bank_in']) {
-                        $activeSheet->setCellValue('F' . $counter, number_format($reportRow['revenue_bank_in'], 2));
+                        $activeSheet->setCellValue('G' . $counter, number_format($reportRow['revenue_bank_in'], 2));
                     }
                     if ($reportRow['refund_out']) {
-                        $activeSheet->setCellValue('G' . $counter, number_format($reportRow['refund_out'], 2));
+                        $activeSheet->setCellValue('H' . $counter, number_format($reportRow['refund_out'], 2));
                     }
-                    $activeSheet->setCellValue('H' . $counter, $reportRow['created_at']);
+                    $activeSheet->setCellValue('I' . $counter, $reportRow['created_at']);
                     $counter++;
                 }
                 $activeSheet->setCellValue('A' . $counter, '');
