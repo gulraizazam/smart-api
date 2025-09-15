@@ -10,6 +10,7 @@ use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
 use App\Models\Appointments;
 use App\Models\Services;
+use PDF;
 use App\Models\TaxTreatmentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
