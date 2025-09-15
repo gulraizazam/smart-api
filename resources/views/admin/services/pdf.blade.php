@@ -142,7 +142,7 @@
                 <tr class="parent-row">
                     <td class="name-cell">{{ $parentService->name }}</td>
                     <td class="duration-cell">{{ $parentService->duration }} min</td>
-                    <td class="price-cell">${{ number_format($parentService->price, 2) }}</td>
+                    <td class="price-cell">{{ number_format($parentService->price, 2) }}</td>
                 </tr>
 
                 <!-- Child Services -->
@@ -153,7 +153,7 @@
                                 <div class="child-name">{{ $childService->name }}</div>
                             </td>
                             <td class="duration-cell">{{ $childService->duration }} min</td>
-                            <td class="price-cell">${{ number_format($childService->price, 2) }}</td>
+                            <td class="price-cell">{{ number_format($childService->price, 2) }}</td>
                         </tr>
 
                         {{-- Handle nested children if you have more than 2 levels --}}
@@ -164,7 +164,7 @@
                                         <div class="child-name">{{ $grandchildService->name }}</div>
                                     </td>
                                     <td class="duration-cell">{{ $grandchildService->duration }} min</td>
-                                    <td class="price-cell">${{ number_format($grandchildService->price, 2) }}</td>
+                                    <td class="price-cell">{{ number_format($grandchildService->price, 2) }}</td>
                                 </tr>
 
                                 {{-- Third level nesting --}}
@@ -175,7 +175,7 @@
                                                 <div class="child-name">{{ $greatGrandchildService->name }}</div>
                                             </td>
                                             <td class="duration-cell">{{ $greatGrandchildService->duration }} min</td>
-                                            <td class="price-cell">${{ number_format($greatGrandchildService->price, 2) }}</td>
+                                            <td class="price-cell">{{ number_format($greatGrandchildService->price, 2) }}</td>
                                         </tr>
                                     @endforeach
                                 @endif
