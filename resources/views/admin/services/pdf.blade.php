@@ -8,6 +8,7 @@
             font-family: Arial, sans-serif;
             font-size: 12px;
             line-height: 1.4;
+            margin: 20px;
         }
         
         .header {
@@ -17,73 +18,107 @@
             padding-bottom: 10px;
         }
         
-        .service-parent {
-            font-weight: bold;
-            font-size: 14px;
+        .services-table {
+            width: 100%;
+            border-collapse: collapse;
             margin-top: 20px;
-            margin-bottom: 10px;
-            color: #333;
-            background-color: #f5f5f5;
+        }
+        
+        .services-table th {
+            background-color: #333;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+            border: 1px solid #333;
+        }
+        
+        .services-table th.duration-header {
+            text-align: center;
+            width: 120px;
+        }
+        
+        .services-table th.price-header {
+            text-align: right;
+            width: 100px;
+        }
+        
+        .services-table td {
             padding: 8px;
+            border: 1px solid #ddd;
+            vertical-align: middle;
+        }
+        
+        .services-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .services-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        
+        /* Parent service styling */
+        .parent-row {
+            background-color: #e8f4fd !important;
+            font-weight: bold;
             border-left: 4px solid #007bff;
         }
         
-        .service-child {
-            margin-left: 20px;
-            margin-bottom: 5px;
-            padding: 5px 0;
-            border-bottom: 1px dotted #ccc;
+        .parent-row td {
+            font-weight: bold;
+            color: #333;
+            border-left: 4px solid #007bff;
         }
         
-        .service-child:last-child {
-            border-bottom: none;
+        /* Child service styling */
+        .child-row {
+            background-color: #fff;
         }
         
-        .service-info {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .child-name {
+            padding-left: 30px;
+            position: relative;
         }
         
-        .service-name {
-            flex: 1;
+        .child-name:before {
+            content: "└─ ";
+            position: absolute;
+            left: 8px;
+            color: #666;
         }
         
-        .service-duration {
-            width: 100px;
+        /* Nested children styling */
+        .child-level-2 .child-name {
+            padding-left: 50px;
+        }
+        
+        .child-level-2 .child-name:before {
+            left: 28px;
+            content: "└─ ";
+        }
+        
+        .child-level-3 .child-name {
+            padding-left: 70px;
+        }
+        
+        .child-level-3 .child-name:before {
+            left: 48px;
+            content: "└─ ";
+        }
+        
+        .duration-cell {
             text-align: center;
+            width: 120px;
         }
         
-        .service-price {
-            width: 80px;
+        .price-cell {
             text-align: right;
             font-weight: bold;
-        }
-        
-        .table-header {
-            background-color: #333;
-            color: white;
-            padding: 10px;
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .table-header .header-name {
-            flex: 1;
-            font-weight: bold;
-        }
-        
-        .table-header .header-duration {
             width: 100px;
-            text-align: center;
-            font-weight: bold;
         }
         
-        .table-header .header-price {
-            width: 80px;
-            text-align: right;
-            font-weight: bold;
+        .name-cell {
+            min-width: 200px;
         }
     </style>
 </head>
@@ -93,37 +128,63 @@
         <p>Generated on: {{ date('F j, Y, g:i a') }}</p>
     </div>
 
-    <div class="table-header">
-        <div class="header-name">Service Name</div>
-        <div class="header-duration">Duration</div>
-        <div class="header-price">Price</div>
-    </div>
+    <table class="services-table">
+        <thead>
+            <tr>
+                <th class="name-header">Service Name</th>
+                <th class="duration-header">Duration</th>
+                <th class="price-header">Price</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach($services as $parentService)
+                <!-- Parent Service Row -->
+                <tr class="parent-row">
+                    <td class="name-cell">{{ $parentService->name }}</td>
+                    <td class="duration-cell">{{ $parentService->duration }} min</td>
+                    <td class="price-cell">${{ number_format($parentService->price, 2) }}</td>
+                </tr>
 
-    @foreach($services as $parentService)
-        <div class="service-parent">
-            <div class="service-info">
-                <div class="service-name">{{ $parentService->name }}</div>
-                <div class="service-duration">{{ $parentService->duration }} min</div>
-                <div class="service-price">${{ number_format($parentService->price, 2) }}</div>
-            </div>
-        </div>
+                <!-- Child Services -->
+                @if($parentService->children->count() > 0)
+                    @foreach($parentService->children as $childService)
+                        <tr class="child-row">
+                            <td class="name-cell">
+                                <div class="child-name">{{ $childService->name }}</div>
+                            </td>
+                            <td class="duration-cell">{{ $childService->duration }} min</td>
+                            <td class="price-cell">${{ number_format($childService->price, 2) }}</td>
+                        </tr>
 
-        @if($parentService->children->count() > 0)
-            @foreach($parentService->children as $childService)
-                <div class="service-child">
-                    <div class="service-info">
-                        <div class="service-name">└─ {{ $childService->name }}</div>
-                        <div class="service-duration">{{ $childService->duration }} min</div>
-                        <div class="service-price">${{ number_format($childService->price, 2) }}</div>
-                    </div>
-                </div>
+                        {{-- Handle nested children if you have more than 2 levels --}}
+                        @if($childService->children->count() > 0)
+                            @foreach($childService->children as $grandchildService)
+                                <tr class="child-row child-level-2">
+                                    <td class="name-cell">
+                                        <div class="child-name">{{ $grandchildService->name }}</div>
+                                    </td>
+                                    <td class="duration-cell">{{ $grandchildService->duration }} min</td>
+                                    <td class="price-cell">${{ number_format($grandchildService->price, 2) }}</td>
+                                </tr>
 
-                {{-- Handle nested children if you have more than 2 levels --}}
-                @if($childService->children->count() > 0)
-                    @include('services.pdf-recursive', ['services' => $childService->children, 'level' => 2])
+                                {{-- Third level nesting --}}
+                                @if($grandchildService->children->count() > 0)
+                                    @foreach($grandchildService->children as $greatGrandchildService)
+                                        <tr class="child-row child-level-3">
+                                            <td class="name-cell">
+                                                <div class="child-name">{{ $greatGrandchildService->name }}</div>
+                                            </td>
+                                            <td class="duration-cell">{{ $greatGrandchildService->duration }} min</td>
+                                            <td class="price-cell">${{ number_format($greatGrandchildService->price, 2) }}</td>
+                                        </tr>
+                                    @endforeach
+                                @endif
+                            @endforeach
+                        @endif
+                    @endforeach
                 @endif
             @endforeach
-        @endif
-    @endforeach
+        </tbody>
+    </table>
 </body>
 </html>
