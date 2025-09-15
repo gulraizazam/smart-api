@@ -670,4 +670,11 @@ class Services extends BaseModal
     {
         return $this->hasManyThrough(Voucher::class, VoucherHasLocation::class, 'service_id', 'id', 'id', 'voucher_id');
     }
+    public static function getTreeStructure()
+    {
+        return self::where('parent_id', 0)
+                  ->with('children')
+                  ->orderBy('name')
+                  ->get();
+    }
 }
