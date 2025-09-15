@@ -411,4 +411,41 @@ class ServicesController extends Controller
             return response()->json(['color' => '#000']);
         }
     }
+    public function exportPdf()
+    {
+        $services = Services::getTreeStructure();
+        
+        $pdf = PDF::loadView('admin.services.pdf', compact('services'));
+        
+        return $pdf->download('services-tree.pdf');
+    }
+
+    // Helper method to flatten tree for display
+    private function flattenTree($services, $level = 0)
+    {
+        $flattened = [];
+        
+        foreach ($services as $service) {
+            $service->level = $level;
+            $flattened[] = $service;
+            
+            if ($service->children->count() > 0) {
+                $children = $this->flattenTree($service->children, $level + 1);
+                $flattened = array_merge($flattened, $children);
+            }
+        }
+        
+        return $flattened;
+    }
+
+    // Alternative method using flattened approach
+    public function exportPdfFlattened()
+    {
+        $services = Services::getTreeStructure();
+        $flattenedServices = $this->flattenTree($services);
+        
+        $pdf = PDF::loadView('services.pdf-flattened', compact('flattenedServices'));
+        
+        return $pdf->download('services-tree.pdf');
+    }
 }
