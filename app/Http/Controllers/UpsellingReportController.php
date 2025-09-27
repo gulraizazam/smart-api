@@ -880,6 +880,9 @@ public function downloadDoctorUpsellingExcel(Request $request)
                     // FIXED: Changed back to 'amount' instead of 'cash_amount'
                     $paymentsQuery = DB::table('package_advances')
                         ->where('package_id', $packageId)
+                        ->where('cash_flow','in')
+                        ->where('is_refund',0)
+                        ->where('is_adjustment',0)
                         ->whereDate('created_at', $serviceCreatedAt->toDateString())
                         ->where('created_at', '>', $service->created_at)
                         ->whereBetween('created_at', [$startDate, $endDate]);
