@@ -950,7 +950,7 @@ public function getDoctorPaymentBasedUpsellingData(Request $request)
                     $paymentsQuery->where('created_at', '<', $nextServiceTime->toDateTimeString());
                 }
                 
-                $paymentsForThisService = $paymentsQuery->sum('amount');
+                $paymentsForThisService = $paymentsQuery->sum('cash_amount');
 
                 // Calculate upselling amount - only if payment is made on SAME DAY
                 if ($paymentsForThisService > 0) {
