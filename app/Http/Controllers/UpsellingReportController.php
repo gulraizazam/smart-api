@@ -713,7 +713,7 @@ public function consultantSellerDetail($consultantId, $sellerId)
 public function downloadDoctorUpsellingExcel(Request $request)
     {
         try {
-            $period = $request->period ?: 'thismonth';
+            $period = $request->period ?: 'lastmonth';
             
             // Hardcoded centre IDs
             $centreIds = [
