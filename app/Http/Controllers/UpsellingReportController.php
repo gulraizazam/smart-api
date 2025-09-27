@@ -788,113 +788,204 @@ public function downloadDoctorUpsellingExcel(Request $request)
 }
 
 // Helper function to get upselling data for a specific centre
-private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate)
+public function getDoctorPaymentBasedUpsellingData(Request $request)
 {
-    // Get users with specific roles
-    $roleHasUsers = User::whereHas('roles', function($query) {
-        $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
-    })->pluck('id');
+    try {
+        $centreId = $request->centre_id;
+        $period = $request->period ?: 'thismonth';
+        
+        // Define date ranges
+        $periods = [
+            'yesterday' => [
+                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+            ],
+            'last7days' => [
+                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+            ],
+            'week' => [
+                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+            ],
+            'thismonth' => [
+                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+            ],
+            'lastmonth' => [
+                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
+            ],
+        ];
 
-    $fdmUserIds = User::whereHas('roles', function ($q) use ($centreId) {
-            $q->where('name', 'FDM');
-        })
-        ->whereHas('user_has_locations', function ($q) use ($centreId) {
-            $q->where('location_id', $centreId);
-        })
-        ->pluck('id');
+        $startDate = $periods[$period]['start_date'];
+        $endDate = $periods[$period]['end_date'];
 
-    // Get doctors for the specific location
-    $doctorIds = DB::table('doctor_has_locations')
-        ->where('location_id', $centreId)
-        ->whereIn('user_id', $roleHasUsers)
-        ->distinct()
-        ->pluck('user_id');
+        // Get users with specific roles
+        $roleHasUsers = User::whereHas('roles', function($query) {
+            $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
+        })->pluck('id');
 
-    $allSellerIds = $doctorIds->merge($fdmUserIds)->unique();
+        $fdmUserIds = User::whereHas('roles', function ($q) {
+                $q->where('name', 'FDM');
+            })
+            ->whereHas('user_has_locations', function ($q) use ($centreId) {
+                if ($centreId !== 'all') {
+                    $q->where('location_id', $centreId);
+                }
+            })
+            ->pluck('id');
 
-    if ($allSellerIds->isEmpty()) {
-        return [];
-    }
+        // Get doctors for the location(s)
+        if ($centreId === 'all') {
+            // Get all locations user has access to
+            $userLocations = \App\Helpers\ACL::getUserCentres();
+            $doctorIds = DB::table('doctor_has_locations')
+                ->whereIn('location_id', $userLocations)
+                ->whereIn('user_id', $roleHasUsers)
+                ->distinct()
+                ->pluck('user_id');
+        } else {
+            $doctorIds = DB::table('doctor_has_locations')
+                ->where('location_id', $centreId)
+                ->whereIn('user_id', $roleHasUsers)
+                ->distinct()
+                ->pluck('user_id');
+        }
 
-    // Get all active users (doctors, consultants, FDMs) for the location
-    $allActiveUsers = User::whereIn('id', $allSellerIds)
-        ->where('active', 1)
-        ->select('id', 'name')
-        ->get()
-        ->keyBy('id');
+        $allSellerIds = $doctorIds->merge($fdmUserIds)->unique();
 
-    // Get package services created in the date range
-    $packageServicesQuery = PackageService::query()
-        ->join('packages', 'package_services.package_id', '=', 'packages.id')
-        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-        ->whereIn('package_services.sold_by', $allSellerIds)
-        ->whereBetween('package_services.created_at', [$startDate, $endDate])
-        ->whereNotNull('sold_by')
-        ->where('packages.location_id', $centreId);
+        if ($allSellerIds->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'No doctors found for the selected location.',
+                'data' => [],
+            ]);
+        }
 
-    $packageServices = $packageServicesQuery
-        ->select(
-            'package_services.id',
-            'package_services.package_id',
-            'package_services.sold_by',
-            'package_services.tax_including_price',
-            'package_services.created_at',
-            'appointments.appointment_type_id',
-            'appointments.doctor_id as appointment_doctor_id'
-        )
-        ->orderBy('package_services.created_at')
-        ->get();
+        // Get all active users (doctors, consultants, FDMs) for the location
+        $allActiveUsers = User::whereIn('id', $allSellerIds)
+            ->where('active', 1)
+            ->select('id', 'name')
+            ->get()
+            ->keyBy('id');
 
-    // Initialize upselling amounts for each doctor
-    $doctorUpsellingAmounts = [];
-    foreach ($allSellerIds as $sellerId) {
-        $doctorUpsellingAmounts[$sellerId] = 0;
-    }
+        // Get package services created in the date range
+        $packageServicesQuery = PackageService::query()
+            ->join('packages', 'package_services.package_id', '=', 'packages.id')
+            ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+            ->whereIn('package_services.sold_by', $allSellerIds)
+            ->whereBetween('package_services.created_at', [$startDate, $endDate])
+            ->whereNotNull('sold_by');
 
-    // Group services by package_id for processing
-    $servicesByPackage = $packageServices->groupBy('package_id');
+        // Apply location filter
+        if ($centreId !== 'all') {
+            $packageServicesQuery->where('packages.location_id', $centreId);
+        } else {
+            $userLocations = \App\Helpers\ACL::getUserCentres();
+            $packageServicesQuery->whereIn('packages.location_id', $userLocations);
+        }
 
-    foreach ($servicesByPackage as $packageId => $services) {
-        foreach ($services as $service) {
-            // Apply the appointment type exclusion logic
-            if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
-                continue;
-            }
+        $packageServices = $packageServicesQuery
+            ->select(
+                'package_services.id',
+                'package_services.package_id',
+                'package_services.sold_by',
+                'package_services.tax_including_price',
+                'package_services.created_at',
+                'appointments.appointment_type_id',
+                'appointments.doctor_id as appointment_doctor_id'
+            )
+            ->orderBy('package_services.created_at')
+            ->get();
+
+        // Initialize upselling amounts for each doctor
+        $doctorUpsellingAmounts = [];
+        foreach ($allSellerIds as $sellerId) {
+            $doctorUpsellingAmounts[$sellerId] = 0;
+        }
+
+        // Group services by package_id for processing
+        $servicesByPackage = $packageServices->groupBy('package_id');
+
+        foreach ($servicesByPackage as $packageId => $services) {
+            // Sort services by created_at time within each package
+            $sortedServices = $services->sortBy('created_at');
             
-            $serviceCreatedAt = Carbon::parse($service->created_at);
-            $serviceAmount = $service->tax_including_price;
-            
-            // Get payments made to this package on the same day after this service was added
-            $paymentsOnSameDay = DB::table('package_advances')
-                ->where('package_id', $packageId)
-                ->whereDate('created_at', $serviceCreatedAt->toDateString())
-                ->where('created_at', '>', $service->created_at)
-                ->whereBetween('created_at', [$startDate, $endDate])
-                ->sum('cash_amount');
-
-            // Calculate upselling amount
-            if ($paymentsOnSameDay > 0) {
-                if ($paymentsOnSameDay >= $serviceAmount) {
-                    $upsellingAmount = $serviceAmount;
-                } else {
-                    $upsellingAmount = $paymentsOnSameDay;
+            foreach ($sortedServices as $service) {
+                // Apply the appointment type exclusion logic (same as original function)
+                // Skip if this is a consultation appointment and doctor is selling to their own appointment
+                if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                    continue;
                 }
                 
-                $doctorUpsellingAmounts[$service->sold_by] += $upsellingAmount;
+                $serviceCreatedAt = Carbon::parse($service->created_at);
+                $serviceAmount = $service->tax_including_price;
+                
+                // Get the next service time in the same package (if any)
+                $nextServiceTime = null;
+                foreach ($sortedServices as $nextService) {
+                    if ($nextService->created_at > $service->created_at) {
+                        $nextServiceTime = Carbon::parse($nextService->created_at);
+                        break;
+                    }
+                }
+                
+                // Get payments made to this package on the same day after this service was added
+                // but before the next service (if any)
+                $paymentsQuery = DB::table('package_advances')
+                    ->where('package_id', $packageId)
+                    ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                    ->where('created_at', '>', $service->created_at)
+                    ->whereBetween('created_at', [$startDate, $endDate]);
+                
+                // If there's a next service on the same day, limit payments to before that service
+                if ($nextServiceTime && $nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
+                    $paymentsQuery->where('created_at', '<', $nextServiceTime->toDateTimeString());
+                }
+                
+                $paymentsForThisService = $paymentsQuery->sum('amount');
+
+                // Calculate upselling amount - only if payment is made on SAME DAY
+                if ($paymentsForThisService > 0) {
+                    if ($paymentsForThisService >= $serviceAmount) {
+                        // Payment is more than service amount, credit full service amount
+                        $upsellingAmount = $serviceAmount;
+                    } else {
+                        // Payment is less than service amount, credit actual payment amount
+                        $upsellingAmount = $paymentsForThisService;
+                    }
+                    
+                    $doctorUpsellingAmounts[$service->sold_by] += $upsellingAmount;
+                }
+                // If no payment on same day, upselling = 0 (already initialized to 0)
             }
         }
+
+        // Prepare the final report data
+        $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
+            return (object)[
+                'doctor_id' => $user->id,
+                'doctor_name' => $user->name,
+                'total_upselling_amount' => $doctorUpsellingAmounts[$user->id] ?? 0,
+            ];
+        })->sortByDesc('total_upselling_amount')->values();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Doctor payment-based upselling data retrieved successfully.',
+            'data' => $reportData,
+        ]);
+
+    } catch (\Exception $e) {
+        \Log::error('Doctor Payment-Based Upselling Data Error: ' . $e->getMessage());
+        
+        return response()->json([
+            'success' => false,
+            'message' => 'Error retrieving doctor payment-based upselling data.',
+            'data' => [],
+        ], 500);
     }
-
-    // Prepare the report data
-    $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
-        return [
-            'doctor_id' => $user->id,
-            'doctor_name' => $user->name,
-            'total_upselling_amount' => $doctorUpsellingAmounts[$user->id] ?? 0,
-        ];
-    })->sortByDesc('total_upselling_amount')->values()->toArray();
-
-    return $reportData;
 }
 
 // Function to generate Excel file
