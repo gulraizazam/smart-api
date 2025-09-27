@@ -761,37 +761,31 @@ public function downloadDoctorUpsellingExcel(Request $request)
             ];
 
             $currentPeriod = $periods[$period];
-            
-            // Create CSV content
-            $csvContent = "Centre,Doctor ID,Doctor Name,Total Upselling Amount\n";
-            
+            $allCentreData = [];
+
+            // Get data for each centre
             foreach ($centreIds as $centreId => $centreName) {
                 $centreData = $this->getDoctorUpsellingDataForCentre($centreId, $currentPeriod['start_date'], $currentPeriod['end_date']);
                 
-                foreach ($centreData as $doctor) {
-                    $csvContent .= sprintf(
-                        "%s,%s,%s,%s\n",
-                        $centreName,
-                        $doctor['doctor_id'],
-                        '"' . str_replace('"', '""', $doctor['doctor_name']) . '"',
-                        number_format($doctor['total_upselling_amount'], 2)
-                    );
-                }
+                // Include centre even if no data (will show empty sheet)
+                $allCentreData[] = [
+                    'centre_name' => $centreName,
+                    'centre_id' => $centreId,
+                    'data' => $centreData
+                ];
             }
+
+            // Create Excel file
+            $fileName = 'Doctor_Upselling_Report_' . $currentPeriod['label'] . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
             
-            $fileName = 'Doctor_Upselling_Report_' . $currentPeriod['label'] . '_' . now()->format('Y-m-d_H-i-s') . '.csv';
-            
-            return response($csvContent)
-                ->header('Content-Type', 'text/csv')
-                ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+            return $this->generateExcelFile($allCentreData, $fileName, $currentPeriod);
 
         } catch (\Exception $e) {
-            \Log::error('Excel Download Error: ' . $e->getMessage());
-            return response()->json(['error' => $e->getMessage()], 500);
+            \Log::error('Doctor Upselling Excel Download Error: ' . $e->getMessage());  
+            return redirect()->back()->with('error', 'Error generating Excel file.');
         }
     }
 
-    // FIXED: Added the missing getDoctorUpsellingDataForCentre method
     private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate)
     {
         try {
@@ -893,7 +887,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
                         $paymentsQuery->where('created_at', '<', $nextServiceTime->toDateTimeString());
                     }
                     
-                    $paymentsForThisService = $paymentsQuery->sum('cash_amount'); // FIXED: back to 'amount'
+                    $paymentsForThisService = $paymentsQuery->sum('amount'); // FIXED: back to 'amount'
 
                     // Calculate upselling amount - only if payment is made on SAME DAY
                     if ($paymentsForThisService > 0) {
@@ -1124,6 +1118,116 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 'message' => 'Error retrieving doctor payment-based upselling data.',
                 'data' => [],
             ], 500);
+        }
+    }
+
+    // Function to generate Excel file with separate sheets
+    private function generateExcelFile($allCentreData, $fileName, $periodInfo)
+    {
+        try {
+            // Check if PhpSpreadsheet is available
+            if (!class_exists('\PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+                throw new \Exception('PhpSpreadsheet is not installed. Run: composer require phpoffice/phpspreadsheet');
+            }
+
+            $spreadsheet = new Spreadsheet();
+            
+            // Remove default worksheet
+            $spreadsheet->removeSheetByIndex(0);
+            
+            $sheetIndex = 0;
+            foreach ($allCentreData as $centreInfo) {
+                // Create worksheet for each centre
+                $worksheet = $spreadsheet->createSheet($sheetIndex);
+                
+                // Clean sheet name (Excel has restrictions)
+                $sheetName = substr(str_replace(['/', '*', '?', ':', '[', ']'], '', $centreInfo['centre_name']), 0, 31);
+                $worksheet->setTitle($sheetName);
+                
+                // Set headers
+                $worksheet->setCellValue('A1', 'Doctor Upselling Report - ' . $centreInfo['centre_name']);
+                $worksheet->setCellValue('A2', 'Period: ' . $periodInfo['label']);
+                $worksheet->setCellValue('A3', 'Date Range: ' . $periodInfo['start_date'] . ' to ' . $periodInfo['end_date']);
+                
+                // Style the header
+                $worksheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+                $worksheet->getStyle('A2:A3')->getFont()->setBold(true);
+                
+                // Table headers
+                $worksheet->setCellValue('A5', 'Doctor ID');
+                $worksheet->setCellValue('B5', 'Doctor Name');
+                $worksheet->setCellValue('C5', 'Total Upselling Amount');
+                
+                // Style table headers
+                $worksheet->getStyle('A5:C5')->getFont()->setBold(true);
+                $worksheet->getStyle('A5:C5')->getFill()
+                    ->setFillType(Fill::FILL_SOLID)
+                    ->getStartColor()->setRGB('E2EFDA');
+                
+                // Add data
+                $row = 6;
+                $totalAmount = 0;
+                
+                if (!empty($centreInfo['data'])) {
+                    foreach ($centreInfo['data'] as $doctorData) {
+                        $worksheet->setCellValue('A' . $row, $doctorData['doctor_id']);
+                        $worksheet->setCellValue('B' . $row, $doctorData['doctor_name']);
+                        $worksheet->setCellValue('C' . $row, $doctorData['total_upselling_amount']);
+                        
+                        // Format currency
+                        $worksheet->getStyle('C' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+                        
+                        $totalAmount += $doctorData['total_upselling_amount'];
+                        $row++;
+                    }
+                } else {
+                    // Show "No data found" if centre has no data
+                    $worksheet->setCellValue('A6', 'No data found for this centre');
+                    $worksheet->mergeCells('A6:C6');
+                    $worksheet->getStyle('A6')->getFont()->setItalic(true);
+                    $row = 7;
+                }
+                
+                // Add total row
+                $worksheet->setCellValue('A' . $row, '');
+                $worksheet->setCellValue('B' . $row, 'TOTAL');
+                $worksheet->setCellValue('C' . $row, $totalAmount);
+                $worksheet->getStyle('B' . $row . ':C' . $row)->getFont()->setBold(true);
+                $worksheet->getStyle('C' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+                
+                // Auto-size columns
+                $worksheet->getColumnDimension('A')->setAutoSize(true);
+                $worksheet->getColumnDimension('B')->setAutoSize(true);
+                $worksheet->getColumnDimension('C')->setAutoSize(true);
+                
+                // Add borders to data table
+                $tableRange = 'A5:C' . $row;
+                $worksheet->getStyle($tableRange)->getBorders()->getAllBorders()
+                    ->setBorderStyle(Border::BORDER_THIN);
+                
+                $sheetIndex++;
+            }
+            
+            // Set first sheet as active
+            if (count($allCentreData) > 0) {
+                $spreadsheet->setActiveSheetIndex(0);
+            }
+            
+            // Generate and download file
+            $writer = new Xlsx($spreadsheet);
+            
+            // Create temporary file
+            $tempFile = tempnam(sys_get_temp_dir(), 'doctor_upselling_');
+            $writer->save($tempFile);
+            
+            // Return file download response
+            return response()->download($tempFile, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ])->deleteFileAfterSend(true);
+            
+        } catch (\Exception $e) {
+            \Log::error('Excel Generation Error: ' . $e->getMessage());
+            throw new \Exception('Excel generation failed: ' . $e->getMessage());
         }
     }
 }
