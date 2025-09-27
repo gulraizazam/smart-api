@@ -760,26 +760,32 @@ public function downloadDoctorUpsellingExcel(Request $request)
             ],
         ];
 
-        $currentPeriod = $periods[$period];
-        $allCentreData = [];
-
-        // Get data for each centre
+         $currentPeriod = $periods[$period];
+        
+        // Create CSV content
+        $csvContent = "Centre,Doctor ID,Doctor Name,Total Upselling Amount\n";
+        
         foreach ($centreIds as $centreId => $centreName) {
             $centreData = $this->getDoctorUpsellingDataForCentre($centreId, $currentPeriod['start_date'], $currentPeriod['end_date']);
             
-            if (!empty($centreData)) {
-                $allCentreData[] = [
-                    'centre_name' => $centreName,
-                    'centre_id' => $centreId,
-                    'data' => $centreData
-                ];
+            foreach ($centreData as $doctor) {
+                $csvContent .= sprintf(
+                    "%s,%s,%s,%s\n",
+                    $centreName,
+                    $doctor['doctor_id'],
+                    '"' . str_replace('"', '""', $doctor['doctor_name']) . '"',
+                    number_format($doctor['total_upselling_amount'], 2)
+                );
             }
         }
-
-        // Create Excel file
-        $fileName = 'Doctor_Upselling_Report_' . $currentPeriod['label'] . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
         
-        return $this->generateExcelFile($allCentreData, $fileName, $currentPeriod);
+        $fileName = 'Doctor_Upselling_Report_' . $currentPeriod['label'] . '_' . now()->format('Y-m-d_H-i-s') . '.csv';
+        
+        return response($csvContent)
+            ->header('Content-Type', 'text/csv')
+            ->header('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        
+        
 
     } catch (\Exception $e) {
         \Log::error('Excel Download Error: ' . $e->getMessage());
