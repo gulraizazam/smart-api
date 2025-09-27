@@ -11,7 +11,11 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Spatie\Permission\Models\Role;
-
+  use PhpOffice\PhpSpreadsheet\Spreadsheet;
+    use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+    use PhpOffice\PhpSpreadsheet\Style\Alignment;
+    use PhpOffice\PhpSpreadsheet\Style\Font;
+    use PhpOffice\PhpSpreadsheet\Style\Border;
 class UpsellingReportController extends Controller
 {
     public function index()
@@ -703,5 +707,277 @@ public function consultantSellerDetail($consultantId, $sellerId)
         'consultantId',
         'sellerId'
     ));
+}
+public function downloadDoctorUpsellingExcel(Request $request)
+{
+    try {
+        $period = $request->period ?: 'thismonth';
+        
+        // Hardcoded centre IDs
+        $centreIds = [
+            2 => 'Centre 2',
+            3 => 'Centre 3',
+            4 => 'Centre 4',
+            46 => 'Centre 46',
+            47 => 'Centre 47',
+            48 => 'Centre 48',
+            49 => 'Centre 49',
+            50 => 'Centre 50',
+            51 => 'Centre 51',
+            52 => 'Centre 52',
+            53 => 'Centre 53',
+            54 => 'Centre 54',
+            55 => 'Centre 55',
+            56 => 'Centre 56'
+        ];
+        
+        // Define date ranges
+        $periods = [
+            'yesterday' => [
+                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+                'label' => 'Yesterday'
+            ],
+            'last7days' => [
+                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+                'label' => 'Last 7 Days'
+            ],
+            'week' => [
+                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+                'label' => 'This Week'
+            ],
+            'thismonth' => [
+                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),
+                'label' => 'This Month'
+            ],
+            'lastmonth' => [
+                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
+                'label' => 'Last Month'
+            ],
+        ];
+
+        $currentPeriod = $periods[$period];
+        $allCentreData = [];
+
+        // Get data for each centre
+        foreach ($centreIds as $centreId => $centreName) {
+            $centreData = $this->getDoctorUpsellingDataForCentre($centreId, $currentPeriod['start_date'], $currentPeriod['end_date']);
+            
+            if (!empty($centreData)) {
+                $allCentreData[] = [
+                    'centre_name' => $centreName,
+                    'centre_id' => $centreId,
+                    'data' => $centreData
+                ];
+            }
+        }
+
+        // Create Excel file
+        $fileName = 'Doctor_Upselling_Report_' . $currentPeriod['label'] . '_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
+        
+        return $this->generateExcelFile($allCentreData, $fileName, $currentPeriod);
+
+    } catch (\Exception $e) {
+        \Log::error('Excel Download Error: ' . $e->getMessage());
+        return response()->json(['error' => 'Failed to generate Excel file'], 500);
+    }
+}
+
+// Helper function to get upselling data for a specific centre
+private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate)
+{
+    // Get users with specific roles
+    $roleHasUsers = User::whereHas('roles', function($query) {
+        $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
+    })->pluck('id');
+
+    $fdmUserIds = User::whereHas('roles', function ($q) use ($centreId) {
+            $q->where('name', 'FDM');
+        })
+        ->whereHas('user_has_locations', function ($q) use ($centreId) {
+            $q->where('location_id', $centreId);
+        })
+        ->pluck('id');
+
+    // Get doctors for the specific location
+    $doctorIds = DB::table('doctor_has_locations')
+        ->where('location_id', $centreId)
+        ->whereIn('user_id', $roleHasUsers)
+        ->distinct()
+        ->pluck('user_id');
+
+    $allSellerIds = $doctorIds->merge($fdmUserIds)->unique();
+
+    if ($allSellerIds->isEmpty()) {
+        return [];
+    }
+
+    // Get all active users (doctors, consultants, FDMs) for the location
+    $allActiveUsers = User::whereIn('id', $allSellerIds)
+        ->where('active', 1)
+        ->select('id', 'name')
+        ->get()
+        ->keyBy('id');
+
+    // Get package services created in the date range
+    $packageServicesQuery = PackageService::query()
+        ->join('packages', 'package_services.package_id', '=', 'packages.id')
+        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+        ->whereIn('package_services.sold_by', $allSellerIds)
+        ->whereBetween('package_services.created_at', [$startDate, $endDate])
+        ->whereNotNull('sold_by')
+        ->where('packages.location_id', $centreId);
+
+    $packageServices = $packageServicesQuery
+        ->select(
+            'package_services.id',
+            'package_services.package_id',
+            'package_services.sold_by',
+            'package_services.tax_including_price',
+            'package_services.created_at',
+            'appointments.appointment_type_id',
+            'appointments.doctor_id as appointment_doctor_id'
+        )
+        ->orderBy('package_services.created_at')
+        ->get();
+
+    // Initialize upselling amounts for each doctor
+    $doctorUpsellingAmounts = [];
+    foreach ($allSellerIds as $sellerId) {
+        $doctorUpsellingAmounts[$sellerId] = 0;
+    }
+
+    // Group services by package_id for processing
+    $servicesByPackage = $packageServices->groupBy('package_id');
+
+    foreach ($servicesByPackage as $packageId => $services) {
+        foreach ($services as $service) {
+            // Apply the appointment type exclusion logic
+            if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                continue;
+            }
+            
+            $serviceCreatedAt = Carbon::parse($service->created_at);
+            $serviceAmount = $service->tax_including_price;
+            
+            // Get payments made to this package on the same day after this service was added
+            $paymentsOnSameDay = DB::table('package_advances')
+                ->where('package_id', $packageId)
+                ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                ->where('created_at', '>', $service->created_at)
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->sum('cash_amount');
+
+            // Calculate upselling amount
+            if ($paymentsOnSameDay > 0) {
+                if ($paymentsOnSameDay >= $serviceAmount) {
+                    $upsellingAmount = $serviceAmount;
+                } else {
+                    $upsellingAmount = $paymentsOnSameDay;
+                }
+                
+                $doctorUpsellingAmounts[$service->sold_by] += $upsellingAmount;
+            }
+        }
+    }
+
+    // Prepare the report data
+    $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
+        return [
+            'doctor_id' => $user->id,
+            'doctor_name' => $user->name,
+            'total_upselling_amount' => $doctorUpsellingAmounts[$user->id] ?? 0,
+        ];
+    })->sortByDesc('total_upselling_amount')->values()->toArray();
+
+    return $reportData;
+}
+
+// Function to generate Excel file
+private function generateExcelFile($allCentreData, $fileName, $periodInfo)
+{
+
+    
+  
+
+    $spreadsheet = new Spreadsheet();
+    
+    // Remove default worksheet
+    $spreadsheet->removeSheetByIndex(0);
+    
+    foreach ($allCentreData as $index => $centreInfo) {
+        // Create worksheet for each centre
+        $worksheet = $spreadsheet->createSheet();
+        $worksheet->setTitle(substr($centreInfo['centre_name'], 0, 31)); // Excel sheet name limit
+        
+        // Set headers
+        $worksheet->setCellValue('A1', 'Doctor Upselling Report - ' . $centreInfo['centre_name']);
+        $worksheet->setCellValue('A2', 'Period: ' . $periodInfo['label']);
+        $worksheet->setCellValue('A3', 'Date Range: ' . $periodInfo['start_date'] . ' to ' . $periodInfo['end_date']);
+        
+        // Style the header
+        $worksheet->getStyle('A1')->getFont()->setBold(true)->setSize(16);
+        $worksheet->getStyle('A2:A3')->getFont()->setBold(true);
+        
+        // Table headers
+        $worksheet->setCellValue('A5', 'Doctor ID');
+        $worksheet->setCellValue('B5', 'Doctor Name');
+        $worksheet->setCellValue('C5', 'Total Upselling Amount');
+        
+        // Style table headers
+        $worksheet->getStyle('A5:C5')->getFont()->setBold(true);
+        $worksheet->getStyle('A5:C5')->getFill()
+            ->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+            ->getStartColor()->setRGB('E2EFDA');
+        
+        // Add data
+        $row = 6;
+        $totalAmount = 0;
+        
+        foreach ($centreInfo['data'] as $doctorData) {
+            $worksheet->setCellValue('A' . $row, $doctorData['doctor_id']);
+            $worksheet->setCellValue('B' . $row, $doctorData['doctor_name']);
+            $worksheet->setCellValue('C' . $row, number_format($doctorData['total_upselling_amount'], 2));
+            
+            $totalAmount += $doctorData['total_upselling_amount'];
+            $row++;
+        }
+        
+        // Add total row
+        $worksheet->setCellValue('A' . $row, '');
+        $worksheet->setCellValue('B' . $row, 'TOTAL');
+        $worksheet->setCellValue('C' . $row, number_format($totalAmount, 2));
+        $worksheet->getStyle('B' . $row . ':C' . $row)->getFont()->setBold(true);
+        
+        // Auto-size columns
+        $worksheet->getColumnDimension('A')->setAutoSize(true);
+        $worksheet->getColumnDimension('B')->setAutoSize(true);
+        $worksheet->getColumnDimension('C')->setAutoSize(true);
+        
+        // Add borders to data table
+        $tableRange = 'A5:C' . $row;
+        $worksheet->getStyle($tableRange)->getBorders()->getAllBorders()
+            ->setBorderStyle(Border::BORDER_THIN);
+    }
+    
+    // Set first sheet as active
+    if (count($allCentreData) > 0) {
+        $spreadsheet->setActiveSheetIndex(0);
+    }
+    
+    // Generate and download file
+    $writer = new Xlsx($spreadsheet);
+    
+    // Set headers for download
+    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="' . $fileName . '"');
+    header('Cache-Control: max-age=0');
+    
+    $writer->save('php://output');
+    exit;
 }
 }
