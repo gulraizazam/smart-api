@@ -715,20 +715,20 @@ public function downloadDoctorUpsellingExcel(Request $request)
         
         // Hardcoded centre IDs
         $centreIds = [
-            2 => 'Centre 2',
-            3 => 'Centre 3',
-            4 => 'Centre 4',
-            46 => 'Centre 46',
-            47 => 'Centre 47',
-            48 => 'Centre 48',
-            49 => 'Centre 49',
-            50 => 'Centre 50',
-            51 => 'Centre 51',
-            52 => 'Centre 52',
-            53 => 'Centre 53',
-            54 => 'Centre 54',
-            55 => 'Centre 55',
-            56 => 'Centre 56'
+            2 => 'CUTERA DHA Karachi',
+            3 => 'CUTERA Bahadurabad Karachi',
+          
+            46 => 'CUTERA Johar Karachi',
+            47 => 'CUTERA Johar Karachi',
+            48 => 'CUTERA DHA Lahore',
+            49 => 'CUTERA Gulberg Lahore',
+            50 => 'CUTERA Faisalabad',
+            51 => 'CUTERA F-7 Islamabad',
+   
+            53 => 'CUTERA Saddar Rawalpindi',
+            54 => 'CUTERA I-8 Islamabad',
+            55 => 'CUTERA Hyderabad',
+            56 => 'CUTERA Sialkot'
         ];
         
         // Define date ranges
