@@ -889,7 +889,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
                         $paymentsQuery->where('created_at', '<', $nextServiceTime->toDateTimeString());
                     }
                     
-                    $paymentsForThisService = $paymentsQuery->sum('amount'); // FIXED: back to 'amount'
+                    $paymentsForThisService = $paymentsQuery->sum('cash_amount'); // FIXED: back to 'amount'
 
                     // Calculate upselling amount - only if payment is made on SAME DAY
                     if ($paymentsForThisService > 0) {
