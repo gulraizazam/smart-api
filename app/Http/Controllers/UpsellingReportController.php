@@ -789,7 +789,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
 
     } catch (\Exception $e) {
         \Log::error('Excel Download Error: ' . $e->getMessage());
-        return response()->json(['error' => 'Failed to generate Excel file'], 500);
+        return response()->json(['error' =>$e->getMessage()], 500);
     }
 }
 
