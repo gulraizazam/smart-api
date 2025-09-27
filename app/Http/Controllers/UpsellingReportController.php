@@ -15,7 +15,9 @@ use Spatie\Permission\Models\Role;
     use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
     use PhpOffice\PhpSpreadsheet\Style\Alignment;
     use PhpOffice\PhpSpreadsheet\Style\Font;
-    use PhpOffice\PhpSpreadsheet\Style\Border;
+
+use PhpOffice\PhpSpreadsheet\Style\Border;
+use PhpOffice\PhpSpreadsheet\Style\Fill;
 class UpsellingReportController extends Controller
 {
     public function index()
