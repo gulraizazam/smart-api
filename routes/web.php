@@ -89,6 +89,7 @@ Route::get('/', function () {
 Route::get('/unauthorized', function () {
     return view('unathorized');
 })->name('unauthorized');
+Route::get('/download-doctor-upselling-excel', [UpsellingReportController::class, 'downloadDoctorUpsellingExcel'])->name('download.doctor.upselling');
 Auth::routes();
 // Authentication Routes...
 
