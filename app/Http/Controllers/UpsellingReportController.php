@@ -844,7 +844,8 @@ public function downloadDoctorUpsellingExcel(Request $request)
                     'appointments.doctor_id as appointment_doctor_id'
                 )
                 ->orderBy('package_services.created_at')
-                ->get();
+                ->count();
+                dd($packageServices);
 
             // Initialize upselling amounts for each doctor
             $doctorUpsellingAmounts = [];
