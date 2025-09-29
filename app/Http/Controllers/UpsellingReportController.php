@@ -1022,7 +1022,7 @@ $servicesByTimestamp = $validServices->groupBy(function($service) {
 
             // Get users with specific roles
             $roleHasUsers = User::whereHas('roles', function($query) {
-                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
+                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant')->orWhere('consultant');
             })->pluck('id');
 
             $fdmUserIds = User::whereHas('roles', function ($q) {
@@ -1158,7 +1158,7 @@ foreach ($servicesByPackage as $packageId => $services) {
         if ($nextService) {
             $nextServiceTime = Carbon::parse($nextService->created_at);
             if ($nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
-                $paymentsQuery->where('created_at', '<', $nextService->created_at);
+                $paymentsQuery->where('created_at', '<=', $nextService->created_at);
             }
         }
         
