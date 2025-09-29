@@ -1090,24 +1090,28 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 ->get();
 
             // Initialize upselling amounts for each doctor
-           $doctorUpsellingAmounts = [];
-foreach ($allSellerIds as $sellerId) {
-    // Ensure the key is an integer
-    $doctorUpsellingAmounts[(int)$sellerId] = 0;
-}
+            $doctorUpsellingAmounts = [];
+            foreach ($allSellerIds as $sellerId) {
+                $doctorUpsellingAmounts[$sellerId] = 0;
+            }
 
-// Add debug logging
-\Log::info('Initialized doctor amounts', [
-    'keys' => array_keys($doctorUpsellingAmounts),
-    'key_types' => array_map('gettype', array_keys($doctorUpsellingAmounts))
-]);
+            // Group services by package_id for processing
+            $servicesByPackage = $packageServices->groupBy('package_id');
 
-// Group services by package_id for processing
-$servicesByPackage = $packageServices->groupBy('package_id');
+           $servicesByPackage = $packageServices->groupBy('package_id');
 
 foreach ($servicesByPackage as $packageId => $services) {
+    // Filter out any services with null created_at BEFORE grouping
+    $servicesWithTimestamps = $services->filter(function($service) {
+        return !is_null($service->created_at);
+    });
+    
+    if ($servicesWithTimestamps->isEmpty()) {
+        continue;
+    }
+    
     // Group by exact timestamp to identify bundles
-    $servicesByTimestamp = $services->groupBy(function($service) {
+    $servicesByTimestamp = $servicesWithTimestamps->groupBy(function($service) {
         return $service->created_at;
     });
     
@@ -1115,103 +1119,54 @@ foreach ($servicesByPackage as $packageId => $services) {
     $sortedTimestamps = $servicesByTimestamp->sortKeys();
     
     foreach ($sortedTimestamps as $timestamp => $servicesAtTime) {
+        // Ensure timestamp is valid
+        if (empty($timestamp) || is_null($timestamp)) {
+            continue;
+        }
+        
         $serviceCreatedAt = Carbon::parse($timestamp);
-        
-        // Get next timestamp in package
-        $nextTimestamp = null;
-        foreach ($sortedTimestamps->keys() as $ts) {
-            if ($ts > $timestamp) {
-                $nextTimestamp = Carbon::parse($ts);
-                break;
+                    $serviceAmount = $service->tax_including_price;
+                    
+                    // Get the next service time in the same package (if any)
+                    $nextServiceTime = null;
+                    foreach ($sortedServices as $nextService) {
+                        if ($nextService->created_at > $service->created_at) {
+                            $nextServiceTime = Carbon::parse($nextService->created_at);
+                            break;
+                        }
+                    }
+                    
+                    // Get payments made to this package on the same day after this service was added
+                    // but before the next service (if any)
+                    $paymentsQuery = DB::table('package_advances')
+                        ->where('package_id', $packageId)
+                        ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                        ->where('created_at', '>', $service->created_at)
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                    
+                    // If there's a next service on the same day, limit payments to before that service
+                    if ($nextServiceTime && $nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
+                        $paymentsQuery->where('created_at', '<', $nextServiceTime->toDateTimeString());
+                    }
+                    
+                    // FIXED: Changed back to 'amount' instead of 'cash_amount'
+                    $paymentsForThisService = $paymentsQuery->sum('amount');
+
+                    // Calculate upselling amount - only if payment is made on SAME DAY
+                    if ($paymentsForThisService > 0) {
+                        if ($paymentsForThisService >= $serviceAmount) {
+                            // Payment is more than service amount, credit full service amount
+                            $upsellingAmount = $serviceAmount;
+                        } else {
+                            // Payment is less than service amount, credit actual payment amount
+                            $upsellingAmount = $paymentsForThisService;
+                        }
+                        
+                        $doctorUpsellingAmounts[$service->sold_by] += $upsellingAmount;
+                    }
+                    // If no payment on same day, upselling = 0 (already initialized to 0)
+                }
             }
-        }
-        
-        // Get payments for this timestamp window
-        $paymentsQuery = DB::table('package_advances')
-            ->where('package_id', $packageId)
-            ->where('cash_flow', 'in')
-            ->where('is_refund', 0)
-            ->where('is_adjustment', 0)
-            ->whereDate('created_at', $serviceCreatedAt->toDateString())
-            ->where('created_at', '>', $timestamp)
-            ->whereBetween('created_at', [$startDate, $endDate]);
-        
-        // Limit to before next timestamp if on same day
-        if ($nextTimestamp && $nextTimestamp->toDateString() === $serviceCreatedAt->toDateString()) {
-            $paymentsQuery->where('created_at', '<', $nextTimestamp->toDateTimeString());
-        }
-        
-        $totalPaymentForThisTime = $paymentsQuery->sum('cash_amount');
-        
-        if ($totalPaymentForThisTime <= 0) {
-            continue;
-        }
-        
-        // Filter out invalid services
-        $validServices = [];
-        foreach ($servicesAtTime as $service) {
-            // Skip if sold_by is null
-            if (is_null($service->sold_by)) {
-                continue;
-            }
-            
-            // Ensure it's an integer
-            $soldById = (int)$service->sold_by;
-            
-            // Skip if not in our list
-            if (!isset($doctorUpsellingAmounts[$soldById])) {
-                \Log::warning('Sold by ID not in amounts array', [
-                    'sold_by' => $soldById,
-                    'type' => gettype($soldById),
-                    'package_id' => $packageId
-                ]);
-                continue;
-            }
-            
-            // Skip self-consultation sales
-            if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
-                continue;
-            }
-            
-            $validServices[] = $service;
-        }
-        
-        if (empty($validServices)) {
-            continue;
-        }
-        
-        // Calculate total value of services at this timestamp
-        $totalServiceValue = 0;
-        foreach ($validServices as $service) {
-            $totalServiceValue += $service->tax_including_price;
-        }
-        
-        if ($totalServiceValue == 0) {
-            continue;
-        }
-        
-        // Determine payment to distribute (capped at service value)
-        $paymentToDistribute = min($totalPaymentForThisTime, $totalServiceValue);
-        
-        // Check if single service or bundle
-        if (count($validServices) == 1) {
-            // Single service - direct attribution
-            $service = $validServices[0];
-            $soldById = (int)$service->sold_by;
-            
-            $doctorUpsellingAmounts[$soldById] += $paymentToDistribute;
-        } else {
-            // Multiple services (bundle) - proportional distribution
-            foreach ($validServices as $service) {
-                $serviceRatio = $service->tax_including_price / $totalServiceValue;
-                $serviceUpselling = $paymentToDistribute * $serviceRatio;
-                
-                $soldById = (int)$service->sold_by;
-                $doctorUpsellingAmounts[$soldById] += $serviceUpselling;
-            }
-        }
-    }
-}
 
             // Prepare the final report data
             $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
