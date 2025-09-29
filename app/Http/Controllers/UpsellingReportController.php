@@ -857,7 +857,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
             // Group services by package_id for processing
             $servicesByPackage = $packageServices->groupBy('package_id');
 
- dd(DB::getQueryLog());
+
             foreach ($servicesByPackage as $packageId => $services) {
                 // Group by exact timestamp to identify bundles
                 $validServices = $services->filter(function($service) {
@@ -1125,60 +1125,43 @@ foreach ($servicesByPackage as $packageId => $services) {
         ['id', 'asc']
     ])->values();
     
-    foreach ($sortedServices as $index => $service) {
-        // Skip self-consultation sales
-        if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
-            continue;
-        }
-        
-        $soldById = (int)$service->sold_by;
-        
-        if (!isset($doctorUpsellingAmounts[$soldById])) {
-            continue;
-        }
-        
-        $serviceCreatedAt = Carbon::parse($service->created_at);
-        $serviceAmount = $service->tax_including_price;
-        
-        // Find the next service (regardless of same timestamp or not)
-        $nextService = null;
-        if ($index < count($sortedServices) - 1) {
-            $nextService = $sortedServices[$index + 1];
-        }
-        
-        // Build payment query - get payments after this service on same day
-        $paymentsQuery = DB::table('package_advances')
-            ->where('package_id', $packageId)
-            ->where('cash_flow', 'in')
-            ->where('is_refund', 0)
-            ->where('is_adjustment', 0)
-            ->whereDate('created_at', $serviceCreatedAt->toDateString())
-            ->where('created_at', '>', $service->created_at)
-            ->whereBetween('created_at', [$startDate, $endDate]);
-        
-        // If there's a next service on the SAME DAY, limit payments to before that service
-        if ($nextService) {
-            $nextServiceTime = Carbon::parse($nextService->created_at);
-            if ($nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
-                $paymentsQuery->where('created_at', '<=', $nextService->created_at);
-            }
-        }
-        
-        $paymentsForThisService = $paymentsQuery->sum('cash_amount');
-        
-        // Calculate upselling amount
-        if ($paymentsForThisService > 0) {
-            if ($paymentsForThisService >= $serviceAmount) {
-                // Payment covers full service amount
-                $upsellingAmount = $serviceAmount;
-            } else {
-                // Payment is less than service amount
-                $upsellingAmount = $paymentsForThisService;
-            }
-            
-            $doctorUpsellingAmounts[$soldById] += $upsellingAmount;
-        }
+    foreach ($sortedServices as $i => $service) {
+    // Skip invalid services
+    if (is_null($service->sold_by)) continue;
+    if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) continue;
+    
+    $soldById = (int)$service->sold_by;
+    if (!isset($doctorUpsellingAmounts[$soldById])) continue;
+    
+    $serviceAmount = $service->tax_including_price;
+    if ($serviceAmount <= 0) continue;
+    
+    // Find next service
+    $nextService = null;
+    if ($i < count($sortedServices) - 1) {
+        $nextService = $sortedServices[$i + 1];
     }
+    
+    // Get payments after this service, before next service, within date range
+    $paymentsQuery = DB::table('package_advances')
+        ->where('package_id', $packageId)
+        ->where('cash_flow', 'in')
+        ->where('is_refund', 0)
+        ->where('is_adjustment', 0)
+        ->where('created_at', '>', $service->created_at)
+        ->whereBetween('created_at', [$startDate, $endDate]); // KEY CHANGE
+    
+    if ($nextService) {
+        $paymentsQuery->where('created_at', '<', $nextService->created_at);
+    }
+    
+    $paymentsForThisService = $paymentsQuery->sum('cash_amount');
+    
+    if ($paymentsForThisService > 0) {
+        $upsellingAmount = min($paymentsForThisService, $serviceAmount);
+        $doctorUpsellingAmounts[$soldById] += $upsellingAmount;
+    }
+}
 }
 
             // Prepare the final report data
