@@ -855,6 +855,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
             // Group services by package_id for processing
             $servicesByPackage = $packageServices->groupBy('package_id');
 
+
 foreach ($servicesByPackage as $packageId => $services) {
     // Group by exact timestamp to identify bundles
     $servicesByTimestamp = $services->groupBy(function($service) {
@@ -863,8 +864,6 @@ foreach ($servicesByPackage as $packageId => $services) {
     
     // Sort timestamps chronologically
     $sortedTimestamps = $servicesByTimestamp->sortKeys();
-    
-    $previousTimestamp = null;
     
     foreach ($sortedTimestamps as $timestamp => $servicesAtTime) {
         $serviceCreatedAt = Carbon::parse($timestamp);
@@ -899,9 +898,21 @@ foreach ($servicesByPackage as $packageId => $services) {
             continue;
         }
         
-        // Filter out self-consultation services
+        // Filter out:
+        // 1. Self-consultation services
+        // 2. Services with null sold_by
         $validServices = $servicesAtTime->filter(function($service) {
-            return !($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by);
+            // Exclude if sold_by is null
+            if (!$service->sold_by) {
+                return false;
+            }
+            
+            // Exclude self-consultation sales
+            if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                return false;
+            }
+            
+            return true;
         });
         
         if ($validServices->isEmpty()) {
