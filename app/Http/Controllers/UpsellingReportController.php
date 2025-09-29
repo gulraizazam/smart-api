@@ -870,7 +870,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
     })->toArray()
 ]);
 
-dd($servicesByTimestamp);
+dd($servicesByTimestamp->keys()->toArray());
     // Sort timestamps chronologically
     $sortedTimestamps = $servicesByTimestamp->sortKeys();
     
