@@ -720,7 +720,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 2 => 'CUTERA DHA Karachi',
                 3 => 'CUTERA Bahadurabad Karachi',
                
-                46 => 'CUTERA Johar Karachi',
+                46 => 'CUTERA Johar Town',
                 47 => 'CUTERA Johar Karachi',
                 48 => 'CUTERA DHA Lahore',
                 49 => 'CUTERA Gulberg Lahore',
@@ -793,7 +793,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
         try {
             // Get users with specific roles
             $roleHasUsers = User::whereHas('roles', function($query) {
-                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
+                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant')->orWhere('Consultant');
             })->pluck('id');
 
             $fdmUserIds = User::whereHas('roles', function ($q) use ($centreId) {
@@ -856,116 +856,116 @@ public function downloadDoctorUpsellingExcel(Request $request)
             $servicesByPackage = $packageServices->groupBy('package_id');
 
 
-           foreach ($servicesByPackage as $packageId => $services) {
-            // Group by exact timestamp to identify bundles
-            $validServices = $services->filter(function($service) {
-    return !is_null($service->created_at);
-});
+            foreach ($servicesByPackage as $packageId => $services) {
+                // Group by exact timestamp to identify bundles
+                $validServices = $services->filter(function($service) {
+                    return !is_null($service->created_at);
+                });
 
-if ($validServices->isEmpty()) {
-    continue;
-}
+                if ($validServices->isEmpty()) {
+                    continue;
+                }
 
-$servicesByTimestamp = $validServices->groupBy(function($service) {
-    return (string)$service->created_at;
-});
+                $servicesByTimestamp = $validServices->groupBy(function($service) {
+                    return (string)$service->created_at;
+                });
 
 
-    // Sort timestamps chronologically
-    $sortedTimestamps = $servicesByTimestamp->sortKeys();
+                // Sort timestamps chronologically
+                $sortedTimestamps = $servicesByTimestamp->sortKeys();
     
-    foreach ($sortedTimestamps as $timestamp => $servicesAtTime) {
-        $serviceCreatedAt = Carbon::parse($timestamp);
-        
-        // Get next timestamp in package
-        $nextTimestamp = null;
-        foreach ($sortedTimestamps->keys() as $ts) {
-            if ($ts > $timestamp) {
-                $nextTimestamp = Carbon::parse($ts);
-                break;
-            }
-        }
-        
-        // Get payments for this timestamp window
-        $paymentsQuery = DB::table('package_advances')
-            ->where('package_id', $packageId)
-            ->where('cash_flow', 'in')
-            ->where('is_refund', 0)
-            ->where('is_adjustment', 0)
-            ->whereDate('created_at', $serviceCreatedAt->toDateString())
-            ->where('created_at', '>', $timestamp)
-            ->whereBetween('created_at', [$startDate, $endDate]);
-        
-        // Limit to before next timestamp if on same day
-        if ($nextTimestamp && $nextTimestamp->toDateString() === $serviceCreatedAt->toDateString()) {
-            $paymentsQuery->where('created_at', '<', $nextTimestamp->toDateTimeString());
-        }
-        
-        $totalPaymentForThisTime = $paymentsQuery->sum('cash_amount');
-        
-        if ($totalPaymentForThisTime <= 0) {
-            continue;
-        }
-        
-        // Filter out invalid services
-        $validServices = $servicesAtTime->filter(function($service) use ($doctorUpsellingAmounts) {
-            // Exclude if sold_by is null or not numeric
-            if (is_null($service->sold_by) || !is_numeric($service->sold_by)) {
-                return false;
-            }
-            
-            // Cast to int and check if exists in array
-            $soldById = (int)$service->sold_by;
-            if (!array_key_exists($soldById, $doctorUpsellingAmounts)) {
-                return false;
-            }
-            
-            // Exclude self-consultation sales
-            if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
-                return false;
-            }
-            
-            return true;
-        });
-        
-        if ($validServices->isEmpty()) {
-            continue;
-        }
-        
-        // Calculate total value of services at this timestamp
-        $totalServiceValue = $validServices->sum('tax_including_price');
-        
-        if ($totalServiceValue == 0) {
-            continue;
-        }
-        
-        // Determine payment to distribute (capped at service value)
-        $paymentToDistribute = min($totalPaymentForThisTime, $totalServiceValue);
-        
-        // Check if single service or bundle
-        if ($validServices->count() == 1) {
-            // Single service - direct attribution
-            $service = $validServices->first();
-            $soldById = (int)$service->sold_by; // CAST TO INT
-            
-            if (array_key_exists($soldById, $doctorUpsellingAmounts)) {
-                $doctorUpsellingAmounts[$soldById] += $paymentToDistribute;
-            }
-        } else {
-            // Multiple services (bundle) - proportional distribution
-            foreach ($validServices as $service) {
-                $serviceRatio = $service->tax_including_price / $totalServiceValue;
-                $serviceUpselling = $paymentToDistribute * $serviceRatio;
-                
-                $soldById = (int)$service->sold_by; // CAST TO INT
-                
-                if (array_key_exists($soldById, $doctorUpsellingAmounts)) {
-                    $doctorUpsellingAmounts[$soldById] += $serviceUpselling;
+                foreach ($sortedTimestamps as $timestamp => $servicesAtTime) {
+                    $serviceCreatedAt = Carbon::parse($timestamp);
+                    
+                    // Get next timestamp in package
+                    $nextTimestamp = null;
+                    foreach ($sortedTimestamps->keys() as $ts) {
+                        if ($ts > $timestamp) {
+                            $nextTimestamp = Carbon::parse($ts);
+                            break;
+                        }
+                    }
+                    
+                    // Get payments for this timestamp window
+                    $paymentsQuery = DB::table('package_advances')
+                        ->where('package_id', $packageId)
+                        ->where('cash_flow', 'in')
+                        ->where('is_refund', 0)
+                        ->where('is_adjustment', 0)
+                        ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                        ->where('created_at', '>', $timestamp)
+                        ->whereBetween('created_at', [$startDate, $endDate]);
+                    
+                    // Limit to before next timestamp if on same day
+                    if ($nextTimestamp && $nextTimestamp->toDateString() === $serviceCreatedAt->toDateString()) {
+                        $paymentsQuery->where('created_at', '<', $nextTimestamp->toDateTimeString());
+                    }
+                    
+                    $totalPaymentForThisTime = $paymentsQuery->sum('cash_amount');
+                    
+                    if ($totalPaymentForThisTime <= 0) {
+                        continue;
+                    }
+                    
+                    // Filter out invalid services
+                    $validServices = $servicesAtTime->filter(function($service) use ($doctorUpsellingAmounts) {
+                        // Exclude if sold_by is null or not numeric
+                        if (is_null($service->sold_by) || !is_numeric($service->sold_by)) {
+                            return false;
+                        }
+                        
+                        // Cast to int and check if exists in array
+                        $soldById = (int)$service->sold_by;
+                        if (!array_key_exists($soldById, $doctorUpsellingAmounts)) {
+                            return false;
+                        }
+                        
+                        // Exclude self-consultation sales
+                        if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                            return false;
+                        }
+                        
+                        return true;
+                    });
+                    
+                    if ($validServices->isEmpty()) {
+                        continue;
+                    }
+                    
+                    // Calculate total value of services at this timestamp
+                    $totalServiceValue = $validServices->sum('tax_including_price');
+                    
+                    if ($totalServiceValue == 0) {
+                        continue;
+                    }
+                    
+                    // Determine payment to distribute (capped at service value)
+                    $paymentToDistribute = min($totalPaymentForThisTime, $totalServiceValue);
+                    
+                    // Check if single service or bundle
+                    if ($validServices->count() == 1) {
+                        // Single service - direct attribution
+                        $service = $validServices->first();
+                        $soldById = (int)$service->sold_by; // CAST TO INT
+                        
+                        if (array_key_exists($soldById, $doctorUpsellingAmounts)) {
+                            $doctorUpsellingAmounts[$soldById] += $paymentToDistribute;
+                        }
+                    } else {
+                        // Multiple services (bundle) - proportional distribution
+                        foreach ($validServices as $service) {
+                            $serviceRatio = $service->tax_including_price / $totalServiceValue;
+                            $serviceUpselling = $paymentToDistribute * $serviceRatio;
+                            
+                            $soldById = (int)$service->sold_by; // CAST TO INT
+                            
+                            if (array_key_exists($soldById, $doctorUpsellingAmounts)) {
+                                $doctorUpsellingAmounts[$soldById] += $serviceUpselling;
+                            }
+                        }
+                    }
                 }
             }
-        }
-    }
-}
     
     
 
@@ -990,7 +990,7 @@ $servicesByTimestamp = $validServices->groupBy(function($service) {
     public function getDoctorPaymentBasedUpsellingData(Request $request)
     {
         try {
-            $centreId = 46;
+            $centreId = $request->centre_id;
             $period = $request->period ?: 'thismonth';
             
             // Define date ranges
