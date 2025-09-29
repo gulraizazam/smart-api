@@ -793,7 +793,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
         try {
             // Get users with specific roles
             $roleHasUsers = User::whereHas('roles', function($query) {
-                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant')->orWhere('Consultant');
+                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant')->orWhere('name','Consultant');
             })->pluck('id');
 
             $fdmUserIds = User::whereHas('roles', function ($q) use ($centreId) {
@@ -1022,7 +1022,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
 
             // Get users with specific roles
             $roleHasUsers = User::whereHas('roles', function($query) {
-                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant')->orWhere('consultant');
+                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
             })->pluck('id');
 
             $fdmUserIds = User::whereHas('roles', function ($q) {
