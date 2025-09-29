@@ -856,7 +856,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
             $servicesByPackage = $packageServices->groupBy('package_id');
 
 
-foreach ($servicesByPackage as $packageId => $services) {
+            foreach ($servicesByPackage as $packageId => $services) {
     // Group by exact timestamp to identify bundles
     $servicesByTimestamp = $services->groupBy(function($service) {
         return $service->created_at;
@@ -901,9 +901,15 @@ foreach ($servicesByPackage as $packageId => $services) {
         // Filter out:
         // 1. Self-consultation services
         // 2. Services with null sold_by
-        $validServices = $servicesAtTime->filter(function($service) {
-            // Exclude if sold_by is null
-            if (!$service->sold_by) {
+        // 3. Services where sold_by is not in our initialized array
+        $validServices = $servicesAtTime->filter(function($service) use ($doctorUpsellingAmounts) {
+            // Exclude if sold_by is null or not a valid value
+            if (is_null($service->sold_by) || !is_numeric($service->sold_by)) {
+                return false;
+            }
+            
+            // Exclude if sold_by not in our initialized sellers list
+            if (!array_key_exists($service->sold_by, $doctorUpsellingAmounts)) {
                 return false;
             }
             
@@ -933,18 +939,27 @@ foreach ($servicesByPackage as $packageId => $services) {
         if ($validServices->count() == 1) {
             // Single service - direct attribution
             $service = $validServices->first();
-            $doctorUpsellingAmounts[$service->sold_by] += $paymentToDistribute;
+            
+            // Double-check before assignment
+            if (array_key_exists($service->sold_by, $doctorUpsellingAmounts)) {
+                $doctorUpsellingAmounts[$service->sold_by] += $paymentToDistribute;
+            }
         } else {
             // Multiple services (bundle) - proportional distribution
             foreach ($validServices as $service) {
                 $serviceRatio = $service->tax_including_price / $totalServiceValue;
                 $serviceUpselling = $paymentToDistribute * $serviceRatio;
                 
-                $doctorUpsellingAmounts[$service->sold_by] += $serviceUpselling;
+                // Double-check before assignment
+                if (array_key_exists($service->sold_by, $doctorUpsellingAmounts)) {
+                    $doctorUpsellingAmounts[$service->sold_by] += $serviceUpselling;
+                }
             }
         }
     }
 }
+    
+    
 
             // Prepare the report data
             $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
