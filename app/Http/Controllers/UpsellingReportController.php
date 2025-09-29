@@ -794,7 +794,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
         try {
             // Get users with specific roles
             $roleHasUsers = User::whereHas('roles', function($query) {
-                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant')->orWhere('name','Consultant');
+                $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
             })->pluck('id');
 
             $fdmUserIds = User::whereHas('roles', function ($q) use ($centreId) {
@@ -895,7 +895,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
                         ->where('is_refund', 0)
                         ->where('is_adjustment', 0)
                         ->whereDate('created_at', $serviceCreatedAt->toDateString())
-                        ->where('created_at', '>', $timestamp)
+                       // ->where('created_at', '>', $timestamp)
                         ->whereBetween('created_at', [$startDate, $endDate]);
                     
                     // Limit to before next timestamp if on same day
