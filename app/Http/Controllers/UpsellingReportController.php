@@ -846,7 +846,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 )
                 ->orderBy('package_services.created_at')
                 ->get();
-                dd(DB::getQueryLog());
+               
 
             // Initialize upselling amounts for each doctor
             $doctorUpsellingAmounts = [];
@@ -857,7 +857,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
             // Group services by package_id for processing
             $servicesByPackage = $packageServices->groupBy('package_id');
 
-
+ dd(DB::getQueryLog());
             foreach ($servicesByPackage as $packageId => $services) {
                 // Group by exact timestamp to identify bundles
                 $validServices = $services->filter(function($service) {
