@@ -856,7 +856,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
             $servicesByPackage = $packageServices->groupBy('package_id');
 
 
-            foreach ($servicesByPackage as $packageId => $services) {
+           foreach ($servicesByPackage as $packageId => $services) {
     // Group by exact timestamp to identify bundles
     $servicesByTimestamp = $services->groupBy(function($service) {
         return $service->created_at;
@@ -898,18 +898,16 @@ public function downloadDoctorUpsellingExcel(Request $request)
             continue;
         }
         
-        // Filter out:
-        // 1. Self-consultation services
-        // 2. Services with null sold_by
-        // 3. Services where sold_by is not in our initialized array
+        // Filter out invalid services
         $validServices = $servicesAtTime->filter(function($service) use ($doctorUpsellingAmounts) {
-            // Exclude if sold_by is null or not a valid value
+            // Exclude if sold_by is null or not numeric
             if (is_null($service->sold_by) || !is_numeric($service->sold_by)) {
                 return false;
             }
             
-            // Exclude if sold_by not in our initialized sellers list
-            if (!array_key_exists($service->sold_by, $doctorUpsellingAmounts)) {
+            // Cast to int and check if exists in array
+            $soldById = (int)$service->sold_by;
+            if (!array_key_exists($soldById, $doctorUpsellingAmounts)) {
                 return false;
             }
             
@@ -939,10 +937,10 @@ public function downloadDoctorUpsellingExcel(Request $request)
         if ($validServices->count() == 1) {
             // Single service - direct attribution
             $service = $validServices->first();
+            $soldById = (int)$service->sold_by; // CAST TO INT
             
-            // Double-check before assignment
-            if (array_key_exists($service->sold_by, $doctorUpsellingAmounts)) {
-                $doctorUpsellingAmounts[$service->sold_by] += $paymentToDistribute;
+            if (array_key_exists($soldById, $doctorUpsellingAmounts)) {
+                $doctorUpsellingAmounts[$soldById] += $paymentToDistribute;
             }
         } else {
             // Multiple services (bundle) - proportional distribution
@@ -950,9 +948,10 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 $serviceRatio = $service->tax_including_price / $totalServiceValue;
                 $serviceUpselling = $paymentToDistribute * $serviceRatio;
                 
-                // Double-check before assignment
-                if (array_key_exists($service->sold_by, $doctorUpsellingAmounts)) {
-                    $doctorUpsellingAmounts[$service->sold_by] += $serviceUpselling;
+                $soldById = (int)$service->sold_by; // CAST TO INT
+                
+                if (array_key_exists($soldById, $doctorUpsellingAmounts)) {
+                    $doctorUpsellingAmounts[$soldById] += $serviceUpselling;
                 }
             }
         }
