@@ -857,9 +857,17 @@ public function downloadDoctorUpsellingExcel(Request $request)
 
 
            foreach ($servicesByPackage as $packageId => $services) {
-    // Group by exact timestamp to identify bundles
-    $servicesByTimestamp = $services->groupBy(function($service) {
-    return $service->created_at;
+            // Group by exact timestamp to identify bundles
+            $validServices = $services->filter(function($service) {
+    return !is_null($service->created_at);
+});
+
+if ($validServices->isEmpty()) {
+    continue;
+}
+
+$servicesByTimestamp = $validServices->groupBy(function($service) {
+    return (string)$service->created_at;
 });
 
 // Check what keys were created
