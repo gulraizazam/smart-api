@@ -899,12 +899,12 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 
                 // Build payment query
                 $paymentsQuery = DB::table('package_advances')
-                    ->where('package_id', $packageId)
-                    ->where('cash_flow', 'in')
-                    ->where('is_refund', 0)
-                    ->where('is_adjustment', 0)
-                    ->where('created_at', '>', $service->created_at)  // CRITICAL: After service
-                    ->whereBetween('created_at', [$startDate, $endDate]); // Within report period
+    ->where('package_id', $packageId)
+    ->where('cash_flow', 'in')
+    ->where('is_refund', 0)
+    ->where('is_adjustment', 0)
+    ->where('created_at', '>=', $service->created_at)  // Changed to >=
+    ->whereBetween('created_at', [$startDate, $endDate]);
                 
                 // If there's a next service, limit payments to before that service
                 if ($nextService && !is_null($nextService->created_at)) {
