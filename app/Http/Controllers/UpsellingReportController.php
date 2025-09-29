@@ -790,6 +790,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
 
     private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate)
     {
+        DB::enableQueryLog();
         try {
             // Get users with specific roles
             $roleHasUsers = User::whereHas('roles', function($query) {
@@ -844,8 +845,8 @@ public function downloadDoctorUpsellingExcel(Request $request)
                     'appointments.doctor_id as appointment_doctor_id'
                 )
                 ->orderBy('package_services.created_at')
-                ->count();
-                dd($packageServices);
+                ->get();
+                dd(DB::getQueryLog());
 
             // Initialize upselling amounts for each doctor
             $doctorUpsellingAmounts = [];
