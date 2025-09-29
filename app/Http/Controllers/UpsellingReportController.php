@@ -859,10 +859,18 @@ public function downloadDoctorUpsellingExcel(Request $request)
            foreach ($servicesByPackage as $packageId => $services) {
     // Group by exact timestamp to identify bundles
     $servicesByTimestamp = $services->groupBy(function($service) {
-      
-        return $service->created_at;
-    });
-      dd( $servicesByTimestamp);
+    return $service->created_at;
+});
+
+// Check what keys were created
+\Log::info('Group keys:', [
+    'keys' => $servicesByTimestamp->keys()->toArray(),
+    'key_types' => $servicesByTimestamp->keys()->map(function($k) {
+        return gettype($k);
+    })->toArray()
+]);
+
+dd($servicesByTimestamp);
     // Sort timestamps chronologically
     $sortedTimestamps = $servicesByTimestamp->sortKeys();
     
