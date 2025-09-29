@@ -859,6 +859,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
            foreach ($servicesByPackage as $packageId => $services) {
     // Group by exact timestamp to identify bundles
     $servicesByTimestamp = $services->groupBy(function($service) {
+        dd($service);
         return $service->created_at;
     });
     
