@@ -990,7 +990,7 @@ $servicesByTimestamp = $validServices->groupBy(function($service) {
     public function getDoctorPaymentBasedUpsellingData(Request $request)
     {
         try {
-            $centreId = $request->centre_id;
+            $centreId = 46;
             $period = $request->period ?: 'thismonth';
             
             // Define date ranges
