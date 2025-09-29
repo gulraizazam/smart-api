@@ -870,15 +870,7 @@ $servicesByTimestamp = $validServices->groupBy(function($service) {
     return (string)$service->created_at;
 });
 
-// Check what keys were created
-\Log::info('Group keys:', [
-    'keys' => $servicesByTimestamp->keys()->toArray(),
-    'key_types' => $servicesByTimestamp->keys()->map(function($k) {
-        return gettype($k);
-    })->toArray()
-]);
 
-dd($servicesByTimestamp->keys()->toArray());
     // Sort timestamps chronologically
     $sortedTimestamps = $servicesByTimestamp->sortKeys();
     
