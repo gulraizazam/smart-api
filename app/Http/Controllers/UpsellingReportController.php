@@ -47,7 +47,7 @@ class UpsellingReportController extends Controller
         $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
     })->pluck('id');
 
-    $fdmUserIds = User::whereHas('roles', function ($q) {
+    $fdmUserIds = User::whereHas('roles', function ($q) use ($locationId) {
             $q->where('name', 'FDM');
         })
         ->whereHas('user_has_locations', function ($q) use ($locationId) {
@@ -55,14 +55,15 @@ class UpsellingReportController extends Controller
         })
         ->pluck('id');
 
-    // Step 1: Get doctors for the location
+    // Get doctors for the location
     $doctorIds = DB::table('doctor_has_locations')
-    ->where('location_id', $locationId)
-    ->whereIn('user_id', $roleHasUsers)
-     ->distinct()
-    ->pluck('user_id');
+        ->where('location_id', $locationId)
+        ->whereIn('user_id', $roleHasUsers)
+        ->distinct()
+        ->pluck('user_id');
 
     $allSellerIds = $doctorIds->merge($fdmUserIds)->unique();
+    
     if ($allSellerIds->isEmpty()) {
         return response()->json([
             'status' => 200,
@@ -71,38 +72,126 @@ class UpsellingReportController extends Controller
         ]);
     }
 
-    $reportQuery = PackageService::query()
-        ->join('users', 'package_services.sold_by', '=', 'users.id')
+    // Get all active users
+    $allActiveUsers = User::whereIn('id', $allSellerIds)
+        ->where('active', 1)
+        ->select('id', 'name')
+        ->get()
+        ->keyBy('id');
+
+    // Get package services
+    $packageServices = PackageService::query()
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
         ->whereIn('package_services.sold_by', $allSellerIds)
-        ->where('packages.location_id', $locationId);
-
-    // Apply date range filter on created_at
-    if ($startDate && $endDate) {
-        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate])
-            ->whereNotNull('sold_by');
-    }
-
-    // Fetch summary report data (only doctor names and total amounts)
-    $reportData = $reportQuery
+        ->whereBetween('package_services.created_at', [$startDate, $endDate])
+        ->whereNotNull('sold_by')
+        ->where('packages.location_id', $locationId)
         ->select(
-            'users.name as doctor_name',
-            'package_services.sold_by as doctor_id',
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_sold_amount
-            ")
+            'package_services.id',
+            'package_services.package_id',
+            'package_services.sold_by',
+            'package_services.tax_including_price',
+            'package_services.created_at',
+            'appointments.appointment_type_id',
+            'appointments.doctor_id as appointment_doctor_id'
         )
-        ->groupBy('package_services.sold_by', 'users.name')
+        ->orderBy('package_services.created_at')
         ->get();
 
-    // Store filters in session for detail view
+    // Initialize upselling amounts
+    $doctorUpsellingAmounts = [];
+    foreach ($allSellerIds as $sellerId) {
+        $doctorUpsellingAmounts[(int)$sellerId] = 0;
+    }
+
+    // Process services by package
+    $servicesByPackage = $packageServices->groupBy('package_id');
+
+    foreach ($servicesByPackage as $packageId => $services) {
+        $sortedServices = $services->sortBy([
+            ['created_at', 'asc'],
+            ['id', 'asc']
+        ])->values()->all();
+        
+        $totalServices = count($sortedServices);
+        
+        for ($i = 0; $i < $totalServices; $i++) {
+            $service = $sortedServices[$i];
+            
+            if (is_null($service->sold_by) || is_null($service->created_at)) {
+                continue;
+            }
+            
+            if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                continue;
+            }
+            
+            $soldById = (int)$service->sold_by;
+            
+            if (!isset($doctorUpsellingAmounts[$soldById])) {
+                continue;
+            }
+            
+            $serviceAmount = $service->tax_including_price;
+            
+            if ($serviceAmount <= 0) {
+                continue;
+            }
+            
+            $serviceCreatedAt = Carbon::parse($service->created_at);
+            
+            $nextService = null;
+            if ($i < $totalServices - 1) {
+                $nextService = $sortedServices[$i + 1];
+            }
+            
+            $paymentsQuery = DB::table('package_advances')
+                ->where('package_id', $packageId)
+                ->where('cash_flow', 'in')
+                ->where('is_refund', 0)
+                ->where('is_adjustment', 0)
+                ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                ->where(function($q) use ($service) {
+                    $q->where('created_at', '>', $service->created_at)
+                      ->orWhere(function($q2) use ($service) {
+                          $q2->where('created_at', '=', $service->created_at)
+                             ->where('id', '>', $service->id);
+                      });
+                });
+            
+            if ($nextService && !is_null($nextService->created_at)) {
+                $nextServiceTime = Carbon::parse($nextService->created_at);
+                if ($nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
+                    $paymentsQuery->where(function($q) use ($nextService) {
+                        $q->where('created_at', '<', $nextService->created_at)
+                          ->orWhere(function($q2) use ($nextService) {
+                              $q2->where('created_at', '=', $nextService->created_at)
+                                 ->where('id', '<', $nextService->id);
+                          });
+                    });
+                }
+            }
+            
+            $paymentsForThisService = $paymentsQuery->sum('cash_amount');
+            
+            if ($paymentsForThisService > 0) {
+                $upsellingAmount = min($paymentsForThisService, $serviceAmount);
+                $doctorUpsellingAmounts[$soldById] += $upsellingAmount;
+            }
+        }
+    }
+
+    // Prepare report data
+    $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
+        return (object)[
+            'doctor_id' => $user->id,
+            'doctor_name' => $user->name,
+            'total_sold_amount' => $doctorUpsellingAmounts[$user->id] ?? 0,
+        ];
+    })->sortByDesc('total_sold_amount')->values();
+
+    // Store filters in session
     session(['upselling_filters' => [
         'location_id' => $locationId,
         'start_date' => $startDate,

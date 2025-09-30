@@ -907,7 +907,7 @@
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th class="text-left">Doctor Name</th>
-                                                        <th class="text-right">Sold Amount</th>
+                                                        <th class="text-right">Upselling Amount</th>
                                                         
                                                     </tr>
                                                 </thead>
