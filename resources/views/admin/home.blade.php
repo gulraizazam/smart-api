@@ -922,7 +922,7 @@
                                                 <tfoot id="doctor_upselling_tfoot" style="display: none;">
                                                     <tr class="font-weight-bold bg-light">
                                                         <td>Total</td>
-                                                        <td class="text-right" id="total_sold_amount">0.00</td>
+                                                        <td class="text-right" id="total_upselling_amount">0.00</td>
                                                         
                                                     </tr>
                                                 </tfoot>
