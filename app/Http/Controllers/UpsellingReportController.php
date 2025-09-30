@@ -427,70 +427,142 @@ public function getDoctorUpsellingData(Request $request)
             ]);
         }
 
-        // First, get all active users (doctors, consultants, FDMs) for the location
+        // Get all active users (doctors, consultants, FDMs) for the location
         $allActiveUsers = User::whereIn('id', $allSellerIds)
-        ->where('active', 1)
+            ->where('active', 1)
             ->select('id', 'name')
             ->get()
             ->keyBy('id');
 
-        // Then get the sales data
-        $salesQuery = PackageService::query()
-            ->join('users', 'package_services.sold_by', '=', 'users.id')
+        // Get package services created in the date range
+        $packageServicesQuery = PackageService::query()
             ->join('packages', 'package_services.package_id', '=', 'packages.id')
             ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
             ->whereIn('package_services.sold_by', $allSellerIds)
             ->whereBetween('package_services.created_at', [$startDate, $endDate])
             ->whereNotNull('sold_by');
 
-        // Apply location filter for sales data
+        // Apply location filter
         if ($centreId !== 'all') {
-            $salesQuery->where('packages.location_id', $centreId);
+            $packageServicesQuery->where('packages.location_id', $centreId);
         } else {
             $userLocations = \App\Helpers\ACL::getUserCentres();
-            $salesQuery->whereIn('packages.location_id', $userLocations);
+            $packageServicesQuery->whereIn('packages.location_id', $userLocations);
         }
 
-        // Get sales data grouped by seller
-        $salesData = $salesQuery
+        $packageServices = $packageServicesQuery
             ->select(
-                'package_services.sold_by as doctor_id',
-                DB::raw("
-                    SUM(
-                        CASE
-                            WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                            THEN package_services.tax_including_price
-                            ELSE 0
-                        END
-                    ) as total_sold_amount
-                "),
-                DB::raw("
-                    SUM(
-                        CASE
-                            WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                            AND package_services.is_consumed = 1
-                            AND package_services.consumed_at BETWEEN '{$startDate}' AND '{$endDate}'
-                            THEN package_services.tax_including_price
-                            ELSE 0
-                        END
-                    ) as total_consumed_amount
-                ")
+                'package_services.id',
+                'package_services.package_id',
+                'package_services.sold_by',
+                'package_services.tax_including_price',
+                'package_services.created_at',
+                'appointments.appointment_type_id',
+                'appointments.doctor_id as appointment_doctor_id'
             )
-            ->groupBy('package_services.sold_by')
-            ->get()
-            ->keyBy('doctor_id');
+            ->orderBy('package_services.created_at')
+            ->get();
 
-        // Combine all users with their sales data
-        $reportData = $allActiveUsers->map(function ($user) use ($salesData) {
-            $userSales = $salesData->get($user->id);
+        // Initialize upselling amounts for each doctor
+        $doctorUpsellingAmounts = [];
+        foreach ($allSellerIds as $sellerId) {
+            $doctorUpsellingAmounts[(int)$sellerId] = 0;
+        }
+
+        // Group services by package_id for processing
+        $servicesByPackage = $packageServices->groupBy('package_id');
+
+        foreach ($servicesByPackage as $packageId => $services) {
+            // Sort all services by created_at, then by id
+            $sortedServices = $services->sortBy([
+                ['created_at', 'asc'],
+                ['id', 'asc']
+            ])->values()->all();
             
+            $totalServices = count($sortedServices);
+            
+            for ($i = 0; $i < $totalServices; $i++) {
+                $service = $sortedServices[$i];
+                
+                // Skip if sold_by or created_at is null
+                if (is_null($service->sold_by) || is_null($service->created_at)) {
+                    continue;
+                }
+                
+                // Skip self-consultation sales
+                if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                    continue;
+                }
+                
+                $soldById = (int)$service->sold_by;
+                
+                // Skip if sold_by not in our initialized array
+                if (!isset($doctorUpsellingAmounts[$soldById])) {
+                    continue;
+                }
+                
+                $serviceAmount = $service->tax_including_price;
+                
+                // Skip zero or negative amounts
+                if ($serviceAmount <= 0) {
+                    continue;
+                }
+                
+                $serviceCreatedAt = Carbon::parse($service->created_at);
+                
+                // Find the next service
+                $nextService = null;
+                if ($i < $totalServices - 1) {
+                    $nextService = $sortedServices[$i + 1];
+                }
+                
+                // Build payment query - SAME DAY ONLY
+                $paymentsQuery = DB::table('package_advances')
+                    ->where('package_id', $packageId)
+                    ->where('cash_flow', 'in')
+                    ->where('is_refund', 0)
+                    ->where('is_adjustment', 0)
+                    ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                    ->where(function($q) use ($service) {
+                        $q->where('created_at', '>', $service->created_at)
+                          ->orWhere(function($q2) use ($service) {
+                              $q2->where('created_at', '=', $service->created_at)
+                                 ->where('id', '>', $service->id);
+                          });
+                    });
+                
+                // If there's a next service on same day, limit payments to before that service
+                if ($nextService && !is_null($nextService->created_at)) {
+                    $nextServiceTime = Carbon::parse($nextService->created_at);
+                    if ($nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
+                        $paymentsQuery->where(function($q) use ($nextService) {
+                            $q->where('created_at', '<', $nextService->created_at)
+                              ->orWhere(function($q2) use ($nextService) {
+                                  $q2->where('created_at', '=', $nextService->created_at)
+                                     ->where('id', '<', $nextService->id);
+                              });
+                        });
+                    }
+                }
+                
+                $paymentsForThisService = $paymentsQuery->sum('cash_amount');
+                
+                // Calculate upselling
+                if ($paymentsForThisService > 0) {
+                    $upsellingAmount = min($paymentsForThisService, $serviceAmount);
+                    $doctorUpsellingAmounts[$soldById] += $upsellingAmount;
+                }
+            }
+        }
+
+        // Combine all users with their upselling data
+        $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
             return (object)[
                 'doctor_id' => $user->id,
                 'doctor_name' => $user->name,
-                'total_sold_amount' => $userSales ? $userSales->total_sold_amount : 0,
-                'total_consumed_amount' => $userSales ? $userSales->total_consumed_amount : 0,
+                'total_upselling_amount' => $doctorUpsellingAmounts[$user->id] ?? 0,
             ];
-        })->sortByDesc('total_sold_amount')->values();
+        })->sortByDesc('total_upselling_amount')->values();
 
         return response()->json([
             'success' => true,
