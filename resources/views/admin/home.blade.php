@@ -1014,25 +1014,21 @@ function loadDoctorUpsellingData(centreId, period) {
 
 function populateTable(data) {
     let tbody = '';
-    let totalSoldAmount = 0;
-    let totalConsumedAmount = 0;
+    let totalUpsellingAmount = 0;
     
     data.forEach(function(doctor) {
-        totalSoldAmount += parseFloat(doctor.total_sold_amount || 0);
-        totalConsumedAmount += parseFloat(doctor.total_consumed_amount || 0);
+        totalUpsellingAmount += parseFloat(doctor.total_upselling_amount || 0);
         
         tbody += `
             <tr>
                 <td class="font-weight-bold">${doctor.doctor_name}</td>
-                <td class="text-right">${formatCurrency(doctor.total_sold_amount)}</td>
-                <td class="text-right">${formatCurrency(doctor.total_consumed_amount || 0)}</td>
+                <td class="text-right">${formatCurrency(doctor.total_upselling_amount)}</td>
             </tr>
         `;
     });
     
     $('#doctor_upselling_tbody').html(tbody);
-    $('#total_sold_amount').text(formatCurrency(totalSoldAmount));
-    $('#total_consumed_amount').text(formatCurrency(totalConsumedAmount));
+    $('#total_upselling_amount').text(formatCurrency(totalUpsellingAmount));
     $('#doctor_upselling_tfoot').show();
     
     // Generate chart
@@ -1041,23 +1037,17 @@ function populateTable(data) {
 
 function generateDoctorUpsellingChart(data) {
     const primary = '#6993FF';
-    const success = '#1BC5BD';
-    const warning = '#FFA800';
     
     let doctorNames = data.map(doctor => doctor.doctor_name);
-    let soldAmounts = data.map(doctor => parseFloat(doctor.total_sold_amount || 0));
-    let consumedAmounts = data.map(doctor => parseFloat(doctor.total_consumed_amount || 0));
+    let upsellingAmounts = data.map(doctor => parseFloat(doctor.total_upselling_amount || 0));
     
     // Hide placeholder and show chart
     $('#doctor_upselling_placeholder').hide();
     
     var options = {
         series: [{
-            name: 'Sold Amount',
-            data: soldAmounts
-        }, {
-            name: 'Consumed Amount', 
-            data: consumedAmounts
+            name: 'Upselling Amount',
+            data: upsellingAmounts
         }],
         chart: {
             type: 'bar',
@@ -1070,11 +1060,22 @@ function generateDoctorUpsellingChart(data) {
             bar: {
                 horizontal: false,
                 columnWidth: '55%',
-                endingShape: 'rounded'
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
             }
         },
         dataLabels: {
-            enabled: false
+            enabled: true,
+            formatter: function (val) {
+                return formatCurrency(val);
+            },
+            offsetY: -20,
+            style: {
+                fontSize: '12px',
+                colors: ["#304758"]
+            }
         },
         stroke: {
             show: true,
@@ -1085,12 +1086,15 @@ function generateDoctorUpsellingChart(data) {
             categories: doctorNames,
             labels: {
                 rotate: -45,
-                maxHeight: 120
+                maxHeight: 120,
+                style: {
+                    fontSize: '11px'
+                }
             }
         },
         yaxis: {
             title: {
-                text: 'Amount'
+                text: 'Upselling Amount'
             },
             labels: {
                 formatter: function (val) {
@@ -1098,7 +1102,7 @@ function generateDoctorUpsellingChart(data) {
                 }
             }
         },
-        colors: [primary, success],
+        colors: [primary],
         fill: {
             opacity: 1
         },
@@ -1110,8 +1114,7 @@ function generateDoctorUpsellingChart(data) {
             }
         },
         legend: {
-            show: true,
-            position: 'top'
+            show: false
         }
     };
     
@@ -1121,7 +1124,6 @@ function generateDoctorUpsellingChart(data) {
     var chart = new ApexCharts(document.querySelector("#doctor_upselling_chart"), options);
     chart.render();
 }
-
 function showNoDataMessage() {
     $('#doctor_upselling_tbody').html(`
         <tr>
