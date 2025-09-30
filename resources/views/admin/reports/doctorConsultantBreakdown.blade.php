@@ -56,39 +56,30 @@
         <i class="fas fa-info-circle"></i>
         <strong>Breakdown Analysis:</strong> Shows which consultants' appointments generated the upselling revenue for <strong>{{ $sellerName }}</strong>.
         <br>
-        <small class="text-muted">This helps understand which consultant-seller combinations are most effective.</small>
+        <small class="text-muted">Upselling is calculated based on same-day payments received after services were added to packages.</small>
     </div>
 
     <!-- Summary Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card stats-card">
                 <div class="card-body text-center">
-                    <h5 class="card-title">Total Sold Amount</h5>
+                    <h5 class="card-title">Total Upselling Amount</h5>
                     <h3>{{ number_format($totalSoldAmount, 2) }}</h3>
                     <small>by {{ $sellerName }}</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card bg-success text-white">
-                <div class="card-body text-center">
-                    <h5 class="card-title">Total Consumed</h5>
-                    <h3>{{ number_format($totalConsumedAmount, 2) }}</h3>
-                    <small>{{ $totalConsumedAmount > 0 ? number_format(($totalConsumedAmount/$totalSoldAmount)*100, 1) : 0 }}% consumed</small>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-info text-white">
                 <div class="card-body text-center">
                     <h5 class="card-title">Total Packages</h5>
                     <h3>{{ $totalPackages }}</h3>
-                    <small>packages sold</small>
+                    <small>packages with upselling</small>
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card bg-warning text-white">
                 <div class="card-body text-center">
                     <h5 class="card-title">Consultants</h5>
@@ -110,44 +101,37 @@
                     <thead>
                         <tr>
                             <th>Consultant Name</th>
-                            <th>Amount Sold</th>
-                            <th>Consumed Amount</th>
-                            
+                            <th class="text-right">Upselling Amount</th>
+                            <th class="text-center">Packages</th>
                             <th>Contribution %</th>
-                           
-                            <th>Action</th>
+                            <th class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($consultantBreakdown as $consultant)
                             @php
                                 $contributionPercentage = $totalSoldAmount > 0 ? ($consultant->total_amount / $totalSoldAmount) * 100 : 0;
-                                $consumptionRate = $consultant->total_amount > 0 ? ($consultant->total_consumed_amount / $consultant->total_amount) * 100 : 0;
                             @endphp
                             <tr>
                                 <td class="font-weight-bold">
                                     <i class="fas fa-user-md text-primary mr-2"></i>
                                     {{ $consultant->consultant_name }}
                                 </td>
-                                <td>
-                                    <strong>{{ number_format($consultant->total_amount, 2) }}</strong>
+                                <td class="text-right">
+                                    <strong class="text-success">{{ number_format($consultant->total_amount, 2) }}</strong>
                                 </td>
-                                <td>
-                                    <span class="text-success font-weight-bold">
-                                        {{ number_format($consultant->total_consumed_amount, 2) }}
-                                    </span>
+                                <td class="text-center">
+                                    <span class="badge badge-info">{{ $consultant->total_packages }}</span>
                                 </td>
-                                
                                 <td>
                                     <div class="d-flex align-items-center">
-                                        <span class="mr-2 font-weight-bold">{{ number_format($contributionPercentage, 1) }}%</span>
+                                        <span class="mr-2 font-weight-bold" style="min-width: 50px;">{{ number_format($contributionPercentage, 1) }}%</span>
                                         <div class="percentage-bar flex-grow-1">
                                             <div class="percentage-fill" style="width: {{ $contributionPercentage }}%"></div>
                                         </div>
                                     </div>
                                 </td>
-                                
-                                <td>
+                                <td class="text-center">
                                     <a href="{{ route('admin.consultant.seller.detail', [$consultant->consultant_id, $sellerId]) }}" 
                                        class="btn btn-sm btn-primary">
                                         <i class="fas fa-search"></i> View Details
@@ -156,13 +140,21 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="text-center text-muted py-4">
+                                <td colspan="5" class="text-center text-muted py-4">
                                     <i class="fas fa-exclamation-triangle mb-2"></i><br>
                                     No consultant breakdown data found for {{ $sellerName }}.
                                 </td>
                             </tr>
                         @endforelse
                     </tbody>
+                    <tfoot class="font-weight-bold bg-light">
+                        <tr>
+                            <td>TOTAL</td>
+                            <td class="text-right">{{ number_format($totalSoldAmount, 2) }}</td>
+                            <td class="text-center">{{ $totalPackages }}</td>
+                            <td colspan="2"></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
         </div>
@@ -171,24 +163,49 @@
     @if($consultantBreakdown->isNotEmpty())
     <!-- Additional Insights -->
     <div class="row mt-4">
-        <div class="col-md-12">
+        <div class="col-md-6">
             <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0">Top Contributing Consultant</h6>
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0"><i class="fas fa-trophy"></i> Top Contributing Consultant</h6>
                 </div>
                 <div class="card-body">
                     @php $topConsultant = $consultantBreakdown->first(); @endphp
-                    <div class="d-flex justify-content-between">
-                        <span><strong>{{ $topConsultant->consultant_name }}</strong></span>
-                        <span class="text-success">{{ number_format($topConsultant->total_amount, 2) }}</span>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="h5">{{ $topConsultant->consultant_name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ $topConsultant->total_packages }} packages</small>
+                        </div>
+                        <div class="text-right">
+                            <span class="h4 text-success">{{ number_format($topConsultant->total_amount, 2) }}</span>
+                            <br>
+                            <small class="text-muted">{{ number_format(($topConsultant->total_amount / $totalSoldAmount) * 100, 1) }}% of total</small>
+                        </div>
                     </div>
-                    <small class="text-muted">
-                        {{ number_format(($topConsultant->total_amount / $totalSoldAmount) * 100, 1) }}% of total revenue
-                    </small>
                 </div>
             </div>
         </div>
-        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Average per Consultant</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong class="h5">Avg. Upselling</strong>
+                            <br>
+                            <small class="text-muted">per consultant</small>
+                        </div>
+                        <div class="text-right">
+                            <span class="h4 text-info">{{ number_format($totalSoldAmount / max($totalConsultants, 1), 2) }}</span>
+                            <br>
+                            <small class="text-muted">{{ number_format($totalPackages / max($totalConsultants, 1), 1) }} packages avg.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     @endif
 </div>

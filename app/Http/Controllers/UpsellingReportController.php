@@ -773,66 +773,144 @@ public function doctorConsultantBreakdown($sellerId)
         return redirect()->back()->with('error', 'Seller not found.');
     }
 
-    $reportQuery = PackageService::query()
+    // Get all package services for this seller
+    $packageServices = PackageService::query()
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-        ->join('users as appointment_doctors', 'appointments.doctor_id', '=', 'appointment_doctors.id')
-        ->join('users as sellers', 'package_services.sold_by', '=', 'sellers.id')
         ->where('package_services.sold_by', $sellerId)
-        ->whereIn('package_services.sold_by', $filters['all_seller_ids'])
         ->where('packages.location_id', $filters['location_id'])
         ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
-        ->whereNotNull('sold_by');
-
-    // Get breakdown by consultant (appointment doctor)
-    $consultantBreakdown = $reportQuery
+        ->whereNotNull('sold_by')
         ->select(
-            'appointment_doctors.name as consultant_name',
-            'appointments.doctor_id as consultant_id',
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_amount
-            "),
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        AND package_services.is_consumed = 1
-                        AND package_services.consumed_at BETWEEN '{$filters['start_date']}' AND '{$filters['end_date']}'
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_consumed_amount
-            "),
-            DB::raw("
-                COUNT(DISTINCT 
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        THEN package_services.package_id
-                        ELSE NULL
-                    END
-                ) as total_packages
-            ")
+            'package_services.id',
+            'package_services.package_id',
+            'package_services.sold_by',
+            'package_services.tax_including_price',
+            'package_services.created_at',
+            'appointments.appointment_type_id',
+            'appointments.doctor_id as appointment_doctor_id'
         )
-        ->where(DB::raw("
-            CASE
-                WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                THEN package_services.tax_including_price
-                ELSE 0
-            END
-        "), '>', 0)
-        ->groupBy('appointments.doctor_id', 'appointment_doctors.name')
-        ->orderBy('total_amount', 'desc')
+        ->orderBy('package_services.created_at')
         ->get();
+
+    // Initialize consultant tracking
+    $consultantData = [];
+    
+    // Process services by package
+    $servicesByPackage = $packageServices->groupBy('package_id');
+
+    foreach ($servicesByPackage as $packageId => $services) {
+        $sortedServices = $services->sortBy([
+            ['created_at', 'asc'],
+            ['id', 'asc']
+        ])->values()->all();
+        
+        $totalServices = count($sortedServices);
+        
+        for ($i = 0; $i < $totalServices; $i++) {
+            $service = $sortedServices[$i];
+            
+            // Skip self-consultation sales
+            if ($service->appointment_type_id == 1 && $service->appointment_doctor_id == $service->sold_by) {
+                continue;
+            }
+            
+            $serviceAmount = $service->tax_including_price;
+            
+            if ($serviceAmount <= 0) {
+                continue;
+            }
+            
+            $serviceCreatedAt = Carbon::parse($service->created_at);
+            $consultantId = $service->appointment_doctor_id;
+            
+            // Find next service
+            $nextService = null;
+            if ($i < $totalServices - 1) {
+                $nextService = $sortedServices[$i + 1];
+            }
+            
+            // Get payments for this service
+            $paymentsQuery = DB::table('package_advances')
+                ->where('package_id', $packageId)
+                ->where('cash_flow', 'in')
+                ->where('is_refund', 0)
+                ->where('is_adjustment', 0)
+                ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                ->where(function($q) use ($service) {
+                    $q->where('created_at', '>', $service->created_at)
+                      ->orWhere(function($q2) use ($service) {
+                          $q2->where('created_at', '=', $service->created_at)
+                             ->where('id', '>', $service->id);
+                      });
+                });
+            
+            if ($nextService && !is_null($nextService->created_at)) {
+                $nextServiceTime = Carbon::parse($nextService->created_at);
+                if ($nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
+                    $paymentsQuery->where(function($q) use ($nextService) {
+                        $q->where('created_at', '<', $nextService->created_at)
+                          ->orWhere(function($q2) use ($nextService) {
+                              $q2->where('created_at', '=', $nextService->created_at)
+                                 ->where('id', '<', $nextService->id);
+                          });
+                    });
+                }
+            }
+            
+            $paymentsReceived = $paymentsQuery->sum('cash_amount');
+            
+            if ($paymentsReceived > 0) {
+                $upsellingAmount = min($paymentsReceived, $serviceAmount);
+                
+                // Initialize consultant data if not exists
+                if (!isset($consultantData[$consultantId])) {
+                    $consultantData[$consultantId] = [
+                        'consultant_id' => $consultantId,
+                        'consultant_name' => null, // Will be populated later
+                        'total_amount' => 0,
+                        'packages' => [],
+                    ];
+                }
+                
+                // Add to consultant's total
+                $consultantData[$consultantId]['total_amount'] += $upsellingAmount;
+                $consultantData[$consultantId]['packages'][$packageId] = true;
+            }
+        }
+    }
+
+    // Get consultant names
+    $consultantIds = array_keys($consultantData);
+    if (!empty($consultantIds)) {
+        $consultants = User::whereIn('id', $consultantIds)
+            ->select('id', 'name')
+            ->get()
+            ->keyBy('id');
+        
+        foreach ($consultantData as $consultantId => $data) {
+            if (isset($consultants[$consultantId])) {
+                $consultantData[$consultantId]['consultant_name'] = $consultants[$consultantId]->name;
+            } else {
+                $consultantData[$consultantId]['consultant_name'] = 'Unknown Consultant';
+            }
+            
+            // Count unique packages
+            $consultantData[$consultantId]['total_packages'] = count($consultantData[$consultantId]['packages']);
+            unset($consultantData[$consultantId]['packages']); // Remove packages array, only keep count
+        }
+    }
+
+    // Convert to collection and sort by total amount
+    $consultantBreakdown = collect($consultantData)
+        ->map(function($data) {
+            return (object)$data;
+        })
+        ->sortByDesc('total_amount')
+        ->values();
 
     // Calculate totals
     $totalSoldAmount = $consultantBreakdown->sum('total_amount');
-    $totalConsumedAmount = $consultantBreakdown->sum('total_consumed_amount');
     $totalPackages = $consultantBreakdown->sum('total_packages');
     $totalConsultants = $consultantBreakdown->count();
 
@@ -843,7 +921,6 @@ public function doctorConsultantBreakdown($sellerId)
         'sellerName', 
         'sellerId',
         'totalSoldAmount',
-        'totalConsumedAmount', 
         'totalPackages',
         'totalConsultants'
     ));
