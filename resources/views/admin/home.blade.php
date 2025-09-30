@@ -908,7 +908,7 @@
                                                     <tr>
                                                         <th class="text-left">Doctor Name</th>
                                                         <th class="text-right">Sold Amount</th>
-                                                        <th class="text-right">Consumed Amount</th>
+                                                        
                                                     </tr>
                                                 </thead>
                                                 <tbody id="doctor_upselling_tbody">
@@ -923,7 +923,7 @@
                                                     <tr class="font-weight-bold bg-light">
                                                         <td>Total</td>
                                                         <td class="text-right" id="total_sold_amount">0.00</td>
-                                                        <td class="text-right" id="total_consumed_amount">0.00</td>
+                                                        
                                                     </tr>
                                                 </tfoot>
                                             </table>
