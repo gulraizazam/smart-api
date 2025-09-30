@@ -104,7 +104,7 @@
                             <th class="text-right">Upselling Amount</th>
                             <th class="text-center">Packages</th>
                             <th>Contribution %</th>
-                            <th class="text-center">Action</th>
+                           
                         </tr>
                     </thead>
                     <tbody>
@@ -131,12 +131,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td class="text-center">
-                                    <a href="{{ route('admin.consultant.seller.detail', [$consultant->consultant_id, $sellerId]) }}" 
-                                       class="btn btn-sm btn-primary">
-                                        <i class="fas fa-search"></i> View Details
-                                    </a>
-                                </td>
+                               
                             </tr>
                         @empty
                             <tr>
