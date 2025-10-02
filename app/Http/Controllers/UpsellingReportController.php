@@ -1041,7 +1041,7 @@ public function consultantSellerDetail($consultantId, $sellerId)
 public function downloadDoctorUpsellingExcel(Request $request)
     {
         try {
-            $period = $request->period ?: 'lastmonth';
+            $period = $request->period ?: 'august2025';
             
             // Hardcoded centre IDs
             $centreIds = [
@@ -1087,6 +1087,11 @@ public function downloadDoctorUpsellingExcel(Request $request)
                     'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d 00:00:00'),
                     'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d 23:59:59'),
                     'label' => 'Last Month'
+                ],
+                'august2025' => [
+                    'start_date' => '2025-08-01 00:00:00',
+                    'end_date' => '2025-08-31 23:59:59',
+                    'label' => 'August 2025'
                 ],
             ];
 
