@@ -1226,54 +1226,77 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                 
                 $serviceCreatedAt = Carbon::parse($service->created_at);
                 
-                // SIMPLIFIED LOGIC: Get all payments on the same day
-                $paymentsForThisService = DB::table('package_advances')
-                    ->where('package_id', $packageId)
-                    ->where('cash_flow', 'in')
-                    ->where('is_refund', 0)
-                    ->where('is_adjustment', 0)
-                    ->whereDate('created_at', $serviceCreatedAt->toDateString())
-                    ->sum('cash_amount');
+                // Find the previous and next service
+                $previousService = null;
+                if ($i > 0) {
+                    $previousService = $sortedServices[$i - 1];
+                }
                 
-                /* COMMENTED OUT: Complex payment calculation logic
-                // Find the next service
                 $nextService = null;
                 if ($i < $totalServices - 1) {
                     $nextService = $sortedServices[$i + 1];
                 }
                 
-                // Build payment query - SAME DAY ONLY
+                // Calculate payment window start time
+                // Default: 1 hour before service
+                $paymentWindowStart = $serviceCreatedAt->copy()->subHour();
+                
+                // If previous service exists and is within 1 hour, start from previous service time
+                if ($previousService && !is_null($previousService->created_at)) {
+                    $previousServiceTime = Carbon::parse($previousService->created_at);
+                    $timeDiffFromPrevious = $serviceCreatedAt->diffInMinutes($previousServiceTime);
+                    
+                    // If previous service is less than 60 minutes before current service,
+                    // start from previous service time (to avoid counting same payments twice)
+                    if ($timeDiffFromPrevious < 60) {
+                        $paymentWindowStart = $previousServiceTime->copy();
+                    }
+                }
+                
+                // Calculate payment window end time
+                // Default: 1 hour after service
+                $paymentWindowEnd = $serviceCreatedAt->copy()->addHour();
+                
+                // If next service exists and is within 1 hour, end at next service time
+                if ($nextService && !is_null($nextService->created_at)) {
+                    $nextServiceTime = Carbon::parse($nextService->created_at);
+                    $timeDiffToNext = $nextServiceTime->diffInMinutes($serviceCreatedAt);
+                    
+                    // If next service is less than 60 minutes after current service,
+                    // end at the next service time
+                    if ($timeDiffToNext < 60) {
+                        $paymentWindowEnd = $nextServiceTime->copy();
+                    }
+                }
+                
+                // Build payment query with the calculated window
                 $paymentsQuery = DB::table('package_advances')
                     ->where('package_id', $packageId)
                     ->where('cash_flow', 'in')
                     ->where('is_refund', 0)
                     ->where('is_adjustment', 0)
-                    ->whereDate('created_at', $serviceCreatedAt->toDateString()) // SAME DAY
-                    ->where(function($q) use ($service) {
-                        // Payment after service OR same timestamp but higher ID
-                        $q->where('created_at', '>', $service->created_at)
-                          ->orWhere(function($q2) use ($service) {
-                              $q2->where('created_at', '=', $service->created_at)
+                    ->where(function($q) use ($paymentWindowStart, $service) {
+                        // Payment after window start OR same timestamp but higher ID
+                        $q->where('created_at', '>', $paymentWindowStart)
+                          ->orWhere(function($q2) use ($paymentWindowStart, $service) {
+                              $q2->where('created_at', '=', $paymentWindowStart)
                                  ->where('id', '>', $service->id);
+                          });
+                    })
+                    ->where(function($q) use ($paymentWindowEnd, $nextService) {
+                        // Payment before window end OR same timestamp but lower ID
+                        $q->where('created_at', '<', $paymentWindowEnd)
+                          ->orWhere(function($q2) use ($paymentWindowEnd, $nextService) {
+                              if ($nextService) {
+                                  $q2->where('created_at', '=', $paymentWindowEnd)
+                                     ->where('id', '<', $nextService->id);
+                              } else {
+                                  $q2->where('created_at', '=', $paymentWindowEnd);
+                              }
                           });
                     });
                 
-                // If there's a next service on same day, limit payments to before that service
-                if ($nextService && !is_null($nextService->created_at)) {
-                    $nextServiceTime = Carbon::parse($nextService->created_at);
-                    if ($nextServiceTime->toDateString() === $serviceCreatedAt->toDateString()) {
-                        $paymentsQuery->where(function($q) use ($nextService) {
-                            $q->where('created_at', '<', $nextService->created_at)
-                              ->orWhere(function($q2) use ($nextService) {
-                                  $q2->where('created_at', '=', $nextService->created_at)
-                                     ->where('id', '<', $nextService->id);
-                              });
-                        });
-                    }
-                }
-                
                 $paymentsForThisService = $paymentsQuery->sum('cash_amount');
-                */
                 
                 // Calculate upselling
                 if ($paymentsForThisService > 0) {
