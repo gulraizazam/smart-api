@@ -1238,33 +1238,33 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                 }
                 
                 // Calculate payment window start time
-                // Default: 1 hour before service
-                $paymentWindowStart = $serviceCreatedAt->copy()->subHour();
+                // Default: 2 hours before service
+                $paymentWindowStart = $serviceCreatedAt->copy()->subHours(2);
                 
-                // If previous service exists and is within 1 hour, start from previous service time
+                // If previous service exists and is within 2 hours, start from previous service time
                 if ($previousService && !is_null($previousService->created_at)) {
                     $previousServiceTime = Carbon::parse($previousService->created_at);
                     $timeDiffFromPrevious = $serviceCreatedAt->diffInMinutes($previousServiceTime);
                     
-                    // If previous service is less than 60 minutes before current service,
+                    // If previous service is less than 120 minutes before current service,
                     // start from previous service time (to avoid counting same payments twice)
-                    if ($timeDiffFromPrevious < 60) {
+                    if ($timeDiffFromPrevious < 120) {
                         $paymentWindowStart = $previousServiceTime->copy();
                     }
                 }
                 
                 // Calculate payment window end time
-                // Default: 1 hour after service
-                $paymentWindowEnd = $serviceCreatedAt->copy()->addHour();
+                // Default: 2 hours after service
+                $paymentWindowEnd = $serviceCreatedAt->copy()->addHours(2);
                 
-                // If next service exists and is within 1 hour, end at next service time
+                // If next service exists and is within 2 hours, end at next service time
                 if ($nextService && !is_null($nextService->created_at)) {
                     $nextServiceTime = Carbon::parse($nextService->created_at);
                     $timeDiffToNext = $nextServiceTime->diffInMinutes($serviceCreatedAt);
                     
-                    // If next service is less than 60 minutes after current service,
+                    // If next service is less than 120 minutes after current service,
                     // end at the next service time
-                    if ($timeDiffToNext < 60) {
+                    if ($timeDiffToNext < 120) {
                         $paymentWindowEnd = $nextServiceTime->copy();
                     }
                 }
