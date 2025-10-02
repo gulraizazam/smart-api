@@ -1116,7 +1116,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
         }
     }
 
-    private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate)
+private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate)
 {
     try {
         // Get users with specific roles
@@ -1221,6 +1221,16 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 
                 $serviceCreatedAt = Carbon::parse($service->created_at);
                 
+                // SIMPLIFIED LOGIC: Get all payments on the same day
+                $paymentsForThisService = DB::table('package_advances')
+                    ->where('package_id', $packageId)
+                    ->where('cash_flow', 'in')
+                    ->where('is_refund', 0)
+                    ->where('is_adjustment', 0)
+                    ->whereDate('created_at', $serviceCreatedAt->toDateString())
+                    ->sum('cash_amount');
+                
+                /* COMMENTED OUT: Complex payment calculation logic
                 // Find the next service
                 $nextService = null;
                 if ($i < $totalServices - 1) {
@@ -1258,6 +1268,7 @@ public function downloadDoctorUpsellingExcel(Request $request)
                 }
                 
                 $paymentsForThisService = $paymentsQuery->sum('cash_amount');
+                */
                 
                 // Calculate upselling
                 if ($paymentsForThisService > 0) {
