@@ -55,7 +55,6 @@ class UpsellingReportController extends Controller
         })
         ->pluck('id');
 
-    // Get doctors for the location
     $doctorIds = DB::table('doctor_has_locations')
         ->where('location_id', $locationId)
         ->whereIn('user_id', $roleHasUsers)
@@ -72,14 +71,12 @@ class UpsellingReportController extends Controller
         ]);
     }
 
-    // Get all active users
     $allActiveUsers = User::whereIn('id', $allSellerIds)
         ->where('active', 1)
         ->select('id', 'name')
         ->get()
         ->keyBy('id');
 
-    // Get package services - INCLUDE package_bundle_id
     $packageServices = PackageService::query()
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
@@ -101,13 +98,11 @@ class UpsellingReportController extends Controller
         ->orderBy('package_services.id')
         ->get();
 
-    // Initialize upselling amounts
     $doctorUpsellingAmounts = [];
     foreach ($allSellerIds as $sellerId) {
         $doctorUpsellingAmounts[(int)$sellerId] = 0;
     }
 
-    // Process services by package
     $servicesByPackage = $packageServices->groupBy('package_id');
 
     foreach ($servicesByPackage as $packageId => $services) {
@@ -120,7 +115,6 @@ class UpsellingReportController extends Controller
         $processedIndices = [];
         
         for ($i = 0; $i < $totalServices; $i++) {
-            // Skip if already processed as part of a bundle
             if (in_array($i, $processedIndices)) {
                 continue;
             }
@@ -137,9 +131,8 @@ class UpsellingReportController extends Controller
             
             $serviceCreatedAt = Carbon::parse($service->created_at);
             
-            // Check if this is part of a bundle
+            // Find all services with same package_bundle_id
             $bundleServices = [];
-            
             for ($j = $i; $j < $totalServices; $j++) {
                 $potentialBundleService = $sortedServices[$j];
                 
@@ -149,10 +142,8 @@ class UpsellingReportController extends Controller
                 }
             }
             
-            // If more than 1 service shares the same package_bundle_id, treat as bundle
             if (count($bundleServices) > 1) {
                 // BUNDLE LOGIC
-                
                 $previousService = null;
                 if ($i > 0) {
                     $previousService = $sortedServices[$i - 1];
@@ -212,7 +203,6 @@ class UpsellingReportController extends Controller
                 
                 $totalPaymentsForBundle = $paymentsQuery->sum('cash_amount');
                 
-                // Calculate total bundle amount
                 $totalBundleAmount = 0;
                 foreach ($bundleServices as $bundleService) {
                     if ($bundleService->tax_including_price > 0) {
@@ -220,11 +210,19 @@ class UpsellingReportController extends Controller
                     }
                 }
                 
-                // Cap total payments at total bundle amount
                 $actualUpsellingForBundle = min($totalPaymentsForBundle, $totalBundleAmount);
                 
+                // Add debug logging
+                \Log::info('Bundle Processing', [
+                    'package_id' => $packageId,
+                    'bundle_id' => $service->package_bundle_id,
+                    'services_count' => count($bundleServices),
+                    'total_payments' => $totalPaymentsForBundle,
+                    'total_bundle_amount' => $totalBundleAmount,
+                    'actual_upselling' => $actualUpsellingForBundle
+                ]);
+                
                 if ($actualUpsellingForBundle > 0 && $totalBundleAmount > 0) {
-                    // Distribute the capped upselling amount proportionally
                     foreach ($bundleServices as $bundleService) {
                         $soldById = (int)$bundleService->sold_by;
                         
@@ -238,15 +236,21 @@ class UpsellingReportController extends Controller
                             continue;
                         }
                         
-                        // Calculate proportional share of the actual upselling amount
                         $serviceShare = ($serviceAmount / $totalBundleAmount) * $actualUpsellingForBundle;
+                        
+                        \Log::info('Adding to doctor', [
+                            'doctor_id' => $soldById,
+                            'service_share' => $serviceShare,
+                            'before' => $doctorUpsellingAmounts[$soldById],
+                            'after' => $doctorUpsellingAmounts[$soldById] + $serviceShare
+                        ]);
                         
                         $doctorUpsellingAmounts[$soldById] += $serviceShare;
                     }
                 }
                 
             } else {
-                // SINGLE SERVICE LOGIC
+                // SINGLE SERVICE LOGIC (unchanged)
                 $soldById = (int)$service->sold_by;
                 
                 if (!isset($doctorUpsellingAmounts[$soldById])) {
@@ -325,7 +329,9 @@ class UpsellingReportController extends Controller
         }
     }
 
-    // Prepare report data
+    // Add final debug log
+    \Log::info('Final Doctor Amounts', $doctorUpsellingAmounts);
+
     $reportData = $allActiveUsers->map(function ($user) use ($doctorUpsellingAmounts) {
         return (object)[
             'doctor_id' => $user->id,
@@ -334,7 +340,6 @@ class UpsellingReportController extends Controller
         ];
     })->sortByDesc('total_sold_amount')->values();
 
-    // Store filters in session
     session(['upselling_filters' => [
         'location_id' => $locationId,
         'start_date' => $startDate,
