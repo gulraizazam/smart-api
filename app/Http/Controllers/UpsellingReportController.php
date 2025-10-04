@@ -1380,7 +1380,7 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
             ])->values()->all();
             
             $totalServices = count($sortedServices);
-            $processedIndices = []; // Track which services we've already processed
+            $processedIndices = [];
             
             for ($i = 0; $i < $totalServices; $i++) {
                 // Skip if already processed as part of a bundle
@@ -1411,7 +1411,7 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                     // Services are part of same bundle if they have same package_bundle_id
                     if ($potentialBundleService->package_bundle_id == $service->package_bundle_id) {
                         $bundleServices[] = $potentialBundleService;
-                        $processedIndices[] = $j; // Mark as processed
+                        $processedIndices[] = $j;
                     }
                 }
                 
@@ -1483,7 +1483,7 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                     
                     $totalPaymentsForBundle = $paymentsQuery->sum('cash_amount');
                     
-                    // Distribute payments proportionally to each service in the bundle
+                    // Calculate total bundle amount
                     $totalBundleAmount = 0;
                     foreach ($bundleServices as $bundleService) {
                         if ($bundleService->tax_including_price > 0) {
@@ -1491,7 +1491,11 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                         }
                     }
                     
-                    if ($totalPaymentsForBundle > 0 && $totalBundleAmount > 0) {
+                    // Cap total payments at total bundle amount
+                    $actualUpsellingForBundle = min($totalPaymentsForBundle, $totalBundleAmount);
+                    
+                    if ($actualUpsellingForBundle > 0 && $totalBundleAmount > 0) {
+                        // Distribute the capped upselling amount proportionally
                         foreach ($bundleServices as $bundleService) {
                             $soldById = (int)$bundleService->sold_by;
                             
@@ -1505,11 +1509,10 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                                 continue;
                             }
                             
-                            // Calculate proportional share
-                            $serviceShare = ($serviceAmount / $totalBundleAmount) * $totalPaymentsForBundle;
-                            $upsellingAmount = min($serviceShare, $serviceAmount);
+                            // Calculate proportional share of the actual upselling amount
+                            $serviceShare = ($serviceAmount / $totalBundleAmount) * $actualUpsellingForBundle;
                             
-                            $doctorUpsellingAmounts[$soldById] += $upsellingAmount;
+                            $doctorUpsellingAmounts[$soldById] += $serviceShare;
                         }
                     }
                     
