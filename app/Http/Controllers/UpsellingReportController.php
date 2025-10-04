@@ -212,6 +212,7 @@ class UpsellingReportController extends Controller
                 
                 $totalPaymentsForBundle = $paymentsQuery->sum('cash_amount');
                 
+                // Calculate total bundle amount
                 $totalBundleAmount = 0;
                 foreach ($bundleServices as $bundleService) {
                     if ($bundleService->tax_including_price > 0) {
@@ -219,7 +220,11 @@ class UpsellingReportController extends Controller
                     }
                 }
                 
-                if ($totalPaymentsForBundle > 0 && $totalBundleAmount > 0) {
+                // Cap total payments at total bundle amount
+                $actualUpsellingForBundle = min($totalPaymentsForBundle, $totalBundleAmount);
+                
+                if ($actualUpsellingForBundle > 0 && $totalBundleAmount > 0) {
+                    // Distribute the capped upselling amount proportionally
                     foreach ($bundleServices as $bundleService) {
                         $soldById = (int)$bundleService->sold_by;
                         
@@ -233,10 +238,10 @@ class UpsellingReportController extends Controller
                             continue;
                         }
                         
-                        $serviceShare = ($serviceAmount / $totalBundleAmount) * $totalPaymentsForBundle;
-                        $upsellingAmount = min($serviceShare, $serviceAmount);
+                        // Calculate proportional share of the actual upselling amount
+                        $serviceShare = ($serviceAmount / $totalBundleAmount) * $actualUpsellingForBundle;
                         
-                        $doctorUpsellingAmounts[$soldById] += $upsellingAmount;
+                        $doctorUpsellingAmounts[$soldById] += $serviceShare;
                     }
                 }
                 
