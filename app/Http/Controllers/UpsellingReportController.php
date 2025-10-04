@@ -1245,7 +1245,7 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                 'package_services.sold_by',
                 'package_services.tax_including_price',
                 'package_services.created_at',
-                'package_services.package_bundle_id',  // Added this field
+                'package_services.package_bundle_id',
                 'appointments.appointment_type_id',
                 'appointments.doctor_id as appointment_doctor_id'
             )
@@ -1292,29 +1292,22 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                 
                 $serviceCreatedAt = Carbon::parse($service->created_at);
                 
-                // Check if this service is part of a bundle (has package_bundle_id and same created_at)
+                // Check if this is part of a bundle by looking for other services with same package_bundle_id
                 $bundleServices = [];
-                $isBundleService = false;
                 
-                if (!is_null($service->package_bundle_id)) {
-                    // Find all services with same package_bundle_id and created_at
-                    for ($j = $i; $j < $totalServices; $j++) {
-                        $potentialBundleService = $sortedServices[$j];
-                        
-                        if (!is_null($potentialBundleService->package_bundle_id) &&
-                            $potentialBundleService->package_bundle_id == $service->package_bundle_id &&
-                            Carbon::parse($potentialBundleService->created_at)->equalTo($serviceCreatedAt)) {
-                            
-                            $bundleServices[] = $potentialBundleService;
-                            $processedIndices[] = $j; // Mark as processed
-                            $isBundleService = true;
-                        }
+                for ($j = $i; $j < $totalServices; $j++) {
+                    $potentialBundleService = $sortedServices[$j];
+                    
+                    // Services are part of same bundle if they have same package_bundle_id
+                    if ($potentialBundleService->package_bundle_id == $service->package_bundle_id) {
+                        $bundleServices[] = $potentialBundleService;
+                        $processedIndices[] = $j; // Mark as processed
                     }
                 }
                 
-                if ($isBundleService && count($bundleServices) > 0) {
-                    // BUNDLE LOGIC: Process all services in the bundle together
-                    $lastBundleService = end($bundleServices);
+                // If more than 1 service shares the same package_bundle_id, treat as bundle
+                if (count($bundleServices) > 1) {
+                    // BUNDLE LOGIC: Multiple services with same package_bundle_id
                     
                     // Find previous service (before the bundle)
                     $previousService = null;
@@ -1329,7 +1322,7 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                         $nextService = $sortedServices[$lastBundleIndex + 1];
                     }
                     
-                    // Payment window: 2 hours before first service in bundle
+                    // Payment window: 2 hours before bundle created_at
                     $paymentWindowStart = $serviceCreatedAt->copy()->subHours(2);
                     
                     if ($previousService && !is_null($previousService->created_at)) {
@@ -1341,7 +1334,7 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                         }
                     }
                     
-                    // Payment window: 2 hours after last service in bundle (same time as first)
+                    // Payment window: 2 hours after bundle created_at
                     $paymentWindowEnd = $serviceCreatedAt->copy()->addHours(2);
                     
                     if ($nextService && !is_null($nextService->created_at)) {
@@ -1411,7 +1404,7 @@ private function getDoctorUpsellingDataForCentre($centreId, $startDate, $endDate
                     }
                     
                 } else {
-                    // REGULAR SINGLE SERVICE LOGIC
+                    // SINGLE SERVICE LOGIC (unique package_bundle_id)
                     $soldById = (int)$service->sold_by;
                     
                     if (!isset($doctorUpsellingAmounts[$soldById])) {
