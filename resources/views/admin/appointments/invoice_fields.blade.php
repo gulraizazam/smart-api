@@ -232,7 +232,9 @@
 
                 <div class="col-md-11 mt-5">
                     <strong class="mt-5">Date</strong>
-                    <!-- <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span> -->
+                    @if(Auth::user()->hasRole('Super-Admin'))
+                    <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
+                    @endif
                     <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
                            class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
                 </div>
