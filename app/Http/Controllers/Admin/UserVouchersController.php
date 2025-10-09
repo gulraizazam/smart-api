@@ -84,7 +84,7 @@ class UserVouchersController extends Controller
                     return [
                         'id' => $item->id,
                         'patient_id' => $item->user_id,
-                        'name' => $item->user ? $item->user->first_name . ' ' . $item->user->last_name : 'N/A',
+                        'name' => $item->user ? $item->user->name  : 'N/A',
                         'voucher_type' => $item->voucher ? $item->voucher->name : 'N/A',
                         'amount' => $item->amount,
                         'created_at' => $item->created_at,
