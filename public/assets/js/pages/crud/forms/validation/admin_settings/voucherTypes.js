@@ -193,17 +193,16 @@ var AssignToPatientValidation = function () {
     var validation = function () {
         let modal_id = 'modal_assign_voucher_to_patient_form';
         let form = document.getElementById(modal_id);
+
+        if (!form) {
+            console.error('Form not found:', modal_id);
+            return;
+        }
+
         let validate = FormValidation.formValidation(
             form,
             {
                 fields: {
-                    patient_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The patient field is required'
-                            }
-                        }
-                    },
                     amount: {
                         validators: {
                             notEmpty: {
@@ -233,10 +232,17 @@ var AssignToPatientValidation = function () {
            select2Validation();
         });
         validate.on('core.form.valid', function(event) {
+            // Check if patient is selected
+            if (!$('#assign_patient_id').val()) {
+                toastr.error('Please select a patient');
+                return false;
+            }
+
             submitForm(route('admin.voucherTypes.assignToPatient'), 'POST', $(form).serialize(), function (response) {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
+                    $('#modal_assign_voucher_to_patient').modal('hide');
                     $('#assign_voucher_type_name').val('');
                     $('#assign_voucher_id').val('');
                     $('#assign_patient_search').val('');
@@ -260,7 +266,11 @@ jQuery(document).ready(function() {
     AddValidation.init();
     EditValidation.init();
     AllocateValidation.init();
-    AssignToPatientValidation.init();
+
+    // Initialize AssignToPatientValidation after a short delay to ensure modal is in DOM
+    setTimeout(function() {
+        AssignToPatientValidation.init();
+    }, 500);
 });
 
 function submitData(callback) {
