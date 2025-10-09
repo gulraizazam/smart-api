@@ -121,21 +121,26 @@ function editVoucher(url) {
         type: "GET",
         cache: false,
         success: function(response) {
-            if (response.status === 'success') {
-                // Populate form fields with voucher data
-                $('#edit_voucher_id').val(response.data.id);
-                $('#edit_user_id').val(response.data.user_id).trigger('change');
-                $('#edit_voucher_id_field').val(response.data.voucher_id).trigger('change');
-                $('#edit_amount').val(response.data.amount);
+            if (response.status === true || response.status === 'success') {
+                let voucher = response.data.voucher;
 
-                reInitSelect2(".select2", "");
+                // Set form action to update route
+                $("#modal_edit_vouchers_form").attr("action", route('admin.vouchers.update', {id: voucher.id}));
+
+                // Populate form fields with voucher data
+                $('#edit_voucher_id').val(voucher.id);
+                $('#edit_patient_name').val(response.data.patient_name);
+                $('#edit_voucher_type_name').val(response.data.voucher_type_name);
+                $('#edit_amount').val(voucher.amount);
             } else {
                 toastr.error(response.message || 'Cannot edit this voucher.');
+                $("#modal_edit_voucher").modal("hide");
             }
         },
         error: function(xhr) {
             var message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'An error occurred.';
             toastr.error(message);
+            $("#modal_edit_voucher").modal("hide");
         }
     });
 }

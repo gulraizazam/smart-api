@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit Voucher Type</h2>
+        <h2 class="fw-bolder">Edit User Voucher</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -25,47 +25,29 @@
         <form id="modal_edit_vouchers_form" method="post" action="">
             <!--begin::Scroll-->
             @method('put')
+            <input type="hidden" name="id" id="edit_voucher_id">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_vouchers_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">
                     <div class="row">
 
-                       
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
-                            <input id="edit_name" class="form-control" type="text" name="name">
-                        </div>
-                        
-                       
-                        
-                            
-                        
-                    </div>
-
-                    
-                    <div class="row">
-
-                        <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
-                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">From <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_start" class="form-control datatable-input" name="start">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_patient_name" class="form-control" readonly disabled style="background-color: #f3f6f9; cursor: not-allowed;">
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5 input-daterange current-datepicker">
-                            <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">To <span class="text text-danger">*</span></label>
-                            <input type="text" id="edit_end" class="form-control datatable-input" name="end">
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Voucher Type <span class="text text-danger">*</span></label>
+                            <input type="text" id="edit_voucher_type_name" class="form-control" readonly disabled style="background-color: #f3f6f9; cursor: not-allowed;">
                         </div>
 
-                        <span class="switch switch-icon mt-5">
-                           <label for="edit_active" class="fw-bold fs-6">
-                            <input id="edit_active" checked value="1" type="checkbox" name="active">
-                            <span></span>
-                           </label>
-                           <span class="fs-6 pl-2">Active</span>
-                        </span>
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
+                            <input type="number" min="0" step="0.01" id="edit_amount" class="form-control" name="amount" placeholder="Enter amount">
+                        </div>
 
                     </div>
-
                 </div>
 
             </div>

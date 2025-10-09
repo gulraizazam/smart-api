@@ -75,27 +75,17 @@ var EditValidation = function () {
             form,
             {
                 fields: {
-                    name: {
+                    amount: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
-                            }
-                        }
-                    },
-                    
-
-                    start: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The start field is required'
-                            }
-                        }
-                    },
-
-                    end: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The end field is required'
+                                message: 'The amount field is required'
+                            },
+                            numeric: {
+                                message: 'The amount must be a valid number'
+                            },
+                            greaterThan: {
+                                min: 0,
+                                message: 'The amount must be greater than 0'
                             }
                         }
                     },
@@ -118,7 +108,7 @@ var EditValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable('discount');
+                    reInitTable();
                 } else {
                     toastr.error(response.message);
                 }

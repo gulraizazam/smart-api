@@ -193,7 +193,7 @@ class UserVouchersController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
-            $userVoucher = UserVouchers::findOrFail($id);
+            $userVoucher = UserVouchers::with(['user', 'voucher'])->findOrFail($id);
 
             // Check if voucher is used in package_vouchers
             $isUsedInPackages = PackageVouchers::where('voucher_id', $userVoucher->voucher_id)
@@ -204,7 +204,11 @@ class UserVouchersController extends Controller
                 return ApiHelper::apiResponse($this->error, 'This voucher cannot be edited as it is already applied to services.', false);
             }
 
-            return ApiHelper::apiResponse($this->success, 'Record found', true, $userVoucher);
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'voucher' => $userVoucher,
+                'patient_name' => $userVoucher->user ? $userVoucher->user->name : 'N/A',
+                'voucher_type_name' => $userVoucher->voucher ? $userVoucher->voucher->name : 'N/A',
+            ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
