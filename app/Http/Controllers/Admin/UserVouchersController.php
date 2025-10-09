@@ -6,6 +6,7 @@ use App\Helpers\Filters;
 use App\Models\UserVouchers;
 use App\Models\User;
 use App\Models\Discounts;
+use App\Models\PackageVouchers;
 use Illuminate\Http\Request;
 use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
@@ -81,7 +82,11 @@ class UserVouchersController extends Controller
 
             if ($userVouchers) {
                 $records['data'] = $userVouchers->map(function ($item) {
-                   
+                    // Check if voucher is used in package_vouchers
+                    $isUsedInPackages = PackageVouchers::where('voucher_id', $item->voucher_id)
+                        ->where('user_id', $item->user_id)
+                        ->exists();
+
                     return [
                         'id' => $item->id,
                         'patient_id' => $item->user_id,
@@ -89,6 +94,8 @@ class UserVouchersController extends Controller
                         'voucher_type' => $item->voucher ? $item->voucher->name : 'N/A',
                         'amount' => $item->amount,
                         'created_at' => $item->created_at,
+                        'can_edit' => !$isUsedInPackages,
+                        'can_delete' => !$isUsedInPackages,
                     ];
                 });
 
@@ -171,5 +178,100 @@ class UserVouchersController extends Controller
         ];
 
         return $records;
+    }
+
+    /**
+     * Edit user voucher.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function edit($id)
+    {
+        try {
+            if (!Gate::allows('vouchers_manage')) {
+                return ApiHelper::apiUnAuthorized();
+            }
+
+            $userVoucher = UserVouchers::findOrFail($id);
+
+            // Check if voucher is used in package_vouchers
+            $isUsedInPackages = PackageVouchers::where('voucher_id', $userVoucher->voucher_id)
+                ->where('user_id', $userVoucher->user_id)
+                ->exists();
+
+            if ($isUsedInPackages) {
+                return ApiHelper::apiError('This voucher cannot be edited as it is already applied to services.');
+            }
+
+            return ApiHelper::apiSuccess($userVoucher);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Update user voucher.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(Request $request, $id)
+    {
+        try {
+            if (!Gate::allows('vouchers_manage')) {
+                return ApiHelper::apiUnAuthorized();
+            }
+
+            $userVoucher = UserVouchers::findOrFail($id);
+
+            // Check if voucher is used in package_vouchers
+            $isUsedInPackages = PackageVouchers::where('voucher_id', $userVoucher->voucher_id)
+                ->where('user_id', $userVoucher->user_id)
+                ->exists();
+
+            if ($isUsedInPackages) {
+                return ApiHelper::apiError('This voucher cannot be updated as it is already applied to services.');
+            }
+
+            $userVoucher->update($request->only(['user_id', 'voucher_id', 'amount']));
+
+            return ApiHelper::apiSuccess($userVoucher, 'Voucher updated successfully.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Delete user voucher.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy($id)
+    {
+        try {
+            if (!Gate::allows('vouchers_manage')) {
+                return ApiHelper::apiUnAuthorized();
+            }
+
+            $userVoucher = UserVouchers::findOrFail($id);
+
+            // Check if voucher is used in package_vouchers
+            $isUsedInPackages = PackageVouchers::where('voucher_id', $userVoucher->voucher_id)
+                ->where('user_id', $userVoucher->user_id)
+                ->exists();
+
+            if ($isUsedInPackages) {
+                return ApiHelper::apiError('This voucher cannot be deleted as it is already applied to services.');
+            }
+
+            $userVoucher->delete();
+
+            return ApiHelper::apiSuccess(null, 'Voucher deleted successfully.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 }

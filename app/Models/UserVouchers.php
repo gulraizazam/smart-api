@@ -25,4 +25,10 @@ class UserVouchers extends Model
         return $this->belongsTo(Discounts::class, 'voucher_id', 'id')
             ->where('discount_type', 'voucher');
     }
+
+    public function packageVouchers()
+    {
+        return $this->hasMany(PackageVouchers::class, 'voucher_id', 'voucher_id')
+            ->where('user_id', $this->user_id);
+    }
 }
