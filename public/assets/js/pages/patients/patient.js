@@ -121,12 +121,12 @@ function actions(data) {
                     <span class="navi-text">Cancel Membership</span>\
                     </a>\
                 </li>';
-                actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="addVoucher(`'+ assign_voucher_url + '`, `' + id + '`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-pencil"></i></span>\
-                            <span class="navi-text">Add Voucher</span>\
-                        </a>\
-                    </li>';
+                // actions += '<li class="navi-item">\
+                //         <a href="javascript:void(0);" onclick="addVoucher(`'+ assign_voucher_url + '`, `' + id + '`);" class="navi-link">\
+                //             <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                //             <span class="navi-text">Add Voucher</span>\
+                //         </a>\
+                //     </li>';
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="editRow(`'+ url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
