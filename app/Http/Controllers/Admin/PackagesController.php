@@ -1266,15 +1266,32 @@ class PackagesController extends Controller
                         }
                     }
                 }
-               if($checkUserDicounts){
-                $discounts = Discounts::whereIn('id', $uniq_array)->whereIn('id', $checkUserDicounts)->where([
-                    ['active', '=', '1'],
-                ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-               }else{
-                $discounts = Discounts::whereIn('id', $uniq_array)->where([
-                    ['active', '=', '1'],
-                ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-               }
+               // Fetch NON-VOUCHER discounts
+            $generalDiscounts = Discounts::whereIn('id', $uniq_array)
+                ->where('discount_type', '!=', 'voucher')
+                ->where('active', '=', '1')
+                ->whereDate('start', '<=', $today)
+                ->whereDate('end', '>=', $today)
+                ->get();
+
+            // Fetch VOUCHER discounts
+            $voucherDiscounts = Collection::make();
+            $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
+                ->pluck('voucher_id')
+                ->toArray();
+            
+            if ($checkUserVouchers) {
+                $voucherDiscounts = Discounts::whereIn('id', $uniq_array)
+                    ->whereIn('id', $checkUserVouchers)
+                    ->where('discount_type', '=', 'voucher')
+                    ->where('active', '=', '1')
+                    ->whereDate('start', '<=', $today)
+                    ->whereDate('end', '>=', $today)
+                    ->get();
+            }
+
+                // Merge both collections
+                $discounts = $generalDiscounts->merge($voucherDiscounts);
                 
             }
         }
