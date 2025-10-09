@@ -229,15 +229,15 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     ////Vouchers
     
-    Route::post('vouchersTypes/datatable', [VouchersController::class, 'datatable'])->name('vouchersTypes.datatable');
-    Route::post('vouchersTypes/status', [VouchersController::class, 'status'])->name('vouchersTypes.status');
-    Route::get('vouchersTypes/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('vouchersTypes.location_manage');
+    Route::post('voucherTypes/datatable', [VouchersController::class, 'datatable'])->name('vouchersTypes.datatable');
+    Route::post('voucherTypes/status', [VouchersController::class, 'status'])->name('vouchersTypes.status');
+    Route::get('voucherTypes/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('vouchersTypes.location_manage');
     Route::get('getDservice', [VouchersController::class, 'getDservices'])->name('vouchersTypes.get_Dservice');
     Route::get('getDiscountServices', [VouchersController::class, 'getDiscountServices'])->name('vouchersTypes.getDiscountServices');
     Route::post('saveDervice', [VouchersController::class, 'saveDservices'])->name('vouchersTypes.save_Dervice');
     Route::post('deleteDservice', [VouchersController::class, 'deleteDservice'])->name('vouchersTypes.delete_service');
 
-    Route::resource('vouchersTypes', VouchersController::class)->except('index');
+    Route::resource('voucherTypes', VouchersController::class)->except('index');
 
     //Packages Route start
     Route::post('bundles/datatable', [BundlesController::class, 'datatable'])->name('bundles.datatable');
