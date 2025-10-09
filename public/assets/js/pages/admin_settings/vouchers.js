@@ -1,5 +1,5 @@
 
-var table_url = route('admin.user-vouchers.datatable');
+var table_url = route('admin.vouchers.datatable');
 
 var table_columns = [
     {
