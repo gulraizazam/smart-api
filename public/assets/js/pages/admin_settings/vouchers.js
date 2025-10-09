@@ -30,59 +30,105 @@ var table_columns = [
         title: 'Created at',
         width: 'auto',
     }, {
-        field: 'Actions',
+        field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 150,
+        width: 120,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
-            var actions = '';
-
-            // View button (empty for now)
-            actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" title="View">' +
-                '<i class="fa fa-eye"></i>' +
-                '</a>';
-
-            // Edit button - check if editable
-            if (data.can_edit) {
-                actions += '<a href="javascript:void(0);" onclick="editVoucher(' + data.id + ');" class="btn btn-sm btn-clean btn-icon mr-2" title="Edit">' +
-                    '<i class="fa fa-edit"></i>' +
-                    '</a>';
-            } else {
-                actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2 disabled" title="Cannot edit - voucher is used in services" style="opacity: 0.5; cursor: not-allowed;">' +
-                    '<i class="fa fa-edit"></i>' +
-                    '</a>';
-            }
-
-            // Delete button - check if deletable
-            if (data.can_delete) {
-                actions += '<a href="javascript:void(0);" onclick="deleteVoucher(' + data.id + ');" class="btn btn-sm btn-clean btn-icon" title="Delete">' +
-                    '<i class="fa fa-trash"></i>' +
-                    '</a>';
-            } else {
-                actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon disabled" title="Cannot delete - voucher is applied on services" style="opacity: 0.5; cursor: not-allowed;">' +
-                    '<i class="fa fa-trash"></i>' +
-                    '</a>';
-            }
-
-            return actions;
+            return actions(data);
         }
     }];
 
-function editVoucher(id) {
+function actions(data) {
+    if (typeof data.id !== 'undefined') {
+        let id = data.id;
+        let edit_url = route('admin.vouchers.edit', {id: id});
+        let delete_url = route('admin.vouchers.destroy', {id: id});
+
+        if (permissions.view) {
+            let actions = '<div class="dropdown dropdown-inline action-dots">\
+        <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
+            <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
+        </a>\
+        <div class="dropdown-menu dropdown-menu-sm dropdown-menu-right">\
+            <ul class="navi flex-column navi-hover py-2">\
+                <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
+                    Choose an action: \
+                </li>';
+
+            // View button (empty for now)
+            actions += '<li class="navi-item">\
+                <a href="javascript:void(0);" class="navi-link">\
+                    <span class="navi-icon"><i class="la la-eye"></i></span>\
+                    <span class="navi-text">View</span>\
+                </a>\
+            </li>';
+
+            // Edit button - check if editable
+            if (data.can_edit && permissions.view) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="editVoucher(`' + edit_url + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                        <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+            } else {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" class="navi-link disabled" style="opacity: 0.5; cursor: not-allowed;" title="Cannot edit - voucher is used in services">\
+                        <span class="navi-icon"><i class="la la-pencil"></i></span>\
+                        <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+            }
+
+            // Delete button - check if deletable
+            if (data.can_delete && permissions.view) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="deleteVoucher(`' + delete_url + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-trash"></i></span>\
+                        <span class="navi-text">Delete</span>\
+                    </a>\
+                </li>';
+            } else {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" class="navi-link disabled" style="opacity: 0.5; cursor: not-allowed;" title="Cannot delete - voucher is applied on services">\
+                        <span class="navi-icon"><i class="la la-trash"></i></span>\
+                        <span class="navi-text">Delete</span>\
+                    </a>\
+                </li>';
+            }
+
+            actions += '</ul>\
+        </div>\
+    </div>';
+
+            return actions;
+        }
+    }
+    return '';
+}
+
+function editVoucher(url) {
+    $("#modal_edit_voucher").modal("show");
+
     $.ajax({
-        url: route('admin.vouchers.edit', id),
-        type: 'GET',
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
         success: function(response) {
             if (response.status === 'success') {
-                // Open edit modal with voucher data
-                $('#modal_edit_voucher').modal('show');
                 // Populate form fields with voucher data
                 $('#edit_voucher_id').val(response.data.id);
                 $('#edit_user_id').val(response.data.user_id).trigger('change');
                 $('#edit_voucher_id_field').val(response.data.voucher_id).trigger('change');
                 $('#edit_amount').val(response.data.amount);
+
+                reInitSelect2(".select2", "");
             } else {
                 toastr.error(response.message || 'Cannot edit this voucher.');
             }
@@ -94,29 +140,39 @@ function editVoucher(id) {
     });
 }
 
-function deleteVoucher(id) {
-    if (!confirm('Are you sure you want to delete this voucher?')) {
-        return;
-    }
-
-    $.ajax({
-        url: route('admin.vouchers.destroy', id),
-        type: 'DELETE',
-        data: {
-            _token: $('meta[name="csrf-token"]').attr('content')
-        },
-        success: function(response) {
-            if (response.status === 'success') {
-                toastr.success(response.message || 'Voucher deleted successfully.');
-                // Reload datatable
-                $('#kt_datatable').KTDatatable().reload();
-            } else {
-                toastr.error(response.message || 'Cannot delete this voucher.');
-            }
-        },
-        error: function(xhr) {
-            var message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'An error occurred.';
-            toastr.error(message);
+function deleteVoucher(url) {
+    swal.fire({
+        title: 'Are you sure you want to remove?',
+        type: 'danger',
+        icon: 'info',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete!',
+        cancelButtonText: 'No',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-primary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function(result) {
+        if (result.value) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'DELETE',
+                url: url,
+                success: function(response) {
+                    if (response.status === 'success') {
+                        toastr.success(response.message || 'Voucher deleted successfully.');
+                        // Reload datatable
+                        $('#kt_datatable').KTDatatable().reload();
+                    } else {
+                        toastr.error(response.message || 'Cannot delete this voucher.');
+                    }
+                },
+                error: function(xhr) {
+                    var message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'An error occurred.';
+                    toastr.error(message);
+                }
+            });
         }
     });
 }
