@@ -365,8 +365,8 @@
                             @endcan
 
                             @can('packages_manage')
-                            <li class="menu-item manage-treatment {{ activeMenu('admin.bundles.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.bundles.index') }}" class="menu-link">
+                            <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.vouchers.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
                                         <span></span>
                                     </i>
