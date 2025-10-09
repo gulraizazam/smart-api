@@ -1217,22 +1217,32 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-$checkUserDicounts = UserVouchers::where('user_id', $request->patient_id)->pluck('voucher_id')->toArray();
+             $generalDiscounts = Discounts::whereIn('id', $discountIds)
+            ->where('discount_type', '!=', 'voucher')
+            ->where('active', '=', '1')
+            ->whereDate('start', '<=', $today)
+            ->whereDate('end', '>=', $today)
+            ->get();
 
-// Merge both arrays
-if($checkUserDicounts){
-    $allDiscountIds = array_merge($discountIds, $checkUserDicounts);
-    $allDiscountIds = array_unique($allDiscountIds);
-} else {
-    $allDiscountIds = $discountIds;
-}
+        // Fetch VOUCHER discounts (user-specific)
+        $voucherDiscounts = Collection::make();
+        $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
+            ->pluck('voucher_id')
+            ->toArray();
+        
+        if ($checkUserVouchers) {
+            // Get voucher discounts that match BOTH location/service AND user assignment
+            $voucherDiscounts = Discounts::whereIn('id', $discountIds)
+                ->whereIn('id', $checkUserVouchers)
+                ->where('discount_type', '=', 'voucher')
+                ->where('active', '=', '1')
+                ->whereDate('start', '<=', $today)
+                ->whereDate('end', '>=', $today)
+                ->get();
+        }
 
-$discounts = Discounts::whereIn('id', $allDiscountIds)
-    ->where('active', '=', '1')
-    ->whereDate('start', '<=', $today)
-    ->whereDate('end', '>=', $today)
-    ->get();
-           
+        // Merge both collections
+        $discounts = $generalDiscounts->merge($voucherDiscounts);
            
             
         } else {
