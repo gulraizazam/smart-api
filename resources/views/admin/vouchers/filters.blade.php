@@ -16,7 +16,16 @@
             </select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>Created at:</label>
+            <div class="input-group">
+                <input type="text" id="search_date_range" class="form-control filter-field" readonly placeholder="Select Date Range">
+            </div>
+            <input type="hidden" id="search_created_from">
+            <input type="hidden" id="search_created_to">
+        </div>
+
+        <div class="col-lg-2 mb-lg-0 mt-8">
             @include('admin.partials.filter-buttons')
         </div>
     </div>

@@ -197,6 +197,8 @@ function applyFilters(datatable) {
             delete: '',
             patient_id: $("#search_patient").val(),
             voucher_type: $("#search_voucher_type").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
@@ -208,11 +210,16 @@ function resetAllFilters(datatable) {
         $('.search_patient').val('');
         $("#search_patient").val('');
         $("#search_voucher_type").val('').trigger('change');
+        $("#search_date_range").val('');
+        $("#search_created_from").val('');
+        $("#search_created_to").val('');
 
         let filters = {
             delete: '',
             patient_id: '',
             voucher_type: '',
+            created_from: '',
+            created_to: '',
             filter: 'filter_cancel',
         }
         datatable.search(filters, 'search');
@@ -235,10 +242,17 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_patient").val(active_filters.patient_id || '');
         $("#search_voucher_type").val(active_filters.voucher_type || '');
+        $("#search_created_from").val(active_filters.created_from || '');
+        $("#search_created_to").val(active_filters.created_to || '');
 
         // Set patient name if patient_id exists
         if (active_filters.patient_id && active_filters.patient_name) {
             $('.search_patient').val(active_filters.patient_name);
+        }
+
+        // Set date range if exists
+        if (active_filters.created_from && active_filters.created_to) {
+            $("#search_date_range").val(active_filters.created_from + ' - ' + active_filters.created_to);
         }
 
     } catch (err) {
@@ -251,8 +265,36 @@ function addUsers(){
     $("#search_patient").val('');
 }
 
-// Initialize patient search
+// Initialize patient search and daterangepicker
 $(document).ready(function() {
     // Patient search using existing function from custom.js
     patientSearch('search_patient');
+
+    // Initialize daterangepicker
+    $('#search_date_range').daterangepicker({
+        locale: {
+            format: 'YYYY-MM-DD'
+        },
+        ranges: {
+            'Today': [moment(), moment()],
+            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            'This Week': [moment().startOf('week'), moment().endOf('week')],
+            'Last Week': [moment().subtract(1, 'week').startOf('week'), moment().subtract(1, 'week').endOf('week')],
+            'This Month': [moment().startOf('month'), moment().endOf('month')],
+            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        },
+        autoUpdateInput: false
+    });
+
+    $('#search_date_range').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        $('#search_created_from').val(picker.startDate.format('YYYY-MM-DD'));
+        $('#search_created_to').val(picker.endDate.format('YYYY-MM-DD'));
+    });
+
+    $('#search_date_range').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+        $('#search_created_from').val('');
+        $('#search_created_to').val('');
+    });
 });
