@@ -673,6 +673,49 @@ class VouchersController extends Controller
     {
         $vouchers = Discounts::where('discount_type', 'voucher')->pluck('id','name')->toArray();
         return response()->json(['data'=> $vouchers]);
-        
+
+    }
+
+    /**
+     * Assign voucher to patient from voucher types screen.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function assignToPatient(Request $request)
+    {
+        if (!Gate::allows('vouchers_manage')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        try {
+            $validator = Validator::make($request->all(), [
+                'voucher_id' => 'required',
+                'patient_id' => 'required',
+                'amount' => 'required|numeric|min:0',
+            ]);
+
+            if ($validator->fails()) {
+                return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+            }
+
+            $checkVoucher = \App\Models\UserVouchers::where('user_id', $request->patient_id)
+                ->where('voucher_id', $request->voucher_id)
+                ->first();
+
+            if ($checkVoucher) {
+                return ApiHelper::apiResponse($this->error, 'Voucher is already assigned to this patient', false);
+            }
+
+            \App\Models\UserVouchers::create([
+                'user_id' => $request->patient_id,
+                'voucher_id' => $request->voucher_id,
+                'amount' => $request->amount
+            ]);
+
+            return ApiHelper::apiResponse($this->success, 'Voucher assigned to patient successfully.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 }

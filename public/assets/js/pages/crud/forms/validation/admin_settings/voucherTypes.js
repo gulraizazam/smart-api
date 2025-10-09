@@ -188,10 +188,79 @@ var AllocateValidation = function () {
     };
 }();
 
+var AssignToPatientValidation = function () {
+    // Private functions
+    var validation = function () {
+        let modal_id = 'modal_assign_voucher_to_patient_form';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    patient_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The patient field is required'
+                            }
+                        }
+                    },
+                    amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The amount field is required'
+                            },
+                            numeric: {
+                                message: 'The amount must be a number'
+                            },
+                            greaterThan: {
+                                min: 0,
+                                message: 'The amount must be greater than 0'
+                            }
+                        }
+                    },
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+           select2Validation();
+        });
+        validate.on('core.form.valid', function(event) {
+            submitForm(route('admin.voucherTypes.assignToPatient'), 'POST', $(form).serialize(), function (response) {
+                if (response.status == true) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                    $('#assign_voucher_type_name').val('');
+                    $('#assign_voucher_id').val('');
+                    $('#assign_patient_search').val('');
+                    $('#assign_patient_id').val('');
+                    $('#assign_amount').val('');
+                } else {
+                    toastr.error(response.message);
+                }
+            }, form);
+        });
+    }
+
+    return {
+        init: function() {
+            validation();
+        }
+    };
+}();
+
 jQuery(document).ready(function() {
     AddValidation.init();
     EditValidation.init();
     AllocateValidation.init();
+    AssignToPatientValidation.init();
 });
 
 function submitData(callback) {

@@ -78,6 +78,12 @@ function actions(data) {
                     </a>\
                 </li>';
             }
+            actions += '<li class="navi-item">\
+                <a href="javascript:void(0);" onclick="assignToPatient(`' + id + '`, `' + data.name + '`);" class="navi-link">\
+                    <span class="navi-icon"><i class="la la-user"></i></span>\
+                    <span class="navi-text">Assign To Patient</span>\
+                </a>\
+            </li>';
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="editRow(`' + url + '`);" class="navi-link">\
@@ -595,13 +601,76 @@ $(document).on('change', '.discount_type_wrap.get_discount_type .radio-inline .g
 });
 $(document).on("keyup", ".add_configurable_amount", function () {
 
-    
+
         var val = parseInt(this.value);
         if (val > 100 || val < 0) {
             this.value = '';
             toastr.error("Amount is not allowed greater than 100");
         }
-    
+
 
 })
+
+function assignToPatient(voucherId, voucherName) {
+    $('#assign_voucher_type_name').val(voucherName);
+    $('#assign_voucher_id').val(voucherId);
+    $('#assign_patient_search').val('');
+    $('#assign_patient_id').val('');
+    $('#assign_amount').val('');
+
+    $("#modal_assign_voucher_to_patient").modal("show");
+}
+
+function selectUserVoucher(name, user_id) {
+    $('#assign_patient_search').val(name);
+    $('#assign_patient_id').val(user_id);
+    $(".suggesstion-box-voucher").hide();
+}
+
+$(document).ready(function() {
+    // Patient search for voucher assignment
+    $(document).on("keyup", "#assign_patient_search", function () {
+        $(".suggesstion-box-voucher .suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box-voucher").show();
+
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box-voucher").hide();
+            return false;
+        }
+
+        var that = $(this);
+        if ($(this).val() != '') {
+            setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        $(".suggesstion-box-voucher .suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectUserVoucher(\'' + patient.name + '\', \'' + patient.id + '\');">' + patient.name + ' - ' + patient.id + '</li>';
+                            });
+                            $(".suggesstion-box-voucher .suggestion-list").html(html);
+                            $(".suggesstion-box-voucher").show();
+                        } else {
+                            $(".suggesstion-box-voucher").hide();
+                        }
+                    }
+                });
+            }, 1000);
+        } else {
+            $(".suggesstion-box-voucher").hide();
+        }
+    });
+
+    $(document).on("click", ".clear-patient-voucher", function () {
+        $('#assign_patient_search').val('');
+        $('#assign_patient_id').val('');
+        $(".suggesstion-box-voucher").hide();
+    });
+});
 
