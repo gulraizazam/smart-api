@@ -228,6 +228,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('discounts', DiscountsController::class)->except('index');
 
     ////Vouchers
+    
     Route::post('vouchersTypes/datatable', [VouchersController::class, 'datatable'])->name('vouchersTypes.datatable');
     Route::post('vouchersTypes/status', [VouchersController::class, 'status'])->name('vouchersTypes.status');
     Route::get('vouchersTypes/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('vouchersTypes.location_manage');
