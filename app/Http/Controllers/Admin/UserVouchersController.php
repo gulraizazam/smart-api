@@ -177,48 +177,6 @@ class UserVouchersController extends Controller
             }
         }
 
-        if (hasFilter($filters, 'created_from')) {
-            $where[] = [
-                'created_at',
-                '>=',
-                $filters['created_from'] . ' 00:00:00',
-            ];
-            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'created_from');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'created_from')) {
-                    $where[] = [
-                        'created_at',
-                        '>=',
-                        Filters::get(Auth::User()->id, $filename, 'created_from') . ' 00:00:00',
-                    ];
-                }
-            }
-        }
-
-        if (hasFilter($filters, 'created_to')) {
-            $where[] = [
-                'created_at',
-                '<=',
-                $filters['created_to'] . ' 23:59:59',
-            ];
-            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
-        } else {
-            if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'created_to');
-            } else {
-                if (Filters::get(Auth::User()->id, $filename, 'created_to')) {
-                    $where[] = [
-                        'created_at',
-                        '<=',
-                        Filters::get(Auth::User()->id, $filename, 'created_to') . ' 23:59:59',
-                    ];
-                }
-            }
-        }
-
         return $where;
     }
 
