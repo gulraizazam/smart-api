@@ -1,14 +1,13 @@
 <div class="mt-2 mb-7">
-     <div class="row mb-6">
-
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Patient:</label>
-            <input class="form-control filter-field" id="search_patient" placeholder="Patient Search" autocomplete="off">
-            <span onclick="$('.clear-patient-filter').click();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
-            <div class="suggesstion-box-patient-filter" style="display: none;">
+    <div class="row mb-6">
+        <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
+            <label>Patient Search:</label>
+            <input class="form-control filter-field search_patient" placeholder="Patient Search" autocomplete="off">
+            <input type="hidden" class="filter-field search_field" id="search_patient">
+            <span onclick="addUsers();" class="croxcli" style="padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
+            <div class="suggesstion-box" style="display: none;">
                 <ul class="suggestion-list"></ul>
             </div>
-            <input type="hidden" id="search_patient_id">
         </div>
 
         <div class="col-lg-2 mb-lg-0 mb-6">
@@ -17,25 +16,17 @@
             </select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Created From:</label>
-            <div class="input-daterange input-group to-from-datepicker">
-                <input type="text" id="search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From">
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>Created at:</label>
+            <div class="input-group">
+                <input type="text" id="search_date_range" class="form-control filter-field" readonly placeholder="Select Date Range">
             </div>
+            <input type="hidden" id="search_created_from">
+            <input type="hidden" id="search_created_to">
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Created To:</label>
-            <div class="input-daterange input-group to-from-datepicker">
-                <input type="text" id="search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To">
-            </div>
-        </div>
-
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
-
+        <div class="col-lg-2 mb-lg-0 mt-8">
             @include('admin.partials.filter-buttons')
-
         </div>
     </div>
-
 </div>
