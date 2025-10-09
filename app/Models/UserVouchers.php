@@ -13,7 +13,7 @@ class UserVouchers extends Model
         'user_id',
         'voucher_id',
         'amount',
-        'actual_amount'
+        'total_amount'
     ];
 
 

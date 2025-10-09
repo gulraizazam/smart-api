@@ -92,7 +92,7 @@ class UserVouchersController extends Controller
                         'patient_id' => $item->user_id,
                         'name' => $item->user ? $item->user->name  : 'N/A',
                         'voucher_type' => $item->voucher ? $item->voucher->name : 'N/A',
-                        'actual_amount' => $item->actual_amount ?? 0,
+                        'total_amount' => $item->total_amount ?? 0,
                         'amount' => $item->amount,
                         'created_at' => $item->created_at,
                         'can_edit' => !$isUsedInPackages,
