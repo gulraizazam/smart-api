@@ -1217,17 +1217,21 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-            $checkUserDicounts = UserVouchers::where('user_id', $request->patient_id)->pluck('voucher_id')->toArray();
-            dd($discountIds, $checkUserDicounts);
-            if($checkUserDicounts){
-                $discounts = Discounts::whereIn('id', $discountIds)->whereIn('id', $checkUserDicounts)->where([
-                    ['active', '=', '1'],
-                ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-            }else{
-                $discounts = Discounts::whereIn('id', $discountIds)->where([
-                    ['active', '=', '1'],
-                ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
-            }
+$checkUserDicounts = UserVouchers::where('user_id', $request->patient_id)->pluck('voucher_id')->toArray();
+
+// Merge both arrays
+if($checkUserDicounts){
+    $allDiscountIds = array_merge($discountIds, $checkUserDicounts);
+    $allDiscountIds = array_unique($allDiscountIds);
+} else {
+    $allDiscountIds = $discountIds;
+}
+
+$discounts = Discounts::whereIn('id', $allDiscountIds)
+    ->where('active', '=', '1')
+    ->whereDate('start', '<=', $today)
+    ->whereDate('end', '>=', $today)
+    ->get();
            
            
             
