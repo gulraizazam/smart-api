@@ -700,7 +700,7 @@ class PackagesController extends Controller
         ];
         if ($discount) {
             if( $request->discount_price  >  $bundle->price){
-                $newDiscountPrice =$request->discount_price - $bundle->price;
+                $newDiscountPrice = $bundle->price;
             }else{
                 $newDiscountPrice = $request->discount_price;
             }
