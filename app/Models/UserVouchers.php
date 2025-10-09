@@ -16,6 +16,9 @@ class UserVouchers extends Model
         'total_amount'
     ];
 
+    protected $casts = [
+        'created_at' => 'datetime:F d,Y h:i A',
+    ];
 
     public function user()
     {
