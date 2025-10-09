@@ -81,11 +81,22 @@ class UserVouchersController extends Controller
             $records = $this->getFiltersData($records, $filename);
 
             if ($userVouchers) {
-                $records['data'] = $userVouchers->map(function ($item) {
+                // Fetch all package vouchers once to avoid N+1 queries
+                $userIds = $userVouchers->pluck('user_id')->unique()->toArray();
+                $voucherIds = $userVouchers->pluck('voucher_id')->unique()->toArray();
+
+                $usedVouchers = PackageVouchers::whereIn('user_id', $userIds)
+                    ->whereIn('voucher_id', $voucherIds)
+                    ->select('user_id', 'voucher_id')
+                    ->get()
+                    ->groupBy(function($item) {
+                        return $item->user_id . '_' . $item->voucher_id;
+                    });
+
+                $records['data'] = $userVouchers->map(function ($item) use ($usedVouchers) {
                     // Check if voucher is used in package_vouchers
-                    $isUsedInPackages = PackageVouchers::where('voucher_id', $item->voucher_id)
-                        ->where('user_id', $item->user_id)
-                        ->exists();
+                    $key = $item->user_id . '_' . $item->voucher_id;
+                    $isUsedInPackages = isset($usedVouchers[$key]);
 
                     return [
                         'id' => $item->id,
