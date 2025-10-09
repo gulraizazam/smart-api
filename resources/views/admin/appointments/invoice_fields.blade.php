@@ -154,7 +154,7 @@
 
                         <div class="col-md-10 mt-12">
                             <!--begin::Option-->
-                            <span class="switch switch-sm switch-icon switch_custom">
+                            <!-- <span class="switch switch-sm switch-icon switch_custom">
                                 <div class="col-md-12" style="padding-left: 0">
                                     <strong>Exclusive</strong>
 
@@ -178,7 +178,7 @@
                                 @endif
 
                                 </div>
-                            </span>
+                            </span> -->
                         </div>
 
 
@@ -232,9 +232,9 @@
 
                 <div class="col-md-11 mt-5">
                     <strong class="mt-5">Date</strong>
-                    @if(Auth::user()->hasRole('Super-Admin'))
+                    <!-- @if(Auth::user()->hasRole('Super-Admin'))
                     <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
-                    @endif
+                    @endif -->
                     <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
                            class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
                 </div>
