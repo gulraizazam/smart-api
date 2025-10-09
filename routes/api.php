@@ -22,6 +22,7 @@ use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\VouchersController;
+use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\WarehouseController;
@@ -230,6 +231,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     ////Vouchers
     
     Route::post('voucherTypes/datatable', [VouchersController::class, 'datatable'])->name('voucherTypes.datatable');
+    Route::post('vouchers/datatable', [UserVouchersController::class, 'datatable'])->name('vouchers.datatable');
     Route::post('voucherTypes/status', [VouchersController::class, 'status'])->name('voucherTypes.status');
     Route::get('voucherTypes/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('voucherTypes.location_manage');
     Route::get('getDservice', [VouchersController::class, 'getDservices'])->name('voucherTypes.get_Dservice');
