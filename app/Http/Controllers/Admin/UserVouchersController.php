@@ -190,7 +190,7 @@ class UserVouchersController extends Controller
     {
         try {
             if (!Gate::allows('vouchers_manage')) {
-                return ApiHelper::apiUnAuthorized();
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
             $userVoucher = UserVouchers::findOrFail($id);
@@ -201,10 +201,10 @@ class UserVouchersController extends Controller
                 ->exists();
 
             if ($isUsedInPackages) {
-                return ApiHelper::apiError('This voucher cannot be edited as it is already applied to services.');
+                return ApiHelper::apiResponse($this->error, 'This voucher cannot be edited as it is already applied to services.', false);
             }
 
-            return ApiHelper::apiSuccess($userVoucher);
+            return ApiHelper::apiResponse($this->success, 'Record found', true, $userVoucher);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -221,7 +221,7 @@ class UserVouchersController extends Controller
     {
         try {
             if (!Gate::allows('vouchers_manage')) {
-                return ApiHelper::apiUnAuthorized();
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
             $userVoucher = UserVouchers::findOrFail($id);
@@ -232,12 +232,12 @@ class UserVouchersController extends Controller
                 ->exists();
 
             if ($isUsedInPackages) {
-                return ApiHelper::apiError('This voucher cannot be updated as it is already applied to services.');
+                return ApiHelper::apiResponse($this->error, 'This voucher cannot be updated as it is already applied to services.', false);
             }
 
             $userVoucher->update($request->only(['user_id', 'voucher_id', 'amount']));
 
-            return ApiHelper::apiSuccess($userVoucher, 'Voucher updated successfully.');
+            return ApiHelper::apiResponse($this->success, 'Voucher updated successfully.', true, $userVoucher);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -253,7 +253,7 @@ class UserVouchersController extends Controller
     {
         try {
             if (!Gate::allows('vouchers_manage')) {
-                return ApiHelper::apiUnAuthorized();
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
             $userVoucher = UserVouchers::findOrFail($id);
@@ -264,12 +264,12 @@ class UserVouchersController extends Controller
                 ->exists();
 
             if ($isUsedInPackages) {
-                return ApiHelper::apiError('This voucher cannot be deleted as it is already applied to services.');
+                return ApiHelper::apiResponse($this->error, 'This voucher cannot be deleted as it is already applied to services.', false);
             }
 
             $userVoucher->delete();
 
-            return ApiHelper::apiSuccess(null, 'Voucher deleted successfully.');
+            return ApiHelper::apiResponse($this->success, 'Voucher deleted successfully.', true);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
