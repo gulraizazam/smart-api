@@ -1,11 +1,11 @@
 @extends('admin.layouts.master')
-@section('title', 'Voucher Types')
+@section('title', 'Vouchers')
 @section('content')
 
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-    @include('admin.partials.breadcrumb', ['module' => 'Voucher Types List', 'title' => 'Voucher Types'])
+    @include('admin.partials.breadcrumb', ['module' => 'Vouchers List', 'title' => 'Vouchers'])
 
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
@@ -79,7 +79,7 @@
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup medium_modal" id="voucher_add">
 
-            @include('admin.voucherTypes.create')
+            @include('admin.vouchers.create')
 
         </div>
         <!--end::Modal dialog-->
@@ -89,7 +89,7 @@
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup medium_modal" id="voucher_edit">
 
-            @include('admin.voucherTypes.edit')
+            @include('admin.vouchers.edit')
 
         </div>
         <!--end::Modal dialog-->
@@ -99,7 +99,7 @@
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered form-popup" id="voucher_allocate">
 
-            @include('admin.voucherTypes.allocate')
+            @include('admin.vouchers.allocate')
 
         </div>
         <!--end::Modal dialog-->
@@ -107,11 +107,11 @@
 
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/voucherTypes.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/vouchers.js')}}"></script>
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/voucherTypes.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/vouchers.js')}}"></script>
     @endpush
 
 @endsection

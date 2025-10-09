@@ -36,7 +36,7 @@ class UserVouchersController extends Controller
             return abort(401);
         }
 
-        return view('admin.user-vouchers.index');
+        return view('admin.vouchers.index');
     }
 
     /**
@@ -51,7 +51,7 @@ class UserVouchersController extends Controller
             $records = [];
             $records['data'] = [];
 
-            $filename = 'user_vouchers';
+            $filename = 'vouchers';
             $filters = getFilters($request->all());
             $apply_filter = checkFilters($filters, $filename);
 
