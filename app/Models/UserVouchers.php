@@ -22,6 +22,6 @@ class UserVouchers extends Model
     }
     public function voucher()
     {
-        return $this->belongsTo(voucher::class);
+        return $this->belongsTo(Voucher::class);
     }
 }
