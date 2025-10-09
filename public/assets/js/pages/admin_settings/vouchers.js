@@ -195,7 +195,7 @@ function applyFilters(datatable) {
     $('#apply-filters').on('click', function() {
         let filters = {
             delete: '',
-            patient_id: $("#search_patient_id").val(),
+            patient_id: $("#search_patient").val(),
             voucher_type: $("#search_voucher_type").val(),
             created_from: $("#search_created_from").val(),
             created_to: $("#search_created_to").val(),
@@ -207,9 +207,10 @@ function applyFilters(datatable) {
 
 function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
+        $('.search_patient').val('');
         $("#search_patient").val('');
-        $("#search_patient_id").val('');
         $("#search_voucher_type").val('').trigger('change');
+        $("#search_date_range").val('');
         $("#search_created_from").val('');
         $("#search_created_to").val('');
 
@@ -239,14 +240,19 @@ function setFilters(filter_values, active_filters) {
 
         $("#search_voucher_type").html(voucher_options);
 
-        $("#search_patient_id").val(active_filters.patient_id || '');
+        $("#search_patient").val(active_filters.patient_id || '');
         $("#search_voucher_type").val(active_filters.voucher_type || '');
         $("#search_created_from").val(active_filters.created_from || '');
         $("#search_created_to").val(active_filters.created_to || '');
 
         // Set patient name if patient_id exists
         if (active_filters.patient_id && active_filters.patient_name) {
-            $("#search_patient").val(active_filters.patient_name);
+            $('.search_patient').val(active_filters.patient_name);
+        }
+
+        // Set date range if exists
+        if (active_filters.created_from && active_filters.created_to) {
+            $("#search_date_range").val(active_filters.created_from + ' - ' + active_filters.created_to);
         }
 
     } catch (err) {
@@ -254,55 +260,41 @@ function setFilters(filter_values, active_filters) {
     }
 }
 
-function selectPatientFilter(name, user_id) {
-    $('#search_patient').val(name);
-    $('#search_patient_id').val(user_id);
-    $(".suggesstion-box-patient-filter").hide();
+function addUsers(){
+    $('.search_patient').val('');
+    $("#search_patient").val('');
 }
 
+// Initialize patient search and daterangepicker
 $(document).ready(function() {
-    // Patient search for filter
-    $(document).on("keyup", "#search_patient", function () {
-        $(".suggesstion-box-patient-filter .suggestion-list").html('<li>Searching...</li>');
-        $(".suggesstion-box-patient-filter").show();
+    // Patient search using existing function from custom.js
+    patientSearch('search_patient');
 
-        if ($(this).val().length < 2) {
-            $(".suggesstion-box-patient-filter").hide();
-            return false;
-        }
-
-        var that = $(this);
-        if ($(this).val() != '') {
-            setTimeout(function () {
-                $.ajax({
-                    type: "GET",
-                    url: route('admin.users.getpatient.id'),
-                    dataType: 'json',
-                    data: { search: that.val() },
-                    success: function (response) {
-                        let html = '';
-                        $(".suggesstion-box-patient-filter .suggestion-list").html(html);
-                        let patients = response.data.patients;
-                        if (patients.length) {
-                            patients.forEach(function (patient) {
-                                html += '<li onClick="selectPatientFilter(\'' + patient.name + '\', \'' + patient.id + '\');">' + patient.name + ' - ' + patient.id + '</li>';
-                            });
-                            $(".suggesstion-box-patient-filter .suggestion-list").html(html);
-                            $(".suggesstion-box-patient-filter").show();
-                        } else {
-                            $(".suggesstion-box-patient-filter").hide();
-                        }
-                    }
-                });
-            }, 1000);
-        } else {
-            $(".suggesstion-box-patient-filter").hide();
-        }
+    // Initialize daterangepicker
+    $('#search_date_range').daterangepicker({
+        locale: {
+            format: 'YYYY-MM-DD'
+        },
+        ranges: {
+            'Today': [moment(), moment()],
+            'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+            'This Week': [moment().startOf('week'), moment().endOf('week')],
+            'Last Week': [moment().subtract(1, 'week').startOf('week'), moment().subtract(1, 'week').endOf('week')],
+            'This Month': [moment().startOf('month'), moment().endOf('month')],
+            'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
+        },
+        autoUpdateInput: false
     });
 
-    $(document).on("click", ".clear-patient-filter", function () {
-        $('#search_patient').val('');
-        $('#search_patient_id').val('');
-        $(".suggesstion-box-patient-filter").hide();
+    $('#search_date_range').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('YYYY-MM-DD') + ' - ' + picker.endDate.format('YYYY-MM-DD'));
+        $('#search_created_from').val(picker.startDate.format('YYYY-MM-DD'));
+        $('#search_created_to').val(picker.endDate.format('YYYY-MM-DD'));
+    });
+
+    $('#search_date_range').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+        $('#search_created_from').val('');
+        $('#search_created_to').val('');
     });
 });
