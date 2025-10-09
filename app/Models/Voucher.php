@@ -91,7 +91,7 @@ class Voucher extends Model
 
             flash('Resource not found.')->error()->important();
 
-            return redirect()->route('admin.vouchers.index');
+            return redirect()->route('admin.voucherTypes.index');
         }
 
         // Check if child records exists or not, If exist then disallow to delete it.

@@ -1,5 +1,5 @@
 
-var table_url = route('admin.vouchers.datatable');
+var table_url = route('admin.voucherTypes.datatable');
 
 var table_columns = [
     {
@@ -31,7 +31,7 @@ var table_columns = [
         width: 100,
         sortable: false,
         template: function (data) {
-            let status_url = route('admin.vouchers.status');
+            let status_url = route('admin.voucherTypes.status');
             return statuses(data, status_url);
         }
     }, {
@@ -56,9 +56,9 @@ function actions(data) {
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
-        let url = route('admin.vouchers.edit', {id: id});
-        let allocate_url = route('admin.vouchers.location_manage', {id: id});
-        let delete_url = route('admin.vouchers.destroy', {id: id});
+        let url = route('admin.voucherTypes.edit', {id: id});
+        let allocate_url = route('admin.voucherTypes.location_manage', {id: id});
+        let delete_url = route('admin.voucherTypes.destroy', {id: id});
 
         if (permissions.edit || permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -190,7 +190,7 @@ function getDesrvice($this) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route("admin.vouchers.get_Dservice"),
+        url: route("admin.voucherTypes.get_Dservice"),
         type: "GET",
         data: {voucher_id:  $("#voucher_id").val(), id: $this.val()},
         cache: false,
@@ -254,7 +254,7 @@ function deleteModel(id) {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 type: 'post',
-                url: route('admin.vouchers.delete_service'),
+                url: route('admin.voucherTypes.delete_service'),
                 data: {'id': id
                 },
                 success: function (response) {
@@ -303,7 +303,7 @@ function setEditData(response) {
 
         
 
-        $("#modal_edit_vouchers_form").attr("action", route('admin.vouchers.update', {id: voucher.id}));
+        $("#modal_edit_vouchers_form").attr("action", route('admin.voucherTypes.update', {id: voucher.id}));
         
 
         $("#edit_name").val(voucher.name);

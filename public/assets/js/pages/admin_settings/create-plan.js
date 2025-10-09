@@ -726,7 +726,7 @@ function setEditData(response) {
         if (users) {
 
             Object.entries(users).forEach(function ([id, name]) {
-                //let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
+                let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
                 userOptions += '<option value="' + id + '">' + name + '</option>';
             });
         }

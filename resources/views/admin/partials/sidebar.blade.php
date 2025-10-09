@@ -334,6 +334,68 @@
                             @endcan
                             @can('discounts_manage')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.vouchers.index') }} " class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Vouchers</span>
+                                </a>
+                            </li>
+                            @endcan
+                        </ul>
+                    </div>
+
+                </li>
+                @endif
+                @if (Gate::allows('services_manage') || Gate::allows('packages_manage') || Gate::allows('discounts_manage'))
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.voucherTypes.index']) }} {{ openMenu(['admin.vouchers.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
+
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon fa_icon">
+                            <i class="font-icon la la-clock-o"></i>
+                        </span>
+                        <span class="menu-text">Vouchers</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+
+                        <ul class="menu-subnav">
+
+                            @can('services_manage')
+                            <li class="menu-item manage-consultancy {{ activeMenu('admin.voucherTypes.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.voucherTypes.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Vouchers Types</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('packages_manage')
+                            <li class="menu-item manage-treatment {{ activeMenu('admin.bundles.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.bundles.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Vouchers</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('discounts_manage')
+                            <li class="menu-item manage-treatment {{ activeMenu('admin.discounts.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.discounts.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Discounts</span>
+                                </a>
+                            </li>
+                            @endcan
+                            @can('discounts_manage')
+                            <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.vouchers.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
                                         <span></span>
