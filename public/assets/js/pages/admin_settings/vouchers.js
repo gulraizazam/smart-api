@@ -190,3 +190,119 @@ function deleteVoucher(url) {
         }
     });
 }
+
+function applyFilters(datatable) {
+    $('#apply-filters').on('click', function() {
+        let filters = {
+            delete: '',
+            patient_id: $("#search_patient_id").val(),
+            voucher_type: $("#search_voucher_type").val(),
+            created_from: $("#search_created_from").val(),
+            created_to: $("#search_created_to").val(),
+            filter: 'filter',
+        }
+        datatable.search(filters, 'search');
+    });
+}
+
+function resetAllFilters(datatable) {
+    $('#reset-filters').on('click', function() {
+        $("#search_patient").val('');
+        $("#search_patient_id").val('');
+        $("#search_voucher_type").val('').trigger('change');
+        $("#search_created_from").val('');
+        $("#search_created_to").val('');
+
+        let filters = {
+            delete: '',
+            patient_id: '',
+            voucher_type: '',
+            created_from: '',
+            created_to: '',
+            filter: 'filter_cancel',
+        }
+        datatable.search(filters, 'search');
+    });
+}
+
+function setFilters(filter_values, active_filters) {
+    try {
+        let vouchers = filter_values.vouchers;
+
+        let voucher_options = '<option value="">All Voucher Types</option>';
+
+        if (vouchers) {
+            Object.values(vouchers).forEach(function (voucher, index) {
+                voucher_options += '<option value="' + voucher.id + '">' + voucher.name + '</option>';
+            });
+        }
+
+        $("#search_voucher_type").html(voucher_options);
+
+        $("#search_patient_id").val(active_filters.patient_id || '');
+        $("#search_voucher_type").val(active_filters.voucher_type || '');
+        $("#search_created_from").val(active_filters.created_from || '');
+        $("#search_created_to").val(active_filters.created_to || '');
+
+        // Set patient name if patient_id exists
+        if (active_filters.patient_id && active_filters.patient_name) {
+            $("#search_patient").val(active_filters.patient_name);
+        }
+
+    } catch (err) {
+        console.log(err);
+    }
+}
+
+function selectPatientFilter(name, user_id) {
+    $('#search_patient').val(name);
+    $('#search_patient_id').val(user_id);
+    $(".suggesstion-box-patient-filter").hide();
+}
+
+$(document).ready(function() {
+    // Patient search for filter
+    $(document).on("keyup", "#search_patient", function () {
+        $(".suggesstion-box-patient-filter .suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box-patient-filter").show();
+
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box-patient-filter").hide();
+            return false;
+        }
+
+        var that = $(this);
+        if ($(this).val() != '') {
+            setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        $(".suggesstion-box-patient-filter .suggestion-list").html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectPatientFilter(\'' + patient.name + '\', \'' + patient.id + '\');">' + patient.name + ' - ' + patient.id + '</li>';
+                            });
+                            $(".suggesstion-box-patient-filter .suggestion-list").html(html);
+                            $(".suggesstion-box-patient-filter").show();
+                        } else {
+                            $(".suggesstion-box-patient-filter").hide();
+                        }
+                    }
+                });
+            }, 1000);
+        } else {
+            $(".suggesstion-box-patient-filter").hide();
+        }
+    });
+
+    $(document).on("click", ".clear-patient-filter", function () {
+        $('#search_patient').val('');
+        $('#search_patient_id').val('');
+        $(".suggesstion-box-patient-filter").hide();
+    });
+});

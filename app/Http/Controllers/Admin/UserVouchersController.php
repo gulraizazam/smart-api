@@ -131,7 +131,7 @@ class UserVouchersController extends Controller
         }
     }
 
-    private function applyFilters($filters, $apply_filter, $filename = 'user_vouchers')
+    private function applyFilters($filters, $apply_filter, $filename = 'vouchers')
     {
         $where = [];
 
@@ -156,22 +156,64 @@ class UserVouchersController extends Controller
             }
         }
 
-        if (hasFilter($filters, 'voucher_id')) {
+        if (hasFilter($filters, 'voucher_type')) {
             $where[] = [
                 'voucher_id',
                 '=',
-                $filters['voucher_id'],
+                $filters['voucher_type'],
             ];
-            Filters::put(Auth::User()->id, $filename, 'voucher_id', $filters['voucher_id']);
+            Filters::put(Auth::User()->id, $filename, 'voucher_type', $filters['voucher_type']);
         } else {
             if ($apply_filter) {
-                Filters::forget(Auth::User()->id, $filename, 'voucher_id');
+                Filters::forget(Auth::User()->id, $filename, 'voucher_type');
             } else {
-                if (Filters::get(Auth::User()->id, $filename, 'voucher_id')) {
+                if (Filters::get(Auth::User()->id, $filename, 'voucher_type')) {
                     $where[] = [
                         'voucher_id',
                         '=',
-                        Filters::get(Auth::User()->id, $filename, 'voucher_id'),
+                        Filters::get(Auth::User()->id, $filename, 'voucher_type'),
+                    ];
+                }
+            }
+        }
+
+        if (hasFilter($filters, 'created_from')) {
+            $where[] = [
+                'created_at',
+                '>=',
+                $filters['created_from'] . ' 00:00:00',
+            ];
+            Filters::put(Auth::User()->id, $filename, 'created_from', $filters['created_from']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'created_from');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'created_from')) {
+                    $where[] = [
+                        'created_at',
+                        '>=',
+                        Filters::get(Auth::User()->id, $filename, 'created_from') . ' 00:00:00',
+                    ];
+                }
+            }
+        }
+
+        if (hasFilter($filters, 'created_to')) {
+            $where[] = [
+                'created_at',
+                '<=',
+                $filters['created_to'] . ' 23:59:59',
+            ];
+            Filters::put(Auth::User()->id, $filename, 'created_to', $filters['created_to']);
+        } else {
+            if ($apply_filter) {
+                Filters::forget(Auth::User()->id, $filename, 'created_to');
+            } else {
+                if (Filters::get(Auth::User()->id, $filename, 'created_to')) {
+                    $where[] = [
+                        'created_at',
+                        '<=',
+                        Filters::get(Auth::User()->id, $filename, 'created_to') . ' 23:59:59',
                     ];
                 }
             }
@@ -182,10 +224,19 @@ class UserVouchersController extends Controller
 
     private function getFiltersData($records, $filename)
     {
-        $records['active_filters'] = Filters::all(Auth::User()->id, $filename);
+        $active_filters = Filters::all(Auth::User()->id, $filename);
+
+        // Get patient name if patient_id exists in filters
+        if (isset($active_filters['patient_id']) && $active_filters['patient_id']) {
+            $patient = User::find($active_filters['patient_id']);
+            if ($patient) {
+                $active_filters['patient_name'] = $patient->name;
+            }
+        }
+
+        $records['active_filters'] = $active_filters;
 
         $records['filter_values'] = [
-            'patients' => User::select('id', 'name')->get(),
             'vouchers' => Discounts::where('discount_type', 'voucher')->select('id', 'name')->get(),
         ];
 
