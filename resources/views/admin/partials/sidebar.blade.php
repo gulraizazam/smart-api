@@ -332,7 +332,7 @@
                                 </a>
                             </li>
                             @endcan
-                            <!-- @can('discounts_manage')
+                            @can('discounts_manage')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.vouchers.index') }} " class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -341,7 +341,7 @@
                                     <span class="menu-text">Vouchers</span>
                                 </a>
                             </li>
-                            @endcan -->
+                            @endcan
                         </ul>
                     </div>
 
@@ -394,7 +394,7 @@
                                 </a>
                             </li>
                             @endcan
-                            <!-- @can('discounts_manage')
+                            @can('discounts_manage')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.vouchers.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -403,7 +403,7 @@
                                     <span class="menu-text">Vouchers</span>
                                 </a>
                             </li>
-                            @endcan -->
+                            @endcan
                         </ul>
                     </div>
 

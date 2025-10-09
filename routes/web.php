@@ -26,6 +26,7 @@ use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\DiscountsController;
 use App\Http\Controllers\Admin\VouchersController;
+use App\Http\Controllers\Admin\VoucherController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\UserTypesController;
@@ -281,6 +282,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         //Discount route Start
         Route::resource('discounts', DiscountsController::class)->only('index')->middleware('permission:discounts_manage');
         Route::resource('vouchersTypes', VouchersController::class)->only('index')->middleware('permission:discounts_manage');
+         Route::resource('vouchers', VoucherController::class)->only('index')->middleware('permission:discounts_manage');
         Route::get('vouchersTypes/getListing', [VouchersController::class, 'getListing'])->name('vouchersTypes.getListing')->middleware('permission:discounts_manage');
         //Discount route end
 
