@@ -105,7 +105,7 @@ class UserVouchersController extends Controller
                         'voucher_type' => $item->voucher ? $item->voucher->name : 'N/A',
                         'total_amount' => $item->total_amount ?? 0,
                         'amount' => $item->amount,
-                        'created_at' => $item->created_at,
+                        'created_at' => $item->created_at ? $item->created_at->format('F d,Y h:i A') : '',
                         'can_edit' => !$isUsedInPackages,
                         'can_delete' => !$isUsedInPackages,
                     ];
