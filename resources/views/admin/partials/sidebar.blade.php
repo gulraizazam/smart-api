@@ -332,16 +332,7 @@
                                 </a>
                             </li>
                             @endcan
-                            @can('discounts_manage')
-                            <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.vouchers.index') }} " class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Vouchers</span>
-                                </a>
-                            </li>
-                            @endcan
+                            
                         </ul>
                     </div>
 
@@ -384,26 +375,8 @@
                             </li>
                             @endcan
 
-                            @can('discounts_manage')
-                            <li class="menu-item manage-treatment {{ activeMenu('admin.discounts.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.discounts.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Discounts</span>
-                                </a>
-                            </li>
-                            @endcan
-                            @can('discounts_manage')
-                            <li class="menu-item manage-treatment {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.vouchers.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Vouchers</span>
-                                </a>
-                            </li>
-                            @endcan
+                           
+                           
                         </ul>
                     </div>
 
