@@ -107,11 +107,11 @@
 
 
     @push('datatable-js')
-        <script src="{{asset('assets/js/pages/admin_settings/vouchers.js')}}"></script>
+        <script src="{{asset('assets/js/pages/admin_settings/voucherTypes.js')}}"></script>
     @endpush
 
     @push('js')
-        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/vouchers.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/voucherTypes.js')}}"></script>
     @endpush
 
 @endsection
