@@ -1216,10 +1216,8 @@ class PackagesController extends Controller
 
             $location_id = $request->location_id;
 
-           $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
+            $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
             $checkUserDicounts = UserVouchers::where('user_id', $request->patient_id)->pluck('voucher_id')->toArray();
-
-            // Base query
             $query = Discounts::where('active', '=', '1')
                 ->whereDate('start', '<=', $today)
                 ->whereDate('end', '>=', $today)
@@ -1229,7 +1227,7 @@ class PackagesController extends Controller
                     
                     // OR discounts associated with this user
                     if($checkUserDicounts){
-                        $q->orWhereIn('id', $checkUserDicounts);
+                        $q-whereIn('id', $checkUserDicounts);
                     }
                 });
 
