@@ -81,6 +81,7 @@ class UserVouchersController extends Controller
 
             if ($userVouchers) {
                 $records['data'] = $userVouchers->map(function ($item) {
+                    dd($item);
                     return [
                         'id' => $item->id,
                         'patient_id' => $item->user_id,
