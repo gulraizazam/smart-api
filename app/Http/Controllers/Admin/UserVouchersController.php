@@ -165,7 +165,7 @@ class UserVouchersController extends Controller
         $records['active_filters'] = Filters::all(Auth::User()->id, $filename);
 
         $records['filter_values'] = [
-            'patients' => User::select('id', 'first_name', 'last_name')->get(),
+            'patients' => User::select('id', 'name')->get(),
             'vouchers' => Discounts::where('discount_type', 'voucher')->select('id', 'name')->get(),
         ];
 
