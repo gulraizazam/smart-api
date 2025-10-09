@@ -20,8 +20,9 @@ class UserVouchers extends Model
     {
         return $this->belongsTo(User::class);
     }
-    public function voucher()
+   public function voucher()
     {
-        return $this->belongsTo(Voucher::class);
+        return $this->belongsTo(Discounts::class, 'voucher_id', 'id')
+            ->where('discount_type', 'voucher');
     }
 }
