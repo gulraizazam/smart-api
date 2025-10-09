@@ -1569,7 +1569,8 @@ class PatientsController extends Controller
         UserVouchers::create([
             'user_id'=>$request->id,
             'voucher_id'=>$request->voucher_id,
-            'amount'=>$request->amount
+            'amount'=>$request->amount,
+            'total_amount'=>$request->amount
         ]);
        
         return ApiHelper::apiResponse($this->success, 'Voucher assigned successfully');
