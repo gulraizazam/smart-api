@@ -283,7 +283,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         //Discount route Start
         Route::resource('discounts', DiscountsController::class)->only('index')->middleware('permission:discounts_manage');
         Route::resource('voucherTypes', VouchersController::class)->only('index')->middleware('permission:discounts_manage');
-         Route::resource('vouchers', VoucherController::class)->only('index')->middleware('permission:discounts_manage');
+         Route::resource('vouchers', UserVouchersController::class)->only('index')->middleware('permission:discounts_manage');
         Route::get('vouchersTypes/getListing', [VouchersController::class, 'getListing'])->name('vouchersTypes.getListing')->middleware('permission:discounts_manage');
 
         //User Vouchers route Start
