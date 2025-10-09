@@ -18,12 +18,12 @@ var table_columns = [
         sortable: false,
         width: 200,
     }, {
-        field: 'actual_amount',
-        title: 'Actual Amount',
+        field: 'total_amount',
+        title: 'Total Amount',
         sortable: false,
         width: 150,
         template: function (data) {
-            return data.actual_amount ? parseFloat(data.actual_amount).toFixed(2) : '0.00';
+            return data.total_amount ? parseFloat(data.total_amount).toFixed(2) : '0.00';
         }
     }, {
         field: 'amount',
@@ -139,7 +139,7 @@ function editVoucher(url) {
                 $('#edit_voucher_id').val(voucher.id);
                 $('#edit_patient_name').val(response.data.patient_name);
                 $('#edit_voucher_type_name').val(response.data.voucher_type_name);
-                $('#edit_actual_amount').val(parseFloat(voucher.actual_amount || 0).toFixed(2));
+                $('#edit_total_amount').val(parseFloat(voucher.total_amount || 0).toFixed(2));
                 $('#edit_amount').val(voucher.amount);
             } else {
                 toastr.error(response.message || 'Cannot edit this voucher.');
