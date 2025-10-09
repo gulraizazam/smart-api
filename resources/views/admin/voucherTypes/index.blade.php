@@ -105,6 +105,16 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_assign_voucher_to_patient" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup medium_modal" id="voucher_assign_patient">
+
+            @include('admin.voucherTypes.assignToPatient')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/voucherTypes.js')}}"></script>
