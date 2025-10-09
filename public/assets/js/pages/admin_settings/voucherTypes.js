@@ -617,6 +617,7 @@ function assignToPatient(voucherId, voucherName) {
     $('#assign_patient_search').val('');
     $('#assign_patient_id').val('');
     $('#assign_amount').val('');
+    $('.suggesstion-box-voucher').hide();
 
     $("#modal_assign_voucher_to_patient").modal("show");
 }
