@@ -193,7 +193,7 @@ function assignMembership(url, id) {
 function addVoucher(url, id) {
     $('#edit_voucher_id').empty();
     $("#edit_amount").val('');
-    var getVouchersUrl = route('admin.vouchers.getListing');
+    var getVouchersUrl = route('admin.voucherTypes.getListing');
     $('#edit_voucher_id').append('<option value="">Select a Voucher</option>');
     $.ajax({
         headers: {

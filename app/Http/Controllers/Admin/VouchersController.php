@@ -44,7 +44,7 @@ class VouchersController extends Controller
             return abort(401);
         }
 
-        return view('admin.vouchers.index');
+        return view('admin.voucherTypes.index');
     }
 
     /**

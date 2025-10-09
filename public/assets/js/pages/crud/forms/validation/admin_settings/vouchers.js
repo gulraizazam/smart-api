@@ -205,7 +205,7 @@ function submitData(callback) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.vouchers.save_Dervice'),
+        url: route('admin.voucherTypes.save_Dervice'),
         type: "POST",
         data: {voucher_id: $("#voucher_id").val(), id: ids.join(',')},
         cache: false,

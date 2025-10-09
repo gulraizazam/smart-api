@@ -228,15 +228,15 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('discounts', DiscountsController::class)->except('index');
 
     ////Vouchers
-    Route::post('vouchers/datatable', [VouchersController::class, 'datatable'])->name('vouchers.datatable');
-    Route::post('vouchers/status', [VouchersController::class, 'status'])->name('vouchers.status');
-    Route::get('vouchers/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('vouchers.location_manage');
-    Route::get('getDservice', [VouchersController::class, 'getDservices'])->name('vouchers.get_Dservice');
-    Route::get('getDiscountServices', [VouchersController::class, 'getDiscountServices'])->name('vouchers.getDiscountServices');
-    Route::post('saveDervice', [VouchersController::class, 'saveDservices'])->name('vouchers.save_Dervice');
-    Route::post('deleteDservice', [VouchersController::class, 'deleteDservice'])->name('vouchers.delete_service');
+    Route::post('vouchersTypes/datatable', [VouchersController::class, 'datatable'])->name('vouchersTypes.datatable');
+    Route::post('vouchersTypes/status', [VouchersController::class, 'status'])->name('vouchersTypes.status');
+    Route::get('vouchersTypes/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('vouchersTypes.location_manage');
+    Route::get('getDservice', [VouchersController::class, 'getDservices'])->name('vouchersTypes.get_Dservice');
+    Route::get('getDiscountServices', [VouchersController::class, 'getDiscountServices'])->name('vouchersTypes.getDiscountServices');
+    Route::post('saveDervice', [VouchersController::class, 'saveDservices'])->name('vouchersTypes.save_Dervice');
+    Route::post('deleteDservice', [VouchersController::class, 'deleteDservice'])->name('vouchersTypes.delete_service');
 
-    Route::resource('vouchers', VouchersController::class)->except('index');
+    Route::resource('vouchersTypes', VouchersController::class)->except('index');
 
     //Packages Route start
     Route::post('bundles/datatable', [BundlesController::class, 'datatable'])->name('bundles.datatable');
