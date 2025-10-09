@@ -348,7 +348,7 @@
                 </li>
                 @endif
                 @if (Gate::allows('services_manage') || Gate::allows('packages_manage') || Gate::allows('discounts_manage'))
-                <li class="menu-item menu-item-submenu {{ openMenu(['admin.voucherTypes.index']) }} {{ openMenu(['admin.vouchers.index']) }}" aria-haspopup="true" data-menu-toggle="hover">
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.voucherTypes.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
                         <span class="svg-icon menu-icon fa_icon">
