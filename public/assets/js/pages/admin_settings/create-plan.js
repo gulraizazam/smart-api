@@ -594,47 +594,46 @@ function setEditData(response) {
         let membership = response.data.membership;
         let selectedUserId = response.data.selectedUserId;
         if (packageadvances.length) {
-            history_options = '';
-            Object.values(packageadvances).forEach(function (packageadvance) {
-                if (packageadvance.cash_amount != '0') {
-                    let selector = 'history_cash_row_' + packageadvance.id;
-                    history_options += '<tr id="' + selector + '">';
-                    if (packageadvance.is_tax == 1 && packageadvance.cash_flow == 'out') {
-                        history_options += '<td>Tax</td>';
-                    } else {
-                        history_options += '<td>' + packageadvance?.paymentmode?.name + '</td>';
-                    }
+    history_options = '';
+    Object.values(packageadvances).forEach(function (packageadvance) {
+        // Skip zero amounts only for 'in' flow, not for 'out' flow
+        if (packageadvance.cash_amount != '0' || packageadvance.cash_flow == 'out') {
+            let selector = 'history_cash_row_' + packageadvance.id;
+            history_options += '<tr id="' + selector + '">';
+            if (packageadvance.is_tax == 1 && packageadvance.cash_flow == 'out') {
+                history_options += '<td>Tax</td>';
+            } else {
+                history_options += '<td>' + packageadvance?.paymentmode?.name + '</td>';
+            }
 
-                    if (packageadvance.is_refund == 1) {
-                        history_options += '<td>out / refund</td>';
-                    } else if (packageadvance.is_setteled == 1) {
-                        history_options += '<td>out / settled</td>';
-                    }
-                    else {
-                        history_options += '<td>' + packageadvance.cash_flow + '</td>';
-                    }
+            if (packageadvance.is_refund == 1) {
+                history_options += '<td>out / refund</td>';
+            } else if (packageadvance.is_setteled == 1) {
+                history_options += '<td>out / settled</td>';
+            }
+            else {
+                history_options += '<td>' + packageadvance.cash_flow + '</td>';
+            }
 
-                    history_options += '<td>' + packageadvance.cash_amount + '</td>';
-                    history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
+            history_options += '<td>' + packageadvance.cash_amount + '</td>';
+            history_options += '<td>' + formatDate(packageadvance.created_at, 'MMM, DD yyyy hh:mm A') + '</td>';
 
-
-                    history_options += '<td>';
-                    if (packageadvance?.cash_flow == 'in') {
-                        if (permissions.plans_cash_edit) {
-                            history_options += '<a onclick="planeEdit(' + packageadvance.id + ', ' + package.id + ');" class="btn btn-sm btn-info" href="javascript:void(0);">Edit</a>&nbsp;';
-                        }
-                        if (permissions.plans_cash_delete) {
-                            history_options += '<button onclick="deletePlaneHistory(`' + route('admin.packages.delete_cash') + '`, ' + packageadvance.id + ');" class="btn btn-sm btn-danger">Delete</button>';
-                        }
-                    }
-
-                    history_options += '</td>';
-
-                    history_options += '<tr>';
-
+            history_options += '<td>';
+            if (packageadvance?.cash_flow == 'in') {
+                if (permissions.plans_cash_edit) {
+                    history_options += '<a onclick="planeEdit(' + packageadvance.id + ', ' + package.id + ');" class="btn btn-sm btn-info" href="javascript:void(0);">Edit</a>&nbsp;';
                 }
-            });
+                if (permissions.plans_cash_delete) {
+                    history_options += '<button onclick="deletePlaneHistory(`' + route('admin.packages.delete_cash') + '`, ' + packageadvance.id + ');" class="btn btn-sm btn-danger">Delete</button>';
+                }
+            }
+
+            history_options += '</td>';
+
+            history_options += '</tr>';
         }
+    });
+}
 
         let service_options = noRecordFoundTable(9);
 
