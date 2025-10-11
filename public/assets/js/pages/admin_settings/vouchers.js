@@ -139,8 +139,7 @@ function editVoucher(url) {
                 $('#edit_voucher_id').val(voucher.id);
                 $('#edit_patient_name').val(response.data.patient_name);
                 $('#edit_voucher_type_name').val(response.data.voucher_type_name);
-                $('#edit_total_amount').val(parseFloat(voucher.total_amount || 0).toFixed(2));
-                $('#edit_amount').val(voucher.amount);
+                $('#edit_total_amount').val(voucher.total_amount);
             } else {
                 toastr.error(response.message || 'Cannot edit this voucher.');
                 $("#modal_edit_voucher").modal("hide");
