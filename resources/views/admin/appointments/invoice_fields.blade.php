@@ -30,7 +30,7 @@
     </div>
     <div id="outstandingMessage" class="alert alert-danger display-hide" style="display: none;">
         <button class="close" data-close="alert"></button>
-        Please add this service and related payment in plan to consume
+        Please add this service OR related payment in plan to consume
     </div>
     {{--End--}}
 
