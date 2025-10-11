@@ -43,8 +43,8 @@
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Total Amount <span class="text text-danger">*</span></label>
-                            <input type="number" min="0" step="0.01" id="edit_total_amount" class="form-control" name="total_amount" placeholder="Enter total amount">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Value <span class="text text-danger">*</span></label>
+                            <input type="number" min="0" step="0.01" id="edit_total_amount" class="form-control" name="total_amount" placeholder="Enter value">
                         </div>
 
                     </div>
