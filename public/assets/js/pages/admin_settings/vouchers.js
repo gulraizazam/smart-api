@@ -21,7 +21,7 @@ var table_columns = [
         field: 'total_amount',
         title: 'Value',
         sortable: false,
-        width: 150,
+        width: 130,
         template: function (data) {
             return data.total_amount ? parseFloat(data.total_amount).toFixed(2) : '0.00';
         }
@@ -29,7 +29,7 @@ var table_columns = [
         field: 'consumed',
         title: 'Consumed',
         sortable: false,
-        width: 150,
+        width: 130,
         template: function (data) {
             var total = data.total_amount ? parseFloat(data.total_amount) : 0;
             var remaining = data.amount ? parseFloat(data.amount) : 0;
@@ -40,7 +40,7 @@ var table_columns = [
         field: 'amount',
         title: 'Remaining',
         sortable: false,
-        width: 150,
+        width: 130,
         template: function (data) {
             return data.amount ? parseFloat(data.amount).toFixed(2) : '0.00';
         }
