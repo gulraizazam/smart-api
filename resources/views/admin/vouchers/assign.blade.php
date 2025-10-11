@@ -47,8 +47,8 @@
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Amount <span class="text text-danger">*</span></label>
-                            <input type="number" min="0" step="0.01" name="amount" id="assign_amount" class="form-control" placeholder="Enter amount">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Value <span class="text text-danger">*</span></label>
+                            <input type="number" min="0" step="0.01" name="amount" id="assign_amount" class="form-control" placeholder="Enter value">
                         </div>
 
                     </div>
