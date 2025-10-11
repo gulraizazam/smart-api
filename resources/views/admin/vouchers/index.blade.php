@@ -46,7 +46,7 @@
                             @endif
 
                             @if(Gate::allows('vouchers_create'))
-                                <a href="javascript:void(0);" onclick="createVoucher('{{ route('admin.voucherTypes.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_voucher">
+                                <a href="javascript:void(0);" onclick="assignNewVoucher();" class="btn btn-primary" data-toggle="modal" data-target="#modal_assign_voucher">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
@@ -100,6 +100,16 @@
         <div class="modal-dialog modal-dialog-centered form-popup" id="voucher_allocate">
 
             @include('admin.vouchers.allocate')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_assign_voucher" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="voucher_assign">
+
+            @include('admin.vouchers.assign')
 
         </div>
         <!--end::Modal dialog-->
