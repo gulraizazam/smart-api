@@ -178,10 +178,82 @@ var AllocateValidation = function () {
     };
 }();
 
+var AssignValidation = function () {
+    // Private functions
+    var validation = function () {
+        let modal_id = 'modal_assign_vouchers_form';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    voucher_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The voucher type field is required'
+                            }
+                        }
+                    },
+                    patient_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The patient field is required'
+                            }
+                        }
+                    },
+                    amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The amount field is required'
+                            },
+                            numeric: {
+                                message: 'The amount must be a valid number'
+                            },
+                            greaterThan: {
+                                min: 0,
+                                message: 'The amount must be greater than 0'
+                            }
+                        }
+                    },
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+           select2Validation();
+        });
+        validate.on('core.form.valid', function(event) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+                if (response.status == true) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                    reInitTable();
+                } else {
+                    toastr.error(response.message);
+                }
+            }, form);
+        });
+    }
+
+    return {
+        init: function() {
+            validation();
+        }
+    };
+}();
+
 jQuery(document).ready(function() {
     AddValidation.init();
     EditValidation.init();
     AllocateValidation.init();
+    AssignValidation.init();
 });
 
 function submitData(callback) {

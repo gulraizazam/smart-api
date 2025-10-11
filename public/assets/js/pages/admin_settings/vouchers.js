@@ -275,10 +275,58 @@ function addUsers(){
     $("#search_patient").val('');
 }
 
+function assignNewVoucher() {
+    $("#modal_assign_voucher").modal("show");
+
+    // Clear form
+    $('#assign_patient_id').val('');
+    $('#assign_voucher_id').val('').trigger('change');
+    $('.search_patient').val('');
+    $('#assign_search_patient').val('');
+    $('#assign_amount').val('');
+
+    // Load voucher types
+    loadVoucherTypes();
+}
+
+function loadVoucherTypes() {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('vouchersTypes.getListing'),
+        type: "GET",
+        cache: false,
+        success: function(response) {
+            if (response.status === true || response.status === 'success') {
+                let options = '<option value="">Select Voucher Type</option>';
+                if (response.data && response.data.length > 0) {
+                    response.data.forEach(function(voucher) {
+                        options += '<option value="' + voucher.id + '">' + voucher.name + '</option>';
+                    });
+                }
+                $('#assign_voucher_id').html(options);
+            } else {
+                toastr.error(response.message || 'Failed to load voucher types.');
+            }
+        },
+        error: function(xhr) {
+            var message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'An error occurred.';
+            toastr.error(message);
+        }
+    });
+}
+
 // Initialize patient search and daterangepicker
 $(document).ready(function() {
     // Patient search using existing function from custom.js
     patientSearch('search_patient');
+    patientSearch('assign_search_patient');
+
+    // Sync patient_id with id field in assign form
+    $(document).on('change', '#assign_search_patient', function() {
+        $('#assign_patient_id').val($(this).val());
+    });
 
     // Initialize daterangepicker
     $('#search_date_range').daterangepicker({
