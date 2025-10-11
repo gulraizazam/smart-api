@@ -229,7 +229,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('discounts', DiscountsController::class)->except('index');
 
     ////Vouchers
-    
+
     Route::post('voucherTypes/datatable', [VouchersController::class, 'datatable'])->name('voucherTypes.datatable');
     Route::post('vouchers/datatable', [UserVouchersController::class, 'datatable'])->name('vouchers.datatable');
     Route::post('vouchers', [UserVouchersController::class, 'store'])->name('vouchers.store');
@@ -238,6 +238,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::delete('vouchers/{id}', [UserVouchersController::class, 'destroy'])->name('vouchers.destroy');
     Route::post('voucherTypes/status', [VouchersController::class, 'status'])->name('voucherTypes.status');
     Route::get('voucherTypes/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('voucherTypes.location_manage');
+    Route::get('vouchersTypes/getListing', [VouchersController::class, 'getListing'])->name('vouchersTypes.getListing');
     Route::get('getDservice', [VouchersController::class, 'getDservices'])->name('voucherTypes.get_Dservice');
     Route::get('getDiscountServices', [VouchersController::class, 'getDiscountServices'])->name('voucherTypes.getDiscountServices');
     Route::post('saveDervice', [VouchersController::class, 'saveDservices'])->name('voucherTypes.save_Dervice');
