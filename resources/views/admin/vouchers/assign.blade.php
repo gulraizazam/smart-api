@@ -39,8 +39,11 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
-                            <input type="text" class="form-control search_patient" placeholder="Search Patient">
-                            <input type="hidden" name="patient_id" id="assign_patient_id">
+                            <div class="suggesstion-box" style="display: none;">
+                                <ul class="suggestion-list"></ul>
+                            </div>
+                            <input type="text" class="form-control assign_patient_id" placeholder="Search Patient">
+                            <input type="hidden" name="patient_id" class="search_field" id="assign_patient_id">
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">

@@ -297,16 +297,20 @@ function loadVoucherTypes() {
         type: "GET",
         cache: false,
         success: function(response) {
-            if (response.status === true || response.status === 'success') {
+            if (response.data) {
                 let options = '<option value="">Select Voucher Type</option>';
-                if (response.data && response.data.length > 0) {
-                    response.data.forEach(function(voucher) {
-                        options += '<option value="' + voucher.id + '">' + voucher.name + '</option>';
-                    });
-                }
+                // response.data is an object with id as key and name as value
+                $.each(response.data, function(id, name) {
+                    options += '<option value="' + id + '">' + name + '</option>';
+                });
                 $('#assign_voucher_id').html(options);
+
+                // Reinitialize select2 if it's being used
+                if ($.fn.select2 && $('#assign_voucher_id').hasClass('select2')) {
+                    $('#assign_voucher_id').select2();
+                }
             } else {
-                toastr.error(response.message || 'Failed to load voucher types.');
+                toastr.error('Failed to load voucher types.');
             }
         },
         error: function(xhr) {
