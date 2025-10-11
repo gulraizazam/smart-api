@@ -232,6 +232,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     
     Route::post('voucherTypes/datatable', [VouchersController::class, 'datatable'])->name('voucherTypes.datatable');
     Route::post('vouchers/datatable', [UserVouchersController::class, 'datatable'])->name('vouchers.datatable');
+    Route::post('vouchers', [UserVouchersController::class, 'store'])->name('vouchers.store');
     Route::get('vouchers/{id}/edit', [UserVouchersController::class, 'edit'])->name('vouchers.edit');
     Route::put('vouchers/{id}', [UserVouchersController::class, 'update'])->name('vouchers.update');
     Route::delete('vouchers/{id}', [UserVouchersController::class, 'destroy'])->name('vouchers.destroy');

@@ -282,7 +282,6 @@ function assignNewVoucher() {
     $('#assign_patient_id').val('');
     $('#assign_voucher_id').val('').trigger('change');
     $('.search_patient').val('');
-    $('#assign_search_patient').val('');
     $('#assign_amount').val('');
 
     // Load voucher types
@@ -321,12 +320,7 @@ function loadVoucherTypes() {
 $(document).ready(function() {
     // Patient search using existing function from custom.js
     patientSearch('search_patient');
-    patientSearch('assign_search_patient');
-
-    // Sync patient_id with id field in assign form
-    $(document).on('change', '#assign_search_patient', function() {
-        $('#assign_patient_id').val($(this).val());
-    });
+    patientSearch('assign_patient_id');
 
     // Initialize daterangepicker
     $('#search_date_range').daterangepicker({
