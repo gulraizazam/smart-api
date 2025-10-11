@@ -75,17 +75,17 @@ var EditValidation = function () {
             form,
             {
                 fields: {
-                    amount: {
+                    total_amount: {
                         validators: {
                             notEmpty: {
-                                message: 'The amount field is required'
+                                message: 'The total amount field is required'
                             },
                             numeric: {
-                                message: 'The amount must be a valid number'
+                                message: 'The total amount must be a valid number'
                             },
                             greaterThan: {
                                 min: 0,
-                                message: 'The amount must be greater than 0'
+                                message: 'The total amount must be greater than 0'
                             }
                         }
                     },

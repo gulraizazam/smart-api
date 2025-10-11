@@ -291,6 +291,10 @@ class UserVouchersController extends Controller
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
+            $request->validate([
+                'total_amount' => 'required|numeric|min:0',
+            ]);
+
             $userVoucher = UserVouchers::findOrFail($id);
 
             // Check if voucher is used in package_vouchers
@@ -302,7 +306,7 @@ class UserVouchersController extends Controller
                 return ApiHelper::apiResponse($this->error, 'This voucher cannot be updated as it is already applied to services.', false);
             }
 
-            $userVoucher->update($request->only(['user_id', 'voucher_id', 'amount']));
+            $userVoucher->update($request->only(['user_id', 'voucher_id', 'total_amount']));
 
             return ApiHelper::apiResponse($this->success, 'Voucher updated successfully.', true, $userVoucher);
         } catch (\Exception $e) {
