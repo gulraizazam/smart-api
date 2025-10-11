@@ -1,6 +1,6 @@
 <div class="mt-2 mb-7">
     <div class="row mb-6">
-        <div class="col-lg-3 mb-lg-0 mb-6" id="patient_id">
+        <div class="col-lg-3 mb-lg-0 mb-6" id="filter_patient_search_container">
             <label>Patient Search:</label>
             <input class="form-control filter-field search_patient" placeholder="Patient Search" autocomplete="off">
             <input type="hidden" class="filter-field search_field" id="search_patient">
