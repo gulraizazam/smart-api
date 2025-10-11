@@ -293,7 +293,7 @@ function loadVoucherTypes() {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('vouchersTypes.getListing'),
+        url: route('admin.vouchersTypes.getListing'),
         type: "GET",
         cache: false,
         success: function(response) {
