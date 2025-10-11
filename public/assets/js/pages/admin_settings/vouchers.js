@@ -14,7 +14,7 @@ var table_columns = [
         width: 200,
     }, {
         field: 'voucher_type',
-        title: 'Voucher Type',
+        title: 'Type',
         sortable: false,
         width: 200,
     }, {
