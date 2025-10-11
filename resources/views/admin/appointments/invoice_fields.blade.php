@@ -236,7 +236,7 @@
                     <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
                     @endif -->
                     <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
-                           class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
+                           class="form-control float-right custom_field" id="created_at" readonly>
                 </div>
 
                 <div class="col-md-10 mt-5 mb-10">
