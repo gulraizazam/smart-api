@@ -320,12 +320,71 @@ function loadVoucherTypes() {
     });
 }
 
+// Patient search function specifically for assign voucher modal
+function assignPatientSearch() {
+    let debounceTimer;
+    let $container = $('#assign_patient_search_container');
+
+    $container.find('.assign_patient_id').on('keyup', function() {
+        let $suggestionList = $container.find('.suggestion-list');
+        let $suggestionBox = $container.find('.suggesstion-box');
+
+        $suggestionList.html('<li>Searching...</li>');
+        $suggestionBox.show();
+
+        if ($(this).val().length < 2) {
+            $suggestionBox.hide();
+            return false;
+        }
+
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function() {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.users.getpatient.id'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function(response) {
+                        let html = '';
+                        $suggestionList.html(html);
+                        let patients = response.data.patients;
+                        if (patients.length) {
+                            patients.forEach(function(patient) {
+                                html += '<li onClick="selectAssignPatient(\'' + patient.name + '\', \'' + patient.id + '\');">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>';
+                            });
+                            $suggestionList.html(html);
+                            $suggestionBox.show();
+                        } else {
+                            $suggestionBox.hide();
+                        }
+                    }
+                });
+            }, 700);
+        } else {
+            $suggestionBox.hide();
+        }
+    });
+    return false;
+}
+
+// Select patient function for assign voucher modal
+function selectAssignPatient(name, user_id) {
+    let $container = $('#assign_patient_search_container');
+    $container.find('.search_field').val(user_id).change();
+    $container.find('.assign_patient_id').val(name);
+    $container.find('.suggesstion-box').hide();
+    $container.find('.assign_patient_id').focus();
+}
+
 // Initialize patient search and daterangepicker
 $(document).ready(function() {
-    // Patient search using existing function from custom.js
-    // Initialize with container context to avoid conflicts
-    patientSearch('search_patient', '#filter_patient_search_container');
-    patientSearch('assign_patient_id', '#assign_patient_search_container');
+    // Patient search for filter using existing function from custom.js
+    patientSearch('search_patient');
+
+    // Patient search for assign modal using custom function
+    assignPatientSearch();
 
     // Initialize daterangepicker
     $('#search_date_range').daterangepicker({
