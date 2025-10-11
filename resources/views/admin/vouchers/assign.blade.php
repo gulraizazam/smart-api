@@ -37,12 +37,12 @@
                             </select>
                         </div>
 
-                        <div class="fv-row col-md-12 mt-5">
+                        <div class="fv-row col-md-12 mt-5" id="assign_patient_search_container">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
-                            <input type="text" class="form-control assign_patient_id" placeholder="Search Patient">
+                            <input type="text" class="form-control assign_patient_id" placeholder="Search Patient" autocomplete="off">
                             <input type="hidden" name="patient_id" class="search_field" id="assign_patient_id">
                         </div>
 

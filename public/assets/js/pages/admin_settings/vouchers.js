@@ -323,8 +323,9 @@ function loadVoucherTypes() {
 // Initialize patient search and daterangepicker
 $(document).ready(function() {
     // Patient search using existing function from custom.js
-    patientSearch('search_patient');
-    patientSearch('assign_patient_id');
+    // Initialize with container context to avoid conflicts
+    patientSearch('search_patient', '#filter_patient_search_container');
+    patientSearch('assign_patient_id', '#assign_patient_search_container');
 
     // Initialize daterangepicker
     $('#search_date_range').daterangepicker({
