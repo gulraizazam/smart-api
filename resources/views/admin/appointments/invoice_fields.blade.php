@@ -28,6 +28,10 @@
         <button class="close" data-close="alert"></button>
         Kindly select the treatment
     </div>
+    <div id="outstandingMessage" class="alert alert-danger display-hide" style="display: none;">
+        <button class="close" data-close="alert"></button>
+        Please add this service and related payment in plan to consume
+    </div>
     {{--End--}}
 
     {{--Some hidden Fields that helps us for saving invoice--}}
@@ -239,7 +243,7 @@
                            class="form-control float-right custom_field" id="created_at" readonly>
                 </div>
 
-                <div class="col-md-10 mt-5 mb-10">
+                <div class="col-md-10 mt-5 mb-10" id="pay_section">
                     <strong class="mt-5">Pay</strong>
                     <input style="width: 50%;" type="text" name="cash_create" id="cash_create" value="0" class="form-control float-right" min="0" oninput="this.value = !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null;">
                 </div>
