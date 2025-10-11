@@ -306,7 +306,11 @@ class UserVouchersController extends Controller
                 return ApiHelper::apiResponse($this->error, 'This voucher cannot be updated as it is already applied to services.', false);
             }
 
-            $userVoucher->update($request->only(['user_id', 'voucher_id', 'total_amount']));
+            // Update both total_amount and amount (remaining amount)
+            $userVoucher->update([
+                'total_amount' => $request->total_amount,
+                'amount' => $request->total_amount,
+            ]);
 
             return ApiHelper::apiResponse($this->success, 'Voucher updated successfully.', true, $userVoucher);
         } catch (\Exception $e) {
