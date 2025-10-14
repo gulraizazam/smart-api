@@ -98,7 +98,7 @@
                                                 @if($usage['discount_type'] == 'Percentage')
                                                     {{ number_format($usage['discount_price'], 2) }}%
                                                 @else
-                                                    ${{ number_format($usage['discount_price'], 2) }}
+                                                    {{ number_format($usage['discount_price'], 2) }}
                                                 @endif
                                             </td>
                                         </tr>
