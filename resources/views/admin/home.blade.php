@@ -538,6 +538,7 @@
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="center_wise_arrival" class="form-control" name="type">
 
+
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
@@ -552,6 +553,7 @@
                                     <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="initCentreWiseArrival" class="form-control" name="type">
+
 
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
@@ -747,6 +749,7 @@
                                                 Auth::user()->hasRole('Super-Admin') ||
                                                 Auth::user()->hasRole('Head of Operations') ||
                                                 Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
+                                                Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                 <a class="btn form-control btndropdown btn_Report doctorwisefeedback" href="javascript:;"
                                                     data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false" data-id="all">
                                                     All Centres
@@ -765,6 +768,7 @@
                                                     @if (Auth::user()->hasRole('Administrator') ||
                                                     Auth::user()->hasRole('Super-Admin') ||
                                                     Auth::user()->hasRole('Head of Operations') ||
+                                                    Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                     Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                     <option value="all" data-period="thismonth" {{-- onclick="changeCenterDoct('thismonth', 'all')" --}}>
                                                         {{-- <a class="dropdown-item doctor_wise_feedback_centre_id" data-id="all"></a> --}}
@@ -792,6 +796,9 @@
                                                 <!-- <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                                     Week</option> -->
+
+                                                <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
+                                                <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time
 
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
                                                 <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time
@@ -1242,6 +1249,7 @@ function formatCurrency(amount) {
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initCentreWiseArrival('yesterday', '', 'firsttime');
+                    initCentreWiseArrival('yesterday', '', 'firsttime');
                     @if (!auth()->user()->hasRole('CSR'))
                     initDoctorWiseConversion('today', centre_id, 'firsttime');
                     @endif
@@ -1533,6 +1541,104 @@ function formatCurrency(amount) {
             }
 
             function BarChart(service) {
+    const primary = '#6993FF';
+    const success = '#1BC5BD';
+    const info = '#8950FC';
+    const warning = '#FFA800';
+    const danger = '#F64E60';
+    
+    // Debug logging
+    console.log('Chart data received:', service.data);
+    
+    let locations = service.data.bar;
+    let modifiedLocations;
+    
+    if (locations && locations.length > 0) {
+        if (locations.some(str => str.includes('CUTERA,'))) {
+            modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
+        } else {
+            modifiedLocations = locations;
+        }
+    } else {
+        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore',
+            'Gulberg Lahore', 'DHA Lahore'
+        ];
+    }
+
+    // Create copies of arrays to avoid modifying original data
+    let totalData = [...(service.data.total || [])];
+    let arrivedData = [...(service.data.arrived || [])];
+    let walkinData = [...(service.data.walkin || [])];
+    
+    // Ensure all arrays have the same length
+    const maxLength = Math.max(totalData.length, arrivedData.length, walkinData.length);
+    
+    // Pad arrays with zeros if needed
+    while (totalData.length < maxLength) totalData.push(0);
+    while (arrivedData.length < maxLength) arrivedData.push(0);
+    while (walkinData.length < maxLength) walkinData.push(0);
+    
+    // Adjust data: subtract walkin from total and arrived
+    for (var i = 0; i < walkinData.length; i++) {
+        totalData[i] = Math.max(0, totalData[i] - walkinData[i]);
+        arrivedData[i] = Math.max(0, arrivedData[i] - walkinData[i]);
+    }
+
+    // Clear any existing chart
+    if (centre_wise_arrival) {
+        centre_wise_arrival.destroy();
+    }
+
+    var options = {
+        series: [{
+            name: 'Total Appointments',
+            data: totalData
+        }, {
+            name: 'Arrived',
+            data: arrivedData
+        }, {
+            name: 'Walk-in',
+            data: walkinData
+        }],
+        chart: {
+            type: 'bar',
+            height: 350,
+        },
+        plotOptions: {
+            bar: {
+                horizontal: false,
+                columnWidth: '55%',
+                endingShape: 'rounded'
+            },
+        },
+        stroke: {
+            show: true,
+            width: 1,
+            colors: ['transparent']
+        },
+        xaxis: {
+            categories: modifiedLocations,
+        },
+        colors: [primary, success, warning],
+        dataLabels: {
+            enabled: false
+        },
+        legend: {
+            show: true
+        }
+    };
+    
+    // Create new chart instance
+    centre_wise_arrival = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
+    centre_wise_arrival.render();
+    
+    console.log('Chart rendered with data:', {
+        categories: modifiedLocations,
+        total: totalData,
+        arrived: arrivedData,
+        walkin: walkinData
+    });
+}
     const primary = '#6993FF';
     const success = '#1BC5BD';
     const info = '#8950FC';

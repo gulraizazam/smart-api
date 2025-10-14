@@ -104,7 +104,15 @@
         </div>
         <!--end::Modal dialog-->
     </div>
-   
+    <div class="modal fade" id="modal_edit_vouchers" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered form-popup" id="edit_vouchers">
+
+            @include('admin.patients.assignVoucher')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
 
     <div class="modal fade" id="modal_import_leads" tabindex="-1" aria-hidden="true">
         <!--begin::Modal dialog-->

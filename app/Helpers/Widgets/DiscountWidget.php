@@ -15,6 +15,7 @@ use App\Models\Regions;
 use App\Models\Services;
 use App\Models\User;
 use Carbon\Carbon;
+use App\Models\VoucherHasLocations;
 
 class DiscountWidget
 {
@@ -273,7 +274,183 @@ class DiscountWidget
 
         return $discount_array;
     }
+    public static function loadPlanVoucherByLocationService($location_id, $service_id, $account_id)
+    {
+        $searchServices = Services::where([
+            'account_id' => $account_id,
+        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
 
+        if ($searchServices->count()) {
+            $searchServices = $searchServices->toArray();
+        }
+
+        /*
+         * Case 1: Find those discounts which are All centre based
+         */
+        $discount_array = [];
+
+        // 1. Find All Centres
+        $rootlocation = VoucherHasLocations::where([
+            'location_id' => Locations::where([
+                'slug' => 'all',
+                'account_id' => $account_id,
+            ])->select('id')->first()->id,
+        ])->get();
+        
+        if ($rootlocation->count()) {
+            //      Find All Services
+            $rootvouchers = VoucherHasLocations::where([
+                'service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'location_id' => Locations::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+            ])->get();
+
+            if ($rootvouchers->count()) {
+                foreach ($rootvouchers as $rootvoucher) {
+                    if (! in_array($rootvoucher->voucher_id, $discount_array)) {
+                        $discount_array[] = $rootvoucher->voucher_id;
+                    }
+                }
+            }
+
+            //      Find Matching Services
+            $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
+            $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
+
+            $servicediscounts = VoucherHasLocations::where([
+                'location_id' => Locations::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+            ])
+                ->whereIn('service_id', $serviceWithParents)
+                ->get();
+
+            if ($servicediscounts->count()) {
+                foreach ($servicediscounts as $servicediscount) {
+                    if (! in_array($servicediscount->discount_id, $discount_array)) {
+                        $discount_array[] = $servicediscount->discount_id;
+                    }
+                }
+            }
+        }
+
+        /*
+         * Case 2: Find those discounts which are region based
+        */
+        // 2. Find All Regions
+        $singleLocation = Locations::find($location_id);
+        $regionlocation = VoucherHasLocations::where([
+            'location_id' => Locations::where([
+                'slug' => 'region',
+                'account_id' => $account_id,
+                'region_id' => $singleLocation->region_id,
+            ])->select('id')->first() ? Locations::where([
+                'slug' => 'region',
+                'account_id' => $account_id,
+                'region_id' => $singleLocation->region_id,
+            ])->select('id')->first()->id : null,
+        ])->get();
+        
+        // $regionLocation = DiscountHasLocations::whereHas('location', function ($query) use ($account_id, $singleLocation) {
+        //     $query->where([
+        //         'slug' => 'region',
+        //         'account_id' => $account_id,
+        //         'region_id' => $singleLocation->region_id,
+        //     ]);
+        // })->get();
+
+
+        if ($regionlocation->count()) {
+            //      Find All Services
+            $regionvouchers = VoucherHasLocations::where([
+                'service_id' => Services::where([
+                    'slug' => 'all',
+                    'account_id' => $account_id,
+                ])->select('id')->first()->id,
+                'location_id' => Locations::where([
+                    'slug' => 'region',
+                    'account_id' => $account_id,
+                    'region_id' => $singleLocation->region_id,
+                ])->select('id')->first()->id,
+            ])->get();
+           
+            if ($regionvouchers->count()) {
+                foreach ($regionvouchers as $regionvoucher) {
+                    if (! in_array($regionvoucher->voucher_id, $discount_array)) {
+                        $discount_array[] = $regionvoucher->voucher_id;
+                    }
+                }
+            }
+
+            //      Find Matching Services
+            $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
+            $serviceWithParents = array_merge($serviceWithParents, [$service_id]);
+
+            $servicediscounts = VoucherHasLocations::where([
+                'location_id' => Locations::where([
+                    'slug' => 'region',
+                    'account_id' => $account_id,
+                    'region_id' => $singleLocation->region_id,
+                ])->select('id')->first()->id,
+            ])
+                ->whereIn('service_id', $serviceWithParents)
+                ->get();
+
+            if ($servicediscounts->count()) {
+                foreach ($servicediscounts as $servicediscount) {
+                    if (! in_array($servicediscount->discount_id, $discount_array)) {
+                        $discount_array[] = $servicediscount->discount_id;
+                    }
+                }
+            }
+        }
+
+        /*
+         * Case 3: Find those discounts which single centre based
+        */
+
+        // Find All Services
+        $centrediscounts = VoucherHasLocations::where([
+            'service_id' => Services::where([
+                'slug' => 'all',
+                'account_id' => $account_id,
+            ])->select('id')->first()->id,
+            'location_id' => $location_id,
+        ])->get();
+      
+        if ($centrediscounts->count()) {
+            foreach ($centrediscounts as $centrediscount) {
+                if (! in_array($centrediscount->discount_id, $discount_array)) {
+                    $discount_array[] = $centrediscount->discount_id;
+                }
+            }
+        }
+        //      Find Matching Services
+        $serviceWithParents = LocationsWidget::findServiceParents($service_id, $searchServices);
+        $serviceWithParents = array_merge($serviceWithParents ?? [], [$service_id]);
+
+        $centreservicediscounts = VoucherHasLocations::where([
+            'location_id' => $location_id,
+        ])
+            ->whereIn('service_id', $serviceWithParents)
+            ->get();
+          
+        if ($centreservicediscounts->count()) {
+            foreach ($centreservicediscounts as $centreservicediscount) {
+                if (! in_array($centreservicediscount->voucher_id, $discount_array)) {
+                    $discount_array[] = $centreservicediscount->voucher_id;
+                }
+            }
+        }
+       
+        return $discount_array;
+    }
     /*
      * Function that filter discount for consultancy
      *

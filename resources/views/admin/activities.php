@@ -37,7 +37,14 @@
                                                            for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
                                                            at <span style="color: #F5B183;">{{\Illuminate\Support\Carbon::parse($appoint_log['time'])->format("h:s A") ?? 'N/A'}} {{\Illuminate\Support\Carbon::parse($appoint_log['date'])->format("d/m/Y") ?? 'N/A'}} </span>
                                                            in {{$appoint_log['address'] ?? 'N/A'}}
+                                                        @elseif($appoint_log['type'] == 'received')
 
+                                                           <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
+                                                           a {{$appoint_log['action'] ?? 'N/A'}}
+                                                           <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>
+                                                           for <span style="color: #3E7FBB;">{{$appoint_log['action_for']}}</span>
+                                                           at <span style="color: #F5B183;">{{\Illuminate\Support\Carbon::parse($appoint_log['time'])->format("h:s A") ?? 'N/A'}} {{\Illuminate\Support\Carbon::parse($appoint_log['date'])->format("d/m/Y") ?? 'N/A'}} </span>
+                                                           in {{$appoint_log['address'] ?? 'N/A'}}
                                                        @else
                                                            <span style="color: #056FBF;">{{$appoint_log['action_by'] ?? 'N/A'}}</span>
                                                            {{$appoint_log['action'] ?? 'N/A'}} <span style="color: #F5B183;">{{$appoint_log['screen'] ?? 'N/A'}}</span>

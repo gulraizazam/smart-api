@@ -332,7 +332,94 @@
                                 </a>
                             </li>
                             @endcan
-                           
+                            
+                        </ul>
+                    </div>
+
+                </li>
+                @endif
+                @if (Gate::allows('vouchers_manage') || Gate::allows('voucher_types_manage'))
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.voucherTypes.index', 'admin.vouchers.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
+
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-ticket"></i>
+                        </span>
+                        <span class="menu-text">Vouchers</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+
+                        <ul class="menu-subnav">
+
+                            @can('voucher_types_manage')
+                            <li class="menu-item {{ activeMenu('admin.voucherTypes.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.voucherTypes.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Voucher Types</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('vouchers_manage')
+                            <li class="menu-item {{ activeMenu('admin.vouchers.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.vouchers.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Vouchers</span>
+                                </a>
+                            </li>
+                            @endcan
+
+
+
+                        </ul>
+                    </div>
+
+                </li>
+                @endif
+
+                @if (Gate::allows('memberships_manage'))
+                <li class="menu-item menu-item-submenu {{ openMenu(['admin.membershiptypes.index', 'admin.memberships.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
+
+                    <a href="javascript:void(0);" class="menu-link menu-toggle">
+                        <span class="svg-icon menu-icon">
+                            <i class="font-icon la la-id-card"></i>
+                        </span>
+                        <span class="menu-text">Memberships</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+
+                        <ul class="menu-subnav">
+
+                            @can('memberships_manage')
+                            <li class="menu-item {{ activeMenu('admin.membershiptypes.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.membershiptypes.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Membership Types</span>
+                                </a>
+                            </li>
+                            @endcan
+
+                            @can('memberships_manage')
+                            <li class="menu-item {{ activeMenu('admin.memberships.index') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.memberships.index') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Memberships</span>
+                                </a>
+                            </li>
+                            @endcan
+
                         </ul>
                     </div>
 
@@ -376,9 +463,7 @@
                 Gate::allows('invoices_manage') ||
                 Gate::allows('pabao_records_manage') ||
                 Gate::allows('machineType_manage') ||
-                Gate::allows('towns_manage') ||
-                Gate::allows('memberships_manage') ||
-                Gate::allows('membershiptypes_manage'))
+                Gate::allows('towns_manage'))
 
                 <li class="menu-item menu-item-submenu {{ openMenu([
                         'admin.settings.index',
@@ -415,8 +500,6 @@
                         'admin.custom_forms.edit',
                         'admin.custom_form_feedbacks.preview_form',
                         'admin.custom_form_feedbacks.fill_form',
-                        'admin.memberships.index',
-                        'admin.membershiptypes.index',
                     ]) }}" aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -437,36 +520,6 @@
                                         <span></span>
                                     </i>
                                     <span class="menu-text">Global Settings</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    @endcan
-                    @can('memberships_manage')
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.membershiptypes.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.membershiptypes.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Membership Types</span>
-                                </a>
-                            </li>
-
-                        </ul>
-                    </div>
-                    <div class="menu-submenu">
-                        <i class="menu-arrow"></i>
-                        <ul class="menu-subnav">
-                            <li class="menu-item {{ activeMenu('admin.memberships.index') }}" aria-haspopup="true">
-                                <a href="{{ route('admin.memberships.index') }}" class="menu-link">
-                                    <i class="menu-bullet menu-bullet-dot">
-                                        <span></span>
-                                    </i>
-                                    <span class="menu-text">Memberships</span>
                                 </a>
                             </li>
 

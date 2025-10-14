@@ -252,6 +252,7 @@ function getDiscountInfo($this) {
 
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
+    var patient_id = $('#add_patients_id').val();
     setTimeout(function () {
         $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
@@ -319,7 +320,8 @@ function getDiscountInfo($this) {
                 url: route('admin.packages.getdiscountinfo'),
                 data: {
                     'service_id': service_id,
-                    'discount_id': discount_id
+                    'discount_id': discount_id,
+                    'patient_id': patient_id
                 },
                 success: function (resposne) {
                     if (resposne.status) {
@@ -360,7 +362,7 @@ function getDiscountValue($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
-
+    var patient_id = $('#add_patients_id').val();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
@@ -382,6 +384,7 @@ function getDiscountValue($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value,
                 'discount_type': discount_type,
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -410,7 +413,7 @@ function changeDiscount($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_value = $('#discount_value_1').val();
     var discount_type = $this.val();
-
+    var patient_id = $('#add_patients_id').val();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
@@ -428,6 +431,7 @@ function changeDiscount($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value,
                 'discount_type': discount_type,
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -570,7 +574,7 @@ jQuery(document).ready(function () {
 
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_location_id').val();
-
+        var user_id = $('#add_patients_id').val();
         if (service_id && net_amount && location_id) {
 
             showSpinner("-add");
@@ -600,6 +604,7 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
+                'user_id': user_id,
                 'package_bundles[]': []
             };
 

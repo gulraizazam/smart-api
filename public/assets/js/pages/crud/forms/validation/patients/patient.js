@@ -200,8 +200,68 @@ var AssignMembershipValidation = function () {
         }
     };
 }();
+var AssignVoucherValidation = function () {
+    // Private functions
+    var AssignValidation = function () {
+        let modal_id = 'modal_edit_vouchers_form';
+        let form = document.getElementById(modal_id);
+        let validate = FormValidation.formValidation(
+            form,
+            {
+                fields: {
+                    voucher_id: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The Voucher field is required'
+                            }
+                        }
+                    },
+                    amount: {
+                        validators: {
+                            notEmpty: {
+                                message: 'The amount field is required'
+                            }
+                        }
+                    },
+                   
+                },
+
+                plugins: {
+                    trigger: new FormValidation.plugins.Trigger(),
+                    // Bootstrap Framework Integration
+                    bootstrap: new FormValidation.plugins.Bootstrap(),
+                    // Validate fields when clicking the Submit button
+                    submitButton: new FormValidation.plugins.SubmitButton(),
+                }
+            }
+        );
+        validate.on('core.form.invalid', function (e) {
+            select2Validation();
+        });
+        validate.on('core.form.valid', function(event) {
+            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+
+                if (response.status) {
+                    toastr.success(response.message);
+                    closePopup(modal_id);
+                    reInitTable('patient');
+                } else {
+                    toastr.error(response.message);
+                }
+            }, form);
+        });
+    }
+
+    return {
+        // public functions
+        init: function() {
+            AssignValidation();
+        }
+    };
+}();
 jQuery(document).ready(function() {
     AddValidation.init();
     EditValidation.init();
     AssignMembershipValidation.init();
+    AssignVoucherValidation.init();
 });

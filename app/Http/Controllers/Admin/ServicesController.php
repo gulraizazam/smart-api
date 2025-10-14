@@ -10,6 +10,7 @@ use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
 use App\Models\Appointments;
 use App\Models\Services;
+use PDF;
 use App\Models\TaxTreatmentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -107,28 +108,28 @@ class ServicesController extends Controller
     }
     public function sortOrderGet()
     {
-       
+
         try {
             if (! Gate::allows('services_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-           
+
                 $services = Services::where('slug', '!=', 'all')
                     ->where(['parent_id' => 0])
                     ->orderBy('id', 'asc')
                     ->get();
-                
+
             $mergedServices = [];
             foreach ($services as $service) {
-               
+
                     $children = Services::where(['parent_id' => $service->id])->orderby('sort_number', 'ASC')->get()->toArray();
-                
+
                 $mergedServices[] = $service->toArray();
                 foreach ($children as $child) {
                     $mergedServices[] = $child;
                 }
             }
-            
+
 
             return ApiHelper::apiResponse($this->success, 'Success', true, $mergedServices);
         } catch (\Exception $e) {
@@ -137,8 +138,8 @@ class ServicesController extends Controller
     }
     public function sortOrderSave(Request $request)
     {
-       
-       
+
+
         try {
             if (! Gate::allows('services_sort')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
@@ -146,7 +147,7 @@ class ServicesController extends Controller
             $itemIDs = $request->item_ids;
             if (count($itemIDs)) {
                 foreach ($itemIDs as $key => $itemID) {
-                    
+
                     Services::where('id', '=', $itemID)->update(['sort_number' => $key]);
                 }
 
@@ -366,6 +367,23 @@ class ServicesController extends Controller
             if (! Gate::allows('services_active') && ! Gate::allows('services_inactive')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
+            $checkService = Services::find($request->id);
+
+        if (!$checkService) {
+            return ApiHelper::apiResponse($this->error, 'Service not found.', false);
+        }
+
+        // If the request is to deactivate (status = 0) AND service is a parent
+        if ($request->status == 0 && $checkService->parent_id == 0) {
+            // Check if any child is active
+            $activeChildExists = Services::where('parent_id', $checkService->id)
+                ->where('active', 1)
+                ->exists();
+
+            if ($activeChildExists) {
+                return ApiHelper::apiResponse($this->error, 'This parent has active child services. Please deactivate them first.', false);
+            }
+        }
 
             if ($request->status == 1) {
                 $response = Services::activeRecord($request->id);
@@ -393,5 +411,42 @@ class ServicesController extends Controller
         } else {
             return response()->json(['color' => '#000']);
         }
+    }
+    public function exportPdf()
+    {
+        $services = Services::getTreeStructure();
+        
+        $pdf = PDF::loadView('admin.services.pdf', compact('services'));
+        
+        return $pdf->download('services-tree.pdf');
+    }
+
+    // Helper method to flatten tree for display
+    private function flattenTree($services, $level = 0)
+    {
+        $flattened = [];
+        
+        foreach ($services as $service) {
+            $service->level = $level;
+            $flattened[] = $service;
+            
+            if ($service->children->count() > 0) {
+                $children = $this->flattenTree($service->children, $level + 1);
+                $flattened = array_merge($flattened, $children);
+            }
+        }
+        
+        return $flattened;
+    }
+
+    // Alternative method using flattened approach
+    public function exportPdfFlattened()
+    {
+        $services = Services::getTreeStructure();
+        $flattenedServices = $this->flattenTree($services);
+        
+        $pdf = PDF::loadView('services.pdf-flattened', compact('flattenedServices'));
+        
+        return $pdf->download('services-tree.pdf');
     }
 }

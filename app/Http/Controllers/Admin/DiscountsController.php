@@ -193,7 +193,7 @@ class DiscountsController extends Controller
 
             $where = $this->applyFilters($filters, $apply_filter, $filename);
 
-            $total_query = Discounts::select('id');
+            $total_query = Discounts::select('id')->where('discount_type',"!=",'voucher');
             if (count($where)) {
                 if (\Illuminate\Support\Facades\Gate::allows('view_inactive_discounts')) {
                     $total_query->where($where);
@@ -207,7 +207,7 @@ class DiscountsController extends Controller
 
             [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
 
-            $query = Discounts::select('*');
+            $query = Discounts::select('*')->where('discount_type',"!=",'voucher');
             if ($request->get('startdate') && $request->get('startdate') != '') {
                 $query->whereDate('start', '>=', $request->get('startdate'));
             }

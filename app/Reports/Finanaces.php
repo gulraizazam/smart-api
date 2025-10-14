@@ -1091,7 +1091,6 @@ class Finanaces
      */
     public static function generalrevenuereportdetail($data, $account_id)
 {
-  
     $where = [];
 
     if (isset($data['date_range']) && $data['date_range']) {

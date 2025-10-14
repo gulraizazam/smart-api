@@ -15,6 +15,7 @@ use App\Models\Invoices;
 use App\Models\Packages;
 use App\Models\Services;
 use App\Models\Settings;
+use App\Models\PackageVouchers;
 use App\Models\Discounts;
 use App\Models\Locations;
 use App\Helpers\Financelog;
@@ -22,6 +23,7 @@ use App\Helpers\JazzSMSAPI;
 use App\Models\AuditTrails;
 use App\Models\Appointments;
 use App\Models\PaymentModes;
+use App\Models\Voucher;
 use Illuminate\Http\Request;
 use Composer\Package\Package;
 use App\Helpers\TelenorSMSAPI;
@@ -30,6 +32,7 @@ use App\Models\PackageBundles;
 use App\Models\PackageService;
 use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
+use App\Models\UserVouchers;
 use App\Models\UserHasLocations;
 use App\Helpers\GeneralFunctions;
 use App\Models\AuditTrailChanges;
@@ -128,11 +131,11 @@ class PackagesController extends Controller
         if ($service_has_location) {
 
             $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
-            
-            
+
+
             return ApiHelper::apiResponse($this->success, 'Recode found', true, [
                 'service' => $locationhasservice,
-               
+
             ]);
         }
 
@@ -148,15 +151,15 @@ class PackagesController extends Controller
     {
 
         if ($request->discount_id) {
-
+            $discount_is_voucher = false;
             $service_id = $request->service_id;
-
+            $patient_id = $request->patient_id;
             $service_data = Bundles::find($service_id);
 
             $discount_id = $request->discount_id;
 
             $discount_data = Discounts::find($discount_id);
-
+           
             if ($discount_data->slug == 'custom') {
 
 
@@ -165,29 +168,47 @@ class PackagesController extends Controller
                 ]);
             } else {
 
-                if ($discount_data->type == Config::get('constants.Fixed')) {
+                if ($discount_data->type == Config::get('constants.Fixed') && $discount_data->discount_type !="voucher") {
 
                     $discount_type = Config::get('constants.Fixed');
                     $discount_price = $discount_data->amount;
                     $net_amount = ($service_data->price) - ($discount_data->amount);
-                } else if ($discount_data->type == Config::get('constants.Percentage')) {
+                } else if ($discount_data->type == Config::get('constants.Percentage') && $discount_data->discount_type !="voucher") {
 
                     $discount_type = Config::get('constants.Percentage');
                     $discount_price = $discount_data->amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
-                } else if ($discount_data->type == "Configurable") {
+                } else if ($discount_data->type == "Configurable" && $discount_data->discount_type !="voucher") {
 
                     $discount_type = "Configurable";
                     $discount_price = $discount_data->amount;
                     $discount_price_cal = $service_data->price * (($discount_price) / 100);
                     $net_amount = ($service_data->price) - ($discount_price_cal);
+                }else if ($discount_data->discount_type == "voucher") {
+                    $patientVoucher = UserVouchers::where("user_id", $patient_id)->where("voucher_id", $discount_id)->first();
+                    if ($patientVoucher) {
+                        $discount_type = Config::get('constants.Fixed');
+                        $discount_price = $patientVoucher->amount;
+                        $discount_is_voucher = true;
+                        $net_amount = ($service_data->price) - ($discount_price);
+                        if($net_amount < 0){
+                            $net_amount =0;
+                        }
+                      
+                    }else{
+                        $discount_type = "";
+                        $discount_price = 0;
+                        $discount_is_voucher = false;
+                        $net_amount = $service_data->price;
+                    }
                 }
                 return ApiHelper::apiResponse($this->success, 'Record Found', true, [
                     'discount_type' => $net_amount < 0 ? '' : $discount_type,
                     'discount_price' => $discount_price,
                     'net_amount' => $net_amount < 0 ? $service_data->price : $net_amount,
                     'custom_checked' => 0,
+                    'discount_is_voucher' => $discount_is_voucher,
                 ]);
             }
         }
@@ -203,7 +224,7 @@ class PackagesController extends Controller
     public function savepackages_service(Request $request)
     {
 
-
+       
         $status = true;
         $service_data = Bundles::find($request->bundle_id);
         $find_package = Packages::where('random_id', $request->random_id)->first();
@@ -659,11 +680,13 @@ class PackagesController extends Controller
     }
     public function makePackagesServicesData(Request $request)
     {
+        
         $soldBy = $request->sold_by;
         $bundle = Bundles::find($request->bundle_id);
         $discount = Discounts::find($request->discount_id);
         $allBundleServices = BundleHasServices::where('bundle_id', $request->bundle_id)->get();
         $packageBundleData = $request->all();
+        $r_ID = $request->random_id;
         $locationDetail = Locations::find($request->location_id);
         $bundleId = $bundle->id;
         $total = 0;
@@ -673,13 +696,20 @@ class PackagesController extends Controller
             'service_price' => $bundle->price,
             'service_name' => $bundle->name,
             'net_amount' => $request->net_amount,
-          
+
         ];
         if ($discount) {
+            if( $request->discount_price  >  $bundle->price){
+                $newDiscountPrice = $bundle->price;
+            }else{
+                $newDiscountPrice = $request->discount_price;
+            }
             $packageBundleData['discount_name'] = $discount->name;
-            $packageBundleData['discount_price'] = $request->discount_price;
+            $packageBundleData['discount_price'] = $newDiscountPrice;
             $packageBundleData['discount_type'] = $request->discount_type;
             $packageBundleData['discount_id'] = $discount->id;
+          
+            
         }
         $taxTreatmentType = $bundle->tax_treatment_type_id;
         $taxPercentage = $locationDetail->tax_percentage;
@@ -705,9 +735,11 @@ class PackagesController extends Controller
                 $packageBundleData['tax_including_price'] = ceil($packageBundleData['tax_exclusive_net_amount'] + ($packageBundleData['tax_exclusive_net_amount'] * $taxPercentage / 100));
                 break;
             default:
+           
                 $packageBundleData['tax_including_price'] = $netAmount;
                 $packageBundleData['tax_percenatage'] = $locationDetail?->tax_percentage ?? '00.00';
                 $packageBundleData['tax_exclusive_net_amount'] = ceil((100 * $netAmount) / ($packageBundleData['tax_percenatage'] + 100));
+                
                 $packageBundleData['tax_price'] = ceil($netAmount - $packageBundleData['tax_exclusive_net_amount']);
                 $packageBundleData['is_exclusive'] = 0;
                 break;
@@ -716,6 +748,34 @@ class PackagesController extends Controller
         $randomNumber = rand(1000, 9999);
         $generateRandomId = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
         $packageBundleData['id'] = $generateRandomId;
+        if($discount){
+            $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
+          
+            if($userVoucher){
+                $amountLeft = $userVoucher->amount -  $bundle->price;
+                if($amountLeft < 0){
+                   $amountLeft = 0;
+                }
+              
+                $userVoucher->amount = $amountLeft;
+                $userVoucher->update();
+                if($amountLeft <= 0){
+                    $amountForVoucher =$request->discount_price;
+
+                }else{
+                    $amountForVoucher =$bundle->price;
+                }
+                PackageVouchers::create([
+                    'package_random_id' => $r_ID,
+                    'voucher_id' => $discount->id,
+                    'user_id' => $request->user_id,
+                    'amount' => $amountForVoucher,
+                    'service_id' =>$generateRandomId,
+                    'main_service_id'=>$request->bundle_id
+                ]);
+            }
+            
+        }
         $bundleServices = [];
         foreach ($allBundleServices as $bundleService) {
             $serviceName = Services::find($bundleService->service_id);
@@ -799,7 +859,7 @@ class PackagesController extends Controller
             $discount_type = $packageBundleData['discount_type'];
             $discount_price = $packageBundleData['discount_price'];
         }
-        
+
         $packageServices = PackageService::where('random_id', $request->random_id)->get();
         $packageBundle = PackageBundles::where('random_id', $request->random_id)->get();
         $servicesData = [
@@ -815,7 +875,7 @@ class PackagesController extends Controller
             'discount_price' => $discount_price,
             'net_amount' => $net_amount,
             'total' => $total,
-            'sold_by' => $request->sold_by,  
+            'sold_by' => $soldBy,
         ];
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -838,9 +898,18 @@ class PackagesController extends Controller
         if ($discount_data->slug == 'custom') {
             $discount_id = $request->discount_id;
         } else {
-            $request->discount_value = $discount_data->amount;
+            if($discount_data->discount_type == "voucher"){
+                $discountValue = UserVouchers::where("user_id", $request->patient_id)->where("voucher_id", $discount_id)->first();
+                if ($discountValue) {
+                    $request->discount_value = $discountValue->amount;
+                }else{
+                    $request->discount_value = 0;
+                }
+            }else{
+                $request->discount_value = $discount_data->amount;
+            }
         }
-        if ($discount_data->type == 'Fixed') {
+        if ($discount_data->type == 'Fixed' && $discount_data->discount_type != 'voucher') {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 if ($request->discount_value > $discount_data->amount || $request->discount_value > $service_data->price) {
                     return false;
@@ -859,6 +928,21 @@ class PackagesController extends Controller
                 $amount_after_per = ($request->discount_value / 100) * $service_data->price;
                 $net_amount = $service_data->price - $amount_after_per;
             }
+        }else if($discount_data->type == 'Fixed' && $discount_data->discount_type == 'voucher'){
+            $discountValue = UserVouchers::where("user_id", $request->patient_id)->where("voucher_id", $discount_id)->first();
+            if($discountValue){
+                $discount_type = Config::get('constants.Fixed');
+                $discount_price = $discountValue->amount;
+                $discount_price_in_percentage = ($discount_price / $service_data->price) * 100;
+                $net_amount = ($service_data->price) - ($discount_price);
+                if($net_amount < 0){
+                    $net_amount =0;
+                }
+            }else{
+                $discount_price=0;
+                $net_amount = ($service_data->price) - ($discount_price);
+            }
+            
         } else {
             if ($request->discount_type == Config::get('constants.Fixed')) {
                 $discount_price = $request->discount_value;
@@ -905,6 +989,21 @@ class PackagesController extends Controller
         } else {
 
             $packageService = PackageBundles::find($request->id);
+            $findPackage = Packages::find($packageService->package_id);
+            if ($findPackage) {
+                $packageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->where('main_service_id',$packageService->bundle_id)->first();
+                if($packageVoucher){
+                   
+                    $packageVoucherAmount = $packageVoucher->amount;
+                    $findUserVoucher = UserVouchers::where('voucher_id',$packageVoucher->voucher_id)->where('user_id',$findPackage->patient_id)->first();
+                    if($findUserVoucher){
+                        $findUserVoucher->update(['amount' => $findUserVoucher->amount + $packageVoucherAmount]);
+                    }
+                    $packageVoucher->delete();
+                }
+
+            }
+            
             if ($request->package_total == '') {
                 $request->merge(['package_total' => 0]);
             }
@@ -915,6 +1014,10 @@ class PackagesController extends Controller
             PackageService::where('package_bundle_id', '=', $request->id)->delete();
 
             PackageBundles::find($request->id)->forcedelete();
+            // $checkPackageVoucher = PackageVouchers::where('package_random_id',$packageService->random_id)->first();
+            // if($checkPackageVoucher){
+            //     $checkPackageVoucher->delete();
+            // }
             $old_total = PackageService::where('random_id', $packageService->random_id)->sum('tax_including_price');
             if ($request->update_status == 1) {
                 if ($packageService->package_id) {
@@ -1104,7 +1207,7 @@ class PackagesController extends Controller
 
         if ($bundle && $bundle->type == 'single') {
 
-
+            
             $bundleService = BundleHasServices::where([
                 'bundle_id' => $bundle->id,
             ])->first();
@@ -1114,20 +1217,36 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-            $userRoleIds = Auth::user()->roles->pluck('id')->toArray();
-            $discounts = Discounts::whereIn('id', $discountIds)
-                ->whereHas('roles', function ($query) use ($userRoleIds) {
-                    $query->whereIn('roles.id', $userRoleIds);
-                })
-                ->where([
-                    ['discount_type', '=', 'Treatment'],
-                    ['active', '=', '1'],
-                ])
+             $generalDiscounts = Discounts::whereIn('id', $discountIds)
+            ->where('discount_type', '!=', 'voucher')
+            ->where('active', '=', '1')
+            ->whereDate('start', '<=', $today)
+            ->whereDate('end', '>=', $today)
+            ->get();
+
+        // Fetch VOUCHER discounts (user-specific)
+        $voucherDiscounts = Collection::make();
+        $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
+            ->pluck('voucher_id')
+            ->toArray();
+        
+        if ($checkUserVouchers) {
+            // Get voucher discounts that match BOTH location/service AND user assignment
+            $voucherDiscounts = Discounts::whereIn('id', $discountIds)
+                ->whereIn('id', $checkUserVouchers)
+                ->where('discount_type', '=', 'voucher')
+                ->where('active', '=', '1')
                 ->whereDate('start', '<=', $today)
                 ->whereDate('end', '>=', $today)
                 ->get();
-        } else {
+        }
 
+        // Merge both collections
+        $discounts = $generalDiscounts->merge($voucherDiscounts);
+           
+            
+        } else {
+           
             if ($bundle && $bundle->apply_discount == '1') {
                 $bundleServices = BundleHasServices::where([
                     'bundle_id' => $bundle->id,
@@ -1136,6 +1255,8 @@ class PackagesController extends Controller
                     $service_id = $bundleService->service_id;
                     $location_id = $request->location_id;
                     $discountIds[] = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
+                    
+          
                 }
                 $uniq_array = [];
                 foreach ($discountIds as $discountId) {
@@ -1145,17 +1266,38 @@ class PackagesController extends Controller
                         }
                     }
                 }
-                $userRoleIds = Auth::user()->roles->pluck('id')->toArray();
-                $discounts = Discounts::whereIn('id', $uniq_array)->whereHas('roles', function ($query) use ($userRoleIds) {
-                    $query->whereIn('roles.id', $userRoleIds);
-                })->where([
-                    ['discount_type', '=', 'Treatment'],
-                    ['active', '=', '1'],
-                ])->whereDate('start', '<=', $today)->whereDate('end', '>=', $today)->get();
+               // Fetch NON-VOUCHER discounts
+            $generalDiscounts = Discounts::whereIn('id', $uniq_array)
+                ->where('discount_type', '!=', 'voucher')
+                ->where('active', '=', '1')
+                ->whereDate('start', '<=', $today)
+                ->whereDate('end', '>=', $today)
+                ->get();
+
+            // Fetch VOUCHER discounts
+            $voucherDiscounts = Collection::make();
+            $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
+                ->pluck('voucher_id')
+                ->toArray();
+            
+            if ($checkUserVouchers) {
+                $voucherDiscounts = Discounts::whereIn('id', $uniq_array)
+                    ->whereIn('id', $checkUserVouchers)
+                    ->where('discount_type', '=', 'voucher')
+                    ->where('active', '=', '1')
+                    ->whereDate('start', '<=', $today)
+                    ->whereDate('end', '>=', $today)
+                    ->get();
+            }
+
+                // Merge both collections
+                $discounts = $generalDiscounts->merge($voucherDiscounts);
+                
             }
         }
 
         $temp_discounts = [];
+       
 
         /*Now Checked Brithday promotion valid or not*/
         foreach ($discounts as $key => $discount) {
@@ -1190,14 +1332,17 @@ class PackagesController extends Controller
                 }
             }
         }
+        
         /*end*/
         $Discount_array = [];
+       
         if (count($discounts) > 0) {
             $service_data = Bundles::where('id', '=', $request->bundle_id)->first();
             if ($service_data) {
                 foreach ($discounts as $discount) {
                     if ($discount->slug != 'custom') {
                         if ($discount->type == Config::get('constants.Fixed')) {
+                            
                             $discount_type = $discount->type;
                             $discount_price = $discount->amount;
                             $net_amount = ($service_data->price) - ($discount_price);
@@ -1258,13 +1403,15 @@ class PackagesController extends Controller
                     ]);
                 }
             }
+            
         }
-
+        
+        
         return ApiHelper::apiResponse($this->success, 'Records found.', false, [
             'net_amount' => isset($bundle) ? $bundle->price : 0,
         ]);
     }
-
+   
     /**
      * Get service info whan discount not selected
      *
@@ -1548,7 +1695,7 @@ class PackagesController extends Controller
      */
     public function edit($id)
     {
-        
+
         if (!Gate::allows('plans_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
@@ -1647,34 +1794,34 @@ class PackagesController extends Controller
                 }
             }
             $doctors = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
-    
+
             // Fetch active doctors as an associative array
             $users = User::whereIn('id', $doctors)
                 ->where('active', 1)
                 ->pluck('name', 'id') // Preserve user IDs
                 ->toArray();
-        
+
             // Ensure 'from_id' is an array
             $locationId = $package->location_id;
-    
+
             // Fetch FDM users by getting the user_ids associated with the center (location_id)
             $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
-    
+
             // Fetch the 'FDM' role and get its user ids
             $findRole = DB::table('roles')->where('name', 'FDM')->first();
             $roleId = $findRole->id;
-    
+
             // Get users who have the FDM role
             $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-    
+
             // Get the intersection of users who are both FDM and belong to the center
             $fdmUsers = array_intersect($findFDM, $roleHasUser);
-    
+
             // Fetch FDM user details (id and name) from the users table
             $FDMUsers = User::whereIn('id', $fdmUsers)
                 ->pluck('name', 'id') // Preserve user IDs
                 ->toArray();
-    
+
             // Merge the arrays while preserving keys
             $combinedUsers = $users + $FDMUsers;
             $selectedUserId = null;
@@ -2141,13 +2288,13 @@ class PackagesController extends Controller
             }
         }
         $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
-    
+
         // Fetch active doctors as an associative array
         $users = User::whereIn('id', $doctors)
             ->where('active', 1)
             ->pluck('name', 'id') // Preserve user IDs
             ->toArray();
-    
+
         // Ensure 'from_id' is an array
         $locationId = $request->location_id;
 
@@ -2834,6 +2981,7 @@ class PackagesController extends Controller
     }
     public function storeRecord($package, $request)
     {
+
         $packageBundledata['random_id'] = $package->random_id;
         $packageBundledata['is_allocate'] = 1;
         if (isset($request['package_bundles'])) {
@@ -2910,5 +3058,54 @@ class PackagesController extends Controller
             }
             return true;
         }
+    }
+    public function deleteplanrowtem(Request $request){
+       $voucher = PackageVouchers::where('service_id', $request->id)->where('package_random_id', $request->random_id)->first();
+
+       if($voucher){
+        $checkUser = UserVouchers::where('voucher_id', $voucher->voucher_id)->where('user_id', $voucher->user_id)->first();
+        if($checkUser){
+            $newAmount = $checkUser->amount + $voucher->amount;
+            $checkUser->amount = $newAmount;
+            $checkUser->update();
+        }
+        $voucher->delete();
+       }
+       return response()->json([
+        'status' => true,
+        'message' => 'Record deleted successfully',
+       ]);
+    }
+    public function resetvoucherpacakgebundles(Request $request)
+    {
+        $servicesIds = $request->package_bundles;
+        $randomId = $request->random_id;
+        
+        $vouchers = PackageVouchers::where('package_random_id', $randomId)
+                                ->whereIn('service_id', $servicesIds)
+                                ->get();
+        
+       
+        $voucherAmounts = [];
+        foreach ($vouchers as $voucher) {
+            $key = $voucher->user_id . '_' . $voucher->voucher_id;
+            $voucherAmounts[$key]['user_id'] = $voucher->user_id;
+            $voucherAmounts[$key]['voucher_id'] = $voucher->voucher_id;
+            $voucherAmounts[$key]['amount'] = ($voucherAmounts[$key]['amount'] ?? 0) + $voucher->amount;
+        }
+
+        // Update user vouchers
+        foreach ($voucherAmounts as $data) {
+            UserVouchers::where('user_id', $data['user_id'])
+                    ->where('voucher_id', $data['voucher_id'])
+                    ->increment('amount', $data['amount']);
+        }
+
+        // Delete package vouchers
+        PackageVouchers::where('package_random_id', $randomId)
+                    ->whereIn('service_id', $servicesIds)
+                    ->delete();
+
+        return response()->json(['success' => true]);
     }
 }

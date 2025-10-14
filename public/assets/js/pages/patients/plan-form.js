@@ -829,7 +829,7 @@ function getDiscountValue($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
-
+    var patient_id = $('#add_patients_id').val();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#percentageMessage').show();
@@ -851,7 +851,8 @@ function getDiscountValue($this) {
                 'service_id': service_id,//Basicailly it is bundle id
                 'discount_id': discount_id,
                 'discount_value': discount_value,
-                'discount_type': discount_type,
+                'discount_type': discount_type, 
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -883,7 +884,7 @@ function editDiscountValue($this) {
     var discount_id = $('#edit_discount_id').val();
     var discount_type = $('#edit_discount_type').val();
     var discount_value = $this.val();
-
+    var patient_id = $('#edit_patients_id').val();
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
             $('#edit_percentageMessage').show();
@@ -906,6 +907,7 @@ function editDiscountValue($this) {
                 'discount_id': discount_id,
                 'discount_value': discount_value,
                 'discount_type': discount_type,
+                'patient_id': patient_id
             },
             success: function (resposne) {
                 if (resposne.status) {
@@ -1484,7 +1486,7 @@ jQuery(document).ready(function () {
 
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_location_id').val();
-
+        
         if (service_id && net_amount && location_id) {
 
             showSpinner("-add");
@@ -1514,6 +1516,7 @@ jQuery(document).ready(function () {
                 'package_total': package_total,
                 'is_exclusive': is_exclusive,
                 'location_id': location_id,
+                'user_id': user_id,
                 'package_bundles[]': []
             };
 
