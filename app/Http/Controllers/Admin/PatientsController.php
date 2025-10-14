@@ -1563,9 +1563,9 @@ class PatientsController extends Controller
     public function assignVoucher(Request $request)
     {
         $checkVoucher = UserVouchers::where('user_id', $request->id)->where('voucher_id',$request->voucher_id)->first();
-        if ($checkVoucher) {
-            return ApiHelper::apiResponse($this->error, 'Voucher is already assigned to this patient');
-        }
+        // if ($checkVoucher) {
+        //     return ApiHelper::apiResponse($this->error, 'Voucher is already assigned to this patient');
+        // }
         UserVouchers::create([
             'user_id'=>$request->id,
             'voucher_id'=>$request->voucher_id,
