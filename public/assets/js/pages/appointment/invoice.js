@@ -679,8 +679,10 @@ function keyfunction_custom(type = '') {
 
                                 if (response.outstanding == '0') {
                                     $("#" + type + "addinvoice").show();
+                                    $("#outstandingMessage").hide();
                                 } else {
                                     $("#" + type + "addinvoice").hide();
+                                    $("#outstandingMessage").show();
                                 }
 
                             } else {
@@ -814,8 +816,10 @@ function keyfunction(type = '') {
                     $(".outstand_create").val(resposne.outstdanding);
                     if (resposne.outstdanding == '0') {
                         $("#" + type + "addinvoice").show();
+                        $("#outstandingMessage").hide();
                     } else {
                         $("#" + type + "addinvoice").hide();
+                        $("#outstandingMessage").show();
                     }
 
                     // Check outstanding and show/hide pay section
@@ -863,8 +867,10 @@ function calculateInvoice(id, type = '') {
 
                 if (resposne.outstanding == '0') {
                     $("#" + type + "addinvoice").show();
+                    $("#outstandingMessage").hide();
                 } else {
                     $("#" + type + "addinvoice").hide();
+                    $("#outstandingMessage").show();
                 }
 
                 // Check outstanding and show/hide pay section
@@ -903,7 +909,7 @@ function showHideDiscount($this) {
 
 // Function to check outstanding amount and show/hide pay section
 function checkOutstandingAmount() {
-    var outstanding = parseFloat($('.outstand_create').val()) || 0;
+    var outstanding = parseFloat($('.outstand_create').val()) || parseFloat($('.outstand').val()) || 0;
 
     if (outstanding > 0) {
         // Hide pay input and payment mode
@@ -911,6 +917,9 @@ function checkOutstandingAmount() {
         $('#paymentmode').hide();
         // Show red message
         $('#outstandingMessage').show();
+        // Hide invoice buttons
+        $('#treatment_addinvoice').hide();
+        $('#addinvoice').hide();
     } else {
         // Show pay input
         $('#pay_section').show();
