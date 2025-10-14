@@ -115,6 +115,16 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_view_voucher" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered modal-lg" id="voucher_view">
+
+            @include('admin.vouchers.view_modal')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/vouchers.js')}}"></script>

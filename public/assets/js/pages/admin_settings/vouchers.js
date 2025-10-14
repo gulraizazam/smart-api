@@ -80,7 +80,7 @@ function actions(data) {
 
             // View button
             actions += '<li class="navi-item">\
-                <a href="' + view_url + '" class="navi-link">\
+                <a href="javascript:void(0);" onclick="viewVoucher(`' + view_url + '`);" class="navi-link">\
                     <span class="navi-icon"><i class="la la-eye"></i></span>\
                     <span class="navi-text">View</span>\
                 </a>\
@@ -128,6 +128,36 @@ function actions(data) {
         }
     }
     return '';
+}
+
+function viewVoucher(url) {
+    $("#modal_view_voucher").modal("show");
+
+    // Show loading spinner
+    $('#view_voucher_content').html('<div class="text-center"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div></div>');
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function(response) {
+            if (response.status === true || response.status === 'success') {
+                // Load the HTML content into the modal
+                $('#view_voucher_content').html(response.data.html);
+            } else {
+                toastr.error(response.message || 'Cannot load voucher details.');
+                $("#modal_view_voucher").modal("hide");
+            }
+        },
+        error: function(xhr) {
+            var message = xhr.responseJSON && xhr.responseJSON.message ? xhr.responseJSON.message : 'An error occurred.';
+            toastr.error(message);
+            $("#modal_view_voucher").modal("hide");
+        }
+    });
 }
 
 function editVoucher(url) {
