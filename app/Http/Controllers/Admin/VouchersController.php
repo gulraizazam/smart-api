@@ -40,7 +40,7 @@ class VouchersController extends Controller
      */
     public function index()
     {
-        if (!Gate::allows('vouchers_manage')) {
+        if (!Gate::allows('voucher_types_manage')) {
             return abort(401);
         }
 
@@ -54,7 +54,7 @@ class VouchersController extends Controller
      */
     public function create()
     {
-        if (!Gate::allows('vouchers_create')) {
+        if (!Gate::allows('voucher_types_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -78,7 +78,7 @@ class VouchersController extends Controller
     public function store(Request $request)
     {
 
-        if (!Gate::allows('vouchers_create')) {
+        if (!Gate::allows('voucher_types_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -206,12 +206,13 @@ class VouchersController extends Controller
             }
 
             $records['permissions'] = [
-                'edit' => Gate::allows('vouchers_edit'),
-                'delete' => Gate::allows('vouchers_destroy'),
-                'active' => Gate::allows('vouchers_active'),
-                'inactive' => Gate::allows('vouchers_inactive'),
-                'create' => Gate::allows('vouchers_create'),
-                'allocate' => Gate::allows('vouchers_allocate'),
+                'edit' => Gate::allows('voucher_types_edit'),
+                'delete' => Gate::allows('voucher_types_destroy'),
+                'active' => Gate::allows('voucher_types_active'),
+                'inactive' => Gate::allows('voucher_types_inactive'),
+                'create' => Gate::allows('voucher_types_create'),
+                'allocate' => Gate::allows('voucher_types_allocate'),
+                'assign' => Gate::allows('voucher_types_assign'),
             ];
 
             return ApiHelper::apiDataTable($records);
@@ -407,7 +408,7 @@ class VouchersController extends Controller
      */
     public function edit($id)
     {
-        if (!Gate::allows('vouchers_edit')) {
+        if (!Gate::allows('voucher_types_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -468,7 +469,7 @@ class VouchersController extends Controller
     public function update(Request $request, $id)
     {
 
-        if (!Gate::allows('vouchers_edit')) {
+        if (!Gate::allows('voucher_types_edit')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -517,7 +518,7 @@ class VouchersController extends Controller
      */
     public function status(Request $request)
     {
-        if (!Gate::allows('vouchers_active')) {
+        if (!Gate::allows('voucher_types_active')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -547,7 +548,7 @@ class VouchersController extends Controller
      */
     public function destroy($id)
     {
-        if (!Gate::allows('vouchers_destroy')) {
+        if (!Gate::allows('voucher_types_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -578,7 +579,7 @@ class VouchersController extends Controller
      */
     public function displayDlocation($id)
     {
-        if (!Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('voucher_types_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -607,7 +608,7 @@ class VouchersController extends Controller
      */
     public function getDservices(Request $request)
     {
-        if (!Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('voucher_types_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $discount_info = Discounts::find($request->discount_id);
@@ -623,7 +624,7 @@ class VouchersController extends Controller
     }
     public function getDiscountServices(Request $request)
     {
-        if (!Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('voucher_types_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -639,7 +640,7 @@ class VouchersController extends Controller
      */
     public function saveDservices(Request $request)
     {
-        if (!Gate::allows('discounts_allocate')) {
+        if (!Gate::allows('voucher_types_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -681,7 +682,7 @@ class VouchersController extends Controller
     public function deleteDservice(Request $request)
     {
 
-        if (!Gate::allows('vouchers_allocate')) {
+        if (!Gate::allows('voucher_types_allocate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -706,7 +707,7 @@ class VouchersController extends Controller
      */
     public function assignToPatient(Request $request)
     {
-        if (!Gate::allows('vouchers_manage')) {
+        if (!Gate::allows('voucher_types_assign')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
