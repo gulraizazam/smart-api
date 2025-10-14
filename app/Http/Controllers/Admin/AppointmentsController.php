@@ -3732,7 +3732,7 @@ class AppointmentsController extends Controller
 
     public function invoice($id)
     {
-        dd("sss");
+        
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -3767,7 +3767,8 @@ class AppointmentsController extends Controller
                         'package_services.is_consumed' => '0',
                         'packages.location_id' => $appointment->location_id,
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
-                $status = 'true';
+                        dd($packages);
+                    $status = 'true';
                 if (count($packages) <= 0) {
                     $location_information = Locations::find($appointment->location_id);
                     $location_id = $appointment->location_id;
