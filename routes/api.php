@@ -21,6 +21,8 @@ use App\Http\Controllers\Admin\ProductsController;
 use App\Http\Controllers\Admin\ServicesController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Admin\DiscountsController;
+use App\Http\Controllers\Admin\VouchersController;
+use App\Http\Controllers\Admin\UserVouchersController;
 use App\Http\Controllers\Admin\LocationsController;
 use App\Http\Controllers\Admin\ResourcesController;
 use App\Http\Controllers\Admin\WarehouseController;
@@ -226,6 +228,25 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     Route::resource('discounts', DiscountsController::class)->except('index');
 
+    ////Vouchers
+
+    Route::post('voucherTypes/datatable', [VouchersController::class, 'datatable'])->name('voucherTypes.datatable');
+    Route::post('vouchers/datatable', [UserVouchersController::class, 'datatable'])->name('vouchers.datatable');
+    Route::post('vouchers', [UserVouchersController::class, 'store'])->name('vouchers.store');
+    Route::get('vouchers/{id}/edit', [UserVouchersController::class, 'edit'])->name('vouchers.edit');
+    Route::put('vouchers/{id}', [UserVouchersController::class, 'update'])->name('vouchers.update');
+    Route::delete('vouchers/{id}', [UserVouchersController::class, 'destroy'])->name('vouchers.destroy');
+    Route::post('voucherTypes/status', [VouchersController::class, 'status'])->name('voucherTypes.status');
+    Route::get('voucherTypes/locations/{id}', [VouchersController::class, 'displayDlocation'])->name('voucherTypes.location_manage');
+    Route::get('vouchersTypes/getListing', [VouchersController::class, 'getListing'])->name('vouchersTypes.getListing');
+    Route::get('getDservice', [VouchersController::class, 'getDservices'])->name('voucherTypes.get_Dservice');
+    Route::get('getDiscountServices', [VouchersController::class, 'getDiscountServices'])->name('voucherTypes.getDiscountServices');
+    Route::post('saveDervice', [VouchersController::class, 'saveDservices'])->name('voucherTypes.save_Dervice');
+    Route::post('deleteDservice', [VouchersController::class, 'deleteDservice'])->name('voucherTypes.delete_service');
+    Route::post('voucherTypes/assignToPatient', [VouchersController::class, 'assignToPatient'])->name('voucherTypes.assignToPatient');
+
+    Route::resource('voucherTypes', VouchersController::class)->except('index');
+
     //Packages Route start
     Route::post('bundles/datatable', [BundlesController::class, 'datatable'])->name('bundles.datatable');
     Route::post('bundles/status', [BundlesController::class, 'status'])->name('bundles.status');
@@ -292,7 +313,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::post('packages/status', [PackagesController::class, 'status'])->name('packages.status');
 
     Route::get('packages/getdiscountinfo', [PackagesController::class, 'getdiscountinfo'])->name('packages.getdiscountinfo');
-
+Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanrowtem'])->name('packages.deleteplanrowtem');
     Route::get('packages/getdiscountinfo_custom', [PackagesController::class, 'getdiscountinfocustom'])->name('packages.getdiscountinfo_custom');
     Route::get('packages/savepackagesservice', [PackagesController::class, 'makePackagesServicesData'])->name('packages.savepackages_service');
     //Route::get('packages/savepackagesservice', [PackagesController::class, 'savepackages_service'])->name('packages.savepackages_service');
@@ -310,7 +331,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('packages/updatepackages', [PackagesController::class, 'updatepackages'])->name('packages.updatepackages');
 
     Route::get('packages/getserviceinfo', [PackagesController::class, 'getserviceinfo'])->name('packages.getserviceinfo');
-
+    Route::get('packages/getvoucherinfo', [PackagesController::class, 'getvoucherinfo'])->name('packages.getvoucherinfo');
     Route::get('packages/display/{id}', [PackagesController::class, 'display'])->name('packages.display');
 
     Route::get('packages/getservice', [PackagesController::class, 'getservices'])->name('packages.getservice');
@@ -394,6 +415,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     // Patients routes start
     Route::post('patients/{id}/appointments-datatable', [PatientsController::class, 'appointmentsDatatable'])->name('patients.appointmentsDatatable');
+    Route::post('patients/{id}/vouchers-datatable', [PatientsController::class, 'voucherDatatable'])->name('patients.vouchersDatatable');
 
     Route::post('patients/datatable', [PatientsController::class, 'datatable'])->name('patients.datatable');
 
@@ -614,6 +636,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('memberships', MembershipsController::class)->except('index');
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
     Route::post('patient/assignmembership', [PatientsController::class, 'assignMembership'])->name('patients.assignmembership');
+    Route::post('patient/assignvoucher', [PatientsController::class, 'assignVoucher'])->name('patients.assignvoucher');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
     Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
 });

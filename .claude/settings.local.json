@@ -1,10 +1,18 @@
 {
   "permissions": {
     "allow": [
+<<<<<<< HEAD
       "Read(/C:\\laragon\\www\\cutera-upgradation1\\resources\\views\\admin/**)",
       "Read(/C:\\laragon\\www\\cutera-upgradation1\\public\\assets\\js/**)"
+=======
+      "Bash(php artisan:*)"
+>>>>>>> test
     ],
     "deny": [],
     "ask": []
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> test

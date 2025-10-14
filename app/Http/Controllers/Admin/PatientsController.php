@@ -9,6 +9,7 @@ use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
 use App\Http\Controllers\Controller;
 use App\Models\Appointments;
+use App\Models\UserVouchers;
 use App\Models\AppointmentStatuses;
 use App\Models\AppointmentTypes;
 use App\Models\Cities;
@@ -18,6 +19,7 @@ use App\Models\Leads;
 use App\Models\LeadStatuses;
 use App\Models\Locations;
 use App\Models\Membership;
+use App\Models\Voucher;
 use App\Models\MembershipType;
 use App\Models\Patients;
 use App\Models\Services;
@@ -1132,6 +1134,78 @@ class PatientsController extends Controller
 
         return ApiHelper::apiDataTable($records);
     }
+    
+    public function voucherDatatable($id, Request $request)
+    {
+        try {
+            $records = [];
+            $records['data'] = [];
+
+            // Get vouchers assigned to this user with additional details
+            $query = Voucher::whereHas('userVouchers', function ($query) use ($id) {
+                $query->where('user_vouchers.user_id', $id);
+            })
+            ->with([
+                'userVouchers' => function ($query) use ($id) {
+                    $query->where('user_id', $id);
+                },
+                'voucherHasLocations.service' // Load services relationship
+            ]);
+            $iTotalRecords = $query->count();
+
+            [$orderBy, $order] = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
+
+            $vouchers = $query->limit($iDisplayLength)
+                ->offset($iDisplayStart)
+                ->orderby('created_at', 'desc')
+                ->get();
+
+            // Transform data to include user_voucher relationship data
+            $transformedVouchers = $vouchers->map(function ($voucher) {
+                $userVoucher = $voucher->userVouchers->first();
+                $serviceNames = $voucher->voucherHasLocations
+                ->pluck('service.name') // assuming service has 'name' field
+                ->filter() // remove nulls
+                ->implode(', ');   
+                return [
+                    'id' => $voucher->id,
+                    'name' => $voucher->name,
+                    'service' => $serviceNames,
+                    'amount' => $userVoucher->amount,
+                    'startDate' => $voucher->start,
+                    'endDate' => $voucher->end,
+                    'status' => $voucher->status,
+                    'created_at' => $voucher->created_at,
+                ];
+            });
+
+            if ($vouchers->isNotEmpty()) {
+                $records['data'] = $transformedVouchers;
+                $records['meta'] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+            }
+
+            $records['permissions'] = [
+                'edit' => Gate::allows('vouchers_edit'),
+                'delete' => Gate::allows('vouchers_destroy'),
+                'active' => Gate::allows('vouchers_active'),
+                'inactive' => Gate::allows('vouchers_inactive'),
+                'create' => Gate::allows('vouchers_create'),
+                'allocate' => Gate::allows('vouchers_allocate'),
+            ];
+
+            return ApiHelper::apiDataTable($records);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
 
     private function getFilterData($records, $fileName)
     {
@@ -1485,5 +1559,21 @@ class PatientsController extends Controller
         } else {
             return ApiHelper::apiResponse($this->error, 'Membership is inactive or already assigned to a patient');
         }
+    }
+    public function assignVoucher(Request $request)
+    {
+        $checkVoucher = UserVouchers::where('user_id', $request->id)->where('voucher_id',$request->voucher_id)->first();
+        if ($checkVoucher) {
+            return ApiHelper::apiResponse($this->error, 'Voucher is already assigned to this patient');
+        }
+        UserVouchers::create([
+            'user_id'=>$request->id,
+            'voucher_id'=>$request->voucher_id,
+            'amount'=>$request->amount,
+            'total_amount'=>$request->amount
+        ]);
+       
+        return ApiHelper::apiResponse($this->success, 'Voucher assigned successfully');
+        
     }
 }

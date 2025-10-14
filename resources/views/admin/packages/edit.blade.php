@@ -6,16 +6,18 @@
         <h2 class="fw-bolder">Edit Plan</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
-        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
-            <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
-            <span class="svg-icon svg-icon-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
-                    <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
-                </svg>
-            </span>
-            <!--end::Svg Icon-->
-        </div>
+        <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" 
+     data-kt-users-modal-action="close" 
+     onclick="resetVoucherEdit(event); return false;">
+    <!--begin::Svg Icon | path: icons/duotune/arrows/arr061.svg-->
+    <span class="svg-icon svg-icon-1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
+            <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+        </svg>
+    </span>
+    <!--end::Svg Icon-->
+</div>
         <!--end::Close-->
     </div>
     <!--end::Modal header-->
@@ -111,15 +113,15 @@
                         </div>
 
                         <div class="fv-row col-md-4 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts</label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discounts/Vouchers</label>
                             <select id="edit_discount_id" onchange="editDiscountInfo($(this));" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_id">
                                 <option value="">Select Discount</option>
                             </select>
                         </div>
 
                         <div class="fv-row col-md-4 mt-5" id="select_edit_discount_type">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Type</label>
-                            <select id="edit_discount_type" onchange="changeDiscount1($(this),'edit');" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount/Voucher Type</label>
+                            <select id="edit_discount_type" onchange="changeDiscount($(this),'edit');" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="discount_type">
                                 <option value="">Select Discount Type</option>
                                 <option value="Fixed">Fixed</option>
                                 <option value="Percentage">Percentage</option>
@@ -128,7 +130,7 @@
                         </div>
 
                         <div class="fv-row col-md-4 mt-5" id="edit_discount_value_div">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount Value </label>
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Discount/Voucher Value </label>
                             <input type="number" onkeyup="editDiscountValue($(this));" name="discount_value" class="form-control" id="edit_discount_value_1" min="0" oninput="validity.valid||(value='');" disabled step=".001">
                             <small class="text-danger error-class"><b id='discount_payment_error' class="error-msg"></b></small>
                         </div>
@@ -221,7 +223,7 @@
             <!--begin::Actions-->
             <hr>
             <div class="text-center">
-                <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
+                <button type="button" class="btn btn-light me-3 " onclick="resetVoucherEdit(event)">Cancel</button>
                 <button id="EditPackageFinal" type="button" class="btn btn-primary spinner-button-edit-save">
                     <span class="indicator-label">save</span>
                 </button>

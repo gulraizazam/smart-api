@@ -4,6 +4,9 @@ $(document).ready(function () {
 
     $('.select2').select2();
 
+    // Check outstanding on page load
+    checkOutstandingAmount();
+
     /*Consultancy section*/
     $(document).on("change", "#is_exclusive_consultancy", function () {
         if ($(this).is(":checked")) {
@@ -676,8 +679,10 @@ function keyfunction_custom(type = '') {
 
                                 if (response.outstanding == '0') {
                                     $("#" + type + "addinvoice").show();
+                                    $("#outstandingMessage").hide();
                                 } else {
                                     $("#" + type + "addinvoice").hide();
+                                    $("#outstandingMessage").show();
                                 }
 
                             } else {
@@ -811,9 +816,14 @@ function keyfunction(type = '') {
                     $(".outstand_create").val(resposne.outstdanding);
                     if (resposne.outstdanding == '0') {
                         $("#" + type + "addinvoice").show();
+                        $("#outstandingMessage").hide();
                     } else {
                         $("#" + type + "addinvoice").hide();
+                        $("#outstandingMessage").show();
                     }
+
+                    // Check outstanding and show/hide pay section
+                    checkOutstandingAmount();
                 }
             },
         });
@@ -857,9 +867,14 @@ function calculateInvoice(id, type = '') {
 
                 if (resposne.outstanding == '0') {
                     $("#" + type + "addinvoice").show();
+                    $("#outstandingMessage").hide();
                 } else {
                     $("#" + type + "addinvoice").hide();
+                    $("#outstandingMessage").show();
                 }
+
+                // Check outstanding and show/hide pay section
+                checkOutstandingAmount();
 
             } else {
                 $('#wrongMessage').show();
@@ -889,5 +904,26 @@ function showHideDiscount($this) {
 
     if ($this.val() != '') {
 
+    }
+}
+
+// Function to check outstanding amount and show/hide pay section
+function checkOutstandingAmount() {
+    var outstanding = parseFloat($('.outstand_create').val()) || parseFloat($('.outstand').val()) || 0;
+
+    if (outstanding > 0) {
+        // Hide pay input and payment mode
+        $('#pay_section').hide();
+        $('#paymentmode').hide();
+        // Show red message
+        $('#outstandingMessage').show();
+        // Hide invoice buttons
+        $('#treatment_addinvoice').hide();
+        $('#addinvoice').hide();
+    } else {
+        // Show pay input
+        $('#pay_section').show();
+        // Hide the message
+        $('#outstandingMessage').hide();
     }
 }

@@ -28,6 +28,10 @@
         <button class="close" data-close="alert"></button>
         Kindly select the treatment
     </div>
+    <div id="outstandingMessage" class="alert alert-danger display-hide" style="display: none;">
+        <button class="close" data-close="alert"></button>
+        Please add this service OR related payment in plan to consume
+    </div>
     {{--End--}}
 
     {{--Some hidden Fields that helps us for saving invoice--}}
@@ -46,7 +50,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <select class="form-control select2 disabled-field" disabled>
-                        <option value="">Select Package</option>
+                        <option value="">Select Plan</option>
                     </select>
                 </div>
             </div>
@@ -81,7 +85,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <select name="package_id_create" id="package_id_create" class="form-control select2">
-                        <option value="">Select Package</option>
+                        <option value="">Select Plan</option>
                         @foreach($packages as $key => $package)
                             <option @if($key == '0') selected="selected"
                                     @endif value="{{$package->id}}">{{$package->name}}</option>
@@ -124,7 +128,7 @@
             <div class="col-md-8">
 
                 {{--In case if treatment not belong to treatment plan--}}
-                @if($status == 'false')
+                <!-- @if($status == 'false')
                     <div class="col-md-10">
                         <label><strong>Appointment</strong></label>
                         <select name="appointment_link_cons" id="appointment_link_cons" class="form-control">
@@ -135,7 +139,7 @@
                             @endforeach
                         </select>
                     </div>
-                @endif
+                @endif -->
                 {{--End--}}
 
             </div>
@@ -154,7 +158,7 @@
 
                         <div class="col-md-10 mt-12">
                             <!--begin::Option-->
-                            <span class="switch switch-sm switch-icon switch_custom">
+                            <!-- <span class="switch switch-sm switch-icon switch_custom">
                                 <div class="col-md-12" style="padding-left: 0">
                                     <strong>Exclusive</strong>
 
@@ -178,7 +182,7 @@
                                 @endif
 
                                 </div>
-                            </span>
+                            </span> -->
                         </div>
 
 
@@ -230,16 +234,30 @@
                     <input type="hidden" class="outstand_create" name="outstand_create" value="{{$outstanding}}">
                 </div>
 
-                <div class="col-md-11 mt-5">
-                    <strong class="mt-5">Date</strong>
-                    <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
-                    <input type="text" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
-                           class="form-control custom-datepicker float-right custom_field" id="created_at" readonly>
-                </div>
+                @if($outstanding > 0)
+                <script>
+                    $(document).ready(function() {
+                        // Show outstanding message immediately if outstanding > 0
+                        setTimeout(function() {
+                            $('#outstandingMessage').show();
+                            $('#treatment_addinvoice').hide();
+                        }, 100);
+                    });
+                </script>
+                @endif
 
-                <div class="col-md-10 mt-5 mb-10">
-                    <strong class="mt-5">Pay</strong>
-                    <input style="width: 50%;" type="text" name="cash_create" id="cash_create" value="0" class="form-control float-right" min="0" oninput="this.value = !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null;">
+                <!-- <div class="col-md-11 mt-5">
+                    <strong class="mt-5">Date</strong> -->
+                    <!-- @if(Auth::user()->hasRole('Super-Admin'))
+                    <span><i  onclick="triggerDate('custom_field');" style="color: #cc8600; font-size: large; cursor: pointer;" class="la la-pencil float-right"></i></span>
+                    @endif -->
+                    <input type="hidden" name="created_at" value="{{\Carbon\Carbon::now()->format('Y-m-d')}}"
+                           class="form-control float-right custom_field" id="created_at" readonly>
+                <!-- </div> -->
+
+                <div class="col-md-10 mt-5 mb-10" id="pay_section">
+                    <!-- <strong class="mt-5">Pay</strong> -->
+                    <input style="width: 50%;" type="hidden" name="cash_create" id="cash_create" value="0" class="form-control float-right" min="0" oninput="this.value = !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null;">
                 </div>
 
                 <div class="col-md-10 mt-5" id="paymentmode" style="display: none;">
