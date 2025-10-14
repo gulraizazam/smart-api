@@ -5,7 +5,7 @@
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
 
-        @include('admin.partials.breadcrumb', ['module' => 'Voucher Usage', 'title' => 'View Voucher'])
+        @include('admin.partials.breadcrumb', ['module' => 'Vouchers', 'title' => 'View Voucher'])
 
         <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
