@@ -391,4 +391,64 @@ class UserVouchersController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+
+    /**
+     * Show voucher usage details for a specific patient.
+     *
+     * @param  int  $id
+     * @return \Illuminate\View\View
+     */
+    public function show($id)
+    {
+        if (!Gate::allows('vouchers_manage')) {
+            return abort(401);
+        }
+
+        // Get the user voucher record
+        $userVoucher = UserVouchers::with(['user', 'voucher'])->findOrFail($id);
+
+        $voucher = $userVoucher->voucher;
+        $user = $userVoucher->user;
+
+        // Get package_random_ids and main_service_ids from package_vouchers for this specific user and voucher
+        $packageVouchers = PackageVouchers::where('user_id', $userVoucher->user_id)
+            ->where('voucher_id', $userVoucher->voucher_id)
+            ->select('package_random_id', 'main_service_id')
+            ->distinct()
+            ->get();
+
+        $voucherUsageData = [];
+
+        foreach ($packageVouchers as $packageVoucher) {
+            // Find matching package_bundles
+            $packageBundles = \App\Models\PackageBundles::where('random_id', $packageVoucher->package_random_id)
+                ->where('bundle_id', $packageVoucher->main_service_id)
+                ->where('discount_name', $voucher->name) // strict check with voucher name
+                ->get();
+
+            foreach ($packageBundles as $bundle) {
+                // Get the package to retrieve package_id
+                $package = \App\Models\Packages::where('random_id', $packageVoucher->package_random_id)->first();
+
+                // Get services for this bundle
+                $packageServices = \App\Models\PackageService::where('package_bundle_id', $bundle->id)
+                    ->with('service')
+                    ->get();
+
+                foreach ($packageServices as $service) {
+                    $voucherUsageData[] = [
+                        'package_id' => $package ? $package->id : null,
+                        'package_random_id' => $packageVoucher->package_random_id,
+                        'bundle_name' => $bundle->bundle ? $bundle->bundle->name : 'N/A',
+                        'service_name' => $service->service ? $service->service->name : 'N/A',
+                        'discount_type' => $bundle->discount_type,
+                        'discount_price' => $bundle->discount_price,
+                        'user_id' => $userVoucher->user_id,
+                    ];
+                }
+            }
+        }
+
+        return view('admin.vouchers.show', compact('voucher', 'user', 'voucherUsageData', 'userVoucher'));
+    }
 }

@@ -57,7 +57,6 @@ function actions(data) {
         let id = data.id;
 
         let url = route('admin.voucherTypes.edit', {id: id});
-        let view_url = route('admin.voucherTypes.show', {id: id});
         let allocate_url = route('admin.voucherTypes.location_manage', {id: id});
         let delete_url = route('admin.voucherTypes.destroy', {id: id});
 
@@ -79,12 +78,6 @@ function actions(data) {
                     </a>\
                 </li>';
             }
-            actions += '<li class="navi-item">\
-                <a href="' + view_url + '" class="navi-link">\
-                    <span class="navi-icon"><i class="la la-eye"></i></span>\
-                    <span class="navi-text">View</span>\
-                </a>\
-            </li>';
             actions += '<li class="navi-item">\
                 <a href="javascript:void(0);" onclick="assignToPatient(`' + id + '`, `' + data.name + '`);" class="navi-link">\
                     <span class="navi-icon"><i class="la la-user"></i></span>\
