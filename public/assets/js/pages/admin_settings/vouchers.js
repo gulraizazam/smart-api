@@ -64,6 +64,7 @@ function actions(data) {
     if (typeof data.id !== 'undefined') {
         let id = data.id;
         let edit_url = route('admin.vouchers.edit', {id: id});
+        let view_url = route('admin.user-vouchers.show', {user_voucher: id});
         let delete_url = route('admin.vouchers.destroy', {id: id});
 
         if (permissions.view) {
@@ -77,9 +78,9 @@ function actions(data) {
                     Choose an action: \
                 </li>';
 
-            // View button (empty for now)
+            // View button
             actions += '<li class="navi-item">\
-                <a href="javascript:void(0);" class="navi-link">\
+                <a href="' + view_url + '" class="navi-link">\
                     <span class="navi-icon"><i class="la la-eye"></i></span>\
                     <span class="navi-text">View</span>\
                 </a>\
