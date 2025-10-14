@@ -3767,7 +3767,7 @@ class AppointmentsController extends Controller
                         'package_services.is_consumed' => '0',
                         'packages.location_id' => $appointment->location_id,
                     ])->select('packages.id', 'packages.name')->groupby('packages.id')->orderBy('packages.id', 'desc')->get();
-                        dd($packages);
+                       // dd($packages);
                     $status = 'true';
                 if (count($packages) <= 0) {
                     $location_information = Locations::find($appointment->location_id);
