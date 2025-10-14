@@ -85,7 +85,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <select name="package_id_create" id="package_id_create" class="form-control select2">
-                        <option value="">Select Package</option>
+                        <option value="">Select Plan</option>
                         @foreach($packages as $key => $package)
                             <option @if($key == '0') selected="selected"
                                     @endif value="{{$package->id}}">{{$package->name}}</option>

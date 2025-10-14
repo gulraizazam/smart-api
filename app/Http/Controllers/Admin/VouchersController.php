@@ -721,6 +721,17 @@ class VouchersController extends Controller
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
 
+            // Check if voucher type exists and is active
+            $voucherType = Discounts::find($request->voucher_id);
+
+            if (!$voucherType) {
+                return ApiHelper::apiResponse($this->error, 'Voucher type not found', false);
+            }
+
+            if (!$voucherType->active) {
+                return ApiHelper::apiResponse($this->error, 'Cannot assign inactive voucher type to patient', false);
+            }
+
             $checkVoucher = \App\Models\UserVouchers::where('user_id', $request->patient_id)
                 ->where('voucher_id', $request->voucher_id)
                 ->first();
