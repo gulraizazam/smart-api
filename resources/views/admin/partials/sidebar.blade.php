@@ -338,7 +338,7 @@
 
                 </li>
                 @endif
-                @if (Gate::allows('vouchers_manage'))
+                @if (Gate::allows('vouchers_manage') || Gate::allows('voucher_types_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.voucherTypes.index', 'admin.vouchers.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -353,7 +353,7 @@
 
                         <ul class="menu-subnav">
 
-                            @can('vouchers_manage')
+                            @can('voucher_types_manage')
                             <li class="menu-item {{ activeMenu('admin.voucherTypes.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.voucherTypes.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">

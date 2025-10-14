@@ -122,7 +122,10 @@ class UserVouchersController extends Controller
             }
 
             $records['permissions'] = [
-                'view' => Gate::allows('vouchers_manage'),
+                'view' => Gate::allows('vouchers_view'),
+                'create' => Gate::allows('vouchers_create'),
+                'edit' => Gate::allows('vouchers_edit'),
+                'delete' => Gate::allows('vouchers_destroy'),
             ];
 
             return ApiHelper::apiDataTable($records);
@@ -252,7 +255,7 @@ class UserVouchersController extends Controller
     public function store(Request $request)
     {
         try {
-            if (!Gate::allows('vouchers_manage')) {
+            if (!Gate::allows('vouchers_create')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
@@ -294,7 +297,7 @@ class UserVouchersController extends Controller
     public function edit($id)
     {
         try {
-            if (!Gate::allows('vouchers_manage')) {
+            if (!Gate::allows('vouchers_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
@@ -329,7 +332,7 @@ class UserVouchersController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            if (!Gate::allows('vouchers_manage')) {
+            if (!Gate::allows('vouchers_edit')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
@@ -369,7 +372,7 @@ class UserVouchersController extends Controller
     public function destroy($id)
     {
         try {
-            if (!Gate::allows('vouchers_manage')) {
+            if (!Gate::allows('vouchers_destroy')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
             }
 
