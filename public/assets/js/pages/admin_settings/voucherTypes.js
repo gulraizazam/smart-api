@@ -78,12 +78,14 @@ function actions(data) {
                     </a>\
                 </li>';
             }
-            actions += '<li class="navi-item">\
-                <a href="javascript:void(0);" onclick="assignToPatient(`' + id + '`, `' + data.name + '`);" class="navi-link">\
-                    <span class="navi-icon"><i class="la la-user"></i></span>\
-                    <span class="navi-text">Assign To Patient</span>\
-                </a>\
-            </li>';
+            if (permissions.assign) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="assignToPatient(`' + id + '`, `' + data.name + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-user"></i></span>\
+                        <span class="navi-text">Assign To Patient</span>\
+                    </a>\
+                </li>';
+            }
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="editRow(`' + url + '`);" class="navi-link">\
