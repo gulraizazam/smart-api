@@ -699,6 +699,68 @@ class VouchersController extends Controller
     }
 
     /**
+     * View voucher usage details - shows all services and packages where voucher is used.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        if (!Gate::allows('vouchers_manage')) {
+            return abort(401);
+        }
+
+        try {
+            // Get voucher details
+            $voucher = Discounts::find($id);
+
+            if (!$voucher) {
+                flash('Voucher not found.')->error()->important();
+                return redirect()->route('admin.voucherTypes.index');
+            }
+
+            // Get all package voucher records for this voucher
+            $packageVouchers = \DB::table('package_vouchers')
+                ->where('voucher_id', $id)
+                ->get();
+
+            $voucherUsageData = [];
+
+            foreach ($packageVouchers as $packageVoucher) {
+                // Get package bundles matching the criteria
+                $packageBundles = \App\Models\PackageBundles::where('random_id', $packageVoucher->package_random_id)
+                    ->where('bundle_id', $packageVoucher->main_service_id)
+                    ->where('discount_name', $voucher->name) // Additional strict checking
+                    ->with(['bundle', 'packageservice.service'])
+                    ->get();
+
+                foreach ($packageBundles as $packageBundle) {
+                    // Get all services for this bundle
+                    $services = $packageBundle->packageservice;
+
+                    foreach ($services as $service) {
+                        $voucherUsageData[] = [
+                            'package_random_id' => $packageVoucher->package_random_id,
+                            'package_id' => $packageBundle->package_id,
+                            'bundle_name' => $packageBundle->bundle ? $packageBundle->bundle->name : 'N/A',
+                            'service_name' => $service->service ? $service->service->name : 'N/A',
+                            'discount_price' => $packageBundle->discount_price,
+                            'discount_type' => $packageBundle->discount_type,
+                            'user_id' => $packageVoucher->user_id,
+                        ];
+                    }
+                }
+            }
+
+            return view('admin.voucherTypes.show', compact('voucher', 'voucherUsageData'));
+
+        } catch (\Exception $e) {
+            flash('Something went wrong: ' . $e->getMessage())->error()->important();
+            return redirect()->route('admin.voucherTypes.index');
+        }
+    }
+
+    /**
      * Assign voucher to patient from voucher types screen.
      *
      * @param  \Illuminate\Http\Request  $request
