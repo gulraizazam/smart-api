@@ -11,17 +11,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Spatie\Permission\Models\Role;
-<<<<<<< HEAD
-  use PhpOffice\PhpSpreadsheet\Spreadsheet;
-    use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-    use PhpOffice\PhpSpreadsheet\Style\Alignment;
-    use PhpOffice\PhpSpreadsheet\Style\Font;
-
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Font;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
-=======
-
->>>>>>> test
 class UpsellingReportController extends Controller
 {
     public function index()
@@ -36,11 +31,7 @@ class UpsellingReportController extends Controller
 
         return view('admin.reports.consultant_revenue', get_defined_vars());
     }
-<<<<<<< HEAD
   public function loadUpsellingReport(Request $request)
-=======
-   public function loadUpsellingReport(Request $request)
->>>>>>> test
 {
     $request->validate([
         'centre_id' => 'required|integer|exists:locations,id',
@@ -55,11 +46,7 @@ class UpsellingReportController extends Controller
         $query->where('name', 'Aesthetic Doctor')->orWhere('name','Lifestyle Consultant');
     })->pluck('id');
 
-<<<<<<< HEAD
     $fdmUserIds = User::whereHas('roles', function ($q) use ($locationId) {
-=======
-    $fdmUserIds = User::whereHas('roles', function ($q) {
->>>>>>> test
             $q->where('name', 'FDM');
         })
         ->whereHas('user_has_locations', function ($q) use ($locationId) {
@@ -67,7 +54,6 @@ class UpsellingReportController extends Controller
         })
         ->pluck('id');
 
-<<<<<<< HEAD
     $doctorIds = DB::table('doctor_has_locations')
         ->where('location_id', $locationId)
         ->whereIn('user_id', $roleHasUsers)
@@ -76,16 +62,6 @@ class UpsellingReportController extends Controller
 
     $allSellerIds = $doctorIds->merge($fdmUserIds)->unique();
     
-=======
-    // Step 1: Get doctors for the location
-    $doctorIds = DB::table('doctor_has_locations')
-    ->where('location_id', $locationId)
-    ->whereIn('user_id', $roleHasUsers)
-     ->distinct()
-    ->pluck('user_id');
-
-    $allSellerIds = $doctorIds->merge($fdmUserIds)->unique();
->>>>>>> test
     if ($allSellerIds->isEmpty()) {
         return response()->json([
             'status' => 200,
@@ -94,7 +70,6 @@ class UpsellingReportController extends Controller
         ]);
     }
 
-<<<<<<< HEAD
     $allActiveUsers = User::whereIn('id', $allSellerIds)
         ->where('active', 1)
         ->select('id', 'name')
@@ -364,40 +339,6 @@ class UpsellingReportController extends Controller
         ];
     })->sortByDesc('total_sold_amount')->values();
 
-=======
-    $reportQuery = PackageService::query()
-        ->join('users', 'package_services.sold_by', '=', 'users.id')
-        ->join('packages', 'package_services.package_id', '=', 'packages.id')
-        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-        ->whereIn('package_services.sold_by', $allSellerIds)
-        ->where('packages.location_id', $locationId);
-
-    // Apply date range filter on created_at
-    if ($startDate && $endDate) {
-        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate])
-            ->whereNotNull('sold_by');
-    }
-
-    // Fetch summary report data (only doctor names and total amounts)
-    $reportData = $reportQuery
-        ->select(
-            'users.name as doctor_name',
-            'package_services.sold_by as doctor_id',
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_sold_amount
-            ")
-        )
-        ->groupBy('package_services.sold_by', 'users.name')
-        ->get();
-
-    // Store filters in session for detail view
->>>>>>> test
     session(['upselling_filters' => [
         'location_id' => $locationId,
         'start_date' => $startDate,
@@ -417,21 +358,15 @@ public function doctorUpsellingDetail($doctorId)
         return redirect()->back()->with('error', 'Session expired. Please reload the report.');
     }
 
-<<<<<<< HEAD
     // Get doctor name
     $doctorName = User::find($doctorId)->name ?? 'Unknown Doctor';
 
     // Get all package services for this doctor in the period
     $packageServices = PackageService::query()
-=======
-    $reportQuery = PackageService::query()
-        ->join('users', 'package_services.sold_by', '=', 'users.id')
->>>>>>> test
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
         ->join('services', 'package_services.service_id', '=', 'services.id')
         ->where('package_services.sold_by', $doctorId)
-<<<<<<< HEAD
         ->where('packages.location_id', $filters['location_id'])
         ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
         ->whereNotNull('sold_by')
@@ -711,48 +646,6 @@ public function doctorUpsellingDetail($doctorId)
         'totalAmount', 
         'uniqueUpsellings'
     ));
-=======
-        ->whereIn('package_services.sold_by', $filters['all_seller_ids'])
-        ->where('packages.location_id', $filters['location_id'])
-        ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
-        ->whereNotNull('sold_by');
-
-    $detailData = $reportQuery
-        ->select(
-            'users.name as doctor_name',
-            'package_services.package_id',
-            'services.name as service_name',
-            'package_services.tax_including_price',
-            'package_services.created_at',
-            'appointments.patient_id',
-            'appointments.name as patient_name',
-            'appointments.scheduled_date',
-            DB::raw("
-                CASE
-                    WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                    THEN package_services.tax_including_price
-                    ELSE 0
-                END as actual_amount
-            ")
-        )
-        ->where(DB::raw("
-            CASE
-                WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                THEN package_services.tax_including_price
-                ELSE 0
-            END
-        "), '>', 0)
-        ->orderBy('package_services.created_at', 'desc')
-        ->get();
-
-    $doctorName = $detailData->first()->doctor_name ?? 'Unknown Doctor';
-    $totalAmount = $detailData->sum('actual_amount');
-    
-    // Count unique upselling packages instead of service records
-    $uniqueUpsellings = $detailData->unique('package_id')->count();
-
-    return view('admin.reports.doctorUpsellingDetail', compact('detailData', 'doctorName', 'totalAmount', 'uniqueUpsellings'));
->>>>>>> test
 }
 public function loadConsultantRevenueReport(Request $request)
 {
@@ -1012,34 +905,21 @@ public function getDoctorUpsellingData(Request $request)
             ]);
         }
 
-<<<<<<< HEAD
         // Get all active users (doctors, consultants, FDMs) for the location
         $allActiveUsers = User::whereIn('id', $allSellerIds)
             ->where('active', 1)
-=======
-        // First, get all active users (doctors, consultants, FDMs) for the location
-        $allActiveUsers = User::whereIn('id', $allSellerIds)
-        ->where('active', 1)
->>>>>>> test
             ->select('id', 'name')
             ->get()
             ->keyBy('id');
 
-<<<<<<< HEAD
         // Get package services created in the date range
         $packageServicesQuery = PackageService::query()
-=======
-        // Then get the sales data
-        $salesQuery = PackageService::query()
-            ->join('users', 'package_services.sold_by', '=', 'users.id')
->>>>>>> test
             ->join('packages', 'package_services.package_id', '=', 'packages.id')
             ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
             ->whereIn('package_services.sold_by', $allSellerIds)
             ->whereBetween('package_services.created_at', [$startDate, $endDate])
             ->whereNotNull('sold_by');
 
-<<<<<<< HEAD
         // Apply location filter
         if ($centreId !== 'all') {
             $packageServicesQuery->where('packages.location_id', $centreId);
@@ -1294,56 +1174,6 @@ public function getDoctorUpsellingData(Request $request)
                 'total_upselling_amount' => $doctorUpsellingAmounts[$user->id] ?? 0,
             ];
         })->sortByDesc('total_upselling_amount')->values();
-=======
-        // Apply location filter for sales data
-        if ($centreId !== 'all') {
-            $salesQuery->where('packages.location_id', $centreId);
-        } else {
-            $userLocations = \App\Helpers\ACL::getUserCentres();
-            $salesQuery->whereIn('packages.location_id', $userLocations);
-        }
-
-        // Get sales data grouped by seller
-        $salesData = $salesQuery
-            ->select(
-                'package_services.sold_by as doctor_id',
-                DB::raw("
-                    SUM(
-                        CASE
-                            WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                            THEN package_services.tax_including_price
-                            ELSE 0
-                        END
-                    ) as total_sold_amount
-                "),
-                DB::raw("
-                    SUM(
-                        CASE
-                            WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                            AND package_services.is_consumed = 1
-                            AND package_services.consumed_at BETWEEN '{$startDate}' AND '{$endDate}'
-                            THEN package_services.tax_including_price
-                            ELSE 0
-                        END
-                    ) as total_consumed_amount
-                ")
-            )
-            ->groupBy('package_services.sold_by')
-            ->get()
-            ->keyBy('doctor_id');
-
-        // Combine all users with their sales data
-        $reportData = $allActiveUsers->map(function ($user) use ($salesData) {
-            $userSales = $salesData->get($user->id);
-            
-            return (object)[
-                'doctor_id' => $user->id,
-                'doctor_name' => $user->name,
-                'total_sold_amount' => $userSales ? $userSales->total_sold_amount : 0,
-                'total_consumed_amount' => $userSales ? $userSales->total_consumed_amount : 0,
-            ];
-        })->sortByDesc('total_sold_amount')->values();
->>>>>>> test
 
         return response()->json([
             'success' => true,
@@ -1375,7 +1205,6 @@ public function doctorConsultantBreakdown($sellerId)
         return redirect()->back()->with('error', 'Seller not found.');
     }
 
-<<<<<<< HEAD
     // Get all package services for this seller
     $packageServices = PackageService::query()
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
@@ -1514,68 +1343,6 @@ public function doctorConsultantBreakdown($sellerId)
 
     // Calculate totals
     $totalSoldAmount = $consultantBreakdown->sum('total_amount');
-=======
-    $reportQuery = PackageService::query()
-        ->join('packages', 'package_services.package_id', '=', 'packages.id')
-        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-        ->join('users as appointment_doctors', 'appointments.doctor_id', '=', 'appointment_doctors.id')
-        ->join('users as sellers', 'package_services.sold_by', '=', 'sellers.id')
-        ->where('package_services.sold_by', $sellerId)
-        ->whereIn('package_services.sold_by', $filters['all_seller_ids'])
-        ->where('packages.location_id', $filters['location_id'])
-        ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
-        ->whereNotNull('sold_by');
-
-    // Get breakdown by consultant (appointment doctor)
-    $consultantBreakdown = $reportQuery
-        ->select(
-            'appointment_doctors.name as consultant_name',
-            'appointments.doctor_id as consultant_id',
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_amount
-            "),
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        AND package_services.is_consumed = 1
-                        AND package_services.consumed_at BETWEEN '{$filters['start_date']}' AND '{$filters['end_date']}'
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_consumed_amount
-            "),
-            DB::raw("
-                COUNT(DISTINCT 
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        THEN package_services.package_id
-                        ELSE NULL
-                    END
-                ) as total_packages
-            ")
-        )
-        ->where(DB::raw("
-            CASE
-                WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                THEN package_services.tax_including_price
-                ELSE 0
-            END
-        "), '>', 0)
-        ->groupBy('appointments.doctor_id', 'appointment_doctors.name')
-        ->orderBy('total_amount', 'desc')
-        ->get();
-
-    // Calculate totals
-    $totalSoldAmount = $consultantBreakdown->sum('total_amount');
-    $totalConsumedAmount = $consultantBreakdown->sum('total_consumed_amount');
->>>>>>> test
     $totalPackages = $consultantBreakdown->sum('total_packages');
     $totalConsultants = $consultantBreakdown->count();
 
@@ -1586,10 +1353,6 @@ public function doctorConsultantBreakdown($sellerId)
         'sellerName', 
         'sellerId',
         'totalSoldAmount',
-<<<<<<< HEAD
-=======
-        'totalConsumedAmount', 
->>>>>>> test
         'totalPackages',
         'totalConsultants'
     ));
@@ -1707,7 +1470,6 @@ public function consultantSellerDetail($consultantId, $sellerId)
         'sellerId'
     ));
 }
-<<<<<<< HEAD
 public function downloadDoctorUpsellingExcel(Request $request)
     {
         try {
@@ -2431,6 +2193,4 @@ foreach ($servicesByPackage as $packageId => $services) {
             throw new \Exception('Excel generation failed: ' . $e->getMessage());
         }
     }
-=======
->>>>>>> test
 }
