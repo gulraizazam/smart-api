@@ -553,6 +553,13 @@ class VouchersController extends Controller
 
         try {
 
+            // Check if voucher is assigned to any patient
+            $isAssigned = \App\Models\UserVouchers::where('voucher_id', $id)->exists();
+
+            if ($isAssigned) {
+                return ApiHelper::apiResponse($this->error, 'Cannot delete voucher type as it is already assigned to patients.', false);
+            }
+
             $record = Discounts::deleteRecord($id);
             if ($record) {
                 return ApiHelper::apiResponse($this->success, $record);
