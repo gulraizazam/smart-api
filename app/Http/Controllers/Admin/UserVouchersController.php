@@ -270,9 +270,9 @@ class UserVouchersController extends Controller
                 ->where('voucher_id', $request->voucher_id)
                 ->first();
 
-            if ($checkVoucher) {
-                return ApiHelper::apiResponse($this->error, 'Voucher is already assigned to this patient.', false);
-            }
+            // if ($checkVoucher) {
+            //     return ApiHelper::apiResponse($this->error, 'Voucher is already assigned to this patient.', false);
+            // }
 
             // Create the user voucher
             UserVouchers::create([
