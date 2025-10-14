@@ -248,6 +248,7 @@ class RolesController extends Controller
             'inactive' => 'Inactive',
             'destroy' => 'Delete',
             'sort' => 'Sort',
+            'assign' => 'Assign',
             'change_password' => 'Change Password',
             'import' => 'Import',
             'export' => 'Export',
