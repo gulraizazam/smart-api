@@ -234,6 +234,18 @@
                     <input type="hidden" class="outstand_create" name="outstand_create" value="{{$outstanding}}">
                 </div>
 
+                @if($outstanding > 0)
+                <script>
+                    $(document).ready(function() {
+                        // Show outstanding message immediately if outstanding > 0
+                        setTimeout(function() {
+                            $('#outstandingMessage').show();
+                            $('#treatment_addinvoice').hide();
+                        }, 100);
+                    });
+                </script>
+                @endif
+
                 <!-- <div class="col-md-11 mt-5">
                     <strong class="mt-5">Date</strong> -->
                     <!-- @if(Auth::user()->hasRole('Super-Admin'))
