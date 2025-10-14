@@ -3732,6 +3732,7 @@ class AppointmentsController extends Controller
 
     public function invoice($id)
     {
+        dd("sss");
         if (! Gate::allows('appointments_manage') && ! Gate::allows('appointments_view')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
