@@ -66,7 +66,10 @@ class Discounts extends BaseModal
     {
 
         $record = self::create($data);
-        $record->roles()->sync($data['roles']);
+        if(isset($data['roles'])){
+            $record->roles()->sync($data['roles']);
+        }
+      
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
         return $record;
