@@ -257,7 +257,7 @@
 
                 <div class="col-md-10 mt-5 mb-10" id="pay_section">
                     <strong class="mt-5">Pay</strong>
-                    <input style="width: 50%;" type="text" name="cash_create" id="cash_create" value="0" class="form-control float-right" min="0" oninput="this.value = !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null;">
+                    <input style="width: 50%;" type="hidden" name="cash_create" id="cash_create" value="0" class="form-control float-right" min="0" oninput="this.value = !!this.value && Math.abs(this.value) >= 0 ? Math.abs(this.value) : null;">
                 </div>
 
                 <div class="col-md-10 mt-5" id="paymentmode" style="display: none;">
