@@ -50,7 +50,7 @@
             <div class="row">
                 <div class="col-md-6">
                     <select class="form-control select2 disabled-field" disabled>
-                        <option value="">Select Package</option>
+                        <option value="">Select Plan</option>
                     </select>
                 </div>
             </div>
@@ -128,7 +128,7 @@
             <div class="col-md-8">
 
                 {{--In case if treatment not belong to treatment plan--}}
-                @if($status == 'false')
+                <!-- @if($status == 'false')
                     <div class="col-md-10">
                         <label><strong>Appointment</strong></label>
                         <select name="appointment_link_cons" id="appointment_link_cons" class="form-control">
@@ -139,7 +139,7 @@
                             @endforeach
                         </select>
                     </div>
-                @endif
+                @endif -->
                 {{--End--}}
 
             </div>
