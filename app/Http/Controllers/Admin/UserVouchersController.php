@@ -395,12 +395,16 @@ class UserVouchersController extends Controller
     /**
      * Show voucher usage details for a specific patient.
      *
+     * @param  \Illuminate\Http\Request  $request
      * @param  int  $id
-     * @return \Illuminate\View\View
+     * @return \Illuminate\View\View|\Illuminate\Http\JsonResponse
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         if (!Gate::allows('vouchers_manage')) {
+            if ($request->ajax()) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            }
             return abort(401);
         }
 
@@ -449,6 +453,13 @@ class UserVouchersController extends Controller
             }
         }
 
+        // If AJAX request, return HTML content for modal
+        if ($request->ajax()) {
+            $html = view('admin.vouchers.view_content', compact('voucher', 'user', 'voucherUsageData', 'userVoucher'))->render();
+            return ApiHelper::apiResponse($this->success, 'Voucher usage details retrieved successfully.', true, ['html' => $html]);
+        }
+
+        // Otherwise return full page view
         return view('admin.vouchers.show', compact('voucher', 'user', 'voucherUsageData', 'userVoucher'));
     }
 }
