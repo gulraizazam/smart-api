@@ -58,11 +58,11 @@
                                             </div>
                                             <div class="col-md-3">
                                                 <strong>Total Amount:</strong><br>
-                                                ${{ number_format($userVoucher->total_amount, 2) }}
+                                                {{ number_format($userVoucher->total_amount, 2) }}
                                             </div>
                                             <div class="col-md-3">
                                                 <strong>Remaining Amount:</strong><br>
-                                                ${{ number_format($userVoucher->amount, 2) }}
+                                                {{ number_format($userVoucher->amount, 2) }}
                                             </div>
                                         </div>
                                     </div>
@@ -79,10 +79,10 @@
                                         <tr>
                                             <th>#</th>
                                             <th>Package ID</th>
-                                            <th>Package Random ID</th>
-                                            <th>Bundle Name</th>
+                                            
+                                           
                                             <th>Service Name</th>
-                                            <th>Discount Type</th>
+                                           
                                             <th>Voucher Amount Used</th>
                                         </tr>
                                     </thead>
@@ -91,12 +91,9 @@
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ $usage['package_id'] ?? 'N/A' }}</td>
-                                            <td>{{ $usage['package_random_id'] }}</td>
-                                            <td>{{ $usage['bundle_name'] }}</td>
+                                          
                                             <td>{{ $usage['service_name'] }}</td>
-                                            <td>
-                                                <span class="badge badge-info">{{ $usage['discount_type'] }}</span>
-                                            </td>
+                                           
                                             <td>
                                                 @if($usage['discount_type'] == 'Percentage')
                                                     {{ number_format($usage['discount_price'], 2) }}%
