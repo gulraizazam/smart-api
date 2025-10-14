@@ -306,17 +306,27 @@ function setEditData(response) {
     try {
 
         let voucher = response.data.voucher;
+        let isAssigned = response.data.is_assigned;
 
-        
+
 
         $("#modal_edit_vouchers_form").attr("action", route('admin.voucherTypes.update', {id: voucher.id}));
-        
+
 
         $("#edit_name").val(voucher.name);
         $("#edit_start").val(voucher.start);
         $("#edit_end").val(voucher.end);
 
         $("#edit_active").prop("checked", voucher.active);
+
+        // Disable name field if voucher is assigned to a patient
+        if (isAssigned) {
+            $("#edit_name").prop("readonly", true);
+            $("#edit_name").addClass("bg-light-secondary");
+        } else {
+            $("#edit_name").prop("readonly", false);
+            $("#edit_name").removeClass("bg-light-secondary");
+        }
 
     } catch (error) {
         showException(error);

@@ -426,7 +426,7 @@ class VouchersController extends Controller
 
                     $voucherServices = [];
                 }
-                
+
                 /* Create Nodes with Parents */
                 $Services = ServiceWidget::generateServiceArrayDiscount($id, Auth::User()->account_id);
 
@@ -442,12 +442,16 @@ class VouchersController extends Controller
                         $Voucher['end'] = $voucher->dateFormat($voucher['end'], 'Y-m-d');
                     }
                 }
-              
+
+                // Check if voucher is assigned to any patient
+                $isAssigned = \App\Models\UserVouchers::where('voucher_id', $id)->exists();
+
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
                     'voucher' => $Voucher ?? $voucher,
                     'locations' => $locations,
                     'services' => $Services,
-                    
+                    'is_assigned' => $isAssigned,
+
                 ]);
             }
         } catch (\Exception $e) {
@@ -476,14 +480,25 @@ class VouchersController extends Controller
 
         $data = $request->all();
 
-        
+        // Check if voucher is assigned to any patient
+        $isAssigned = \App\Models\UserVouchers::where('voucher_id', $id)->exists();
+
+        // If voucher is assigned, prevent name change
+        if ($isAssigned) {
+            $currentVoucher = Discounts::find($id);
+            if ($currentVoucher && $request->name !== $currentVoucher->name) {
+                return ApiHelper::apiResponse($this->success, 'Cannot change voucher name as it is already assigned to patients.', false);
+            }
+            // Remove name from update data to prevent accidental changes
+            unset($data['name']);
+        }
 
         if ($request->active == null) {
             $data['active'] = '0';
         }
 
         if ($request->start <= $request->end) {
-            
+
             if (Discounts::updateDiscount($data, $id)) {
 
                 return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');

@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Vouchers</h3>
+                            <h3 class="card-label">Voucher Types</h3>
                         </div>
 
                         <div class="card-toolbar">
