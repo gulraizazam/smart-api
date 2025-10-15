@@ -1638,7 +1638,7 @@ function formatCurrency(amount) {
         arrived: arrivedData,
         walkin: walkinData
     });
-}
+
     const primary = '#6993FF';
     const success = '#1BC5BD';
     const info = '#8950FC';
