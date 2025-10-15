@@ -965,8 +965,8 @@ class AppointmentsController extends Controller
                     'cancelled_appointment_status' => $cancelled_appointment_status,
                     'appointment_status_id' => ($appointment->appointment_status_id ? ($appointment->appointment_status->parent_id ? $AppointmentStatuses[$appointment->appointment_status->parent_id]->name : $appointment->appointment_status->name) : ''),
                     'appointment_status' => $appointment->appointment_status_id,
-                    'invoice_id' => $appointment->invoice->id ?? 0,
-                    'invoice' => $appointment->invoice ?? null,
+                     'invoice_id' => $invoiceid,
+                    'invoice' => $invoice,
                 ];
                 $index++;
             }
