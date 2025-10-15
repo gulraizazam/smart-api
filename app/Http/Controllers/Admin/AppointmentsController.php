@@ -918,14 +918,14 @@ class AppointmentsController extends Controller
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
 
-                // $invoice = Invoices::where([
-                //     ['appointment_id', '=', $appointment->id],
-                //     ['invoice_status_id', '=', $invoice_status->id],
-                // ])->first();
-                // $invoicearray[] = $invoice;
-                // if ($invoice) {
-                //     $invoiceid = $invoice->id;
-                // }
+                $invoice = Invoices::where([
+                    ['appointment_id', '=', $appointment->id],
+                    ['invoice_status_id', '=', $invoice_status->id],
+                ])->first();
+                $invoicearray[] = $invoice;
+                if ($invoice) {
+                    $invoiceid = $invoice->id;
+                }
                 if ($appointment->consultancy_type == 'in_person') {
                     $consultancy_type = 'In Person';
                 } elseif ($appointment->consultancy_type == 'virtual') {
