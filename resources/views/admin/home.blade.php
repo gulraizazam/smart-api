@@ -538,6 +538,7 @@
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="center_wise_arrival" class="form-control" name="type">
 
+
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
@@ -552,6 +553,7 @@
                                     <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="initCentreWiseArrival" class="form-control" name="type">
+
 
                                                 <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
@@ -747,6 +749,7 @@
                                                 Auth::user()->hasRole('Super-Admin') ||
                                                 Auth::user()->hasRole('Head of Operations') ||
                                                 Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
+                                                Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                 <a class="btn form-control btndropdown btn_Report doctorwisefeedback" href="javascript:;"
                                                     data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false" data-id="all">
                                                     All Centres
@@ -765,6 +768,7 @@
                                                     @if (Auth::user()->hasRole('Administrator') ||
                                                     Auth::user()->hasRole('Super-Admin') ||
                                                     Auth::user()->hasRole('Head of Operations') ||
+                                                    Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                     Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
                                                     <option value="all" data-period="thismonth" {{-- onclick="changeCenterDoct('thismonth', 'all')" --}}>
                                                         {{-- <a class="dropdown-item doctor_wise_feedback_centre_id" data-id="all"></a> --}}
@@ -792,6 +796,9 @@
                                                 <!-- <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                                     Week</option> -->
+
+                                                <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
+                                                <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time
 
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
                                                 <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time
@@ -907,8 +914,8 @@
                                                 <thead class="thead-light">
                                                     <tr>
                                                         <th class="text-left">Doctor Name</th>
-                                                        <th class="text-right">Sold Amount</th>
-                                                        <th class="text-right">Consumed Amount</th>
+                                                        <th class="text-right">Upselling Amount</th>
+                                                        
                                                     </tr>
                                                 </thead>
                                                 <tbody id="doctor_upselling_tbody">
@@ -922,8 +929,8 @@
                                                 <tfoot id="doctor_upselling_tfoot" style="display: none;">
                                                     <tr class="font-weight-bold bg-light">
                                                         <td>Total</td>
-                                                        <td class="text-right" id="total_sold_amount">0.00</td>
-                                                        <td class="text-right" id="total_consumed_amount">0.00</td>
+                                                        <td class="text-right" id="total_upselling_amount">0.00</td>
+                                                        
                                                     </tr>
                                                 </tfoot>
                                             </table>
@@ -1014,25 +1021,21 @@ function loadDoctorUpsellingData(centreId, period) {
 
 function populateTable(data) {
     let tbody = '';
-    let totalSoldAmount = 0;
-    let totalConsumedAmount = 0;
+    let totalUpsellingAmount = 0;
     
     data.forEach(function(doctor) {
-        totalSoldAmount += parseFloat(doctor.total_sold_amount || 0);
-        totalConsumedAmount += parseFloat(doctor.total_consumed_amount || 0);
+        totalUpsellingAmount += parseFloat(doctor.total_upselling_amount || 0);
         
         tbody += `
             <tr>
                 <td class="font-weight-bold">${doctor.doctor_name}</td>
-                <td class="text-right">${formatCurrency(doctor.total_sold_amount)}</td>
-                <td class="text-right">${formatCurrency(doctor.total_consumed_amount || 0)}</td>
+                <td class="text-right">${formatCurrency(doctor.total_upselling_amount)}</td>
             </tr>
         `;
     });
     
     $('#doctor_upselling_tbody').html(tbody);
-    $('#total_sold_amount').text(formatCurrency(totalSoldAmount));
-    $('#total_consumed_amount').text(formatCurrency(totalConsumedAmount));
+    $('#total_upselling_amount').text(formatCurrency(totalUpsellingAmount));
     $('#doctor_upselling_tfoot').show();
     
     // Generate chart
@@ -1041,23 +1044,17 @@ function populateTable(data) {
 
 function generateDoctorUpsellingChart(data) {
     const primary = '#6993FF';
-    const success = '#1BC5BD';
-    const warning = '#FFA800';
     
     let doctorNames = data.map(doctor => doctor.doctor_name);
-    let soldAmounts = data.map(doctor => parseFloat(doctor.total_sold_amount || 0));
-    let consumedAmounts = data.map(doctor => parseFloat(doctor.total_consumed_amount || 0));
+    let upsellingAmounts = data.map(doctor => parseFloat(doctor.total_upselling_amount || 0));
     
     // Hide placeholder and show chart
     $('#doctor_upselling_placeholder').hide();
     
     var options = {
         series: [{
-            name: 'Sold Amount',
-            data: soldAmounts
-        }, {
-            name: 'Consumed Amount', 
-            data: consumedAmounts
+            name: 'Upselling Amount',
+            data: upsellingAmounts
         }],
         chart: {
             type: 'bar',
@@ -1070,11 +1067,22 @@ function generateDoctorUpsellingChart(data) {
             bar: {
                 horizontal: false,
                 columnWidth: '55%',
-                endingShape: 'rounded'
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
             }
         },
         dataLabels: {
-            enabled: false
+            enabled: true,
+            formatter: function (val) {
+                return formatCurrency(val);
+            },
+            offsetY: -20,
+            style: {
+                fontSize: '12px',
+                colors: ["#304758"]
+            }
         },
         stroke: {
             show: true,
@@ -1085,12 +1093,15 @@ function generateDoctorUpsellingChart(data) {
             categories: doctorNames,
             labels: {
                 rotate: -45,
-                maxHeight: 120
+                maxHeight: 120,
+                style: {
+                    fontSize: '11px'
+                }
             }
         },
         yaxis: {
             title: {
-                text: 'Amount'
+                text: 'Upselling Amount'
             },
             labels: {
                 formatter: function (val) {
@@ -1098,7 +1109,7 @@ function generateDoctorUpsellingChart(data) {
                 }
             }
         },
-        colors: [primary, success],
+        colors: [primary],
         fill: {
             opacity: 1
         },
@@ -1110,8 +1121,7 @@ function generateDoctorUpsellingChart(data) {
             }
         },
         legend: {
-            show: true,
-            position: 'top'
+            show: false
         }
     };
     
@@ -1121,7 +1131,6 @@ function generateDoctorUpsellingChart(data) {
     var chart = new ApexCharts(document.querySelector("#doctor_upselling_chart"), options);
     chart.render();
 }
-
 function showNoDataMessage() {
     $('#doctor_upselling_tbody').html(`
         <tr>
@@ -1239,6 +1248,7 @@ function formatCurrency(amount) {
                 }
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
+                    initCentreWiseArrival('yesterday', '', 'firsttime');
                     initCentreWiseArrival('yesterday', '', 'firsttime');
                     @if (!auth()->user()->hasRole('CSR'))
                     initDoctorWiseConversion('today', centre_id, 'firsttime');
@@ -1533,13 +1543,12 @@ function formatCurrency(amount) {
             function BarChart(service) {
     const primary = '#6993FF';
     const success = '#1BC5BD';
-    const info = '#8950FC';
     const warning = '#FFA800';
-    const danger = '#F64E60';
     
     // Debug logging
     console.log('Chart data received:', service.data);
     
+    // Process locations
     let locations = service.data.bar;
     let modifiedLocations;
     
@@ -1550,36 +1559,33 @@ function formatCurrency(amount) {
             modifiedLocations = locations;
         }
     } else {
-        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 'Johar Town Lahore',
-            'Gulberg Lahore', 'DHA Lahore'
-        ];
+        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 
+                            'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
     }
 
-    // Create copies of arrays to avoid modifying original data
+    // Create copies of arrays
     let totalData = [...(service.data.total || [])];
     let arrivedData = [...(service.data.arrived || [])];
     let walkinData = [...(service.data.walkin || [])];
     
     // Ensure all arrays have the same length
     const maxLength = Math.max(totalData.length, arrivedData.length, walkinData.length);
-    
-    // Pad arrays with zeros if needed
     while (totalData.length < maxLength) totalData.push(0);
     while (arrivedData.length < maxLength) arrivedData.push(0);
     while (walkinData.length < maxLength) walkinData.push(0);
     
     // Adjust data: subtract walkin from total and arrived
-    for (var i = 0; i < walkinData.length; i++) {
+    for (let i = 0; i < walkinData.length; i++) {
         totalData[i] = Math.max(0, totalData[i] - walkinData[i]);
         arrivedData[i] = Math.max(0, arrivedData[i] - walkinData[i]);
     }
 
-    // Clear any existing chart
-    if (centre_wise_arrival) {
+    // Clear any existing chart (assuming centre_wise_arrival is declared elsewhere)
+    if (typeof centre_wise_arrival !== 'undefined' && centre_wise_arrival) {
         centre_wise_arrival.destroy();
     }
 
-    var options = {
+    const options = {
         series: [{
             name: 'Total Appointments',
             data: totalData
@@ -1629,7 +1635,6 @@ function formatCurrency(amount) {
         walkin: walkinData
     });
 }
-
             $(document).on('click', '.planIdText', function () {
                 $('.planIdText').tooltip();
                 var planId = $(this).text();
