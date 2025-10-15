@@ -842,7 +842,8 @@ class AppointmentsController extends Controller
             'appointment_status',
             'appointment_status.parent',
             'hasInvoices', // 👈 eager load invoice
-        ])
+            'invoice'
+            ])
         ->where('appointments.appointment_type_id', $consultancyslug->id)
         ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
