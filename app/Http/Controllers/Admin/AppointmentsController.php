@@ -842,7 +842,7 @@ class AppointmentsController extends Controller
             'appointment_status',
             'appointment_status.parent',
             'hasInvoices', // 👈 eager load invoice
-             'invoice'
+           
         ])
         ->where('appointments.appointment_type_id', $consultancyslug->id)
         ->whereIn('appointments.location_id', ACL::getUserCentres());
@@ -855,7 +855,7 @@ class AppointmentsController extends Controller
         if (Gate::allows('appointments_services') && Gate::allows('appointments_consultancy')) {
             $count_query = Appointments::with([
             'patient',
-            'invoice', // 👈 eager load invoice
+           
         ])
 
         ->whereIn('appointments.location_id', ACL::getUserCentres());
