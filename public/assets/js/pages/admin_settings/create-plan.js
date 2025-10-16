@@ -125,6 +125,26 @@ $(document).ready(function () {
     patient_search_createpalan();
     planeEditValidation.init();
 
+    // ESC key handler - listen on document for both modals
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            // Check if add modal is open
+            if ($('#modal_add_plan').is(':visible')) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetVoucherAdd(e);
+                return false;
+            }
+            // Check if edit modal is open
+            else if ($('#modal_edit_plan').is(':visible')) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetVoucherEdit(e);
+                return false;
+            }
+        }
+    });
+
     $("#add_patient_id_selector").on("select2:select", function (e) {
         $("#add_appointment_id").empty();
         $('#add_appointment_id').val(null).trigger('change');
@@ -1798,7 +1818,7 @@ function editServiceDiscount($this, type = '') {
     setTimeout(function () {
         $('#edit_discount_value_1').val('');
         $("#edit_discount_value_1").attr('disabled', true);
-        //$("#edit_discount_type").val('').change();
+        $("#edit_discount_type").val('').change();
         $("#edit_discount_type").attr('disabled', true);
         $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
