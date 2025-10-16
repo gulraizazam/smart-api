@@ -127,25 +127,16 @@ $(document).ready(function () {
 
     // ESC key handler - listen on document for both modals
     $(document).on('keydown', function(e) {
-        console.log('Key pressed:', e.key, 'KeyCode:', e.keyCode);
-        console.log('Add modal has show class:', $('#modal_add_plan').hasClass('show'));
-        console.log('Add modal is visible:', $('#modal_add_plan').is(':visible'));
-        console.log('Edit modal has show class:', $('#modal_edit_plan').hasClass('show'));
-        console.log('Edit modal is visible:', $('#modal_edit_plan').is(':visible'));
-
         if (e.key === 'Escape' || e.keyCode === 27) {
-            console.log('ESC key detected');
             // Check if add modal is open
-            if ($('#modal_add_plan').hasClass('show') && $('#modal_add_plan').is(':visible')) {
-                console.log('Calling resetVoucherAdd');
+            if ($('#modal_add_plan').is(':visible')) {
                 e.preventDefault();
                 e.stopPropagation();
                 resetVoucherAdd(e);
                 return false;
             }
             // Check if edit modal is open
-            else if ($('#modal_edit_plan').hasClass('show') && $('#modal_edit_plan').is(':visible')) {
-                console.log('Calling resetVoucherEdit');
+            else if ($('#modal_edit_plan').is(':visible')) {
                 e.preventDefault();
                 e.stopPropagation();
                 resetVoucherEdit(e);
