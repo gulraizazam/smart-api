@@ -748,33 +748,59 @@ class PackagesController extends Controller
         $randomNumber = rand(1000, 9999);
         $generateRandomId = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
         $packageBundleData['id'] = $generateRandomId;
+
+        // Initialize voucher balance variables for UI display
+        $voucherBalanceData = null;
+
         if($discount){
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
-          
+
             if($userVoucher){
-                $amountLeft = $userVoucher->amount -  $bundle->price;
+                // Calculate what the balance would be (DON'T update database yet)
+                $amountToDeduct = min($bundle->price, $userVoucher->amount);
+                $amountLeft = $userVoucher->amount - $amountToDeduct;
                 if($amountLeft < 0){
                    $amountLeft = 0;
                 }
-              
-                $userVoucher->amount = $amountLeft;
-                $userVoucher->update();
-                if($amountLeft <= 0){
-                    $amountForVoucher =$request->discount_price;
 
+                if($amountToDeduct <= 0){
+                    $amountForVoucher = $request->discount_price;
                 }else{
-                    $amountForVoucher =$bundle->price;
+                    $amountForVoucher = $amountToDeduct;
                 }
+
+                // Create reservation in PackageVouchers (for tracking only)
                 PackageVouchers::create([
                     'package_random_id' => $r_ID,
                     'voucher_id' => $discount->id,
                     'user_id' => $request->user_id,
                     'amount' => $amountForVoucher,
-                    'service_id' =>$generateRandomId,
-                    'main_service_id'=>$request->bundle_id
+                    'service_id' => $generateRandomId,
+                    'main_service_id' => $request->bundle_id
                 ]);
+
+                // Calculate total reserved amount for this voucher
+                $totalReserved = PackageVouchers::where('package_random_id', $r_ID)
+                    ->where('voucher_id', $discount->id)
+                    ->where('user_id', $request->user_id)
+                    ->sum('amount');
+
+                // Calculate the balance to show in UI
+                $calculatedBalance = $userVoucher->amount - $totalReserved;
+                if($calculatedBalance < 0){
+                    $calculatedBalance = 0;
+                }
+
+                // Prepare voucher balance data for response
+                $voucherBalanceData = [
+                    'voucher_id' => $discount->id,
+                    'voucher_name' => $discount->name,
+                    'original_balance' => $userVoucher->amount,
+                    'reserved_amount' => $totalReserved,
+                    'remaining_balance' => $calculatedBalance
+                ];
             }
-            
+
         }
         $bundleServices = [];
         foreach ($allBundleServices as $bundleService) {
@@ -876,6 +902,7 @@ class PackagesController extends Controller
             'net_amount' => $net_amount,
             'total' => $total,
             'sold_by' => $soldBy,
+            'voucher_balance' => $voucherBalanceData,  // Add voucher balance info
         ];
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -1133,6 +1160,26 @@ class PackagesController extends Controller
             $package = Packages::create($data_package);
             $package->update(['name' => sprintf('%05d', $package->id)]);
             $packagebundle = self::storeRecord($package, $request);
+
+            // NOW deduct vouchers from UserVouchers based on PackageVouchers reservations
+            $packageVouchers = PackageVouchers::where('package_random_id', $request->random_id)->get();
+            $voucherAmounts = [];
+            foreach ($packageVouchers as $voucher) {
+                $key = $voucher->user_id . '_' . $voucher->voucher_id;
+                $voucherAmounts[$key]['user_id'] = $voucher->user_id;
+                $voucherAmounts[$key]['voucher_id'] = $voucher->voucher_id;
+                $voucherAmounts[$key]['amount'] = ($voucherAmounts[$key]['amount'] ?? 0) + $voucher->amount;
+            }
+
+            // Deduct the reserved amounts from user vouchers
+            foreach ($voucherAmounts as $data) {
+                UserVouchers::where('user_id', $data['user_id'])
+                    ->where('voucher_id', $data['voucher_id'])
+                    ->decrement('amount', $data['amount']);
+            }
+
+            // Delete the package voucher reservations as they are now applied
+            PackageVouchers::where('package_random_id', $request->random_id)->delete();
 
             if ($request->cash_amount == null || $request->cash_amount == '0') {
 
@@ -1956,6 +2003,26 @@ class PackagesController extends Controller
             $id = $package->id;
             $package->update($data_package);
             $packageBundle = self::storeRecord($package, $request);
+
+            // NOW deduct vouchers from UserVouchers based on PackageVouchers reservations
+            $packageVouchers = PackageVouchers::where('package_random_id', $request->random_id)->get();
+            $voucherAmounts = [];
+            foreach ($packageVouchers as $voucher) {
+                $key = $voucher->user_id . '_' . $voucher->voucher_id;
+                $voucherAmounts[$key]['user_id'] = $voucher->user_id;
+                $voucherAmounts[$key]['voucher_id'] = $voucher->voucher_id;
+                $voucherAmounts[$key]['amount'] = ($voucherAmounts[$key]['amount'] ?? 0) + $voucher->amount;
+            }
+
+            // Deduct the reserved amounts from user vouchers
+            foreach ($voucherAmounts as $data) {
+                UserVouchers::where('user_id', $data['user_id'])
+                    ->where('voucher_id', $data['voucher_id'])
+                    ->decrement('amount', $data['amount']);
+            }
+
+            // Delete the package voucher reservations as they are now applied
+            PackageVouchers::where('package_random_id', $request->random_id)->delete();
 
             /*End*/
             if ($request->cash_amount == null || $request->cash_amount == '0') {
@@ -3063,12 +3130,8 @@ class PackagesController extends Controller
        $voucher = PackageVouchers::where('service_id', $request->id)->where('package_random_id', $request->random_id)->first();
 
        if($voucher){
-        $checkUser = UserVouchers::where('voucher_id', $voucher->voucher_id)->where('user_id', $voucher->user_id)->first();
-        if($checkUser){
-            $newAmount = $checkUser->amount + $voucher->amount;
-            $checkUser->amount = $newAmount;
-            $checkUser->update();
-        }
+        // Just delete the reservation - don't restore to UserVouchers
+        // since nothing was deducted yet
         $voucher->delete();
        }
        return response()->json([
@@ -3080,28 +3143,9 @@ class PackagesController extends Controller
     {
         $servicesIds = $request->package_bundles;
         $randomId = $request->random_id;
-        
-        $vouchers = PackageVouchers::where('package_random_id', $randomId)
-                                ->whereIn('service_id', $servicesIds)
-                                ->get();
-        
-       
-        $voucherAmounts = [];
-        foreach ($vouchers as $voucher) {
-            $key = $voucher->user_id . '_' . $voucher->voucher_id;
-            $voucherAmounts[$key]['user_id'] = $voucher->user_id;
-            $voucherAmounts[$key]['voucher_id'] = $voucher->voucher_id;
-            $voucherAmounts[$key]['amount'] = ($voucherAmounts[$key]['amount'] ?? 0) + $voucher->amount;
-        }
 
-        // Update user vouchers
-        foreach ($voucherAmounts as $data) {
-            UserVouchers::where('user_id', $data['user_id'])
-                    ->where('voucher_id', $data['voucher_id'])
-                    ->increment('amount', $data['amount']);
-        }
-
-        // Delete package vouchers
+        // Just delete the reservations - don't restore to UserVouchers
+        // since nothing was deducted yet
         PackageVouchers::where('package_random_id', $randomId)
                     ->whereIn('service_id', $servicesIds)
                     ->delete();

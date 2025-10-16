@@ -2606,6 +2606,17 @@ jQuery(document).ready(function () {
                         if (rows >= 3) {
                             $("#add_plan_location_id").prop("disabled", true);
                         }
+
+                        // Display voucher balance if available
+                        if (resposne.data.servicesData.voucher_balance) {
+                            var voucherBalance = resposne.data.servicesData.voucher_balance;
+                            console.log('Voucher Balance:', voucherBalance.voucher_name,
+                                       'Remaining:', voucherBalance.remaining_balance);
+
+                            // You can display this in UI - example with toastr notification
+                            toastr.info('Voucher "' + voucherBalance.voucher_name + '" - Remaining Balance: ' +
+                                       voucherBalance.remaining_balance.toFixed(2));
+                        }
                     } else {
                         $('#AlreadyExitMessage').show();
                     }
