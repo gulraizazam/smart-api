@@ -120,13 +120,8 @@ var planeEditValidation = function () {
         }
     };
 }();
-
-$(document).ready(function () {
-    patient_search_createpalan();
-    planeEditValidation.init();
-
-    // ESC key handler for modal_add_plan
-    $('#modal_add_plan').on('keydown', function(e) {
+$('#modal_add_plan').on('keydown', function(e) {
+    alert('hi');
         if (e.key === 'Escape' || e.keyCode === 27) {
             e.preventDefault();
             e.stopPropagation();
@@ -136,12 +131,19 @@ $(document).ready(function () {
 
     // ESC key handler for modal_edit_plan
     $('#modal_edit_plan').on('keydown', function(e) {
+        alert('hi');
         if (e.key === 'Escape' || e.keyCode === 27) {
             e.preventDefault();
             e.stopPropagation();
             resetVoucherEdit(e);
         }
     });
+$(document).ready(function () {
+    patient_search_createpalan();
+    planeEditValidation.init();
+
+    // ESC key handler for modal_add_plan
+    
 
     $("#add_patient_id_selector").on("select2:select", function (e) {
         $("#add_appointment_id").empty();
