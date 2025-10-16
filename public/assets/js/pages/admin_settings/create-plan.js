@@ -2610,6 +2610,7 @@ jQuery(document).ready(function () {
 
                         // Display voucher balance if available
                         if (resposne.data.servicesData.voucher_balance) {
+                            $("#discount_value_1").val(voucherBalance.remaining_balance);
                             var voucherBalance = resposne.data.servicesData.voucher_balance;
                             console.log('Voucher Balance:', voucherBalance.voucher_name,
                                        'Remaining:', voucherBalance.remaining_balance);
