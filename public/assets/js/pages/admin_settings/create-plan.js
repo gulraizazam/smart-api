@@ -125,6 +125,24 @@ $(document).ready(function () {
     patient_search_createpalan();
     planeEditValidation.init();
 
+    // ESC key handler for modal_add_plan
+    $('#modal_add_plan').on('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            e.preventDefault();
+            e.stopPropagation();
+            resetVoucherAdd(e);
+        }
+    });
+
+    // ESC key handler for modal_edit_plan
+    $('#modal_edit_plan').on('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            e.preventDefault();
+            e.stopPropagation();
+            resetVoucherEdit(e);
+        }
+    });
+
     $("#add_patient_id_selector").on("select2:select", function (e) {
         $("#add_appointment_id").empty();
         $('#add_appointment_id').val(null).trigger('change');
