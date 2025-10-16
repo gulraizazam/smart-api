@@ -120,30 +120,30 @@ var planeEditValidation = function () {
         }
     };
 }();
-$('#modal_add_plan').on('keydown', function(e) {
-    alert('hi');
-        if (e.key === 'Escape' || e.keyCode === 27) {
-            e.preventDefault();
-            e.stopPropagation();
-            resetVoucherAdd(e);
-        }
-    });
 
-    // ESC key handler for modal_edit_plan
-    $('#modal_edit_plan').on('keydown', function(e) {
-        alert('hi');
-        if (e.key === 'Escape' || e.keyCode === 27) {
-            e.preventDefault();
-            e.stopPropagation();
-            resetVoucherEdit(e);
-        }
-    });
 $(document).ready(function () {
     patient_search_createpalan();
     planeEditValidation.init();
 
-    // ESC key handler for modal_add_plan
-    
+    // ESC key handler - listen on document for both modals
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape' || e.keyCode === 27) {
+            // Check if add modal is open
+            if ($('#modal_add_plan').hasClass('show') && $('#modal_add_plan').is(':visible')) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetVoucherAdd(e);
+                return false;
+            }
+            // Check if edit modal is open
+            else if ($('#modal_edit_plan').hasClass('show') && $('#modal_edit_plan').is(':visible')) {
+                e.preventDefault();
+                e.stopPropagation();
+                resetVoucherEdit(e);
+                return false;
+            }
+        }
+    });
 
     $("#add_patient_id_selector").on("select2:select", function (e) {
         $("#add_appointment_id").empty();
