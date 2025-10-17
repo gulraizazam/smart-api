@@ -1279,6 +1279,7 @@ class PackagesController extends Controller
 if ($userVouchers->isNotEmpty()) {
     $voucherIds = $userVouchers->pluck('voucher_id')->toArray();
     
+    // Get the discount records
     $voucherDiscountRecords = Discounts::whereIn('id', $discountIds)
         ->whereIn('id', $voucherIds)
         ->where('discount_type', '=', 'voucher')
@@ -1288,28 +1289,24 @@ if ($userVouchers->isNotEmpty()) {
         ->get()
         ->keyBy('id');
     
+    // Create a collection with duplicates based on user_vouchers entries
     $voucherDiscounts = collect();
     foreach ($userVouchers as $userVoucher) {
         if (isset($voucherDiscountRecords[$userVoucher->voucher_id])) {
-            $discount = $voucherDiscountRecords[$userVoucher->voucher_id]->toArray();
+            $discount = clone $voucherDiscountRecords[$userVoucher->voucher_id];
             
             // Add user_voucher specific data
-            $discount['user_voucher_id'] = $userVoucher->id;
-            $discount['user_voucher_amount'] = $userVoucher->amount;
-            $discount['user_voucher_total'] = $userVoucher->total_amount;
+            $discount->user_voucher_id = $userVoucher->id;
+            $discount->user_voucher_amount = $userVoucher->amount;
+            $discount->user_voucher_total = $userVoucher->total_amount;
             
             $voucherDiscounts->push($discount);
         }
     }
 }
 
-// Convert generalDiscounts to array as well for consistency
-$generalDiscounts = $generalDiscounts->map(function($item) {
-    return $item->toArray();
-});
-
-// Merge both collections
-$discounts = $generalDiscounts->merge($voucherDiscounts);
+// Use concat() instead of merge() to preserve duplicates
+$discounts = $generalDiscounts->concat($voucherDiscounts);
 
            
             dd($discounts);
