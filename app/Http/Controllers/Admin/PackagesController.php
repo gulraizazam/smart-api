@@ -1273,19 +1273,26 @@ class PackagesController extends Controller
 
         // Fetch VOUCHER discounts (user-specific)
         $voucherDiscounts = Collection::make();
-        $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
-            ->pluck('voucher_id')
+        $userVoucherCounts = UserVouchers::where('user_id', $request->patient_id)
+            ->select('voucher_id', DB::raw('COUNT(*) as assignment_count'))
+            ->groupBy('voucher_id')
+            ->pluck('assignment_count', 'voucher_id')
             ->toArray();
-        
-        if ($checkUserVouchers) {
-            // Get voucher discounts that match BOTH location/service AND user assignment
+
+        $voucherIds = array_keys($userVoucherCounts);
+
+        if ($voucherIds) {
             $voucherDiscounts = Discounts::whereIn('id', $discountIds)
-                ->whereIn('id', $checkUserVouchers)
+                ->whereIn('id', $voucherIds)
                 ->where('discount_type', '=', 'voucher')
                 ->where('active', '=', '1')
                 ->whereDate('start', '<=', $today)
                 ->whereDate('end', '>=', $today)
-                ->get();
+                ->get()
+                ->map(function($discount) use ($userVoucherCounts) {
+                    $discount->assignment_count = $userVoucherCounts[$discount->id] ?? 1;
+                    return $discount;
+                });
         }
 
         // Merge both collections
