@@ -1273,31 +1273,39 @@ class PackagesController extends Controller
 
         // Fetch VOUCHER discounts (user-specific)
         $voucherDiscounts = Collection::make();
-        $userVoucherCounts = UserVouchers::where('user_id', $request->patient_id)
-            ->select('voucher_id', DB::raw('COUNT(*) as assignment_count'))
-            ->groupBy('voucher_id')
-            ->pluck('assignment_count', 'voucher_id')
-            ->toArray();
+        $userVouchers = UserVouchers::where('user_id', $request->patient_id)
+    ->get();
 
-        $voucherIds = array_keys($userVoucherCounts);
-
-        if ($voucherIds) {
-            $voucherDiscounts = Discounts::whereIn('id', $discountIds)
-                ->whereIn('id', $voucherIds)
-                ->where('discount_type', '=', 'voucher')
-                ->where('active', '=', '1')
-                ->whereDate('start', '<=', $today)
-                ->whereDate('end', '>=', $today)
-                ->get()
-                ->map(function($discount) use ($userVoucherCounts) {
-                    $discount->assignment_count = $userVoucherCounts[$discount->id] ?? 1;
-                    return $discount;
-                });
+if ($userVouchers->isNotEmpty()) {
+    $voucherIds = $userVouchers->pluck('voucher_id')->unique()->toArray();
+    
+    // Get the discount records
+    $voucherDiscountRecords = Discounts::whereIn('id', $discountIds)
+        ->whereIn('id', $voucherIds)
+        ->where('discount_type', '=', 'voucher')
+        ->where('active', '=', '1')
+        ->whereDate('start', '<=', $today)
+        ->whereDate('end', '>=', $today)
+        ->get()
+        ->keyBy('id'); // Key by discount ID for easy lookup
+    
+    // Create a collection with duplicates based on user_vouchers entries
+    $voucherDiscounts = collect();
+    foreach ($userVouchers as $userVoucher) {
+        if (isset($voucherDiscountRecords[$userVoucher->voucher_id])) {
+            $discount = clone $voucherDiscountRecords[$userVoucher->voucher_id];
+            // You can add user_voucher specific data if needed
+            $discount->user_voucher_id = $userVoucher->id;
+            $discount->user_voucher_amount = $userVoucher->amount;
+            $discount->user_voucher_total = $userVoucher->total_amount;
+            $voucherDiscounts->push($discount);
         }
+    }
+}
 
         // Merge both collections
         $discounts = $generalDiscounts->merge($voucherDiscounts);
-        dd($discounts);
+           
             
         } else {
            
