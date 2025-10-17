@@ -1306,6 +1306,7 @@ if ($userVouchers->isNotEmpty()) {
 
         // Merge both collections
         $discounts = $generalDiscounts->merge($voucherDiscounts);
+        dd($discounts);
            
             
         } else {
