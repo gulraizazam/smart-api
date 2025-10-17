@@ -1273,9 +1273,8 @@ class PackagesController extends Controller
 
         // Fetch VOUCHER discounts (user-specific)
         $voucherDiscounts = Collection::make();
-        $userVouchers = UserVouchers::where('user_id', $request->patient_id)
-        ->get();
-       
+     $userVouchers = UserVouchers::where('user_id', $request->patient_id)
+    ->get();
 
 if ($userVouchers->isNotEmpty()) {
     $voucherIds = $userVouchers->pluck('voucher_id')->toArray();
@@ -1288,27 +1287,32 @@ if ($userVouchers->isNotEmpty()) {
         ->whereDate('start', '<=', $today)
         ->whereDate('end', '>=', $today)
         ->get()
-        ->keyBy('id'); // Key by discount ID for easy lookup
+        ->keyBy('id');
     
     // Create a collection with duplicates based on user_vouchers entries
     $voucherDiscounts = collect();
     foreach ($userVouchers as $userVoucher) {
         if (isset($voucherDiscountRecords[$userVoucher->voucher_id])) {
-            $discount = clone $voucherDiscountRecords[$userVoucher->voucher_id];
-            // You can add user_voucher specific data if needed
+            // Create a new model instance instead of cloning
+            $discount = $voucherDiscountRecords[$userVoucher->voucher_id]->replicate();
+            
+            // Add user_voucher specific data
             $discount->user_voucher_id = $userVoucher->id;
             $discount->user_voucher_amount = $userVoucher->amount;
             $discount->user_voucher_total = $userVoucher->total_amount;
+            
+            // IMPORTANT: Unset the primary key to avoid merge conflicts
+            unset($discount->id);
+            
             $voucherDiscounts->push($discount);
         }
     }
 }
 
-        // Merge both collections
-        $discounts = $generalDiscounts->merge($voucherDiscounts);
-        dd($discounts);
+// Merge both collections
+$discounts = $generalDiscounts->merge($voucherDiscounts);
            
-            
+            dd($discounts);
         } else {
            
             if ($bundle && $bundle->apply_discount == '1') {
