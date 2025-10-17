@@ -1274,7 +1274,8 @@ class PackagesController extends Controller
         // Fetch VOUCHER discounts (user-specific)
         $voucherDiscounts = Collection::make();
         $userVouchers = UserVouchers::where('user_id', $request->patient_id)
-    ->get();
+        ->get();
+        dd($userVouchers);
 
 if ($userVouchers->isNotEmpty()) {
     $voucherIds = $userVouchers->pluck('voucher_id')->unique()->toArray();
