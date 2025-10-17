@@ -1310,7 +1310,7 @@ $generalDiscounts = $generalDiscounts->map(function($item) {
 
 // Merge both collections
 $discounts = $generalDiscounts->merge($voucherDiscounts);
-($discounts);
+
            
             dd($discounts);
         } else {
