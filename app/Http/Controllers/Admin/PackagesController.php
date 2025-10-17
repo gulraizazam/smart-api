@@ -1275,11 +1275,11 @@ class PackagesController extends Controller
         $voucherDiscounts = Collection::make();
         $userVouchers = UserVouchers::where('user_id', $request->patient_id)
         ->get();
-        dd($userVouchers);
+       
 
 if ($userVouchers->isNotEmpty()) {
     $voucherIds = $userVouchers->pluck('voucher_id')->unique()->toArray();
-    
+     dd($voucherIds);
     // Get the discount records
     $voucherDiscountRecords = Discounts::whereIn('id', $discountIds)
         ->whereIn('id', $voucherIds)
