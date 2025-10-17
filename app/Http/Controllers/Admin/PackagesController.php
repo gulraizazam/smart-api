@@ -1297,7 +1297,7 @@ class PackagesController extends Controller
 
         // Merge both collections
         $discounts = $generalDiscounts->merge($voucherDiscounts);
-           
+        dd($discounts);
             
         } else {
            
