@@ -1278,7 +1278,7 @@ class PackagesController extends Controller
        
 
 if ($userVouchers->isNotEmpty()) {
-    $voucherIds = $userVouchers->pluck('voucher_id')->unique()->toArray();
+    $voucherIds = $userVouchers->pluck('voucher_id')->toArray();
      dd($voucherIds);
     // Get the discount records
     $voucherDiscountRecords = Discounts::whereIn('id', $discountIds)
