@@ -1309,7 +1309,7 @@ if ($userVouchers->isNotEmpty()) {
 $discounts = $generalDiscounts->concat($voucherDiscounts);
 
            
-            dd($discounts);
+          
         } else {
            
             if ($bundle && $bundle->apply_discount == '1') {
