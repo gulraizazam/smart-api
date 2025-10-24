@@ -1239,7 +1239,7 @@ class PackagesController extends Controller
                 ->where('active', '=', '1')
               
                 ->get();
-                   dd($voucherDiscounts);
+                  
         }
 
         // Merge both collections
