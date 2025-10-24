@@ -1220,8 +1220,8 @@ class PackagesController extends Controller
              $generalDiscounts = Discounts::whereIn('id', $discountIds)
             ->where('discount_type', '!=', 'voucher')
             ->where('active', '=', '1')
-            // ->whereDate('start', '<=', $today)
-            // ->whereDate('end', '>=', $today)
+            ->whereDate('start', '<=', $today)
+            ->whereDate('end', '>=', $today)
             ->get();
 
         // Fetch VOUCHER discounts (user-specific)
@@ -1229,6 +1229,7 @@ class PackagesController extends Controller
         $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
             ->pluck('voucher_id')
             ->toArray();
+            dd($checkUserVouchers);
         
         if ($checkUserVouchers) {
             // Get voucher discounts that match BOTH location/service AND user assignment
