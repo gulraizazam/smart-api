@@ -271,7 +271,7 @@ class DiscountWidget
                 }
             }
         }
-dd($discount_array);
+
         return $discount_array;
     }
     public static function loadPlanVoucherByLocationService($location_id, $service_id, $account_id)
