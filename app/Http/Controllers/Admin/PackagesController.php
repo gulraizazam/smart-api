@@ -1280,14 +1280,20 @@ if ($userVouchers->isNotEmpty()) {
     $voucherIds = $userVouchers->pluck('voucher_id')->toArray();
     
     // Get the discount records
-    $voucherDiscountRecords = Discounts::whereIn('id', $discountIds)
-        ->whereIn('id', $voucherIds)
-        ->where('discount_type', '=', 'voucher')
-        ->where('active', '=', '1')
-        ->whereDate('start', '<=', $today)
-        ->whereDate('end', '>=', $today)
-        ->get()
-        ->keyBy('id');
+   $discountType = 'voucher'; // or however you determine this
+
+$query = Discounts::whereIn('id', $discountIds)
+    ->whereIn('id', $voucherIds)
+    ->where('discount_type', '=', $discountType)
+    ->where('active', '=', '1');
+
+// Only add date filters if discount_type is NOT 'voucher'
+if ($discountType !== 'voucher') {
+    $query->whereDate('start', '<=', $today)
+          ->whereDate('end', '>=', $today);
+}
+
+$voucherDiscountRecords = $query->get()->keyBy('id');
     
     // Create a collection with duplicates based on user_vouchers entries
     $voucherDiscounts = collect();
