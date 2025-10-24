@@ -1217,7 +1217,8 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-             $generalDiscounts = Discounts::whereIn('id', $discountIds)
+            dd( $discountIds) ;
+            $generalDiscounts = Discounts::whereIn('id', $discountIds)
             ->where('discount_type', '!=', 'voucher')
             ->where('active', '=', '1')
             ->whereDate('start', '<=', $today)
