@@ -1285,8 +1285,8 @@ class PackagesController extends Controller
                     ->whereIn('id', $checkUserVouchers)
                     ->where('discount_type', '=', 'voucher')
                     ->where('active', '=', '1')
-                    ->whereDate('start', '<=', $today)
-                    ->whereDate('end', '>=', $today)
+                    // ->whereDate('start', '<=', $today)
+                    // ->whereDate('end', '>=', $today)
                     ->get();
             }
 
