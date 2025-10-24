@@ -1229,7 +1229,7 @@ class PackagesController extends Controller
         $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
             ->pluck('voucher_id')
             ->toArray();
-            dd($checkUserVouchers);
+         
         
         if ($checkUserVouchers) {
             // Get voucher discounts that match BOTH location/service AND user assignment
@@ -1240,6 +1240,7 @@ class PackagesController extends Controller
                 // ->whereDate('start', '<=', $today)
                 // ->whereDate('end', '>=', $today)
                 ->get();
+                   dd($voucherDiscounts);
         }
 
         // Merge both collections
