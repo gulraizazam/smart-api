@@ -1473,7 +1473,7 @@ public function consultantSellerDetail($consultantId, $sellerId)
 public function downloadDoctorUpsellingExcel(Request $request)
     {
         try {
-            $period = $request->period ?: 'august2025';
+            $period = $request->period ?: 'september2025';
             
             // Hardcoded centre IDs
             $centreIds = [
@@ -1525,6 +1525,12 @@ public function downloadDoctorUpsellingExcel(Request $request)
                     'end_date' => '2025-08-31 23:59:59',
                     'label' => 'August 2025'
                 ],
+                'september2025' => [
+                    'start_date' => '2025-09-01 00:00:00',
+                    'end_date' => '2025-09-30 23:59:59',
+                    'label' => 'September 2025'
+                ],
+
             ];
 
             $currentPeriod = $periods[$period];
