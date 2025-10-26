@@ -7,6 +7,24 @@
             background-color: #F3F6F9 !important;
             opacity: 1;
         }
+
+        /* Handle nested modal z-index */
+        #modal_edit_sold_by {
+            z-index: 1060 !important;
+        }
+
+        #modal_edit_sold_by ~ .modal-backdrop {
+            z-index: 1055 !important;
+        }
+
+        /* Ensure the edit plan modal stays below */
+        #modal_edit_plan {
+            z-index: 1050;
+        }
+
+        #modal_edit_plan ~ .modal-backdrop {
+            z-index: 1040;
+        }
     </style>
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -144,7 +162,7 @@
         <!--end::Modal dialog-->
     </div>
 
-    <div class="modal fade" id="modal_edit_sold_by" tabindex="-1" aria-hidden="true">
+    <div class="modal fade" id="modal_edit_sold_by" tabindex="-1" aria-hidden="true" data-bs-backdrop="true" data-bs-keyboard="true">
         <!--begin::Modal dialog-->
         <div class="modal-dialog modal-dialog-centered modal-md">
             <!--begin::Modal content-->
@@ -152,7 +170,7 @@
                 <!--begin::Modal header-->
                 <div class="modal-header">
                     <h2 class="fw-bolder">Edit Sold By</h2>
-                    <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
+                    <div class="btn btn-icon btn-sm btn-active-icon-primary" onclick="closeSoldByModal()">
                         <span class="svg-icon svg-icon-1">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                                 <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
@@ -174,7 +192,7 @@
                             <small class="text-danger"><b id="sold_by_error" class="error-msg"></b></small>
                         </div>
                         <div class="text-center pt-15">
-                            <button type="button" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-light me-3" onclick="closeSoldByModal()">Cancel</button>
                             <button type="button" id="update_sold_by_btn" class="btn btn-primary">
                                 <span class="indicator-label">Update</span>
                             </button>

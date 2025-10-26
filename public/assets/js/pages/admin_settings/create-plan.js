@@ -3507,8 +3507,17 @@ function editBundleSoldBy(packageBundleId, locationId) {
                 });
                 $('#sold_by_dropdown').html(userOptions);
 
-                // Show modal
-                $('#modal_edit_sold_by').modal('show');
+                // Show modal with proper z-index handling
+                $('#modal_edit_sold_by').modal({
+                    backdrop: 'static',
+                    keyboard: true
+                });
+
+                // Fix z-index for nested modal
+                $('#modal_edit_sold_by').on('shown.bs.modal', function () {
+                    $(this).css('z-index', parseInt($('.modal-backdrop').css('z-index')) + 10);
+                });
+
             } else {
                 toastr.error(response.message || 'Failed to load sold by data');
             }
@@ -3517,6 +3526,23 @@ function editBundleSoldBy(packageBundleId, locationId) {
             errorMessage(xhr);
         }
     });
+}
+
+/*
+ * Close edit sold by modal
+ */
+function closeSoldByModal() {
+    $('#modal_edit_sold_by').modal('hide');
+    $('#sold_by_error').html('');
+    $('#package_service_id').val('');
+    $('#package_service_id').removeData('service-ids');
+
+    // Ensure parent modal stays visible after closing nested modal
+    setTimeout(function() {
+        if ($('#modal_edit_plan').hasClass('show')) {
+            $('body').addClass('modal-open');
+        }
+    }, 500);
 }
 
 /*
@@ -3558,7 +3584,7 @@ $(document).on('click', '#update_sold_by_btn', function() {
             $('#update_sold_by_btn').attr('disabled', false);
             if (response.status) {
                 toastr.success(response.message || 'Sold by updated successfully');
-                $('#modal_edit_sold_by').modal('hide');
+                closeSoldByModal();
 
                 // Reload the edit modal data if it's open
                 let editRandomId = $('#edit_random_id').val();
