@@ -748,8 +748,8 @@ function setEditData(response) {
             Object.entries(users).forEach(function ([id, name]) {
                 // If doctor_ids exists and has values, filter users by doctor_ids
                 // Otherwise, show all users
-                let shouldShow = (!doctor_ids || doctor_ids.length === 0) || doctor_ids.includes(parseInt(id));
-                
+                let shouldShow = (!doctor_ids || !Array.isArray(doctor_ids) || doctor_ids.length === 0) || doctor_ids.includes(parseInt(id));
+
                 if (shouldShow) {
                     let selected = (parseInt(id) === parseInt(selected_user_id)) ? 'selected' : '';
                     userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
