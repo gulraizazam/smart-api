@@ -663,7 +663,7 @@ function setEditData(response) {
 
                 var del_icon;
                 //if(packagebundle.net_amount > 0){
-                del_icon = "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+                del_icon = "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-primary btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + ")'><i class='fa fa-pencil'></i></button><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
                 // }else{
                 //     del_icon="<td></td>";
                 // }
@@ -3468,8 +3468,120 @@ function hideModal() {
         }
         
         console.log("No modal found to hide");
-        
+
     } catch (error) {
         console.error("Error hiding modal:", error);
     }
 }
+
+/*
+ * Function to edit sold_by for all services in a package bundle
+ */
+function editBundleSoldBy(packageBundleId, locationId) {
+    // Get all package services for this bundle from the current data
+    let packageServices = [];
+
+    // Find services in the response data
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.packages.getsoldbydata'),
+        type: 'GET',
+        data: {
+            package_bundle_id: packageBundleId,
+            location_id: locationId
+        },
+        success: function(response) {
+            if (response.status) {
+                // Store all package service IDs
+                let serviceIds = response.data.package_services.map(service => service.id);
+                $('#package_service_id').val(serviceIds[0] || '');
+                $('#package_service_id').data('service-ids', serviceIds);
+
+                // Populate dropdown with users
+                let userOptions = '<option value="">Select</option>';
+                Object.entries(response.data.users).forEach(function([id, name]) {
+                    let selected = (parseInt(id) === parseInt(response.data.current_sold_by)) ? 'selected' : '';
+                    userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
+                });
+                $('#sold_by_dropdown').html(userOptions);
+
+                // Show modal
+                $('#modal_edit_sold_by').modal('show');
+            } else {
+                toastr.error(response.message || 'Failed to load sold by data');
+            }
+        },
+        error: function(xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+/*
+ * Update sold_by on button click
+ */
+$(document).on('click', '#update_sold_by_btn', function() {
+    let packageServiceIds = $('#package_service_id').data('service-ids');
+    let soldBy = $('#sold_by_dropdown').val();
+
+    // Validation
+    if (!soldBy) {
+        $('#sold_by_error').html('Please select sold by');
+        return false;
+    }
+
+    $('#sold_by_error').html('');
+    $(this).attr('disabled', true);
+
+    // Prepare data for update
+    let updateData = {
+        sold_by: soldBy
+    };
+
+    // If multiple services, send as array
+    if (packageServiceIds && Array.isArray(packageServiceIds)) {
+        updateData.package_services = packageServiceIds;
+    } else {
+        updateData.package_service_id = $('#package_service_id').val();
+    }
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.packages.updatesoldby'),
+        type: 'POST',
+        data: updateData,
+        success: function(response) {
+            $('#update_sold_by_btn').attr('disabled', false);
+            if (response.status) {
+                toastr.success(response.message || 'Sold by updated successfully');
+                $('#modal_edit_sold_by').modal('hide');
+
+                // Reload the edit modal data if it's open
+                let editRandomId = $('#edit_random_id').val();
+                if (editRandomId) {
+                    // Find the package id from the random_id and refresh the data
+                    let url = route('admin.packages.edit', editRandomId);
+                    $.ajax({
+                        url: url,
+                        type: 'GET',
+                        success: function(editResponse) {
+                            if (editResponse.status) {
+                                setEditData(editResponse);
+                            }
+                        }
+                    });
+                }
+            } else {
+                toastr.error(response.message || 'Failed to update sold by');
+            }
+        },
+        error: function(xhr) {
+            $('#update_sold_by_btn').attr('disabled', false);
+            errorMessage(xhr);
+        }
+    });
+});

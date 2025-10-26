@@ -144,6 +144,50 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_edit_sold_by" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered modal-md">
+            <!--begin::Modal content-->
+            <div class="modal-content">
+                <!--begin::Modal header-->
+                <div class="modal-header">
+                    <h2 class="fw-bolder">Edit Sold By</h2>
+                    <div class="btn btn-icon btn-sm btn-active-icon-primary" data-bs-dismiss="modal">
+                        <span class="svg-icon svg-icon-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
+                                <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <!--end::Modal header-->
+                <!--begin::Modal body-->
+                <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+                    <form id="edit_sold_by_form">
+                        <input type="hidden" id="package_service_id" name="package_service_id">
+                        <div class="fv-row mb-7">
+                            <label class="required fw-bold fs-6 mb-2">Sold By</label>
+                            <select id="sold_by_dropdown" name="sold_by" class="form-control form-control-solid" required>
+                                <option value="">Select</option>
+                            </select>
+                            <small class="text-danger"><b id="sold_by_error" class="error-msg"></b></small>
+                        </div>
+                        <div class="text-center pt-15">
+                            <button type="button" class="btn btn-light me-3" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" id="update_sold_by_btn" class="btn btn-primary">
+                                <span class="indicator-label">Update</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <!--end::Modal body-->
+            </div>
+            <!--end::Modal content-->
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
     @push('js')
         <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}"></script>
         <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
