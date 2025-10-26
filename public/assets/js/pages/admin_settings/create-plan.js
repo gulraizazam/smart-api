@@ -742,11 +742,16 @@ function setEditData(response) {
 
         let serviceOptions = '<option value="">Select Service</option>';
         let userOptions = '<option value="">Select</option>';
-        if (users) {
-
+         if (users) {
             Object.entries(users).forEach(function ([id, name]) {
-                let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
-                userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
+                // If doctor_ids exists and has values, filter users by doctor_ids
+                // Otherwise, show all users
+                let shouldShow = (!doctor_ids || doctor_ids.length === 0) || doctor_ids.includes(parseInt(id));
+                
+                if (shouldShow) {
+                    let selected = (parseInt(id) === parseInt(selected_user_id)) ? 'selected' : '';
+                    userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
+                }
             });
         }
 
