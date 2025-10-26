@@ -612,8 +612,6 @@ function setEditData(response) {
         let location = package.location;
         let history_options = noRecordFoundTable(5);
         let membership = response.data.membership;
-        let selectedUserId = response.data.selectedUserId;
-        let doctor_ids = response.data.doctor_ids;
         let selected_user_id = response.data.selectedUserId;
         if (packageadvances.length) {
     history_options = '';
@@ -746,14 +744,8 @@ function setEditData(response) {
         let userOptions = '<option value="">Select</option>';
          if (users) {
             Object.entries(users).forEach(function ([id, name]) {
-                // If doctor_ids exists and has values, filter users by doctor_ids
-                // Otherwise, show all users
-                let shouldShow = (!doctor_ids || !Array.isArray(doctor_ids) || doctor_ids.length === 0) || doctor_ids.includes(parseInt(id));
-
-                if (shouldShow) {
-                    let selected = (parseInt(id) === parseInt(selected_user_id)) ? 'selected' : '';
-                    userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
-                }
+                let selected = (parseInt(id) === parseInt(selected_user_id)) ? 'selected' : '';
+                userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
             });
         }
 

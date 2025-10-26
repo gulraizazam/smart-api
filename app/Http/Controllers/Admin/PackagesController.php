@@ -1796,97 +1796,61 @@ class PackagesController extends Controller
             }
              $doctorsIds = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
 
-            $findTreatments = Appointments::where('patient_id', $package->patient_id)
-                ->where('location_id', $package->location_id)
-                ->where('appointment_status_id', 2)
-                ->where('appointment_type_id', 2)
-                ->pluck('doctor_id')
-                ->toArray();
-
             // Fetch active doctors as an associative array
-            $users = User::whereIn('id', $doctorsIds)
+            $allDoctors = User::whereIn('id', $doctorsIds)
                 ->where('active', 1)
-                ->pluck('name', 'id') // Preserve user IDs
+                ->pluck('name', 'id')
                 ->toArray();
 
-            $locationId = $package->location_id;
-
-            // Check if authenticated user has FDM role
-            $authUser = auth()->user();
-            $hasFDMRole = $authUser->roles()->where('name', 'FDM')->exists();
-
-            $combinedUsers = $users;
-
-            // Only fetch and add FDM users if authenticated user is NOT an FDM
-            if (!$hasFDMRole) {
-                // Fetch FDM users by getting the user_ids associated with the center (location_id)
-                $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
-
-                // Fetch the 'FDM' role and get its user ids
-                $findRole = DB::table('roles')->where('name', 'FDM')->first();
-                $roleId = $findRole->id;
-
-                // Get users who have the FDM role
-                $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-
-                // Get the intersection of users who are both FDM and belong to the center
-                $fdmUsers = array_intersect($findFDM, $roleHasUser);
-
-                // Fetch FDM user details (id and name) from the users table
-                $FDMUsers = User::whereIn('id', $fdmUsers)
-                    ->pluck('name', 'id') // Preserve user IDs
-                    ->toArray();
-
-                // Merge the arrays while preserving keys
-                $combinedUsers = $users + $FDMUsers;
-            }
-
+            // Determine selected user ID from appointment array
             $selectedUserId = null;
             if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
                 $firstDoctorId = $appointmentArray[0]['doctor_id'];
-                if (array_key_exists($firstDoctorId, $combinedUsers)) {
+                if (array_key_exists($firstDoctorId, $allDoctors)) {
                     $selectedUserId = $firstDoctorId;
                 }
             }
 
-            // Handle treatments based on requirements
-            $resultToSend = [];
+            // Check for treatments in last 30 days
+            $thirtyDaysAgo = now()->subDays(30);
 
-            if (empty($findTreatments)) {
-                // No treatments found - send only selectedUserId
-                $resultToSend = ['selected_user_id' => $selectedUserId];
-            } else {
-                // Treatments exist - filter by last 30 days and get doctor IDs
-                $thirtyDaysAgo = now()->subDays(30);
-                
-                $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
-                    ->where('location_id', $package->location_id)
-                    ->where('appointment_status_id', 2)
-                    ->where('appointment_type_id', 2)
-                    ->where('scheduled_date', '>=', $thirtyDaysAgo)
-                    ->pluck('doctor_id')
-                    ->unique()
-                    ->toArray();
-                
-                // Combine selected user ID with recent treatment doctor IDs
-                $combinedDoctorIds = array_unique(array_merge(
-                    $selectedUserId ? [$selectedUserId] : [], 
+            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $package->location_id)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $thirtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Determine which users to show
+            $userIdsToShow = [];
+            if (!empty($recentTreatmentDoctorIds)) {
+                // Treatments found in last 30 days: show selectedUserId + recent treatment doctors
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
                     $recentTreatmentDoctorIds
                 ));
-                
-                $resultToSend = [
-                    'selected_user_id' => $selectedUserId,
-                    'doctor_ids' => $combinedDoctorIds
-                ];
+            } else {
+                // No treatments in last 30 days: show only selectedUserId
+                $userIdsToShow = $selectedUserId ? [$selectedUserId] : [];
             }
+
+            // Filter users to only those that should be shown
+            $usersToShow = [];
+            foreach ($userIdsToShow as $userId) {
+                if (array_key_exists($userId, $allDoctors)) {
+                    $usersToShow[$userId] = $allDoctors[$userId];
+                }
+            }
+
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
                 'packagebundles' => $packagebundles,
                 'packageservices' => $packageservices,
-                'users' => $combinedUsers,
+                'users' => $usersToShow,
                 'selectedUserId' => $selectedUserId,
-                'doctor_ids' => $resultToSend['doctor_ids'] ?? null,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
                 'grand_total' => $remaining_amount,
