@@ -1794,43 +1794,90 @@ class PackagesController extends Controller
                     $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
                 }
             }
-            $doctors = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
+             $doctorsIds = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
+
+            $findTreatments = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $package->location_id)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->pluck('doctor_id')
+                ->toArray();
 
             // Fetch active doctors as an associative array
-            $users = User::whereIn('id', $doctors)
+            $users = User::whereIn('id', $doctorsIds)
                 ->where('active', 1)
                 ->pluck('name', 'id') // Preserve user IDs
                 ->toArray();
 
-            // Ensure 'from_id' is an array
             $locationId = $package->location_id;
 
-            // Fetch FDM users by getting the user_ids associated with the center (location_id)
-            $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+            // Check if authenticated user has FDM role
+            $authUser = auth()->user();
+            $hasFDMRole = $authUser->roles()->where('name', 'FDM')->exists();
 
-            // Fetch the 'FDM' role and get its user ids
-            $findRole = DB::table('roles')->where('name', 'FDM')->first();
-            $roleId = $findRole->id;
+            $combinedUsers = $users;
 
-            // Get users who have the FDM role
-            $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+            // Only fetch and add FDM users if authenticated user is NOT an FDM
+            if (!$hasFDMRole) {
+                // Fetch FDM users by getting the user_ids associated with the center (location_id)
+                $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
 
-            // Get the intersection of users who are both FDM and belong to the center
-            $fdmUsers = array_intersect($findFDM, $roleHasUser);
+                // Fetch the 'FDM' role and get its user ids
+                $findRole = DB::table('roles')->where('name', 'FDM')->first();
+                $roleId = $findRole->id;
 
-            // Fetch FDM user details (id and name) from the users table
-            $FDMUsers = User::whereIn('id', $fdmUsers)
-                ->pluck('name', 'id') // Preserve user IDs
-                ->toArray();
+                // Get users who have the FDM role
+                $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
 
-            // Merge the arrays while preserving keys
-            $combinedUsers = $users + $FDMUsers;
+                // Get the intersection of users who are both FDM and belong to the center
+                $fdmUsers = array_intersect($findFDM, $roleHasUser);
+
+                // Fetch FDM user details (id and name) from the users table
+                $FDMUsers = User::whereIn('id', $fdmUsers)
+                    ->pluck('name', 'id') // Preserve user IDs
+                    ->toArray();
+
+                // Merge the arrays while preserving keys
+                $combinedUsers = $users + $FDMUsers;
+            }
+
             $selectedUserId = null;
             if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
                 $firstDoctorId = $appointmentArray[0]['doctor_id'];
                 if (array_key_exists($firstDoctorId, $combinedUsers)) {
                     $selectedUserId = $firstDoctorId;
                 }
+            }
+
+            // Handle treatments based on requirements
+            $resultToSend = [];
+
+            if (empty($findTreatments)) {
+                // No treatments found - send only selectedUserId
+                $resultToSend = ['selected_user_id' => $selectedUserId];
+            } else {
+                // Treatments exist - filter by last 30 days and get doctor IDs
+                $thirtyDaysAgo = now()->subDays(30);
+                
+                $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                    ->where('location_id', $package->location_id)
+                    ->where('appointment_status_id', 2)
+                    ->where('appointment_type_id', 2)
+                    ->where('scheduled_date', '>=', $thirtyDaysAgo)
+                    ->pluck('doctor_id')
+                    ->unique()
+                    ->toArray();
+                
+                // Combine selected user ID with recent treatment doctor IDs
+                $combinedDoctorIds = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [], 
+                    $recentTreatmentDoctorIds
+                ));
+                
+                $resultToSend = [
+                    'selected_user_id' => $selectedUserId,
+                    'doctor_ids' => $combinedDoctorIds
+                ];
             }
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
@@ -1839,6 +1886,7 @@ class PackagesController extends Controller
                 'packageservices' => $packageservices,
                 'users' => $combinedUsers,
                 'selectedUserId' => $selectedUserId,
+                'doctor_ids' => $resultToSend['doctor_ids'] ?? null,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
                 'grand_total' => $remaining_amount,
