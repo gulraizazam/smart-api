@@ -2412,6 +2412,7 @@ class PackagesController extends Controller
 
             // Fetch the 'FDM' role and get its user ids
             $findRole = DB::table('roles')->where('name', 'FDM')->first();
+            $fdmUserIds = [];
             if ($findRole) {
                 $roleId = $findRole->id;
 
@@ -2419,20 +2420,67 @@ class PackagesController extends Controller
                 $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
 
                 // Get the intersection of users who are both FDM and belong to the center
-                $fdmUsers = array_intersect($findFDM, $roleHasUser);
+                $fdmUserIds = array_intersect($findFDM, $roleHasUser);
+            }
 
-                // Fetch FDM user details (id and name) from the users table
-                $FDMUsers = User::whereIn('id', $fdmUsers)
+            // Get selected user ID (current sold_by)
+            $selectedUserId = $currentSoldBy;
+
+            // Check for treatments in last 30 days
+            $thirtyDaysAgo = now()->subDays(30);
+
+            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $locationId)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $thirtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Determine which users to show: selected user + recent treatment doctors + FDM users
+            $userIdsToShow = [];
+            if (!empty($recentTreatmentDoctorIds)) {
+                // Treatments found in last 30 days: show selectedUserId + recent treatment doctors + FDM users
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
+                    $recentTreatmentDoctorIds,
+                    $fdmUserIds
+                ));
+            } else {
+                // No treatments in last 30 days: show only selectedUserId + FDM users
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
+                    $fdmUserIds
+                ));
+            }
+
+            // Filter users to only those that should be shown
+            $usersToShow = [];
+
+            // First add doctors from allDoctors
+            foreach ($userIdsToShow as $userId) {
+                if (array_key_exists($userId, $allDoctors)) {
+                    $usersToShow[$userId] = $allDoctors[$userId];
+                }
+            }
+
+            // Then add FDM users
+            if (!empty($fdmUserIds)) {
+                $FDMUsers = User::whereIn('id', $fdmUserIds)
                     ->where('active', 1)
                     ->pluck('name', 'id')
                     ->toArray();
 
-                // Merge the arrays while preserving keys
-                $allDoctors = $allDoctors + $FDMUsers;
+                foreach ($FDMUsers as $fdmId => $fdmName) {
+                    if (!array_key_exists($fdmId, $usersToShow)) {
+                        $usersToShow[$fdmId] = $fdmName;
+                    }
+                }
             }
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                'users' => $allDoctors,
+                'users' => $usersToShow,
                 'current_sold_by' => $currentSoldBy,
                 'package_services' => $packageServices->map(function ($service) {
                     return [
