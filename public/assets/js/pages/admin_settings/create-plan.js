@@ -3583,24 +3583,20 @@ $(document).on('click', '#update_sold_by_btn', function() {
         success: function(response) {
             $('#update_sold_by_btn').attr('disabled', false);
             if (response.status) {
-                toastr.success(response.message || 'Sold by updated successfully');
                 closeSoldByModal();
 
-                // Reload the edit modal data if it's open
-                let editRandomId = $('#edit_random_id').val();
-                if (editRandomId) {
-                    // Find the package id from the random_id and refresh the data
-                    let url = route('admin.packages.edit', editRandomId);
-                    $.ajax({
-                        url: url,
-                        type: 'GET',
-                        success: function(editResponse) {
-                            if (editResponse.status) {
-                                setEditData(editResponse);
-                            }
-                        }
-                    });
-                }
+                // Show alert and reload page
+                swal.fire({
+                    title: 'Success!',
+                    text: response.message || 'Sold by updated successfully',
+                    icon: 'success',
+                    buttonsStyling: false,
+                    confirmButtonText: 'OK',
+                    confirmButtonClass: 'btn btn-primary font-weight-bold'
+                }).then(function() {
+                    // Reload the complete page
+                    location.reload();
+                });
             } else {
                 toastr.error(response.message || 'Failed to update sold by');
             }
