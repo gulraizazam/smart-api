@@ -3585,18 +3585,12 @@ $(document).on('click', '#update_sold_by_btn', function() {
             if (response.status) {
                 closeSoldByModal();
 
-                // Show alert and reload page
-                swal.fire({
-                    title: 'Success!',
-                    text: response.message || 'Sold by updated successfully',
-                    icon: 'success',
-                    buttonsStyling: false,
-                    confirmButtonText: 'OK',
-                    confirmButtonClass: 'btn btn-primary font-weight-bold'
-                }).then(function() {
-                    // Reload the complete page
+                // Show toast and reload page after a short delay
+                toastr.success(response.message || 'Sold by updated successfully');
+
+                setTimeout(function() {
                     location.reload();
-                });
+                }, 1500);
             } else {
                 toastr.error(response.message || 'Failed to update sold by');
             }
