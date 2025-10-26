@@ -613,6 +613,8 @@ function setEditData(response) {
         let history_options = noRecordFoundTable(5);
         let membership = response.data.membership;
         let selectedUserId = response.data.selectedUserId;
+        let doctor_ids = response.data.doctor_ids;
+        let selected_user_id = response.data.selectedUserId;
         if (packageadvances.length) {
     history_options = '';
     Object.values(packageadvances).forEach(function (packageadvance) {
