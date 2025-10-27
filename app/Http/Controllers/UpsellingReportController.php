@@ -117,304 +117,304 @@ class UpsellingReportController extends Controller
 }
 
 // New function for doctor detail view
-// public function doctorUpsellingDetail($doctorId)
-// {
-//     $filters = session('upselling_filters');
-
-//     if (!$filters) {
-//         return redirect()->back()->with('error', 'Session expired. Please reload the report.');
-//     }
-
-//     // Get doctor name
-//     $doctorName = User::find($doctorId)->name ?? 'Unknown Doctor';
-
-//     // Get all package services for this doctor in the period
-//     $packageServices = PackageService::query()
-//         ->join('packages', 'package_services.package_id', '=', 'packages.id')
-//         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-//         ->join('services', 'package_services.service_id', '=', 'services.id')
-//         ->where('package_services.sold_by', $doctorId)
-//         ->where('packages.location_id', $filters['location_id'])
-//         ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
-//         ->whereNotNull('sold_by')
-//         ->select(
-//             'package_services.id',
-//             'package_services.package_id',
-//             'package_services.sold_by',
-//             'package_services.service_id',
-//             'package_services.tax_including_price',
-//             'package_services.created_at',
-//             'package_services.package_bundle_id',
-//             'services.name as service_name',
-//             'appointments.appointment_type_id',
-//             'appointments.doctor_id as appointment_doctor_id',
-//             'appointments.patient_id',
-//             'appointments.name as patient_name',
-//             'appointments.scheduled_date'
-//         )
-//         ->orderBy('package_services.created_at')
-//         ->orderBy('package_services.id')
-//         ->get();
-
-//     // Process each package's services to calculate upselling
-//     $detailData = collect();
-//     $servicesByPackage = $packageServices->groupBy('package_id');
-//     $totalAmount = 0;
-//     $uniquePackages = collect();
-
-//     foreach ($servicesByPackage as $packageId => $services) {
-//         $sortedServices = $services->sortBy([
-//             ['created_at', 'asc'],
-//             ['id', 'asc']
-//         ])->values()->all();
-        
-//         $totalServicesInPackage = count($sortedServices);
-//         $processedIndices = [];
-        
-//         for ($i = 0; $i < $totalServicesInPackage; $i++) {
-//             // Skip if already processed as part of a bundle
-//             if (in_array($i, $processedIndices)) {
-//                 continue;
-//             }
-            
-//             $service = $sortedServices[$i];
-            
-//             // Skip self-consultation sales
-//             $isSelfConsultation = ($service->appointment_type_id == 1 && 
-//                                    $service->appointment_doctor_id == $service->sold_by);
-            
-//             if ($isSelfConsultation) {
-//                 continue;
-//             }
-            
-//             $serviceCreatedAt = Carbon::parse($service->created_at);
-            
-//             // Check if this is part of a bundle
-//             $bundleServices = [];
-            
-//             for ($j = $i; $j < $totalServicesInPackage; $j++) {
-//                 $potentialBundleService = $sortedServices[$j];
-                
-//                 if ($potentialBundleService->package_bundle_id == $service->package_bundle_id) {
-//                     $bundleServices[] = $potentialBundleService;
-//                     $processedIndices[] = $j;
-//                 }
-//             }
-            
-//             // If more than 1 service shares the same package_bundle_id, treat as bundle
-//             if (count($bundleServices) > 1) {
-//                 // BUNDLE LOGIC
-                
-//                 $previousService = null;
-//                 if ($i > 0) {
-//                     $previousService = $sortedServices[$i - 1];
-//                 }
-                
-//                 $nextService = null;
-//                 $lastBundleIndex = max($processedIndices);
-//                 if ($lastBundleIndex < $totalServicesInPackage - 1) {
-//                     $nextService = $sortedServices[$lastBundleIndex + 1];
-//                 }
-                
-//                 $paymentWindowStart = $serviceCreatedAt->copy()->subHours(2);
-                
-//                 if ($previousService && !is_null($previousService->created_at)) {
-//                     $previousServiceTime = Carbon::parse($previousService->created_at);
-//                     $timeDiffFromPrevious = $serviceCreatedAt->diffInMinutes($previousServiceTime);
-                    
-//                     if ($timeDiffFromPrevious < 120) {
-//                         $paymentWindowStart = $previousServiceTime->copy();
-//                     }
-//                 }
-                
-//                 $paymentWindowEnd = $serviceCreatedAt->copy()->addHours(2);
-                
-//                 if ($nextService && !is_null($nextService->created_at)) {
-//                     $nextServiceTime = Carbon::parse($nextService->created_at);
-//                     $timeDiffToNext = $nextServiceTime->diffInMinutes($serviceCreatedAt);
-                    
-//                     if ($timeDiffToNext < 120) {
-//                         $paymentWindowEnd = $nextServiceTime->copy();
-//                     }
-//                 }
-                
-//                 $paymentsQuery = DB::table('package_advances')
-//                     ->where('package_id', $packageId)
-//                     ->where('cash_flow', 'in')
-//                     ->where('is_refund', 0)
-//                     ->where('is_adjustment', 0)
-//                     ->where(function($q) use ($paymentWindowStart, $service) {
-//                         $q->where('created_at', '>', $paymentWindowStart)
-//                           ->orWhere(function($q2) use ($paymentWindowStart, $service) {
-//                               $q2->where('created_at', '=', $paymentWindowStart)
-//                                  ->where('id', '>', $service->id);
-//                           });
-//                     })
-//                     ->where(function($q) use ($paymentWindowEnd, $nextService) {
-//                         $q->where('created_at', '<', $paymentWindowEnd)
-//                           ->orWhere(function($q2) use ($paymentWindowEnd, $nextService) {
-//                               if ($nextService) {
-//                                   $q2->where('created_at', '=', $paymentWindowEnd)
-//                                      ->where('id', '<', $nextService->id);
-//                               } else {
-//                                   $q2->where('created_at', '=', $paymentWindowEnd);
-//                               }
-//                           });
-//                     });
-                
-//                 $totalPaymentsForBundle = $paymentsQuery->sum('cash_amount');
-                
-//                 $totalBundleAmount = 0;
-//                 foreach ($bundleServices as $bundleService) {
-//                     if ($bundleService->tax_including_price > 0) {
-//                         $totalBundleAmount += $bundleService->tax_including_price;
-//                     }
-//                 }
-                
-//                 $actualUpsellingForBundle = min($totalPaymentsForBundle, $totalBundleAmount);
-                
-//                 // Add each bundle service to detail data
-//                 foreach ($bundleServices as $bundleService) {
-//                     $serviceAmount = $bundleService->tax_including_price;
-                    
-//                     if ($serviceAmount <= 0) {
-//                         continue;
-//                     }
-                    
-//                     $serviceShare = 0;
-//                     if ($actualUpsellingForBundle > 0 && $totalBundleAmount > 0) {
-//                         $serviceShare = ($serviceAmount / $totalBundleAmount) * $actualUpsellingForBundle;
-//                     }
-                    
-//                     if ($serviceShare > 0) {
-//                         $uniquePackages->push($packageId);
-//                     }
-                    
-//                     $detailData->push((object)[
-//                         'doctor_name' => $doctorName,
-//                         'package_id' => $packageId,
-//                         'service_name' => $bundleService->service_name,
-//                         'tax_including_price' => $serviceAmount,
-//                         'created_at' => $bundleService->created_at,
-//                         'patient_id' => $bundleService->patient_id,
-//                         'patient_name' => $bundleService->patient_name,
-//                         'scheduled_date' => $bundleService->scheduled_date,
-//                         'actual_amount' => $serviceShare,
-//                         'payment_received' => $totalPaymentsForBundle,
-//                         'has_upselling' => $serviceShare > 0,
-//                         'is_bundle' => true,
-//                         'bundle_id' => $bundleService->package_bundle_id
-//                     ]);
-                    
-//                     $totalAmount += $serviceShare;
-//                 }
-                
-//             } else {
-//                 // SINGLE SERVICE LOGIC
-//                 $serviceAmount = $service->tax_including_price;
-                
-//                 if ($serviceAmount <= 0) {
-//                     continue;
-//                 }
-                
-//                 $previousService = null;
-//                 if ($i > 0) {
-//                     $previousService = $sortedServices[$i - 1];
-//                 }
-                
-//                 $nextService = null;
-//                 if ($i < $totalServicesInPackage - 1) {
-//                     $nextService = $sortedServices[$i + 1];
-//                 }
-                
-//                 $paymentWindowStart = $serviceCreatedAt->copy()->subHours(2);
-                
-//                 if ($previousService && !is_null($previousService->created_at)) {
-//                     $previousServiceTime = Carbon::parse($previousService->created_at);
-//                     $timeDiffFromPrevious = $serviceCreatedAt->diffInMinutes($previousServiceTime);
-                    
-//                     if ($timeDiffFromPrevious < 120) {
-//                         $paymentWindowStart = $previousServiceTime->copy();
-//                     }
-//                 }
-                
-//                 $paymentWindowEnd = $serviceCreatedAt->copy()->addHours(2);
-                
-//                 if ($nextService && !is_null($nextService->created_at)) {
-//                     $nextServiceTime = Carbon::parse($nextService->created_at);
-//                     $timeDiffToNext = $nextServiceTime->diffInMinutes($serviceCreatedAt);
-                    
-//                     if ($timeDiffToNext < 120) {
-//                         $paymentWindowEnd = $nextServiceTime->copy();
-//                     }
-//                 }
-                
-//                 $paymentsQuery = DB::table('package_advances')
-//                     ->where('package_id', $packageId)
-//                     ->where('cash_flow', 'in')
-//                     ->where('is_refund', 0)
-//                     ->where('is_adjustment', 0)
-//                     ->where(function($q) use ($paymentWindowStart, $service) {
-//                         $q->where('created_at', '>', $paymentWindowStart)
-//                           ->orWhere(function($q2) use ($paymentWindowStart, $service) {
-//                               $q2->where('created_at', '=', $paymentWindowStart)
-//                                  ->where('id', '>', $service->id);
-//                           });
-//                     })
-//                     ->where(function($q) use ($paymentWindowEnd, $nextService) {
-//                         $q->where('created_at', '<', $paymentWindowEnd)
-//                           ->orWhere(function($q2) use ($paymentWindowEnd, $nextService) {
-//                               if ($nextService) {
-//                                   $q2->where('created_at', '=', $paymentWindowEnd)
-//                                      ->where('id', '<', $nextService->id);
-//                               } else {
-//                                   $q2->where('created_at', '=', $paymentWindowEnd);
-//                               }
-//                           });
-//                     });
-                
-//                 $paymentsReceived = $paymentsQuery->sum('cash_amount');
-//                 $upsellingAmount = 0;
-                
-//                 if ($paymentsReceived > 0) {
-//                     $upsellingAmount = min($paymentsReceived, $serviceAmount);
-//                     $uniquePackages->push($packageId);
-//                 }
-                
-//                 $detailData->push((object)[
-//                     'doctor_name' => $doctorName,
-//                     'package_id' => $packageId,
-//                     'service_name' => $service->service_name,
-//                     'tax_including_price' => $serviceAmount,
-//                     'created_at' => $service->created_at,
-//                     'patient_id' => $service->patient_id,
-//                     'patient_name' => $service->patient_name,
-//                     'scheduled_date' => $service->scheduled_date,
-//                     'actual_amount' => $upsellingAmount,
-//                     'payment_received' => $paymentsReceived,
-//                     'has_upselling' => $upsellingAmount > 0,
-//                     'is_bundle' => false
-//                 ]);
-                
-//                 $totalAmount += $upsellingAmount;
-//             }
-//         }
-//     }
-
-//     // Sort by created_at descending
-//     $detailData = $detailData->sortByDesc('created_at')->values();
-    
-//     // Count unique packages with upselling
-//     $uniqueUpsellings = $uniquePackages->unique()->count();
-
-//     return view('admin.reports.doctorUpsellingDetail', compact(
-//         'detailData', 
-//         'doctorName', 
-//         'totalAmount', 
-//         'uniqueUpsellings'
-//     ));
-// }
 public function doctorUpsellingDetail($doctorId)
+{
+    $filters = session('upselling_filters');
+
+    if (!$filters) {
+        return redirect()->back()->with('error', 'Session expired. Please reload the report.');
+    }
+
+    // Get doctor name
+    $doctorName = User::find($doctorId)->name ?? 'Unknown Doctor';
+
+    // Get all package services for this doctor in the period
+    $packageServices = PackageService::query()
+        ->join('packages', 'package_services.package_id', '=', 'packages.id')
+        ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
+        ->join('services', 'package_services.service_id', '=', 'services.id')
+        ->where('package_services.sold_by', $doctorId)
+        ->where('packages.location_id', $filters['location_id'])
+        ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
+        ->whereNotNull('sold_by')
+        ->select(
+            'package_services.id',
+            'package_services.package_id',
+            'package_services.sold_by',
+            'package_services.service_id',
+            'package_services.tax_including_price',
+            'package_services.created_at',
+            'package_services.package_bundle_id',
+            'services.name as service_name',
+            'appointments.appointment_type_id',
+            'appointments.doctor_id as appointment_doctor_id',
+            'appointments.patient_id',
+            'appointments.name as patient_name',
+            'appointments.scheduled_date'
+        )
+        ->orderBy('package_services.created_at')
+        ->orderBy('package_services.id')
+        ->get();
+
+    // Process each package's services to calculate upselling
+    $detailData = collect();
+    $servicesByPackage = $packageServices->groupBy('package_id');
+    $totalAmount = 0;
+    $uniquePackages = collect();
+
+    foreach ($servicesByPackage as $packageId => $services) {
+        $sortedServices = $services->sortBy([
+            ['created_at', 'asc'],
+            ['id', 'asc']
+        ])->values()->all();
+        
+        $totalServicesInPackage = count($sortedServices);
+        $processedIndices = [];
+        
+        for ($i = 0; $i < $totalServicesInPackage; $i++) {
+            // Skip if already processed as part of a bundle
+            if (in_array($i, $processedIndices)) {
+                continue;
+            }
+            
+            $service = $sortedServices[$i];
+            
+            // Skip self-consultation sales
+            $isSelfConsultation = ($service->appointment_type_id == 1 && 
+                                   $service->appointment_doctor_id == $service->sold_by);
+            
+            if ($isSelfConsultation) {
+                continue;
+            }
+            
+            $serviceCreatedAt = Carbon::parse($service->created_at);
+            
+            // Check if this is part of a bundle
+            $bundleServices = [];
+            
+            for ($j = $i; $j < $totalServicesInPackage; $j++) {
+                $potentialBundleService = $sortedServices[$j];
+                
+                if ($potentialBundleService->package_bundle_id == $service->package_bundle_id) {
+                    $bundleServices[] = $potentialBundleService;
+                    $processedIndices[] = $j;
+                }
+            }
+            
+            // If more than 1 service shares the same package_bundle_id, treat as bundle
+            if (count($bundleServices) > 1) {
+                // BUNDLE LOGIC
+                
+                $previousService = null;
+                if ($i > 0) {
+                    $previousService = $sortedServices[$i - 1];
+                }
+                
+                $nextService = null;
+                $lastBundleIndex = max($processedIndices);
+                if ($lastBundleIndex < $totalServicesInPackage - 1) {
+                    $nextService = $sortedServices[$lastBundleIndex + 1];
+                }
+                
+                $paymentWindowStart = $serviceCreatedAt->copy()->subHours(2);
+                
+                if ($previousService && !is_null($previousService->created_at)) {
+                    $previousServiceTime = Carbon::parse($previousService->created_at);
+                    $timeDiffFromPrevious = $serviceCreatedAt->diffInMinutes($previousServiceTime);
+                    
+                    if ($timeDiffFromPrevious < 120) {
+                        $paymentWindowStart = $previousServiceTime->copy();
+                    }
+                }
+                
+                $paymentWindowEnd = $serviceCreatedAt->copy()->addHours(2);
+                
+                if ($nextService && !is_null($nextService->created_at)) {
+                    $nextServiceTime = Carbon::parse($nextService->created_at);
+                    $timeDiffToNext = $nextServiceTime->diffInMinutes($serviceCreatedAt);
+                    
+                    if ($timeDiffToNext < 120) {
+                        $paymentWindowEnd = $nextServiceTime->copy();
+                    }
+                }
+                
+                $paymentsQuery = DB::table('package_advances')
+                    ->where('package_id', $packageId)
+                    ->where('cash_flow', 'in')
+                    ->where('is_refund', 0)
+                    ->where('is_adjustment', 0)
+                    ->where(function($q) use ($paymentWindowStart, $service) {
+                        $q->where('created_at', '>', $paymentWindowStart)
+                          ->orWhere(function($q2) use ($paymentWindowStart, $service) {
+                              $q2->where('created_at', '=', $paymentWindowStart)
+                                 ->where('id', '>', $service->id);
+                          });
+                    })
+                    ->where(function($q) use ($paymentWindowEnd, $nextService) {
+                        $q->where('created_at', '<', $paymentWindowEnd)
+                          ->orWhere(function($q2) use ($paymentWindowEnd, $nextService) {
+                              if ($nextService) {
+                                  $q2->where('created_at', '=', $paymentWindowEnd)
+                                     ->where('id', '<', $nextService->id);
+                              } else {
+                                  $q2->where('created_at', '=', $paymentWindowEnd);
+                              }
+                          });
+                    });
+                
+                $totalPaymentsForBundle = $paymentsQuery->sum('cash_amount');
+                
+                $totalBundleAmount = 0;
+                foreach ($bundleServices as $bundleService) {
+                    if ($bundleService->tax_including_price > 0) {
+                        $totalBundleAmount += $bundleService->tax_including_price;
+                    }
+                }
+                
+                $actualUpsellingForBundle = min($totalPaymentsForBundle, $totalBundleAmount);
+                
+                // Add each bundle service to detail data
+                foreach ($bundleServices as $bundleService) {
+                    $serviceAmount = $bundleService->tax_including_price;
+                    
+                    if ($serviceAmount <= 0) {
+                        continue;
+                    }
+                    
+                    $serviceShare = 0;
+                    if ($actualUpsellingForBundle > 0 && $totalBundleAmount > 0) {
+                        $serviceShare = ($serviceAmount / $totalBundleAmount) * $actualUpsellingForBundle;
+                    }
+                    
+                    if ($serviceShare > 0) {
+                        $uniquePackages->push($packageId);
+                    }
+                    
+                    $detailData->push((object)[
+                        'doctor_name' => $doctorName,
+                        'package_id' => $packageId,
+                        'service_name' => $bundleService->service_name,
+                        'tax_including_price' => $serviceAmount,
+                        'created_at' => $bundleService->created_at,
+                        'patient_id' => $bundleService->patient_id,
+                        'patient_name' => $bundleService->patient_name,
+                        'scheduled_date' => $bundleService->scheduled_date,
+                        'actual_amount' => $serviceShare,
+                        'payment_received' => $totalPaymentsForBundle,
+                        'has_upselling' => $serviceShare > 0,
+                        'is_bundle' => true,
+                        'bundle_id' => $bundleService->package_bundle_id
+                    ]);
+                    
+                    $totalAmount += $serviceShare;
+                }
+                
+            } else {
+                // SINGLE SERVICE LOGIC
+                $serviceAmount = $service->tax_including_price;
+                
+                if ($serviceAmount <= 0) {
+                    continue;
+                }
+                
+                $previousService = null;
+                if ($i > 0) {
+                    $previousService = $sortedServices[$i - 1];
+                }
+                
+                $nextService = null;
+                if ($i < $totalServicesInPackage - 1) {
+                    $nextService = $sortedServices[$i + 1];
+                }
+                
+                $paymentWindowStart = $serviceCreatedAt->copy()->subHours(2);
+                
+                if ($previousService && !is_null($previousService->created_at)) {
+                    $previousServiceTime = Carbon::parse($previousService->created_at);
+                    $timeDiffFromPrevious = $serviceCreatedAt->diffInMinutes($previousServiceTime);
+                    
+                    if ($timeDiffFromPrevious < 120) {
+                        $paymentWindowStart = $previousServiceTime->copy();
+                    }
+                }
+                
+                $paymentWindowEnd = $serviceCreatedAt->copy()->addHours(2);
+                
+                if ($nextService && !is_null($nextService->created_at)) {
+                    $nextServiceTime = Carbon::parse($nextService->created_at);
+                    $timeDiffToNext = $nextServiceTime->diffInMinutes($serviceCreatedAt);
+                    
+                    if ($timeDiffToNext < 120) {
+                        $paymentWindowEnd = $nextServiceTime->copy();
+                    }
+                }
+                
+                $paymentsQuery = DB::table('package_advances')
+                    ->where('package_id', $packageId)
+                    ->where('cash_flow', 'in')
+                    ->where('is_refund', 0)
+                    ->where('is_adjustment', 0)
+                    ->where(function($q) use ($paymentWindowStart, $service) {
+                        $q->where('created_at', '>', $paymentWindowStart)
+                          ->orWhere(function($q2) use ($paymentWindowStart, $service) {
+                              $q2->where('created_at', '=', $paymentWindowStart)
+                                 ->where('id', '>', $service->id);
+                          });
+                    })
+                    ->where(function($q) use ($paymentWindowEnd, $nextService) {
+                        $q->where('created_at', '<', $paymentWindowEnd)
+                          ->orWhere(function($q2) use ($paymentWindowEnd, $nextService) {
+                              if ($nextService) {
+                                  $q2->where('created_at', '=', $paymentWindowEnd)
+                                     ->where('id', '<', $nextService->id);
+                              } else {
+                                  $q2->where('created_at', '=', $paymentWindowEnd);
+                              }
+                          });
+                    });
+                
+                $paymentsReceived = $paymentsQuery->sum('cash_amount');
+                $upsellingAmount = 0;
+                
+                if ($paymentsReceived > 0) {
+                    $upsellingAmount = min($paymentsReceived, $serviceAmount);
+                    $uniquePackages->push($packageId);
+                }
+                
+                $detailData->push((object)[
+                    'doctor_name' => $doctorName,
+                    'package_id' => $packageId,
+                    'service_name' => $service->service_name,
+                    'tax_including_price' => $serviceAmount,
+                    'created_at' => $service->created_at,
+                    'patient_id' => $service->patient_id,
+                    'patient_name' => $service->patient_name,
+                    'scheduled_date' => $service->scheduled_date,
+                    'actual_amount' => $upsellingAmount,
+                    'payment_received' => $paymentsReceived,
+                    'has_upselling' => $upsellingAmount > 0,
+                    'is_bundle' => false
+                ]);
+                
+                $totalAmount += $upsellingAmount;
+            }
+        }
+    }
+
+    // Sort by created_at descending
+    $detailData = $detailData->sortByDesc('created_at')->values();
+    
+    // Count unique packages with upselling
+    $uniqueUpsellings = $uniquePackages->unique()->count();
+
+    return view('admin.reports.doctorUpsellingDetail', compact(
+        'detailData', 
+        'doctorName', 
+        'totalAmount', 
+        'uniqueUpsellings'
+    ));
+}
+public function doctorConsultantBreakdown($doctorId)
 {
     // Get filters from session
     $filters = session('upselling_filters');
@@ -470,7 +470,7 @@ public function doctorUpsellingDetail($doctorId)
     // Get location name
     $location = DB::table('locations')->where('id', $locationId)->first();
 
-    return view('admin.reports.doctorUpsellingDetail', compact(
+    return view('admin.reports.consultantSellerDetail', compact(
         'doctor',
         'breakdownData',
         'totalUpselling',
