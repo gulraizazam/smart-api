@@ -209,70 +209,116 @@ public function loadConsultantRevenueReport(Request $request)
 
     $allSellerIds = $roleHasUsers->merge($fdmUserIds)->unique();
 
-    $reportQuery = PackageService::query()
+    // Get package services with consultant information
+    $packageServices = PackageService::query()
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-        ->join('users as appointment_doctors', 'appointments.doctor_id', '=', 'appointment_doctors.id')
         ->whereIn('package_services.sold_by', $allSellerIds)
         ->whereIn('appointments.doctor_id', $consultantIds)
-        ->where('packages.location_id', $locationId);
-
-    // Apply date range filter on created_at
-    if ($startDate && $endDate) {
-        $reportQuery->whereBetween('package_services.created_at', [$startDate, $endDate])
-            ->whereNotNull('sold_by');
-    }
-
-    // Fetch consultant revenue data - upselling attributed to consultants
-    $reportData = $reportQuery
+        ->whereBetween('package_services.created_at', [$startDate, $endDate])
+        ->whereNotNull('sold_by')
+        ->where('packages.location_id', $locationId)
+        // Exclude self-consultation sales
+        ->where(function($query) {
+            $query->where('appointments.appointment_type_id', '!=', 1)
+                ->orWhereColumn('appointments.doctor_id', '!=', 'package_services.sold_by');
+        })
         ->select(
-            'appointment_doctors.name as consultant_name',
+            'package_services.package_id',
             'appointments.doctor_id as consultant_id',
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_consultation_revenue
-            "),
-            DB::raw("
-                SUM(
-                    CASE
-                        WHEN NOT (appointments.appointment_type_id = 1 AND appointments.doctor_id = package_services.sold_by)
-                        AND package_services.is_consumed = 1
-                        AND package_services.consumed_at BETWEEN '{$startDate}' AND '{$endDate}'
-                        THEN package_services.tax_including_price
-                        ELSE 0
-                    END
-                ) as total_consumed_amount
-            ")
+            'package_services.tax_including_price',
+            'package_services.is_consumed',
+            'package_services.consumed_at'
         )
-        ->groupBy('appointments.doctor_id', 'appointment_doctors.name')
         ->get();
 
-    // Get all eligible consultants and add those with 0 amounts
-    $reportedConsultantIds = $reportData->pluck('consultant_id')->toArray();
-    $missingConsultantIds = $consultantIds->diff($reportedConsultantIds);
-    
-    if ($missingConsultantIds->isNotEmpty()) {
-        $missingConsultants = User::whereIn('id', $missingConsultantIds)
-            ->select('id as consultant_id', 'name as consultant_name')
-            ->get()
-            ->map(function ($user) {
-                return (object) [
-                    'consultant_name' => $user->consultant_name,
-                    'consultant_id' => $user->consultant_id,
-                    'total_consultation_revenue' => 0,
-                    'total_consumed_amount' => 0
-                ];
-            });
-        
-        $reportData = $reportData->concat($missingConsultants);
+    // Group services by package_id
+    $servicesByPackage = $packageServices->groupBy('package_id');
+
+    // Initialize consultant revenue tracking
+    $consultantRevenue = [];
+    foreach ($consultantIds as $consultantId) {
+        $consultantRevenue[(int)$consultantId] = [
+            'total_consultation_revenue' => 0,
+            'total_consumed_amount' => 0,
+        ];
     }
-    
-    // Re-sort the final collection
+
+    // Process each package
+    foreach ($servicesByPackage as $packageId => $services) {
+        // Get total payments for this package in the date range
+        $totalPayments = DB::table('package_advances')
+            ->where('package_id', $packageId)
+            ->where('cash_flow', 'in')
+            ->where('is_refund', 0)
+            ->where('is_adjustment', 0)
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->sum('cash_amount');
+
+        if ($totalPayments <= 0) {
+            continue;
+        }
+
+        // Calculate total service amount for this package
+        $totalServiceAmount = $services->sum('tax_including_price');
+
+        if ($totalServiceAmount <= 0) {
+            continue;
+        }
+
+        // Cap payments at total service amount
+        $actualRevenue = min($totalPayments, $totalServiceAmount);
+
+        // Distribute revenue to consultants proportionally
+        foreach ($services as $service) {
+            $consultantId = (int)$service->consultant_id;
+            
+            if (!isset($consultantRevenue[$consultantId])) {
+                continue;
+            }
+
+            $serviceAmount = $service->tax_including_price;
+
+            if ($serviceAmount <= 0) {
+                continue;
+            }
+
+            // Calculate proportional share
+            $serviceShare = ($serviceAmount / $totalServiceAmount) * $actualRevenue;
+
+            // Add to total consultation revenue
+            $consultantRevenue[$consultantId]['total_consultation_revenue'] += $serviceShare;
+
+            // Add to consumed amount if service is consumed in date range
+            if ($service->is_consumed == 1 && 
+                $service->consumed_at >= $startDate && 
+                $service->consumed_at <= $endDate) {
+                $consultantRevenue[$consultantId]['total_consumed_amount'] += $serviceShare;
+            }
+        }
+    }
+
+    // Get consultant names and prepare report data
+    $consultants = User::whereIn('id', $consultantIds)
+        ->select('id', 'name')
+        ->get()
+        ->keyBy('id');
+
+    $reportData = collect();
+    foreach ($consultantRevenue as $consultantId => $revenue) {
+        $consultant = $consultants->get($consultantId);
+        
+        if ($consultant) {
+            $reportData->push((object)[
+                'consultant_id' => $consultantId,
+                'consultant_name' => $consultant->name,
+                'total_consultation_revenue' => $revenue['total_consultation_revenue'],
+                'total_consumed_amount' => $revenue['total_consumed_amount'],
+            ]);
+        }
+    }
+
+    // Sort by revenue descending
     $reportData = $reportData->sortByDesc('total_consultation_revenue')->values();
 
     // Store filters in session for detail view
