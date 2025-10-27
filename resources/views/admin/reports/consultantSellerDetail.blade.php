@@ -8,7 +8,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h3 class="card-title">Consultant Breakdown for {{ $doctor->name }}</h3>
-                        <a href="{{ route('admin.doctor.upselling.report') }}" class="btn btn-secondary">
+                        <a href="#" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Report
                         </a>
                     </div>
