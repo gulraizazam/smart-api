@@ -1069,7 +1069,7 @@ public function getDoctorUpsellingData(Request $request)
         ], 500);
     }
 }
-public function doctorConsultantBreakdown($sellerId)
+public function doctorConsultantBreakdown1($sellerId)
 {
     $filters = session('upselling_filters');
 
