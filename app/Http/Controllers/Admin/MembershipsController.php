@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Facades\Excel;
 use Rap2hpoutre\FastExcel\FastExcel;
+use App\Exports\StudentMembershipPatientsExport;
+
 
 class MembershipsController extends Controller
 {
@@ -540,5 +542,12 @@ class MembershipsController extends Controller
         $record = $membership->update(['active' => 0]);
 
         return $record;
+    }
+    public function downloadStudentMembershipPatients()
+    {
+        return Excel::download(
+            new StudentMembershipPatientsExport, 
+            'student_membership_patients_' . date('Y-m-d') . '.xlsx'
+        );
     }
 }

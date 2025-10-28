@@ -89,7 +89,8 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 Route::get('/services/export-pdf', [ServicesController::class, 'exportPdf'])->name('services.export.pdf');
-
+Route::get('/download-student-membership-patients', [MembershipsController::class, 'downloadStudentMembershipPatients'])
+    ->name('download.student.membership.patients');
 Route::get('/unauthorized', function () {
     return view('unathorized');
 })->name('unauthorized');
