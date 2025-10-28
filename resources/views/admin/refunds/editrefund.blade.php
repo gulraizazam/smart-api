@@ -74,7 +74,8 @@
                         </div>
                         <div class="fv-row col-md-6 mt-15 ">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Case Setteled </label>
-                            <input type="checkbox" id="edit_case_setteled" name="case_setteled">
+                            <input type="hidden" name="case_setteled" value="0">
+                            <input type="checkbox" id="edit_case_setteled" name="case_setteled" value="1">
                         </div>
                         <div class="fv-row col-md-12 mt-5">
                             <label for="refund_note" class="required fw-bold fs-6 mb-2 pl-0">Refund Note <span class="text text-danger">*</span></label>

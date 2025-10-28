@@ -3075,7 +3075,7 @@ class PackagesController extends Controller
 
         )->latest()->first();
 
-        if ($request['case_setteled'] == 'on') {
+        if ($request['case_setteled'] == '1') {
 
             $package_cash_receive = PackageAdvances::where([
                 ['package_id', '=', $request->package_id],
@@ -3159,6 +3159,16 @@ class PackagesController extends Controller
             } else {
                 $latest_refund->where('id', $request['record_id'])->update(['is_setteled' => 1]);
             }
+        } else {
+            // Handle unchecked case - remove settlement status
+            $latest_refund->where('id', $request['record_id'])->update(['is_setteled' => 0]);
+
+            // Delete settlement records for this package
+            PackageAdvances::where([
+                ['package_id', '=', $request->package_id],
+                ['cash_flow', '=', 'out'],
+                ['is_setteled', '=', 1],
+            ])->delete();
         }
         $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id']]);
         return ApiHelper::apiResponse($this->success, 'Record updated', true, []);

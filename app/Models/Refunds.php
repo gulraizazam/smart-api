@@ -157,7 +157,7 @@ class Refunds extends Model
         if ($packageinformation->is_refund == '0') {
             $package = Packages::updateRecordRefunds($request->package_id);
         }
-        if($request->case_setteled == "on"){
+        if($request->case_setteled == "1"){
             $package_is_refunded_amount = PackageAdvances::where([
                 ['package_id', '=', $request->package_id],
                 ['cash_flow', '=', 'out'],
