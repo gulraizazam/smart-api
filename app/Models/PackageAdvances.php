@@ -195,8 +195,10 @@ class PackageAdvances extends BaseModal
             }
             $data['payment_mode_id'] = $request->payment_mode_id;
             $data['payment_mode_id'] = $request->payment_mode_id;
-            $data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
-            $data['updated_at'] = now();
+           // $data['created_at'] = $request->created_at.' '.Carbon::now()->toTimeString();
+           $data['created_at'] =Carbon::now()->timezone('Asia/Karachi');
+           // $data['updated_at'] = now();
+           $data['updated_at'] =Carbon::now()->timezone('Asia/Karachi');
             $record = PackageAdvances::where(['id' => $request->package_advances_id, 'account_id' => $account_id])->first();
             if (! $record) {
                 return null;

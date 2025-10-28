@@ -612,7 +612,7 @@ function setEditData(response) {
         let location = package.location;
         let history_options = noRecordFoundTable(5);
         let membership = response.data.membership;
-        let selectedUserId = response.data.selectedUserId;
+        let selected_user_id = response.data.selectedUserId;
         if (packageadvances.length) {
     history_options = '';
     Object.values(packageadvances).forEach(function (packageadvance) {
@@ -663,7 +663,8 @@ function setEditData(response) {
 
                 var del_icon;
                 //if(packagebundle.net_amount > 0){
-                del_icon = "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
+                var editIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="#3699FF" viewBox="0 0 16 16"><path d="M12.146.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1 0 .708l-10 10a.5.5 0 0 1-.168.11l-5 2a.5.5 0 0 1-.65-.65l2-5a.5.5 0 0 1 .11-.168l10-10zM11.207 2.5 13.5 4.793 14.793 3.5 12.5 1.207 11.207 2.5zm1.586 3L10.5 3.207 4 9.707V10h.5a.5.5 0 0 1 .5.5v.5h.5a.5.5 0 0 1 .5.5v.5h.293l6.5-6.5zm-9.761 5.175-.106.106-1.528 3.821 3.821-1.528.106-.106A.5.5 0 0 1 5 12.5V12h-.5a.5.5 0 0 1-.5-.5V11h-.5a.5.5 0 0 1-.468-.325z"/></svg>';
+                del_icon = "<td><button type='button' class='btn btn-icon btn-sm btn-light btn-sm me-2' onClick='editBundleSoldBy(" + packagebundle.id + ", " + location.id + ")'>" + editIcon + "</button><button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + packagebundle.id + ", `edit_`)'>" + trashBtn() + "</button></td>";
                 // }else{
                 //     del_icon="<td></td>";
                 // }
@@ -742,10 +743,9 @@ function setEditData(response) {
 
         let serviceOptions = '<option value="">Select Service</option>';
         let userOptions = '<option value="">Select</option>';
-        if (users) {
-
+         if (users) {
             Object.entries(users).forEach(function ([id, name]) {
-                let selected = (parseInt(id) === parseInt(selectedUserId)) ? 'selected' : '';
+                let selected = (parseInt(id) === parseInt(selected_user_id)) ? 'selected' : '';
                 userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
             });
         }
@@ -1387,10 +1387,12 @@ function setServices(response) {
 function setSoldBy(response) {
     try {
         let users = response.data.users;
+        let selected_doctor_id = response.data.selected_doctor_id;
         let user_options = '<option value=""> Select </option>';
 
         Object.entries(users).forEach(function ([id, name]) {
-            user_options += '<option value="' + id + '"> ' + name + ' </option>';
+            let selected = (parseInt(id) === parseInt(selected_doctor_id)) ? 'selected' : '';
+            user_options += '<option value="' + id + '" ' + selected + '> ' + name + ' </option>';
         });
 
         $("#add_sold_by").html(user_options);
@@ -2555,6 +2557,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
+                    console.log('resposne', resposne);
 
                     let consume = 'No';
                     if (resposne.status) {
@@ -2605,6 +2608,16 @@ jQuery(document).ready(function () {
                         var rows = $('#plan_services tbody tr').length;
                         if (rows >= 3) {
                             $("#add_plan_location_id").prop("disabled", true);
+                        }
+
+                        // Display voucher balance if available
+                        if (resposne.data.servicesData.voucher_balance) {
+                            console.log(resposne.data.servicesData.voucher_balance.remaining_balance);
+                           // 
+                            var voucherBalance = resposne.data.servicesData.voucher_balance;
+                          $("#discount_value_1").val(voucherBalance.remaining_balance);
+
+                            
                         }
                     } else {
                         $('#AlreadyExitMessage').show();
@@ -3456,8 +3469,136 @@ function hideModal() {
         }
         
         console.log("No modal found to hide");
-        
+
     } catch (error) {
         console.error("Error hiding modal:", error);
     }
 }
+
+/*
+ * Function to edit sold_by for all services in a package bundle
+ */
+function editBundleSoldBy(packageBundleId, locationId) {
+    // Get all package services for this bundle from the current data
+    let packageServices = [];
+
+    // Find services in the response data
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.packages.getsoldbydata'),
+        type: 'GET',
+        data: {
+            package_bundle_id: packageBundleId,
+            location_id: locationId
+        },
+        success: function(response) {
+            if (response.status) {
+                // Store all package service IDs
+                let serviceIds = response.data.package_services.map(service => service.id);
+                $('#package_service_id').val(serviceIds[0] || '');
+                $('#package_service_id').data('service-ids', serviceIds);
+
+                // Populate dropdown with users
+                let userOptions = '<option value="">Select</option>';
+                Object.entries(response.data.users).forEach(function([id, name]) {
+                    let selected = (parseInt(id) === parseInt(response.data.current_sold_by)) ? 'selected' : '';
+                    userOptions += '<option value="' + id + '" ' + selected + '>' + name + '</option>';
+                });
+                $('#sold_by_dropdown').html(userOptions);
+
+                // Show modal with proper z-index handling
+                $('#modal_edit_sold_by').modal({
+                    backdrop: 'static',
+                    keyboard: true
+                });
+
+                // Fix z-index for nested modal
+                $('#modal_edit_sold_by').on('shown.bs.modal', function () {
+                    $(this).css('z-index', parseInt($('.modal-backdrop').css('z-index')) + 10);
+                });
+
+            } else {
+                toastr.error(response.message || 'Failed to load sold by data');
+            }
+        },
+        error: function(xhr) {
+            errorMessage(xhr);
+        }
+    });
+}
+
+/*
+ * Close edit sold by modal
+ */
+function closeSoldByModal() {
+    $('#modal_edit_sold_by').modal('hide');
+    $('#sold_by_error').html('');
+    $('#package_service_id').val('');
+    $('#package_service_id').removeData('service-ids');
+
+    // Ensure parent modal stays visible after closing nested modal
+    setTimeout(function() {
+        if ($('#modal_edit_plan').hasClass('show')) {
+            $('body').addClass('modal-open');
+        }
+    }, 500);
+}
+
+/*
+ * Update sold_by on button click
+ */
+$(document).on('click', '#update_sold_by_btn', function() {
+    let packageServiceIds = $('#package_service_id').data('service-ids');
+    let soldBy = $('#sold_by_dropdown').val();
+
+    // Validation
+    if (!soldBy) {
+        $('#sold_by_error').html('Please select sold by');
+        return false;
+    }
+
+    $('#sold_by_error').html('');
+    $(this).attr('disabled', true);
+
+    // Prepare data for update
+    let updateData = {
+        sold_by: soldBy
+    };
+
+    // If multiple services, send as array
+    if (packageServiceIds && Array.isArray(packageServiceIds)) {
+        updateData.package_services = packageServiceIds;
+    } else {
+        updateData.package_service_id = $('#package_service_id').val();
+    }
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.packages.updatesoldby'),
+        type: 'POST',
+        data: updateData,
+        success: function(response) {
+            $('#update_sold_by_btn').attr('disabled', false);
+            if (response.status) {
+                closeSoldByModal();
+
+                // Show toast and reload page after a short delay
+                toastr.success(response.message || 'Sold by updated successfully');
+
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
+            } else {
+                toastr.error(response.message || 'Failed to update sold by');
+            }
+        },
+        error: function(xhr) {
+            $('#update_sold_by_btn').attr('disabled', false);
+            errorMessage(xhr);
+        }
+    });
+});
