@@ -213,9 +213,9 @@ function setEditData(response) {
         }
         $("#edit_refund_payment_mode_id").html(payment_options);
         if(refund.package_setteled_amount > 0){
-            $("#edit_case_setteled").attr('checked',true);
+            $("#edit_case_setteled").prop('checked',true);
         }else{
-            $("#edit_case_setteled").attr('checked',false);
+            $("#edit_case_setteled").prop('checked',false);
         }
 
 }
