@@ -356,6 +356,8 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     // End
 
     Route::get('packages/getappointmentinfo', [PackagesController::class, 'getappointmentinfo'])->name('packages.getappointmentinfo');
+    Route::get('packages/getsoldbydata', [PackagesController::class, 'getSoldByData'])->name('packages.getsoldbydata');
+    Route::post('packages/updatesoldby', [PackagesController::class, 'updateSoldBy'])->name('packages.updatesoldby');
     Route::resource('packages', PackagesController::class)->except('index');
 
     //Non Refunds Route start

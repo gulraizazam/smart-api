@@ -1217,7 +1217,8 @@ class PackagesController extends Controller
             $location_id = $request->location_id;
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
-             $generalDiscounts = Discounts::whereIn('id', $discountIds)
+           
+            $generalDiscounts = Discounts::whereIn('id', $discountIds)
             ->where('discount_type', '!=', 'voucher')
             ->where('active', '=', '1')
             ->whereDate('start', '<=', $today)
@@ -1229,15 +1230,17 @@ class PackagesController extends Controller
         $checkUserVouchers = UserVouchers::where('user_id', $request->patient_id)
             ->pluck('voucher_id')
             ->toArray();
+         
         
         if ($checkUserVouchers) {
             // Get voucher discounts that match BOTH location/service AND user assignment
             $voucherDiscounts = Discounts::whereIn('id', $discountIds)
                 ->whereIn('id', $checkUserVouchers)
                 ->where('discount_type', '=', 'voucher')
-                
-               
+                ->where('active', '=', '1')
+              
                 ->get();
+                  
         }
 
         // Merge both collections
@@ -1283,8 +1286,8 @@ class PackagesController extends Controller
                 $voucherDiscounts = Discounts::whereIn('id', $uniq_array)
                     ->whereIn('id', $checkUserVouchers)
                     ->where('discount_type', '=', 'voucher')
-                    
-                    
+                    ->where('active', '=', '1')
+                   
                     ->get();
             }
 
@@ -1791,50 +1794,62 @@ class PackagesController extends Controller
                     $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
                 }
             }
-            $doctors = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
+             $doctorsIds = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
 
             // Fetch active doctors as an associative array
-            $users = User::whereIn('id', $doctors)
+            $allDoctors = User::whereIn('id', $doctorsIds)
                 ->where('active', 1)
-                ->pluck('name', 'id') // Preserve user IDs
+                ->pluck('name', 'id')
                 ->toArray();
 
-            // Ensure 'from_id' is an array
-            $locationId = $package->location_id;
-
-            // Fetch FDM users by getting the user_ids associated with the center (location_id)
-            $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
-
-            // Fetch the 'FDM' role and get its user ids
-            $findRole = DB::table('roles')->where('name', 'FDM')->first();
-            $roleId = $findRole->id;
-
-            // Get users who have the FDM role
-            $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-
-            // Get the intersection of users who are both FDM and belong to the center
-            $fdmUsers = array_intersect($findFDM, $roleHasUser);
-
-            // Fetch FDM user details (id and name) from the users table
-            $FDMUsers = User::whereIn('id', $fdmUsers)
-                ->pluck('name', 'id') // Preserve user IDs
-                ->toArray();
-
-            // Merge the arrays while preserving keys
-            $combinedUsers = $users + $FDMUsers;
+            // Determine selected user ID from appointment array
             $selectedUserId = null;
             if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
                 $firstDoctorId = $appointmentArray[0]['doctor_id'];
-                if (array_key_exists($firstDoctorId, $combinedUsers)) {
+                if (array_key_exists($firstDoctorId, $allDoctors)) {
                     $selectedUserId = $firstDoctorId;
                 }
             }
+
+            // Check for treatments in last 30 days
+            $thirtyDaysAgo = now()->subDays(30);
+
+            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $package->location_id)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $thirtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Determine which users to show
+            $userIdsToShow = [];
+            if (!empty($recentTreatmentDoctorIds)) {
+                // Treatments found in last 30 days: show selectedUserId + recent treatment doctors
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
+                    $recentTreatmentDoctorIds
+                ));
+            } else {
+                // No treatments in last 30 days: show only selectedUserId
+                $userIdsToShow = $selectedUserId ? [$selectedUserId] : [];
+            }
+
+            // Filter users to only those that should be shown
+            $usersToShow = [];
+            foreach ($userIdsToShow as $userId) {
+                if (array_key_exists($userId, $allDoctors)) {
+                    $usersToShow[$userId] = $allDoctors[$userId];
+                }
+            }
+
             return ApiHelper::apiResponse($this->success, 'Record found.', true, [
                 'package' => $package,
                 'locations' => $locations,
                 'packagebundles' => $packagebundles,
                 'packageservices' => $packageservices,
-                'users' => $combinedUsers,
+                'users' => $usersToShow,
                 'selectedUserId' => $selectedUserId,
                 'packageadvances' => $packageadvances,
                 'paymentmodes' => $paymentmodes,
@@ -2285,51 +2300,236 @@ class PackagesController extends Controller
                 $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
             }
         }
-        $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
+        $doctorsIds = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
 
         // Fetch active doctors as an associative array
-        $users = User::whereIn('id', $doctors)
+        $allDoctors = User::whereIn('id', $doctorsIds)
             ->where('active', 1)
-            ->pluck('name', 'id') // Preserve user IDs
+            ->pluck('name', 'id')
             ->toArray();
 
-        // Ensure 'from_id' is an array
-        $locationId = $request->location_id;
-
-        // Fetch FDM users by getting the user_ids associated with the center (location_id)
-        $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
-
-        // Fetch the 'FDM' role and get its user ids
-        $findRole = DB::table('roles')->where('name', 'FDM')->first();
-        $roleId = $findRole->id;
-
-        // Get users who have the FDM role
-        $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
-
-        // Get the intersection of users who are both FDM and belong to the center
-        $fdmUsers = array_intersect($findFDM, $roleHasUser);
-
-        // Fetch FDM user details (id and name) from the users table
-        $FDMUsers = User::whereIn('id', $fdmUsers)
-            ->pluck('name', 'id') // Preserve user IDs
-            ->toArray();
-
-        // Merge the arrays while preserving keys
-        $combinedUsers = $users + $FDMUsers;
+        // Determine selected user ID from appointment array
         $selectedUserId = null;
         if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
             $firstDoctorId = $appointmentArray[0]['doctor_id'];
-            if (array_key_exists($firstDoctorId, $combinedUsers)) {
+            if (array_key_exists($firstDoctorId, $allDoctors)) {
                 $selectedUserId = $firstDoctorId;
+            }
+        }
+
+        // Check for treatments in last 30 days
+        $thirtyDaysAgo = now()->subDays(30);
+
+        $recentTreatmentDoctorIds = Appointments::where('patient_id', $request->patient_id)
+            ->where('location_id', $request->location_id)
+            ->where('appointment_status_id', 2)
+            ->where('appointment_type_id', 2)
+            ->where('scheduled_date', '>=', $thirtyDaysAgo)
+            ->pluck('doctor_id')
+            ->unique()
+            ->toArray();
+
+        // Determine which users to show
+        $userIdsToShow = [];
+        if (!empty($recentTreatmentDoctorIds)) {
+            // Treatments found in last 30 days: show selectedUserId + recent treatment doctors
+            $userIdsToShow = array_unique(array_merge(
+                $selectedUserId ? [$selectedUserId] : [],
+                $recentTreatmentDoctorIds
+            ));
+        } else {
+            // No treatments in last 30 days: show only selectedUserId
+            $userIdsToShow = $selectedUserId ? [$selectedUserId] : [];
+        }
+
+        // Filter users to only those that should be shown
+        $usersToShow = [];
+        foreach ($userIdsToShow as $userId) {
+            if (array_key_exists($userId, $allDoctors)) {
+                $usersToShow[$userId] = $allDoctors[$userId];
             }
         }
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
             'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
-            'users'=>$combinedUsers,
-            'selected_doctor_id'=>$selectedUserId
+            'users' => $usersToShow,
+            'selected_doctor_id' => $selectedUserId
         ]);
+    }
+
+    /*
+     * Get sold by data for editing
+     */
+    public function getSoldByData(Request $request)
+    {
+        try {
+            // Handle both package_service_id and package_bundle_id
+            if ($request->has('package_service_id')) {
+                $packageService = PackageService::find($request->package_service_id);
+
+                if (!$packageService) {
+                    return ApiHelper::apiResponse($this->notfound, 'Package service not found', false);
+                }
+
+                $package = Packages::find($packageService->package_id);
+                $locationId = $request->location_id ?? $package->location_id;
+                $currentSoldBy = $packageService->sold_by;
+                $packageServices = [$packageService];
+            } elseif ($request->has('package_bundle_id')) {
+                $packageBundle = PackageBundles::find($request->package_bundle_id);
+
+                if (!$packageBundle) {
+                    return ApiHelper::apiResponse($this->notfound, 'Package bundle not found', false);
+                }
+
+                $package = Packages::find($packageBundle->package_id);
+                $locationId = $request->location_id ?? $package->location_id;
+
+                // Get all services for this bundle
+                $packageServices = PackageService::where('package_bundle_id', $packageBundle->id)->get();
+
+                if ($packageServices->isEmpty()) {
+                    return ApiHelper::apiResponse($this->notfound, 'No services found for this bundle', false);
+                }
+
+                // Get the first service's sold_by as default
+                $currentSoldBy = $packageServices->first()->sold_by;
+            } else {
+                return ApiHelper::apiResponse($this->notfound, 'Package service or bundle ID required', false);
+            }
+
+            // Get all active doctors from the location
+            $doctorsIds = DoctorHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+
+            $allDoctors = User::whereIn('id', $doctorsIds)
+                ->where('active', 1)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            // Get FDM users by getting the user_ids associated with the center (location_id)
+            $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+
+            // Fetch the 'FDM' role and get its user ids
+            $findRole = DB::table('roles')->where('name', 'FDM')->first();
+            $fdmUserIds = [];
+            if ($findRole) {
+                $roleId = $findRole->id;
+
+                // Get users who have the FDM role
+                $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+
+                // Get the intersection of users who are both FDM and belong to the center
+                $fdmUserIds = array_intersect($findFDM, $roleHasUser);
+            }
+
+            // Get selected user ID (current sold_by)
+            $selectedUserId = $currentSoldBy;
+
+            // Check for treatments in last 30 days
+            $thirtyDaysAgo = now()->subDays(30);
+
+            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $locationId)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $thirtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Determine which users to show: selected user + recent treatment doctors + FDM users
+            $userIdsToShow = [];
+            if (!empty($recentTreatmentDoctorIds)) {
+                // Treatments found in last 30 days: show selectedUserId + recent treatment doctors + FDM users
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
+                    $recentTreatmentDoctorIds,
+                    $fdmUserIds
+                ));
+            } else {
+                // No treatments in last 30 days: show only selectedUserId + FDM users
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
+                    $fdmUserIds
+                ));
+            }
+
+            // Filter users to only those that should be shown
+            $usersToShow = [];
+
+            // First add doctors from allDoctors
+            foreach ($userIdsToShow as $userId) {
+                if (array_key_exists($userId, $allDoctors)) {
+                    $usersToShow[$userId] = $allDoctors[$userId];
+                }
+            }
+
+            // Then add FDM users
+            if (!empty($fdmUserIds)) {
+                $FDMUsers = User::whereIn('id', $fdmUserIds)
+                    ->where('active', 1)
+                    ->pluck('name', 'id')
+                    ->toArray();
+
+                foreach ($FDMUsers as $fdmId => $fdmName) {
+                    if (!array_key_exists($fdmId, $usersToShow)) {
+                        $usersToShow[$fdmId] = $fdmName;
+                    }
+                }
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'users' => $usersToShow,
+                'current_sold_by' => $currentSoldBy,
+                'package_services' => $packageServices->map(function ($service) {
+                    return [
+                        'id' => $service->id,
+                        'sold_by' => $service->sold_by
+                    ];
+                })
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /*
+     * Update sold by for package service(s)
+     */
+    public function updateSoldBy(Request $request)
+    {
+        try {
+            // If package_services array is provided, update multiple services
+            if ($request->has('package_services') && is_array($request->package_services)) {
+                foreach ($request->package_services as $serviceId) {
+                    $packageService = PackageService::find($serviceId);
+                    if ($packageService) {
+                        $packageService->sold_by = $request->sold_by;
+                        $packageService->save();
+                    }
+                }
+                return ApiHelper::apiResponse($this->success, 'Sold by updated successfully for all services', true);
+            }
+
+            // Single service update
+            if ($request->has('package_service_id')) {
+                $packageService = PackageService::find($request->package_service_id);
+
+                if (!$packageService) {
+                    return ApiHelper::apiResponse($this->notfound, 'Package service not found', false);
+                }
+
+                $packageService->sold_by = $request->sold_by;
+                $packageService->save();
+
+                return ApiHelper::apiResponse($this->success, 'Sold by updated successfully', true);
+            }
+
+            return ApiHelper::apiResponse($this->notfound, 'Package service ID required', false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
     /*
