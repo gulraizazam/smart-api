@@ -3151,10 +3151,13 @@ class PackagesController extends Controller
                 $dataInvoice['doctor_id'] = $find_doc->doctor_id;
                 $dataInvoice['active'] = 1;
                 $dataInvoice['is_exclusive'] = 0;
+                $dataInvoice['is_settlement'] = 1;
                 $create_invoice =  Invoices::create($dataInvoice);
                 $dataInvoiceDetail['qty'] = 1;
                 $dataInvoiceDetail['service_id'] = $services->id;
+                $dataInvoiceDetail['package_id'] = $request->package_id;
                 $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
+                 $dataInvoiceDetail['is_settlement'] = 1;
                 InvoiceDetails::create($dataInvoiceDetail);
             } else {
                 $latest_refund->where('id', $request['record_id'])->update(['is_setteled' => 1]);
@@ -3169,6 +3172,11 @@ class PackagesController extends Controller
                 ['cash_flow', '=', 'out'],
                 ['is_setteled', '=', 1],
             ])->delete();
+            InvoiceDetails::whereHas('invoice', function ($query) use ($request) {
+                $query->where('package_id', $request->package_id)
+                      ->where('is_settlement', 1);
+            })->delete();
+           
         }
         $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id']]);
         return ApiHelper::apiResponse($this->success, 'Record updated', true, []);
