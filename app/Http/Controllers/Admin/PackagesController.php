@@ -1582,6 +1582,7 @@ class PackagesController extends Controller
             'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
             'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
             'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
+            'plans_edit_sold_by'=> Gate::allows('plans_edit_sold_by'),
         ];
 
         if ($id) {
@@ -1601,6 +1602,7 @@ class PackagesController extends Controller
                 'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
                 'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
                 'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
+                'plans_edit_sold_by'=> Gate::allows('plans_edit_sold_by'),
             ];
         }
 
