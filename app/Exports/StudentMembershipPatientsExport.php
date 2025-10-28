@@ -12,7 +12,7 @@ class StudentMembershipPatientsExport implements FromCollection, WithHeadings, W
     public function collection()
     {
         return DB::table('packages')
-            ->join('package_services', 'packages.package_id', '=', 'package_services.package_id')
+            ->join('package_services', 'packages.id', '=', 'package_services.package_id')
             ->join('services', 'package_services.service_id', '=', 'services.id')
             ->leftJoin('memberships', 'packages.patient_id', '=', 'memberships.patient_id')
             ->where('services.name', 'Student Membership') // Adjust field name if needed
