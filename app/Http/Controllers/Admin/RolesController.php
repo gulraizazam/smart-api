@@ -322,7 +322,7 @@ class RolesController extends Controller
             'cash_edit' => 'Plan Cash Edit',
 
             'cash_edit_payment_mode' => 'Plan Cash Edit Payment Mode',
-            'edit_sold_by' => 'Plan Edit Sold By',
+            
             'cash_edit_amount' => 'Plan Cash Edit Amount',
             'cash_edit_date' => 'Plan Cash Edit Date',
 
@@ -330,6 +330,7 @@ class RolesController extends Controller
             'log' => 'Log',
             'log_excel' => 'Generate Invoice For Outrange',
             'sms_log' => 'Sms Log',
+            'edit_sold_by' => 'Plan Edit Sold By',
             'add_stock' => 'Add Stock',
             'stock_detail' => 'Stock Detail',
             'sale_price' => 'Sale Price',
