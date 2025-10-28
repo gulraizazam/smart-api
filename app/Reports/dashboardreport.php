@@ -377,7 +377,7 @@ class dashboardreport
         $wherecondtion = [];
         foreach ($location_informations as $key => $location_infomation) {
             if ($where == 'today') {
-                $packagesadvances = PackageAdvances::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
+                $packagesadvances = PackageAdvances::where('deleted_at',null)->whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
                     ->where([
                         ['account_id', '=', $account_id],
                         ['location_id', '=', $location_infomation],
