@@ -48,4 +48,8 @@ class InvoiceDetails extends Model
     {
         return $this->belongsTo('App\Models\Services', 'parent_id', 'service_id');
     }
+    public function invoice(): BelongsTo
+    {
+        return $this->belongsTo('App\Models\Invoices', 'invoice_id');
+    }
 }
