@@ -322,6 +322,7 @@ class RolesController extends Controller
             'cash_edit' => 'Plan Cash Edit',
 
             'cash_edit_payment_mode' => 'Plan Cash Edit Payment Mode',
+            'edit_sold_by' => 'Plan Edit Sold By',
             'cash_edit_amount' => 'Plan Cash Edit Amount',
             'cash_edit_date' => 'Plan Cash Edit Date',
 
