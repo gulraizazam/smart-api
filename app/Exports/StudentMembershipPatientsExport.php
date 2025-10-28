@@ -15,7 +15,7 @@ class StudentMembershipPatientsExport implements FromCollection, WithHeadings, W
             ->join('package_services', 'packages.id', '=', 'package_services.package_id')
             ->join('services', 'package_services.service_id', '=', 'services.id')
             ->leftJoin('memberships', 'packages.patient_id', '=', 'memberships.patient_id')
-            ->where('services.name', 'Student Membership') // Adjust field name if needed
+            ->where('services.name', 'Student Membership Card') // Adjust field name if needed
             ->whereNull('memberships.patient_id') // Not in memberships table
             ->select('packages.patient_id')
             ->distinct()
