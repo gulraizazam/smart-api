@@ -1523,7 +1523,7 @@ class PackagesController extends Controller
                     ['is_tax', '=', '0'],
                     ['is_adjustment', '=', '0'],
                     ['is_refund', '=', '0'],
-                    ['is_setteled', '=', 1],
+                    ['is_setteled', '=', '0'],
                 ])->sum('cash_amount');
                 $settle_tax_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
@@ -1534,7 +1534,14 @@ class PackagesController extends Controller
                     ['is_refund', '=', '0'],
                     ['is_setteled', '=', '0'],
                 ])->sum('cash_amount');
-                $settle_amount_with_tax = $settle_amount + $settle_tax_amount;
+                $refund_settle_amount = PackageAdvances::where([
+                    ['package_id', '=', $package->id],
+                    ['cash_flow', '=', 'out'],
+                    ['is_cancel', '=', '0'],
+                    ['is_refund', '=', '0'],
+                    ['is_setteled', '=', 1],
+                ])->sum('cash_amount');
+                $settle_amount_with_tax = $settle_amount + $settle_tax_amount + $refund_settle_amount;
                 if ($package->is_refund == '0') {
                     $refund_status = 'No';
                 } else {
