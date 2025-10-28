@@ -1523,7 +1523,7 @@ class PackagesController extends Controller
                     ['is_tax', '=', '0'],
                     ['is_adjustment', '=', '0'],
                     ['is_refund', '=', '0'],
-                    ['is_setteled', '=', '0'],
+                    ['is_setteled', '=', 1],
                 ])->sum('cash_amount');
                 $settle_tax_amount = PackageAdvances::where([
                     ['package_id', '=', $package->id],
