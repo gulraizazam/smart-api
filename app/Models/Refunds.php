@@ -196,10 +196,13 @@ class Refunds extends Model
                     $dataInvoice['doctor_id'] =$find_doc->doctor_id;
                     $dataInvoice['active'] = 1;
                     $dataInvoice['is_exclusive'] = 0;
+                    $dataInvoice['is_settlement'] = 1;
+                    $dataInvoice['package_id'] = $request->package_id;
                     $create_invoice =  Invoices::create($dataInvoice);
                     $dataInvoiceDetail['qty'] = 1;
                     $dataInvoiceDetail['service_id'] =$services->id;
                     $dataInvoiceDetail['invoice_id'] = $create_invoice->id;
+                    $dataInvoiceDetail['is_settlement'] = 1;
                     InvoiceDetails::create($dataInvoiceDetail);
                 }
             }
