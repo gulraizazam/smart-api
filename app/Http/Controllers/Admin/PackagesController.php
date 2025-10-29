@@ -3152,6 +3152,7 @@ class PackagesController extends Controller
                 $dataInvoice['active'] = 1;
                 $dataInvoice['is_exclusive'] = 0;
                 $dataInvoice['is_settlement'] = 1;
+                $dataInvoice['package_id'] = $request->package_id;
                 $create_invoice =  Invoices::create($dataInvoice);
                 $dataInvoiceDetail['qty'] = 1;
                 $dataInvoiceDetail['service_id'] = $services->id;
@@ -3172,10 +3173,15 @@ class PackagesController extends Controller
                 ['cash_flow', '=', 'out'],
                 ['is_setteled', '=', 1],
             ])->delete();
-            InvoiceDetails::whereHas('invoice', function ($query) use ($request) {
-                $query->where('package_id', $request->package_id)
-                      ->where('is_settlement', 1);
-            })->delete();
+            $findInvoice = Invoices::where('package_id', $request->package_id)->where('is_settlement', 1)->first();
+            if ($findInvoice) {
+                $findInvoiceDetails = InvoiceDetails::where('invoice_id', $findInvoice->id)->where('is_settlement', 1)->first();
+                if ($findInvoiceDetails) {
+                    $findInvoiceDetails->delete();
+                }
+                $findInvoice->delete();
+            }
+            
            
         }
         $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id']]);
