@@ -680,8 +680,13 @@ class PackagesController extends Controller
     }
     public function makePackagesServicesData(Request $request)
     {
-        
+
         $soldBy = $request->sold_by;
+        $soldByName = '-';
+        if ($soldBy) {
+            $soldByUser = User::find($soldBy);
+            $soldByName = $soldByUser ? $soldByUser->name : '-';
+        }
         $bundle = Bundles::find($request->bundle_id);
         $discount = Discounts::find($request->discount_id);
         $allBundleServices = BundleHasServices::where('bundle_id', $request->bundle_id)->get();
@@ -876,6 +881,7 @@ class PackagesController extends Controller
             'net_amount' => $net_amount,
             'total' => $total,
             'sold_by' => $soldBy,
+            'sold_by_name' => $soldByName,
         ];
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
@@ -1717,9 +1723,9 @@ class PackagesController extends Controller
             /*Due to finance editing we calculate that "total" through package bundle otherwise we can use package->total_amount*/
             $total_price = PackageBundles::where('package_id', '=', $id)->sum('tax_including_price');
 
-            $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
+            $packagebundles = PackageBundles::with(['bundle', 'packageservice.soldBy'])->where('package_id', '=', $package->id)->get();
 
-            $packageservices = PackageService::with('service')->where('package_id', '=', $package->id)->get();
+            $packageservices = PackageService::with('service', 'soldBy')->where('package_id', '=', $package->id)->get();
 
             $packageadvances = PackageAdvances::with('paymentmode')->where([
                 ['package_id', '=', $package->id],
