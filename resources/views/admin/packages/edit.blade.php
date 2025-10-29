@@ -177,6 +177,7 @@
                                 <th>Amount</th>
                                 <th>Tax </th>
                                 <th>Total.</th>
+                                <th>Sold By</th>
                                 <!-- <th>Is Consumed</th> -->
                                 <th>Action</th>
                             </tr>
@@ -184,7 +185,7 @@
 
                         <tbody id="edit_plan_services">
                             <tr class="text-center service_not_found">
-                                <td colspan="8">No record found</td>
+                                <td colspan="10">No record found</td>
                             </tr>
                         </tbody>
                     </table>
