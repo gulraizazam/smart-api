@@ -1807,7 +1807,7 @@ class PackagesController extends Controller
 
             // Fetch active doctors as an associative array
             $allDoctors = User::whereIn('id', $doctorsIds)
-                ->where('active', 1)
+               // ->where('active', 1)
                 ->pluck('name', 'id')
                 ->toArray();
 
