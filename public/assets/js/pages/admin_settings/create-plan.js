@@ -655,7 +655,7 @@ function setEditData(response) {
     });
 }
 
-        let service_options = noRecordFoundTable(10);
+        let service_options = noRecordFoundTable(9);
 
         if (packagebundles.length) {
             service_options = '';
@@ -709,12 +709,6 @@ function setEditData(response) {
                 //service_options += '<td>' + packagebundle.tax_percenatage + '</td>';
                 service_options += '<td>' + packagebundle.tax_price + '</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
-                // Get sold by name from first service in bundle
-                let soldByName = '-';
-                if (packagebundle.packageservice && packagebundle.packageservice.length > 0 && packagebundle.packageservice[0].sold_by) {
-                    soldByName = packagebundle.packageservice[0].sold_by.name || '-';
-                }
-                service_options += '<td>' + soldByName + '</td>';
                 // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
                 // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
                 service_options += del_icon;
@@ -1057,7 +1051,7 @@ function displayData(response) {
         }
 
 
-        let service_options = noRecordFoundTable(10);
+        let service_options = noRecordFoundTable(9);
 
         if (packagebundles.length) {
             service_options = '';
@@ -2598,7 +2592,6 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
                             "<td>" + grandTotal + "</td>" +
-                            "<td>" + (resposne.data.servicesData.sold_by_name || '-') + "</td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
@@ -2939,7 +2932,6 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
                             "<td>" + grandTotal + "</td>" +
-                            "<td>" + (resposne.data.servicesData.sold_by_name || '-') + "</td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
