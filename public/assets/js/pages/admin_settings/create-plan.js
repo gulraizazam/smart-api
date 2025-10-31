@@ -2955,7 +2955,7 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
                             "<td>" + grandTotal + "</td>" +
-                            "<td></td>" +
+                            "<td><span>-</span></td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
