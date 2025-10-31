@@ -1553,6 +1553,15 @@ class PackagesController extends Controller
                 } else {
                     $refund_status = 'Yes';
                 }
+                // Get unique sold_by names for this package
+                $soldByNames = PackageService::where('package_id', '=', $package->id)
+                    ->with('soldBy:id,name')
+                    ->get()
+                    ->pluck('soldBy.name')
+                    ->filter()
+                    ->unique()
+                    ->implode(', ');
+
                 $records['data'][] = [
                     'id' => $package->id,
                     'patient_id' => GeneralFunctions::patientSearchStringAdd($package->user?->id),
@@ -1561,6 +1570,7 @@ class PackagesController extends Controller
                     'location_id' => $package->location->city->name . '-' . $package->location->name,
                     'session_count' => $session_count,
                     'total' => number_format($packageservices_price),
+                    'sold_by_name' => $soldByNames ?: 'N/A',
                     'cash_receive' => number_format($cash_receive),
                     'refunded' => number_format($package_is_refunded_amount),
                     'settle_amount' => number_format($settle_amount_with_tax),

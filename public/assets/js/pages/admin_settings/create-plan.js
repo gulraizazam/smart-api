@@ -368,6 +368,11 @@ var table_columns = [
         sortable: false,
         width: 70,
     }, {
+        field: 'sold_by_name',
+        title: 'Sold By',
+        sortable: false,
+        width: 80,
+    }, {
         field: 'actions',
         title: 'Actions',
         sortable: false,
