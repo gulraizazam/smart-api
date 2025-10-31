@@ -125,6 +125,13 @@
                         </div>
                         <input type="text" readonly name="net_amount_1" class="form-control" id="net_amount_1">
                     </div>
+                    <div class="fv-row col-md-3 mt-5" id="sold_by_div">
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Sold By <span class="text text-danger">*</span></label>
+                        <select  id="add_sold_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="sold_by">
+
+                        </select>
+                        <small class="text-danger ml-1 mt-1"><b id="add_sold_by_errorr" class="create-plan-error"></b></small>
+                    </div>
                     <div class="fv-row col-md-2 mt-1">
                         <div class="text-center mt-10">
                             <button type="button" id="AddPackage" class="btn btn-primary float-right spinner-button-add">
