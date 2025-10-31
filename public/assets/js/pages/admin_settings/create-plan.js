@@ -2955,7 +2955,7 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.servicesData.bundlesData.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.servicesData.bundlesData.tax_price + "</td>" +
                             "<td>" + grandTotal + "</td>" +
-                            
+                            "<td><span>-</span></td>" +
                             "<td  class='d-none'>" +
                             "<input type='hidden' class='bundle_id'  name='bundle_id' value='" + resposne.data.servicesData.bundlesData.bundle_id + "' />" +
 
@@ -3036,8 +3036,8 @@ jQuery(document).ready(function () {
                 Amount: $(this).find('td:nth-child(6)').text(),
                 Tax: $(this).find('td:nth-child(7)').text(),
                 Total: $(this).find('td:nth-child(8)').text(),
-                bundleId: $(this).find('td:nth-child(9)').find('input').val(),
-                sold_by: $(this).find('td:nth-child(10)').find("input[name='sold_by[]']").val()
+                bundleId: $(this).find('td:nth-child(10)').find('input').val(),
+                sold_by: $(this).find('td:nth-child(11)').find("input[name='sold_by[]']").val()
 
             });
         });
