@@ -2086,9 +2086,9 @@ class PackagesController extends Controller
 
         $package = Packages::with('user', 'location')->find($id);
 
-        $packagebundles = PackageBundles::with('bundle')->where('package_id', '=', $package->id)->get();
+        $packagebundles = PackageBundles::with(['bundle', 'packageservice.soldBy'])->where('package_id', '=', $package->id)->get();
 
-        $packageservices = PackageService::with('service')->where('package_id', '=', $package->id)->get();
+        $packageservices = PackageService::with('service', 'soldBy')->where('package_id', '=', $package->id)->get();
         $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
         $packageadvances = PackageAdvances::with('paymentmode')->where([
             ['package_id', '=', $package->id],

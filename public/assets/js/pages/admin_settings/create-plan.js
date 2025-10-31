@@ -660,7 +660,7 @@ function setEditData(response) {
     });
 }
 
-        let service_options = noRecordFoundTable(9);
+        let service_options = noRecordFoundTable(10);
 
         if (packagebundles.length) {
             service_options = '';
@@ -716,6 +716,18 @@ function setEditData(response) {
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
                 // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
                 // service_options += '<td id="cc-'+packagebundle.id+'"></td>';
+
+                // Get sold_by names for this bundle
+                let soldByNames = [];
+                Object.values(packageservices).forEach(function (ps) {
+                    if (ps.package_bundle_id == packagebundle.id && ps.sold_by && ps.sold_by.name) {
+                        if (!soldByNames.includes(ps.sold_by.name)) {
+                            soldByNames.push(ps.sold_by.name);
+                        }
+                    }
+                });
+                service_options += '<td>' + (soldByNames.length > 0 ? soldByNames.join(', ') : 'N/A') + '</td>';
+
                 service_options += del_icon;
                 service_options += '</tr>';
 
@@ -1056,7 +1068,7 @@ function displayData(response) {
         }
 
 
-        let service_options = noRecordFoundTable(9);
+        let service_options = noRecordFoundTable(10);
 
         if (packagebundles.length) {
             service_options = '';
@@ -1095,6 +1107,17 @@ function displayData(response) {
 
                 service_options += '<td>' + packagebundle.tax_price + '</td>';
                 service_options += '<td>' + packagebundle.tax_including_price + '</td>';
+
+                // Get sold_by names for this bundle (for display view)
+                let soldByNames = [];
+                Object.values(packageservices).forEach(function (ps) {
+                    if (ps.package_bundle_id == packagebundle.id && ps.sold_by && ps.sold_by.name) {
+                        if (!soldByNames.includes(ps.sold_by.name)) {
+                            soldByNames.push(ps.sold_by.name);
+                        }
+                    }
+                });
+                service_options += '<td>' + (soldByNames.length > 0 ? soldByNames.join(', ') : 'N/A') + '</td>';
 
                 service_options += '</tr>';
 
