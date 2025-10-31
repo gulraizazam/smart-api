@@ -634,7 +634,7 @@ jQuery(document).ready(function () {
                             "<td>" + resposne.data.myarray.record.tax_exclusive_net_amount.toLocaleString() + "</td>" +
                             "<td>" + resposne.data.myarray.record.tax_percenatage + "</td>" +
                             "<td>" + resposne.data.myarray.record.tax_including_price.toLocaleString() + "</td>" +
-                            "<td>" + resposne.data.myarray.record.sold_by_name + "</td>" +
+                            
                             "<td>" +
                             "<input type='hidden' class='package_bundles' name='package_bundles[]' value='" + resposne.data.myarray.record.id + "' />" +
                             "<button type='button' class='btn btn-icon btn-sm btn-light btn-hover-danger btn-sm' onClick='deletePlanRow(" + resposne.data.myarray.record.id + ")'>" + trashBtn() + "</button>" +
