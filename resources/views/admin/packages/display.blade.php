@@ -61,6 +61,7 @@
 
                                     <th>Tax Price</th>
                                     <th>Total</th>
+                                    <th>Sold By</th>
                                 </tr>
                             </thead>
 
