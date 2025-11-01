@@ -720,7 +720,7 @@ class DoctorsController extends Controller
             }
             $doctor = User::find($id);
             $location = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
-            $doctor_has_location = DoctorHasLocations::with(['service', 'location.city'])->where('user_id', '=', $doctor->id)->get();
+            $doctor_has_location = DoctorHasLocations::with(['service', 'location.city'])->where('user_id', '=', $doctor->id)->where('is_allocated',1)->get();
 
             //            return view('admin.doctors.location', compact('doctor', 'location', 'doctor_has_location'));
             return ApiHelper::apiResponse($this->success, 'Service Allocated', true, [
