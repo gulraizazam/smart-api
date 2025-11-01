@@ -772,7 +772,7 @@ class DoctorsController extends Controller
             $data['service_id'] = $myArray[1];
             $service = Services::where(['id' => $data['service_id']])->first();
             $data['end_node'] = $service->end_node;
-
+            $data['is_allocated']=1;
             $checked_service = DoctorHasLocations::where([
                 'location_id' => $myArray[0],
                 'service_id' => $myArray[1],
@@ -838,8 +838,11 @@ class DoctorsController extends Controller
             if (! Gate::allows('doctors_allocate')) {
                 return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
             }
-            DoctorHasLocations::find($request->id)->delete();
-
+          //  DoctorHasLocations::find($request->id)->delete();
+            $doctorService = DoctorHasLocations::find($request->id);
+            if ($doctorService) {
+                $doctorService->update(['is_allocated'=>0]);
+            }
             return ApiHelper::apiResponse($this->success, 'Doctor location has been deleted!', true, ['id' => $request->id]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
