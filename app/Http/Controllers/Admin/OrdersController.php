@@ -578,7 +578,7 @@ class OrdersController extends Controller
             ->pluck('user_id')
             ->toArray();
 
-        $doctors = DoctorHasLocations::where('location_id', $request->location_id)
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where('location_id', $request->location_id)
             ->pluck('user_id')
             ->toArray();
 
@@ -602,7 +602,7 @@ class OrdersController extends Controller
     }
     public function getDoctors(Request $request)
     {
-        $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where('location_id', $request->location_id)->pluck('user_id')->toArray();
 
         // Fetch active doctors as an associative array
         $users = User::whereIn('id', $doctors)
@@ -638,7 +638,7 @@ class OrdersController extends Controller
     }
     public function getCentreDoctors(Request $request)
     {
-        $doctors = DoctorHasLocations::where('location_id', $request->location_id)->pluck('user_id')->toArray();
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where('location_id', $request->location_id)->pluck('user_id')->toArray();
 
         // Fetch active doctors as an associative array
         $users = User::whereIn('id', $doctors)

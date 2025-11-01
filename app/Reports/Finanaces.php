@@ -2725,7 +2725,7 @@ class Finanaces
         }
 
 
-        $consultants = DoctorHasLocations::whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
+        $consultants = DoctorHasLocations::where('is_allocated',1)->whereIn('location_id', $locations)->when(!empty($data['doctor_id']), function ($query) use ($data) {
             return $query->where('user_id', $data['doctor_id']);
         })
             ->distinct('user_id')

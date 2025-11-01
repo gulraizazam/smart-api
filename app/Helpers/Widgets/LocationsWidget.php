@@ -334,7 +334,7 @@ class LocationsWidget
          */
 
         // 1)
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
             'slug' => 'all',
             'account_id' => $account_id,
         ])->select('id')->first()->id])->select('user_id')->get();
@@ -354,7 +354,7 @@ class LocationsWidget
             'region_id' => $location->region_id,
         ])->select('id')->first();
 
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
             'slug' => 'region',
             'region_id' => $location->region_id,
         ])->select('id')->first()?->id])->select('user_id')->get();
@@ -379,7 +379,7 @@ class LocationsWidget
     }
     public static function loadConsultantDoctorByLocation($location_id, $account_id)
 {
-    $doctorIds = DoctorHasLocations::where('location_id', $location_id)
+    $doctorIds = DoctorHasLocations::where('is_allocated',1)->where('location_id', $location_id)
         ->pluck('user_id')
         ->toArray();
 
@@ -409,7 +409,7 @@ class LocationsWidget
          */
 
         // 1)
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
             'slug' => 'all',
             'account_id' => $account_id,
         ])->select('id')->first()->id])->select('user_id')->get();
@@ -429,7 +429,7 @@ class LocationsWidget
             'region_id' => $location->region_id,
         ])->select('id')->first();
 
-        $doctors = DoctorHasLocations::where(['location_id' => Locations::where([
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where(['location_id' => Locations::where([
             'slug' => 'region',
             'region_id' => $location->region_id,
         ])->select('id')->first()->id])->select('user_id')->get();
@@ -685,7 +685,7 @@ class LocationsWidget
         $doctor_services_array = [];
 
         // 1. Find All Centres
-        $rootlocation = DoctorHasLocations::where([
+        $rootlocation = DoctorHasLocations::where('is_allocated',1)->where([
             'location_id' => Locations::where([
                 'slug' => 'all',
                 'account_id' => $account_id,
@@ -695,7 +695,7 @@ class LocationsWidget
 
         if ($rootlocation->count()) {
             //      Find All Services
-            $rootservice = DoctorHasLocations::where([
+            $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
                 'service_id' => Services::where([
                     'slug' => 'all',
                     'account_id' => $account_id,
@@ -730,7 +730,7 @@ class LocationsWidget
                 }
             } else {
                 //      Find Allocated Services
-                $doctorservices = DoctorHasLocations::where([
+                $doctorservices = DoctorHasLocations::where('is_allocated',1)->where([
                     'user_id' => $doctor_id,
                 ])->get();
 
@@ -761,7 +761,7 @@ class LocationsWidget
             $singleLocation = Locations::find($location_id);
             $location_count = Locations::where(['slug' => 'region', 'account_id' => $account_id, 'region_id' => $singleLocation->region_id])->count();
             if ($location_count) {
-                $regionlocation = DoctorHasLocations::where([
+                $regionlocation = DoctorHasLocations::where('is_allocated',1)->where([
                     'location_id' => Locations::where([
                         'slug' => 'region',
                         'account_id' => $account_id,
@@ -770,7 +770,7 @@ class LocationsWidget
                     'user_id' => $doctor_id,
                 ])->get();
             } else {
-                $regionlocation = DoctorHasLocations::where([
+                $regionlocation = DoctorHasLocations::where('is_allocated',1)->where([
                     'location_id' => Locations::where([
                         'slug' => 'region',
                         'account_id' => $account_id,
@@ -782,7 +782,7 @@ class LocationsWidget
 
             if ($regionlocation->count()) {
                 //      Find All Services
-                $rootservice = DoctorHasLocations::where([
+                $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
                     'service_id' => Services::where([
                         'slug' => 'all',
                         'account_id' => $account_id,
@@ -817,7 +817,7 @@ class LocationsWidget
                     }
                 } else {
                     //      Find Allocated Services
-                    $doctorservices = DoctorHasLocations::where([
+                    $doctorservices = DoctorHasLocations::where('is_allocated',1)->where([
                         'user_id' => $doctor_id,
                     ])->get();
 
@@ -845,14 +845,14 @@ class LocationsWidget
                 }
             } else {
                 // 3. Find Single Centre
-                $singlelocation = DoctorHasLocations::where([
+                $singlelocation = DoctorHasLocations::where('is_allocated',1)->where([
                     'user_id' => $doctor_id,
                     'location_id' => $location_id,
                 ])->get();
 
                 if ($singlelocation->count()) {
                     //      Find All Services
-                    $rootservice = DoctorHasLocations::where([
+                    $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
                         'service_id' => Services::where([
                             'slug' => 'all',
                             'account_id' => $account_id,
@@ -888,7 +888,7 @@ class LocationsWidget
                         }
                     } else {
                         //      Find Allocated Services
-                        $doctorservices = DoctorHasLocations::where([
+                        $doctorservices = where('is_allocated',1)->where([
                             'user_id' => $doctor_id,
                             'location_id' => $location_id,
                         ])->get();

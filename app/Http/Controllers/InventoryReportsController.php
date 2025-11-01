@@ -143,7 +143,7 @@ class InventoryReportsController extends Controller
                 //     ->whereIn('location_id', $locationId)
                 //     ->pluck('user_id');
 
-                    $doctors = DoctorHasLocations::where('location_id',$locationId)->pluck('user_id')->toArray();
+                    $doctors = DoctorHasLocations::where('is_allocated',1)->where('location_id',$locationId)->pluck('user_id')->toArray();
 
                     // Fetch active doctors as an associative array
                     $users = User::whereIn('id', $doctors)

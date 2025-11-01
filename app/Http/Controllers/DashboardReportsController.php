@@ -2804,7 +2804,7 @@ class DashboardReportsController extends Controller
         } else {
             $locations = [$request->centre_id];
         }
-        $consultant = DoctorHasLocations::whereIn('location_id', $locations)->when($request->doc_id != null && $request->doc_id != 0 && $request->doc_id != "all-docs", function ($query) use ($request) {
+        $consultant = DoctorHasLocations::where('is_allocated',1)->whereIn('location_id', $locations)->when($request->doc_id != null && $request->doc_id != 0 && $request->doc_id != "all-docs", function ($query) use ($request) {
             return $query->whereIn('user_id', [$request->doc_id]);
         })
             ->distinct('user_id')
@@ -3056,7 +3056,7 @@ class DashboardReportsController extends Controller
         }
 
         // Step 2: Get doctors assigned to those locations
-        $doctorIds = DoctorHasLocations::whereIn('location_id', $locationIds)
+        $doctorIds = where('is_allocated',1)->whereIn('location_id', $locationIds)
             ->when($request->doc_id && $request->doc_id !== '0' && $request->doc_id !== 'all-docs', function ($query) use ($request) {
                 return $query->where('user_id', $request->doc_id);
             })
@@ -3354,7 +3354,7 @@ class DashboardReportsController extends Controller
     {
         if ($request->centre_id == 'all') {
 
-            $consultant = DoctorHasLocations::distinct('user_id')
+            $consultant = DoctorHasLocations::where('is_allocated',1)->distinct('user_id')
                 ->pluck('user_id');
 
             $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
@@ -3366,7 +3366,7 @@ class DashboardReportsController extends Controller
             //     ->distinct('user_id')
             //     ->get();
         } else {
-            $consultant = DoctorHasLocations::where('location_id', $request->centre_id)
+            $consultant = DoctorHasLocations::where('is_allocated',1)->where('location_id', $request->centre_id)
                 ->distinct('user_id')
                 ->pluck('user_id');
             $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();

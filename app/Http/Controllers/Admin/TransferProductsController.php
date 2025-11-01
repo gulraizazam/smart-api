@@ -360,7 +360,7 @@ class TransferProductsController extends Controller
     public function getProducts(Request $request)
     {
         $products = Product::getProductsAjax($request, Auth::User()->account_id);
-        $doctors = DoctorHasLocations::where('location_id', $request->from_id)->pluck('user_id')->toArray();
+        $doctors = DoctorHasLocations::where('is_allocated',1)->where('is_allocated',1)->where('location_id', $request->from_id)->pluck('user_id')->toArray();
     
         // Fetch active doctors as an associative array
         $users = User::whereIn('id', $doctors)

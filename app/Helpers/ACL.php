@@ -32,7 +32,7 @@ class ACL
             $locations = Locations::whereActive(1)->where('name', '!=', 'All Centres')->get()->pluck('id');
         } else {
             if (Auth::user()->user_type_id == Config::get('constants.practitioner_id')) {
-                $locations = DoctorHasLocations::where('user_id', '=', Auth::user()->id)->groupBy('location_id')->get()->pluck('location_id');
+                $locations = DoctorHasLocations::where('user_id', '=', Auth::user()->id)->where('is_allocated',1)->groupBy('location_id')->get()->pluck('location_id');
             } else {
                 $locations = Auth::user()->user_has_locations()->pluck('location_id');
             }
@@ -88,7 +88,7 @@ class ACL
         } else {
             if (Auth::user()->user_type_id == Config::get('constants.practitioner_id')) {
 
-                $cities = Locations::whereIn('id', DoctorHasLocations::where('user_id', '=', Auth::user()->id)->groupBy('location_id')->get()->pluck('location_id'))
+                $cities = Locations::whereIn('id', DoctorHasLocations::where('user_id', '=', Auth::user()->id)->where('is_allocated',1)->groupBy('location_id')->get()->pluck('location_id'))
                     ->where('account_id', '=', Auth::User()->account_id)
                     ->get()->pluck('city_id');
             } else {
