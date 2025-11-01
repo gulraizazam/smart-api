@@ -1809,7 +1809,7 @@ class PackagesController extends Controller
                     $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
                 }
             }
-             $doctorsIds = DoctorHasLocations::where('is_allocated',1)->where('location_id', $package->location_id)->pluck('user_id')->toArray();
+             $doctorsIds = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
 
             // Fetch active doctors as an associative array
             $allDoctors = User::whereIn('id', $doctorsIds)
