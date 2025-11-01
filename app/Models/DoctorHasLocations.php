@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class DoctorHasLocations extends Model
 {
-    protected $fillable = ['user_id', 'location_id', 'service_id', 'end_node'];
+    protected $fillable = ['user_id', 'location_id', 'service_id', 'end_node','is_allocated'];
 
     protected $table = 'doctor_has_locations';
 
