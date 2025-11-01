@@ -2668,7 +2668,7 @@ class AppointmentsController extends Controller
                 $service = $parent->parent_id;
             }
             $doctor_has_service = DoctorHasLocations::where('is_allocated',1)->where(['user_id' => $request->doctor_id, 'service_id' => $service,'location_id'=>$request->location_id])->first();
-            dd($doctor_has_service);
+           
             if ($doctor_has_service) {
                 $validator = $this->verifyUpdateFields($request);
                 if ($validator->fails()) {
