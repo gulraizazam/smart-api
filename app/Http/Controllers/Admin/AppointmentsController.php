@@ -1451,7 +1451,7 @@ class AppointmentsController extends Controller
                 $locations = Locations::where('id', '=', $userHasLocation->location_id)->first();
                 $city_id = $locations->city->id;
                 $location_id = $locations->id;
-                $doctors = DoctorHasLocations::where('location_id', '=', $location_id)->first();
+                $doctors = DoctorHasLocations::where('is_allocated',1)->where('location_id', '=', $location_id)->first();
                 $urlquery = '?city_id='.$city_id.'&location_id='.$location_id;
                 if ($doctors) {
                     $urlquery = '?city_id='.$city_id.'&location_id='.$location_id.'&doctor_id='.$doctors->user_id;
@@ -1466,7 +1466,7 @@ class AppointmentsController extends Controller
          * Set dropdown for all asthetic operators/ consultants
          */
         if ($user->user_type_id == config('constants.practitioner_id')) {
-            $userHasLocation = DoctorHasLocations::join('locations', 'doctor_has_locations.location_id', '=', 'locations.id')->where('doctor_has_locations.user_id', '=', $user->id)->orderby('name', 'asc')->first();
+            $userHasLocation = DoctorHasLocations::join('locations', 'doctor_has_locations.location_id', '=', 'locations.id')->where('doctor_has_locations.is_allocated',1)->where('doctor_has_locations.user_id', '=', $user->id)->orderby('name', 'asc')->first();
             if ($userHasLocation) {
                 $locations = Locations::where('id', '=', $userHasLocation->location_id)->first();
                 $city_id = $locations->city_id;
@@ -2241,7 +2241,7 @@ class AppointmentsController extends Controller
         }
         if(Gate::allows('edit_after_arrived')){
 
-            $doctor_ids = DoctorHasLocations::where('location_id' ,$appointment->location_id )->groupBy('user_id')->pluck('user_id');
+            $doctor_ids = DoctorHasLocations::where('is_allocated',1)->where('location_id' ,$appointment->location_id )->groupBy('user_id')->pluck('user_id');
 
             $doctors = Doctors::whereIn('id',$doctor_ids)->where('active' , 1)->get()->pluck('name', 'id');
 
@@ -2496,7 +2496,7 @@ class AppointmentsController extends Controller
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
-        $doctor_has_service = DoctorHasLocations::where(['user_id' => $request->doctor_id])->first();
+        $doctor_has_service = DoctorHasLocations::where('is_allocated',1)->where(['user_id' => $request->doctor_id])->first();
         if ($doctor_has_service->service_id == 13) {
             $validator = $this->verifyUpdateFields($request);
             if ($validator->fails()) {
@@ -2666,7 +2666,7 @@ class AppointmentsController extends Controller
             } else {
                 $service = $parent->parent_id;
             }
-            $doctor_has_service = DoctorHasLocations::where(['user_id' => $request->doctor_id, 'service_id' => $service])->first();
+            $doctor_has_service = DoctorHasLocations::where('is_allocated',1)->where(['user_id' => $request->doctor_id, 'service_id' => $service])->first();
             if ($doctor_has_service) {
                 $validator = $this->verifyUpdateFields($request);
                 if ($validator->fails()) {
@@ -4389,7 +4389,7 @@ class AppointmentsController extends Controller
 
                 $city_id = $locations->city_id;
                 $location_id = $locations->id;
-                $doctors = DoctorHasLocations::where('location_id', '=', $location_id)->first();
+                $doctors = DoctorHasLocations::where('is_allocated',1)->where('location_id', '=', $location_id)->first();
                 $urlquery = '?city_id='.$city_id.'&location_id='.$location_id;
                 if ($doctors) {
                     $urlquery = '?city_id='.$city_id.'&location_id='.$location_id.'&doctor_id='.$doctors->user_id;
@@ -4407,7 +4407,7 @@ class AppointmentsController extends Controller
          * Set dropdown for all asthetic operators/ consultants
          */
         if ($user->user_type_id == config('constants.practitioner_id')) {
-            $userHasLocation = DoctorHasLocations::join('locations', 'doctor_has_locations.location_id', '=', 'locations.id')->where('doctor_has_locations.user_id', '=', $user->id)->orderby('name', 'asc')->first();
+            $userHasLocation = DoctorHasLocations::join('locations', 'doctor_has_locations.location_id', '=', 'locations.id')->where('is_allocated',1)->where('doctor_has_locations.user_id', '=', $user->id)->orderby('name', 'asc')->first();
             if ($userHasLocation) {
                 $locations = Locations::where('id', '=', $userHasLocation->location_id)->first();
                 $resource = Resources::where('location_id', '=', $userHasLocation->location_id)->first();

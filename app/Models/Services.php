@@ -609,7 +609,7 @@ class Services extends BaseModal
             self::where(['parent_id' => $id, 'account_id' => $account_id])->count() ||
             PackageService::where(['service_id' => $id])->count() ||
             DiscountHasLocations::where(['service_id' => $id])->count() ||
-            DoctorHasLocations::where(['service_id' => $id])->count() ||
+            DoctorHasLocations::where('is_allocated',1)->where(['service_id' => $id])->count() ||
             ServiceHasLocations::where(['service_id' => $id])->count() ||
             Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')->where(['invoice_details.service_id' => $id], ['invoices.invoice_status_id' => $invoicestatus->id ?? 0])->count() ||
             Appointments::where(['service_id' => $id])->count() ||

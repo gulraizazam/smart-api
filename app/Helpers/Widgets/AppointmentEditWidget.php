@@ -132,7 +132,7 @@ class AppointmentEditWidget
         $doctor_services_array = [];
 
         // 1. Find All Centres
-        $rootlocation = DoctorHasLocations::where([
+        $rootlocation = DoctorHasLocations::where('is_allocated',1)->where([
             'location_id' => Locations::where([
                 'slug' => 'all',
                 'account_id' => $account_id,
@@ -142,7 +142,7 @@ class AppointmentEditWidget
 
         if ($rootlocation->count()) {
             //      Find All Services
-            $rootservice = DoctorHasLocations::where([
+            $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
                 'service_id' => Services::where([
                     'slug' => 'all',
                     'account_id' => $account_id,
@@ -177,7 +177,7 @@ class AppointmentEditWidget
                 }
             } else {
                 //      Find Allocated Services
-                $doctorservices = DoctorHasLocations::where([
+                $doctorservices = DoctorHasLocations::where('is_allocated',1)->where([
                     'user_id' => $doctor_id,
                 ])->get();
 
@@ -206,7 +206,7 @@ class AppointmentEditWidget
         } else {
             // 2. Find All Regions
             $singleLocation = Locations::find($location_id);
-            $regionlocation = DoctorHasLocations::where([
+            $regionlocation = DoctorHasLocations::where('is_allocated',1)->where([
                 'location_id' => Locations::where([
                     'slug' => 'region',
                     'account_id' => $account_id,
@@ -217,7 +217,7 @@ class AppointmentEditWidget
 
             if ($regionlocation->count()) {
                 //      Find All Services
-                $rootservice = DoctorHasLocations::where([
+                $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
                     'service_id' => Services::where([
                         'slug' => 'all',
                         'account_id' => $account_id,
@@ -252,7 +252,7 @@ class AppointmentEditWidget
                     }
                 } else {
                     //      Find Allocated Services
-                    $doctorservices = DoctorHasLocations::where([
+                    $doctorservices = DoctorHasLocations::where('is_allocated',1)->where([
                         'user_id' => $doctor_id,
                     ])->get();
 
@@ -280,14 +280,14 @@ class AppointmentEditWidget
                 }
             } else {
                 // 3. Find Single Centre
-                $singlelocation = DoctorHasLocations::where([
+                $singlelocation = DoctorHasLocations::where('is_allocated',1)->where([
                     'user_id' => $doctor_id,
                     'location_id' => $location_id,
                 ])->get();
 
                 if ($singlelocation->count()) {
                     //      Find All Services
-                    $rootservice = DoctorHasLocations::where([
+                    $rootservice = DoctorHasLocations::where('is_allocated',1)->where([
                         'service_id' => Services::where([
                             'slug' => 'all',
                             'account_id' => $account_id,
@@ -323,7 +323,7 @@ class AppointmentEditWidget
                         }
                     } else {
                         //      Find Allocated Services
-                        $doctorservices = DoctorHasLocations::where([
+                        $doctorservices = DoctorHasLocations::where('is_allocated',1)->where([
                             'user_id' => $doctor_id,
                             'location_id' => $location_id,
                         ])->get();

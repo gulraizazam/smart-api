@@ -369,7 +369,7 @@ class User extends Authenticatable
     public static function isExists($id, $account_id)
     {
         if (
-            DoctorHasLocations::where(['user_id' => $id])->count() ||
+            DoctorHasLocations::where('is_allocated',1)->where(['user_id' => $id])->count() ||
             Appointments::where(['doctor_id' => $id])->count()
         ) {
             return true;
