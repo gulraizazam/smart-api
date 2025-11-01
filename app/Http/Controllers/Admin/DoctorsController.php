@@ -840,7 +840,7 @@ class DoctorsController extends Controller
             }
           //  DoctorHasLocations::find($request->id)->delete();
             $doctorService = DoctorHasLocations::find($request->id);
-            dd( $doctorService);
+           
             if ($doctorService) {
                 $doctorService->update(['is_allocated'=>0]);
             }
