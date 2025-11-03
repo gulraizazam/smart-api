@@ -3056,7 +3056,7 @@ class DashboardReportsController extends Controller
         }
 
         // Step 2: Get doctors assigned to those locations
-        $doctorIds = where('is_allocated',1)->whereIn('location_id', $locationIds)
+        $doctorIds =DoctorHasLocations::where('is_allocated',1)->whereIn('location_id', $locationIds)
             ->when($request->doc_id && $request->doc_id !== '0' && $request->doc_id !== 'all-docs', function ($query) use ($request) {
                 return $query->where('user_id', $request->doc_id);
             })
