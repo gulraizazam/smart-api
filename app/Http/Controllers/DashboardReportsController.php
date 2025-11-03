@@ -2496,99 +2496,99 @@ class DashboardReportsController extends Controller
     }
 
     public function CentreWiseArrival(Request $request)
-{
-    $lables = [];
-    $total_apts = [];
-    $arrived_apts = [];
-    $walkin_apts = [];
-    $center_name = [];
-    
-    try {
-        $role_id = Role::where(['name' => 'FDM'])->first()->id;
-        $period = $request->period == '' ? 'thismonth' : $request->period;
-        $fdm_users = RoleHasUsers::where(['role_id' => $role_id])->pluck('user_id')->toArray();
-        $center_id = $request->centre_id == 'All' ? ACL::getUserCentres() : [$request->centre_id];
+    {
+        $lables = [];
+        $total_apts = [];
+        $arrived_apts = [];
+        $walkin_apts = [];
+        $center_name = [];
+        
+        try {
+            $role_id = Role::where(['name' => 'FDM'])->first()->id;
+            $period = $request->period == '' ? 'thismonth' : $request->period;
+            $fdm_users = RoleHasUsers::where(['role_id' => $role_id])->pluck('user_id')->toArray();
+            $center_id = $request->centre_id == 'All' ? ACL::getUserCentres() : [$request->centre_id];
 
-        // Build center names array
-        foreach ($center_id as $data) {
-            $location = Locations::find($data);
-            if ($location) {
-                array_push($center_name, $location->name);
-            }
-        }
-
-        $periods = [
-            'today' => [
-                'start_date' => Carbon::now()->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
-            ],
-            'yesterday' => [
-                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'last7days' => [
-                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'week' => [
-                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'thismonth' => [
-                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'lastmonth' => [
-                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
-            ],
-        ];
-
-        $stats = AppointmentsDailyStats::select('centre_id')
-            ->selectRaw('count(*) as total')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
-            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-            ->whereIn('centre_id', $center_id)
-            ->groupBy('centre_id')
-            ->get()->toArray();
-
-        if (!empty($stats)) {
-            foreach ($stats as $stat) {
-                $centre = Locations::find($stat['centre_id']);
-                if ($centre) {
-                    array_push($lables, $centre['name']);
-                    array_push($total_apts, (int) $stat['total']);
-                    array_push($arrived_apts, (int) $stat['arrived']);
-                    array_push($walkin_apts, (int) $stat['walkin']);
+            // Build center names array
+            foreach ($center_id as $data) {
+                $location = Locations::find($data);
+                if ($location) {
+                    array_push($center_name, $location->name);
                 }
             }
-        } else {
-            // When no stats found, initialize arrays with zeros for each center
-            $lables = $center_name;
-            $total_apts = array_fill(0, count($center_name), 0);
-            $arrived_apts = array_fill(0, count($center_name), 0);
-            $walkin_apts = array_fill(0, count($center_name), 0);
-        }
 
-        return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
-            'bar' => $lables,
-            'total' => $total_apts,
-            'arrived' => $arrived_apts,
-            'walkin' => $walkin_apts,
-        ]);
-        
-    } catch (\Exception $e) {
-        \Log::error('CentreWiseArrival Error: ' . $e->getMessage());
-        
-        return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
-            'bar' => [],
-            'total' => [],
-            'arrived' => [],
-            'walkin' => [],
-        ]);
+            $periods = [
+                'today' => [
+                    'start_date' => Carbon::now()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->format('Y-m-d'),
+                ],
+                'yesterday' => [
+                    'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'last7days' => [
+                    'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'week' => [
+                    'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'thismonth' => [
+                    'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
+                ],
+                'lastmonth' => [
+                    'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
+                    'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
+                ],
+            ];
+
+            $stats = AppointmentsDailyStats::select('centre_id')
+                ->selectRaw('count(*) as total')
+                ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
+                ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
+                ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+                ->whereIn('centre_id', $center_id)
+                ->groupBy('centre_id')
+                ->get()->toArray();
+
+            if (!empty($stats)) {
+                foreach ($stats as $stat) {
+                    $centre = Locations::where('fdo_phone',null)->find($stat['centre_id']);
+                    if ($centre) {
+                        array_push($lables, $centre['name']);
+                        array_push($total_apts, (int) $stat['total']);
+                        array_push($arrived_apts, (int) $stat['arrived']);
+                        array_push($walkin_apts, (int) $stat['walkin']);
+                    }
+                }
+            } else {
+                // When no stats found, initialize arrays with zeros for each center
+                $lables = $center_name;
+                $total_apts = array_fill(0, count($center_name), 0);
+                $arrived_apts = array_fill(0, count($center_name), 0);
+                $walkin_apts = array_fill(0, count($center_name), 0);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
+                'bar' => $lables,
+                'total' => $total_apts,
+                'arrived' => $arrived_apts,
+                'walkin' => $walkin_apts,
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('CentreWiseArrival Error: ' . $e->getMessage());
+            
+            return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
+                'bar' => [],
+                'total' => [],
+                'arrived' => [],
+                'walkin' => [],
+            ]);
+        }
     }
-}
 
     public function CSRWiseArrival(Request $request)
     {
