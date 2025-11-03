@@ -58,7 +58,7 @@ var table_columns = [
                 if (data.scheduled_date == '-') {
                     return '<span>Un-Scheduled</span>';
                 } else if (data.appointment_status == 2) {
-                    return '<span>' + data.appointment_status_id + '</span>';
+                    return '<span style="color: purple; font-weight: bold;">' + data.appointment_status_id + '</span>';
                 } else {
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
                 }
