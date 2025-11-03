@@ -888,7 +888,7 @@ class LocationsWidget
                         }
                     } else {
                         //      Find Allocated Services
-                        $doctorservices = where('is_allocated',1)->where([
+                        $doctorservices =DoctorHasLocations::where('is_allocated',1)->where([
                             'user_id' => $doctor_id,
                             'location_id' => $location_id,
                         ])->get();
