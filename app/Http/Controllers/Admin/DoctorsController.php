@@ -844,7 +844,7 @@ class DoctorsController extends Controller
             if ($doctorService) {
                 $doctorService->update(['is_allocated'=>0]);
             }
-            return ApiHelper::apiResponse($this->success, 'Doctor location has been deleted!', true, ['id' => $request->id]);
+            return ApiHelper::apiResponse($this->success, 'Location/Service has been unassigned to doctor!', true, ['id' => $request->id]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
