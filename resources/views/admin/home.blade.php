@@ -1249,7 +1249,6 @@ function formatCurrency(amount) {
                 @else
                     var centre_id = $(".doctorwiseconversion").attr('data-id');
                     initCentreWiseArrival('yesterday', '', 'firsttime');
-                    initCentreWiseArrival('yesterday', '', 'firsttime');
                     @if (!auth()->user()->hasRole('CSR'))
                     initDoctorWiseConversion('today', centre_id, 'firsttime');
                     @endif
