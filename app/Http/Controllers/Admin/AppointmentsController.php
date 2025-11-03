@@ -2498,7 +2498,7 @@ class AppointmentsController extends Controller
         }
         $doctor_has_service = DoctorHasLocations::where('is_allocated',1)->where(['user_id' => $request->doctor_id])->first();
         if ($doctor_has_service->service_id == 13) {
-            dd("here");
+          
             $validator = $this->verifyUpdateFields($request);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
