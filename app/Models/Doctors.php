@@ -91,6 +91,7 @@ class Doctors extends BaseModal
                         $join->on('users.id', '=', 'doctor_has_locations.user_id')
                             ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
                             ->where('users.active', '=', 1)
+                            ->where('doctor_has_locations.is_allocated', '=', 1)
                             ->where('users.account_id', '=', $account_id);
                     })
                         ->whereIn('doctor_has_locations.location_id', $locationId)
@@ -106,6 +107,7 @@ class Doctors extends BaseModal
                         $join->on('users.id', '=', 'doctor_has_locations.user_id')
                             ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
                             ->where('users.active', '=', 1)
+                            ->where('doctor_has_locations.is_allocated', '=', 1)
                             ->where('users.account_id', '=', $account_id);
                     })
                         ->whereIn('doctor_has_locations.location_id', $locationId)
@@ -122,10 +124,12 @@ class Doctors extends BaseModal
                 $query = self::join('doctor_has_locations', function ($join) {
                     $join->on('users.id', '=', 'doctor_has_locations.user_id')
                         ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
+
                         ->where('users.active', '=', 1);
                 })
                     ->whereIn('users.id', $doctor_id)
                     ->whereIn('doctor_has_locations.location_id', $locationId)
+                    ->where('doctor_has_locations.is_allocated', '=', 1)
                     ->get();
                 if ($pluck_columns) {
                     $query = $query->pluck('name', 'user_id');
@@ -139,6 +143,7 @@ class Doctors extends BaseModal
                         ->where('users.active', '=', 1);
                 })
                     ->whereIn('doctor_has_locations.location_id', $locationId)
+                    ->where('doctor_has_locations.is_allocated', '=', 1)
                     ->get();
                 if ($pluck_columns) {
                     $query = $query->pluck('name', 'user_id');
@@ -204,6 +209,7 @@ class Doctors extends BaseModal
         $doctors = self::join('doctor_has_locations', function ($join) {
             $join->on('users.id', '=', 'doctor_has_locations.user_id')
                 ->where('users.user_type_id', '=', config('constants.asthatic_operator_id'))
+                ->where('doctor_has_locations.is_allocated', '=', 1)
                 ->where('users.active', '=', 1);
         })->get();
 
