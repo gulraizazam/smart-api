@@ -967,7 +967,7 @@ class AppointmentsController extends Controller
             $orderBy = 'appointments.name';
         }
 
-        $Appointments = $result_query->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+        $Appointments = $result_query->select('appointments.*', 'users.phone', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->with('invoice')
             ->limit($i_display_length)
             ->offset($i_display_start)
