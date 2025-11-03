@@ -967,13 +967,8 @@ class AppointmentsController extends Controller
             $orderBy = 'appointments.name';
         }
 
-        // Get invoice status before the query to use in eager loading
-        $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
-
         $Appointments = $result_query->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
-            ->with(['invoice' => function ($query) use ($invoice_status) {
-                $query->where('invoice_status_id', $invoice_status->id);
-            }])
+            ->with('invoice')
             ->limit($i_display_length)
             ->offset($i_display_start)
             ->orderBy('appointments.created_at', 'DESC')
@@ -984,13 +979,16 @@ class AppointmentsController extends Controller
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
+            $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
             $unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id, ['id']);
             $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly(Auth::User()->account_id);
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-                // Use the eager loaded invoice relationship instead of querying
-                $invoice = $appointment->invoice;
+                // Use the eager loaded invoice and filter by invoice_status_id
+                $invoice = $appointment->invoice && $appointment->invoice->invoice_status_id == $invoice_status->id
+                    ? $appointment->invoice
+                    : null;
                 $invoicearray[] = $invoice;
                 if ($invoice) {
                     $invoiceid = $invoice->id;
