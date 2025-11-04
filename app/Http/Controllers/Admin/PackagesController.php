@@ -1243,7 +1243,7 @@ class PackagesController extends Controller
             $voucherDiscounts = Discounts::whereIn('id', $discountIds)
                 ->whereIn('id', $checkUserVouchers)
                 ->where('discount_type', '=', 'voucher')
-                ->where('active', '=', '1')
+              
               
                 ->get();
                   
@@ -1292,7 +1292,7 @@ class PackagesController extends Controller
                 $voucherDiscounts = Discounts::whereIn('id', $uniq_array)
                     ->whereIn('id', $checkUserVouchers)
                     ->where('discount_type', '=', 'voucher')
-                    ->where('active', '=', '1')
+                    
                    
                     ->get();
             }
