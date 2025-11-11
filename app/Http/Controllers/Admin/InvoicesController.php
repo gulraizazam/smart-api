@@ -261,7 +261,7 @@ class InvoicesController extends Controller
         }
 
         $appintment = Appointments::find($invocies->appointment_id);
-
+         $appintment->update(['base_appointment_status_id'=>1, 'appointment_status_id'=>1]);
         $appointment_type = AppointmentTypes::where('id', '=', $appintment?->appointment_type_id)->first();
 
         if ($appointment_type && $appintment && $invocies) {
