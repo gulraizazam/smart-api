@@ -263,7 +263,7 @@ class InvoicesController extends Controller
         $appintment = Appointments::find($invocies->appointment_id);
          $appintment->update(['base_appointment_status_id'=>1, 'appointment_status_id'=>1]);
         $appointment_type = AppointmentTypes::where('id', '=', $appintment?->appointment_type_id)->first();
-
+        PackageAdvances::where('invoice_id', '=', $id)->where('cash_flow', '=', 'out')->delete();
         if ($appointment_type && $appintment && $invocies) {
             $data_package['cash_flow'] = 'in';
             $data_package['cash_amount'] = $invocies->total_price ?? 0;
@@ -281,7 +281,7 @@ class InvoicesController extends Controller
             if ($invoice_detail->package_id != null) {
                 $data_package['package_id'] = $invoice_detail->package_id;
             }
-            $package_advances = PackageAdvances::createRecord_forinvoice($data_package);
+            //$package_advances = PackageAdvances::createRecord_forinvoice($data_package);
 
             return ApiHelper::apiResponse($this->success, 'Invoice has been canceled successfully.');
         }
