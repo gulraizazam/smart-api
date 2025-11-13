@@ -462,6 +462,7 @@ class RolesController extends Controller
             'compliance_reports' => 'Compliance Report',
             'rescheduled_count_report' => 'Appointment Rescheduled Count Report',
             'activity_report' => 'Appointment Activity Logs Report',
+            'services_duplicate' => 'Duplicate',
         ];
     }
 
