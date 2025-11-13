@@ -179,6 +179,8 @@ function setEditData(response) {
         let service = response.data.service;
 
         $("#modal_edit_services_form").attr("action", route('admin.services.update', {id: service.id}));
+        // Reset form method to PUT for edit
+        $("#modal_edit_services_form").find('input[name="_method"]').val('put');
 
         let services = response.data.parent_services;
         let durations = response.data.durations;
