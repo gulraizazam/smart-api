@@ -98,6 +98,7 @@ function actions(data) {
 
         let url = route('admin.services.edit', {id: id});
         let delete_url = route('admin.services.destroy', {id: id});
+        let duplicate_url = route('admin.services.duplicate', {id: id});
 
         if (permissions.edit || permissions.delete) {
             let actions = '<div class="dropdown dropdown-inline action-dots">\
@@ -114,6 +115,15 @@ function actions(data) {
                     <a href="javascript:void(0);" onclick="editRow(`' + url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+            }
+            // Add duplicate option only for child services
+            if (permissions.edit && data.parent_id != 0) {
+                actions += '<li class="navi-item">\
+                    <a href="javascript:void(0);" onclick="duplicateRow(`' + duplicate_url + '`);" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-copy"></i></span>\
+                        <span class="navi-text">Duplicate</span>\
                     </a>\
                 </li>';
             }
@@ -169,6 +179,107 @@ function setEditData(response) {
         let service = response.data.service;
 
         $("#modal_edit_services_form").attr("action", route('admin.services.update', {id: service.id}));
+
+        let services = response.data.parent_services;
+        let durations = response.data.durations;
+        let tax_treatment_types = response.data.tax_treatment_types;
+        let select_tax_treatment_type = response.data.select_tax_treatment_type;
+        let services_options = '<option value="0">Parent Service</option>';
+        let duration_options = '<option value="">Select a Duration</option>';
+        let radios = '';
+
+        Object.entries(tax_treatment_types).forEach(function (value, index) {
+
+            if (typeof value[1].id !== 'undefined') {
+                radios += '<label class="radio">\
+            <input type="radio" name="tax_treatment_type_id" value="' + value[1].id + '">\
+            <span></span>\
+        ' + value[1].name + '\
+        </label>';
+            }
+
+        });
+
+        Object.entries(services).forEach(function (value, index) {
+            services_options += '<option value="' + value[1].id + '">' + value[1].name + '</option>';
+        });
+
+        Object.entries(durations).forEach(function (value, index) {
+            duration_options += '<option value="' + value[1] + '">' + value[1] + '</option>';
+        });
+
+        $("#edit_duration").html(duration_options);
+
+        $("#edit_parent_service").html(services_options);
+
+        if (radios != '') {
+            $(".tax-radios").html(radios);
+        }
+
+        $(".tax-radios").find("input").each(function () {
+            if ($(this).val() == select_tax_treatment_type) {
+                $(this).prop("checked", true);
+            }
+        });
+
+        $("#edit_parent_service").val(service.parent_id);
+        $("#edit_service_name").val(service.name);
+        $("#edit_duration").val(service.duration);
+        $("#edit_color").val(service.color);
+        $("#edit_price").val(service.price);
+
+        if (service.end_node == 1) {
+            $("#edit_end_node").prop("checked", true);
+        } else {
+            $("#edit_end_node").prop("checked", false);
+        }
+
+        if (service.complimentory == 1) {
+            $("#edit_complimentory").prop("checked", true);
+        } else {
+            $("#edit_complimentory").prop("checked", false);
+        }
+
+    } catch (error) {
+        showException(error);
+    }
+
+}
+
+function duplicateRow(url) {
+
+    $("#modal_edit_services").modal("show");
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: url,
+        type: "GET",
+        cache: false,
+        success: function (response) {
+
+            setDuplicateData(response);
+
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+
+            reInitValidation(EditValidation);
+        }
+    });
+
+}
+
+function setDuplicateData(response) {
+
+    try {
+
+        let service = response.data.service;
+
+        $("#modal_edit_services_form").attr("action", route('admin.services.duplicate.store'));
+        // Change form method to POST for duplicate
+        $("#modal_edit_services_form").find('input[name="_method"]').val('post');
 
         let services = response.data.parent_services;
         let durations = response.data.durations;

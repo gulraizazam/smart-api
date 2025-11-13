@@ -180,6 +180,8 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     // Services
     Route::post('services/datatable', [ServicesController::class, 'datatable'])->name('services.datatable');
     Route::post('services/status', [ServicesController::class, 'status'])->name('services.status');
+    Route::get('services/{id}/duplicate', [ServicesController::class, 'duplicate'])->name('services.duplicate');
+    Route::post('services/duplicate', [ServicesController::class, 'storeDuplicate'])->name('services.duplicate.store');
     Route::resource('services', ServicesController::class)->except('index');
 
     // Logs Routes Start
