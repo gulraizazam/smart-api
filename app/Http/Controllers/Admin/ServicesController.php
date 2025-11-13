@@ -298,6 +298,64 @@ class ServicesController extends Controller
     }
 
     /**
+     * Get service data for duplication.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function duplicate($id)
+    {
+        if (! Gate::allows('services_edit')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        $service = Services::findOrFail($id);
+
+        $tax_treatment_types = TaxTreatmentType::get();
+
+        if ($service->tax_treatment_type_id == 0) {
+            $select_tax_treatment_type = 1;
+        } else {
+            $select_tax_treatment_type = $service->tax_treatment_type_id;
+        }
+
+        $Services = GeneralFunctions::parentServices();
+
+        $durations = GeneralFunctions::duration();
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'parent_services' => $Services,
+            'service' => $service,
+            'durations' => $durations,
+            'tax_treatment_types' => $tax_treatment_types,
+            'select_tax_treatment_type' => $select_tax_treatment_type,
+        ]);
+    }
+
+    /**
+     * Store duplicated service.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeDuplicate(Request $request)
+    {
+        if (! Gate::allows('services_edit')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        $validator = $this->verifyFields($request);
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+        }
+
+        if (Services::createRecord($request, Auth::User()->account_id)) {
+            return ApiHelper::apiResponse($this->success, 'Service has been duplicated successfully.');
+        } else {
+            return ApiHelper::apiResponse($this->success, 'Something went wrong, please try again later.');
+        }
+    }
+
+    /**
      * Update Permission in storage.
      *
      * @param  int  $id
