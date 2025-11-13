@@ -319,6 +319,7 @@ class RolesController extends Controller
             'payment' => 'Add Payment',
             'detail' => 'Detail',
             'service_delete' => 'Plan Service Delete',
+            'services_duplicate' => 'Duplicate',
             'cash_edit' => 'Plan Cash Edit',
 
             'cash_edit_payment_mode' => 'Plan Cash Edit Payment Mode',
