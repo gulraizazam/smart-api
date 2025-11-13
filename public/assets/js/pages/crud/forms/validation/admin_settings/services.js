@@ -133,7 +133,12 @@ var EditValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable('service');
+                    // Check if this is a duplicate action, reload page
+                    if ($(form).attr('action').includes('duplicate')) {
+                        location.reload();
+                    } else {
+                        reInitTable('service');
+                    }
                 } else {
                     toastr.error(response.message);
                 }
