@@ -76,6 +76,7 @@ class ServicesController extends Controller
                 $records['data'] = $Services;
                 $records['permissions'] = [
                     'edit' => Gate::allows('services_edit'),
+                    'duplicate' => Gate::allows('services_duplicate'),
                     'delete' => Gate::allows('services_destroy'),
                     'active' => Gate::allows('services_active'),
                     'inactive' => Gate::allows('services_inactive'),
@@ -305,7 +306,7 @@ class ServicesController extends Controller
      */
     public function duplicate($id)
     {
-        if (! Gate::allows('services_edit')) {
+        if (! Gate::allows('services_duplicate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -339,7 +340,7 @@ class ServicesController extends Controller
      */
     public function storeDuplicate(Request $request)
     {
-        if (! Gate::allows('services_edit')) {
+        if (! Gate::allows('services_duplicate')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
