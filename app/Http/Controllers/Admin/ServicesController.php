@@ -76,12 +76,13 @@ class ServicesController extends Controller
                 $records['data'] = $Services;
                 $records['permissions'] = [
                     'edit' => Gate::allows('services_edit'),
-                    'duplicate' => Gate::allows('services_duplicate'),
+                    
                     'delete' => Gate::allows('services_destroy'),
                     'active' => Gate::allows('services_active'),
                     'inactive' => Gate::allows('services_inactive'),
                     'create' => Gate::allows('services_create'),
                     'sort' => Gate::allows('services_sort'),
+                    'duplicate' => Gate::allows('services_duplicate'),
                 ];
                 $records['meta'] = [
                     'field' => $orderBy,
