@@ -119,7 +119,7 @@ function actions(data) {
                 </li>';
             }
             // Add duplicate option only for child services
-            if (permissions.edit && data.parent_id != 0) {
+            if (permissions.duplicate && data.parent_id != 0) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="duplicateRow(`' + duplicate_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-copy"></i></span>\

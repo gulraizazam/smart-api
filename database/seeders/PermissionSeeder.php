@@ -75,6 +75,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'services_manage', 'title' => 'Services', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'services_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 46],
             ['name' => 'services_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 46],
+            ['name' => 'services_duplicate', 'title' => 'Duplicate', 'main_group' => 0, 'parent_id' => 46],
             ['name' => 'services_active', 'title' => 'Activate', 'main_group' => 0, 'parent_id' => 46],
             ['name' => 'services_inactive', 'title' => 'Inactivate', 'main_group' => 0, 'parent_id' => 46],
             ['name' => 'services_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 46],
