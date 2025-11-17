@@ -19,7 +19,6 @@ use App\Models\Leads;
 use App\Models\LeadStatuses;
 use App\Models\Locations;
 use App\Models\Membership;
-use App\Models\Voucher;
 use App\Models\MembershipType;
 use App\Models\Patients;
 use App\Models\Services;
@@ -1575,5 +1574,106 @@ class PatientsController extends Controller
        
         return ApiHelper::apiResponse($this->success, 'Voucher assigned successfully');
         
+    }
+
+    /**
+     * Add referral by validating membership code
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function addReferral(Request $request, $id)
+    {
+        if (!Gate::allows('patients_manage')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'membership_code' => 'required|string',
+        ]);
+
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->error, $validator->messages()->first(), false);
+        }
+
+        // Check if membership code exists in memberships table
+        $membership = Membership::with('membershipType')
+            ->where('code', $request->membership_code)
+            ->where('active', 1)
+            ->first();
+
+        if (!$membership) {
+            return ApiHelper::apiResponse($this->error, 'Invalid membership code or membership is inactive.', false);
+        }
+
+        // Verify patient exists
+        $patient = Patients::find($id);
+        if (!$patient) {
+            return ApiHelper::apiResponse($this->error, 'Patient not found.', false);
+        }
+
+        // Condition 1: Check if membership is already assigned to the same patient
+        if ($membership->patient_id == $id) {
+            return ApiHelper::apiResponse($this->error, 'Membership is already assigned to this patient.', false);
+        }
+
+        // Condition 2: Check if membership code is not assigned to any patient
+        if (is_null($membership->patient_id)) {
+            return ApiHelper::apiResponse($this->error, 'This membership code is not assigned to any patient, so referral cannot be added.', false);
+        }
+
+        // Condition 2.5: Check if membership type is Gold Membership
+        if (!$membership->membershipType) {
+            return ApiHelper::apiResponse($this->error, 'Membership type not found.', false);
+        }
+
+        $membershipTypeName = strtolower(trim($membership->membershipType->name));
+        if ($membershipTypeName !== 'gold membership') {
+            return ApiHelper::apiResponse($this->error, 'Referrals can only be created for Gold Membership type. Current membership type: ' . $membership->membershipType->name, false);
+        }
+
+        // Condition 3: Check if membership is expired when assigned to different patient
+        if ($membership->patient_id != $id) {
+            $endDate = Carbon::parse($membership->end_date);
+            if ($endDate->isPast()) {
+                return ApiHelper::apiResponse($this->error, 'Membership is expired, referral cannot be added.', false);
+            }
+        }
+
+        // Condition 4: Check maximum referrals limit (2 referrals per membership code)
+        $existingReferrals = Membership::where('code', $request->membership_code)
+            ->where('is_referral', 1)
+            ->count();
+
+        if ($existingReferrals >= 2) {
+            return ApiHelper::apiResponse($this->error, 'Maximum of 2 referrals allowed per membership code. Limit reached.', false);
+        }
+
+        // All conditions met, create referral record
+        $referralData = [
+            'code' => $membership->code,
+            'membership_type_id' => $membership->membership_type_id,
+            'start_date' => $membership->start_date,
+            'end_date' => $membership->end_date,
+            'patient_id' => $id,
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
+            'active' => 1,
+            'assigned_at' => Carbon::now()->format('Y-m-d'),
+            'is_referral' => 1,
+            'parent_membership_code' => $membership->code
+        ];
+
+        $referral = Membership::create($referralData);
+
+        if ($referral) {
+            return ApiHelper::apiResponse($this->success, 'Referral added successfully.', true, [
+                'referral' => $referral,
+                'patient' => $patient
+            ]);
+        }
+
+        return ApiHelper::apiResponse($this->error, 'Failed to add referral. Please try again.', false);
     }
 }

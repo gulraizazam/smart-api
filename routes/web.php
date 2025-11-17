@@ -414,6 +414,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         Route::resource('patients', PatientsController::class)->middleware('permission:patients_manage');
 
+        Route::post('patients/{id}/addreferral', [PatientsController::class, 'addReferral'])->name('patients.addreferral');
+
         /*Route start for patient medical history Forms*/
         Route::get('medicalhistoryform/editcustomform/{id}', [MedicalHistoryController::class, 'edit'])->name('medicalhistoryform.edit');
 

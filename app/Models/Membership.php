@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 class Membership extends Model
 {
     use HasFactory;
-    protected $fillable = ['code', 'membership_type_id', 'start_date', 'end_date', 'patient_id', 'created_by', 'updated_by', 'deleted_by', 'active', 'assigned_at'];
+    protected $fillable = ['code', 'membership_type_id', 'start_date', 'end_date', 'patient_id', 'created_by', 'updated_by', 'deleted_by', 'active', 'assigned_at', 'is_referral', 'parent_membership_code'];
     protected $table = 'memberships';
 
     public function createdBy()
