@@ -1799,14 +1799,15 @@ class PackagesController extends Controller
 
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
             $checkMembership = Membership::with('membershiptype')->where('patient_id', $package->patient_id)->first();
-
+            $membershipDisplay = 'No Membership';
             if ($checkMembership) {
-                if ($checkMembership->end_date < now()->format('Y-m-d')) {
-                    $checkMembership->is_expired = ' - Expired';
-                    $checkMembership->is_active = '';
+                $status = $checkMembership->end_date < now()->format('Y-m-d') ? 'Expired' : 
+                    ($checkMembership->active == 1 ? 'Active' : 'Inactive');
+           
+                if ($checkMembership->is_referral == 1) {
+                    $membershipDisplay = "Ref: ({$checkMembership->code})-{$status}";
                 } else {
-                    $checkMembership->is_expired = '';
-                    $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
+                    $membershipDisplay = "Gold - {$checkMembership->code} - {$status}";
                 }
             }
              $doctorsIds = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
@@ -1876,7 +1877,7 @@ class PackagesController extends Controller
                 'appointmentArray' => $appointmentArray,
                 'discount_type' => config('constants.amount_types'),
                 'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
-                'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
+                'membership' => $membershipDisplay,
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

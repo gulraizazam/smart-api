@@ -381,6 +381,21 @@ function setEditData(response) {
         $("#edit_random_id").val(package?.random_id);
         $("#edit_package_total").val(total_price);
 
+        let membershipText = 'No Membership';
+        if (package?.user?.membership) {
+            let membership = package.user.membership;
+            let end_date = moment(membership.end_date);
+            let isExpired = end_date.isBefore(moment());
+            let status = isExpired ? 'Expired' : (membership.active === 1 ? 'Active' : 'Inactive');
+            
+            if (membership.is_referral == 1) {
+                membershipText = `Ref: (${membership.code})-${status}`;
+            } else {
+                membershipText = `Gold - ${membership.code} - ${status}`;
+            }
+        }
+        $(".membershipInfo").text(membershipText);
+
         let history_options = noRecordFoundTable(5);
 
         if (packageadvances.length) {

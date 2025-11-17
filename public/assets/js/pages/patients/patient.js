@@ -1,4 +1,3 @@
-
 var table_url = route('admin.patients.datatable');
 
 var table_columns = [
@@ -38,7 +37,8 @@ var table_columns = [
             }
             var end_date = moment(data.membership.end_date);
             var isExpired = end_date.isBefore(moment());
-            return data.membership.code + ' - ' + (isExpired ? 'Expired' : (data.membership.active === 1 ? 'Active' : 'Inactive'));
+            var prefix = data.membership.is_referral == 1 ? 'Ref: ' : '';
+            return prefix + data.membership.code + ' - ' + (isExpired ? 'Expired' : (data.membership.active === 1 ? 'Active' : 'Inactive'));
         }
     }, {
         field: 'phone',
@@ -113,6 +113,12 @@ function actions(data) {
                         <a href="javascript:void(0);" onclick="assignMembership(`'+ assign_membership_url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
                             <span class="navi-text">Assign Membership</span>\
+                        </a>\
+                    </li>';
+            actions += '<li class="navi-item">\
+                        <a href="javascript:void(0);" onclick="addReferral(`' + id + '`);" class="navi-link">\
+                            <span class="navi-icon"><i class="la la-user-plus"></i></span>\
+                            <span class="navi-text">Add Referral</span>\
                         </a>\
                     </li>';
             actions += '<li class="navi-item">\
@@ -219,6 +225,56 @@ function addVoucher(url, id) {
     $("#modal_edit_vouchers").modal("show");
     $("#modal_edit_vouchers_form").attr("action", route('admin.patients.assignvoucher', { id: id }));
 
+}
+function addReferral(id) {
+    $("#modal_add_referral").modal("show");
+    $("#modal_add_referral_form").attr("action", route('admin.patients.addreferral', { id: id }));
+    
+    // Clear previous form data
+    $("#referral_membership_code").val('');
+    
+    // Handle form submission
+    $("#modal_add_referral_form").off('submit').on('submit', function(e) {
+        e.preventDefault();
+        
+        var form = $(this);
+        var url = form.attr('action');
+        var formData = form.serialize();
+        
+        // Show loading state
+        var submitBtn = form.find('button[type="submit"]');
+        var originalText = submitBtn.find('.indicator-label').text();
+        submitBtn.prop('disabled', true);
+        submitBtn.find('.indicator-label').text('Processing...');
+        
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: url,
+            type: "POST",
+            data: formData,
+            cache: false,
+            success: function (response) {
+                if (response.status) {
+                    toastr.success(response.message);
+                    $("#modal_add_referral").modal("hide");
+                    // Optionally refresh the datatable
+                    reInitTable();
+                } else {
+                    toastr.error(response.message);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                errorMessage(xhr);
+            },
+            complete: function() {
+                // Reset button state
+                submitBtn.prop('disabled', false);
+                submitBtn.find('.indicator-label').text(originalText);
+            }
+        });
+    });
 }
 function cancelMembership(url) {
 

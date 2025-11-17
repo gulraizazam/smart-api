@@ -158,8 +158,57 @@ class MembershipsController extends Controller
     }
     public function cancelMembership(Request $request)
     {
+        // Get the membership being cancelled to find its code
+        $membership = Membership::where('patient_id', $request->id)->first();
+
+        if (!$membership) {
+            return ApiHelper::apiResponse($this->error, 'Membership not found', false);
+        }
+
+        // Check if patient has packages with Gold Membership Card or Student Membership Card services
+        $packages = DB::table('packages')
+            ->where('patient_id', $request->id)
+            ->whereNull('deleted_at')
+            ->get();
+
+        if ($packages->count() > 0) {
+            $restrictedServiceNames = ['Gold Membership Card', 'Student Membership Card'];
+
+            foreach ($packages as $package) {
+                // Check if this package has any restricted services
+                $hasRestrictedService = DB::table('package_services')
+                    ->join('services', 'package_services.service_id', '=', 'services.id')
+                    ->where('package_services.package_id', $package->id)
+                    ->whereIn('services.name', $restrictedServiceNames)
+                    ->whereNull('services.deleted_at')
+                    ->first();
+
+                if ($hasRestrictedService) {
+                    return ApiHelper::apiResponse(
+                        $this->error,
+                        'Membership applied on services, you can not cancel it',
+                        false
+                    );
+                }
+            }
+        }
+
+        $membershipCode = $membership->code;
+
+        // Cancel the main membership
         Membership::where('patient_id', $request->id)->delete();
-        return ApiHelper::apiResponse($this->success, 'Membership cancelled Successfully');
+
+        // Cancel all referrals associated with this membership code
+        $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
+            ->where('is_referral', 1)
+            ->delete();
+
+        $message = 'Membership cancelled successfully';
+        if ($cancelledReferrals > 0) {
+            $message .= ' along with ' . $cancelledReferrals . ' associated referral(s)';
+        }
+
+        return ApiHelper::apiResponse($this->success, $message);
     }
     public function edit($id)
     {

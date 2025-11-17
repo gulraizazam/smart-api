@@ -84,6 +84,11 @@
                     </div>
 
                     <div class="fv-row col-md-3 mt-5">
+                        <p class="required fw-bold fs-6 mb-2 pl-0">Membership</p>
+                        <h3 class="membershipInfo"></h3>
+                    </div>
+
+                    <div class="fv-row col-md-3 mt-5">
                         <label class="required fw-bold fs-6 mb-2 pl-0">Appointment <span class="text text-danger">*</span></label>
                         <select id="edit_appointment_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="appointment_id">
                             <option value="">Select Appointment</option>
