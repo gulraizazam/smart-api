@@ -194,14 +194,20 @@ class MembershipsController extends Controller
         }
 
         $membershipCode = $membership->code;
+        $isReferral = $membership->is_referral;
 
-        // Cancel the main membership
+        // Cancel the membership
         Membership::where('patient_id', $request->id)->delete();
 
-        // Cancel all referrals associated with this membership code
-        $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
-            ->where('is_referral', 1)
-            ->delete();
+        $cancelledReferrals = 0;
+
+        // Only cancel referrals if this is a parent membership (not a referral itself)
+        if (!$isReferral) {
+            // Cancel all referrals associated with this parent membership code
+            $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
+                ->where('is_referral', 1)
+                ->delete();
+        }
 
         $message = 'Membership cancelled successfully';
         if ($cancelledReferrals > 0) {
