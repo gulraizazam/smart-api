@@ -612,6 +612,7 @@ function setEditData(response) {
         let location = package.location;
         let history_options = noRecordFoundTable(5);
         let membership = response.data.membership;
+        let membership_expiry_date = response.data.membership_expiry_date;
         let selected_user_id = response.data.selectedUserId;
         if (packageadvances.length) {
     history_options = '';
@@ -783,6 +784,7 @@ function setEditData(response) {
 
         $("#edit_appointment_id").html(appointment_options);
         $("#edit-membership-name").text(membership);
+        $("#edit-membership-expiry-date").text(membership_expiry_date ? formatDate(membership_expiry_date, 'MMM DD, YYYY') : '-');
         $("#edit_service_id").html(serviceOptions);
 
         appointmentCheck(package);
