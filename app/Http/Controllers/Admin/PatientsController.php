@@ -129,6 +129,7 @@ class PatientsController extends Controller
             'inactive' => Gate::allows('patients_inactive'),
             'manage' => Gate::allows('patients_manage'),
             'contact' => Gate::allows('contact'),
+            'add_referrals' => Gate::allows('patients_add_referrals'),
         ];
 
         return response()->json($records);
