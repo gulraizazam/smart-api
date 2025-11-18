@@ -183,24 +183,41 @@ class GeneralFunctions
             if (Gate::allows('view_inactive_services')) {
                 $services = Services::where('slug', '!=', 'all')
                     ->where(['parent_id' => 0])
-                    ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                     ->orderBy('id', 'asc')
                     ->get();
             } else {
                 $services = Services::where('slug', '!=', 'all')
                     ->where(['parent_id' => 0])
                     ->where(['active' => 1])
-                    ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
                     ->orderBy('id', 'asc')
                     ->get();
             }
             $mergedServices = [];
             foreach ($services as $service) {
                 if (Gate::allows('view_inactive_services')) {
-                    $children = Services::where(['parent_id' => $service->id])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number', 'asc')->get()->toArray();
+                    $children = Services::where(['parent_id' => $service->id])
+                        ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                        ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
+                        ->orderBy('sort_number', 'asc')
+                        ->get()->toArray();
                 } else {
-                    $children = Services::where(['parent_id' => $service->id, 'active' => 1])->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))->orderBy('sort_number', 'asc')->get()->toArray();
+                    $children = Services::where(['parent_id' => $service->id, 'active' => 1])
+                        ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                        ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
+                        ->orderBy('sort_number', 'asc')
+                        ->get()->toArray();
                 }
+
+                // If name filter is active, only include parent if it matches OR has matching children
+                if (hasFilter($filters, 'name')) {
+                    $parentMatches = stripos($service->name, $filters['name']) !== false;
+                    $hasMatchingChildren = count($children) > 0;
+
+                    if (!$parentMatches && !$hasMatchingChildren) {
+                        continue; // Skip this parent and its children
+                    }
+                }
+
                 $mergedServices[] = $service->toArray();
                 foreach ($children as $child) {
                     $mergedServices[] = $child;
