@@ -86,10 +86,6 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Membership </label>
                             <h4 id="edit-membership-name" style="font-size:15px"></h4>
                         </div>
-                        <div class="fv-row col-md-2 mt-5">
-                            <label class="fw-bold fs-6 mb-2 pl-0">Expiry Date</label>
-                            <h4 id="edit-membership-expiry-date" style="font-size:15px"></h4>
-                        </div>
                         <div class="fv-row col-md-3 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Location</label>
                             <h3 id="edit-location-name"></h3>
