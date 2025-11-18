@@ -3966,6 +3966,7 @@ class AppointmentsController extends Controller
          $package_bundle = PackageBundles::find($package_service->package_bundle_id);
 
          $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)->where('type', '=', 'multiple')->first();
+         dd( $bundle);
          $service = Services::find($package_service->service_id);
          if ($bundle) {
              if ($balance_patient_in >= $bundle->price) {
