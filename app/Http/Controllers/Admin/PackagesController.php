@@ -1800,15 +1800,17 @@ class PackagesController extends Controller
             $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
             $checkMembership = Membership::with('membershiptype')->where('patient_id', $package->patient_id)->first();
             $membershipDisplay = 'No Membership';
+            $membershipExpiryDate = null;
             if ($checkMembership) {
-                $status = $checkMembership->end_date < now()->format('Y-m-d') ? 'Expired' : 
+                $status = $checkMembership->end_date < now()->format('Y-m-d') ? 'Expired' :
                     ($checkMembership->active == 1 ? 'Active' : 'Inactive');
-           
+
                 if ($checkMembership->is_referral == 1) {
                     $membershipDisplay = "Ref: ({$checkMembership->code})-{$status}";
                 } else {
                     $membershipDisplay = "Gold - {$checkMembership->code} - {$status}";
                 }
+                $membershipExpiryDate = $checkMembership->end_date;
             }
              $doctorsIds = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
 
@@ -1878,6 +1880,7 @@ class PackagesController extends Controller
                 'discount_type' => config('constants.amount_types'),
                 'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
                 'membership' => $membershipDisplay,
+                'membership_expiry_date' => $membershipExpiryDate,
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
