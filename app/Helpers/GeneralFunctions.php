@@ -194,33 +194,50 @@ class GeneralFunctions
             }
             $mergedServices = [];
             foreach ($services as $service) {
-                if (Gate::allows('view_inactive_services')) {
-                    $children = Services::where(['parent_id' => $service->id])
-                        ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
-                        ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
-                        ->orderBy('sort_number', 'asc')
-                        ->get()->toArray();
-                } else {
-                    $children = Services::where(['parent_id' => $service->id, 'active' => 1])
-                        ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
-                        ->when(hasFilter($filters, 'name'), fn ($q) => $q->where('name', 'like', '%' . $filters['name'] . '%'))
-                        ->orderBy('sort_number', 'asc')
-                        ->get()->toArray();
-                }
+                // Check if parent matches the name filter
+                $parentMatches = !hasFilter($filters, 'name') || stripos($service->name, $filters['name']) !== false;
 
-                // If name filter is active, only include parent if it matches OR has matching children
-                if (hasFilter($filters, 'name')) {
-                    $parentMatches = stripos($service->name, $filters['name']) !== false;
-                    $hasMatchingChildren = count($children) > 0;
-
-                    if (!$parentMatches && !$hasMatchingChildren) {
-                        continue; // Skip this parent and its children
+                if ($parentMatches) {
+                    // Parent matches: get ALL children (only filter by status, not by name)
+                    if (Gate::allows('view_inactive_services')) {
+                        $children = Services::where(['parent_id' => $service->id])
+                            ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                            ->orderBy('sort_number', 'asc')
+                            ->get()->toArray();
+                    } else {
+                        $children = Services::where(['parent_id' => $service->id, 'active' => 1])
+                            ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                            ->orderBy('sort_number', 'asc')
+                            ->get()->toArray();
                     }
-                }
 
-                $mergedServices[] = $service->toArray();
-                foreach ($children as $child) {
-                    $mergedServices[] = $child;
+                    $mergedServices[] = $service->toArray();
+                    foreach ($children as $child) {
+                        $mergedServices[] = $child;
+                    }
+                } else {
+                    // Parent doesn't match: get children that match the name filter
+                    if (Gate::allows('view_inactive_services')) {
+                        $children = Services::where(['parent_id' => $service->id])
+                            ->where('name', 'like', '%' . $filters['name'] . '%')
+                            ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                            ->orderBy('sort_number', 'asc')
+                            ->get()->toArray();
+                    } else {
+                        $children = Services::where(['parent_id' => $service->id, 'active' => 1])
+                            ->where('name', 'like', '%' . $filters['name'] . '%')
+                            ->when(hasFilter($filters, 'status'), fn ($q) => $q->where(['active' => $filters['status']]))
+                            ->orderBy('sort_number', 'asc')
+                            ->get()->toArray();
+                    }
+
+                    // Only include parent if it has matching children
+                    if (count($children) > 0) {
+                        $mergedServices[] = $service->toArray();
+                        foreach ($children as $child) {
+                            $mergedServices[] = $child;
+                        }
+                    }
                 }
             }
 
