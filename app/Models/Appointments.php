@@ -564,6 +564,7 @@ class Appointments extends Model
                 'message' => "Consultation or Treatment can't be deleted when invoice generated.",
             ];
         }
+        AppointmentsDailyStats::where('appointment_id',$id)->delete();
         $appointment->whereId($id)->update(['deleted_by' => Auth::id()]);
         $appointment->delete();
         Activity::where('appointment_id',$id)->update(['deleted_by'=>Auth::id(),'action'=>'deleted','deleted_date'=>Carbon::now()->format('Y-m-d'),'updated_at'=>Carbon::now()]);
