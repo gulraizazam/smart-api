@@ -3969,18 +3969,18 @@ class AppointmentsController extends Controller
         
          $service = Services::find($package_service->service_id);
          if ($bundle) {
-             if ($balance_patient_in >= $bundle->price) {
-                 dd("1");
+             if ($balance >= $bundle->price) {
+                 
                  $package_access = 1;
              } elseif ($balance >= $service->price) {
-                dd("2");
+              
                  $package_access = 1;
              } else {
-                 dd("3");
+                 
                  $package_access = 0;
              }
          } else {
-             dd("4");
+             
              $package_access = 1;
          }
 
