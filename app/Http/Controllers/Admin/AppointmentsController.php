@@ -4004,7 +4004,7 @@ class AppointmentsController extends Controller
              $settleamount_1 = $price - $cash;
              $settleamount = min($settleamount_1, $balance);
          } else {
-            dd($package_service->price, $package_bundle->net_amount, $balance);
+            
              if ( $package_service->price > ($package_bundle->net_amount - $balance)) {
 
                  $price = $package_service->price;
