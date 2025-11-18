@@ -3983,7 +3983,7 @@ class AppointmentsController extends Controller
            
              $package_access = 1;
          }
-  dd($package_access);
+
          $cash = 0;
          if ($package_access == 1) {
 
@@ -3994,7 +3994,7 @@ class AppointmentsController extends Controller
              $settleamount = min($settleamount_1, $balance);
          } else {
 
-             if ( $package_service->price > ($package_bundle->net_amount - $balance_patient_in)) {
+             if ( $package_service->price > ($package_bundle->net_amount - $balance)) {
 
                  $price = $package_service->price;
 
@@ -4005,7 +4005,7 @@ class AppointmentsController extends Controller
                     $outstanding = intval( $package_service->price - $balance) - $cash;
                  }
 
-                 $settleamount_1 = intval($package_bundle->net_amount - $balance_patient_in) - $cash;
+                 $settleamount_1 = intval($package_bundle->net_amount - $balance) - $cash;
                  $settleamount = min($settleamount_1, $balance);
              } else {
 
