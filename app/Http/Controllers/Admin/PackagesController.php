@@ -2370,7 +2370,7 @@ class PackagesController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
-            'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
+            'membership' => $checkMembership->membershipType ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
             'users' => $usersToShow,
             'selected_doctor_id' => $selectedUserId
         ]);
