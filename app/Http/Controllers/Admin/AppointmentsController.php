@@ -3984,6 +3984,11 @@ class AppointmentsController extends Controller
              $package_access = 1;
          }
 
+         // Calculate total package cost and remaining amount to pay for bundle logic
+         $total_package_cost = PackageBundles::where('package_id', '=', $request->package_id_create)
+             ->sum('tax_including_price');
+         $remaining_to_pay = $total_package_cost - $balance_patient_in;
+
          $cash = 0;
          if ($package_access == 1) {
 
@@ -3994,7 +3999,9 @@ class AppointmentsController extends Controller
                  if ($balance >= $service->price) {
                      $outstanding = 0;
                  } else {
-                     $outstanding = intval($service->price) - intval($balance) - $cash;
+                     // Outstanding is the minimum of service price requirement and remaining bundle amount
+                     $naive_outstanding = intval($service->price) - intval($balance) - $cash;
+                     $outstanding = min($naive_outstanding, max(0, $remaining_to_pay));
                  }
              } else {
                  $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
@@ -4004,7 +4011,7 @@ class AppointmentsController extends Controller
              $settleamount_1 = $price - $cash;
              $settleamount = min($settleamount_1, $balance);
          } else {
-            
+
              if ( $package_service->price > ($package_bundle->net_amount - $balance)) {
 
                  $price = $package_service->price;
@@ -4013,7 +4020,9 @@ class AppointmentsController extends Controller
                  if ($balance >= $service->price) {
                      $outstanding = 0;
                  } else {
-                     $outstanding = intval($service->price - $balance) - $cash;
+                     // Outstanding is the minimum of service price requirement and remaining bundle amount
+                     $naive_outstanding = intval($service->price - $balance) - $cash;
+                     $outstanding = min($naive_outstanding, max(0, $remaining_to_pay));
                  }
 
                  $settleamount_1 = intval($package_bundle->net_amount - $balance) - $cash;
@@ -4026,7 +4035,9 @@ class AppointmentsController extends Controller
                  if ($balance >= $service->price) {
                      $outstanding = 0;
                  } else {
-                     $outstanding = intval($service->price) - intval($balance) - $cash;
+                     // Outstanding is the minimum of service price requirement and remaining bundle amount
+                     $naive_outstanding = intval($service->price) - intval($balance) - $cash;
+                     $outstanding = min($naive_outstanding, max(0, $remaining_to_pay));
                  }
 
                  $settleamount_1 = $price - $cash;
