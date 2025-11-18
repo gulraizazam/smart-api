@@ -3988,21 +3988,32 @@ class AppointmentsController extends Controller
          if ($package_access == 1) {
 
              $price = $package_service->tax_including_price;
-             $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
+
+             // For bundles: check if balance >= service price to determine outstanding
+             if ($bundle) {
+                 if ($balance >= $service->price) {
+                     $outstanding = 0;
+                 } else {
+                     $outstanding = intval($service->price) - intval($balance) - $cash;
+                 }
+             } else {
+                 $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
+             }
+
              $remaining = 0;
              $settleamount_1 = $price - $cash;
              $settleamount = min($settleamount_1, $balance);
          } else {
             dd($package_service->price, $package_bundle->net_amount, $balance);
              if ( $package_service->price > ($package_bundle->net_amount - $balance)) {
-                   
+
                  $price = $package_service->price;
 
-                 if($price < $balance){
-                    $outstanding =0;
-                 }else{
-
-                    $outstanding = intval( $package_service->price - $balance) - $cash;
+                 // For bundles: check if balance >= service price to determine outstanding
+                 if ($balance >= $service->price) {
+                     $outstanding = 0;
+                 } else {
+                     $outstanding = intval($service->price - $balance) - $cash;
                  }
 
                  $settleamount_1 = intval($package_bundle->net_amount - $balance) - $cash;
@@ -4010,7 +4021,14 @@ class AppointmentsController extends Controller
              } else {
 
                  $price = $package_service->price;
-                 $outstanding = intval($price) - $cash - intval($balance);
+
+                 // For bundles: check if balance >= service price to determine outstanding
+                 if ($balance >= $service->price) {
+                     $outstanding = 0;
+                 } else {
+                     $outstanding = intval($service->price) - intval($balance) - $cash;
+                 }
+
                  $settleamount_1 = $price - $cash;
                  $settleamount = min($settleamount_1, $balance);
              }
