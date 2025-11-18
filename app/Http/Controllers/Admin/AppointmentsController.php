@@ -3995,7 +3995,7 @@ class AppointmentsController extends Controller
          } else {
 
              if ( $package_service->price > ($package_bundle->net_amount - $balance)) {
-
+                    dd('here');
                  $price = $package_service->price;
 
                  if($price < $balance){
@@ -4008,7 +4008,7 @@ class AppointmentsController extends Controller
                  $settleamount_1 = intval($package_bundle->net_amount - $balance) - $cash;
                  $settleamount = min($settleamount_1, $balance);
              } else {
-
+dd('heress');
                  $price = $package_service->price;
                  $outstanding = intval($price) - $cash - intval($balance);
                  $settleamount_1 = $price - $cash;
