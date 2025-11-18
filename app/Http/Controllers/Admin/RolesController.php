@@ -316,6 +316,7 @@ class RolesController extends Controller
             'invoice_sms_log' => 'Invoice Sms Log',
             'refund_manage' => 'Refund Manage',
             'refund_refund' => 'Patient Refund',
+            'add_referrals' => 'Assign Referrals',
             'payment' => 'Add Payment',
             'detail' => 'Detail',
             'service_delete' => 'Plan Service Delete',
