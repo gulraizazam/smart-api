@@ -3985,9 +3985,16 @@ class AppointmentsController extends Controller
          }
 
          // Calculate total package cost and remaining amount to pay for bundle logic
-         $total_package_cost = PackageBundles::where('package_id', '=', $request->package_id_create)
+         // Only consider the specific bundle for this service, not all bundles in the package
+         $total_package_cost = $package_bundle->tax_including_price;
+
+         // Calculate how much has been consumed from this specific bundle
+         $consumed_from_bundle = PackageService::where('package_bundle_id', '=', $package_bundle->id)
+             ->where('is_consumed', '=', 1)
              ->sum('tax_including_price');
-         $remaining_to_pay = $total_package_cost - $balance_patient_in;
+
+         // Remaining to pay is the bundle price minus what's been consumed minus current balance
+         $remaining_to_pay = max(0, $total_package_cost - $consumed_from_bundle - $balance);
 
          $cash = 0;
          if ($package_access == 1) {
