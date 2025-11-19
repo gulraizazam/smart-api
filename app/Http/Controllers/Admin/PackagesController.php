@@ -1809,7 +1809,9 @@ class PackagesController extends Controller
                 if ($checkMembership->is_referral == 1) {
                     $membershipDisplay = "Ref: ({$checkMembership->code})-{$status}" . ($expiryDateFormatted ? " (Exp: {$expiryDateFormatted})" : "");
                 } else {
-                    $membershipDisplay = "Gold - {$checkMembership->code} - {$status}" . ($expiryDateFormatted ? " (Exp: {$expiryDateFormatted})" : "");
+                    // Get membership type name (e.g., "Gold" or "Student" from "Gold Membership" or "Student Membership")
+                    $membershipTypeName = $checkMembership->membershipType ? str_replace(' Membership', '', $checkMembership->membershipType->name) : 'Gold';
+                    $membershipDisplay = "{$membershipTypeName} - {$checkMembership->code} - {$status}" . ($expiryDateFormatted ? " (Exp: {$expiryDateFormatted})" : "");
                 }
             }
              $doctorsIds = DoctorHasLocations::where('location_id', $package->location_id)->pluck('user_id')->toArray();
