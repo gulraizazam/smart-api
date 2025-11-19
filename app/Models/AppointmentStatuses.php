@@ -45,10 +45,10 @@ class AppointmentStatuses extends BaseModal
     public static function getBaseActiveSorted($account_id, $exclude_appointment_status_id = false)
     {
         if ($exclude_appointment_status_id) {
-            return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('id', '!=', $exclude_appointment_status_id)->where('name','!=','Arrived')->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+            return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('id', '!=', $exclude_appointment_status_id)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
         }
 
-        return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+        return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('name','!=','Arrived')->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
     }
 
     /**
