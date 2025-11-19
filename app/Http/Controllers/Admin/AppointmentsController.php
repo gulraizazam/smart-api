@@ -2966,7 +2966,7 @@ class AppointmentsController extends Controller
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'No record found', false);
         }
-        $base_appointments = AppointmentStatuses::where(['account_id' => 1])->where('name','!=','Arrived')->select('id', 'parent_id', 'is_comment')->get()->keyBy('id');
+        $base_appointments = AppointmentStatuses::where(['account_id' => 1])->select('id', 'parent_id', 'is_comment')->get()->keyBy('id');
         /*
          * If Un-scheduled status is present then exclude this status from drop-down
          */
