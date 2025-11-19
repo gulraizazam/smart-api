@@ -2368,9 +2368,18 @@ class PackagesController extends Controller
             }
         }
 
+        // Extract membership type name (e.g., "Gold" from "Gold Membership")
+        $membershipTypeName = 'No membership';
+        if ($checkMembership && $checkMembership->membershipType) {
+            $fullName = $checkMembership->membershipType->name;
+            // Remove " Membership" suffix to get just "Gold" or "Student"
+            $typeName = str_replace(' Membership', '', $fullName);
+            $membershipTypeName = "{$typeName}{$checkMembership->is_active}{$checkMembership->is_expired}";
+        }
+
         return ApiHelper::apiResponse($this->success, 'Record found', true, [
             'appointments' => $appointmentArray,
-            'membership' => $checkMembership && $checkMembership->membershipType ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
+            'membership' => $membershipTypeName,
             'users' => $usersToShow,
             'selected_doctor_id' => $selectedUserId
         ]);
