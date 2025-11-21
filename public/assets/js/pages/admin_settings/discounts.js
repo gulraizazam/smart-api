@@ -216,7 +216,7 @@ function getDesrvice($this) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route("admin.discounts.get_Dservice"),
+        url: route("admin.voucherTypes.get_Dservice"),
         type: "GET",
         data: {discount_id:  $("#discount_id").val(), id: $this.val()},
         cache: false,
@@ -280,7 +280,7 @@ function deleteModel(id) {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
                 type: 'post',
-                url: route('admin.discounts.delete_service'),
+                url: route('admin.voucherTypes.delete_service'),
                 data: {'id': id
                 },
                 success: function (response) {
@@ -586,7 +586,7 @@ function SetFields()
             headers: {
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             },
-            url: route("admin.discounts.getDiscountServices"),
+            url: route("admin.voucherTypes.getDiscountServices"),
             type: "GET",
             data: {},
             cache: false,
