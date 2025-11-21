@@ -226,6 +226,14 @@ function submitData(callback) {
     ids.push($("#locations").val());
     ids.push($("#services").val());
 
+    console.log('=== DISCOUNT ALLOCATE DEBUG ===');
+    console.log('Location ID:', $("#locations").val());
+    console.log('Service ID:', $("#services").val());
+    console.log('Discount ID:', $("#discount_id").val());
+    console.log('Combined IDs:', ids.join(','));
+    console.log('URL:', '/api/saveDervice');
+    console.log('Data:', {voucher_id: $("#discount_id").val(), id: ids.join(',')});
+
     showSpinner();
     $.ajax({
         headers: {
@@ -236,7 +244,11 @@ function submitData(callback) {
         data: {voucher_id: $("#discount_id").val(), id: ids.join(',')},
         cache: false,
         timeout: 30000,
+        beforeSend: function() {
+            console.log('Request sending...');
+        },
         success: function (response) {
+            console.log('Success Response:', response);
             if (response.status == true) {
                 var data = response.data;
                 $('#allocate_services').append(serviceLocation(data.record.id, data.record_locaiton_name, data.record_service_name));
@@ -254,26 +266,37 @@ function submitData(callback) {
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            console.error('AJAX Error:', xhr.status, thrownError, xhr.responseText);
+            console.error('=== AJAX ERROR DETAILS ===');
+            console.error('Status:', xhr.status);
+            console.error('Status Text:', xhr.statusText);
+            console.error('Thrown Error:', thrownError);
+            console.error('Response Text:', xhr.responseText);
+            console.error('Ready State:', xhr.readyState);
+            console.error('Full XHR:', xhr);
+
+            let errorMsg = 'Unknown error';
             if (xhr.status == '401') {
-                callback({
-                    'status': 0,
-                    'message': 'You are not authorized to access this resource',
-                });
-                hideSpinnerRestForm();
+                errorMsg = 'You are not authorized to access this resource';
             } else if (thrownError === 'timeout') {
-                callback({
-                    'status': 0,
-                    'message': 'Request timeout. Please check your connection and try again.',
-                });
-                hideSpinnerRestForm();
+                errorMsg = 'Request timeout. Please check your connection and try again.';
+            } else if (xhr.status == 0) {
+                errorMsg = 'Network error. Please check your internet connection or CORS settings.';
+            } else if (xhr.status == 500) {
+                errorMsg = 'Server error (500). Check server logs.';
+            } else if (xhr.status == 404) {
+                errorMsg = 'Route not found (404). URL: /api/saveDervice';
             } else {
-                callback({
-                    'status': 0,
-                    'message': 'Unable to process your request, please try again later. Error: ' + thrownError,
-                });
-                hideSpinnerRestForm();
+                errorMsg = 'Error ' + xhr.status + ': ' + thrownError;
             }
+
+            callback({
+                'status': 0,
+                'message': errorMsg,
+            });
+            hideSpinnerRestForm();
+        },
+        complete: function() {
+            console.log('Request completed');
         }
     });
 }
