@@ -231,9 +231,9 @@ function submitData(callback) {
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         },
-        url: route('admin.discounts.save_Dervice'),
+        url: route('admin.voucherTypes.save_Dervice'),
         type: "POST",
-        data: {discount_id: $("#discount_id").val(), id: ids.join(',')},
+        data: {voucher_id: $("#discount_id").val(), id: ids.join(',')},
         cache: false,
         success: function (response) {
             if (response.status == true) {

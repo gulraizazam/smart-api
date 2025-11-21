@@ -57,18 +57,20 @@ class DiscountsController extends Controller
      */
     public function create()
     {
-        
+
         if (!Gate::allows('discounts_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
         try {
             $roles = Role::pluck('name', 'id')->toArray();
+            $locations = LocationsWidget::generateDropDownArray(Auth::User()->account_id);
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'discount_types' => config('constants.discount_types'),
                 'discount_groups' => config('constants.discount_groups'),
                 'amount_types' => config('constants.amount_types'),
-                'roles'=>$roles
+                'roles'=>$roles,
+                'locations'=>$locations
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
