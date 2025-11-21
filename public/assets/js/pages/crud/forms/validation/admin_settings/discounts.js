@@ -235,6 +235,7 @@ function submitData(callback) {
         type: "POST",
         data: {voucher_id: $("#discount_id").val(), id: ids.join(',')},
         cache: false,
+        timeout: 30000,
         success: function (response) {
             if (response.status == true) {
                 var data = response.data;
@@ -253,16 +254,23 @@ function submitData(callback) {
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            console.error('AJAX Error:', xhr.status, thrownError, xhr.responseText);
             if (xhr.status == '401') {
                 callback({
                     'status': 0,
                     'message': 'You are not authorized to access this resource',
                 });
                 hideSpinnerRestForm();
+            } else if (thrownError === 'timeout') {
+                callback({
+                    'status': 0,
+                    'message': 'Request timeout. Please check your connection and try again.',
+                });
+                hideSpinnerRestForm();
             } else {
                 callback({
                     'status': 0,
-                    'message': 'Unable to process your request, please try again later.',
+                    'message': 'Unable to process your request, please try again later. Error: ' + thrownError,
                 });
                 hideSpinnerRestForm();
             }
