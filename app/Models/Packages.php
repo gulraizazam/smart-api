@@ -282,7 +282,7 @@ class Packages extends BaseModal
 
         $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
 
-        [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
+        [$orderBy, $order] = getSortBy($request, 'updated_at', 'DESC');
         if (\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
             return self::when(count($where), fn ($query) => $query->where($where))->whereIn('location_id', ACL::getUserCentres())
                 ->limit($iDisplayLength)
