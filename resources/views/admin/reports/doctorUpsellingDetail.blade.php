@@ -56,7 +56,7 @@
                                     <th>Patient Name</th>
                                     <th>Service Name</th>
                                     <th>Price (PKR)</th>
-                                    <th>Scheduled Date</th>
+                                   
                                     <th>Sold Date</th>
                                 </tr>
                             </thead>
@@ -75,10 +75,7 @@
                                         <td>
                                             <strong class="text-success">{{ number_format($service->tax_including_price, 2) }}</strong>
                                         </td>
-                                        <td>
-                                            <i class="fas fa-calendar"></i>
-                                            {{ $service->scheduled_date ? date('M d, Y', strtotime($service->scheduled_date)) : 'N/A' }}
-                                        </td>
+                                        
                                         <td>
                                             <i class="fas fa-clock"></i>
                                             {{ date('M d, Y H:i', strtotime($service->created_at)) }}
