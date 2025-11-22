@@ -125,60 +125,45 @@ public function doctorUpsellingDetail($doctorId)
         return redirect()->back()->with('error', 'Session expired. Please reload the report.');
     }
 
-    $locationId = $filters['location_id'];
-    $startDate = $filters['start_date'];
-    $endDate = $filters['end_date'];
+    // Get doctor name
+    $doctorName = User::find($doctorId)->name ?? 'Unknown Doctor';
 
-    // Get the doctor information
-    $doctor = User::find($doctorId);
-
-    if (!$doctor) {
-        return redirect()->back()->with('error', 'Doctor not found.');
-    }
-
-    // Get all services sold by this doctor with consultant information
-    $servicesWithConsultants = PackageService::query()
+    // Get all package services for this doctor in the period
+    $packageServices = PackageService::query()
         ->join('packages', 'package_services.package_id', '=', 'packages.id')
         ->join('appointments', 'packages.appointment_id', '=', 'appointments.id')
-        ->join('users as consultants', 'appointments.doctor_id', '=', 'consultants.id')
+        ->join('services', 'package_services.service_id', '=', 'services.id')
         ->where('package_services.sold_by', $doctorId)
-        ->whereBetween('package_services.created_at', [$startDate, $endDate])
+        ->where('packages.location_id', $filters['location_id'])
+        ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
         ->whereNotNull('sold_by')
-        ->where('packages.location_id', $locationId)
-        // Exclude self-consultation sales
-        ->where(function($query) use ($doctorId) {
-            $query->where('appointments.appointment_type_id', '!=', 1)
-                ->orWhere('appointments.doctor_id', '!=', $doctorId);
+        ->whereNot(function($query) {
+            $query->where('appointments.appointment_type_id', 1)
+                  ->whereColumn('appointments.doctor_id', 'package_services.sold_by');
         })
         ->select(
-            'appointments.doctor_id as consultant_id',
-            'consultants.name as consultant_name',
-            DB::raw('SUM(package_services.tax_including_price) as total_amount'),
-            DB::raw('COUNT(package_services.id) as service_count')
+            'package_services.id',
+            'package_services.package_id',
+            'package_services.sold_by',
+            'package_services.service_id',
+            'package_services.tax_including_price',
+            'package_services.created_at',
+            'services.name as service_name',
+            'appointments.patient_id',
+            'appointments.name as patient_name',
+            'appointments.scheduled_date'
         )
-        ->groupBy('appointments.doctor_id', 'consultants.name')
-        ->orderByDesc('total_amount')
+        ->orderBy('package_services.created_at', 'desc')
         ->get();
 
-    // Calculate total upselling
-    $totalUpselling = $servicesWithConsultants->sum('total_amount');
-
-    // Add percentage to each consultant
-    $breakdownData = $servicesWithConsultants->map(function($item) use ($totalUpselling) {
-        $item->percentage = $totalUpselling > 0 ? ($item->total_amount / $totalUpselling) * 100 : 0;
-        return $item;
-    });
-
-    // Get location name
-    $location = Locations::find($locationId);
+    $totalAmount = $packageServices->sum('tax_including_price');
+    $uniqueUpsellings = $packageServices->pluck('package_id')->unique()->count();
 
     return view('admin.reports.doctorUpsellingDetail', compact(
-        'doctor',
-        'breakdownData',
-        'totalUpselling',
-        'location',
-        'startDate',
-        'endDate'
+        'packageServices', 
+        'doctorName', 
+        'totalAmount', 
+        'uniqueUpsellings'
     ));
 }
 public function doctorConsultantBreakdown($doctorId)
