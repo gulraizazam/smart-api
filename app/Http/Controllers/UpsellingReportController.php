@@ -137,9 +137,9 @@ public function doctorUpsellingDetail($doctorId)
         ->where('packages.location_id', $filters['location_id'])
         ->whereBetween('package_services.created_at', [$filters['start_date'], $filters['end_date']])
         ->whereNotNull('sold_by')
-        ->whereNot(function($query) {
-            $query->where('appointments.appointment_type_id', 1)
-                  ->whereColumn('appointments.doctor_id', 'package_services.sold_by');
+        ->where(function($query) {
+            $query->where('appointments.appointment_type_id', '!=', 1)
+                  ->orWhereColumn('appointments.doctor_id', '!=', 'package_services.sold_by');
         })
         ->select(
             'package_services.id',
