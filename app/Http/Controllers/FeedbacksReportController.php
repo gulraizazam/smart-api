@@ -32,11 +32,10 @@ class FeedbacksReportController extends Controller
     }
     public function futureTreatmentsReport()
     {
-
-        $membershipTypes = MembershipType::pluck('name', 'id');
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
-        return view('admin.reports.future_treatments_report', get_defined_vars());
+        $services = Services::where('parent_id', 0)->where('active', 1)->get();
 
+        return view('admin.reports.future_treatments_report', get_defined_vars());
     }
     public function loadFeedbackReport(Request $request)
 {
@@ -145,56 +144,43 @@ class FeedbacksReportController extends Controller
 
     public function loadFutureTreatmentsReport(Request $request)
     {
+        // Set fixed date range: today + next 7 days (including today)
+        $startDate = Carbon::today()->startOfDay();
+        $endDate = Carbon::today()->addDays(6)->endOfDay();
 
-        $dates = explode(' - ', $request->input('date_range'));
-        $startDate = date('Y-m-d 00:00:00', strtotime($dates[0]));
-        $endDate = date('Y-m-d 23:59:59', strtotime($dates[1]));
         $centreId = $request->input('centre_id');
-        $patientId = $request->input('patient_id');
-        $membershipId = $request->input('membership_id');
-        $today = Carbon::today()->startOfDay();
+        $serviceId = $request->input('service_id');
 
-    $patients = User::whereHas('appointmentsPatient', function ($query) use ($startDate, $endDate, $centreId, $patientId) {
-            $query->whereBetween('scheduled_date', [$startDate, $endDate])
-                  ->where('appointment_type_id', 2)
-                  ->where('appointment_status_id', 2); // arrived treatments in range
-                  if ($centreId) {
-                    $query->where('location_id', $centreId);
-                }
+        // Query appointments table with the specified filters
+        $appointments = DB::table('appointments')
+            ->join('users', 'appointments.patient_id', '=', 'users.id')
+            ->join('services', 'appointments.service_id', '=', 'services.id')
+            ->join('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
+            ->where('appointments.appointment_type_id', 2)
+            ->where('appointments.appointment_status_id', 1)
+            ->whereBetween('appointments.scheduled_date', [$startDate, $endDate])
+            ->when($centreId, function ($query) use ($centreId) {
+                return $query->where('appointments.location_id', $centreId);
+            })
+            ->when($serviceId, function ($query) use ($serviceId) {
+                return $query->where('appointments.service_id', $serviceId);
+            })
+            ->select(
+                'users.name as patient_name',
+                'services.name as service_name',
+                'appointments.scheduled_date',
+                'appointment_statuses.name as appointment_status'
+            )
+            ->orderBy('appointments.scheduled_date', 'asc')
+            ->get();
 
-                if ($patientId) {
-                    $query->where('patient_id', $patientId);
-                }
-        })
-        // ❌ No arrived treatments AFTER the end of selected range
-        ->whereDoesntHave('appointmentsPatient', function ($query) use ($endDate) {
-            $query->where('scheduled_date', '>', $endDate)
-                  ->where('appointment_type_id', 2)
-                  ->where('appointment_status_id', 2); // exclude if any arrived treatment exists after end date
-        })
-        // ❌ No appointment (any status/type) today or after
-        ->whereDoesntHave('appointmentsPatient', function ($query) use ($today) {
-            $query->where('scheduled_date', '>=', $today);
-        })
+        $filters = [
+            'start_date' => $startDate->format('d M Y'),
+            'end_date' => $endDate->format('d M Y'),
+            'centre_id' => $centreId,
+            'service_id' => $serviceId
+        ];
 
-        ->when($membershipId, function ($query) use ($membershipId) {
-            $query->whereHas('membership', function ($q) use ($membershipId) {
-                $q->where('membership_type_id', $membershipId);
-            });
-        })
-        ->with([
-            'appointmentsPatient' => function ($query) use ($startDate, $endDate) {
-                $query->whereBetween('scheduled_date', [$startDate, $endDate])
-                      ->where('appointment_type_id', 2)
-                      ->where('appointment_status_id', 2);
-            },
-            'membership.membershipType'
-        ])
-        ->get()->sortByDesc(function ($patient) {
-    // Sort users by their latest scheduled_date from loaded appointments
-    return optional($patient->appointmentsPatient->first())->scheduled_date;
-});
-
-    return view('admin.reports.futureTreatmentsReport', compact('patients'));
+        return view('admin.reports.future_treatments_report_data', compact('appointments', 'filters'));
     }
 }
