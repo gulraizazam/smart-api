@@ -82,7 +82,6 @@ class ThirdMessageBeforeAppointment extends Command
         ];
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
             ->where(['appointments.appointment_status_allow_message' => 1])
-            ->where('patient_id',49382)
             ->whereNull('coming_from')
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
             ->get();
