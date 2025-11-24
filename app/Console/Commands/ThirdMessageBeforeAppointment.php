@@ -52,7 +52,7 @@ class ThirdMessageBeforeAppointment extends Command
         $end_time = Carbon::parse(Carbon::now())->addMinutes(120)->setTimezone('Asia/Karachi')->format('H:i').':00';
 
         $currentTime = Carbon::now()->setTimezone('Asia/Karachi')->format('H:i').':00';
-        $start = '10:00:00';
+        $start = '09:00:00';
         $end = '19:00:00';
 
         if (
@@ -82,6 +82,7 @@ class ThirdMessageBeforeAppointment extends Command
         ];
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
             ->where(['appointments.appointment_status_allow_message' => 1])
+            ->where('patient_id',49382)
             ->whereNull('coming_from')
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone')
             ->get();
