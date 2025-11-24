@@ -151,6 +151,21 @@ class FeedbacksReportController extends Controller
         $centreId = $request->input('centre_id');
         $serviceId = $request->input('service_id');
 
+        // Get child service IDs if service is selected
+        $serviceIds = [];
+        if ($serviceId) {
+            $serviceIds[] = $serviceId; // Include parent service ID
+
+            // Fetch all child service IDs
+            $childServices = DB::table('services')
+                ->where('parent_id', $serviceId)
+                ->where('active', 1)
+                ->pluck('id')
+                ->toArray();
+
+            $serviceIds = array_merge($serviceIds, $childServices);
+        }
+
         // Query appointments table with the specified filters
         $appointments = DB::table('appointments')
             ->join('users', 'appointments.patient_id', '=', 'users.id')
@@ -162,8 +177,8 @@ class FeedbacksReportController extends Controller
             ->when($centreId, function ($query) use ($centreId) {
                 return $query->where('appointments.location_id', $centreId);
             })
-            ->when($serviceId, function ($query) use ($serviceId) {
-                return $query->where('appointments.service_id', $serviceId);
+            ->when(!empty($serviceIds), function ($query) use ($serviceIds) {
+                return $query->whereIn('appointments.service_id', $serviceIds);
             })
             ->select(
                 'users.name as patient_name',
