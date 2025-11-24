@@ -33,7 +33,12 @@ class FeedbacksReportController extends Controller
     public function futureTreatmentsReport()
     {
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
-        $services = Services::where('parent_id', 0)->where('active', 1)->get();
+        $services = Services::where('parent_id', 0)
+            ->where('active', 1)
+            ->where('slug', '!=', 'all')
+            ->where('name', 'NOT LIKE', '%refund%')
+            ->where('name', 'NOT LIKE', '%settlement%')
+            ->get();
 
         return view('admin.reports.future_treatments_report', get_defined_vars());
     }
