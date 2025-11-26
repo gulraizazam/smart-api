@@ -62,6 +62,13 @@ function toggleSection($this, $class) {
         getUserCity();
     }
 
+    // Auto-trigger calendar for users with single centre when switching to consultancy tab
+    if ($class == 'consultancy' && typeof autoTriggerCalendarForSingleCentre === 'function') {
+        setTimeout(function() {
+            autoTriggerCalendarForSingleCentre();
+        }, 800);
+    }
+
 }
 
 let loadLocations = function (cityId, appointment = null) {
@@ -318,7 +325,7 @@ let loadDoctors = function (locationId, appointment = null) {
 
 }
 let loadConsultantDoctors = function (locationId, appointment = null) {
-   
+
     if (locationId != '' && locationId != null) {
         $('#treatment_doctor_filter').removeAttr('disabled');
         $('#treatment_resource_filter').removeAttr('disabled');
@@ -353,32 +360,26 @@ let loadConsultantDoctors = function (locationId, appointment = null) {
 
                         if ($("#consultancy_location_filter").val() !== ""
                             && typeof result02.tab !== 'undefined' && result02.tab == 'consultancy') {
+
+                            // Create doctors list for custom resource view
+                            var doctorsList = [];
+                            Object.entries(dropdowns).forEach(function (dropdown) {
+                                doctorsList.push({
+                                    id: dropdown[0],
+                                    name: dropdown[1]
+                                });
+                            });
+
                             window.eventData = {};
                             window.eventData.id = null;
                             window.eventData.firstTime = true;
-                            ConsultancyCalendar.init();
+                            window.eventData.location_id = $("#consultancy_location_filter").val();
+
+                            // Initialize custom resource calendar with vertical doctor columns
+                            CustomResourceCalendar.init(doctorsList);
                         }
                         if (typeof result.doctor_id !== "undefined") {
                             $("#consultancy_doctor_filter").val(result.doctor_id).change();
-                        }
-
-                        var result3 = get_query();
-
-                        if (
-                             $("#consultancy_location_filter").val() !== ""
-                            && typeof result3.tab !== 'undefined' && result3.tab == 'treatment') {
-                            window.eventData = {}
-                            window.eventData.location_id = $("#consultancy_location_filter").val()
-                            window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
-                            window.eventData.id = null;
-                            window.eventData.firstTime = true;
-                            if($('#consultancy_location_filter option').length == 2){
-                                something();
-                            } else{
-                                setTimeout( function () {
-                                    ConsultancyCalendar.init();
-                                }, 500);
-                            }
                         }
                     } else if (appointment && appointment == 'treatment') {
                         if (typeof treatment_calendar !== "undefined" && $('#treatment_location_filter option').length > 2) { /*if already initiate then destroy first*/
@@ -540,25 +541,23 @@ let resetDoctors = function () {
 
 let ConsultancyDoctorListener = function (doctorId) {
 
-    if (doctorId != '' && doctorId != null) {
-
-        if (typeof calendar !== "undefined") { /*if already initiate then destroy first*/
-            calendar.destroy();
-        }
-        var result = get_query();
-
-        if ($("#consultancy_location_filter").val() !== ""
-            && $("#consultancy_doctor_filter").val() !== ""
-            && typeof result.tab !== 'undefined' && result.tab == 'consultancy') {
-            window.eventData = {};
-            window.eventData.location_id = $("#consultancy_location_filter").val();
-            window.eventData.doctor_id = $("#consultancy_doctor_filter").val();
-            window.eventData.id = null;
-            window.eventData.firstTime = true;
-            ConsultancyCalendar.init();
-        }
-    }
+    // Set doctor_id in query string
     setQueryStringParameter('doctor_id', doctorId);
+
+    // In custom resource view, doctor filter is optional
+    // All doctors are already visible in columns
+    // You can add filtering logic here if needed to highlight selected doctor
+    if (doctorId != '' && doctorId != null) {
+        // Optional: Highlight the selected doctor column
+        $('.resource-doctor-column').css('opacity', '0.5');
+        $('.resource-doctor-column[data-doctor-id="' + doctorId + '"]').css('opacity', '1');
+        $('.resource-doctor-header').css('opacity', '0.5');
+        $('.resource-doctor-header[data-doctor-id="' + doctorId + '"]').css('opacity', '1');
+    } else {
+        // Reset all columns to full opacity if no doctor selected
+        $('.resource-doctor-column').css('opacity', '1');
+        $('.resource-doctor-header').css('opacity', '1');
+    }
 }
 
 function detailActions(appointment, invoice, invoiceid, permissions, $class = 'detail-actions') {

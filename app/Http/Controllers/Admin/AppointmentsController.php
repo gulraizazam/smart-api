@@ -103,7 +103,12 @@ class AppointmentsController extends Controller
             return abort(404);
         }
 
-        return view('admin.appointments.index');
+        // Get user's assigned centres
+        $userCentres = ACL::getUserCentres();
+
+        return view('admin.appointments.index', [
+            'userCentres' => $userCentres
+        ]);
     }
 
     public function treatment()
@@ -3319,43 +3324,28 @@ class AppointmentsController extends Controller
     {
         try {
             if ($request->location_id) {
-                if ($request->machine_type_allocation) {
-                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
-                    if ($request->appointment_manage == Config::get('constants.appointment_type_service_string')) {
-                        $reverse_process = true;
-                    } else {
-                        $reverse_process = false;
-                    }
-                    $doctorids = [];
-                    /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
-                    foreach ($doctors as $key => $doctor) {
-                        $doctor_serivce = AppointmentEditWidget::loaddoctorservice_edit($key, $request->location_id, Auth::User()->account_id, $reverse_process);
-                        if (in_array($request->service_id, $doctor_serivce)) {
-                            $doctorids[] = $key;
-                        }
-                    }
-                    $doctors = $doctors_no_final = Doctors::whereIn('id', $doctorids)->get()->pluck('name', 'id');
-                } else {
+                // Use the proper consultant doctor loader that filters by doctor_has_locations with is_allocated = 1
+                $doctors = LocationsWidget::loadConsultantDoctorByLocation($request->location_id, Auth::User()->account_id);
 
-                    $doctors = $doctors_no_final = LocationsWidget::loadAppointmentDoctorByLocation($request->location_id, Auth::User()->account_id);
+                // Filter doctors by rota availability for consultancy
+                $doctors_filtered = [];
+                foreach ($doctors as $doctor_id => $doctor_name) {
+                    $resource = Resources::where('external_id', '=', $doctor_id)->first();
 
-                }
-                foreach ($doctors_no_final as $key => $doctor) {
-                    $resource = Resources::where('external_id', '=', $key)->first();
-
-                    //if ($request->appointment_manage == Config::get('constants.appointment_type_consultancy_string')) {
+                    if ($resource) {
                         $doctor_rota = ResourceHasRota::where([
                             ['resource_id', '=', $resource->id],
                             ['is_consultancy', '=', '1'],
-                        ])->get();
-                        if (count($doctor_rota) == 0) {
-                            unset($doctors[$key]);
+                        ])->exists();
+
+                        if ($doctor_rota) {
+                            $doctors_filtered[$doctor_id] = $doctor_name;
                         }
-                    //}
+                    }
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                    'dropdown' => $doctors,
+                    'dropdown' => $doctors_filtered,
                 ]);
             }
 

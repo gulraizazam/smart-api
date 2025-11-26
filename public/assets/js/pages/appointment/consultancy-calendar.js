@@ -92,7 +92,7 @@ var ConsultancyCalendar = function() {
                     timeGridWeek: { buttonText: 'week' },
                     timeGridDay: { buttonText: 'day' }
                 },
-                defaultView: 'timeGridWeek',
+                defaultView: 'timeGridDay',
                 defaultDate: TODAY,
 
                 editable: true,
@@ -170,6 +170,74 @@ var ConsultancyCalendar = function() {
             });
 
            calendar.render();
+
+           // Function to make calendar title clickable
+           var makeCalendarTitleClickable = function() {
+               setTimeout(function() {
+                   var titleElement = $('.fc-center h2, .fc-toolbar-title');
+                   if (titleElement.length) {
+                       titleElement.css({
+                           'cursor': 'pointer',
+                           'position': 'relative'
+                       });
+                       titleElement.attr('title', 'Click to select a date');
+
+                       // Add calendar icon
+                       if (!titleElement.find('.title-calendar-icon').length) {
+                           titleElement.prepend('<i class="fa fa-calendar title-calendar-icon" style="margin-right: 8px;"></i>');
+                       }
+
+                       // Create hidden datepicker input if it doesn't exist
+                       if (!$('#fullcalendar-datepicker').length) {
+                           $('body').append('<input type="text" id="fullcalendar-datepicker" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;" />');
+                       }
+
+                       titleElement.off('click').on('click', function() {
+                           var datepickerInput = $('#fullcalendar-datepicker');
+
+                           // Remove existing datepicker if any
+                           if (datepickerInput.data('datepicker')) {
+                               datepickerInput.datepicker('destroy');
+                           }
+
+                           // Initialize Bootstrap datepicker
+                           datepickerInput.datepicker({
+                               format: 'yyyy-mm-dd',
+                               autoclose: true,
+                               todayHighlight: true,
+                               orientation: 'bottom auto'
+                           }).on('changeDate', function(e) {
+                               if (e.date) {
+                                   calendar.gotoDate(e.date);
+                               }
+                           });
+
+                           // Show the datepicker
+                           datepickerInput.datepicker('show');
+                       });
+                   }
+               }, 100);
+           };
+
+           // Make title clickable on initial render
+           makeCalendarTitleClickable();
+
+           // Re-apply clickable title when events are rendered (view changes, navigation, etc.)
+           calendar.on('eventAfterAllRender', function() {
+               makeCalendarTitleClickable();
+
+               // Update today button state based on current view
+               var currentViewDate = calendar.getDate();
+               var isViewingToday = moment(currentViewDate).isSame(moment(), 'day');
+
+               // Update today button styling
+               var todayButton = $('.fc-today-button');
+               if (isViewingToday) {
+                   todayButton.addClass('fc-button-active');
+               } else {
+                   todayButton.removeClass('fc-button-active');
+               }
+           });
         },
         async loadEvents(response, callback) {
             patient_search_func();
@@ -358,6 +426,464 @@ var ConsultancyCalendar = function() {
 
         },
 
+    };
+}();
+
+// Custom Resource Calendar for vertical doctor columns
+var CustomResourceCalendar = function() {
+    var currentDate = moment();
+    var doctors = [];
+    var appointments = [];
+
+    return {
+        init: function(doctorsList, date) {
+            doctors = doctorsList || [];
+            currentDate = date ? moment(date) : moment();
+
+            // Hide fullcalendar, show custom view
+            $('#consultancy_calendar').hide();
+            $('#custom_resource_calendar').show();
+
+            this.render();
+            this.loadAppointments();
+        },
+
+        render: function() {
+            var html = '';
+
+            console.log('Rendering calendar for doctors:', doctors);
+
+            // Check if current date is today
+            var isToday = currentDate.isSame(moment(), 'day');
+
+            // Navigation
+            html += '<div class="resource-calendar-nav">';
+            html += '  <div>';
+            html += '    <button class="btn btn-sm btn-light" onclick="CustomResourceCalendar.previousDay()"><i class="fa fa-chevron-left"></i> Previous</button>';
+            html += '    <button class="btn btn-sm ' + (isToday ? 'btn-primary' : 'btn-light') + '" onclick="CustomResourceCalendar.today()">Today</button>';
+            html += '    <button class="btn btn-sm btn-light" onclick="CustomResourceCalendar.nextDay()">Next <i class="fa fa-chevron-right"></i></button>';
+            html += '  </div>';
+            html += '  <div class="current-date" style="cursor: pointer;" onclick="CustomResourceCalendar.openDatePicker()" title="Click to select a date">';
+            html += '    <i class="fa fa-calendar" style="margin-right: 8px;"></i>';
+            html += '    <span id="current-date-text">' + currentDate.format('dddd, MMMM D, YYYY');
+            if (isToday) {
+                html += ' <span style="color: #1BC5BD; font-size: 12px; margin-left: 8px;">(Today)</span>';
+            }
+            html += '</span>';
+            html += '    <input type="text" id="resource-calendar-datepicker" style="position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none;" />';
+            html += '  </div>';
+            html += '  <div></div>';
+            html += '</div>';
+
+            // Calendar container
+            html += '<div class="resource-calendar-container">';
+
+            // Header with doctor names
+            html += '  <div class="resource-calendar-header">';
+            html += '    <div class="resource-time-column">Time</div>';
+            html += '    <div class="resource-calendar-header-doctors">';
+            doctors.forEach(function(doctor) {
+                console.log('Creating column for doctor:', doctor.id, '-', doctor.name);
+                html += '      <div class="resource-doctor-header" data-doctor-id="' + doctor.id + '">' + doctor.name + '</div>';
+            });
+            html += '    </div>';
+            html += '  </div>';
+
+            // Body with time slots
+            html += '  <div class="resource-calendar-body">';
+            html += '    <div class="resource-time-slots">';
+
+            // Generate time slots from 11 AM to 8:45 PM (15 min intervals)
+            var startTime = 11 * 60; // 11 AM in minutes (660)
+            var endTime = 20 * 60 + 45; // 8:45 PM in minutes (1245)
+            var interval = 15; // 15 minutes
+
+            for (var time = startTime; time <= endTime; time += interval) {
+                var hours = Math.floor(time / 60);
+                var mins = time % 60;
+                var timeStr = (hours % 12 || 12) + ':' + (mins < 10 ? '0' : '') + mins + ' ' + (hours < 12 ? 'AM' : 'PM');
+                html += '<div class="resource-time-slot" data-time="' + hours + ':' + (mins < 10 ? '0' : '') + mins + '">' + timeStr + '</div>';
+            }
+
+            html += '    </div>';
+
+            // Calculate total height needed (number of slots * 60px per slot)
+            var totalSlots = Math.floor((endTime - startTime) / interval) + 1;
+            var totalHeight = totalSlots * 60; // 60px per slot
+
+            // Doctor columns
+            html += '    <div class="resource-doctors-container" style="min-height: ' + totalHeight + 'px;">';
+            doctors.forEach(function(doctor) {
+                html += '      <div class="resource-doctor-column" data-doctor-id="' + doctor.id + '" style="min-height: ' + totalHeight + 'px;">';
+
+                for (var time = startTime; time <= endTime; time += interval) {
+                    var hours = Math.floor(time / 60);
+                    var mins = time % 60;
+                    var timeStr = hours + ':' + (mins < 10 ? '0' : '') + mins;
+                    html += '<div class="resource-doctor-slot" data-doctor-id="' + doctor.id + '" data-time="' + timeStr + '" onclick="CustomResourceCalendar.createAppointment(' + doctor.id + ', \'' + timeStr + '\', this)"></div>';
+                }
+
+                html += '      </div>';
+            });
+            html += '    </div>';
+
+            html += '  </div>';
+            html += '</div>';
+
+            $('#custom_resource_calendar').html(html);
+        },
+
+        loadAppointments: function() {
+            $('#custom_resource_calendar .appointment-loader-base').show();
+
+            // Load appointments and rotas for each doctor
+            var loadPromises = [];
+
+            doctors.forEach(function(doctor) {
+                var promise = $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: route('admin.appointments.load_scheduled_appointments'),
+                    type: 'GET',
+                    data: {
+                        location_id: $('#consultancy_location_filter').val(),
+                        doctor_id: doctor.id,
+                        start: currentDate.format('YYYY-MM-DD') + 'T00:00:00',
+                        end: currentDate.format('YYYY-MM-DD') + 'T23:59:59',
+                    },
+                    cache: false
+                });
+                loadPromises.push(promise);
+            });
+
+            // Wait for all requests to complete
+            $.when.apply($, loadPromises).done(function() {
+                // Arguments contain all responses
+                var allEvents = [];
+                var allRotas = [];
+
+                // Handle single doctor case (arguments is the response directly)
+                // Handle multiple doctors case (arguments is array of responses)
+                if (doctors.length === 1) {
+                    var response = arguments[0];
+                    if (response.status) {
+                        allEvents = allEvents.concat(Object.values(response.events || {}));
+                        if (response.rotas && response.rotas.length > 0) {
+                            allRotas = allRotas.concat(response.rotas);
+                        }
+                    }
+                } else {
+                    // Multiple doctors - arguments is array of [response, status, xhr]
+                    for (var i = 0; i < arguments.length; i++) {
+                        var response = arguments[i][0]; // First element is the actual response
+                        if (response && response.status) {
+                            allEvents = allEvents.concat(Object.values(response.events || {}));
+                            if (response.rotas && response.rotas.length > 0) {
+                                allRotas = allRotas.concat(response.rotas);
+                            }
+                        }
+                    }
+                }
+
+                console.log('All rotas collected:', allRotas); // Debug log
+                console.log('All events collected:', allEvents); // Debug log
+
+                CustomResourceCalendar.renderAppointments(allEvents);
+                CustomResourceCalendar.renderRotas(allRotas);
+
+                $('#custom_resource_calendar .appointment-loader-base').hide();
+            }).fail(function() {
+                $('#custom_resource_calendar .appointment-loader-base').hide();
+                toastr.error('Error loading appointments and rotas');
+            });
+        },
+
+        renderAppointments: function(events) {
+            // Each slot is 60px high and represents 15 minutes
+            var slotHeight = 60; // pixels
+            var slotInterval = 15; // minutes
+            var pixelsPerMinute = slotHeight / slotInterval; // 4 pixels per minute
+
+            events.forEach(function(event) {
+                var startTime = moment(event.start);
+                var endTime = moment(event.end);
+                var duration = endTime.diff(startTime, 'minutes');
+
+                var timeStr = startTime.format('H:mm');
+                var doctorId = event.resourceId;
+
+                // Find the slot where appointment starts
+                var slot = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"][data-time="' + timeStr + '"]');
+
+                if (slot.length) {
+                    // Calculate height based on duration
+                    // Each minute = 4px (since 60px slot = 15 minutes)
+                    var appointmentHeight = duration * pixelsPerMinute;
+
+                    // Use appointment color if available, otherwise default to blue
+                    var bgColor = event.color || '#3699ff';
+                    var borderColor = event.color ? CustomResourceCalendar.darkenColor(event.color, 20) : '#187de4';
+
+                    // Format timings
+                    var startTimeFormatted = startTime.format('h:mm A');
+                    var endTimeFormatted = endTime.format('h:mm A');
+
+                    var appointmentHtml = '<div class="resource-appointment" data-id="' + event.id + '" onclick="CustomResourceCalendar.viewAppointment(' + event.id + ')" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; border-color: ' + borderColor + ';">';
+                    appointmentHtml += '<div style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</div>';
+                    appointmentHtml += '<div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">Patient: ' + event.patient + '</div>';
+                    if (event.created_by) {
+                        appointmentHtml += '<div style="font-size: 10px;">Created By: ' + event.created_by + '</div>';
+                    }
+                    appointmentHtml += '</div>';
+
+                    slot.append(appointmentHtml);
+                } else {
+                    console.log('Slot not found for appointment:', event.patient, 'at', timeStr, 'for doctor', doctorId);
+                }
+            });
+        },
+
+        // Helper function to darken a color for borders
+        darkenColor: function(color, percent) {
+            var num = parseInt(color.replace("#",""), 16),
+                amt = Math.round(2.55 * percent),
+                R = (num >> 16) - amt,
+                G = (num >> 8 & 0x00FF) - amt,
+                B = (num & 0x0000FF) - amt;
+            return "#" + (0x1000000 + (R<255?R<1?0:R:255)*0x10000 +
+                (G<255?G<1?0:G:255)*0x100 +
+                (B<255?B<1?0:B:255))
+                .toString(16).slice(1);
+        },
+
+        renderRotas: function(rotasData) {
+            if (!rotasData || rotasData.length === 0) {
+                console.log('No rotas data');
+                return;
+            }
+
+            console.log('=== RENDERING ROTAS ===');
+            console.log('Rotas data received:', rotasData);
+
+            rotasData.forEach(function(rotaGroup) {
+                console.log('--- Processing rota group ---');
+                console.log('Rota group:', rotaGroup);
+
+                if (!rotaGroup.doctor_rotas || rotaGroup.doctor_rotas.length === 0) {
+                    console.log('❌ No doctor_rotas in group');
+                    return;
+                }
+
+                // The doctor_id is the external_id field in the rotaGroup
+                var doctorId = rotaGroup.external_id;
+
+                console.log('✓ Processing rotas for doctor ID:', doctorId, '(' + rotaGroup.name + ')');
+
+                rotaGroup.doctor_rotas.forEach(function(rota) {
+                    console.log('  Rota details:', rota);
+
+                    if (rota.active !== '1' && rota.active !== 1) {
+                        console.log('  ❌ Rota not active:', rota.active);
+                        return;
+                    }
+
+                    // Check if rota date matches current date
+                    var rotaDate = moment(rota.date, 'YYYY-MM-DD');
+                    if (!rotaDate.isSame(currentDate, 'day')) {
+                        console.log('  ❌ Rota date mismatch:', rota.date, 'vs', currentDate.format('YYYY-MM-DD'));
+                        return;
+                    }
+
+                    console.log('  ✓ Rota date matches! Marking slots...');
+                    console.log('  Start:', rota.start_time, 'End:', rota.end_time);
+
+                    // Case 1: Has break time (start_off and end_off)
+                    // This means: available from start_time to start_off, then break, then end_off to end_time
+                    if (rota.start_time && rota.start_off && rota.end_off && rota.end_time) {
+                        console.log('  ✓ Has break time - marking two sessions');
+                        // Morning session: start_time to start_off
+                        CustomResourceCalendar.markRotaSlots(doctorId, rota.start_time, rota.start_off);
+
+                        // Afternoon session: end_off to end_time
+                        CustomResourceCalendar.markRotaSlots(doctorId, rota.end_off, rota.end_time);
+                    }
+                    // Case 2: No break time - continuous availability
+                    else if (rota.start_time && rota.end_time) {
+                        console.log('  ✓ No break time - continuous session');
+                        CustomResourceCalendar.markRotaSlots(doctorId, rota.start_time, rota.end_time);
+                    } else {
+                        console.log('  ❌ Missing start_time or end_time');
+                    }
+                });
+            });
+
+            console.log('=== ROTAS RENDERING COMPLETE ===');
+        },
+
+        markRotaSlots: function(doctorId, startTime, endTime) {
+            // Try parsing in multiple formats (12-hour with AM/PM or 24-hour)
+            var startMoment = moment(startTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
+            var endMoment = moment(endTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
+
+            console.log('Marking slots for doctor:', doctorId);
+            console.log('Start time:', startTime, '→', startMoment.format('HH:mm'));
+            console.log('End time:', endTime, '→', endMoment.format('HH:mm'));
+
+            var slots = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"]');
+            console.log('Found ' + slots.length + ' slots for doctor ' + doctorId);
+
+            var markedCount = 0;
+            slots.each(function() {
+                var slotTime = $(this).data('time');
+                var slotMoment = moment(slotTime, 'H:mm');
+
+                // Check if slot time falls within rota time range
+                if (slotMoment.isSameOrAfter(startMoment) && slotMoment.isBefore(endMoment)) {
+                    $(this).addClass('has-rota');
+                    markedCount++;
+                }
+            });
+
+            console.log('Marked ' + markedCount + ' slots as has-rota for doctor ' + doctorId + ' (from ' + startMoment.format('HH:mm') + ' to ' + endMoment.format('HH:mm') + ')');
+        },
+
+        createAppointment: function(doctorId, time, element) {
+            // Check if the slot has a rota (has-rota class)
+            if (!$(element).hasClass('has-rota')) {
+                toastr.error("Doctor rota does not exist for this time slot");
+                return;
+            }
+
+            var dateTime = currentDate.format('YYYY-MM-DD') + ' ' + time + ':00';
+            var start = formatDate(dateTime, 'YYYY-MM-DDTHH:mm:ss');
+
+            var create_url = route('admin.appointments.consulting.create', {
+                appointment_type: 'consulting',
+                doctor_id: doctorId,
+                location_id: $('#consultancy_location_filter').val(),
+                start: start
+            });
+
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: create_url,
+                type: 'GET',
+                cache: false,
+                success: function(response) {
+                    if (response.status) {
+                       setCreateConsultancy(response, start);
+                    } else {
+                        toastr.error(response.message)
+                    }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    toastr.error("Unable to create appointment");
+                }
+            });
+        },
+
+        viewAppointment: function(appointmentId) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.appointments.detail', [appointmentId]),
+                type: 'Get',
+                cache: false,
+                success: function (response) {
+                    if (response.status) {
+                        setDetailData(response);
+                    } else {
+                        toastr.error(response.message)
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    toastr.error("Unable to load appointment details.")
+                }
+            });
+        },
+
+        previousDay: function() {
+            currentDate = currentDate.subtract(1, 'days');
+            this.render();
+            this.loadAppointments();
+        },
+
+        nextDay: function() {
+            currentDate = currentDate.add(1, 'days');
+            this.render();
+            this.loadAppointments();
+        },
+
+        today: function() {
+            currentDate = moment();
+            this.render();
+            this.loadAppointments();
+        },
+
+        openDatePicker: function() {
+            // Initialize and trigger datepicker
+            var datepickerInput = $('#resource-calendar-datepicker');
+
+            // Remove existing datepicker if any
+            if (datepickerInput.data('datepicker')) {
+                datepickerInput.datepicker('destroy');
+            }
+
+            // Initialize Bootstrap datepicker
+            datepickerInput.datepicker({
+                format: 'yyyy-mm-dd',
+                autoclose: true,
+                todayHighlight: true,
+                orientation: 'bottom auto'
+            }).on('changeDate', function(e) {
+                if (e.date) {
+                    currentDate = moment(e.date);
+                    CustomResourceCalendar.render();
+                    CustomResourceCalendar.loadAppointments();
+                }
+            });
+
+            // Show the datepicker
+            datepickerInput.datepicker('show');
+        },
+
+        goToDate: function(date) {
+            currentDate = moment(date);
+            this.render();
+            this.loadAppointments();
+        },
+
+        highlightNewAppointment: function(appointmentId) {
+            // Wait for appointments to be rendered
+            setTimeout(function() {
+                var appointmentEl = $('.resource-appointment[data-id="' + appointmentId + '"]');
+                if (appointmentEl.length) {
+                    // Scroll to the appointment
+                    appointmentEl[0].scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+
+                    // Add a highlight animation
+                    appointmentEl.css({
+                        'animation': 'pulse-highlight 1.5s ease-in-out 2',
+                        'box-shadow': '0 0 10px 2px rgba(54, 153, 255, 0.5)'
+                    });
+
+                    // Remove highlight after animation
+                    setTimeout(function() {
+                        appointmentEl.css({
+                            'animation': '',
+                            'box-shadow': ''
+                        });
+                    }, 3000);
+                }
+            }, 500);
+        }
     };
 }();
 
