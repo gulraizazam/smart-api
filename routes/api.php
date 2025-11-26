@@ -359,6 +359,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::get('packages/getappointmentinfo', [PackagesController::class, 'getappointmentinfo'])->name('packages.getappointmentinfo');
     Route::get('packages/getsoldbydata', [PackagesController::class, 'getSoldByData'])->name('packages.getsoldbydata');
+    Route::get('packages/checkDuplicateServiceForSoldBy', [PackagesController::class, 'checkDuplicateServiceForSoldBy'])->name('packages.checkDuplicateServiceForSoldBy');
     Route::post('packages/updatesoldby', [PackagesController::class, 'updateSoldBy'])->name('packages.updatesoldby');
     Route::resource('packages', PackagesController::class)->except('index');
 

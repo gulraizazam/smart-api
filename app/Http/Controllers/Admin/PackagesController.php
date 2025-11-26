@@ -2612,6 +2612,122 @@ class PackagesController extends Controller
     }
 
     /*
+     * Check if service is duplicate and return appropriate sold by users
+     */
+    public function checkDuplicateServiceForSoldBy(Request $request)
+    {
+        try {
+            $bundleId = $request->bundle_id;
+            $packageId = $request->package_id;
+            $locationId = $request->location_id;
+
+            // Find the package by random_id
+            $package = Packages::where('random_id', $packageId)->first();
+
+            if (!$package) {
+                return ApiHelper::apiResponse($this->notfound, 'Package not found', false);
+            }
+
+            // Get all services in the current package for this bundle
+            $existingServices = PackageService::join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                ->where('package_services.package_id', $package->id)
+                ->where('package_bundles.bundle_id', $bundleId)
+                ->count();
+
+            $isDuplicateService = $existingServices > 0;
+
+            // If duplicate service, only show the doctor from the appointment
+            if ($isDuplicateService) {
+                $package->load('appointment.doctor');
+
+                if ($package->appointment && $package->appointment->doctor_id) {
+                    $appointmentDoctor = User::where('id', $package->appointment->doctor_id)
+                        ->where('active', 1)
+                        ->first();
+
+                    if ($appointmentDoctor) {
+                        $usersToShow = [$appointmentDoctor->id => $appointmentDoctor->name];
+                    } else {
+                        // If appointment doctor not found or inactive, show empty
+                        $usersToShow = [];
+                    }
+                } else {
+                    // If no appointment or no doctor, show empty
+                    $usersToShow = [];
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Duplicate service detected', true, [
+                    'users' => $usersToShow,
+                    'is_duplicate' => true
+                ]);
+            }
+
+            // If not duplicate, return the normal sold by users (same logic as edit function)
+            $doctorsIds = DoctorHasLocations::where('is_allocated', 1)
+                ->where('location_id', $locationId)
+                ->pluck('user_id')
+                ->toArray();
+
+            $allDoctors = User::whereIn('id', $doctorsIds)
+                ->where('active', 1)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            // Get appointment array to determine selected doctor
+            $data['patient_id'] = $package->patient_id;
+            $data['location_id'] = $locationId;
+            $data = (object) $data;
+            $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
+
+            $selectedUserId = null;
+            if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
+                $firstDoctorId = $appointmentArray[0]['doctor_id'];
+                if (array_key_exists($firstDoctorId, $allDoctors)) {
+                    $selectedUserId = $firstDoctorId;
+                }
+            }
+
+            // Check for treatments in last 30 days
+            $thirtyDaysAgo = now()->subDays(30);
+
+            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $locationId)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $thirtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Determine which users to show
+            $userIdsToShow = [];
+            if (!empty($recentTreatmentDoctorIds)) {
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
+                    $recentTreatmentDoctorIds
+                ));
+            } else {
+                $userIdsToShow = $selectedUserId ? [$selectedUserId] : [];
+            }
+
+            // Filter users to only those that should be shown
+            $usersToShow = [];
+            foreach ($userIdsToShow as $userId) {
+                if (array_key_exists($userId, $allDoctors)) {
+                    $usersToShow[$userId] = $allDoctors[$userId];
+                }
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Service not duplicate', true, [
+                'users' => $usersToShow,
+                'is_duplicate' => false
+            ]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /*
      *  Function for log for package
      */
     public function packagelog($id, $type)
