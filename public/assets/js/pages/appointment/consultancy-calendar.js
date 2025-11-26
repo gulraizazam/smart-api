@@ -629,7 +629,7 @@ var CustomResourceCalendar = function() {
                     var startTimeFormatted = startTime.format('h:mm A');
                     var endTimeFormatted = endTime.format('h:mm A');
 
-                    var appointmentHtml = '<div class="resource-appointment" data-id="' + event.id + '" onclick="CustomResourceCalendar.viewAppointment(' + event.id + ')" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; border-color: ' + borderColor + ';">';
+                    var appointmentHtml = '<div class="resource-appointment" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-start-time="' + timeStr + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; border-color: ' + borderColor + ';">';
                     appointmentHtml += '<div style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</div>';
                     appointmentHtml += '<div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">Patient: ' + event.patient + '</div>';
                     if (event.created_by) {
@@ -642,6 +642,9 @@ var CustomResourceCalendar = function() {
                     console.log('Slot not found for appointment:', event.patient, 'at', timeStr, 'for doctor', doctorId);
                 }
             });
+
+            // Initialize drag and drop for appointments
+            CustomResourceCalendar.initDragAndDrop();
         },
 
         // Helper function to darken a color for borders
@@ -883,6 +886,157 @@ var CustomResourceCalendar = function() {
                     }, 3000);
                 }
             }, 500);
+        },
+
+        initDragAndDrop: function() {
+            var draggedElement = null;
+            var originalSlot = null;
+            var isDragging = false;
+
+            // Handle appointment click
+            $(document).on('click', '.resource-appointment', function(e) {
+                if (!isDragging) {
+                    var appointmentId = $(this).data('id');
+                    CustomResourceCalendar.viewAppointment(appointmentId);
+                }
+            });
+
+            // Handle drag start
+            $(document).on('dragstart', '.resource-appointment', function(e) {
+                isDragging = true;
+                draggedElement = $(this);
+                originalSlot = draggedElement.parent();
+                draggedElement.addClass('dragging');
+
+                // Store data for drag
+                e.originalEvent.dataTransfer.effectAllowed = 'move';
+                e.originalEvent.dataTransfer.setData('text/html', this.innerHTML);
+            });
+
+            // Handle drag end
+            $(document).on('dragend', '.resource-appointment', function(e) {
+                draggedElement.removeClass('dragging');
+                $('.resource-doctor-slot').removeClass('drag-over');
+
+                // Reset isDragging flag after a short delay to prevent click event
+                setTimeout(function() {
+                    isDragging = false;
+                }, 100);
+            });
+
+            // Handle drag over
+            $(document).on('dragover', '.resource-doctor-slot', function(e) {
+                if (e.preventDefault) {
+                    e.preventDefault();
+                }
+                e.originalEvent.dataTransfer.dropEffect = 'move';
+                $(this).addClass('drag-over');
+                return false;
+            });
+
+            // Handle drag leave
+            $(document).on('dragleave', '.resource-doctor-slot', function(e) {
+                $(this).removeClass('drag-over');
+            });
+
+            // Handle drop
+            $(document).on('drop', '.resource-doctor-slot', function(e) {
+                if (e.stopPropagation) {
+                    e.stopPropagation();
+                }
+                e.preventDefault();
+
+                var dropSlot = $(this);
+                dropSlot.removeClass('drag-over');
+
+                if (!draggedElement) {
+                    return false;
+                }
+
+                // Check if the slot has a rota
+                if (!dropSlot.hasClass('has-rota')) {
+                    toastr.error('Doctor rota does not exist for this time slot');
+                    // Move appointment back to original slot
+                    draggedElement.removeClass('dragging');
+                    return false;
+                }
+
+                // Get appointment and slot details
+                var appointmentId = draggedElement.data('id');
+                var newDoctorId = dropSlot.data('doctor-id');
+                var newTime = dropSlot.data('time');
+                var duration = draggedElement.data('duration');
+
+                // Calculate new start and end times
+                var newStartDateTime = currentDate.format('YYYY-MM-DD') + ' ' + newTime + ':00';
+                var newStart = moment(newStartDateTime);
+                var newEnd = newStart.clone().add(duration, 'minutes');
+
+                // Call backend to reschedule
+                CustomResourceCalendar.rescheduleAppointment(
+                    appointmentId,
+                    newStart.format('YYYY-MM-DDTHH:mm:ss'),
+                    newEnd.format('YYYY-MM-DDTHH:mm:ss'),
+                    newDoctorId,
+                    draggedElement,
+                    dropSlot,
+                    originalSlot
+                );
+
+                return false;
+            });
+        },
+
+        rescheduleAppointment: function(appointmentId, newStart, newEnd, newDoctorId, appointmentEl, dropSlot, originalSlot) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.appointments.check_and_save_appointment'),
+                type: 'POST',
+                data: {
+                    id: appointmentId,
+                    start: newStart,
+                    end: newEnd,
+                    doctor_id: newDoctorId,
+                    location_id: $('#consultancy_location_filter').val()
+                },
+                cache: false,
+                success: function(response) {
+                    if (response.status) {
+                        toastr.success(response.message || 'Appointment rescheduled successfully');
+
+                        // Calculate new times for display
+                        var newStartMoment = moment(newStart);
+                        var newEndMoment = moment(newEnd);
+                        var newStartFormatted = newStartMoment.format('h:mm A');
+                        var newEndFormatted = newEndMoment.format('h:mm A');
+
+                        // Update the time display in the appointment card
+                        appointmentEl.find('div:first').html(newStartFormatted + ' - ' + newEndFormatted);
+
+                        // Move the appointment to the new slot
+                        appointmentEl.detach();
+                        dropSlot.append(appointmentEl);
+
+                        // Update appointment data attributes
+                        appointmentEl.attr('data-doctor-id', newDoctorId);
+                        appointmentEl.attr('data-start-time', dropSlot.data('time'));
+                        appointmentEl.attr('data-original-slot', newDoctorId + '-' + dropSlot.data('time'));
+
+                        appointmentEl.removeClass('dragging');
+                    } else {
+                        toastr.error(response.message || 'Failed to reschedule appointment');
+                        // Move appointment back to original slot
+                        appointmentEl.removeClass('dragging');
+                    }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    toastr.error('Unable to reschedule appointment. Please try again.');
+                    // Move appointment back to original slot
+                    appointmentEl.removeClass('dragging');
+                }
+            });
         }
     };
 }();

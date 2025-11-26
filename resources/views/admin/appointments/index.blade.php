@@ -145,7 +145,7 @@
                 border-radius: 4px;
                 font-size: 11px;
                 overflow: hidden;
-                cursor: pointer;
+                cursor: move;
                 border: 1px solid #187de4;
                 z-index: 5;
                 line-height: 1.3;
@@ -154,6 +154,15 @@
                 background: #187de4;
                 box-shadow: 0 2px 6px rgba(0,0,0,0.15);
                 z-index: 10;
+            }
+            .resource-appointment.dragging {
+                opacity: 0.5;
+                cursor: grabbing;
+                z-index: 20;
+            }
+            .resource-doctor-slot.drag-over {
+                background: #fff3cd !important;
+                border: 2px dashed #ffc107 !important;
             }
             .resource-calendar-nav {
                 display: flex;
