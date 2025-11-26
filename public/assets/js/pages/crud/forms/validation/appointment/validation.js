@@ -158,7 +158,18 @@ var EditAppointmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                  reInitTable('consultancy');
+
+                    // Check if calendar view is active
+                    if ($('.consultancy-section').is(':visible') && !$('.consultancy-section').hasClass('d-none')) {
+                        // Refresh calendar if visible
+                        if (typeof calendar !== 'undefined' && typeof start_date !== 'undefined') {
+                            reInitCalendar(start_date, calendar, ConsultancyCalendar);
+                        } else {
+                            reInitTable('consultancy');
+                        }
+                    } else {
+                        reInitTable('consultancy');
+                    }
                 } else {
                     toastr.error(response.message);
                 }
@@ -248,7 +259,17 @@ var CreateConsultancytValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
+
+                    // Store the newly created appointment ID for highlighting
+                    var newAppointmentId = response.data && response.data.appointment ? response.data.appointment.id : null;
+
+                    // Refresh calendar
                     reInitCalendar(start_date, calendar, ConsultancyCalendar);
+
+                    // Highlight the new appointment if ID is available
+                    if (newAppointmentId && $('#custom_resource_calendar').is(':visible')) {
+                        CustomResourceCalendar.highlightNewAppointment(newAppointmentId);
+                    }
                 } else {
                     toastr.error(response.message);
                 }
@@ -345,7 +366,15 @@ var CreateTreatmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
+
+                    // Refresh calendar
                     reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
+
+                    // Highlight the new appointment if ID is available and in resource view
+                    var newAppointmentId = response.data && response.data.appointment ? response.data.appointment.id : null;
+                    if (newAppointmentId && $('#custom_resource_calendar').is(':visible')) {
+                        CustomResourceCalendar.highlightNewAppointment(newAppointmentId);
+                    }
                 } else {
                     toastr.error(response.message);
                 }
@@ -563,7 +592,15 @@ var AppointPlanValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
+
+                    // Refresh calendar
                     reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
+
+                    // Highlight the new appointment if ID is available and in resource view
+                    var newAppointmentId = response.data && response.data.appointment ? response.data.appointment.id : null;
+                    if (newAppointmentId && $('#custom_resource_calendar').is(':visible')) {
+                        CustomResourceCalendar.highlightNewAppointment(newAppointmentId);
+                    }
                 } else {
                     toastr.error(response.message);
                 }
