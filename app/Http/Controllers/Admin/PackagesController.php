@@ -2405,6 +2405,7 @@ class PackagesController extends Controller
                 $locationId = $request->location_id ?? $package->location_id;
                 $currentSoldBy = $packageService->sold_by;
                 $packageServices = [$packageService];
+                $serviceId = $packageService->service_id;
             } elseif ($request->has('package_bundle_id')) {
                 $packageBundle = PackageBundles::find($request->package_bundle_id);
 
@@ -2424,10 +2425,59 @@ class PackagesController extends Controller
 
                 // Get the first service's sold_by as default
                 $currentSoldBy = $packageServices->first()->sold_by;
+                $serviceId = $packageServices->first()->service_id;
             } else {
                 return ApiHelper::apiResponse($this->notfound, 'Package service or bundle ID required', false);
             }
 
+            // Check if this service already exists in the package (duplicate service)
+            $isDuplicateService = false;
+            $existingServices = PackageService::where('package_id', $package->id)
+                ->where('service_id', $serviceId)
+                ->pluck('id')
+                ->toArray();
+
+            // If we have more than the current service(s) with the same service_id, it's a duplicate
+            $currentServiceIds = collect($packageServices)->pluck('id')->toArray();
+            $otherServicesWithSameId = array_diff($existingServices, $currentServiceIds);
+
+            if (!empty($otherServicesWithSameId)) {
+                $isDuplicateService = true;
+            }
+
+            // If duplicate service, only show the doctor from the appointment
+            if ($isDuplicateService) {
+                $package->load('appointment.doctor');
+
+                if ($package->appointment && $package->appointment->doctor_id) {
+                    $appointmentDoctor = User::where('id', $package->appointment->doctor_id)
+                        ->where('active', 1)
+                        ->first();
+
+                    if ($appointmentDoctor) {
+                        $usersToShow = [$appointmentDoctor->id => $appointmentDoctor->name];
+                    } else {
+                        // If appointment doctor not found or inactive, show empty
+                        $usersToShow = [];
+                    }
+                } else {
+                    // If no appointment or no doctor, show empty
+                    $usersToShow = [];
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'users' => $usersToShow,
+                    'current_sold_by' => $currentSoldBy,
+                    'package_services' => collect($packageServices)->map(function ($service) {
+                        return [
+                            'id' => $service->id,
+                            'sold_by' => $service->sold_by
+                        ];
+                    })
+                ]);
+            }
+
+            // If not duplicate, continue with existing logic
             // Get all active doctors from the location
             $doctorsIds = DoctorHasLocations::where('is_allocated',1)->where('location_id', $locationId)->pluck('user_id')->toArray();
 
