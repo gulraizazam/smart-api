@@ -4,6 +4,203 @@
 
     @push('css')
         <link href="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css')}}" rel="stylesheet" type="text/css" />
+        <style>
+            /* Custom Resource Calendar Styles */
+            .resource-calendar-container {
+                display: flex;
+                flex-direction: column;
+                border: 1px solid #e4e6ef;
+                background: #fff;
+                min-height: 600px;
+            }
+            .resource-calendar-container * {
+                box-sizing: border-box;
+            }
+            .resource-calendar-header {
+                display: flex;
+                border-bottom: 2px solid #e4e6ef;
+                background: #f3f6f9;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                overflow-y: scroll;
+                overflow-x: hidden;
+            }
+            .resource-calendar-header::-webkit-scrollbar {
+                width: 17px;
+                height: 0;
+            }
+            .resource-calendar-header::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .resource-calendar-header::-webkit-scrollbar-thumb {
+                background: transparent;
+            }
+            .resource-calendar-header-doctors {
+                display: flex;
+                flex: 1;
+                min-width: 0;
+            }
+            .resource-time-column {
+                width: 80px;
+                min-width: 80px;
+                max-width: 80px;
+                flex: 0 0 80px;
+                border-right: 2px solid #e4e6ef;
+                background: #f3f6f9;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 15px 5px;
+            }
+            .resource-doctor-header {
+                flex: 1;
+                min-width: 0;
+                padding: 15px 10px;
+                text-align: center;
+                font-weight: 600;
+                border-right: 1px solid #e4e6ef;
+                background: #043464;
+                color: #fff;
+                word-wrap: break-word;
+                overflow: hidden;
+            }
+            .resource-calendar-body {
+                display: flex;
+                overflow-y: scroll;
+                overflow-x: hidden;
+                max-height: 700px;
+            }
+            .resource-time-slots {
+                width: 80px;
+                min-width: 80px;
+                max-width: 80px;
+                flex: 0 0 80px;
+                border-right: 2px solid #e4e6ef;
+                background: #f3f6f9;
+                display: flex;
+                flex-direction: column;
+            }
+            .resource-time-slot {
+                height: 60px;
+                min-height: 60px;
+                flex-shrink: 0;
+                border-bottom: 1px solid #e4e6ef;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 600;
+                color: #7e8299;
+                box-sizing: border-box;
+            }
+            .resource-time-slot:last-child {
+                border-bottom: 1px solid #e4e6ef;
+            }
+            .resource-doctors-container {
+                display: flex;
+                flex: 1;
+                min-width: 0;
+                align-items: stretch;
+            }
+            .resource-doctor-column {
+                flex: 1 1 0;
+                min-width: 0;
+                border-right: 1px solid #e4e6ef;
+                position: relative;
+                background: #fff;
+                display: flex;
+                flex-direction: column;
+            }
+            .resource-doctor-slot {
+                height: 60px;
+                min-height: 60px;
+                flex-shrink: 0;
+                border-bottom: 1px solid #e4e6ef;
+                position: relative;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+            }
+            .resource-doctor-slot:last-child {
+                border-bottom: 1px solid #e4e6ef;
+            }
+            .resource-doctor-slot:hover {
+                background: #f3f6f9;
+            }
+            .resource-doctor-slot.has-rota {
+                background: #e8fff3 !important;
+                cursor: pointer !important;
+            }
+            .resource-doctor-slot.has-rota:hover {
+                background: #d4f7e3 !important;
+            }
+            .resource-appointment {
+                position: absolute;
+                left: 2px;
+                right: 2px;
+                background: #3699ff;
+                color: #fff;
+                padding: 6px 8px;
+                border-radius: 4px;
+                font-size: 11px;
+                overflow: hidden;
+                cursor: pointer;
+                border: 1px solid #187de4;
+                z-index: 5;
+                line-height: 1.3;
+            }
+            .resource-appointment:hover {
+                background: #187de4;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                z-index: 10;
+            }
+            .resource-calendar-nav {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px 20px;
+                background: #f3f6f9;
+                border-bottom: 1px solid #e4e6ef;
+                margin-bottom: 10px;
+            }
+            .resource-calendar-nav button {
+                padding: 8px 16px;
+                margin: 0 5px;
+            }
+            .resource-calendar-nav .current-date {
+                font-weight: 600;
+                font-size: 16px;
+                padding: 8px 16px;
+                background: #fff;
+                border-radius: 4px;
+                border: 1px solid #e4e6ef;
+                transition: all 0.2s;
+                display: inline-flex;
+                align-items: center;
+            }
+            .resource-calendar-nav .current-date:hover {
+                background: #f3f6f9;
+                border-color: #3699ff;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            }
+            /* Drag and Drop Styles */
+            .resource-appointment.dragging {
+                opacity: 0.5;
+                cursor: move;
+            }
+            .resource-doctor-slot.drag-over {
+                background: #d4f7e3 !important;
+                border: 2px dashed #1BC5BD !important;
+            }
+            .resource-appointment {
+                cursor: move;
+            }
+            .resource-appointment:hover {
+                cursor: move;
+            }
+        </style>
     @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -136,6 +333,17 @@
                     <div class="card-body appointment treatment-section d-none">
 
                         @include('admin.appointments.services.filters')
+
+                        {{-- Custom Resource Calendar View for Treatments --}}
+                        <div id="custom_treatment_resource_calendar" style="display: none; position: relative;">
+                            <div class="appointment-loader-base" style="display: none;">
+                                <div class="blockui"> <span>Please wait...</span>
+                                    <span>
+                                        <div class="spinner spinner-primary"></div>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="treatment_calendar" style="position: relative">
 
