@@ -12,7 +12,7 @@
             <select class="form-control" id="treatment_location_filter"></select>
         </div>
 
-        <div class="col-lg-4 mb-lg-0 mb-6">
+        <!-- <div class="col-lg-4 mb-lg-0 mb-6">
             <label>Doctor:</label>
             <select class="form-control" id="treatment_doctor_filter" disabled></select>
         </div>
@@ -20,7 +20,7 @@
         <div class="col-lg-4 mb-lg-0 mb-6">
             <label>Resource:</label>
             <select class="form-control" id="treatment_resource_filter" disabled></select>
-        </div>
+        </div> -->
 
     </div>
 

@@ -291,17 +291,34 @@ let loadDoctors = function (locationId, appointment = null) {
                         if (
                              $("#treatment_location_filter").val() !== ""
                             && typeof result3.tab !== 'undefined' && result3.tab == 'treatment') {
+                            
+                            // Create doctors list for resource view
+                            var doctorsList = [];
+                            Object.entries(dropdowns).forEach(function (dropdown) {
+                                doctorsList.push({
+                                    id: dropdown[0],
+                                    name: dropdown[1]
+                                });
+                            });
+                            
                             window.eventData = {}
                             window.eventData.location_id = $("#treatment_location_filter").val()
                             window.eventData.doctor_id = $("#treatment_doctor_filter").val();
                             window.eventData.id = null;
                             window.eventData.firstTime = true;
-                            if($('#treatment_location_filter option').length == 2){
-                                something();
-                            } else{
-                                setTimeout( function () {
-                                    TreatmentCalendar.init();
-                                }, 500);
+                            
+                            // Initialize treatment calendar with resource view (doctors as resources)
+                            if (typeof TreatmentResourceCalendar !== 'undefined') {
+                                TreatmentResourceCalendar.init(doctorsList);
+                            } else {
+                                // Fallback to regular calendar if resource calendar not available
+                                if($('#treatment_location_filter option').length == 2){
+                                    something();
+                                } else{
+                                    setTimeout( function () {
+                                        TreatmentCalendar.init();
+                                    }, 500);
+                                }
                             }
                         }
                         if (typeof result.doctor_id !== "undefined" && typeof result.reload === "undefined") {

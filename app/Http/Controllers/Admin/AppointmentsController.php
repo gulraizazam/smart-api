@@ -1948,13 +1948,17 @@ class AppointmentsController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Invalid request.', false);
         }
-        if ($request->start) {
-            $appointment_checkes = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcalender($request);
-        } else {
-            $appointment_checkes = [
-                'status' => true,
-            ];
-        }
+        // Commented out machine rota check for resource calendar view
+        // if ($request->start) {
+        //     $appointment_checkes = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcalender($request);
+        // } else {
+        //     $appointment_checkes = [
+        //         'status' => true,
+        //     ];
+        // }
+        $appointment_checkes = [
+            'status' => true,
+        ];
         if ($request->lead_id) {
             $lead = Leads::where(['id' => $request->lead_id])->first();
             if ($lead) {
@@ -2002,20 +2006,25 @@ class AppointmentsController extends Controller
             $employees = [];
         }
 
-        $intersect_resource_service_ids = LocationsWidget::loadAppointmentServiceByLocationResource($request->get('machine_id'), Auth::User()->account_id);
+        // If machine_id is provided, load services based on both machine and doctor
+        // Otherwise, load services based only on doctor
+        if ($request->machine_id) {
+            $intersect_resource_service_ids = LocationsWidget::loadAppointmentServiceByLocationResource($request->machine_id, Auth::User()->account_id);
+            $intersect_location_doctor_service_ids = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
 
-        $intersect_resource_service_ids = LocationsWidget::loadAppointmentServiceByLocationResource($request->machine_id, Auth::User()->account_id);
-
-        $intersect_location_doctor_service_ids = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
-
-        $serviceIds = [];
-        if (count($intersect_resource_service_ids) && count($intersect_location_doctor_service_ids)) {
-            $serviceIds = array_intersect($intersect_resource_service_ids, $intersect_location_doctor_service_ids);
+            $serviceIds = [];
+            if (count($intersect_resource_service_ids) && count($intersect_location_doctor_service_ids)) {
+                $serviceIds = array_intersect($intersect_resource_service_ids, $intersect_location_doctor_service_ids);
+            }
+        } else {
+            // No machine selected, load services based only on doctor
+            $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
         }
+
         if (count($serviceIds)) {
             $services = Services::whereIn('id', $serviceIds)->get()->pluck('name', 'id');
         } else {
-            return ApiHelper::apiResponse($this->success, 'Services not found for this doctor and resource.', false);
+            return ApiHelper::apiResponse($this->success, 'Services not found for this doctor.', false);
         }
         $lead_sources = LeadSources::getActiveSorted();
         // Get location based doctors
@@ -4558,6 +4567,40 @@ class AppointmentsController extends Controller
         }
         // Store form data in a variable
         $appointment_data = $request->all();
+        
+        // Auto-determine resource_id if not provided
+        if (!$request->resource_id && $request->location_id) {
+            $machine_type_service = null;
+
+            // First, try to find machine type using base_service_id (parent service)
+            if ($request->base_service_id) {
+                $machine_type_service = \App\Models\MachineTypeHasServices::where('service_id', $request->base_service_id)->first();
+            }
+
+            // If not found with base_service_id, try with service_id (child service)
+            if (!$machine_type_service && $request->service_id) {
+                $machine_type_service = \App\Models\MachineTypeHasServices::where('service_id', $request->service_id)->first();
+            }
+
+            if ($machine_type_service) {
+                // Get resource from location with this machine_type_id
+                $resource = \App\Models\Resources::where('location_id', $request->location_id)
+                    ->where('machine_type_id', $machine_type_service->machine_type_id)
+                    ->where('active', 1)
+                    ->first();
+                if ($resource) {
+                    // Override the resource_id in request and appointment_data
+                    $request->merge(['resource_id' => $resource->id]);
+                    $appointment_data['resource_id'] = $resource->id;
+                }
+            }
+        }
+
+        // Validate that resource_id is present after auto-determination
+        if (!$request->resource_id) {
+            return ApiHelper::apiResponse($this->success, 'Machine not found. Please select a valid machine or ensure the location has an available machine for this service.', false);
+        }
+
         $phone = $appointment_data['phone'];
         if ($appointment_data['phone'] == '***********') {
             $phone = $appointment_data['old_phone'];
@@ -4605,7 +4648,8 @@ class AppointmentsController extends Controller
                 $start = Carbon::parse($start)->format('Y-m-d H:i:s');
             }
             $doctor_checking = Resources::checkingDoctorAvailbility($request->doctor_id, $start, $end);
-            $room_check_availability = Resources::checkingRoomAvailbility($request->resource_id, $start, $end);
+            // $room_check_availability = Resources::checkingRoomAvailbility($request->resource_id, $start, $end);
+            $room_check_availability = $request->resource_id ? Resources::checkingRoomAvailbility($request->resource_id, $start, $end) : true;
             if ($doctor_checking && $room_check_availability) {
                 $appointment_data['scheduled_date'] = Carbon::parse($request->start)->format('Y-m-d');
                 $appointment_data['scheduled_time'] = Carbon::parse($request->start)->format('H:i:s ');
@@ -4863,8 +4907,8 @@ class AppointmentsController extends Controller
                         'overlap' => false,
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
-                        'color' => ($request->doctor_id == $appointment->doctor_id) ? $appointment->service->color : $appointment->service->color.'-',
-                        'resourceId' => $appointment->resource_id,
+                        'color' => $appointment->service->color, // Use exact service color
+                        'resourceId' => $appointment->doctor_id, // Use doctor_id for resource calendar view
                     ];
                 }
             } else {
@@ -4882,7 +4926,7 @@ class AppointmentsController extends Controller
                         'start' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->format('H:i'),
                         'end' => Carbon::parse($appointment->scheduled_date, null)->format('Y-m-d').' '.Carbon::parse($appointment->scheduled_time, null)->addHours($dutation[0])->addMinutes($dutation[1])->format('H:i'),
                         'color' => $appointment->service->color,
-                        'resourceId' => $appointment->resource_id,
+                        'resourceId' => $appointment->doctor_id, // Use doctor_id for resource calendar view
                     ];
                 }
             }
@@ -5023,27 +5067,38 @@ class AppointmentsController extends Controller
 
         if ($request->service_id) {
             $child_services = Appointments::getNodeServices($request->service_id, Auth::User()->account_id, true, true);
-            $resource = Resources::whereId($request->resource_id)->first();
-            $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
-            ->where('service_id',$request->service_id)
-            ->first();
-            if($machine_services){
-                return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                    'services' => $child_services,
-                ]);
-            }else{
+            
+            // If resource_id is provided, filter services by machine type
+            if ($request->resource_id) {
+                $resource = Resources::whereId($request->resource_id)->first();
+                if ($resource) {
+                    $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+                    ->where('service_id',$request->service_id)
+                    ->first();
+                    if($machine_services){
+                        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                            'services' => $child_services,
+                        ]);
+                    }else{
 
-                $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
-                ->whereIn('service_id',array_keys($child_services))
-                ->pluck('service_id');
+                        $machine_services = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+                        ->whereIn('service_id',array_keys($child_services))
+                        ->pluck('service_id');
 
-                $available_services = array_filter($child_services, function ($service, $id) use ($machine_services) {
-                    return in_array($id, $machine_services->toArray()); // Convert collection to array
-                }, ARRAY_FILTER_USE_BOTH);
-                return ApiHelper::apiResponse($this->success, 'Record found', true, [
-                    'services' => $available_services,
-                ]);
+                        $available_services = array_filter($child_services, function ($service, $id) use ($machine_services) {
+                            return in_array($id, $machine_services->toArray()); // Convert collection to array
+                        }, ARRAY_FILTER_USE_BOTH);
+                        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                            'services' => $available_services,
+                        ]);
+                    }
+                }
             }
+            
+            // No resource selected or resource not found, return all child services
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'services' => $child_services,
+            ]);
         }
 
         return ApiHelper::apiResponse($this->success, 'Record not found', false);
@@ -5880,5 +5935,57 @@ class AppointmentsController extends Controller
         SMSLogs::create($SMSLog);
         // SEND SMS for Appointment Booked End
         return $response;
+    }
+
+    /**
+     * Check patient's last treatment to compare doctor and service
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function checkPatientLastTreatment(Request $request)
+    {
+        try {
+            $patientId = $request->input('patient_id');
+            $serviceId = $request->input('service_id');
+
+            // Get the last arrived treatment for this patient
+            $lastTreatment = Appointments::where('patient_id', $patientId)
+                ->where('appointment_type_id', 2) // Treatment type
+                ->where('appointment_status_id', 2) // Arrived status
+                ->orderBy('scheduled_date', 'DESC')
+                ->orderBy('scheduled_time', 'DESC')
+                ->with(['doctor:id,name', 'service:id,name'])
+                ->first();
+
+            if ($lastTreatment) {
+                return response()->json([
+                    'status' => true,
+                    'data' => [
+                        'last_treatment' => [
+                            'id' => $lastTreatment->id,
+                            'doctor_id' => $lastTreatment->doctor_id,
+                            'doctor_name' => $lastTreatment->doctor->name ?? 'Unknown',
+                            'service_id' => $lastTreatment->service_id,
+                            'service_name' => $lastTreatment->service->name ?? 'Unknown',
+                            'scheduled_date' => $lastTreatment->scheduled_date,
+                            'scheduled_time' => $lastTreatment->scheduled_time,
+                        ]
+                    ]
+                ]);
+            } else {
+                return response()->json([
+                    'status' => true,
+                    'data' => [
+                        'last_treatment' => null
+                    ]
+                ]);
+            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error checking patient treatment history: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

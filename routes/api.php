@@ -415,6 +415,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('appointments/load-consultant-doctors', [AppointmentsController::class, 'loadConsultantDoctorsByLocation'])->name('appointments.load_consultant_doctors');
     Route::post('appointments/update/schedule', [AppointmentsController::class, 'updateSchedule'])->name('appointments.updateSchedule');
     Route::get('appointments/schedule/get', [AppointmentsController::class, 'getSchedule'])->name('appointments.get_schedule');
+    Route::get('appointments/check-patient-last-treatment', [AppointmentsController::class, 'checkPatientLastTreatment'])->name('appointments.check_patient_last_treatment');
     Route::resource('appointments', AppointmentsController::class);
     Route::post('appointments/load/lead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
@@ -614,6 +615,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
 
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
+
     // Edit Service
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
     Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');

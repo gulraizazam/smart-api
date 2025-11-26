@@ -41,6 +41,25 @@
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_appointment_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
+                {{-- Warning div for doctor mismatch --}}
+                <div id="treatment_doctor_warning" class="alert alert-warning d-none" style="background-color: #fff3cd; border-color: #ffc107; color: #856404;">
+                    <div class="mb-3">
+                        <strong>Notice:</strong> <span id="warning_message"></span>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="use_previous_doctor" name="doctor_choice" value="previous">
+                        <label class="form-check-label" for="use_previous_doctor">
+                            <span id="previous_doctor_option"></span>
+                        </label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="use_selected_doctor" name="doctor_choice" value="selected">
+                        <label class="form-check-label" for="use_selected_doctor">
+                            Proceed with the currently selected doctor
+                        </label>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <div class="row">
 

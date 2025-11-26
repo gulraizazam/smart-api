@@ -85,7 +85,7 @@
 
 <div class="modal fade" id="modal_create_treatment"  aria-hidden="true">
     <!--begin::Modal dialog-->
-    <div class="modal-dialog modal-dialog-centered form-popup" id="treatment_edit">
+    <div class="modal-dialog modal-dialog-centered mediam-modal" id="treatment_edit">
 
         @include('admin.appointments.appointment-forms.treatment.create')
 
