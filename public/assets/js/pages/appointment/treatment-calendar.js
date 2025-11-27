@@ -725,13 +725,12 @@ var TreatmentResourceCalendar = function() {
 
     return {
         init: function(doctorsList, date) {
-            // Prevent multiple simultaneous initializations
-            if (isInitializing) {
-                console.log('Already initializing calendar, skipping...');
-                return;
-            }
+            console.log('TreatmentResourceCalendar.init() called with', doctorsList ? doctorsList.length : 0, 'doctors');
             
-            isInitializing = true;
+            // Reset flags to allow re-initialization
+            isInitializing = false;
+            isLoading = false;
+            
             doctors = doctorsList || [];
             currentDate = date ? moment(date) : moment();
 
@@ -750,9 +749,6 @@ var TreatmentResourceCalendar = function() {
 
             this.render();
             this.loadAppointments();
-            
-            // Reset the flag after initialization completes
-            isInitializing = false;
         },
 
         render: function() {
