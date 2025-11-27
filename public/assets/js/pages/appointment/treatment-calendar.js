@@ -726,9 +726,17 @@ var TreatmentResourceCalendar = function() {
     var isLoading = false; // Flag to prevent multiple simultaneous loads
     var dragDropInitialized = false;
     var currentMachineId = '';
+    var isInitializing = false; // Flag to prevent multiple simultaneous inits
 
     return {
         init: function(doctorsList, date) {
+            // Prevent multiple simultaneous initializations
+            if (isInitializing) {
+                console.log('Already initializing calendar, skipping...');
+                return;
+            }
+            
+            isInitializing = true;
             doctors = doctorsList || [];
             currentDate = date ? moment(date) : moment();
 
