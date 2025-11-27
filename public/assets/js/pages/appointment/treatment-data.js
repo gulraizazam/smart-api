@@ -380,7 +380,7 @@ function checkPatientLastTreatment(patientId) {
                         // Service matches but doctor is different
                         // Show warning
                         $('#warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + '.');
-                        $('#previous_doctor_option').html('<strong>Schedule this treatment with ' + lastDoctorName + '</strong>');
+                        $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
                         $('#treatment_doctor_warning').removeClass('d-none');
 
                         // Store previous doctor ID

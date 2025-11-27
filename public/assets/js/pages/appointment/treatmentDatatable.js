@@ -1539,7 +1539,7 @@ function checkEditTreatmentDoctorChange() {
 
                         // Show warning message
                         $('#edit_warning_message').html(' The last session for this treatment was performed by ' + lastDoctorName + '');
-                        $('#edit_previous_doctor_option').html('<strong>Schedule this treatment with ' + lastDoctorName + '</strong>');
+                        $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
                         $('#edit_selected_doctor_option').html('' + selectedDoctorName + '');
 
                         // Show the warning div
