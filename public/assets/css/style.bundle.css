@@ -56233,7 +56233,7 @@ button {
 }
 .btn.btn-sm i, .btn-group-sm > .btn i {
     font-size: 1.3rem;
-    padding-right: 0.35rem;
+    padding-right: 0.05rem;
 }
 .btn.btn-sm .svg-icon, .btn-group-sm > .btn .svg-icon {
     margin-right: 0.35rem;
