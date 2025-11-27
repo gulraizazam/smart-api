@@ -499,7 +499,7 @@ var CustomResourceCalendar = function() {
             // Navigation
             html += '<div class="resource-calendar-nav">';
             html += '  <div>';
-            html += '    <button class="btn btn-sm btn-light" onclick="CustomResourceCalendar.previousDay()"><i class="fa fa-chevron-left"></i> Previous</button>';
+            html += '    <button class="btn btn-sm btn-light" onclick="CustomResourceCalendar.previousDay()"><i class="fa fa-chevron-left"></i> Prev</button>';
             html += '    <button class="btn btn-sm ' + (isToday ? 'btn-primary' : 'btn-light') + '" onclick="CustomResourceCalendar.today()">Today</button>';
             html += '    <button class="btn btn-sm btn-light" onclick="CustomResourceCalendar.nextDay()">Next <i class="fa fa-chevron-right"></i></button>';
             html += '  </div>';
