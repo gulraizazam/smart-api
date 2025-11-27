@@ -832,6 +832,10 @@ var TreatmentResourceCalendar = function() {
         },
 
         loadAppointments: function() {
+            // Log who is calling this function
+            console.log('loadAppointments called from:');
+            console.trace();
+            
             // Prevent multiple simultaneous loads
             if (isLoading) {
                 console.log('Already loading appointments, skipping...');
