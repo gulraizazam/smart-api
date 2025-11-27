@@ -473,6 +473,12 @@ var CustomResourceCalendar = function() {
             $('#consultancy_calendar').hide();
             $('#custom_resource_calendar').show();
 
+            // Initialize drag and drop only once
+            if (!dragDropInitialized) {
+                this.initDragAndDrop();
+                dragDropInitialized = true;
+            }
+
             this.render();
             this.loadAppointments();
             
@@ -676,9 +682,6 @@ var CustomResourceCalendar = function() {
                     console.log('Slot not found for appointment:', event.patient, 'at', timeStr, 'for doctor', doctorId);
                 }
             });
-
-            // Initialize drag and drop for appointments
-            CustomResourceCalendar.initDragAndDrop();
         },
 
         // Helper function to darken a color for borders
