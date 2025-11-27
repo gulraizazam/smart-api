@@ -77,7 +77,7 @@ var treatmentDoctorListener = function (doctorId) {
     counter = counter+1;
 }
 
-let loadMachine = function(locationId) {
+window.loadMachine = function(locationId) {
 
     $.ajax({
         headers: {
