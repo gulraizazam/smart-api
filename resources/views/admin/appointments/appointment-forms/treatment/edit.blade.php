@@ -43,7 +43,7 @@
                 {{-- Warning div for doctor mismatch --}}
                 <div id="edit_treatment_doctor_warning" class="alert alert-warning d-none" style="background-color: #FFEB3B; border-color: #FDD835; color: #000000;">
                     <div class="mb-3">
-                        <strong>Notice:</strong> <span id="edit_warning_message"></span>
+                        <strong>Attention:</strong> <span id="edit_warning_message"></span>
                     </div>
                     <div class="form-check mb-2" style="display: flex; align-items: center;">
                         <input class="form-check-input" type="radio" id="edit_use_previous_doctor" name="edit_doctor_choice" value="previous" style="width: 20px; height: 20px; cursor: pointer; margin: 0; flex-shrink: 0;">
