@@ -445,7 +445,9 @@ window.loadConsultantDoctors = function (locationId, appointment = null) {
                             window.eventData.location_id = $("#consultancy_location_filter").val();
 
                             // Initialize custom resource calendar with vertical doctor columns
-                            CustomResourceCalendar.init(doctorsList);
+                            if (typeof CustomResourceCalendar !== 'undefined') {
+                                CustomResourceCalendar.init(doctorsList);
+                            }
                         }
                         if (typeof result.doctor_id !== "undefined") {
                             $("#consultancy_doctor_filter").val(result.doctor_id).change();
