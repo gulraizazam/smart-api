@@ -546,6 +546,70 @@
                 });
             }
 
+            // Auto-trigger calendar for single centre users (Treatment)
+            function autoTriggerTreatmentCalendarForSingleCentre() {
+                // Check if userCentres is defined and has exactly one centre
+                if (typeof window.userCentres !== 'undefined' && window.userCentres.length === 1) {
+                    var singleCentreId = window.userCentres[0];
+
+                    // Check if treatment section is visible
+                    var result = get_query();
+                    var isTreatmentVisible = $('.treatment-section').is(':visible') && !$('.treatment-section').hasClass('d-none');
+
+                    if (isTreatmentVisible || (typeof result.tab !== 'undefined' && result.tab === 'treatment')) {
+                        // Only trigger if calendar is not already loaded
+                        if ($('#treatment_location_filter').val() === '' || $('#treatment_location_filter').val() === null) {
+                            // First, ensure the location dropdown is populated
+                            $.ajax({
+                                headers: {
+                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                },
+                                url: route('admin.appointments.load_locations'),
+                                type: 'POST',
+                                data: {
+                                    city_id: ''
+                                },
+                                cache: false,
+                                success: function(response) {
+                                    if (response.status && response.data.dropdown) {
+                                        var dropdown_options = '';
+                                        Object.entries(response.data.dropdown).forEach(function (dropdown) {
+                                            dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                                        });
+                                        $('#treatment_location_filter').html(dropdown_options);
+
+                                        // Now set the value and trigger calendar
+                                        setTimeout(function() {
+                                            $("#treatment_location_filter").val(singleCentreId);
+                                            console.log('Auto-triggering treatment calendar for centre ID:', singleCentreId);
+                                            loadDoctors(singleCentreId, 'treatment');
+                                        }, 300);
+                                    }
+                                },
+                                error: function(xhr, ajaxOptions, thrownError) {
+                                    console.error('Failed to load locations for treatment auto-trigger');
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Call auto-trigger on page load and when treatment tab is clicked
+            $(document).ready(function() {
+                // Trigger after a delay to ensure page is fully loaded
+                setTimeout(function() {
+                    autoTriggerTreatmentCalendarForSingleCentre();
+                }, 800);
+            });
+
+            // Also trigger when treatment tab is clicked
+            $(document).on('click', '.treatment-tab', function() {
+                setTimeout(function() {
+                    autoTriggerTreatmentCalendarForSingleCentre();
+                }, 800);
+            });
+
         </script>
         <script src="{{asset('assets/js/pages/appointment/invoice.js?v=1')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js')}}"></script>
