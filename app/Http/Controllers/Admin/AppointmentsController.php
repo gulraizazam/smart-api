@@ -117,7 +117,12 @@ class AppointmentsController extends Controller
             return abort(404);
         }
 
-        return view('admin.appointments.treatment');
+        // Get user's assigned centres
+        $userCentres = ACL::getUserCentres();
+
+        return view('admin.appointments.treatment', [
+            'userCentres' => $userCentres
+        ]);
     }
 
     /**
