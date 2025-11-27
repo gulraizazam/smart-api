@@ -5948,6 +5948,16 @@ class AppointmentsController extends Controller
 
             $lastTreatment = $query->first();
 
+            // Debug logging
+            \Log::info('checkPatientLastTreatment Debug', [
+                'patient_id' => $patientId,
+                'service_id' => $serviceId,
+                'location_id' => $locationId,
+                'last_treatment_found' => $lastTreatment ? true : false,
+                'last_treatment_id' => $lastTreatment ? $lastTreatment->id : null,
+                'last_treatment_doctor_id' => $lastTreatment ? $lastTreatment->doctor_id : null,
+            ]);
+
             if ($lastTreatment) {
                 // Check if the doctor is still allocated to the current location for this service
                 $isDoctorAllocated = false;
@@ -5959,6 +5969,13 @@ class AppointmentsController extends Controller
                         ->where('service_id', $serviceId)
                         ->where('is_allocated', 1)
                         ->exists();
+                    
+                    \Log::info('Doctor allocation check', [
+                        'doctor_id' => $lastTreatment->doctor_id,
+                        'location_id' => $locationId,
+                        'service_id' => $serviceId,
+                        'is_allocated' => $isDoctorAllocated
+                    ]);
                 }
 
                 // Only return the last treatment if the doctor is still allocated to the location
