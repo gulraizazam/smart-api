@@ -5933,17 +5933,19 @@ class AppointmentsController extends Controller
             $excludeAppointmentId = $request->input('exclude_appointment_id'); // For edit mode
 
             // Build query for the last arrived treatment for this patient with the same service
-            $query = Appointments::where('patient_id', $patientId)
-                ->where('appointment_type_id', 2) // Treatment type
-                ->where('appointment_status_id', 2) // Arrived status
-                ->where('service_id', $serviceId) // Same service
-                ->orderBy('scheduled_date', 'DESC')
-                ->orderBy('scheduled_time', 'DESC')
+            // Join with invoices table to get the latest treatment based on invoice creation date
+            $query = Appointments::where('appointments.patient_id', $patientId)
+                ->where('appointments.appointment_type_id', 2) // Treatment type
+                ->where('appointments.appointment_status_id', 2) // Arrived status
+                ->where('appointments.service_id', $serviceId) // Same service
+                ->join('invoices', 'appointments.id', '=', 'invoices.appointment_id')
+                ->select('appointments.*', 'invoices.created_at as invoice_created_at')
+                ->orderBy('invoices.created_at', 'DESC')
                 ->with(['doctor:id,name', 'service:id,name']);
 
             // Exclude current appointment if editing
             if ($excludeAppointmentId) {
-                $query->where('id', '!=', $excludeAppointmentId);
+                $query->where('appointments.id', '!=', $excludeAppointmentId);
             }
 
             $lastTreatment = $query->first();
@@ -5956,6 +5958,7 @@ class AppointmentsController extends Controller
                 'last_treatment_found' => $lastTreatment ? true : false,
                 'last_treatment_id' => $lastTreatment ? $lastTreatment->id : null,
                 'last_treatment_doctor_id' => $lastTreatment ? $lastTreatment->doctor_id : null,
+                'invoice_created_at' => $lastTreatment ? $lastTreatment->invoice_created_at : null,
             ]);
 
             if ($lastTreatment) {
