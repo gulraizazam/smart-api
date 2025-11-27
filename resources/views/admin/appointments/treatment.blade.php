@@ -224,7 +224,7 @@
                 <!--begin::Card-->
                 <div class="card card-custom">
                     <div class="card-header py-3">
-                        <div class="card-title">
+                        <div class="card-title align-items-center">
                             <span class="card-icon">
                                 <span class="svg-icon svg-icon-md svg-icon-primary">
                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
@@ -240,7 +240,24 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label change-label">Treatments</h3>
+                            <h3 class="card-label change-label">Manage Treatment</h3>
+
+                            @php
+                                $userCentres = $userCentres ?? [];
+                                $showDropdown = count($userCentres) > 1;
+                            @endphp
+
+                            @if($showDropdown)
+                            <div class="ml-5" style="min-width: 250px;">
+                               
+                                <select class="form-control" id="treatment_location_filter"></select>
+                            </div>
+                            @else
+                            <!-- Hidden dropdown for single-centre users -->
+                            <div style="display: none;">
+                                <select class="form-control" id="treatment_location_filter"></select>
+                            </div>
+                            @endif
 
                         </div>
 
