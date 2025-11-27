@@ -42,7 +42,7 @@
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_appointment_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 {{-- Warning div for doctor mismatch --}}
-                <div id="treatment_doctor_warning" class="alert alert-warning d-none" style="background-color: #fff3cd; border-color: #ffc107; color: #856404;">
+                <div id="treatment_doctor_warning" class="alert alert-warning d-none" style="background-color: #FFEB3B; border-color: #FDD835; color: #000000;">
                     <div class="mb-3">
                         <strong>Notice:</strong> <span id="warning_message"></span>
                     </div>
