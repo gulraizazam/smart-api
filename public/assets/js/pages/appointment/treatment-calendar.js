@@ -571,16 +571,21 @@ function setCreateTreatment(response, start) {
 
         //let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
+        let location_id = response.data.location_id;
         let doctors = response.data.doctors;
 
         // Get the currently selected doctor name from the response data
+        // The doctors object is nested by location: doctors[location_id][doctor_id]
         let selectedDoctorName = 'the currently selected doctor';
-        if (doctors && doctor_id) {
-            // Find doctor name from the doctors object
-            selectedDoctorName = doctors[doctor_id] || selectedDoctorName;
+        if (doctors && doctor_id && location_id) {
+            // Navigate through the nested structure
+            if (doctors[location_id] && doctors[location_id][doctor_id]) {
+                selectedDoctorName = doctors[location_id][doctor_id].name || selectedDoctorName;
+            }
         }
+
+        // Set the doctor name in the label
         $('#selected_doctor_option').text(selectedDoctorName);
-        let location_id = response.data.location_id;
         let employees = response.data.employees;
         let lead = response.data.lead;
         let lead_sources = response.data.lead_sources;
