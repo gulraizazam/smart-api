@@ -195,8 +195,12 @@
             }
             /* Drag and Drop Styles */
             .resource-appointment.dragging {
-                opacity: 0.5;
+                opacity: 0.3;
                 cursor: move;
+                pointer-events: none !important;
+            }
+            .resource-appointment.dragging * {
+                pointer-events: none !important;
             }
             .resource-doctor-slot.drag-over {
                 background: #d4f7e3 !important;
