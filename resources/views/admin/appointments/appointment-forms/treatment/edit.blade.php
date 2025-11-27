@@ -29,6 +29,7 @@
             <input type="hidden" id="appointment_manager" value="{{Config::get('constants.appointment_type_service_string')}}">
 
             <input type="hidden" name="lead_id" id="treatment_leadId">
+            <input type="hidden" id="treatment_patientId">
             <input type="hidden" id="treatment_appointment_id" >
             <input type="hidden" id="treatment_resourceRotaDayID" >
             <input type="hidden" id="treatment_machineRotaDayID" >
