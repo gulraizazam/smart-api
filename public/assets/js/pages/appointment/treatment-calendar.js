@@ -750,6 +750,9 @@ var TreatmentResourceCalendar = function() {
 
             this.render();
             this.loadAppointments();
+            
+            // Reset the flag after initialization completes
+            isInitializing = false;
         },
 
         render: function() {
