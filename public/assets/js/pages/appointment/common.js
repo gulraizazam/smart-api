@@ -59,6 +59,13 @@ function toggleSection($this, $class) {
     // Show/hide location dropdown in header based on active tab
     if ($class == 'treatment') {
         $(".treatment-location-header-dropdown").removeClass("d-none");
+        // Initialize select2 and load locations for treatment dropdown
+        setTimeout(function() {
+            $('#treatment_location_filter').select2({ width: '100%' });
+            if ($('#treatment_location_filter option').length <= 1) {
+                loadLocations('', 'treatment');
+            }
+        }, 200);
     } else {
         $(".treatment-location-header-dropdown").addClass("d-none");
     }
