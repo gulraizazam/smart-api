@@ -665,12 +665,31 @@ var CustomResourceCalendar = function() {
                     var startTimeFormatted = startTime.format('h:mm A');
                     var endTimeFormatted = endTime.format('h:mm A');
 
-                    var appointmentHtml = '<div class="resource-appointment" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-start-time="' + timeStr + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; border-color: ' + borderColor + ';">';
-                    appointmentHtml += '<div style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</div>';
-                    appointmentHtml += '<div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">Patient: ' + event.patient + '</div>';
+                    // Create gradient overlay for depth
+                    var gradientOverlay = 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.05) 100%)';
+                    
+                    var appointmentHtml = '<div class="resource-appointment modern-card" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-start-time="' + timeStr + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; background-image: ' + gradientOverlay + '; border-left: 4px solid ' + borderColor + '; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.3s ease;">';
+                    
+                    // Time badge with icon
+                    appointmentHtml += '<div style="display: flex; align-items: center; gap: 4px; margin-bottom: 6px; padding: 4px 8px; background: rgba(255,255,255,0.2); border-radius: 4px; width: fit-content;">';
+                    appointmentHtml += '<i class="fa fa-clock" style="font-size: 11px; color: #fff; opacity: 0.9;"></i>';
+                    appointmentHtml += '<span style="font-size: 12px; font-weight: 600; letter-spacing: 0.3px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</span>';
+                    appointmentHtml += '</div>';
+                    
+                    // Patient name with icon
+                    appointmentHtml += '<div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">';
+                    appointmentHtml += '<i class="fa fa-user-circle" style="font-size: 12px; color: #fff; opacity: 0.85;"></i>';
+                    appointmentHtml += '<span style="font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">' + event.patient + '</span>';
+                    appointmentHtml += '</div>';
+                    
+                    // Created by with icon (if exists)
                     if (event.created_by) {
-                        appointmentHtml += '<div style="font-size: 10px;">Created By: ' + event.created_by + '</div>';
+                        appointmentHtml += '<div style="display: flex; align-items: center; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.2);">';
+                        appointmentHtml += '<i class="fa fa-user-plus" style="font-size: 10px; color: #fff; opacity: 0.75;"></i>';
+                        appointmentHtml += '<span style="font-size: 11px; opacity: 0.9; font-weight: 500;">' + event.created_by + '</span>';
+                        appointmentHtml += '</div>';
                     }
+                    
                     appointmentHtml += '</div>';
 
                     slot.append(appointmentHtml);

@@ -142,19 +142,26 @@
                 right: 2px;
                 background: #3699ff;
                 color: #fff;
-                padding: 6px 8px;
-                border-radius: 4px;
+                padding: 8px 10px;
+                border-radius: 6px;
                 font-size: 11px;
                 overflow: hidden;
-                cursor: pointer;
-                border: 1px solid #187de4;
+                cursor: move;
+                border: 1px solid transparent;
+                border-left: 4px solid #187de4;
                 z-index: 5;
-                line-height: 1.3;
+                line-height: 1.4;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
             .resource-appointment:hover {
-                background: #187de4;
-                box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                transform: translateY(-2px) scale(1.02);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.3);
                 z-index: 10;
+                filter: brightness(1.1);
+            }
+            .resource-appointment.modern-card {
+                backdrop-filter: blur(10px);
             }
             .resource-calendar-nav {
                 display: flex;
