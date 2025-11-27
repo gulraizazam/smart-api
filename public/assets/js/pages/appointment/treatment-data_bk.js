@@ -66,7 +66,7 @@ jQuery(document).ready(function() {
 
 
 var counter = 0;
-var treatmentDoctorListener = function (doctorId) {
+window.treatmentDoctorListener = function (doctorId) {
 
     setQueryStringParameter('doctor_id', doctorId);
 
@@ -118,7 +118,7 @@ function loadCalendar() {
 }
 
 
-var loadEndServices = function (baseServiceId) {
+window.loadEndServices = function (baseServiceId) {
     if(baseServiceId != '') {
         $.ajax({
             headers: {
