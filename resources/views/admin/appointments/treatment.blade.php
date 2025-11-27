@@ -652,7 +652,7 @@
         <script src="{{asset('assets/js/pages/crud/forms/validation/feedbacks/feedbacks.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/plan/create.js')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/common.js?v=5')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/common.js?v=6')}}"></script>
 
     @endpush
 
