@@ -5073,95 +5073,95 @@ class AppointmentsController extends Controller
      */
     public function dragDropTreatmentReschedule(Request $request)
     {
-        $appointment_checkes = AppointmentCheckesWidget::AppointmentAppointmentCheckesfromcard($request);
-        if ($appointment_checkes['status']) {
-            $doctor_check_availability = Resources::checkDoctorAvailbility($request);
-
-            if (
-                $request->id &&
-                $request->start &&
-                $request->end &&
-                $request->doctor_id
-            ) {
-                if ($doctor_check_availability) {
-                    // Appointment Data
-                    $data = $request->all();
-                    $appointment = Appointments::findOrFail($request->id);
-                    $data['first_scheduled_count'] = $appointment->first_scheduled_count;
-                    $data['scheduled_at_count'] = $appointment->scheduled_at_count;
-
-                    // If resourceId is provided, use it. Otherwise, keep existing resource_id
-                    if ($request->resourceId) {
-                        $data['resource_id'] = $data['resourceId'];
-
-                        // Check room availability only if resourceId is provided
-                        $room_check_availability = Resources::checkRoomAvailbility($request);
-                        if (!$room_check_availability) {
-                            return ApiHelper::apiResponse($this->success, 'Machine is not available for this time slot.', false);
-                        }
-
-                        // Get rota for machine
-                        if ($appointment->appointment_type_id = Config::get('constants.appointment_type_service')) {
-                            $response = Resources::getResourceRotaHasDay($data['start'], $data['resourceId']);
-                            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                                $data['resource_has_rota_day_id_for_machine'] = $response['resource_has_rota_day_id'];
-                            }
-                        }
-                    }
-
-                    // Get doctor rota
-                    if ($appointment->appointment_type_id = Config::get('constants.appointment_type_service')) {
-                        $resource_doctor = Resources::where('external_id', '=', $data['doctor_id'])->first();
-                        if ($resource_doctor) {
-                            $response = Resources::getResourceRotaHasDay($data['start'], $resource_doctor->id);
-                            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                                $data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
-                            }
-                        }
-                    }
-
-                    // Check if appointment has paid invoice
-                    $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-                    $invoice = Invoices::where([
-                        ['appointment_id', '=', $appointment->id],
-                        ['invoice_status_id', '=', $invoicestatus->id],
-                    ])->get();
-                    if (count($invoice) > 0) {
-                        return ApiHelper::apiResponse($this->success, 'Appointment has invoice.', false);
-                    }
-
-                    $record = Appointments::updateServiceRecord($request->id, $data, Auth::User()->account_id);
-                    if ($record) {
-                        /*
-                         * Set Appointment Status 'pending' and set send message flag
-                         */
-                        $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
-                        if ($appointment_status) {
-                            $record->update([
-                                'appointment_status_id' => $appointment_status->id,
-                                'base_appointment_status_id' => $appointment_status->id,
-                                'appointment_status_allow_message' => $appointment_status->allow_message,
-                                'send_message' => 1, // Set flag 1 to send message on cron job
-                            ]);
-                        }
-                        $this->dispatch(
-                            new IndexSingleAppointmentJob([
-                                'account_id' => Auth::User()->account_id,
-                                'appointment_id' => $appointment->id,
-                            ])
-                        );
-
-                        return ApiHelper::apiResponse($this->success, 'Treatment rescheduled successfully.');
-                    }
-                } else {
-                    return ApiHelper::apiResponse($this->success, 'Doctor is not available for this time slot.', false);
-                }
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Required parameters not provided.', false);
+        // Validate required parameters
+        if (!$request->id || !$request->start || !$request->end || !$request->doctor_id) {
+            return ApiHelper::apiResponse($this->success, 'Required parameters (id, start, end, doctor_id) not provided.', false);
         }
 
-        return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
+        // Get appointment
+        $appointment = Appointments::findOrFail($request->id);
+
+        // Check if appointment has paid invoice
+        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+        $invoice = Invoices::where([
+            ['appointment_id', '=', $appointment->id],
+            ['invoice_status_id', '=', $invoicestatus->id],
+        ])->get();
+        if (count($invoice) > 0) {
+            return ApiHelper::apiResponse($this->success, 'Appointment has invoice and cannot be rescheduled.', false);
+        }
+
+        // Check doctor availability
+        $doctor_check_availability = Resources::checkDoctorAvailbility($request);
+        if (!$doctor_check_availability) {
+            return ApiHelper::apiResponse($this->success, 'Doctor is not available for this time slot.', false);
+        }
+
+        // Prepare appointment data
+        $data = $request->all();
+        $data['first_scheduled_count'] = $appointment->first_scheduled_count;
+        $data['scheduled_at_count'] = $appointment->scheduled_at_count;
+        $data['reschedule'] = 1;
+
+        // If resourceId is provided, validate machine and use it
+        if ($request->resourceId && !empty($request->resourceId)) {
+            $data['resource_id'] = $request->resourceId;
+
+            // Check room availability
+            $room_check_availability = Resources::checkRoomAvailbility($request);
+            if (!$room_check_availability) {
+                return ApiHelper::apiResponse($this->success, 'Machine is not available for this time slot.', false);
+            }
+
+            // Get rota for machine
+            $response = Resources::getResourceRotaHasDay($data['start'], $request->resourceId);
+            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
+                $data['resource_has_rota_day_id_for_machine'] = $response['resource_has_rota_day_id'];
+            }
+        } else {
+            // Keep existing resource_id if not provided
+            $data['resource_id'] = $appointment->resource_id;
+        }
+
+        // Get doctor rota
+        $resource_doctor = Resources::where('external_id', '=', $data['doctor_id'])->first();
+        if ($resource_doctor) {
+            $response = Resources::getResourceRotaHasDay($data['start'], $resource_doctor->id);
+            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
+                $data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
+            } else {
+                return ApiHelper::apiResponse($this->success, 'Doctor rota is not available for this time slot.', false);
+            }
+        } else {
+            return ApiHelper::apiResponse($this->success, 'Doctor not found.', false);
+        }
+
+        // Update appointment
+        $record = Appointments::updateServiceRecord($request->id, $data, Auth::User()->account_id);
+        if ($record) {
+            // Set Appointment Status 'pending' and set send message flag
+            $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
+            if ($appointment_status) {
+                $record->update([
+                    'appointment_status_id' => $appointment_status->id,
+                    'base_appointment_status_id' => $appointment_status->id,
+                    'appointment_status_allow_message' => $appointment_status->allow_message,
+                    'send_message' => 1, // Set flag 1 to send message on cron job
+                ]);
+            }
+
+            // Dispatch Elastic Search Index
+            $this->dispatch(
+                new IndexSingleAppointmentJob([
+                    'account_id' => Auth::User()->account_id,
+                    'appointment_id' => $appointment->id,
+                ])
+            );
+
+            return ApiHelper::apiResponse($this->success, 'Treatment rescheduled successfully.');
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Failed to update appointment.', false);
     }
 
     /**
