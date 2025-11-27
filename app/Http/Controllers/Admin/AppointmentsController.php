@@ -5963,17 +5963,37 @@ class AppointmentsController extends Controller
                 $isDoctorAllocated = false;
                 
                 if ($locationId && $lastTreatment->doctor_id) {
-                    $isDoctorAllocated = DB::table('doctor_has_locations')
-                        ->where('location_id', $locationId)
-                        ->where('user_id', $lastTreatment->doctor_id)
-                        ->where('service_id', $serviceId)
-                        ->where('is_allocated', 1)
+                    // Get the requested service to check parent_id
+                    $requestedService = \App\Models\Services::find($serviceId);
+                    
+                    // Check if doctor is allocated to:
+                    // 1. The exact service
+                    // 2. The parent service (if this is a child service)
+                    // 3. "All Services" (slug = 'all')
+                    $isDoctorAllocated = DB::table('doctor_has_locations as dhl')
+                        ->join('services as s', 's.id', '=', 'dhl.service_id')
+                        ->where('dhl.location_id', $locationId)
+                        ->where('dhl.user_id', $lastTreatment->doctor_id)
+                        ->where('dhl.is_allocated', 1)
+                        ->where(function($query) use ($serviceId, $requestedService) {
+                            // Exact service match
+                            $query->where('dhl.service_id', $serviceId);
+                            
+                            // OR parent service match (if this service has a parent)
+                            if ($requestedService && $requestedService->parent_id) {
+                                $query->orWhere('dhl.service_id', $requestedService->parent_id);
+                            }
+                            
+                            // OR "All Services" match
+                            $query->orWhere('s.slug', 'all');
+                        })
                         ->exists();
                     
                     \Log::info('Doctor allocation check', [
                         'doctor_id' => $lastTreatment->doctor_id,
                         'location_id' => $locationId,
                         'service_id' => $serviceId,
+                        'service_parent_id' => $requestedService ? $requestedService->parent_id : null,
                         'is_allocated' => $isDoctorAllocated
                     ]);
                 }
