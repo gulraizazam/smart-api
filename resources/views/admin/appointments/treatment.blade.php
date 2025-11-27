@@ -354,7 +354,7 @@
                     <!--End Consultancy Section-->
 
                     <!--Start Treatment Section-->
-                    <div class="card-body appointment treatment-section d-none">
+                    <div class="card-body appointment treatment-section d-none" style="padding:0 !important">
 
                         @include('admin.appointments.services.filters')
 
