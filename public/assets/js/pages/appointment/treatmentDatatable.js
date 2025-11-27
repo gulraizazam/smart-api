@@ -978,6 +978,7 @@ function setTreatmentEditData(response) {
         $("#edit_old_treatment_patient_phone").val(appointment?.lead?.patient?.phone);
 
         $("#treatment_leadId").val(appointment?.lead_id);
+        $("#treatment_patientId").val(appointment?.patient_id); // Store patient_id for doctor check
         $("#treatment_appointment_id").val(appointment?.id);
         $("#treatment_resourceRotaDayID").val(resourceHadRotaDay?.id);
         $("#treatment_machineRotaDayID").val(machineHadRotaDay?.id);
@@ -1500,7 +1501,7 @@ function checkEditTreatmentDoctorChange() {
     }
 
     var selectedDoctorId = $("#edit_treatment_doctor_id").val();
-    var patientId = $("#treatment_leadId").val();
+    var patientId = $("#treatment_patientId").val(); // Use patient_id instead of lead_id
     var serviceId = $("#treatment_service_id").val();
     var currentAppointmentId = $("#treatment_appointment_id").val();
 
