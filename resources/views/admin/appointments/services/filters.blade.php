@@ -7,10 +7,22 @@
             <select class="form-control" id="treatment_city_filter"></select>
         </div> -->
 
+        @php
+            $userCentres = $userCentres ?? [];
+            $showDropdown = count($userCentres) > 1;
+        @endphp
+
+        @if($showDropdown)
         <div class="col-lg-4 mb-lg-0 mb-6">
             <label>Centre:</label>
             <select class="form-control" id="treatment_location_filter"></select>
         </div>
+        @else
+        <div class="col-lg-4 mb-lg-0 mb-6" style="display: none;">
+            <label>Centre:</label>
+            <select class="form-control" id="treatment_location_filter"></select>
+        </div>
+        @endif
 
         <!-- <div class="col-lg-4 mb-lg-0 mb-6">
             <label>Doctor:</label>
@@ -25,3 +37,8 @@
     </div>
 
 </div>
+
+<script>
+    // Pass user centres to JavaScript for treatment tab
+    window.userCentres = window.userCentres || @json($userCentres);
+</script>
