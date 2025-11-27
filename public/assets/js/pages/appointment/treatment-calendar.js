@@ -970,6 +970,9 @@ var TreatmentResourceCalendar = function() {
             console.log('Current machine ID:', currentMachineId);
             console.log('Filter machine ID:', $('#treatment_resource_filter').val());
 
+            // Clear all existing appointments before rendering new ones
+            $('.resource-appointment').remove();
+
             events.forEach(function(event) {
                 var startTime = moment(event.start);
                 var endTime = moment(event.end);
