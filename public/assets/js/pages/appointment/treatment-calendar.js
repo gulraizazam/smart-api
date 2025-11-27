@@ -732,7 +732,10 @@ var TreatmentResourceCalendar = function() {
             isLoading = false;
             
             doctors = doctorsList || [];
-            currentDate = date ? moment(date) : moment();
+            // Only update currentDate if explicitly provided, otherwise preserve existing date
+            if (date) {
+                currentDate = moment(date);
+            }
 
             // Store the current machine_id
             currentMachineId = $('#treatment_resource_filter').val() || '';
