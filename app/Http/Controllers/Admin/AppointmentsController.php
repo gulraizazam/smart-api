@@ -5931,9 +5931,11 @@ class AppointmentsController extends Controller
             $serviceId = $request->input('service_id');
 
             // Get the last arrived treatment for this patient
+            // Only include past treatments (scheduled_date < today)
             $lastTreatment = Appointments::where('patient_id', $patientId)
                 ->where('appointment_type_id', 2) // Treatment type
                 ->where('appointment_status_id', 2) // Arrived status
+                ->where('scheduled_date', '<', \Carbon\Carbon::today()) // Past treatments only
                 ->orderBy('scheduled_date', 'DESC')
                 ->orderBy('scheduled_time', 'DESC')
                 ->with(['doctor:id,name', 'service:id,name'])
