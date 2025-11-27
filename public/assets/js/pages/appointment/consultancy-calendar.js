@@ -963,7 +963,15 @@ var CustomResourceCalendar = function() {
 
                 // Get appointment and slot details
                 var appointmentId = draggedElement.data('id');
+                var originalDoctorId = draggedElement.data('doctor-id');
                 var newDoctorId = dropSlot.data('doctor-id');
+
+                // Prevent dragging between different doctors
+                if (originalDoctorId !== newDoctorId) {
+                    toastr.error('Consultancy appointments cannot be moved between different doctors');
+                    draggedElement.removeClass('dragging');
+                    return false;
+                }
                 var newTime = dropSlot.data('time');
                 var duration = draggedElement.data('duration');
 
