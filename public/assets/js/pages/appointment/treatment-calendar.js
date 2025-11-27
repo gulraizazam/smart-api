@@ -571,6 +571,10 @@ function setCreateTreatment(response, start) {
 
         //let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
+
+        // Get the currently selected doctor name from the filter dropdown
+        let selectedDoctorName = $('#treatment_doctor_filter option:selected').text() || 'the currently selected doctor';
+        $('#selected_doctor_option').text(selectedDoctorName);
         let location_id = response.data.location_id;
         let employees = response.data.employees;
         let lead = response.data.lead;
@@ -1212,7 +1216,15 @@ var TreatmentResourceCalendar = function() {
 
                 // Get appointment and slot details
                 var appointmentId = draggedElement.data('id');
+                var originalDoctorId = draggedElement.data('doctor-id');
                 var newDoctorId = dropSlot.data('doctor-id');
+
+                // Prevent dragging between different doctors
+                if (originalDoctorId !== newDoctorId) {
+                    toastr.error('Treatments cannot be moved between different doctors');
+                    draggedElement.removeClass('dragging');
+                    return false;
+                }
                 var newTime = dropSlot.data('time');
                 var duration = draggedElement.data('duration');
                 var machineId = draggedElement.data('machine-id');
