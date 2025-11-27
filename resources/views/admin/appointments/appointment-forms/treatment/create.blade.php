@@ -47,14 +47,14 @@
                         <strong>Notice:</strong> <span id="warning_message"></span>
                     </div>
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="use_previous_doctor" name="doctor_choice" value="previous">
-                        <label class="form-check-label" for="use_previous_doctor">
+                        <input class="form-check-input" type="checkbox" id="use_previous_doctor" name="doctor_choice" value="previous" style="width: 20px; height: 20px; cursor: pointer;">
+                        <label class="form-check-label" for="use_previous_doctor" style="cursor: pointer; padding-left: 8px;">
                             <span id="previous_doctor_option"></span>
                         </label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="use_selected_doctor" name="doctor_choice" value="selected">
-                        <label class="form-check-label" for="use_selected_doctor">
+                        <input class="form-check-input" type="checkbox" id="use_selected_doctor" name="doctor_choice" value="selected" style="width: 20px; height: 20px; cursor: pointer;">
+                        <label class="form-check-label" for="use_selected_doctor" style="cursor: pointer; padding-left: 8px;">
                             Proceed with the currently selected doctor
                         </label>
                     </div>

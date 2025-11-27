@@ -417,8 +417,8 @@ function checkPatientLastTreatment(patientId) {
                     } else {
                         // Service matches but doctor is different
                         // Show warning
-                        $('#warning_message').text('The last treatment of this service was performed by Dr. ' + lastDoctorName + '.');
-                        $('#previous_doctor_option').text('Schedule this treatment with Dr. ' + lastDoctorName);
+                        $('#warning_message').html('The last treatment of this service was performed by <strong>' + lastDoctorName + '</strong>.');
+                        $('#previous_doctor_option').html('Schedule this treatment with <strong>' + lastDoctorName + '</strong>');
                         $('#treatment_doctor_warning').removeClass('d-none');
 
                         // Store previous doctor ID
