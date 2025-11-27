@@ -723,6 +723,7 @@ var TreatmentResourceCalendar = function() {
     var currentDate = moment();
     var doctors = [];
     var appointments = [];
+    var isLoading = false; // Flag to prevent multiple simultaneous loads
     var dragDropInitialized = false;
     var currentMachineId = '';
 
@@ -831,6 +832,13 @@ var TreatmentResourceCalendar = function() {
         },
 
         loadAppointments: function() {
+            // Prevent multiple simultaneous loads
+            if (isLoading) {
+                console.log('Already loading appointments, skipping...');
+                return;
+            }
+            
+            isLoading = true;
             $('.appointment-loader-base').show();
 
             // Get and store the machine ID from the filter
@@ -924,6 +932,7 @@ var TreatmentResourceCalendar = function() {
                 TreatmentResourceCalendar.renderRotas(allRotas);
                 TreatmentResourceCalendar.renderAppointments(allEvents);
                 $('.appointment-loader-base').hide();
+                isLoading = false; // Reset loading flag
             }).fail(function() {
                 console.error('AJAX request failed');
                 $('.appointment-loader-base').hide();
