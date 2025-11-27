@@ -3,6 +3,7 @@
 var treatment_calendar;
 var start_treatment_date;
 var ActiveURL;
+var isEventClicked = false; // Flag to track if an event was clicked
 var TreatmentCalendar = function() {
     return {
         init: function(start) {
@@ -98,11 +99,27 @@ var TreatmentCalendar = function() {
 
                 },
                 eventClick:  function(info, jsEvent, view) { /*Click event to edit existing one*/
+                    isEventClicked = true; // Set flag when event is clicked
                     info.jsEvent.preventDefault(); // Prevent default action
                     info.jsEvent.stopPropagation(); // Stop event bubbling to dateClick
-                    TreatmentCalendar.clickTreatmentEvent(info, jsEvent, view)
+                    TreatmentCalendar.clickTreatmentEvent(info, jsEvent, view);
+                    // Reset flag after a short delay
+                    setTimeout(function() {
+                        isEventClicked = false;
+                    }, 100);
                 },
                 dateClick: function(info, jsEvent, view, resource) { /*Create new event on for available dates*/
+                    // Don't create treatment if an event was just clicked
+                    if (isEventClicked) {
+                        return;
+                    }
+                    // Check if click target is an event element
+                    if (info.jsEvent && info.jsEvent.target) {
+                        var target = info.jsEvent.target;
+                        if (target.closest('.fc-event')) {
+                            return; // Don't create if clicking on an event
+                        }
+                    }
                     TreatmentCalendar.createTreatment(info);
                 },
                 eventMouseEnter: function(e) { /*Show info on mouse over*/

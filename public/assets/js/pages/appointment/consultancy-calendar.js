@@ -2,6 +2,7 @@
 
 var calendar;
 var start_date;
+var isConsultancyEventClicked = false; // Flag to track if an event was clicked
 function patient_search_func() {
     $("#patient_search_id_selector").select2({
         ajax: {
@@ -141,11 +142,27 @@ var ConsultancyCalendar = function() {
                   ConsultancyCalendar.checkAndUpdateAppointment(info);
                 },
                 eventClick:  function(info, jsEvent, view) { /*Click event to edit existing one*/
+                    isConsultancyEventClicked = true; // Set flag when event is clicked
                     info.jsEvent.preventDefault(); // Prevent default action
                     info.jsEvent.stopPropagation(); // Stop event bubbling to dateClick
-                    clickEvent(info, jsEvent, view)
+                    clickEvent(info, jsEvent, view);
+                    // Reset flag after a short delay
+                    setTimeout(function() {
+                        isConsultancyEventClicked = false;
+                    }, 100);
                 },
                 dateClick: function(info, jsEvent, view, resource) { /*Create new event on for available dates*/
+                    // Don't create consultancy if an event was just clicked
+                    if (isConsultancyEventClicked) {
+                        return;
+                    }
+                    // Check if click target is an event element
+                    if (info.jsEvent && info.jsEvent.target) {
+                        var target = info.jsEvent.target;
+                        if (target.closest('.fc-event')) {
+                            return; // Don't create if clicking on an event
+                        }
+                    }
                     ConsultancyCalendar.createConsultancy(info);
                 },
                 eventMouseEnter: function(e) { /*Show info on mouse over*/
