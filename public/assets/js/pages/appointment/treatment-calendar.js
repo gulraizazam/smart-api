@@ -604,7 +604,7 @@ function setCreateTreatment(response, start) {
         }
 
         // Set the doctor name in the label with bold styling
-        $('#selected_doctor_option').html('<strong>' + selectedDoctorName + '</strong>');
+        $('#selected_doctor_option').html('' + selectedDoctorName + '');
         let employees = response.data.employees;
         let lead = response.data.lead;
         let lead_sources = response.data.lead_sources;
