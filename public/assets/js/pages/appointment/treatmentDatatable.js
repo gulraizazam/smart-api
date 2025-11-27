@@ -1531,7 +1531,6 @@ $(document).on('change', '#edit_use_previous_doctor', function() {
         isResettingDoctor = true;
         var originalDoctorId = $("#edit_treatment_original_doctor_id").val();
         $('#edit_treatment_doctor_id').val(originalDoctorId).trigger('change.select2');
-        $('#edit_treatment_doctor_warning').addClass('d-none');
 
         // Enable submit button
         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
@@ -1545,8 +1544,6 @@ $(document).on('change', '#edit_use_previous_doctor', function() {
 $(document).on('change', '#edit_use_selected_doctor', function() {
     if ($(this).is(':checked')) {
         // Keep the newly selected doctor
-        $('#edit_treatment_doctor_warning').addClass('d-none');
-
         // Enable submit button
         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
     }
