@@ -58,12 +58,17 @@ function toggleSection($this, $class) {
 
     // Show/hide location dropdown in header based on active tab
     if ($class == 'treatment') {
+        console.log('Treatment tab activated');
         $(".treatment-location-header-dropdown").removeClass("d-none");
         // Initialize select2 and load locations for treatment dropdown
         setTimeout(function() {
+            console.log('Initializing treatment location dropdown, current options:', $('#treatment_location_filter option').length);
             $('#treatment_location_filter').select2({ width: '100%' });
             if ($('#treatment_location_filter option').length <= 1) {
+                console.log('Loading locations for treatment');
                 loadLocations('', 'treatment');
+            } else {
+                console.log('Locations already loaded, skipping');
             }
         }, 200);
     } else {
@@ -224,6 +229,7 @@ var something = (function() {
     };
 })();
 window.loadDoctors = function (locationId, appointment = null) {
+    console.log('loadDoctors called with locationId:', locationId, 'appointment:', appointment);
   
     if (locationId != '' && locationId != null) {
         $('#treatment_doctor_filter').removeAttr('disabled');
