@@ -817,7 +817,7 @@ var TreatmentResourceCalendar = function() {
                     var hours = Math.floor(time / 60);
                     var mins = time % 60;
                     var timeStr = hours + ':' + (mins < 10 ? '0' : '') + mins;
-                    html += '<div class="resource-doctor-slot" data-doctor-id="' + doctor.id + '" data-time="' + timeStr + '" onclick="TreatmentResourceCalendar.createAppointment(' + doctor.id + ', \'' + timeStr + '\', this)"></div>';
+                    html += '<div class="resource-doctor-slot" data-doctor-id="' + doctor.id + '" data-time="' + timeStr + '"></div>';
                 }
 
                 html += '      </div>';
@@ -1180,9 +1180,21 @@ var TreatmentResourceCalendar = function() {
             var originalSlot = null;
             var isDragging = false;
 
+            // Handle slot click (for creating appointments)
+            $(document).on('click', '.resource-doctor-slot', function(e) {
+                // Don't create if clicking on an appointment inside the slot
+                if ($(e.target).hasClass('resource-appointment') || $(e.target).closest('.resource-appointment').length) {
+                    return;
+                }
+                
+                var doctorId = $(this).data('doctor-id');
+                var timeStr = $(this).data('time');
+                TreatmentResourceCalendar.createAppointment(doctorId, timeStr, this);
+            });
+
             // Handle appointment click
             $(document).on('click', '.resource-appointment', function(e) {
-                e.stopPropagation(); // Prevent click from bubbling to slot's onclick
+                e.stopPropagation(); // Prevent click from bubbling to slot click
                 e.preventDefault(); // Prevent default action
                 if (!isDragging) {
                     var appointmentId = $(this).data('id');
