@@ -2705,7 +2705,7 @@ class AppointmentsController extends Controller
 
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {
-            return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location. Please ensure the doctor has either service ID 13 (All Services) or the specific service assigned with is_allocated = 1.', false);
+            return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
         }
     }
 
