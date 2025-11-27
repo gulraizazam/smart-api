@@ -265,7 +265,7 @@ var TreatmentCalendar = function() {
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                url: route('admin.appointments.check_service_schedule_and_save_appointment'),
+                url: route('admin.appointments.drag_drop_reschedule_treatment'),
                 type: 'POST',
                 data: {
                     id: event.id,
@@ -273,7 +273,7 @@ var TreatmentCalendar = function() {
                     end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
                     doctor_id: $("#treatment_doctor_filter").val(),
                     location_id: $("#treatment_location_filter").val(),
-                    resourceId: $("#treatment_resource_filter").val(),
+                    resourceId: $("#treatment_resource_filter").val() || null,
                 },
                 cache: false,
                 success: function(response) {
@@ -1262,7 +1262,7 @@ var TreatmentResourceCalendar = function() {
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                url: route('admin.appointments.check_service_schedule_and_save_appointment'),
+                url: route('admin.appointments.drag_drop_reschedule_treatment'),
                 type: 'POST',
                 data: {
                     id: appointmentId,
@@ -1270,7 +1270,7 @@ var TreatmentResourceCalendar = function() {
                     end: newEnd,
                     doctor_id: newDoctorId,
                     location_id: $('#treatment_location_filter').val(),
-                    resourceId: finalMachineId
+                    resourceId: finalMachineId || null
                 },
                 cache: false,
                 success: function(response) {

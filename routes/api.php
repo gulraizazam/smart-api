@@ -616,6 +616,9 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
 
+    // Drag and drop treatment reschedule (without resourceId requirement)
+    Route::post('appointments/drag-drop-reschedule-treatment', [AppointmentsController::class, 'dragDropTreatmentReschedule'])->name('appointments.drag_drop_reschedule_treatment');
+
     // Edit Service
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
     Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');
