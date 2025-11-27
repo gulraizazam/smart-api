@@ -571,9 +571,14 @@ function setCreateTreatment(response, start) {
 
         //let city_id = response.data.city_id;
         let doctor_id = response.data.doctor_id;
+        let doctors = response.data.doctors;
 
-        // Get the currently selected doctor name from the filter dropdown
-        let selectedDoctorName = $('#treatment_doctor_filter option:selected').text() || 'the currently selected doctor';
+        // Get the currently selected doctor name from the response data
+        let selectedDoctorName = 'the currently selected doctor';
+        if (doctors && doctor_id) {
+            // Find doctor name from the doctors object
+            selectedDoctorName = doctors[doctor_id] || selectedDoctorName;
+        }
         $('#selected_doctor_option').text(selectedDoctorName);
         let location_id = response.data.location_id;
         let employees = response.data.employees;
