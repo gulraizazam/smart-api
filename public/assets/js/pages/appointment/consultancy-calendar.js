@@ -459,6 +459,10 @@ var CustomResourceCalendar = function() {
 
     return {
         init: function(doctorsList, date) {
+            // Log who is calling this function
+            console.log('CustomResourceCalendar.init called from:');
+            console.trace();
+            
             // Prevent multiple simultaneous initializations
             if (isInitializing) {
                 console.log('Already initializing consultancy calendar, skipping...');
