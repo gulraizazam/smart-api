@@ -933,6 +933,22 @@ var TreatmentResourceCalendar = function() {
                 console.log('All rotas:', allRotas);
                 console.log('Sample event data:', allEvents.length > 0 ? allEvents[0] : 'No events');
 
+                // Check if any doctor has no rotas defined and show warning
+                var doctorsWithoutRotas = [];
+                allRotas.forEach(function(rotaData) {
+                    if (rotaData && rotaData.doctor_rotas && rotaData.doctor_rotas.length === 0) {
+                        // Find doctor name from the doctors list
+                        var doctor = doctors.find(function(d) { return d.id == rotaData.doctor_id; });
+                        if (doctor) {
+                            doctorsWithoutRotas.push(doctor.name);
+                        }
+                    }
+                });
+                
+                if (doctorsWithoutRotas.length > 0) {
+                    toastr.error("Doctor rotas not defined for: " + doctorsWithoutRotas.join(', '));
+                }
+
                 TreatmentResourceCalendar.renderRotas(allRotas);
                 TreatmentResourceCalendar.renderAppointments(allEvents);
                 $('.appointment-loader-base').hide();
