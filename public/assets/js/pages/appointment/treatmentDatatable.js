@@ -1503,6 +1503,7 @@ function checkEditTreatmentDoctorChange() {
     var selectedDoctorId = $("#edit_treatment_doctor_id").val();
     var patientId = $("#treatment_patientId").val(); // Use patient_id instead of lead_id
     var serviceId = $("#treatment_service_id").val();
+    var locationId = $("#edit_treatment_location_id").val();
     var currentAppointmentId = $("#treatment_appointment_id").val();
 
     // If no doctor selected or no patient ID, just hide warning and enable submit
@@ -1519,6 +1520,7 @@ function checkEditTreatmentDoctorChange() {
         data: {
             patient_id: patientId,
             service_id: serviceId,
+            location_id: locationId,
             exclude_appointment_id: currentAppointmentId // Exclude current appointment
         },
         success: function(response) {
