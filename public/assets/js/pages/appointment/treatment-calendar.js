@@ -98,6 +98,8 @@ var TreatmentCalendar = function() {
 
                 },
                 eventClick:  function(info, jsEvent, view) { /*Click event to edit existing one*/
+                    info.jsEvent.preventDefault(); // Prevent default action
+                    info.jsEvent.stopPropagation(); // Stop event bubbling to dateClick
                     TreatmentCalendar.clickTreatmentEvent(info, jsEvent, view)
                 },
                 dateClick: function(info, jsEvent, view, resource) { /*Create new event on for available dates*/
