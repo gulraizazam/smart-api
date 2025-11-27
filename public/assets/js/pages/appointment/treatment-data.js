@@ -425,7 +425,11 @@ function checkPatientLastTreatment(patientId) {
                         $('#treatment_doctor_warning').data('previous-doctor-id', lastDoctorId);
                         $('#treatment_doctor_warning').data('previous-doctor-name', lastDoctorName);
 
-                        // Keep submit disabled until checkbox is selected
+                        // Deselect both radio buttons by default
+                        $('#use_previous_doctor').prop('checked', false);
+                        $('#use_selected_doctor').prop('checked', false);
+
+                        // Keep submit disabled until radio button is selected
                     }
                 } else {
                     // Service doesn't match, enable submit button

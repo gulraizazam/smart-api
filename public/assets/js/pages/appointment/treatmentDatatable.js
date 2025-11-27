@@ -956,6 +956,8 @@ function setTreatmentEditData(response) {
         $('#edit_treatment_doctor_warning').addClass('d-none');
         $('#edit_use_previous_doctor').prop('checked', false);
         $('#edit_use_selected_doctor').prop('checked', false);
+        // Enable submit button by default (will be disabled if doctor change detected)
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
 
         $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
         $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
@@ -1498,6 +1500,8 @@ function checkEditTreatmentDoctorChange() {
     // If doctor hasn't changed or no original doctor set, hide warning and return
     if (!selectedDoctorId || !originalDoctorId || selectedDoctorId === originalDoctorId) {
         $('#edit_treatment_doctor_warning').addClass('d-none');
+        // Enable submit button when warning is hidden
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
         return;
     }
 
@@ -1513,8 +1517,12 @@ function checkEditTreatmentDoctorChange() {
     // Show the warning div
     $('#edit_treatment_doctor_warning').removeClass('d-none');
 
-    // Pre-select the "use selected doctor" option
-    $('#edit_use_selected_doctor').prop('checked', true);
+    // Deselect both radio buttons by default
+    $('#edit_use_previous_doctor').prop('checked', false);
+    $('#edit_use_selected_doctor').prop('checked', false);
+
+    // Disable the submit button
+    $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
 }
 
 // Handle radio button changes
@@ -1524,6 +1532,10 @@ $(document).on('change', '#edit_use_previous_doctor', function() {
         var originalDoctorId = $("#edit_treatment_original_doctor_id").val();
         $('#edit_treatment_doctor_id').val(originalDoctorId).trigger('change.select2');
         $('#edit_treatment_doctor_warning').addClass('d-none');
+
+        // Enable submit button
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+
         setTimeout(function() {
             isResettingDoctor = false;
         }, 100);
@@ -1534,6 +1546,9 @@ $(document).on('change', '#edit_use_selected_doctor', function() {
     if ($(this).is(':checked')) {
         // Keep the newly selected doctor
         $('#edit_treatment_doctor_warning').addClass('d-none');
+
+        // Enable submit button
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
     }
 });
 
