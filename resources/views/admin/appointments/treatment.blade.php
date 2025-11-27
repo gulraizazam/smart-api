@@ -413,6 +413,13 @@
                     // Show location dropdown if tab is treatment
                     if (result.tab === 'treatment') {
                         $(".treatment-location-header-dropdown").removeClass("d-none");
+                        // Initialize select2 and load locations for treatment dropdown
+                        setTimeout(function() {
+                            $('#treatment_location_filter').select2({ width: '100%' });
+                            if ($('#treatment_location_filter option').length <= 1) {
+                                loadLocations('', 'treatment');
+                            }
+                        }, 300);
                     }
                 } else {
                     $(".appointment-tab").addClass("nav-bar-active")
