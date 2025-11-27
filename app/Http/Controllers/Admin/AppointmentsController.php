@@ -5945,7 +5945,22 @@ class AppointmentsController extends Controller
                 $query->where('id', '!=', $excludeAppointmentId);
             }
 
+            // Debug: Get the SQL query
+            $sql = $query->toSql();
+            $bindings = $query->getBindings();
+            
             $lastTreatment = $query->first();
+            
+            // Debug: Log what we found
+            \Log::info('checkPatientLastTreatment Query', [
+                'patient_id' => $patientId,
+                'service_id' => $serviceId,
+                'exclude_appointment_id' => $excludeAppointmentId,
+                'sql' => $sql,
+                'bindings' => $bindings,
+                'found' => $lastTreatment ? 'yes' : 'no',
+                'treatment_id' => $lastTreatment ? $lastTreatment->id : null
+            ]);
 
             if ($lastTreatment) {
                 return response()->json([
