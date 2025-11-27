@@ -1822,8 +1822,8 @@ class AppointmentsController extends Controller
                 }
             }
             $message = 'Record has been created successfully.';
-            // Send Promotion SMS
-            $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
+            // Send Promotion SMS - Removed to prevent duplicate SMS (cron job handles this)
+            // $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
             GeneralFunctions::saveAppointmentLogs('created', 'Consultancy', $appointment);
             GeneralFunctions::saveActivityLogs('booked', 'Consultancy', $appointment_data,$appointment->id);
 
@@ -4742,7 +4742,8 @@ class AppointmentsController extends Controller
             }
         }
         $message = 'Record has been created successfully.';
-        $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
+        // Send Promotion SMS - Removed to prevent duplicate SMS (cron job handles this)
+        // $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
         GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
         //GeneralFunctions::saveActivityLogs('booked', 'Treatment', $appointment_data);
         $this->dispatch(
