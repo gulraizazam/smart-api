@@ -165,30 +165,36 @@ class MembershipsController extends Controller
             return ApiHelper::apiResponse($this->error, 'Membership not found', false);
         }
 
-        // Check if patient has packages with Gold Membership Card or Student Membership Card services
-        $packages = DB::table('packages')
-            ->where('patient_id', $request->id)
-            ->whereNull('deleted_at')
-            ->get();
+        // Check if membership is inactive and expired
+        $isInactiveAndExpired = ($membership->active == 0 && $membership->end_date < now());
 
-        if ($packages->count() > 0) {
-            $restrictedServiceNames = ['Gold Membership Card', 'Student Membership Card'];
+        // Only check for applied services if membership is active or not expired
+        if (!$isInactiveAndExpired) {
+            // Check if patient has packages with Gold Membership Card or Student Membership Card services
+            $packages = DB::table('packages')
+                ->where('patient_id', $request->id)
+                ->whereNull('deleted_at')
+                ->get();
 
-            foreach ($packages as $package) {
-                // Check if this package has any restricted services
-                $hasRestrictedService = DB::table('package_services')
-                    ->join('services', 'package_services.service_id', '=', 'services.id')
-                    ->where('package_services.package_id', $package->id)
-                    ->whereIn('services.name', $restrictedServiceNames)
-                    ->whereNull('services.deleted_at')
-                    ->first();
+            if ($packages->count() > 0) {
+                $restrictedServiceNames = ['Gold Membership Card', 'Student Membership Card'];
 
-                if ($hasRestrictedService) {
-                    return ApiHelper::apiResponse(
-                        $this->error,
-                        'Membership applied on services, you can not cancel it',
-                        false
-                    );
+                foreach ($packages as $package) {
+                    // Check if this package has any restricted services
+                    $hasRestrictedService = DB::table('package_services')
+                        ->join('services', 'package_services.service_id', '=', 'services.id')
+                        ->where('package_services.package_id', $package->id)
+                        ->whereIn('services.name', $restrictedServiceNames)
+                        ->whereNull('services.deleted_at')
+                        ->first();
+
+                    if ($hasRestrictedService) {
+                        return ApiHelper::apiResponse(
+                            $this->error,
+                            'Membership applied on services, you can not cancel it',
+                            false
+                        );
+                    }
                 }
             }
         }
