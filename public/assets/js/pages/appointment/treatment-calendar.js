@@ -1182,6 +1182,8 @@ var TreatmentResourceCalendar = function() {
 
             // Handle appointment click
             $(document).on('click', '.resource-appointment', function(e) {
+                e.stopPropagation(); // Prevent click from bubbling to slot's onclick
+                e.preventDefault(); // Prevent default action
                 if (!isDragging) {
                     var appointmentId = $(this).data('id');
                     TreatmentResourceCalendar.clickAppointment(appointmentId);
