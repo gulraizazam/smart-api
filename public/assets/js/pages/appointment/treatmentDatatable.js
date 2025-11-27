@@ -1484,12 +1484,18 @@ var AppointScheduleValidation = function () {
 }();
 
 // Function to handle doctor change detection in edit treatment
+var isResettingDoctor = false; // Flag to prevent infinite loop
+
 function checkEditTreatmentDoctorChange() {
+    // Skip if we're in the middle of resetting the doctor
+    if (isResettingDoctor) {
+        return;
+    }
+
     var originalDoctorId = $("#edit_treatment_original_doctor_id").val();
     var selectedDoctorId = $("#edit_treatment_doctor_id").val();
-    var patientId = $("#treatment_leadId").val(); // Get patient ID
 
-    // If doctor hasn't changed or no patient, hide warning and return
+    // If doctor hasn't changed or no original doctor set, hide warning and return
     if (!selectedDoctorId || !originalDoctorId || selectedDoctorId === originalDoctorId) {
         $('#edit_treatment_doctor_warning').addClass('d-none');
         return;
@@ -1509,22 +1515,27 @@ function checkEditTreatmentDoctorChange() {
 
     // Pre-select the "use selected doctor" option
     $('#edit_use_selected_doctor').prop('checked', true);
-
-    // Handle radio button changes
-    $('#edit_use_previous_doctor').off('change').on('change', function() {
-        if ($(this).is(':checked')) {
-            $('#edit_treatment_doctor_id').val(originalDoctorId).trigger('change.select2');
-            $('#edit_treatment_doctor_warning').addClass('d-none');
-        }
-    });
-
-    $('#edit_use_selected_doctor').off('change').on('change', function() {
-        if ($(this).is(':checked')) {
-            // Keep the newly selected doctor
-            $('#edit_treatment_doctor_warning').addClass('d-none');
-        }
-    });
 }
+
+// Handle radio button changes
+$(document).on('change', '#edit_use_previous_doctor', function() {
+    if ($(this).is(':checked')) {
+        isResettingDoctor = true;
+        var originalDoctorId = $("#edit_treatment_original_doctor_id").val();
+        $('#edit_treatment_doctor_id').val(originalDoctorId).trigger('change.select2');
+        $('#edit_treatment_doctor_warning').addClass('d-none');
+        setTimeout(function() {
+            isResettingDoctor = false;
+        }, 100);
+    }
+});
+
+$(document).on('change', '#edit_use_selected_doctor', function() {
+    if ($(this).is(':checked')) {
+        // Keep the newly selected doctor
+        $('#edit_treatment_doctor_warning').addClass('d-none');
+    }
+});
 
 // Attach the check function to doctor dropdown change event
 $(document).on('change', '#edit_treatment_doctor_id', function() {
