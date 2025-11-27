@@ -1,3 +1,45 @@
+// Define loadEndServices globally before anything else to ensure it's available immediately
+window.loadEndServices = function (baseServiceId) {
+    resource_id = $("#treatment_resource_id").val();
+
+    if(baseServiceId != '') {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_node_service'),
+            type: 'POST',
+            data: {
+                service_id: baseServiceId,
+                resource_id:resource_id
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let services = response.data.services;
+                    let service_option = '<option value="">Select a Child Service</option>';
+
+                    Object.entries(services).forEach( function (service) {
+                        service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
+                    });
+
+                    $('#create_treatment_service').html(service_option);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+
+            }
+        });
+    } else {
+        if (typeof resetNodeServices === 'function') {
+            resetNodeServices();
+        }
+        if (typeof CreateFormValidation !== 'undefined' && typeof CreateFormValidation.loadLead === 'function') {
+            CreateFormValidation.loadLead();
+        }
+    }
+}
+
 jQuery(document).ready(function() {
 
     var result = get_query();
@@ -243,42 +285,6 @@ function loadCalendar() {
 }
 
 
-window.loadEndServices = function (baseServiceId) {
-     resource_id = $("#treatment_resource_id").val();
-
-    if(baseServiceId != '') {
-        $.ajax({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            url: route('admin.appointments.load_node_service'),
-            type: 'POST',
-            data: {
-                service_id: baseServiceId,
-                resource_id:resource_id
-            },
-            cache: false,
-            success: function(response) {
-                if(response.status) {
-                    let services = response.data.services;
-                    let service_option = '<option value="">Select a Child Service</option>';
-
-                    Object.entries(services).forEach( function (service) {
-                        service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
-                    });
-
-                    $('#create_treatment_service').html(service_option);
-                }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-
-            }
-        });
-    } else {
-        resetNodeServices();
-        CreateFormValidation.loadLead();
-    }
-}
 
 function getTreatmentPatientDetail($this) {
     if ($this.val() != '') {
@@ -373,7 +379,7 @@ function checkPatientLastTreatment(patientId) {
                     } else {
                         // Service matches but doctor is different
                         // Show warning
-                        $('#warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + );
+                        $('#warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + '.');
                         $('#previous_doctor_option').html('<strong>Schedule this treatment with ' + lastDoctorName + '</strong>');
                         $('#treatment_doctor_warning').removeClass('d-none');
 
