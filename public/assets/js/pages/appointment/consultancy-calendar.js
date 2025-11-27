@@ -486,10 +486,14 @@ var CustomResourceCalendar = function() {
             this.render();
             this.loadAppointments();
             
-            // Reset initialization flag after a short delay
+            // Reset initialization flag after appointments are loaded
             setTimeout(function() {
-                isInitializing = false;
-            }, 500);
+                // Only reset if we're not still loading
+                if (!isLoading) {
+                    isInitializing = false;
+                    console.log('Initialization flag reset');
+                }
+            }, 2000);
         },
 
         render: function() {
