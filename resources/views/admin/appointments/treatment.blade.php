@@ -186,7 +186,7 @@
                 transition: all 0.2s;
                 display: inline-flex;
                 align-items: center;
-                margin-right: 100px;
+                margin-right: 600px;
             }
             .resource-calendar-nav .current-date:hover {
                 background: #f3f6f9;
