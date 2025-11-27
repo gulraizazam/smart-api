@@ -5962,10 +5962,17 @@ class AppointmentsController extends Controller
             ]);
 
             if ($lastTreatment) {
+                // Check if the doctor is active
+                $isDoctorActive = false;
+                if ($lastTreatment->doctor_id) {
+                    $doctor = \App\Models\User::find($lastTreatment->doctor_id);
+                    $isDoctorActive = $doctor && $doctor->active == 1;
+                }
+                
                 // Check if the doctor is still allocated to the current location for this service
                 $isDoctorAllocated = false;
                 
-                if ($locationId && $lastTreatment->doctor_id) {
+                if ($locationId && $lastTreatment->doctor_id && $isDoctorActive) {
                     // Get the requested service to check parent_id
                     $requestedService = \App\Models\Services::find($serviceId);
                     
@@ -5997,12 +6004,13 @@ class AppointmentsController extends Controller
                         'location_id' => $locationId,
                         'service_id' => $serviceId,
                         'service_parent_id' => $requestedService ? $requestedService->parent_id : null,
+                        'is_doctor_active' => $isDoctorActive,
                         'is_allocated' => $isDoctorAllocated
                     ]);
                 }
 
-                // Only return the last treatment if the doctor is still allocated to the location
-                if ($isDoctorAllocated) {
+                // Only return the last treatment if the doctor is active and still allocated to the location
+                if ($isDoctorActive && $isDoctorAllocated) {
                     return response()->json([
                         'status' => true,
                         'data' => [
