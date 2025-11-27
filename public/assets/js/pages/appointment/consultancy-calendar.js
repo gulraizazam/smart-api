@@ -459,13 +459,8 @@ var CustomResourceCalendar = function() {
 
     return {
         init: function(doctorsList, date) {
-            // Log who is calling this function
-            console.log('CustomResourceCalendar.init called from:');
-            console.trace();
-            
             // Prevent multiple simultaneous initializations
             if (isInitializing) {
-                console.log('Already initializing consultancy calendar, skipping...');
                 return;
             }
             
@@ -491,15 +486,12 @@ var CustomResourceCalendar = function() {
                 // Only reset if we're not still loading
                 if (!isLoading) {
                     isInitializing = false;
-                    console.log('Initialization flag reset');
                 }
             }, 2000);
         },
 
         render: function() {
             var html = '';
-
-            console.log('Rendering calendar for doctors:', doctors);
 
             // Check if current date is today
             var isToday = currentDate.isSame(moment(), 'day');
@@ -531,7 +523,6 @@ var CustomResourceCalendar = function() {
             html += '    <div class="resource-time-column">Time</div>';
             html += '    <div class="resource-calendar-header-doctors">';
             doctors.forEach(function(doctor) {
-                console.log('Creating column for doctor:', doctor.id, '-', doctor.name);
                 html += '      <div class="resource-doctor-header" data-doctor-id="' + doctor.id + '">' + doctor.name + '</div>';
             });
             html += '    </div>';
@@ -633,9 +624,6 @@ var CustomResourceCalendar = function() {
                         }
                     }
                 }
-
-                console.log('All rotas collected:', allRotas); // Debug log
-                console.log('All events collected:', allEvents); // Debug log
 
                 CustomResourceCalendar.renderAppointments(allEvents);
                 CustomResourceCalendar.renderRotas(allRotas);
