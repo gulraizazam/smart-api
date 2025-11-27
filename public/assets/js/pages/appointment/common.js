@@ -56,6 +56,13 @@ function toggleSection($this, $class) {
 
     $(".change-label").text($this.text());
 
+    // Show/hide location dropdown in header based on active tab
+    if ($class == 'treatment') {
+        $(".treatment-location-header-dropdown").removeClass("d-none");
+    } else {
+        $(".treatment-location-header-dropdown").addClass("d-none");
+    }
+
     if ($class != 'appointment') {
         setDashboardFilters();
 

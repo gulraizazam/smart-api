@@ -248,7 +248,7 @@
                             @endphp
 
                             @if($showDropdown)
-                            <div class="ml-5" style="min-width: 250px;">
+                            <div class="ml-5 treatment-location-header-dropdown d-none" style="min-width: 250px;">
                                
                                 <select class="form-control" id="treatment_location_filter"></select>
                             </div>
@@ -405,6 +405,10 @@
                 console.log(result);
                 if (typeof result.tab !== 'undefined') {
                     $("." + result.tab+ '-tab').click();
+                    // Show location dropdown if tab is treatment
+                    if (result.tab === 'treatment') {
+                        $(".treatment-location-header-dropdown").removeClass("d-none");
+                    }
                 } else {
                     $(".appointment-tab").addClass("nav-bar-active")
                 }
