@@ -986,6 +986,11 @@ function setTreatmentEditData(response) {
 
         $("#treatment_appointment_type").val(appointment?.appointment_type_id);
 
+        // Check if doctor change warning should be shown after modal data is loaded
+        setTimeout(function() {
+            checkEditTreatmentDoctorChange();
+        }, 100);
+
     } catch (error) {
         showException(error);
     }
