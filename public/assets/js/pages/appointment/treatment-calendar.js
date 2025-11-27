@@ -763,7 +763,7 @@ var TreatmentResourceCalendar = function() {
             // Navigation
             html += '<div class="resource-calendar-nav">';
             html += '  <div>';
-            html += '    <button class="btn btn-sm btn-light" onclick="TreatmentResourceCalendar.previousDay()"><i class="fa fa-chevron-left"></i> Previous</button>';
+            html += '    <button class="btn btn-sm btn-light" onclick="TreatmentResourceCalendar.previousDay()"><i class="fa fa-chevron-left"></i> Prev</button>';
             html += '    <button class="btn btn-sm ' + (isToday ? 'btn-primary' : 'btn-light') + '" onclick="TreatmentResourceCalendar.today()">Today</button>';
             html += '    <button class="btn btn-sm btn-light" onclick="TreatmentResourceCalendar.nextDay()">Next <i class="fa fa-chevron-right"></i></button>';
             html += '  </div>';
