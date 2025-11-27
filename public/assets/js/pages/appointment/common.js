@@ -71,7 +71,7 @@ function toggleSection($this, $class) {
 
 }
 
-let loadLocations = function (cityId, appointment = null) {
+window.loadLocations = function (cityId, appointment = null) {
     let url = window.location.href;
     const lastSegment = url.split("/").pop();
     if (lastSegment.includes('treatment')) {
@@ -130,7 +130,7 @@ let loadLocations = function (cityId, appointment = null) {
         }
     });
 }
-let loadEditTreatmentLocations = function (cityId, appointment = null) {
+window.loadEditTreatmentLocations = function (cityId, appointment = null) {
     if(cityId != '' ) {
         $.ajax({
             headers: {
@@ -164,7 +164,7 @@ let loadEditTreatmentLocations = function (cityId, appointment = null) {
         resetDropdowns();
     }
 }
-let loadEditConsultancyLocations = function (cityId, appointment = null) {
+window.loadEditConsultancyLocations = function (cityId, appointment = null) {
     if(cityId != '' ) {
         $.ajax({
             headers: {
@@ -209,7 +209,7 @@ var something = (function() {
         }
     };
 })();
-let loadDoctors = function (locationId, appointment = null) {
+window.loadDoctors = function (locationId, appointment = null) {
   
     if (locationId != '' && locationId != null) {
         $('#treatment_doctor_filter').removeAttr('disabled');
@@ -343,7 +343,7 @@ let loadDoctors = function (locationId, appointment = null) {
 }
 
 // Load machines for treatment appointments
-let loadMachine = function(locationId) {
+window.loadMachine = function(locationId) {
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -386,7 +386,7 @@ let loadMachine = function(locationId) {
     });
 }
 
-let loadConsultantDoctors = function (locationId, appointment = null) {
+window.loadConsultantDoctors = function (locationId, appointment = null) {
 
     if (locationId != '' && locationId != null) {
         $('#treatment_doctor_filter').removeAttr('disabled');
@@ -495,7 +495,7 @@ let loadConsultantDoctors = function (locationId, appointment = null) {
     }
 
 }
-let loadEditTreatmentDoctors = function (locationId, appointment = null) {
+window.loadEditTreatmentDoctors = function (locationId, appointment = null) {
     if (locationId != '' && locationId != null) {
         $.ajax({
             headers: {
@@ -559,7 +559,7 @@ let loadEditTreatmentDoctors = function (locationId, appointment = null) {
     }
 
 }
-let loadEditConsultancyDoctors = function (locationId, appointment = null) {
+window.loadEditConsultancyDoctors = function (locationId, appointment = null) {
     if (locationId != '' && locationId != null) {
         $.ajax({
             headers: {
@@ -595,13 +595,13 @@ let loadEditConsultancyDoctors = function (locationId, appointment = null) {
     }
 
 }
-let resetDoctors = function () {
+window.resetDoctors = function () {
     var doctorDropdown = '<select id="doctor_id" class="form-control select2 required" name="doctor_id"><option value="" selected="selected">Select a Doctor</option></select>';
     $('#convert_doctor_id').html(doctorDropdown);
    // $('.select2').select2({ width: '100%' });
 }
 
-let ConsultancyDoctorListener = function (doctorId) {
+window.ConsultancyDoctorListener = function (doctorId) {
 
     // Set doctor_id in query string
     setQueryStringParameter('doctor_id', doctorId);

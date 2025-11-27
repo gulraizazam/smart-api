@@ -130,7 +130,7 @@ jQuery(document).ready(function() {
 
 });
     var counter = 0;
-    var treatmentDoctorListener = function (doctorId) {
+    window.treatmentDoctorListener = function (doctorId) {
     setQueryStringParameter('doctor_id', doctorId);
     $("#treatment_doctor_filter").val(doctorId);
     if (typeof treatment_calendar !== "undefined") { /*if already initiate then destroy first*/
@@ -151,7 +151,7 @@ jQuery(document).ready(function() {
     counter = counter+1;
 }
 
-let machineListener = function (machineId) {
+window.machineListener = function (machineId) {
 
     setQueryStringParameter('machine_id', machineId);
 
@@ -243,9 +243,9 @@ function loadCalendar() {
 }
 
 
-var loadEndServices = function (baseServiceId) {
+window.loadEndServices = function (baseServiceId) {
      resource_id = $("#treatment_resource_id").val();
-    
+
     if(baseServiceId != '') {
         $.ajax({
             headers: {
