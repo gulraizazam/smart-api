@@ -387,6 +387,7 @@ function checkPatientLastTreatment(patientId) {
     // Get current service and doctor
     var currentServiceId = $('#create_treatment_service').val();
     var currentDoctorId = $('#treatment_doctor_id').val();
+    var currentLocationId = $('#treatment_location_id').val();
 
     // If service is not selected yet, just enable submit
     if (!currentServiceId) {
@@ -399,7 +400,8 @@ function checkPatientLastTreatment(patientId) {
         url: route('admin.appointments.check_patient_last_treatment'),
         data: {
             patient_id: patientId,
-            service_id: currentServiceId
+            service_id: currentServiceId,
+            location_id: currentLocationId
         },
         success: function(response) {
             if (response.status && response.data.last_treatment) {

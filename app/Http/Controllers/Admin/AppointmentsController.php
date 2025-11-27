@@ -5929,6 +5929,7 @@ class AppointmentsController extends Controller
         try {
             $patientId = $request->input('patient_id');
             $serviceId = $request->input('service_id');
+            $locationId = $request->input('location_id'); // Current location
             $excludeAppointmentId = $request->input('exclude_appointment_id'); // For edit mode
 
             // Build query for the last arrived treatment for this patient with the same service
@@ -5948,20 +5949,43 @@ class AppointmentsController extends Controller
             $lastTreatment = $query->first();
 
             if ($lastTreatment) {
-                return response()->json([
-                    'status' => true,
-                    'data' => [
-                        'last_treatment' => [
-                            'id' => $lastTreatment->id,
-                            'doctor_id' => $lastTreatment->doctor_id,
-                            'doctor_name' => $lastTreatment->doctor->name ?? 'Unknown',
-                            'service_id' => $lastTreatment->service_id,
-                            'service_name' => $lastTreatment->service->name ?? 'Unknown',
-                            'scheduled_date' => $lastTreatment->scheduled_date,
-                            'scheduled_time' => $lastTreatment->scheduled_time,
+                // Check if the doctor is still allocated to the current location for this service
+                $isDoctorAllocated = false;
+                
+                if ($locationId && $lastTreatment->doctor_id) {
+                    $isDoctorAllocated = DB::table('doctor_has_locations')
+                        ->where('location_id', $locationId)
+                        ->where('user_id', $lastTreatment->doctor_id)
+                        ->where('service_id', $serviceId)
+                        ->where('is_allocated', 1)
+                        ->exists();
+                }
+
+                // Only return the last treatment if the doctor is still allocated to the location
+                if ($isDoctorAllocated) {
+                    return response()->json([
+                        'status' => true,
+                        'data' => [
+                            'last_treatment' => [
+                                'id' => $lastTreatment->id,
+                                'doctor_id' => $lastTreatment->doctor_id,
+                                'doctor_name' => $lastTreatment->doctor->name ?? 'Unknown',
+                                'service_id' => $lastTreatment->service_id,
+                                'service_name' => $lastTreatment->service->name ?? 'Unknown',
+                                'scheduled_date' => $lastTreatment->scheduled_date,
+                                'scheduled_time' => $lastTreatment->scheduled_time,
+                            ]
                         ]
-                    ]
-                ]);
+                    ]);
+                } else {
+                    // Doctor is no longer allocated to this location, don't show warning
+                    return response()->json([
+                        'status' => true,
+                        'data' => [
+                            'last_treatment' => null
+                        ]
+                    ]);
+                }
             } else {
                 return response()->json([
                     'status' => true,
