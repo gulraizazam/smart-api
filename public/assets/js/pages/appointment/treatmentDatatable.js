@@ -951,6 +951,12 @@ function setTreatmentEditData(response) {
         $("#edit_treatment_doctor_id").html(doctor_option).val(appointment?.doctor_id);
         $("#edit_treatment_patient_gender").html(gender_option).val(appointment?.patient?.gender);
 
+        // Store the original doctor ID and hide warning
+        $("#edit_treatment_original_doctor_id").val(appointment?.doctor_id);
+        $('#edit_treatment_doctor_warning').addClass('d-none');
+        $('#edit_use_previous_doctor').prop('checked', false);
+        $('#edit_use_selected_doctor').prop('checked', false);
+
         $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
         $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
         const [hourString, minute] = appointment.scheduled_time.split(":");
@@ -1476,6 +1482,54 @@ var AppointScheduleValidation = function () {
         }
     };
 }();
+
+// Function to handle doctor change detection in edit treatment
+function checkEditTreatmentDoctorChange() {
+    var originalDoctorId = $("#edit_treatment_original_doctor_id").val();
+    var selectedDoctorId = $("#edit_treatment_doctor_id").val();
+    var patientId = $("#treatment_leadId").val(); // Get patient ID
+
+    // If doctor hasn't changed or no patient, hide warning and return
+    if (!selectedDoctorId || !originalDoctorId || selectedDoctorId === originalDoctorId) {
+        $('#edit_treatment_doctor_warning').addClass('d-none');
+        return;
+    }
+
+    // Get doctor names from the dropdown options
+    var originalDoctorName = $("#edit_treatment_doctor_id option[value='" + originalDoctorId + "']").text();
+    var selectedDoctorName = $("#edit_treatment_doctor_id option[value='" + selectedDoctorId + "']").text();
+
+    // Show warning message
+    $('#edit_warning_message').text('The past treatment of this patient was performed by ' + originalDoctorName + '.');
+    $('#edit_previous_doctor_option').text('Keep ' + originalDoctorName);
+    $('#edit_selected_doctor_option').html('<strong>' + selectedDoctorName + '</strong>');
+
+    // Show the warning div
+    $('#edit_treatment_doctor_warning').removeClass('d-none');
+
+    // Pre-select the "use selected doctor" option
+    $('#edit_use_selected_doctor').prop('checked', true);
+
+    // Handle radio button changes
+    $('#edit_use_previous_doctor').off('change').on('change', function() {
+        if ($(this).is(':checked')) {
+            $('#edit_treatment_doctor_id').val(originalDoctorId).trigger('change.select2');
+            $('#edit_treatment_doctor_warning').addClass('d-none');
+        }
+    });
+
+    $('#edit_use_selected_doctor').off('change').on('change', function() {
+        if ($(this).is(':checked')) {
+            // Keep the newly selected doctor
+            $('#edit_treatment_doctor_warning').addClass('d-none');
+        }
+    });
+}
+
+// Attach the check function to doctor dropdown change event
+$(document).on('change', '#edit_treatment_doctor_id', function() {
+    checkEditTreatmentDoctorChange();
+});
 
 jQuery(document).ready(function() {
     AppointScheduleValidation.init();

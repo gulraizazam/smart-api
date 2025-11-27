@@ -584,8 +584,8 @@ function setCreateTreatment(response, start) {
             }
         }
 
-        // Set the doctor name in the label
-        $('#selected_doctor_option').text(selectedDoctorName);
+        // Set the doctor name in the label with bold styling
+        $('#selected_doctor_option').html('<strong>' + selectedDoctorName + '</strong>');
         let employees = response.data.employees;
         let lead = response.data.lead;
         let lead_sources = response.data.lead_sources;
@@ -940,9 +940,9 @@ var TreatmentResourceCalendar = function() {
                     var endTimeFormatted = endTime.format('h:mm A');
 
                     var appointmentHtml = '<div class="resource-appointment" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-machine-id="' + machineId + '" data-start-time="' + timeStr + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; border-color: ' + borderColor + ';">';
-                    appointmentHtml += '<div style="font-size: 10px; font-weight: 600; margin-bottom: 2px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</div>';
-                    appointmentHtml += '<div style="font-size: 11px; font-weight: bold; margin-bottom: 2px;">Patient: ' + event.patient + '</div>';
-                    appointmentHtml += '<div style="font-size: 10px;">Service: ' + event.service + '</div>';
+                    appointmentHtml += '<div style="font-size: 10px; font-weight: 600; margin-bottom: 4px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</div>';
+                    appointmentHtml += '<div style="font-size: 11px; font-weight: bold; margin-bottom: 4px;">Patient: ' + event.patient + '</div>';
+                    appointmentHtml += '<div style="font-size: 10px;"><strong>Service: ' + event.service + '</strong></div>';
                     appointmentHtml += '</div>';
 
                     slot.append(appointmentHtml);

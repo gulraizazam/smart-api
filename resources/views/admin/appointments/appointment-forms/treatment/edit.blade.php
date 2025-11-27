@@ -35,8 +35,28 @@
             <input type="hidden" id="treatment_start_time" >
             <input type="hidden" id="treatment_end_time"  >
             <input type="hidden" id="treatment_service_id"  name="treatment_service_id">
+            <input type="hidden" id="edit_treatment_original_doctor_id" >
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_appointment_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
+
+                {{-- Warning div for doctor mismatch --}}
+                <div id="edit_treatment_doctor_warning" class="alert alert-warning d-none" style="background-color: #FFEB3B; border-color: #FDD835; color: #000000;">
+                    <div class="mb-3">
+                        <strong>Notice:</strong> <span id="edit_warning_message"></span>
+                    </div>
+                    <div class="form-check mb-2" style="display: flex; align-items: center;">
+                        <input class="form-check-input" type="radio" id="edit_use_previous_doctor" name="edit_doctor_choice" value="previous" style="width: 20px; height: 20px; cursor: pointer; margin: 0; flex-shrink: 0;">
+                        <label class="form-check-label" for="edit_use_previous_doctor" style="cursor: pointer; margin-left: 10px; margin-bottom: 0;">
+                            <span id="edit_previous_doctor_option" style="margin-left:15px"></span>
+                        </label>
+                    </div>
+                    <div class="form-check" style="display: flex; align-items: center;">
+                        <input class="form-check-input" type="radio" id="edit_use_selected_doctor" name="edit_doctor_choice" value="selected" style="width: 20px; height: 20px; cursor: pointer; margin: 0; flex-shrink: 0;">
+                        <label class="form-check-label" for="edit_use_selected_doctor" style="cursor: pointer; margin-left: 24px; margin-bottom: 0;">
+                            Proceed with <span id="edit_selected_doctor_option"></span>
+                        </label>
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <div class="row">
