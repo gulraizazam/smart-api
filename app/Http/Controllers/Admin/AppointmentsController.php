@@ -5929,17 +5929,23 @@ class AppointmentsController extends Controller
         try {
             $patientId = $request->input('patient_id');
             $serviceId = $request->input('service_id');
+            $excludeAppointmentId = $request->input('exclude_appointment_id'); // For edit mode
 
-            // Get the last arrived treatment for this patient
-            // Only include past treatments (scheduled_date < today)
-            $lastTreatment = Appointments::where('patient_id', $patientId)
+            // Build query for the last arrived treatment for this patient with the same service
+            $query = Appointments::where('patient_id', $patientId)
                 ->where('appointment_type_id', 2) // Treatment type
                 ->where('appointment_status_id', 2) // Arrived status
-                ->where('scheduled_date', '<', \Carbon\Carbon::today()) // Past treatments only
+                ->where('service_id', $serviceId) // Same service
                 ->orderBy('scheduled_date', 'DESC')
                 ->orderBy('scheduled_time', 'DESC')
-                ->with(['doctor:id,name', 'service:id,name'])
-                ->first();
+                ->with(['doctor:id,name', 'service:id,name']);
+
+            // Exclude current appointment if editing
+            if ($excludeAppointmentId) {
+                $query->where('id', '!=', $excludeAppointmentId);
+            }
+
+            $lastTreatment = $query->first();
 
             if ($lastTreatment) {
                 return response()->json([
