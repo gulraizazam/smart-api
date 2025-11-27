@@ -974,10 +974,32 @@ var TreatmentResourceCalendar = function() {
                     var startTimeFormatted = startTime.format('h:mm A');
                     var endTimeFormatted = endTime.format('h:mm A');
 
-                    var appointmentHtml = '<div class="resource-appointment" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-machine-id="' + machineId + '" data-start-time="' + timeStr + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; border-color: ' + borderColor + ';">';
-                    appointmentHtml += '<div style="font-size: 10px; font-weight: 600; margin-bottom: 4px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</div>';
-                    appointmentHtml += '<div style="font-size: 11px; font-weight: bold; margin-bottom: 4px;">Patient: ' + event.patient + '</div>';
-                    appointmentHtml += '<div style="font-size: 10px;"><strong>Service: ' + event.service + '</strong></div>';
+                    // Create gradient overlay for depth
+                    var gradientOverlay = 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.05) 100%)';
+                    
+                    // Create tooltip text
+                    var tooltipText = 'Patient: ' + event.patient + '\nService: ' + event.service;
+                    
+                    var appointmentHtml = '<div class="resource-appointment modern-card" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-machine-id="' + machineId + '" data-start-time="' + timeStr + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" title="' + tooltipText + '" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; background-image: ' + gradientOverlay + '; border-left: 4px solid ' + borderColor + '; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.3s ease;">';
+                    
+                    // Time badge with icon
+                    appointmentHtml += '<div style="display: flex; align-items: center; gap: 3px; margin-bottom: 6px; padding: 3px 6px; background: rgba(255,255,255,0.2); border-radius: 3px; width: fit-content;">';
+                    appointmentHtml += '<i class="fa fa-clock" style="font-size: 9px; color: #fff; opacity: 0.9;"></i>';
+                    appointmentHtml += '<span style="font-size: 10px; font-weight: 600; letter-spacing: 0.2px;">' + startTimeFormatted + ' - ' + endTimeFormatted + '</span>';
+                    appointmentHtml += '</div>';
+                    
+                    // Patient name with icon
+                    appointmentHtml += '<div style="display: flex; align-items: center; gap: 5px; margin-bottom: 4px;">';
+                    appointmentHtml += '<i class="fa fa-user-circle" style="font-size: 12px; color: #fff; opacity: 0.85;"></i>';
+                    appointmentHtml += '<span style="font-size: 12px; font-weight: 700; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">' + event.patient + '</span>';
+                    appointmentHtml += '</div>';
+                    
+                    // Service with icon
+                    appointmentHtml += '<div style="display: flex; align-items: center; gap: 4px; margin-top: 6px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.2);">';
+                    appointmentHtml += '<i class="fa fa-stethoscope" style="font-size: 10px; color: #fff; opacity: 0.75;"></i>';
+                    appointmentHtml += '<span style="font-size: 11px; opacity: 0.9; font-weight: 500;">' + event.service + '</span>';
+                    appointmentHtml += '</div>';
+                    
                     appointmentHtml += '</div>';
 
                     slot.append(appointmentHtml);
