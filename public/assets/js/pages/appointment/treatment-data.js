@@ -485,35 +485,24 @@ jQuery(document).ready(function () {
         $("#create_treatment_patient_search").parent("div").find(".fv-help-block").text("The patient field is required");
     });
 
-    // Handle doctor choice checkboxes
-    $(document).on('change', '#use_previous_doctor, #use_selected_doctor', function() {
-        var isPreviousChecked = $('#use_previous_doctor').is(':checked');
-        var isSelectedChecked = $('#use_selected_doctor').is(':checked');
+    // Handle doctor choice radio buttons
+    $(document).on('change', 'input[name="doctor_choice"]', function() {
+        var selectedValue = $('input[name="doctor_choice"]:checked').val();
 
-        // Make checkboxes mutually exclusive
-        if ($(this).attr('id') === 'use_previous_doctor' && isPreviousChecked) {
-            $('#use_selected_doctor').prop('checked', false);
-        } else if ($(this).attr('id') === 'use_selected_doctor' && isSelectedChecked) {
-            $('#use_previous_doctor').prop('checked', false);
-        }
+        // Enable submit button since a radio button is selected
+        $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
 
-        // Enable submit button if either checkbox is checked
-        if (isPreviousChecked || isSelectedChecked) {
-            $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+        // If previous doctor is selected, update the hidden doctor field
+        if (selectedValue === 'previous') {
+            var previousDoctorId = $('#treatment_doctor_warning').data('previous-doctor-id');
+            $('#treatment_doctor_id').val(previousDoctorId);
 
-            // If previous doctor is selected, update the hidden doctor field
-            if (isPreviousChecked) {
-                var previousDoctorId = $('#treatment_doctor_warning').data('previous-doctor-id');
-                $('#treatment_doctor_id').val(previousDoctorId);
-
-                // Also update the visible doctor select if it exists
-                if ($('#create_treatment_doctor').length) {
-                    $('#create_treatment_doctor').val(previousDoctorId).trigger('change');
-                }
+            // Also update the visible doctor select if it exists
+            if ($('#create_treatment_doctor').length) {
+                $('#create_treatment_doctor').val(previousDoctorId).trigger('change');
             }
-        } else {
-            $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', true);
         }
+        // If selected doctor is chosen, the doctor_id is already set in the field, no change needed
     });
 
     // Re-check when service changes
@@ -527,7 +516,6 @@ jQuery(document).ready(function () {
     // Reset warning when modal is closed
     $('#modal_create_treatment').on('hidden.bs.modal', function() {
         $('#treatment_doctor_warning').addClass('d-none');
-        $('#use_previous_doctor').prop('checked', false);
-        $('#use_selected_doctor').prop('checked', false);
+        $('input[name="doctor_choice"]').prop('checked', false);
     });
 })
