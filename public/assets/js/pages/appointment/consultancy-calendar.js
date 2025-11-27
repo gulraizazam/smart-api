@@ -944,6 +944,9 @@ var CustomResourceCalendar = function() {
             var draggedElement = null;
             var originalSlot = null;
             var isDragging = false;
+            var dragStartX = 0;
+            var dragStartY = 0;
+            var hasMoved = false;
 
             // Handle slot click (for creating appointments)
             $(document).on('click', '.resource-doctor-slot', function(e) {
@@ -961,7 +964,7 @@ var CustomResourceCalendar = function() {
             $(document).on('click', '.resource-appointment', function(e) {
                 e.stopPropagation(); // Prevent click from bubbling to slot click
                 e.preventDefault(); // Prevent default action
-                if (!isDragging) {
+                if (!isDragging && !hasMoved) {
                     var appointmentId = $(this).data('id');
                     CustomResourceCalendar.viewAppointment(appointmentId);
                 }
@@ -970,24 +973,55 @@ var CustomResourceCalendar = function() {
             // Handle drag start
             $(document).on('dragstart', '.resource-appointment', function(e) {
                 isDragging = true;
+                hasMoved = false;
                 draggedElement = $(this);
                 originalSlot = draggedElement.parent();
-                draggedElement.addClass('dragging');
+                
+                // Store initial position
+                dragStartX = e.originalEvent.clientX;
+                dragStartY = e.originalEvent.clientY;
 
                 // Store data for drag
                 e.originalEvent.dataTransfer.effectAllowed = 'move';
                 e.originalEvent.dataTransfer.setData('text/html', this.innerHTML);
+                
+                // Hide the original element after a tiny delay to allow drag image to be created
+                setTimeout(function() {
+                    if (draggedElement) {
+                        draggedElement.css('visibility', 'hidden');
+                    }
+                }, 0);
+            });
+            
+            // Track drag movement
+            $(document).on('drag', '.resource-appointment', function(e) {
+                if (isDragging && e.originalEvent.clientX !== 0 && e.originalEvent.clientY !== 0) {
+                    var deltaX = Math.abs(e.originalEvent.clientX - dragStartX);
+                    var deltaY = Math.abs(e.originalEvent.clientY - dragStartY);
+                    // Consider it a real drag if moved more than 5 pixels
+                    if (deltaX > 5 || deltaY > 5) {
+                        hasMoved = true;
+                    }
+                }
             });
 
             // Handle drag end
             $(document).on('dragend', '.resource-appointment', function(e) {
-                draggedElement.removeClass('dragging');
                 $('.resource-doctor-slot').removeClass('drag-over');
+                
+                // Show the element again
+                if (draggedElement) {
+                    draggedElement.css('visibility', 'visible');
+                }
 
                 // Reset isDragging flag after a short delay to prevent click event
                 setTimeout(function() {
                     isDragging = false;
-                }, 100);
+                    hasMoved = false;
+                    if (draggedElement) {
+                        draggedElement.removeClass('dragging');
+                    }
+                }, 150);
             });
 
             // Handle drag over
@@ -1038,8 +1072,18 @@ var CustomResourceCalendar = function() {
                     draggedElement.removeClass('dragging');
                     return false;
                 }
-                var newTime = dropSlot.data('time');
-                var duration = draggedElement.data('duration');
+                
+                // Get original and new time
+                var originalTime = draggedElement.attr('data-start-time');
+                var newTime = dropSlot.attr('data-time');
+                var duration = parseInt(draggedElement.attr('data-duration'));
+
+                // Check if dropping in the same slot
+                if (originalTime === newTime) {
+                    toastr.warning('Appointment is already in this time slot');
+                    draggedElement.removeClass('dragging');
+                    return false;
+                }
 
                 // Calculate new start and end times
                 var newStartDateTime = currentDate.format('YYYY-MM-DD') + ' ' + newTime + ':00';
