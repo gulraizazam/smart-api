@@ -453,9 +453,19 @@ var CustomResourceCalendar = function() {
     var currentDate = moment();
     var doctors = [];
     var appointments = [];
+    var isLoading = false; // Flag to prevent multiple simultaneous loads
+    var dragDropInitialized = false;
+    var isInitializing = false; // Flag to prevent multiple simultaneous inits
 
     return {
         init: function(doctorsList, date) {
+            // Prevent multiple simultaneous initializations
+            if (isInitializing) {
+                console.log('Already initializing consultancy calendar, skipping...');
+                return;
+            }
+            
+            isInitializing = true;
             doctors = doctorsList || [];
             currentDate = date ? moment(date) : moment();
 
@@ -465,6 +475,11 @@ var CustomResourceCalendar = function() {
 
             this.render();
             this.loadAppointments();
+            
+            // Reset initialization flag after a short delay
+            setTimeout(function() {
+                isInitializing = false;
+            }, 500);
         },
 
         render: function() {
