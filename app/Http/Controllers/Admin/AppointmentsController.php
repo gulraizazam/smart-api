@@ -5945,22 +5945,38 @@ class AppointmentsController extends Controller
                 $query->where('id', '!=', $excludeAppointmentId);
             }
 
-            // Debug: Get the SQL query
-            $sql = $query->toSql();
-            $bindings = $query->getBindings();
+            // Debug: Check what treatments exist step by step
+            $allTreatments = Appointments::where('patient_id', $patientId)
+                ->where('appointment_type_id', 2)
+                ->select('id', 'appointment_status_id', 'service_id', 'doctor_id', 'scheduled_date')
+                ->get();
             
-            $lastTreatment = $query->first();
+            $withService = Appointments::where('patient_id', $patientId)
+                ->where('appointment_type_id', 2)
+                ->where('service_id', $serviceId)
+                ->select('id', 'appointment_status_id', 'service_id', 'doctor_id', 'scheduled_date')
+                ->get();
             
-            // Debug: Log what we found
-            \Log::info('checkPatientLastTreatment Query', [
+            $withServiceAndStatus = Appointments::where('patient_id', $patientId)
+                ->where('appointment_type_id', 2)
+                ->where('service_id', $serviceId)
+                ->where('appointment_status_id', 2)
+                ->select('id', 'appointment_status_id', 'service_id', 'doctor_id', 'scheduled_date')
+                ->get();
+            
+            \Log::info('checkPatientLastTreatment Debug', [
                 'patient_id' => $patientId,
                 'service_id' => $serviceId,
                 'exclude_appointment_id' => $excludeAppointmentId,
-                'sql' => $sql,
-                'bindings' => $bindings,
-                'found' => $lastTreatment ? 'yes' : 'no',
-                'treatment_id' => $lastTreatment ? $lastTreatment->id : null
+                'all_treatments_count' => $allTreatments->count(),
+                'all_treatments' => $allTreatments->toArray(),
+                'with_service_count' => $withService->count(),
+                'with_service' => $withService->toArray(),
+                'with_service_and_status_count' => $withServiceAndStatus->count(),
+                'with_service_and_status' => $withServiceAndStatus->toArray()
             ]);
+            
+            $lastTreatment = $query->first();
 
             if ($lastTreatment) {
                 return response()->json([
