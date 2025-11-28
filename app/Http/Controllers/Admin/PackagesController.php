@@ -2488,14 +2488,23 @@ class PackagesController extends Controller
             // Filter users to only those that should be shown
             $usersToShow = [];
 
-            // First add doctors from allDoctors
+            // First, ensure the currently selected user (sold_by) is ALWAYS included, even if inactive
+            // This is important for editing - user needs to see who it's currently assigned to
+            if ($selectedUserId) {
+                $currentSoldByUser = User::find($selectedUserId);
+                if ($currentSoldByUser) {
+                    $usersToShow[$currentSoldByUser->id] = $currentSoldByUser->name;
+                }
+            }
+
+            // Then add doctors from allDoctors (active only)
             foreach ($userIdsToShow as $userId) {
                 if (array_key_exists($userId, $allDoctors)) {
                     $usersToShow[$userId] = $allDoctors[$userId];
                 }
             }
 
-            // Then add FDM users
+            // Then add FDM users (active only)
             if (!empty($fdmUserIds)) {
                 $FDMUsers = User::whereIn('id', $fdmUserIds)
                     ->where('active', 1)
