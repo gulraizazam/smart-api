@@ -2596,24 +2596,19 @@ class PackagesController extends Controller
 
             $isDuplicateService = $existingServices > 0;
 
-            // If duplicate service, only show the doctor from the appointment
+            // If duplicate service, only show the doctor from the appointment (even if inactive)
             if ($isDuplicateService) {
                 $package->load('appointment.doctor');
 
+                $usersToShow = [];
+
+                // Always include appointment doctor, even if inactive
                 if ($package->appointment && $package->appointment->doctor_id) {
-                    $appointmentDoctor = User::where('id', $package->appointment->doctor_id)
-                        ->where('active', 1)
-                        ->first();
+                    $appointmentDoctor = User::find($package->appointment->doctor_id);
 
                     if ($appointmentDoctor) {
-                        $usersToShow = [$appointmentDoctor->id => $appointmentDoctor->name];
-                    } else {
-                        // If appointment doctor not found or inactive, show empty
-                        $usersToShow = [];
+                        $usersToShow[$appointmentDoctor->id] = $appointmentDoctor->name;
                     }
-                } else {
-                    // If no appointment or no doctor, show empty
-                    $usersToShow = [];
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Duplicate service detected', true, [
@@ -2672,8 +2667,18 @@ class PackagesController extends Controller
 
             // Filter users to only those that should be shown
             $usersToShow = [];
+
+            // First, ensure the selected user is ALWAYS included, even if inactive
+            if ($selectedUserId) {
+                $selectedUser = User::find($selectedUserId);
+                if ($selectedUser) {
+                    $usersToShow[$selectedUser->id] = $selectedUser->name;
+                }
+            }
+
+            // Then add active doctors from the location
             foreach ($userIdsToShow as $userId) {
-                if (array_key_exists($userId, $allDoctors)) {
+                if (array_key_exists($userId, $allDoctors) && !array_key_exists($userId, $usersToShow)) {
                     $usersToShow[$userId] = $allDoctors[$userId];
                 }
             }
