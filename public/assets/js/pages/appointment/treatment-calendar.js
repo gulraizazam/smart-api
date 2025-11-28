@@ -665,11 +665,14 @@ function setCreateTreatment(response, start) {
 
         $("#create_treatment_types").html(type_options);
 
-        $("#create_treatment_base_service").html(service_options);
+        // create_treatment_base_service is now a hidden input, no need to set options
+        // $("#create_treatment_base_service").html(service_options);
         $("#create_treatment_gender").html(gender_options);
         $("#create_treatment_lead").html(source_options);
         $("#create_treatment_referred_by").html(employee_options);
 
+        // Load all child services automatically
+        loadAllChildServices();
 
     } catch (e) {
         showException(e);

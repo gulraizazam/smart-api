@@ -4448,7 +4448,16 @@ class AppointmentsController extends Controller
         }
         // Store form data in a variable
         $appointment_data = $request->all();
-        
+
+        // Auto-determine base_service_id from service_id's parent if not provided
+        if (!$request->base_service_id && $request->service_id) {
+            $service = Services::find($request->service_id);
+            if ($service && $service->parent_id != 0) {
+                $request->merge(['base_service_id' => $service->parent_id]);
+                $appointment_data['base_service_id'] = $service->parent_id;
+            }
+        }
+
         // Auto-determine resource_id if not provided
         if (!$request->resource_id && $request->location_id) {
             $machine_type_service = null;
@@ -4690,6 +4699,7 @@ class AppointmentsController extends Controller
         return Validator::make($data, [
             'name' => 'required',
             'phone' => 'required',
+            'service_id' => 'required',
             'location_id' => 'required',
             'doctor_id' => 'required',
         ]);
@@ -5084,6 +5094,52 @@ class AppointmentsController extends Controller
 
         return ApiHelper::apiResponse($this->success, 'Record not found', false);
     }
+
+    /**
+     * Load all active child services (where parent_id != 0)
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function loadAllChildServices(Request $request)
+    {
+        $account_id = Auth::User()->account_id;
+
+        // Get all active child services (parent_id != 0)
+        $childServices = Services::where('account_id', $account_id)
+            ->where('active', 1)
+            ->where('parent_id', '!=', 0)
+            ->orderBy('name', 'asc')
+            ->get();
+
+        // If resource_id is provided, filter services by machine type
+        if ($request->resource_id) {
+            $resource = Resources::whereId($request->resource_id)->first();
+            if ($resource) {
+                // Get all service IDs that are compatible with this machine type
+                $compatibleServiceIds = MachineTypeHasServices::where('machine_type_id', $resource->machine_type_id)
+                    ->pluck('service_id')
+                    ->toArray();
+
+                // Filter child services to only those compatible with the machine
+                // Either the service itself OR its parent should be in compatible services
+                $childServices = $childServices->filter(function ($service) use ($compatibleServiceIds) {
+                    return in_array($service->id, $compatibleServiceIds) || in_array($service->parent_id, $compatibleServiceIds);
+                });
+            }
+        }
+
+        // Format for dropdown
+        $services = [];
+        foreach ($childServices as $service) {
+            $services[$service->id] = $service->name;
+        }
+
+        return ApiHelper::apiResponse($this->success, 'Record found', true, [
+            'services' => $services,
+        ]);
+    }
+
     /*
      * Load End Node Services by Service ID
      *
