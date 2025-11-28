@@ -2445,24 +2445,50 @@ class PackagesController extends Controller
                 $isDuplicateService = true;
             }
 
-            // If duplicate service, only show the doctor from the appointment
+            // If duplicate service, show the doctor from the appointment + FDM users
             if ($isDuplicateService) {
                 $package->load('appointment.doctor');
 
+                $usersToShow = [];
+
+                // Add appointment doctor
                 if ($package->appointment && $package->appointment->doctor_id) {
                     $appointmentDoctor = User::where('id', $package->appointment->doctor_id)
                         ->where('active', 1)
                         ->first();
 
                     if ($appointmentDoctor) {
-                        $usersToShow = [$appointmentDoctor->id => $appointmentDoctor->name];
-                    } else {
-                        // If appointment doctor not found or inactive, show empty
-                        $usersToShow = [];
+                        $usersToShow[$appointmentDoctor->id] = $appointmentDoctor->name;
                     }
-                } else {
-                    // If no appointment or no doctor, show empty
-                    $usersToShow = [];
+                }
+
+                // Get FDM users by getting the user_ids associated with the center (location_id)
+                $findFDM = UserHasLocations::where('location_id', $locationId)->pluck('user_id')->toArray();
+
+                // Fetch the 'FDM' role and get its user ids
+                $findRole = DB::table('roles')->where('name', 'FDM')->first();
+                if ($findRole) {
+                    $roleId = $findRole->id;
+
+                    // Get users who have the FDM role
+                    $roleHasUser = RoleHasUsers::where('role_id', $roleId)->pluck('user_id')->toArray();
+
+                    // Get the intersection of users who are both FDM and belong to the center
+                    $fdmUserIds = array_intersect($findFDM, $roleHasUser);
+
+                    // Add FDM users to the list
+                    if (!empty($fdmUserIds)) {
+                        $FDMUsers = User::whereIn('id', $fdmUserIds)
+                            ->where('active', 1)
+                            ->pluck('name', 'id')
+                            ->toArray();
+
+                        foreach ($FDMUsers as $fdmId => $fdmName) {
+                            if (!array_key_exists($fdmId, $usersToShow)) {
+                                $usersToShow[$fdmId] = $fdmName;
+                            }
+                        }
+                    }
                 }
 
                 return ApiHelper::apiResponse($this->success, 'Record found', true, [
