@@ -294,17 +294,11 @@ var CreateTreatmentValidation = function () {
             form,
             {
                 fields: {
-                    base_service_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The service field is required'
-                            }
-                        }
-                    },
+                    // base_service_id validation removed - now auto-populated from service_id parent
                     service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The child service field is required'
+                                message: 'The service field is required'
                             }
                         }
                     },

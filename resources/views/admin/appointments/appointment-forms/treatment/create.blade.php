@@ -63,13 +63,11 @@
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Service <span class="text text-danger">*</span> </label>
-                            <select id="create_treatment_base_service" onchange="loadEndServices($(this).val());" class="form-control select2" name="base_service_id"></select>
-                        </div>
+                        {{-- Hide base service dropdown - validation removed since it's auto-populated from service_id --}}
+                        <input type="hidden" id="create_treatment_base_service" name="base_service_id">
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service <span class="text text-danger">*</span> </label>
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Service <span class="text text-danger">*</span> </label>
                             <select id="create_treatment_service" class="form-control select2" name="service_id"></select>
                         </div>
 

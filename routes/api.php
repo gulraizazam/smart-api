@@ -610,6 +610,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
 
     Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
+    Route::post('appointments/load-all-child-services', [AppointmentsController::class, 'loadAllChildServices'])->name('appointments.load_all_child_services');
     Route::post('appointments/store-service', [AppointmentsController::class, 'storeService'])->name('appointments.store_service');
 
     Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');

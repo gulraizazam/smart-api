@@ -1,3 +1,52 @@
+// Load all child services (parent_id != 0) function
+window.loadAllChildServices = function () {
+    resource_id = $("#treatment_resource_id").val();
+
+    console.log('Loading all child services with resource_id:', resource_id);
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.load_all_child_services'),
+        type: 'POST',
+        data: {
+            resource_id: resource_id
+        },
+        cache: false,
+        success: function(response) {
+            console.log('Child services response:', response);
+            if(response.status) {
+                let services = response.data.services;
+                let service_option = '<option value="">Select a Service</option>';
+
+                let serviceCount = 0;
+                Object.entries(services).forEach(function (service) {
+                    service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
+                    serviceCount++;
+                });
+
+                console.log('Loaded ' + serviceCount + ' child services');
+                $('#create_treatment_service').html(service_option);
+
+                // Reinitialize select2 if it exists
+                if ($('#create_treatment_service').hasClass('select2-hidden-accessible')) {
+                    $('#create_treatment_service').select2('destroy');
+                }
+                $('#create_treatment_service').select2();
+            } else {
+                console.error('Failed to load services:', response.message);
+                toastr.error(response.message || 'Failed to load services');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading child services:', thrownError);
+            console.error('Response:', xhr.responseText);
+            toastr.error('Failed to load services. Please try again.');
+        }
+    });
+}
+
 // Define loadEndServices globally before anything else to ensure it's available immediately
 window.loadEndServices = function (baseServiceId) {
     resource_id = $("#treatment_resource_id").val();
