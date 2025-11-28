@@ -35,7 +35,7 @@ class SecondMessageOfAppointment extends Command
      *
      * @var string
      */
-    protected $description = 'Send 2nd message one day before appointment at 8PM';
+    protected $description = 'Send reminder message to patients with appointments scheduled today';
 
     /**
      * Create a new command instance.
@@ -62,7 +62,7 @@ class SecondMessageOfAppointment extends Command
         $where[] = [
             'scheduled_date',
             '=',
-            $tomorrow,
+            $day,
         ];
         $where[] = [
             'base_appointment_status_id',
