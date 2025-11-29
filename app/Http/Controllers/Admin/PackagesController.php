@@ -2617,7 +2617,19 @@ class PackagesController extends Controller
                 ]);
             }
 
-            // If not duplicate, return the normal sold by users (same logic as edit function)
+            // If not duplicate, show doctors who have treated this patient in last 60 days
+            $sixtyDaysAgo = now()->subDays(60);
+
+            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $locationId)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $sixtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Get all active doctors from the location
             $doctorsIds = DoctorHasLocations::where('is_allocated', 1)
                 ->where('location_id', $locationId)
                 ->pluck('user_id')
@@ -2628,61 +2640,16 @@ class PackagesController extends Controller
                 ->pluck('name', 'id')
                 ->toArray();
 
-            // Get appointment array to determine selected doctor
-            $data['patient_id'] = $package->patient_id;
-            $data['location_id'] = $locationId;
-            $data = (object) $data;
-            $appointmentArray = PlanAppointmentCalculation::tagAppointments($data);
-
-            $selectedUserId = null;
-            if (!empty($appointmentArray) && isset($appointmentArray[0]['doctor_id'])) {
-                $firstDoctorId = $appointmentArray[0]['doctor_id'];
-                if (array_key_exists($firstDoctorId, $allDoctors)) {
-                    $selectedUserId = $firstDoctorId;
-                }
-            }
-
-            // Check for treatments in last 30 days
-            $thirtyDaysAgo = now()->subDays(30);
-
-            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
-                ->where('location_id', $locationId)
-                ->where('appointment_status_id', 2)
-                ->where('appointment_type_id', 2)
-                ->where('scheduled_date', '>=', $thirtyDaysAgo)
-                ->pluck('doctor_id')
-                ->unique()
-                ->toArray();
-
-            // Determine which users to show
-            $userIdsToShow = [];
-            if (!empty($recentTreatmentDoctorIds)) {
-                $userIdsToShow = array_unique(array_merge(
-                    $selectedUserId ? [$selectedUserId] : [],
-                    $recentTreatmentDoctorIds
-                ));
-            } else {
-                $userIdsToShow = $selectedUserId ? [$selectedUserId] : [];
-            }
-
-            // Filter users to only those that should be shown
             $usersToShow = [];
 
-            // First, ensure the selected user is ALWAYS included, even if inactive
-            if ($selectedUserId) {
-                $selectedUser = User::find($selectedUserId);
-                if ($selectedUser) {
-                    $usersToShow[$selectedUser->id] = $selectedUser->name;
+            // Add doctors who treated patient in last 60 days
+            foreach ($recentTreatmentDoctorIds as $doctorId) {
+                if (array_key_exists($doctorId, $allDoctors)) {
+                    $usersToShow[$doctorId] = $allDoctors[$doctorId];
                 }
             }
 
-            // Then add active doctors from the location
-            foreach ($userIdsToShow as $userId) {
-                if (array_key_exists($userId, $allDoctors) && !array_key_exists($userId, $usersToShow)) {
-                    $usersToShow[$userId] = $allDoctors[$userId];
-                }
-            }
-
+            // If no recent history, return empty (user must use main edit sold by to see all)
             return ApiHelper::apiResponse($this->success, 'Service not duplicate', true, [
                 'users' => $usersToShow,
                 'is_duplicate' => false
