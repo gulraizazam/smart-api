@@ -2649,7 +2649,20 @@ class PackagesController extends Controller
                 }
             }
 
-            // If no recent history, return empty (user must use main edit sold by to see all)
+            // If no recent history and no doctors found, return the appointment doctor
+            if (empty($usersToShow)) {
+                $package->load('appointment.doctor');
+
+                // Include appointment doctor, even if inactive
+                if ($package->appointment && $package->appointment->doctor_id) {
+                    $appointmentDoctor = User::find($package->appointment->doctor_id);
+
+                    if ($appointmentDoctor) {
+                        $usersToShow[$appointmentDoctor->id] = $appointmentDoctor->name;
+                    }
+                }
+            }
+
             return ApiHelper::apiResponse($this->success, 'Service not duplicate', true, [
                 'users' => $usersToShow,
                 'is_duplicate' => false
