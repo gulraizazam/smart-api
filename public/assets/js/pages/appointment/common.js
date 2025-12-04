@@ -60,6 +60,7 @@ function toggleSection($this, $class) {
     if ($class == 'treatment') {
         console.log('Treatment tab activated');
         $(".treatment-location-header-dropdown").removeClass("d-none");
+        $(".consultancy-location-header-dropdown").addClass("d-none");
         // Initialize select2 and load locations for treatment dropdown
         setTimeout(function() {
             console.log('Initializing treatment location dropdown, current options:', $('#treatment_location_filter option').length);
@@ -71,8 +72,24 @@ function toggleSection($this, $class) {
                 console.log('Locations already loaded, skipping');
             }
         }, 200);
+    } else if ($class == 'consultancy') {
+        console.log('Consultancy tab activated');
+        $(".consultancy-location-header-dropdown").removeClass("d-none");
+        $(".treatment-location-header-dropdown").addClass("d-none");
+        // Initialize select2 and load locations for consultancy dropdown
+        setTimeout(function() {
+            console.log('Initializing consultancy location dropdown, current options:', $('#consultancy_location_filter option').length);
+            $('#consultancy_location_filter').select2({ width: '100%' });
+            if ($('#consultancy_location_filter option').length <= 1) {
+                console.log('Loading locations for consultancy');
+                loadLocations('', 'consultancy');
+            } else {
+                console.log('Locations already loaded, skipping');
+            }
+        }, 200);
     } else {
         $(".treatment-location-header-dropdown").addClass("d-none");
+        $(".consultancy-location-header-dropdown").addClass("d-none");
     }
 
     if ($class != 'appointment') {
@@ -745,6 +762,57 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
 
     $("." + $class).html(buttons);
 
+}
+
+function deleteAppointmentFromModal(button) {
+    // Get appointment ID from the modal's hidden input field
+    let appointmentId = $("#comment_appointment_id").val() || $("#treatment_comment_appointment_id").val();
+    
+    if (!appointmentId) {
+        toastr.error('Appointment ID not found');
+        return;
+    }
+    
+    let delete_url = route('admin.appointments.destroy', {id: appointmentId});
+    
+    swal.fire({
+        title: 'Are you sure you want to delete this appointment?',
+        text: "You won't be able to revert this!",
+        type: 'warning',
+        icon: 'warning',
+        buttonsStyling: false,
+        confirmButtonText: 'Yes, delete it!',
+        cancelButtonText: 'No, cancel',
+        showCancelButton: true,
+        cancelButtonClass: 'btn btn-secondary font-weight-bold',
+        confirmButtonClass: 'btn btn-danger font-weight-bold'
+    }).then(function (result) {
+        if (result.value) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: delete_url,
+                type: 'DELETE',
+                cache: false,
+                success: function (response) {
+                    if (response.status) {
+                        toastr.success(response.message);
+                        // Close both modals (consultancy and treatment)
+                        $("#modal_consultancy_detail").modal("hide");
+                        $("#modal_treatment_detail").modal("hide");
+                        // Reload the calendar/datatable
+                        reInitTable();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function (xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+    });
 }
 
 var patient;

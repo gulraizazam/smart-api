@@ -2456,36 +2456,7 @@ class PackagesController extends Controller
             // Get selected user ID (current sold_by)
             $selectedUserId = $currentSoldBy;
 
-            // Check for treatments in last 30 days
-            $thirtyDaysAgo = now()->subDays(30);
-
-            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
-                ->where('location_id', $locationId)
-                ->where('appointment_status_id', 2)
-                ->where('appointment_type_id', 2)
-                ->where('scheduled_date', '>=', $thirtyDaysAgo)
-                ->pluck('doctor_id')
-                ->unique()
-                ->toArray();
-
-            // Determine which users to show: selected user + recent treatment doctors + FDM users
-            $userIdsToShow = [];
-            if (!empty($recentTreatmentDoctorIds)) {
-                // Treatments found in last 30 days: show selectedUserId + recent treatment doctors + FDM users
-                $userIdsToShow = array_unique(array_merge(
-                    $selectedUserId ? [$selectedUserId] : [],
-                    $recentTreatmentDoctorIds,
-                    $fdmUserIds
-                ));
-            } else {
-                // No treatments in last 30 days: show only selectedUserId + FDM users
-                $userIdsToShow = array_unique(array_merge(
-                    $selectedUserId ? [$selectedUserId] : [],
-                    $fdmUserIds
-                ));
-            }
-
-            // Filter users to only those that should be shown
+            // Show all active doctors and FDM users from the branch (no date filtering)
             $usersToShow = [];
 
             // First, ensure the currently selected user (sold_by) is ALWAYS included, even if inactive
@@ -2497,14 +2468,14 @@ class PackagesController extends Controller
                 }
             }
 
-            // Then add doctors from allDoctors (active only)
-            foreach ($userIdsToShow as $userId) {
-                if (array_key_exists($userId, $allDoctors)) {
-                    $usersToShow[$userId] = $allDoctors[$userId];
+            // Add all active doctors from the location
+            foreach ($allDoctors as $doctorId => $doctorName) {
+                if (!array_key_exists($doctorId, $usersToShow)) {
+                    $usersToShow[$doctorId] = $doctorName;
                 }
             }
 
-            // Then add FDM users (active only)
+            // Add all active FDM users from the location
             if (!empty($fdmUserIds)) {
                 $FDMUsers = User::whereIn('id', $fdmUserIds)
                     ->where('active', 1)
