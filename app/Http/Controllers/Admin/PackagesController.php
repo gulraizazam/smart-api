@@ -1211,6 +1211,7 @@ class PackagesController extends Controller
 
         // Get logged-in user's role IDs
         $userRoleIds = Auth::user()->user_roles()->pluck('role_id')->toArray();
+        $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
 
         $bundle = Bundles::find($request->bundle_id);
 
@@ -1227,15 +1228,20 @@ class PackagesController extends Controller
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
            
-            $generalDiscounts = Discounts::whereIn('id', $discountIds)
+            $generalDiscountsQuery = Discounts::whereIn('id', $discountIds)
             ->where('discount_type', '!=', 'voucher')
             ->where('active', '=', '1')
             ->whereDate('start', '<=', $today)
-            ->whereDate('end', '>=', $today)
-            ->whereHas('roles', function($query) use ($userRoleIds) {
-                $query->whereIn('role_id', $userRoleIds);
-            })
-            ->get();
+            ->whereDate('end', '>=', $today);
+
+            // Apply role filter only if not super admin
+            if (!$isSuperAdmin) {
+                $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
+                    $query->whereIn('role_id', $userRoleIds);
+                });
+            }
+
+            $generalDiscounts = $generalDiscountsQuery->get();
 
         // Fetch VOUCHER discounts (user-specific)
         $voucherDiscounts = Collection::make();
@@ -1246,12 +1252,14 @@ class PackagesController extends Controller
         
         if ($checkUserVouchers) {
             // Get voucher discounts that match BOTH location/service AND user assignment
-            $voucherDiscounts = Discounts::whereIn('id', $discountIds)
+            $voucherDiscountsQuery = Discounts::whereIn('id', $discountIds)
                 ->whereIn('id', $checkUserVouchers)
-                ->where('discount_type', '=', 'voucher')
-                
-                ->get();
+                ->where('discount_type', '=', 'voucher');
 
+            // Apply role filter only if not super admin
+            
+
+            $voucherDiscounts = $voucherDiscountsQuery->get();
         }
 
         // Merge both collections
@@ -1280,15 +1288,20 @@ class PackagesController extends Controller
                     }
                 }
                // Fetch NON-VOUCHER discounts
-            $generalDiscounts = Discounts::whereIn('id', $uniq_array)
+            $generalDiscountsQuery = Discounts::whereIn('id', $uniq_array)
                 ->where('discount_type', '!=', 'voucher')
                 ->where('active', '=', '1')
                 ->whereDate('start', '<=', $today)
-                ->whereDate('end', '>=', $today)
-                ->whereHas('roles', function($query) use ($userRoleIds) {
+                ->whereDate('end', '>=', $today);
+
+            // Apply role filter only if not super admin
+            if (!$isSuperAdmin) {
+                $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
                     $query->whereIn('role_id', $userRoleIds);
-                })
-                ->get();
+                });
+            }
+
+            $generalDiscounts = $generalDiscountsQuery->get();
 
             // Fetch VOUCHER discounts
             $voucherDiscounts = Collection::make();
@@ -1297,11 +1310,14 @@ class PackagesController extends Controller
                 ->toArray();
             
             if ($checkUserVouchers) {
-                $voucherDiscounts = Discounts::whereIn('id', $uniq_array)
+                $voucherDiscountsQuery = Discounts::whereIn('id', $uniq_array)
                     ->whereIn('id', $checkUserVouchers)
-                    ->where('discount_type', '=', 'voucher')
-                    
-                    ->get();
+                    ->where('discount_type', '=', 'voucher');
+
+                // Apply role filter only if not super admin
+               
+
+                $voucherDiscounts = $voucherDiscountsQuery->get();
             }
 
                 // Merge both collections
