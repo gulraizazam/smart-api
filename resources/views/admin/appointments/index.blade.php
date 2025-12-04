@@ -238,7 +238,7 @@
                 <!--begin::Card-->
                 <div class="card card-custom">
                     <div class="card-header py-3">
-                        <div class="card-title">
+                        <div class="card-title align-items-center">
                             <span class="card-icon">
                                 <span class="svg-icon svg-icon-md svg-icon-primary">
                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
@@ -261,6 +261,23 @@
                                 </span>
                             </span>
                             <h3 class="card-label change-label">Consultancies</h3>
+
+                            @php
+                                $userCentres = $userCentres ?? [];
+                                $showDropdown = count($userCentres) > 1;
+                            @endphp
+
+                            @if($showDropdown)
+                            <div class="ml-5 consultancy-location-header-dropdown d-none" style="min-width: 250px;">
+                                <select onchange="loadConsultantDoctors($(this).val(), 'consultancy');" class="form-control" id="consultancy_location_filter"></select>
+                            </div>
+                            @else
+                            <!-- Hidden dropdown for single-centre users -->
+                            <div style="display: none;">
+                                <select onchange="loadConsultantDoctors($(this).val(), 'consultancy');" class="form-control" id="consultancy_location_filter"></select>
+                            </div>
+                            @endif
+
                         </div>
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
@@ -511,6 +528,17 @@
                 var result = get_query();
                 if (typeof result.tab !== 'undefined') {
                     $("." + result.tab + '-tab').click();
+                    // Show location dropdown if tab is consultancy
+                    if (result.tab === 'consultancy') {
+                        $(".consultancy-location-header-dropdown").removeClass("d-none");
+                        // Initialize select2 and load locations for consultancy dropdown
+                        setTimeout(function() {
+                            $('#consultancy_location_filter').select2({ width: '100%' });
+                            if ($('#consultancy_location_filter option').length <= 1) {
+                                loadLocations('', 'consultancy');
+                            }
+                        }, 300);
+                    }
                 } else {
                     $(".appointment-tab").addClass("nav-bar-active")
                 }
