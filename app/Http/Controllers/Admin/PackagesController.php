@@ -1832,7 +1832,7 @@ class PackagesController extends Controller
             }
 
             // Check for treatments in last 30 days
-            $thirtyDaysAgo = now()->subDays(30);
+            $thirtyDaysAgo = now()->subDays(60);
 
             $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
                 ->where('location_id', $package->location_id)
