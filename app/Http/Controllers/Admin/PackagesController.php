@@ -1209,6 +1209,9 @@ class PackagesController extends Controller
         /*end*/
         $today = Carbon::now()->toDateString();
 
+        // Get logged-in user's role IDs
+        $userRoleIds = Auth::user()->user_roles()->pluck('role_id')->toArray();
+
         $bundle = Bundles::find($request->bundle_id);
 
         if ($bundle && $bundle->type == 'single') {
@@ -1229,6 +1232,9 @@ class PackagesController extends Controller
             ->where('active', '=', '1')
             ->whereDate('start', '<=', $today)
             ->whereDate('end', '>=', $today)
+            ->whereHas('roles', function($query) use ($userRoleIds) {
+                $query->whereIn('role_id', $userRoleIds);
+            })
             ->get();
 
         // Fetch VOUCHER discounts (user-specific)
@@ -1243,10 +1249,9 @@ class PackagesController extends Controller
             $voucherDiscounts = Discounts::whereIn('id', $discountIds)
                 ->whereIn('id', $checkUserVouchers)
                 ->where('discount_type', '=', 'voucher')
-              
-              
+                
                 ->get();
-                  
+
         }
 
         // Merge both collections
@@ -1280,6 +1285,9 @@ class PackagesController extends Controller
                 ->where('active', '=', '1')
                 ->whereDate('start', '<=', $today)
                 ->whereDate('end', '>=', $today)
+                ->whereHas('roles', function($query) use ($userRoleIds) {
+                    $query->whereIn('role_id', $userRoleIds);
+                })
                 ->get();
 
             // Fetch VOUCHER discounts
@@ -1293,7 +1301,6 @@ class PackagesController extends Controller
                     ->whereIn('id', $checkUserVouchers)
                     ->where('discount_type', '=', 'voucher')
                     
-                   
                     ->get();
             }
 
