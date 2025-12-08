@@ -331,6 +331,7 @@ class RolesController extends Controller
             'cash_delete' => 'Plan Cash Delete',
             'log' => 'Log',
             'log_excel' => 'Generate Invoice For Outrange',
+            'edit_appointment_after_arrived' => 'Edit Appointment After Arrived',
             'sms_log' => 'Sms Log',
             'edit_sold_by' => 'Plan Edit Sold By',
             'add_stock' => 'Add Stock',
