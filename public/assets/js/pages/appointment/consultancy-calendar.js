@@ -1066,20 +1066,13 @@ var CustomResourceCalendar = function() {
                 var originalDoctorId = draggedElement.data('doctor-id');
                 var newDoctorId = dropSlot.data('doctor-id');
 
-                // Prevent dragging between different doctors
-                if (originalDoctorId !== newDoctorId) {
-                    toastr.error('Consultancy appointments cannot be moved between different doctors');
-                    draggedElement.removeClass('dragging');
-                    return false;
-                }
-                
                 // Get original and new time
                 var originalTime = draggedElement.attr('data-start-time');
                 var newTime = dropSlot.attr('data-time');
                 var duration = parseInt(draggedElement.attr('data-duration'));
 
-                // Check if dropping in the same slot
-                if (originalTime === newTime) {
+                // Check if dropping in the exact same slot (same doctor AND same time)
+                if (originalTime === newTime && originalDoctorId === newDoctorId) {
                     toastr.warning('Appointment is already in this time slot');
                     draggedElement.removeClass('dragging');
                     return false;

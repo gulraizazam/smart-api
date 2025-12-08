@@ -62,7 +62,22 @@ var AddValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable();
+                    // Save current filter values before reload
+                    sessionStorage.setItem('rotaFilters', JSON.stringify({
+                        resourcename: $("#search_resource_name").val(),
+                        type_id: $("#search_type_id").val(),
+                        region_id: $("#search_region_id").val(),
+                        city_id: $("#search_city_id").val(),
+                        location_id: $("#search_location_id").val(),
+                        from: $("#search_from").val(),
+                        to: $("#search_to").val(),
+                        date_range: $("#date_range").val(),
+                        status: $("#search_status").val()
+                    }));
+                    // Reload the page to reset all form states and prevent null value issues
+                    setTimeout(function() {
+                        location.reload();
+                    }, 500);
                 } else {
                     toastr.error(response.message);
                 }
@@ -120,7 +135,22 @@ var EditValidation = function () {
                 if (response.status == true) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitTable('rota');
+                    // Save current filter values before reload
+                    sessionStorage.setItem('rotaFilters', JSON.stringify({
+                        resourcename: $("#search_resource_name").val(),
+                        type_id: $("#search_type_id").val(),
+                        region_id: $("#search_region_id").val(),
+                        city_id: $("#search_city_id").val(),
+                        location_id: $("#search_location_id").val(),
+                        from: $("#search_from").val(),
+                        to: $("#search_to").val(),
+                        date_range: $("#date_range").val(),
+                        status: $("#search_status").val()
+                    }));
+                    // Reload the page to reset all form states
+                    setTimeout(function() {
+                        location.reload();
+                    }, 500);
                 } else {
                     toastr.error(response.message);
                 }
