@@ -160,13 +160,8 @@ var TreatmentCalendar = function() {
 
                 var events = [];
 
-                console.log('=== LOADING TREATMENT EVENTS ===');
-                console.log('Total events in response:', Object.keys(response.events).length);
-                console.log('Events data:', response.events);
-
                 //  var currentDate = null;
                 $.each(response.events, function(id, appointmentObj) {
-                    console.log('Processing event ID:', appointmentObj.id, 'Patient:', appointmentObj.patient, 'Time:', appointmentObj.start, '-', appointmentObj.end);
                     if (appointmentObj.id == window.eventData.id && window.eventData.firstTime == true) {
                         events.push({
                             id: appointmentObj.id,
@@ -227,9 +222,6 @@ var TreatmentCalendar = function() {
                         }
                     }
                 });
-
-                console.log('Total events pushed to calendar:', events.length);
-                console.log('Events array:', events);
 
                 if($('#treatment_doctor_filter').val() !=''){
                     $.each(response.rotas[0].doctor_rotas, function(id, rota) {
@@ -737,8 +729,6 @@ var TreatmentResourceCalendar = function() {
 
     return {
         init: function(doctorsList, date) {
-            console.log('TreatmentResourceCalendar.init() called with', doctorsList ? doctorsList.length : 0, 'doctors');
-            
             // Reset flags to allow re-initialization
             isInitializing = false;
             isLoading = false;
@@ -859,12 +849,10 @@ var TreatmentResourceCalendar = function() {
 
             // Get and store the machine ID from the filter
             var loadingMachineId = $('#treatment_resource_filter').val();
-            console.log('Loading appointments with machine_id:', loadingMachineId);
 
             // Update the stored machine ID if we have a value
             if (loadingMachineId) {
                 currentMachineId = loadingMachineId;
-                console.log('Updated currentMachineId to:', currentMachineId);
             }
 
             // Load appointments for each doctor
@@ -894,14 +882,9 @@ var TreatmentResourceCalendar = function() {
                 var allEvents = [];
                 var allRotas = [];
 
-                console.log('=== AJAX RESPONSES RECEIVED ===');
-                console.log('Number of doctors:', doctors.length);
-                console.log('Arguments:', arguments);
-
                 // Handle single doctor case
                 if (doctors.length === 1) {
                     var response = arguments[0];
-                    console.log('Single doctor response:', response);
                     if (response.status) {
                         // Map events and add the machine_id (since backend doesn't return it)
                         var events = Object.values(response.events || {});
@@ -909,10 +892,8 @@ var TreatmentResourceCalendar = function() {
                             // Backend doesn't return machine_id, so use the stored one
                             // All events in this response belong to the same machine since we filtered by it
                             event.machine_id = currentMachineId;
-                            console.log('Event ' + event.id + ' assigned machine_id:', event.machine_id);
                             allEvents.push(event);
                         });
-                        console.log('Response rotas:', response.rotas);
                         if (response.rotas && response.rotas.length > 0) {
                             allRotas = allRotas.concat(response.rotas);
                         }
@@ -921,7 +902,6 @@ var TreatmentResourceCalendar = function() {
                     // Multiple doctors
                     for (var i = 0; i < arguments.length; i++) {
                         var response = arguments[i][0];
-                        console.log('Doctor ' + i + ' response:', response);
                         if (response && response.status) {
                             // Map events and add the machine_id (since backend doesn't return it)
                             var events = Object.values(response.events || {});
@@ -929,21 +909,14 @@ var TreatmentResourceCalendar = function() {
                                 // Backend doesn't return machine_id, so use the stored one
                                 // All events in this response belong to the same machine since we filtered by it
                                 event.machine_id = currentMachineId;
-                                console.log('Event ' + event.id + ' assigned machine_id:', event.machine_id);
                                 allEvents.push(event);
                             });
-                            console.log('Doctor ' + i + ' rotas:', response.rotas);
                             if (response.rotas && response.rotas.length > 0) {
                                 allRotas = allRotas.concat(response.rotas);
                             }
                         }
                     }
                 }
-
-                console.log('Total events collected:', allEvents.length);
-                console.log('Total rotas collected:', allRotas.length);
-                console.log('All rotas:', allRotas);
-                console.log('Sample event data:', allEvents.length > 0 ? allEvents[0] : 'No events');
 
                 // Check if any doctor has no rotas defined and show warning
                 var doctorsWithoutRotas = [];
@@ -977,11 +950,6 @@ var TreatmentResourceCalendar = function() {
             var slotInterval = 15;
             var pixelsPerMinute = slotHeight / slotInterval;
 
-            console.log('=== RENDERING APPOINTMENTS ===');
-            console.log('Number of events:', events.length);
-            console.log('Current machine ID:', currentMachineId);
-            console.log('Filter machine ID:', $('#treatment_resource_filter').val());
-
             // Clear all existing appointments before rendering new ones
             $('.resource-appointment').remove();
 
@@ -999,8 +967,6 @@ var TreatmentResourceCalendar = function() {
                 var doctorId = event.resourceId;
                 // Use event's machine_id first, then stored machine ID, then filter
                 var machineId = event.machine_id || currentMachineId || $('#treatment_resource_filter').val() || '';
-
-                console.log('Event ' + event.id + ' actual time:', startTime.format('H:mm'), 'slot time:', timeStr, 'machine_id:', event.machine_id, 'Final machineId:', machineId);
 
                 var slot = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"][data-time="' + timeStr + '"]');
 
@@ -1045,8 +1011,6 @@ var TreatmentResourceCalendar = function() {
                     appointmentHtml += '</div>';
 
                     slot.append(appointmentHtml);
-                } else {
-                    console.warn('Slot not found for event ' + event.id + ' (doctor: ' + doctorId + ', time: ' + timeStr + ')');
                 }
             });
         },
@@ -1102,39 +1066,24 @@ var TreatmentResourceCalendar = function() {
             var startMoment = moment(startTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
             var endMoment = moment(endTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
 
-            console.log('Marking slots for doctor:', doctorId);
-            console.log('Start time:', startTime, '→', startMoment.format('HH:mm'));
-            console.log('End time:', endTime, '→', endMoment.format('HH:mm'));
-
             var slots = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"]');
-            console.log('Found ' + slots.length + ' slots for doctor ' + doctorId);
 
-            var markedCount = 0;
             slots.each(function() {
                 var slotTime = $(this).data('time');
                 var slotMoment = moment(slotTime, 'H:mm');
 
                 if (slotMoment.isSameOrAfter(startMoment) && slotMoment.isBefore(endMoment)) {
                     $(this).addClass('has-rota');
-                    markedCount++;
                 }
             });
-
-            console.log('Marked ' + markedCount + ' slots as has-rota for doctor ' + doctorId + ' (from ' + startMoment.format('HH:mm') + ' to ' + endMoment.format('HH:mm') + ')');
         },
 
         createAppointment: function(doctorId, timeStr, element) {
-            console.log('Clicked element:', element);
-            console.log('Element classes:', $(element).attr('class'));
-            console.log('Has rota class?', $(element).hasClass('has-rota'));
-            
             // Only check rota if clicking on a slot without rota (grey box)
             if (!$(element).hasClass('has-rota')) {
                 toastr.error("Doctor rota does not exist for this time slot");
                 return;
             }
-
-            console.log('Creating appointment for doctor:', doctorId, 'at time:', timeStr);
             
             // Store doctor ID in window.eventData for the modal
             if (!window.eventData) {
@@ -1145,10 +1094,7 @@ var TreatmentResourceCalendar = function() {
             
             // Create the date/time object
             var dateTime = currentDate.format('YYYY-MM-DD') + 'T' + timeStr + ':00';
-            console.log('DateTime:', dateTime);
-            console.log('Doctor ID:', doctorId);
-            console.log('Location ID:', window.eventData.location_id);
-            
+
             var info = { 
                 date: moment(dateTime).toDate(),
                 resource: { id: doctorId }
@@ -1423,22 +1369,6 @@ var TreatmentResourceCalendar = function() {
             // Use provided machineId, fallback to stored currentMachineId, then filter, then empty string
             var finalMachineId = machineId || currentMachineId || $('#treatment_resource_filter').val() || '';
 
-            console.log('=== RESCHEDULE APPOINTMENT ===');
-            console.log('Appointment ID:', appointmentId);
-            console.log('Machine ID from drag:', machineId);
-            console.log('Machine ID from element data:', appointmentEl.data('machine-id'));
-            console.log('Current machine ID:', currentMachineId);
-            console.log('Filter value:', $('#treatment_resource_filter').val());
-            console.log('Final machine ID:', finalMachineId);
-            console.log('Request data:', {
-                id: appointmentId,
-                start: newStart,
-                end: newEnd,
-                doctor_id: newDoctorId,
-                location_id: $('#treatment_location_filter').val(),
-                resourceId: finalMachineId
-            });
-
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -1493,8 +1423,6 @@ var TreatmentResourceCalendar = function() {
 
         // Reload calendar appointments (called after creating a new appointment)
         reload: function() {
-            console.log('TreatmentResourceCalendar.reload() called');
-
             // Update the stored machine_id in case it changed
             currentMachineId = $('#treatment_resource_filter').val() || '';
 
