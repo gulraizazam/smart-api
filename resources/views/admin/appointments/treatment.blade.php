@@ -652,7 +652,7 @@
 
         </script>
         <script src="{{asset('assets/js/pages/appointment/invoice.js?v=1')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js?v=' . time())}}"></script>
 
         <script src="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/treatment-data.js?v=6')}}"></script>
