@@ -1682,9 +1682,19 @@ function packageFormatRepoSelection(item) {
 }
 
 function reInitCalendar(start, calendarInit, calendarInstance) {
-    if (typeof calendarInit !== "undefined") { /*if already initiate then destroy first*/
-        calendarInit.destroy();
-        calendarInstance.init(start);
+    // Check if custom resource calendar is visible
+    if ($('#custom_resource_calendar').is(':visible')) {
+        // Refresh custom resource calendar
+        CustomResourceCalendar.loadAppointments();
+    } else if (typeof calendarInit !== "undefined") {
+        // Try to just refetch events first (more efficient)
+        if (calendarInit.refetchEvents && typeof calendarInit.refetchEvents === 'function') {
+            calendarInit.refetchEvents();
+        } else {
+            // Fallback: Destroy and reinitialize
+            calendarInit.destroy();
+            calendarInstance.init(start);
+        }
     }
 }
 
