@@ -1844,6 +1844,7 @@ function editServiceDiscount($this, type = '') {
     var service_id = $this.val();
     var location_id = $('#edit_location_id').val();
     var patient_id = $('#edit_parent_id').val();
+    var package_id = $('#edit_random_id').val(); // Get package ID
 
     //$("#"+type+"discount_id").val('0').trigger('change');
     setTimeout(function () {
@@ -1854,6 +1855,33 @@ function editServiceDiscount($this, type = '') {
         $('#edit_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
     if (service_id && patient_id) {
+        // Check if service is duplicate and update sold by dropdown
+        $.ajax({
+            type: 'get',
+            url: route('admin.packages.checkDuplicateServiceForSoldBy'),
+            data: {
+                'bundle_id': service_id,
+                'package_id': package_id,
+                'location_id': location_id
+            },
+            success: function (response) {
+                if (response.status) {
+                    // Update sold by dropdown with returned users
+                    let userOptions = '<option value="">Select</option>';
+                    if (response.data.users) {
+                        Object.entries(response.data.users).forEach(function ([id, name]) {
+                            userOptions += '<option value="' + id + '">' + name + '</option>';
+                        });
+                    }
+                    $("#edit_sold_by").html(userOptions);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+                // If endpoint fails, keep existing sold by dropdown
+                console.error('Error checking duplicate service:', thrownError);
+            }
+        });
+
         $.ajax({
             type: 'get',
             url: route('admin.packages.getserviceinfo'),
@@ -1883,7 +1911,7 @@ function editServiceDiscount($this, type = '') {
                 }
             },
         });
-       
+
     }
 
     if ((service_id == null || service_id == '') && patient_id != '') {

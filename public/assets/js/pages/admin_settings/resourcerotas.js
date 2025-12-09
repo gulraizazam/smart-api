@@ -1044,6 +1044,75 @@ function setFilters(filter_values, active_filters) {
 
         getUserCity();
 
+        // Restore filter values from sessionStorage after page reload (if coming from rota creation/edit)
+        setTimeout(function() {
+            var savedFilters = sessionStorage.getItem('rotaFilters');
+            if (savedFilters) {
+                try {
+                    var filters = JSON.parse(savedFilters);
+
+                    // Restore filter values
+                    if (filters.resourcename) $("#search_resource_name").val(filters.resourcename);
+                    if (filters.type_id) $("#search_type_id").val(filters.type_id).trigger('change');
+                    if (filters.region_id) {
+                        $("#search_region_id").val(filters.region_id).trigger('change');
+                        // Show advance filters if region is set
+                        if (!$(".advance-filters").is(':visible')) {
+                            $(".advance-filters").show();
+                            $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
+                        }
+                    }
+                    if (filters.city_id) $("#search_city_id").val(filters.city_id).trigger('change');
+                    if (filters.location_id) $("#search_location_id").val(filters.location_id).trigger('change');
+                    if (filters.from) {
+                        $("#search_from").val(filters.from);
+                        // Show advance filters if from date is set
+                        if (!$(".advance-filters").is(':visible')) {
+                            $(".advance-filters").show();
+                            $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
+                        }
+                    }
+                    if (filters.to) {
+                        $("#search_to").val(filters.to);
+                        // Show advance filters if to date is set
+                        if (!$(".advance-filters").is(':visible')) {
+                            $(".advance-filters").show();
+                            $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
+                        }
+                    }
+                    if (filters.date_range) {
+                        $("#date_range").val(filters.date_range);
+                        // Show advance filters if date range is set
+                        if (!$(".advance-filters").is(':visible')) {
+                            $(".advance-filters").show();
+                            $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
+                        }
+                    }
+                    if (filters.status) {
+                        $("#search_status").val(filters.status).trigger('change');
+                        // Show advance filters if status is set
+                        if (!$(".advance-filters").is(':visible')) {
+                            $(".advance-filters").show();
+                            $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
+                        }
+                    }
+
+                    // Clear the saved filters
+                    sessionStorage.removeItem('rotaFilters');
+
+                    // Apply the filters after restoration
+                    setTimeout(function() {
+                        if ($('#apply-filters').length) {
+                            $('#apply-filters').trigger('click');
+                        }
+                    }, 500);
+                } catch (e) {
+                    console.error('Error restoring filters:', e);
+                    sessionStorage.removeItem('rotaFilters');
+                }
+            }
+        }, 600); // Delay to allow getUserCity() to complete
+
     } catch (error) {
         showException(error);
     }

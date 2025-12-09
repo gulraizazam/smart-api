@@ -405,6 +405,9 @@ class Appointments extends Model
             ->when($request->start, function ($query) use ($request) {
                 return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
             })
+            ->when($request->end, function ($query) use ($request) {
+                return $query->where('scheduled_date', '<=', Carbon::parse($request->get('end'))->format('Y-m-d'));
+            })
             ->when($request->location_id, function ($query) use ($request) {
                 return $query->where('location_id', '=', $request->get('location_id'));
             })
