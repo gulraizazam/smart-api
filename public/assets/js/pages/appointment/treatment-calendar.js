@@ -990,16 +990,25 @@ var TreatmentResourceCalendar = function() {
                 var endTime = moment(event.end);
                 var duration = endTime.diff(startTime, 'minutes');
 
-                var timeStr = startTime.format('H:mm');
+                // Round down to nearest 15-minute interval to find the correct slot
+                var minutes = startTime.minutes();
+                var roundedMinutes = Math.floor(minutes / slotInterval) * slotInterval;
+                var slotTime = startTime.clone().minutes(roundedMinutes).seconds(0);
+                var timeStr = slotTime.format('H:mm');
+
                 var doctorId = event.resourceId;
                 // Use event's machine_id first, then stored machine ID, then filter
                 var machineId = event.machine_id || currentMachineId || $('#treatment_resource_filter').val() || '';
 
-                console.log('Event ' + event.id + ' machine_id:', event.machine_id, 'Final machineId:', machineId);
+                console.log('Event ' + event.id + ' actual time:', startTime.format('H:mm'), 'slot time:', timeStr, 'machine_id:', event.machine_id, 'Final machineId:', machineId);
 
                 var slot = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"][data-time="' + timeStr + '"]');
 
                 if (slot.length) {
+                    // Calculate offset from slot start time
+                    var minutesOffset = startTime.diff(slotTime, 'minutes');
+                    var topOffset = minutesOffset * pixelsPerMinute;
+
                     var appointmentHeight = duration * pixelsPerMinute;
                     var bgColor = event.color || '#3699ff';
                     var borderColor = event.color ? TreatmentResourceCalendar.darkenColor(event.color, 20) : '#187de4';
@@ -1009,11 +1018,11 @@ var TreatmentResourceCalendar = function() {
 
                     // Create gradient overlay for depth
                     var gradientOverlay = 'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.05) 100%)';
-                    
+
                     // Create tooltip text
                     var tooltipText = 'Patient: ' + event.patient + '\nService: ' + event.service;
-                    
-                    var appointmentHtml = '<div class="resource-appointment modern-card" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-machine-id="' + machineId + '" data-start-time="' + timeStr + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" title="' + tooltipText + '" style="height: ' + appointmentHeight + 'px; background: ' + bgColor + '; background-image: ' + gradientOverlay + '; border-left: 4px solid ' + borderColor + '; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.3s ease;">';
+
+                    var appointmentHtml = '<div class="resource-appointment modern-card" draggable="true" data-id="' + event.id + '" data-doctor-id="' + doctorId + '" data-machine-id="' + machineId + '" data-start-time="' + startTime.format("H:mm") + '" data-duration="' + duration + '" data-original-slot="' + doctorId + '-' + timeStr + '" title="' + tooltipText + '" style="height: ' + appointmentHeight + 'px; margin-top: ' + topOffset + 'px; background: ' + bgColor + '; background-image: ' + gradientOverlay + '; border-left: 4px solid ' + borderColor + '; box-shadow: 0 2px 8px rgba(0,0,0,0.12); transition: all 0.3s ease;">';
                     
                     // Time badge with icon
                     appointmentHtml += '<div style="display: flex; align-items: center; gap: 3px; margin-bottom: 6px; padding: 3px 6px; background: rgba(255,255,255,0.2); border-radius: 3px; width: fit-content;">';
@@ -1036,6 +1045,8 @@ var TreatmentResourceCalendar = function() {
                     appointmentHtml += '</div>';
 
                     slot.append(appointmentHtml);
+                } else {
+                    console.warn('Slot not found for event ' + event.id + ' (doctor: ' + doctorId + ', time: ' + timeStr + ')');
                 }
             });
         },
