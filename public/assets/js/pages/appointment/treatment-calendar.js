@@ -71,7 +71,7 @@ var TreatmentCalendar = function() {
                             },
                             cache: false,
                             success: async function (response) {
-                                minxTime = response.start_time;
+                                minxTime = response.min_time || response.start_time;
                                 maxTime = response.end_time;
                                 await TreatmentCalendar.loadTreatmentEvents(response, callback);
                                 TreatmentCalendar.showOnlyAvailableSlotsTreatment(minxTime, maxTime);
@@ -160,8 +160,13 @@ var TreatmentCalendar = function() {
 
                 var events = [];
 
+                console.log('=== LOADING TREATMENT EVENTS ===');
+                console.log('Total events in response:', Object.keys(response.events).length);
+                console.log('Events data:', response.events);
+
                 //  var currentDate = null;
                 $.each(response.events, function(id, appointmentObj) {
+                    console.log('Processing event ID:', appointmentObj.id, 'Patient:', appointmentObj.patient, 'Time:', appointmentObj.start, '-', appointmentObj.end);
                     if (appointmentObj.id == window.eventData.id && window.eventData.firstTime == true) {
                         events.push({
                             id: appointmentObj.id,
@@ -222,6 +227,10 @@ var TreatmentCalendar = function() {
                         }
                     }
                 });
+
+                console.log('Total events pushed to calendar:', events.length);
+                console.log('Events array:', events);
+
                 if($('#treatment_doctor_filter').val() !=''){
                     $.each(response.rotas[0].doctor_rotas, function(id, rota) {
 
