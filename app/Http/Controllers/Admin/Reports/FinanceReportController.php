@@ -3340,6 +3340,13 @@ public static function revenueByGenderAndService($request)
      */
     public function taxCalculationReportLoad(Request $request)
     {
+        // Validate request
+        $request->validate([
+            'bank_taxable' => 'nullable|numeric|min:0|max:100',
+            'cash_taxable' => 'nullable|numeric|min:0|max:100',
+            'consultation_amount' => 'nullable|numeric|min:0',
+        ]);
+
         // Parse date range
         $date_range = explode(' - ', $request->get('date_range'));
         $start_date = date('Y-m-d', strtotime($date_range[0]));

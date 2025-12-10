@@ -99,14 +99,14 @@
                                             </div>
 
                                             <div class="form-group col-md-3 sn-select @if($errors->has('bank_taxable')) has-error @endif">
-                                                {!! Form::label('bank_taxable', 'Bank Taxable', ['class' => 'control-label']) !!}
-                                                {!! Form::number('bank_taxable', null, ['id' => 'bank_taxable', 'class' => 'form-control', 'placeholder' => 'Enter Bank Taxable', 'step' => '0.01']) !!}
+                                                {!! Form::label('bank_taxable', 'Bank Taxable (%)', ['class' => 'control-label']) !!}
+                                                {!! Form::number('bank_taxable', null, ['id' => 'bank_taxable', 'class' => 'form-control', 'placeholder' => 'Enter Bank Taxable %', 'step' => '0.01', 'min' => '0', 'max' => '100']) !!}
                                                 <span id="bank_taxable_handler"></span>
                                             </div>
 
                                             <div class="form-group col-md-3 sn-select @if($errors->has('cash_taxable')) has-error @endif">
-                                                {!! Form::label('cash_taxable', 'Cash Taxable', ['class' => 'control-label']) !!}
-                                                {!! Form::number('cash_taxable', null, ['id' => 'cash_taxable', 'class' => 'form-control', 'placeholder' => 'Enter Cash Taxable', 'step' => '0.01']) !!}
+                                                {!! Form::label('cash_taxable', 'Cash Taxable (%)', ['class' => 'control-label']) !!}
+                                                {!! Form::number('cash_taxable', null, ['id' => 'cash_taxable', 'class' => 'form-control', 'placeholder' => 'Enter Cash Taxable %', 'step' => '0.01', 'min' => '0', 'max' => '100']) !!}
                                                 <span id="cash_taxable_handler"></span>
                                             </div>
 
