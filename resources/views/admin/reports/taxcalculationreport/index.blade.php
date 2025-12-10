@@ -128,7 +128,7 @@
                                         <div class="clear clearfix" style="margin-bottom: 15px;"></div>
                                         <div style="overflow: hidden; width: 100%;" id="content"></div>
 
-                                            {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.tax_calculation_report_load'], 'id' => 'report-form']) !!}
+                                            {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.invoices.calculate-amounts'], 'id' => 'report-form']) !!}
                                             {!! Form::hidden('date_range', null, ['id' => 'date_range-report']) !!}
                                             {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
                                             {!! Form::hidden('bank_taxable', null, ['id' => 'bank_taxable-report']) !!}
@@ -206,37 +206,158 @@
                     date_ranges = $("#date_range").val();
                 }
 
+                // Validate required fields
+                var locationIds = $('#location_id').val();
+                if (!locationIds || locationIds.length === 0) {
+                    alert('Please select at least one centre');
+                    return false;
+                }
+
                 showSpinner();
                 $.ajax({
                     headers: {
                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                     },
-                    url: route('admin.reports.tax_calculation_report_load'),
+                    url: "{{ route('admin.invoices.calculate-amounts') }}",
                     type: "POST",
                     data: {
                         date_range: date_ranges,
-                        location_id: $('#location_id').val(),
-                        bank_taxable: $('#bank_taxable').val(),
-                        cash_taxable: $('#cash_taxable').val(),
-                        consultation_amount: $('#consultation_amount').val(),
+                        location_ids: $('#location_id').val(),
+                        bank_taxable: $('#bank_taxable').val() || 0,
+                        cash_taxable: $('#cash_taxable').val() || 0,
+                        consultation_amount: $('#consultation_amount').val() || 1500,
                         medium_type: $('#medium_type').val(),
                     },
                     success: function(response){
                         $('#content').html('');
 
-                        if($('#medium_type').val() == 'web') {
-                            $('#content').html(response);
+                        if(response.success) {
+                            // Render the results
+                            renderResults(response.data);
                         } else {
-                            return false;
+                            $('#content').html('<div class="alert alert-danger">' + response.message + '</div>');
                         }
 
                         hideSpinner();
                     },
                     error: function (xhr, ajaxOptions, thrownError) {
                         hideSpinner();
+                        var errorMessage = 'An error occurred';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+                        $('#content').html('<div class="alert alert-danger">' + errorMessage + '</div>');
                         return false;
                     }
                 });
+            }
+
+            // Render results function
+            var renderResults = function(data) {
+                var html = '';
+
+                // Summary Section
+                html += '<div class="card mb-4">';
+                html += '<div class="card-header shdoc-header"><h5 class="mb-0">Summary</h5></div>';
+                html += '<div class="card-body">';
+                html += '<div class="row">';
+                html += '<div class="col-md-3"><strong>Total Patients:</strong> ' + data.summary.total_patients + '</div>';
+                html += '<div class="col-md-3"><strong>Total Payments:</strong> ' + data.summary.total_payments + '</div>';
+                html += '<div class="col-md-3"><strong>Grand Total:</strong> ' + formatNumber(data.summary.grand_total) + '</div>';
+                html += '<div class="col-md-3"><strong>Verification:</strong> ' + (data.summary.verification_match ? '<span class="text-success">✓ Match</span>' : '<span class="text-danger">✗ Mismatch</span>') + '</div>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+
+                // Totals by Payment Method
+                html += '<div class="card mb-4">';
+                html += '<div class="card-header shdoc-header"><h5 class="mb-0">Totals by Payment Method</h5></div>';
+                html += '<div class="card-body">';
+                html += '<table class="table table-bordered">';
+                html += '<thead><tr><th>Payment Method</th><th>Total Amount</th><th>Record Count</th><th>Breakdown</th></tr></thead>';
+                html += '<tbody>';
+                html += '<tr><td><strong>Bank (Bank Transfer + Card)</strong></td><td>' + formatNumber(data.totals.bank.total) + '</td><td>' + data.totals.bank.count + '</td>';
+                html += '<td>Bank Transfer: ' + formatNumber(data.totals.bank.breakdown.bank_transfer.total) + ' (' + data.totals.bank.breakdown.bank_transfer.count + ')<br>Card: ' + formatNumber(data.totals.bank.breakdown.card.total) + ' (' + data.totals.bank.breakdown.card.count + ')</td></tr>';
+                html += '<tr><td><strong>Cash</strong></td><td>' + formatNumber(data.totals.cash.total) + '</td><td>' + data.totals.cash.count + '</td><td>-</td></tr>';
+                html += '<tr class="table-info"><td><strong>Grand Total</strong></td><td><strong>' + formatNumber(data.totals.grand_total) + '</strong></td><td><strong>' + data.totals.total_records + '</strong></td><td>-</td></tr>';
+                html += '</tbody>';
+                html += '</table>';
+                html += '</div>';
+                html += '</div>';
+
+                // Taxable/Non-Taxable Splits
+                html += '<div class="card mb-4">';
+                html += '<div class="card-header shdoc-header"><h5 class="mb-0">Taxable / Non-Taxable Splits</h5></div>';
+                html += '<div class="card-body">';
+                html += '<table class="table table-bordered">';
+                html += '<thead><tr><th>Category</th><th>Bank</th><th>Cash</th><th>Combined</th></tr></thead>';
+                html += '<tbody>';
+                html += '<tr><td><strong>Taxable (' + data.splits.bank.taxable_percent + '% Bank / ' + data.splits.cash.taxable_percent + '% Cash)</strong></td>';
+                html += '<td>' + formatNumber(data.splits.bank.taxable_amount) + '</td>';
+                html += '<td>' + formatNumber(data.splits.cash.taxable_amount) + '</td>';
+                html += '<td><strong>' + formatNumber(data.splits.combined.taxable_amount) + '</strong></td></tr>';
+                html += '<tr><td><strong>Non-Taxable (' + data.splits.bank.non_taxable_percent + '% Bank / ' + data.splits.cash.non_taxable_percent + '% Cash)</strong></td>';
+                html += '<td>' + formatNumber(data.splits.bank.non_taxable_amount) + '</td>';
+                html += '<td>' + formatNumber(data.splits.cash.non_taxable_amount) + '</td>';
+                html += '<td><strong>' + formatNumber(data.splits.combined.non_taxable_amount) + '</strong></td></tr>';
+                html += '</tbody>';
+                html += '</table>';
+                html += '</div>';
+                html += '</div>';
+
+                // Patient Shares Table
+                html += '<div class="card mb-4">';
+                html += '<div class="card-header shdoc-header"><h5 class="mb-0">Patient Shares (' + data.patient_shares.length + ' patients)</h5></div>';
+                html += '<div class="card-body">';
+                html += '<div class="table-wrapper">';
+                html += '<table class="table table-bordered table-striped" id="patientSharesTable">';
+                html += '<thead><tr>';
+                html += '<th>Patient ID</th>';
+                html += '<th>Bank Paid</th>';
+                html += '<th>Cash Paid</th>';
+                html += '<th>Total Paid</th>';
+                html += '<th>Taxable Share</th>';
+                html += '<th>Non-Taxable Share</th>';
+                html += '<th>Verification</th>';
+                html += '</tr></thead>';
+                html += '<tbody>';
+
+                data.patient_shares.forEach(function(patient) {
+                    var isMatch = Math.abs(patient.total_paid - patient.verification) < 0.01;
+                    html += '<tr>';
+                    html += '<td>' + patient.patient_id + '</td>';
+                    html += '<td>' + formatNumber(patient.bank_paid) + '<br><small class="text-muted">(Bank: ' + formatNumber(patient.bank_paid_breakdown.bank_transfer) + ', Card: ' + formatNumber(patient.bank_paid_breakdown.card) + ')</small></td>';
+                    html += '<td>' + formatNumber(patient.cash_paid) + '</td>';
+                    html += '<td><strong>' + formatNumber(patient.total_paid) + '</strong></td>';
+                    html += '<td>' + formatNumber(patient.taxable_share.total) + '<br><small class="text-muted">(Bank: ' + formatNumber(patient.taxable_share.bank) + ', Cash: ' + formatNumber(patient.taxable_share.cash) + ')</small></td>';
+                    html += '<td>' + formatNumber(patient.non_taxable_share.total) + '<br><small class="text-muted">(Bank: ' + formatNumber(patient.non_taxable_share.bank) + ', Cash: ' + formatNumber(patient.non_taxable_share.cash) + ')</small></td>';
+                    html += '<td>' + (isMatch ? '<span class="text-success">✓ ' + formatNumber(patient.verification) + '</span>' : '<span class="text-danger">✗ ' + formatNumber(patient.verification) + '</span>') + '</td>';
+                    html += '</tr>';
+                });
+
+                html += '</tbody>';
+                html += '</table>';
+                html += '</div>';
+                html += '</div>';
+                html += '</div>';
+
+                $('#content').html(html);
+
+                // Initialize DataTable
+                $('#patientSharesTable').DataTable({
+                    pageLength: 25,
+                    order: [[3, 'desc']],
+                    dom: 'Bfrtip',
+                    buttons: [
+                        'copy', 'csv', 'excel'
+                    ]
+                });
+            }
+
+            // Format number with commas
+            var formatNumber = function(num) {
+                if (num === null || num === undefined) return '0';
+                return parseFloat(num).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             }
 
             // Print report function
