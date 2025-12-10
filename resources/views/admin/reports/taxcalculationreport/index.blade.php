@@ -109,6 +109,24 @@
                                                 <span id="exempt_percentage_handler"></span>
                                             </div>
 
+                                            <div class="form-group col-md-3 sn-select @if($errors->has('bank_taxable')) has-error @endif">
+                                                {!! Form::label('bank_taxable', 'Bank Taxable', ['class' => 'control-label']) !!}
+                                                {!! Form::number('bank_taxable', null, ['id' => 'bank_taxable', 'class' => 'form-control', 'placeholder' => 'Enter Bank Taxable', 'step' => '0.01']) !!}
+                                                <span id="bank_taxable_handler"></span>
+                                            </div>
+
+                                            <div class="form-group col-md-3 sn-select @if($errors->has('cash_taxable')) has-error @endif">
+                                                {!! Form::label('cash_taxable', 'Cash Taxable', ['class' => 'control-label']) !!}
+                                                {!! Form::number('cash_taxable', null, ['id' => 'cash_taxable', 'class' => 'form-control', 'placeholder' => 'Enter Cash Taxable', 'step' => '0.01']) !!}
+                                                <span id="cash_taxable_handler"></span>
+                                            </div>
+
+                                            <div class="form-group col-md-3 sn-select @if($errors->has('consultation_amount')) has-error @endif">
+                                                {!! Form::label('consultation_amount', 'Consultation Amount', ['class' => 'control-label']) !!}
+                                                {!! Form::number('consultation_amount', null, ['id' => 'consultation_amount', 'class' => 'form-control', 'placeholder' => 'Enter Consultation Amount', 'step' => '0.01']) !!}
+                                                <span id="consultation_amount_handler"></span>
+                                            </div>
+
                                             {!! Form::hidden('medium_type', 'web', ['id' => 'medium_type']) !!}
 
                                             <div class="form-group col-md-2 sn-select">
@@ -125,6 +143,9 @@
                                             {!! Form::hidden('date_range', null, ['id' => 'date_range-report']) !!}
                                             {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
                                             {!! Form::hidden('exempt_percentage', null, ['id' => 'exempt_percentage-report']) !!}
+                                            {!! Form::hidden('bank_taxable', null, ['id' => 'bank_taxable-report']) !!}
+                                            {!! Form::hidden('cash_taxable', null, ['id' => 'cash_taxable-report']) !!}
+                                            {!! Form::hidden('consultation_amount', null, ['id' => 'consultation_amount-report']) !!}
                                             {!! Form::hidden('medium_type', null, ['id' => 'medium_type-report']) !!}
                                             {!! Form::close() !!}
 
@@ -208,6 +229,9 @@
                         date_range: date_ranges,
                         location_id: $('#location_id').val(),
                         exempt_percentage: $('#exempt_percentage').val(),
+                        bank_taxable: $('#bank_taxable').val(),
+                        cash_taxable: $('#cash_taxable').val(),
+                        consultation_amount: $('#consultation_amount').val(),
                         medium_type: $('#medium_type').val(),
                     },
                     success: function(response){
@@ -233,6 +257,9 @@
                 $('#date_range-report').val($('#date_range').val());
                 $('#location_id-report').val($('#location_id').val());
                 $('#exempt_percentage-report').val($('#exempt_percentage').val());
+                $('#bank_taxable-report').val($('#bank_taxable').val());
+                $('#cash_taxable-report').val($('#cash_taxable').val());
+                $('#consultation_amount-report').val($('#consultation_amount').val());
                 $('#medium_type-report').val(medium_type);
                 $('#report-form').submit();
             }
