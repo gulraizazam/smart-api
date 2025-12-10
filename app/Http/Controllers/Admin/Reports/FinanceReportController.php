@@ -3348,6 +3348,9 @@ public static function revenueByGenderAndService($request)
         // Get location_id and exempt_percentage
         $location_id = $request->get('location_id');
         $exempt_percentage = $request->get('exempt_percentage');
+        $bank_taxable = $request->get('bank_taxable');
+        $cash_taxable = $request->get('cash_taxable');
+        $consultation_amount = $request->get('consultation_amount');
         $medium_type = $request->get('medium_type');
 
         // TODO: Add your report logic here
@@ -3360,21 +3363,30 @@ public static function revenueByGenderAndService($request)
                     'report_data',
                     'start_date',
                     'end_date',
-                    'exempt_percentage'
+                    'exempt_percentage',
+                    'bank_taxable',
+                    'cash_taxable',
+                    'consultation_amount'
                 ));
             case 'print':
                 return view('admin.reports.taxcalculationreport.reportprint', compact(
                     'report_data',
                     'start_date',
                     'end_date',
-                    'exempt_percentage'
+                    'exempt_percentage',
+                    'bank_taxable',
+                    'cash_taxable',
+                    'consultation_amount'
                 ));
             case 'pdf':
                 $pdf = PDF::loadView('admin.reports.taxcalculationreport.reportpdf', compact(
                     'report_data',
                     'start_date',
                     'end_date',
-                    'exempt_percentage'
+                    'exempt_percentage',
+                    'bank_taxable',
+                    'cash_taxable',
+                    'consultation_amount'
                 ));
                 return $pdf->stream('tax-calculation-report.pdf');
             case 'excel':
