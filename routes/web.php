@@ -72,6 +72,7 @@ use App\Http\Controllers\FeedbacksReportController;
 use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
 use App\Http\Controllers\UpsellingReportController;
+use App\Http\Controllers\InvoiceGenerationController;
 use App\Models\PackageService;
 
 /*
@@ -172,7 +173,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::get('updatestatusleads', [LeadsController::class, 'leadstatusupdate']);
         Route::prefix('invoices')->name('invoices.')->group(function () {
-            Route::post('/calculate-amounts', [App\Http\Controllers\InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
+            Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
         });
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
