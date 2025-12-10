@@ -1076,7 +1076,7 @@ class DashboardReportsController extends Controller
                             $todayRecord['total'],
                         ];
                     }
-                    if (count($today) > 0) {
+                    if (isset($today) && count($today) > 0) {
                         foreach ($today as $record) {
                             $data['today'][] = $record;
                         }
@@ -1599,7 +1599,10 @@ class DashboardReportsController extends Controller
             }
         }
         $day = $request->type == null ? "today" : $request->type;
-        $dataArray = $data[$day];
+        if(isset($data[$day])){
+            $dataArray = $data[$day];
+        }
+       
 
         // Step 1: Calculate the total value
         $totalValue = 0;
