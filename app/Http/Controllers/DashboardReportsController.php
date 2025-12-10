@@ -1086,7 +1086,12 @@ class DashboardReportsController extends Controller
         }
 
         $day = $request->type == null ? "today" : $request->type;
-        $dataArray = $data[$day];
+        if(isset($data[$day])){
+            $dataArray = $data[$day];
+        }else{
+            $dataArray = [];
+        }
+        
 
         $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
@@ -1601,6 +1606,8 @@ class DashboardReportsController extends Controller
         $day = $request->type == null ? "today" : $request->type;
         if(isset($data[$day])){
             $dataArray = $data[$day];
+        }else{
+            $dataArray = [];
         }
        
 
