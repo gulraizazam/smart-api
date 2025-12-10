@@ -32,6 +32,7 @@ use App\Models\PackageBundles;
 use App\Models\PackageService;
 use App\HelperModule\ApiHelper;
 use App\Models\PackageAdvances;
+use App\Models\PlanInvoice;
 use App\Models\UserVouchers;
 use App\Models\UserHasLocations;
 use App\Helpers\GeneralFunctions;
@@ -1164,6 +1165,24 @@ class PackagesController extends Controller
                 $data_packageAdvances['updated_at'] = Filters::getCurrentTimeStamp();
                 /*End*/
                 $packageAdavances = PackageAdvances::createRecord($data_packageAdvances, $package);
+
+                /*Save data in plan_invoices*/
+                $invoiceNumber = PlanInvoice::generateInvoiceNumber($request->patient_id, $package->id);
+                $data_planInvoice = [
+                    'invoice_number' => $invoiceNumber,
+                    'total_price' => $request->cash_amount,
+                    'account_id' => Auth::User()->account_id,
+                    'patient_id' => $request->patient_id,
+                    'created_by' => Auth::User()->id,
+                    'location_id' => $request->location_id,
+                    'payment_mode_id' => $request->payment_mode_id,
+                    'active' => 1,
+                    'package_id' => $package->id,
+                    'invoice_type' => 'exempt',
+                ];
+                PlanInvoice::create($data_planInvoice);
+                /*End*/
+
                 /////Save activity////
                 $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
@@ -2035,6 +2054,24 @@ class PackagesController extends Controller
                 /*End*/
 
                 $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
+
+                /*Save data in plan_invoices*/
+                $invoiceNumber = PlanInvoice::generateInvoiceNumber($request->patient_id, $package->id);
+                $data_planInvoice = [
+                    'invoice_number' => $invoiceNumber,
+                    'total_price' => $request->cash_amount,
+                    'account_id' => Auth::User()->account_id,
+                    'patient_id' => $request->patient_id,
+                    'created_by' => Auth::User()->id,
+                    'location_id' => $request->location_id,
+                    'payment_mode_id' => $request->payment_mode_id,
+                    'active' => 1,
+                    'package_id' => $package->id,
+                    'invoice_type' => 'exempt',
+                ];
+                PlanInvoice::create($data_planInvoice);
+                /*End*/
+
                 $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
                 $activity = new Activity();
