@@ -98,17 +98,6 @@
                                                 <span id="location_id_handler"></span>
                                             </div>
 
-                                            <div class="form-group col-md-3 sn-select @if($errors->has('exempt_percentage')) has-error @endif">
-                                                {!! Form::label('exempt_percentage', 'Exempt Percentage*', ['class' => 'control-label']) !!}
-                                                <select name="exempt_percentage" id="exempt_percentage" style="width:100%" class="form-control select2">
-                                                    <option value="">Select Exempt Percentage</option>
-                                                    <option value="25">25%</option>
-                                                    <option value="50">50%</option>
-                                                    <option value="70">70%</option>
-                                                </select>
-                                                <span id="exempt_percentage_handler"></span>
-                                            </div>
-
                                             <div class="form-group col-md-3 sn-select @if($errors->has('bank_taxable')) has-error @endif">
                                                 {!! Form::label('bank_taxable', 'Bank Taxable', ['class' => 'control-label']) !!}
                                                 {!! Form::number('bank_taxable', null, ['id' => 'bank_taxable', 'class' => 'form-control', 'placeholder' => 'Enter Bank Taxable', 'step' => '0.01']) !!}
@@ -142,7 +131,6 @@
                                             {!! Form::open(['method' => 'POST', 'target' => '_blank', 'route' => ['admin.reports.tax_calculation_report_load'], 'id' => 'report-form']) !!}
                                             {!! Form::hidden('date_range', null, ['id' => 'date_range-report']) !!}
                                             {!! Form::hidden('location_id', null, ['id' => 'location_id-report']) !!}
-                                            {!! Form::hidden('exempt_percentage', null, ['id' => 'exempt_percentage-report']) !!}
                                             {!! Form::hidden('bank_taxable', null, ['id' => 'bank_taxable-report']) !!}
                                             {!! Form::hidden('cash_taxable', null, ['id' => 'cash_taxable-report']) !!}
                                             {!! Form::hidden('consultation_amount', null, ['id' => 'consultation_amount-report']) !!}
@@ -228,7 +216,6 @@
                     data: {
                         date_range: date_ranges,
                         location_id: $('#location_id').val(),
-                        exempt_percentage: $('#exempt_percentage').val(),
                         bank_taxable: $('#bank_taxable').val(),
                         cash_taxable: $('#cash_taxable').val(),
                         consultation_amount: $('#consultation_amount').val(),
@@ -256,7 +243,6 @@
             var printReport = function (medium_type) {
                 $('#date_range-report').val($('#date_range').val());
                 $('#location_id-report').val($('#location_id').val());
-                $('#exempt_percentage-report').val($('#exempt_percentage').val());
                 $('#bank_taxable-report').val($('#bank_taxable').val());
                 $('#cash_taxable-report').val($('#cash_taxable').val());
                 $('#consultation_amount-report').val($('#consultation_amount').val());
