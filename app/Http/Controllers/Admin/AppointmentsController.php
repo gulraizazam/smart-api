@@ -1257,6 +1257,7 @@ class AppointmentsController extends Controller
         }
 
 
+        
         $resultQuery->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $resultQuery->where($where);
