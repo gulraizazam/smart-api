@@ -2222,7 +2222,12 @@ class DashboardReportsController extends Controller
         }
 
         $day = $request->period == null ? "today" : $request->period;
-        $dataArray = $data[$day];
+        if(isset($data[$day])){
+            $dataArray = $data[$day];
+        }else{
+            $dataArray = [];
+        }
+       
 
         $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
