@@ -3345,9 +3345,8 @@ public static function revenueByGenderAndService($request)
         $start_date = date('Y-m-d', strtotime($date_range[0]));
         $end_date = date('Y-m-d', strtotime($date_range[1]));
 
-        // Get location_id and exempt_percentage
+        // Get filter parameters
         $location_id = $request->get('location_id');
-        $exempt_percentage = $request->get('exempt_percentage');
         $bank_taxable = $request->get('bank_taxable');
         $cash_taxable = $request->get('cash_taxable');
         $consultation_amount = $request->get('consultation_amount');
@@ -3363,7 +3362,6 @@ public static function revenueByGenderAndService($request)
                     'report_data',
                     'start_date',
                     'end_date',
-                    'exempt_percentage',
                     'bank_taxable',
                     'cash_taxable',
                     'consultation_amount'
@@ -3373,7 +3371,6 @@ public static function revenueByGenderAndService($request)
                     'report_data',
                     'start_date',
                     'end_date',
-                    'exempt_percentage',
                     'bank_taxable',
                     'cash_taxable',
                     'consultation_amount'
@@ -3383,7 +3380,6 @@ public static function revenueByGenderAndService($request)
                     'report_data',
                     'start_date',
                     'end_date',
-                    'exempt_percentage',
                     'bank_taxable',
                     'cash_taxable',
                     'consultation_amount'
