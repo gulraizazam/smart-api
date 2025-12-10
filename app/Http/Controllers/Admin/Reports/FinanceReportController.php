@@ -3312,4 +3312,74 @@ public static function revenueByGenderAndService($request)
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         return view('admin.reports.appointments_report', get_defined_vars());
     }
+
+    /**
+     * Display Tax Calculation Report filter page.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function taxCalculationReport()
+    {
+        if (!Gate::allows('tax_calculation_report_manage')) {
+            return abort(401);
+        }
+
+        $locations = Locations::getActiveSorted(ACL::getUserCentres());
+        if (!Auth::user()->hasRole('FDM')) {
+            $locations->prepend('All', '');
+        }
+
+        return view('admin.reports.taxcalculationreport.index', compact('locations'));
+    }
+
+    /**
+     * Load Tax Calculation Report data.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function taxCalculationReportLoad(Request $request)
+    {
+        // Parse date range
+        $date_range = explode(' - ', $request->get('date_range'));
+        $start_date = date('Y-m-d', strtotime($date_range[0]));
+        $end_date = date('Y-m-d', strtotime($date_range[1]));
+
+        // Get location_id and exempt_percentage
+        $location_id = $request->get('location_id');
+        $exempt_percentage = $request->get('exempt_percentage');
+        $medium_type = $request->get('medium_type');
+
+        // TODO: Add your report logic here
+        // For now, just passing the parameters to a view
+        $report_data = [];
+
+        switch ($medium_type) {
+            case 'web':
+                return view('admin.reports.taxcalculationreport.report', compact(
+                    'report_data',
+                    'start_date',
+                    'end_date',
+                    'exempt_percentage'
+                ));
+            case 'print':
+                return view('admin.reports.taxcalculationreport.reportprint', compact(
+                    'report_data',
+                    'start_date',
+                    'end_date',
+                    'exempt_percentage'
+                ));
+            case 'pdf':
+                $pdf = PDF::loadView('admin.reports.taxcalculationreport.reportpdf', compact(
+                    'report_data',
+                    'start_date',
+                    'end_date',
+                    'exempt_percentage'
+                ));
+                return $pdf->stream('tax-calculation-report.pdf');
+            case 'excel':
+                // TODO: Implement Excel export
+                break;
+        }
+    }
 }
