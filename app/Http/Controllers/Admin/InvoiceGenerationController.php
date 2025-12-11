@@ -103,11 +103,16 @@ class InvoiceGenerationController extends Controller
             $this->createSummarySheet($summarySheet, $result);
 
             // Sheet 2: Exempt Invoices
-            $invoiceSheet = $spreadsheet->createSheet();
-            $invoiceSheet->setTitle('Exempt Invoices');
-            $this->createInvoiceSheet($invoiceSheet, $result['invoices']);
+            $exemptSheet = $spreadsheet->createSheet();
+            $exemptSheet->setTitle('Exempt Invoices');
+            $this->createInvoiceSheet($exemptSheet, $result['exempt_invoices']);
 
-            // Sheet 3: Patient Distribution
+            // Sheet 3: Taxable Invoices
+            $taxableSheet = $spreadsheet->createSheet();
+            $taxableSheet->setTitle('Taxable Invoices');
+            $this->createInvoiceSheet($taxableSheet, $result['taxable_invoices']);
+
+            // Sheet 4: Patient Distribution
             $patientSheet = $spreadsheet->createSheet();
             $patientSheet->setTitle('Patient Distribution');
             $this->createPatientSheet($patientSheet, $result['patient_distribution']);

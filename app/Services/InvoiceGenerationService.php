@@ -59,10 +59,13 @@ class InvoiceGenerationService
         $distribution = $this->distributeExemptPercentages($categorizedPatients, $pool, $feasibility);
 
         // Step 8: Generate exempt invoices
-        $invoices = $this->generateInvoices($distribution);
+        $exemptInvoices = $this->generateInvoices($distribution, 'exempt');
 
-        // Step 9: Calculate final summary
-        $summary = $this->calculateSummary($distribution, $invoices, $pool);
+        // Step 9: Generate taxable invoices
+        $taxableInvoices = $this->generateTaxableInvoices($distribution);
+
+        // Step 10: Calculate final summary
+        $summary = $this->calculateSummary($distribution, $exemptInvoices, $taxableInvoices, $pool);
 
         return [
             'parameters' => [
@@ -83,7 +86,8 @@ class InvoiceGenerationService
             'pool' => $pool,
             'feasibility' => $feasibility,
             'patient_distribution' => $distribution,
-            'invoices' => $invoices,
+            'exempt_invoices' => $exemptInvoices,
+            'taxable_invoices' => $taxableInvoices,
             'summary' => $summary,
         ];
     }
@@ -444,7 +448,7 @@ class InvoiceGenerationService
     /**
      * Generate exempt invoices for each patient
      */
-    protected function generateInvoices(array $distribution): array
+    protected function generateInvoices(array $distribution, string $type = 'exempt'): array
     {
         $invoices = [];
 
@@ -490,7 +494,66 @@ class InvoiceGenerationService
                         'plan_id' => $planId,
                         'invoice_date' => $date->format('Y-m-d'),
                         'amount' => $this->consultationAmount,
-                        'type' => 'exempt',
+                        'type' => $type,
+                    ];
+                    $increment++;
+                    $invoiceIndex++;
+                }
+            }
+        }
+
+        return $invoices;
+    }
+
+    /**
+     * Generate taxable invoices for each patient
+     */
+    protected function generateTaxableInvoices(array $distribution): array
+    {
+        $invoices = [];
+
+        foreach ($distribution as $patient) {
+            $taxableAmount = $patient['taxable_amount'];
+            $patientId = $patient['patient_id'];
+            
+            // Calculate number of invoices (each invoice = consultation_amount)
+            $numInvoices = floor($taxableAmount / $this->consultationAmount);
+
+            if ($numInvoices == 0) {
+                continue;
+            }
+
+            // Get patient's plan_id from plan_invoices table
+            $planId = DB::table('plan_invoices')
+                ->where('patient_id', $patientId)
+                ->whereIn('location_id', $this->locationIds)
+                ->whereNull('deleted_at')
+                ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+                ->value('package_id');
+
+            // If no plan_id found, use 0 as default
+            $planId = $planId ?? 0;
+
+            // Get available dates for this patient (with 1-day gap)
+            $patientDates = $this->getPatientInvoiceDates($numInvoices);
+
+            $invoiceIndex = 0;
+            $increment = 1;
+            foreach ($patientDates as $dateInfo) {
+                $date = $dateInfo['date'];
+                $invoicesOnThisDay = $dateInfo['count'];
+
+                for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
+                    // Format: patientID-planID-increment
+                    $invoiceNumber = sprintf('%d-%d-%d', $patientId, $planId, $increment);
+                    
+                    $invoices[] = [
+                        'invoice_number' => $invoiceNumber,
+                        'patient_id' => $patientId,
+                        'plan_id' => $planId,
+                        'invoice_date' => $date->format('Y-m-d'),
+                        'amount' => $this->consultationAmount,
+                        'type' => 'taxable',
                     ];
                     $increment++;
                     $invoiceIndex++;
@@ -550,28 +613,38 @@ class InvoiceGenerationService
     /**
      * Calculate final summary
      */
-    protected function calculateSummary(array $distribution, array $invoices, array $pool): array
+    protected function calculateSummary(array $distribution, array $exemptInvoices, array $taxableInvoices, array $pool): array
     {
         $totalExemptAmount = array_sum(array_column($distribution, 'exempt_amount'));
         $totalTaxableAmount = array_sum(array_column($distribution, 'taxable_amount'));
-        $totalInvoiceAmount = array_sum(array_column($invoices, 'amount'));
+        
+        $totalExemptInvoiced = array_sum(array_column($exemptInvoices, 'amount'));
+        $totalTaxableInvoiced = array_sum(array_column($taxableInvoices, 'amount'));
 
-        // Calculate remainder (exempt amount that couldn't become invoices)
-        $remainder = $totalExemptAmount - $totalInvoiceAmount;
+        // Calculate remainders (amounts that couldn't become invoices)
+        $exemptRemainder = $totalExemptAmount - $totalExemptInvoiced;
+        $taxableRemainder = $totalTaxableAmount - $totalTaxableInvoiced;
 
         return [
             'total_patients' => count($distribution),
             'total_pool' => $pool['total'],
             'total_exempt_calculated' => round($totalExemptAmount, 2),
-            'total_exempt_invoiced' => $totalInvoiceAmount,
-            'total_taxable' => round($totalTaxableAmount + $remainder, 2),
-            'remainder_to_taxable' => round($remainder, 2),
-            'exempt_percent' => $pool['total'] > 0 ? round(($totalInvoiceAmount / $pool['total']) * 100, 2) : 0,
-            'total_invoices' => count($invoices),
+            'total_exempt_invoiced' => $totalExemptInvoiced,
+            'exempt_remainder' => round($exemptRemainder, 2),
+            'total_taxable_calculated' => round($totalTaxableAmount, 2),
+            'total_taxable_invoiced' => $totalTaxableInvoiced,
+            'taxable_remainder' => round($taxableRemainder, 2),
+            'exempt_percent' => $pool['total'] > 0 ? round(($totalExemptInvoiced / $pool['total']) * 100, 2) : 0,
+            'taxable_percent' => $pool['total'] > 0 ? round(($totalTaxableInvoiced / $pool['total']) * 100, 2) : 0,
+            'total_exempt_invoices' => count($exemptInvoices),
+            'total_taxable_invoices' => count($taxableInvoices),
+            'total_invoices' => count($exemptInvoices) + count($taxableInvoices),
             'verification' => [
                 'pool_total' => $pool['total'],
-                'invoiced_plus_taxable' => $totalInvoiceAmount + $totalTaxableAmount + $remainder,
-                'match' => abs($pool['total'] - ($totalInvoiceAmount + $totalTaxableAmount + $remainder)) < 1,
+                'total_invoiced' => $totalExemptInvoiced + $totalTaxableInvoiced,
+                'total_remainders' => $exemptRemainder + $taxableRemainder,
+                'sum' => $totalExemptInvoiced + $totalTaxableInvoiced + $exemptRemainder + $taxableRemainder,
+                'match' => abs($pool['total'] - ($totalExemptInvoiced + $totalTaxableInvoiced + $exemptRemainder + $taxableRemainder)) < 1,
             ],
         ];
     }
