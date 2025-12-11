@@ -187,12 +187,24 @@ class InvoiceGenerationService
 
         $exemptPercent = 100 - $this->bankTaxablePercent;
 
+        // Calculate exempt and taxable separately for Bank+Card and Cash
+        $bankCardTotal = $totals['bank']['total'] + $totals['card']['total'];
+        $bankCardExempt = $bankCardTotal * ($exemptPercent / 100);
+        $bankCardTaxable = $bankCardTotal * ($this->bankTaxablePercent / 100);
+        
+        $cashExempt = $cashToUse * ($exemptPercent / 100);
+        $cashTaxable = $cashToUse * ($this->bankTaxablePercent / 100);
+        
+        // Total exempt and taxable
+        $targetExempt = $bankCardExempt + $cashExempt;
+        $targetTaxable = $bankCardTaxable + $cashTaxable;
+
         return [
             'total' => $poolTotal,
             'exempt_percent' => $exemptPercent,
             'taxable_percent' => $this->bankTaxablePercent,
-            'target_exempt' => $poolTotal * ($exemptPercent / 100),
-            'target_taxable' => $poolTotal * ($this->bankTaxablePercent / 100),
+            'target_exempt' => $targetExempt,
+            'target_taxable' => $targetTaxable,
             'target_range' => [
                 'min' => $poolTotal * 0.68,
                 'max' => $poolTotal * 0.72,
@@ -413,10 +425,10 @@ class InvoiceGenerationService
     protected function generateInvoices(array $distribution): array
     {
         $invoices = [];
-        $invoiceNumber = 1;
 
         foreach ($distribution as $patient) {
             $exemptAmount = $patient['exempt_amount'];
+            $patientId = $patient['patient_id'];
             
             // Calculate number of invoices (each invoice = consultation_amount)
             $numInvoices = floor($exemptAmount / $this->consultationAmount);
@@ -426,23 +438,39 @@ class InvoiceGenerationService
                 continue;
             }
 
+            // Get patient's plan_id from plan_invoices table
+            $planId = DB::table('plan_invoices')
+                ->where('patient_id', $patientId)
+                ->whereIn('location_id', $this->locationIds)
+                ->whereNull('deleted_at')
+                ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
+                ->value('package_id');
+
+            // If no plan_id found, use 0 as default
+            $planId = $planId ?? 0;
+
             // Get available dates for this patient (with 1-day gap)
             $patientDates = $this->getPatientInvoiceDates($numInvoices);
 
             $invoiceIndex = 0;
+            $increment = 1;
             foreach ($patientDates as $dateInfo) {
                 $date = $dateInfo['date'];
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
+                    // Format: patientID-planID-increment
+                    $invoiceNumber = sprintf('%d-%d-%d', $patientId, $planId, $increment);
+                    
                     $invoices[] = [
-                        'invoice_number' => sprintf('INV-%s-%05d', $this->dateFrom->format('Ym'), $invoiceNumber),
-                        'patient_id' => $patient['patient_id'],
+                        'invoice_number' => $invoiceNumber,
+                        'patient_id' => $patientId,
+                        'plan_id' => $planId,
                         'invoice_date' => $date->format('Y-m-d'),
                         'amount' => $this->consultationAmount,
                         'type' => 'exempt',
                     ];
-                    $invoiceNumber++;
+                    $increment++;
                     $invoiceIndex++;
                 }
             }

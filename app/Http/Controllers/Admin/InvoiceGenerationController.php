@@ -318,35 +318,41 @@ class InvoiceGenerationController extends Controller
 
         // Headers
         $sheet->setCellValue('A1', 'Invoice Number');
-        $sheet->setCellValue('B1', 'Invoice Date');
-        $sheet->setCellValue('C1', 'Amount');
-        $sheet->getStyle('A1:C1')->applyFromArray($headerStyle);
+        $sheet->setCellValue('B1', 'Patient ID');
+        $sheet->setCellValue('C1', 'Plan ID');
+        $sheet->setCellValue('D1', 'Invoice Date');
+        $sheet->setCellValue('E1', 'Amount');
+        $sheet->getStyle('A1:E1')->applyFromArray($headerStyle);
 
         // Data
         $row = 2;
         foreach ($invoices as $invoice) {
             $sheet->setCellValue('A' . $row, $invoice['invoice_number']);
-            $sheet->setCellValue('B' . $row, $invoice['invoice_date']);
-            $sheet->setCellValue('C' . $row, $invoice['amount']);
-            $sheet->getStyle('C' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->setCellValue('B' . $row, $invoice['patient_id']);
+            $sheet->setCellValue('C' . $row, $invoice['plan_id']);
+            $sheet->setCellValue('D' . $row, $invoice['invoice_date']);
+            $sheet->setCellValue('E' . $row, $invoice['amount']);
+            $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
             $row++;
         }
 
         // Apply borders to data
         if (count($invoices) > 0) {
-            $sheet->getStyle('A2:C' . ($row - 1))->applyFromArray($dataStyle);
+            $sheet->getStyle('A2:E' . ($row - 1))->applyFromArray($dataStyle);
         }
 
         // Total row
         $sheet->setCellValue('A' . $row, 'TOTAL');
-        $sheet->setCellValue('C' . $row, '=SUM(C2:C' . ($row - 1) . ')');
-        $sheet->getStyle('A' . $row . ':C' . $row)->getFont()->setBold(true);
-        $sheet->getStyle('C' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->setCellValue('E' . $row, '=SUM(E2:E' . ($row - 1) . ')');
+        $sheet->getStyle('A' . $row . ':E' . $row)->getFont()->setBold(true);
+        $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
 
         // Auto-size columns
-        $sheet->getColumnDimension('A')->setWidth(20);
-        $sheet->getColumnDimension('B')->setWidth(15);
-        $sheet->getColumnDimension('C')->setWidth(15);
+        $sheet->getColumnDimension('A')->setWidth(25);
+        $sheet->getColumnDimension('B')->setWidth(12);
+        $sheet->getColumnDimension('C')->setWidth(12);
+        $sheet->getColumnDimension('D')->setWidth(15);
+        $sheet->getColumnDimension('E')->setWidth(15);
     }
 
     /**
