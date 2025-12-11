@@ -136,8 +136,8 @@
                 'This Month': [moment().startOf('month'), moment().endOf('month')],
                 'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')],
             },
-            startDate: moment().startOf('month'),
-            endDate: moment().endOf('month')
+            startDate: moment().subtract(1, 'month').startOf('month'),
+            endDate: moment().subtract(1, 'month').endOf('month')
         });
 
         function loadReport() {

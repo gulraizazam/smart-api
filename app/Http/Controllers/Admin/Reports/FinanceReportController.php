@@ -3325,9 +3325,6 @@ public static function revenueByGenderAndService($request)
         }
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
-        if (!Auth::user()->hasRole('FDM')) {
-            $locations->prepend('All', '');
-        }
 
         return view('admin.reports.taxcalculationreport.index', compact('locations'));
     }
