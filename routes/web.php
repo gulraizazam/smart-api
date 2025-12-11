@@ -605,7 +605,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         //Route::get('reports/inventory_reports', [InventoryReportController::class, 'report'])->name('reports.inventory_report');
 
         Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
-        Route::get('reports/tax_calculation_report', [FinanceReportController::class, 'taxCalculationReport'])->name('reports.tax_calculation_report')->middleware('permission:tax_calculation_report_manage');
+        Route::get('reports/tax_calculation_report', [FinanceReportController::class, 'taxCalculationReport'])->name('reports.tax_calculation_report');
         Route::post('reports/tax_calculation_report_load', [FinanceReportController::class, 'taxCalculationReportLoad'])->name('reports.tax_calculation_report_load');
         Route::get('service-report/{service_id}', [FinanceReportController::class, 'serviceBarChart'])->name('service.barchart');
         Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
