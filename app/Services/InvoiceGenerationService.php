@@ -8,9 +8,9 @@ use Carbon\Carbon;
 class InvoiceGenerationService
 {
     // Payment Mode IDs - adjust these according to your payment_modes table
-    const PAYMENT_MODE_BANK = 2;  // Bank Transfer
+    const PAYMENT_MODE_BANK = 4;  // Bank Transfer
     const PAYMENT_MODE_CASH = 1;  // Cash
-    const PAYMENT_MODE_CARD = 3;  // Card (will be summed into bank)
+    const PAYMENT_MODE_CARD = 2;  // Card (will be summed into bank)
 
     protected $dateFrom;
     protected $dateTo;
