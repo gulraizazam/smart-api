@@ -148,6 +148,9 @@
                                             <a href="javascript:void(0);" onclick="exportExcel();" id="export_excel" class="btn btn-primary ml-2" style="display:none;">
                                                 <i class="fa fa-file-excel"></i> Download Excel
                                             </a>
+                                            <a href="javascript:void(0);" onclick="resetPage();" id="reset_button" class="btn btn-secondary ml-2">
+                                                <i class="fa fa-redo"></i> Reset
+                                            </a>
                                         </div>
                                     </div>
 
@@ -352,6 +355,10 @@
 
         function formatNumber(num) {
             return parseFloat(num || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+        }
+
+        function resetPage() {
+            location.reload();
         }
     </script>
     @endpush
