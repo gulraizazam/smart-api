@@ -516,10 +516,8 @@ class InvoiceGenerationService
             $taxableAmount = $patient['taxable_amount'];
             $patientId = $patient['patient_id'];
             
-            // Calculate number of invoices (each invoice = consultation_amount)
-            $numInvoices = floor($taxableAmount / $this->consultationAmount);
-
-            if ($numInvoices == 0) {
+            // Skip if taxable amount is less than minimum (1000)
+            if ($taxableAmount < 1000) {
                 continue;
             }
 
@@ -534,8 +532,26 @@ class InvoiceGenerationService
             // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
+            // Generate random invoice amounts between 1000-10000
+            $remainingAmount = $taxableAmount;
+            $invoiceAmounts = [];
+            
+            while ($remainingAmount >= 1000) {
+                // Random amount between 1000 and min(10000, remainingAmount)
+                $maxAmount = min(10000, $remainingAmount);
+                $amount = rand(1000, (int)$maxAmount);
+                
+                // If this would leave less than 1000, add it to this invoice
+                if ($remainingAmount - $amount < 1000) {
+                    $amount = $remainingAmount;
+                }
+                
+                $invoiceAmounts[] = $amount;
+                $remainingAmount -= $amount;
+            }
+
             // Get available dates for this patient (with 1-day gap)
-            $patientDates = $this->getPatientInvoiceDates($numInvoices);
+            $patientDates = $this->getPatientInvoiceDates(count($invoiceAmounts));
 
             $invoiceIndex = 0;
             $increment = 1;
@@ -543,7 +559,7 @@ class InvoiceGenerationService
                 $date = $dateInfo['date'];
                 $invoicesOnThisDay = $dateInfo['count'];
 
-                for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
+                for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
                     // Format: patientID-planID-increment
                     $invoiceNumber = sprintf('%d-%d-%d', $patientId, $planId, $increment);
                     
@@ -552,7 +568,7 @@ class InvoiceGenerationService
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
                         'invoice_date' => $date->format('Y-m-d'),
-                        'amount' => $this->consultationAmount,
+                        'amount' => $invoiceAmounts[$invoiceIndex],
                         'type' => 'taxable',
                     ];
                     $increment++;
