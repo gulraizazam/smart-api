@@ -199,6 +199,11 @@ class InvoiceGenerationService
         $targetExempt = $bankCardExempt + $cashExempt;
         $targetTaxable = $bankCardTaxable + $cashTaxable;
 
+        // Dynamic target range based on exempt percent (±2%)
+        $exemptPercentDecimal = $exemptPercent / 100;
+        $targetRangeMin = $exemptPercentDecimal - 0.02;
+        $targetRangeMax = $exemptPercentDecimal + 0.02;
+
         return [
             'total' => $poolTotal,
             'exempt_percent' => $exemptPercent,
@@ -206,8 +211,16 @@ class InvoiceGenerationService
             'target_exempt' => $targetExempt,
             'target_taxable' => $targetTaxable,
             'target_range' => [
-                'min' => $poolTotal * 0.68,
-                'max' => $poolTotal * 0.72,
+                'min' => $poolTotal * $targetRangeMin,
+                'max' => $poolTotal * $targetRangeMax,
+                'min_percent' => round($targetRangeMin * 100, 0),
+                'max_percent' => round($targetRangeMax * 100, 0),
+            ],
+            'taxable_range' => [
+                'min' => $poolTotal * ($this->bankTaxablePercent / 100 - 0.02),
+                'max' => $poolTotal * ($this->bankTaxablePercent / 100 + 0.02),
+                'min_percent' => round($this->bankTaxablePercent - 2, 0),
+                'max_percent' => round($this->bankTaxablePercent + 2, 0),
             ],
         ];
     }
