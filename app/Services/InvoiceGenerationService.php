@@ -393,10 +393,13 @@ class InvoiceGenerationService
             $cappedExempt += $exemptAmount;
         }
 
-        // Step 2: Allocate small patients (give them 100%)
+        // Step 2: Allocate small patients (give them 100% exempt intent)
         $smallExempt = 0;
         foreach ($categorized['small'] as $patient) {
-            $exemptAmount = $patient['pool_share'];
+            // Calculate how many invoices can be created (each = consultation_amount)
+            $numInvoices = floor($patient['pool_share'] / $this->consultationAmount);
+            $exemptAmount = $numInvoices * $this->consultationAmount;
+            $taxableAmount = $patient['pool_share'] - $exemptAmount;
             
             $distribution[] = [
                 'patient_id' => $patient['patient_id'],
@@ -404,7 +407,7 @@ class InvoiceGenerationService
                 'category' => 'small',
                 'exempt_percent' => 100,
                 'exempt_amount' => $exemptAmount,
-                'taxable_amount' => 0,
+                'taxable_amount' => $taxableAmount,
             ];
             $smallExempt += $exemptAmount;
         }
@@ -529,8 +532,8 @@ class InvoiceGenerationService
             $taxableAmount = $patient['taxable_amount'];
             $patientId = $patient['patient_id'];
             
-            // Skip if taxable amount is less than minimum (1000)
-            if ($taxableAmount < 1000) {
+            // Skip if taxable amount is less than minimum (100)
+            if ($taxableAmount < 100) {
                 continue;
             }
 
@@ -545,22 +548,33 @@ class InvoiceGenerationService
            // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
-            // Generate random invoice amounts between 1000-10000
+            // Generate random invoice amounts between 100-10000
             $remainingAmount = $taxableAmount;
             $invoiceAmounts = [];
             
-            while ($remainingAmount >= 1000) {
-                // Random amount between 1000 and min(10000, remainingAmount)
+            // Determine minimum invoice amount based on total taxable amount
+            $minInvoiceAmount = $taxableAmount >= 1000 ? 1000 : 100;
+            
+            while ($remainingAmount >= $minInvoiceAmount) {
+                // Random amount between minInvoiceAmount and min(10000, remainingAmount)
                 $maxAmount = min(10000, $remainingAmount);
-                $amount = rand(1000, (int)$maxAmount);
+                $amount = rand($minInvoiceAmount, (int)$maxAmount);
                 
-                // If this would leave less than 1000, add it to this invoice
-                if ($remainingAmount - $amount < 1000) {
+                // If this would leave less than minInvoiceAmount, add it to this invoice
+                if ($remainingAmount - $amount < $minInvoiceAmount) {
                     $amount = $remainingAmount;
                 }
                 
                 $invoiceAmounts[] = $amount;
                 $remainingAmount -= $amount;
+            }
+            
+            // If there's still a small remainder, add it to the last invoice
+            if ($remainingAmount > 0 && count($invoiceAmounts) > 0) {
+                $invoiceAmounts[count($invoiceAmounts) - 1] += $remainingAmount;
+            } elseif ($remainingAmount > 0) {
+                // If no invoices yet, create one with the full amount
+                $invoiceAmounts[] = $taxableAmount;
             }
 
             // Get available dates for this patient (with 2-day gap for taxable)
