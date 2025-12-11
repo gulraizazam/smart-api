@@ -21,6 +21,7 @@ class InvoiceGenerationService
     protected $consultationAmount;
     protected $maxExemptPerPatient;
     protected $workingDays = [];
+    protected $usedInvoiceNumbers = [];
 
     /**
      * Main function to calculate and generate exempt invoices
@@ -34,7 +35,7 @@ class InvoiceGenerationService
         $this->bankTaxablePercent = $params['bank_taxable'];      // e.g., 30 means 30% taxable, 70% exempt
         $this->cashPercent = $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
         $this->consultationAmount = $params['consultation_amount']; // e.g., 1500
-
+        $this->usedInvoiceNumbers = [];
         // Step 1: Calculate working days and max capacity
         $this->calculateWorkingDays();
         $maxInvoicesPerPatient = $this->calculateMaxInvoicesPerPatient();
@@ -490,9 +491,10 @@ class InvoiceGenerationService
                     $randomNum = rand(1, 999);
                     
                     // Format: patientID-planID-month-random
-                    $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
-                    
+                    $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
+    
                     $invoices[] = [
+                        
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
                         'plan_id' => $planId,
@@ -574,8 +576,8 @@ class InvoiceGenerationService
                     $randomNum = rand(1, 999);
                     
                     // Format: patientID-planID-month-random
-                    $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
-                    
+                    $invoiceNumber = $this->generateUniqueInvoiceNumber($patientId, $planId, $month);
+    
                     $invoices[] = [
                         'invoice_number' => $invoiceNumber,
                         'patient_id' => $patientId,
@@ -596,7 +598,29 @@ class InvoiceGenerationService
 
         return $invoices;
     }
-
+    protected function generateUniqueInvoiceNumber(int $patientId, int $planId, string $month): string
+{
+    $maxAttempts = 100; // Prevent infinite loop
+    $attempts = 0;
+    
+    do {
+        $randomNum = rand(1, 999);
+        $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
+        $attempts++;
+        
+        if ($attempts >= $maxAttempts) {
+            // Fallback: use timestamp-based unique number
+            $randomNum = (int) (microtime(true) * 1000) % 999 + 1;
+            $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
+            break;
+        }
+    } while (in_array($invoiceNumber, $this->usedInvoiceNumbers));
+    
+    // Mark this number as used
+    $this->usedInvoiceNumbers[] = $invoiceNumber;
+    
+    return $invoiceNumber;
+}
     /**
      * Convert number to alphabetic format (1=A, 2=B... 26=Z, 27=AA, 28=AB...)
      */
