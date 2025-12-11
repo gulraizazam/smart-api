@@ -477,9 +477,6 @@ class InvoiceGenerationService
             // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
-            // Generate random number (1-999) for this patient
-            $randomNum = rand(1, 999);
-
             // Get available dates for this patient (with 1-day gap)
             $patientDates = $this->getPatientInvoiceDates($numInvoices);
 
@@ -489,6 +486,9 @@ class InvoiceGenerationService
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
+                    // Generate unique random number (1-999) for each invoice
+                    $randomNum = rand(1, 999);
+                    
                     // Format: patientID-planID-month-random
                     $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
                     
@@ -543,9 +543,6 @@ class InvoiceGenerationService
            // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
-            // Generate random number (1-999) for this patient
-            $randomNum = rand(1, 999);
-
             // Generate random invoice amounts between 1000-10000
             $remainingAmount = $taxableAmount;
             $invoiceAmounts = [];
@@ -573,6 +570,9 @@ class InvoiceGenerationService
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
+                    // Generate unique random number (1-999) for each invoice
+                    $randomNum = rand(1, 999);
+                    
                     // Format: patientID-planID-month-random
                     $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
                     
