@@ -508,7 +508,7 @@ class InvoiceGenerationService
     /**
      * Generate taxable invoices for each patient
      */
-    protected function generateTaxableInvoices(array $distribution): array
+   protected function generateTaxableInvoices(array $distribution): array
     {
         $invoices = [];
 
@@ -550,7 +550,7 @@ class InvoiceGenerationService
                 $remainingAmount -= $amount;
             }
 
-            // Get available dates for this patient (with 1-day gap)
+            // Get available dates for this patient
             $patientDates = $this->getPatientInvoiceDates(count($invoiceAmounts));
 
             $invoiceIndex = 0;
@@ -586,12 +586,34 @@ class InvoiceGenerationService
     protected function getPatientInvoiceDates(int $numInvoices): array
     {
         $dates = [];
+        $totalWorkingDays = count($this->workingDays);
+        
+        if ($numInvoices == 0 || $totalWorkingDays == 0) {
+            return $dates;
+        }
+
+        // Determine strategy based on invoice count
+        if ($numInvoices > 20) {
+            // High count: Aggressive - 3 per day, 1-day gap
+            $invoicesPerDay = 3;
+            $dayGap = 2; // Index increment (1-day gap)
+        } elseif ($numInvoices >= 10) {
+            // Medium count: Moderate - 2 per day, 2-3 day gap
+            $invoicesPerDay = 2;
+            $dayGap = 3; // Index increment (2-day gap)
+        } else {
+            // Low count: Conservative - spread across month
+            $invoicesPerDay = 1;
+            // Calculate spacing to spread across the month
+            $dayGap = max(2, floor($totalWorkingDays / $numInvoices));
+        }
+
         $invoicesRemaining = $numInvoices;
         $workingDayIndex = 0;
-        $totalWorkingDays = count($this->workingDays);
 
+        // First pass: distribute with calculated strategy
         while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
-            $invoicesOnThisDay = min(3, $invoicesRemaining); // Max 3 per day
+            $invoicesOnThisDay = min($invoicesPerDay, $invoicesRemaining);
             
             $dates[] = [
                 'date' => $this->workingDays[$workingDayIndex],
@@ -599,26 +621,38 @@ class InvoiceGenerationService
             ];
             
             $invoicesRemaining -= $invoicesOnThisDay;
-            $workingDayIndex += 2; // Skip 1 day (1-day gap)
+            $workingDayIndex += $dayGap;
         }
 
-        // If we still have invoices remaining, fill in the gaps
+        // Second pass: if still have invoices, fill in gaps with minimum spacing
         if ($invoicesRemaining > 0) {
             $workingDayIndex = 1; // Start from first skipped day
             while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
-                $invoicesOnThisDay = min(3, $invoicesRemaining);
+                // Check if this day is already used
+                $dayAlreadyUsed = false;
+                foreach ($dates as $existingDate) {
+                    if ($existingDate['date']->format('Y-m-d') === $this->workingDays[$workingDayIndex]->format('Y-m-d')) {
+                        $dayAlreadyUsed = true;
+                        break;
+                    }
+                }
                 
-                $dates[] = [
-                    'date' => $this->workingDays[$workingDayIndex],
-                    'count' => $invoicesOnThisDay,
-                ];
+                if (!$dayAlreadyUsed) {
+                    $invoicesOnThisDay = min(3, $invoicesRemaining); // Don't exceed 3 per day
+                    
+                    $dates[] = [
+                        'date' => $this->workingDays[$workingDayIndex],
+                        'count' => $invoicesOnThisDay,
+                    ];
+                    
+                    $invoicesRemaining -= $invoicesOnThisDay;
+                }
                 
-                $invoicesRemaining -= $invoicesOnThisDay;
-                $workingDayIndex += 2;
+                $workingDayIndex++;
             }
         }
 
-        // Sort dates
+        // Sort dates chronologically
         usort($dates, function ($a, $b) {
             return $a['date'] <=> $b['date'];
         });
