@@ -432,7 +432,13 @@ class InvoiceGenerationService
             return $b['pool_share'] <=> $a['pool_share'];
         });
 
-        return $distribution;
+        // Filter out patients whose exempt amount is less than consultation amount
+        $distribution = array_filter($distribution, function ($patient) {
+            return $patient['exempt_amount'] >= $this->consultationAmount;
+        });
+
+        // Re-index array after filtering
+        return array_values($distribution);
     }
 
     /**
