@@ -35,7 +35,7 @@ class SecondMessageOfAppointment extends Command
      *
      * @var string
      */
-    protected $description = 'Send 2nd message one day before appointment at 8PM';
+    protected $description = 'Send reminder message to patients with appointments scheduled today';
 
     /**
      * Create a new command instance.
@@ -62,7 +62,7 @@ class SecondMessageOfAppointment extends Command
         $where[] = [
             'scheduled_date',
             '=',
-            $tomorrow,
+            $day,
         ];
         $where[] = [
             'base_appointment_status_id',
@@ -73,7 +73,7 @@ class SecondMessageOfAppointment extends Command
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
 
-            ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id')
+            ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id', 'appointments.consultancy_type')
             ->get();
             
         $log_type = '2nd_sms';
@@ -129,12 +129,8 @@ class SecondMessageOfAppointment extends Command
 
 
             if (! $SMSTemplate) {
-                // SMS Promotion is disabled
-                return [
-                    'status' => true,
-                    'sms_data' => 'SMS Promotion is disabled',
-                    'error_msg' => '',
-                ];
+                // SMS template not found, skip this appointment
+                continue;
             }
             $preparedText = Appointments::prepareSMSContent($appointment->appointment_id, $SMSTemplate->content);
 
@@ -175,7 +171,7 @@ class SecondMessageOfAppointment extends Command
             if ($setting->data == 2) {
                 $SMSLog['mask'] = $SMSObj['from'];
             }
-            SMSLogs::create($SMSLog);
+                SMSLogs::create($SMSLog);
 
           
 

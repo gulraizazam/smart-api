@@ -951,6 +951,14 @@ function setTreatmentEditData(response) {
         $("#edit_treatment_doctor_id").html(doctor_option).val(appointment?.doctor_id);
         $("#edit_treatment_patient_gender").html(gender_option).val(appointment?.patient?.gender);
 
+        // Store the original doctor ID and hide warning
+        $("#edit_treatment_original_doctor_id").val(appointment?.doctor_id);
+        $('#edit_treatment_doctor_warning').addClass('d-none');
+        $('#edit_use_previous_doctor').prop('checked', false);
+        $('#edit_use_selected_doctor').prop('checked', false);
+        // Enable submit button by default (will be disabled if doctor change detected)
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+
         $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
         $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
         const [hourString, minute] = appointment.scheduled_time.split(":");
@@ -970,6 +978,7 @@ function setTreatmentEditData(response) {
         $("#edit_old_treatment_patient_phone").val(appointment?.lead?.patient?.phone);
 
         $("#treatment_leadId").val(appointment?.lead_id);
+        $("#treatment_patientId").val(appointment?.patient_id); // Store patient_id for doctor check
         $("#treatment_appointment_id").val(appointment?.id);
         $("#treatment_resourceRotaDayID").val(resourceHadRotaDay?.id);
         $("#treatment_machineRotaDayID").val(machineHadRotaDay?.id);
@@ -977,6 +986,11 @@ function setTreatmentEditData(response) {
         $("#treatment_end_time").val(resourceHadRotaDay?.end_time);
 
         $("#treatment_appointment_type").val(appointment?.appointment_type_id);
+
+        // Check if doctor change warning should be shown after modal data is loaded
+        setTimeout(function() {
+            checkEditTreatmentDoctorChange();
+        }, 100);
 
     } catch (error) {
         showException(error);
@@ -1476,6 +1490,123 @@ var AppointScheduleValidation = function () {
         }
     };
 }();
+
+// Function to handle doctor change detection in edit treatment
+var isResettingDoctor = false; // Flag to prevent infinite loop
+
+function checkEditTreatmentDoctorChange() {
+    // Skip if we're in the middle of resetting the doctor
+    if (isResettingDoctor) {
+        return;
+    }
+
+    var selectedDoctorId = $("#edit_treatment_doctor_id").val();
+    var patientId = $("#treatment_patientId").val(); // Use patient_id instead of lead_id
+    var serviceId = $("#treatment_service_id").val();
+    var locationId = $("#edit_treatment_location_id").val();
+    var currentAppointmentId = $("#treatment_appointment_id").val();
+
+    // If no doctor selected or no patient ID, just hide warning and enable submit
+    if (!selectedDoctorId || !patientId || !serviceId) {
+        $('#edit_treatment_doctor_warning').addClass('d-none');
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+        return;
+    }
+
+    // Call backend to check if patient has past arrived treatments of the same service
+    $.ajax({
+        type: 'GET',
+        url: route('admin.appointments.check_patient_last_treatment'),
+        data: {
+            patient_id: patientId,
+            service_id: serviceId,
+            location_id: locationId,
+            exclude_appointment_id: currentAppointmentId // Exclude current appointment
+        },
+        success: function(response) {
+            if (response.status && response.data.last_treatment) {
+                var lastTreatment = response.data.last_treatment;
+                var lastDoctorId = lastTreatment.doctor_id;
+                var lastDoctorName = lastTreatment.doctor_name;
+                var lastServiceId = lastTreatment.service_id;
+
+                // Check if the last treatment's service matches current service
+                if (lastServiceId == serviceId) {
+                    // Service matches, now check if doctor is different
+                    if (lastDoctorId != selectedDoctorId) {
+                        // Get selected doctor name from dropdown
+                        var selectedDoctorName = $("#edit_treatment_doctor_id option[value='" + selectedDoctorId + "']").text();
+
+                        // Show warning message
+                        $('#edit_warning_message').html(' The last session for this treatment was performed by ' + lastDoctorName + '');
+                        $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
+                        $('#edit_selected_doctor_option').html('' + selectedDoctorName + '');
+
+                        // Show the warning div
+                        $('#edit_treatment_doctor_warning').removeClass('d-none');
+
+                        // Deselect both radio buttons by default
+                        $('#edit_use_previous_doctor').prop('checked', false);
+                        $('#edit_use_selected_doctor').prop('checked', false);
+
+                        // Store the last doctor ID for the radio button handler
+                        $('#edit_treatment_doctor_warning').data('last-doctor-id', lastDoctorId);
+
+                        // Disable the submit button until user makes a choice
+                        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
+                    } else {
+                        // Last treatment was with the same doctor, no warning needed
+                        $('#edit_treatment_doctor_warning').addClass('d-none');
+                        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                    }
+                } else {
+                    // Service doesn't match, no warning needed
+                    $('#edit_treatment_doctor_warning').addClass('d-none');
+                    $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                }
+            } else {
+                // No past arrived treatment found, no warning needed
+                $('#edit_treatment_doctor_warning').addClass('d-none');
+                $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+            }
+        },
+        error: function() {
+            // On error, hide warning and enable submit
+            $('#edit_treatment_doctor_warning').addClass('d-none');
+            $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+        }
+    });
+}
+
+// Handle radio button changes
+$(document).on('change', '#edit_use_previous_doctor', function() {
+    if ($(this).is(':checked')) {
+        isResettingDoctor = true;
+        // Use the last doctor ID from the past arrived treatment
+        var lastDoctorId = $('#edit_treatment_doctor_warning').data('last-doctor-id');
+        $('#edit_treatment_doctor_id').val(lastDoctorId).trigger('change.select2');
+
+        // Enable submit button
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+
+        setTimeout(function() {
+            isResettingDoctor = false;
+        }, 100);
+    }
+});
+
+$(document).on('change', '#edit_use_selected_doctor', function() {
+    if ($(this).is(':checked')) {
+        // Keep the newly selected doctor
+        // Enable submit button
+        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+    }
+});
+
+// Attach the check function to doctor dropdown change event
+$(document).on('change', '#edit_treatment_doctor_id', function() {
+    checkEditTreatmentDoctorChange();
+});
 
 jQuery(document).ready(function() {
     AppointScheduleValidation.init();

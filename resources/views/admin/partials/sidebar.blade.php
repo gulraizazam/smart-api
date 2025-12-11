@@ -1172,7 +1172,7 @@
                                     <i class="menu-bullet menu-bullet-dot">
                                         <span></span>
                                     </i>
-                                    <span class="menu-text">No Future Treatments Report </span>
+                                    <span class="menu-text">Future Treatments Report</span>
                                 </a>
                             </li>
                         </ul>

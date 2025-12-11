@@ -34,6 +34,14 @@
                         <div class="row" style="margin-right: 0;">
                             <div class="col-md-3">
                                 <ul class="calendar-left-menu list-unstyled treatment-detail-actions"></ul>
+                                
+                                @if(Gate::allows('appointments_destroy'))
+                                <div class="mt-3">
+                                    <button type="button" id="delete_treatment_appointment_btn" class="btn btn-danger btn-block font-weight-bolder" onclick="deleteAppointmentFromModal(this);">
+                                        <i class="la la-trash"></i> Delete Appointment
+                                    </button>
+                                </div>
+                                @endif
                             </div>
 
                             <div class="col-md-9">

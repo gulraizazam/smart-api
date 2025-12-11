@@ -1,11 +1,11 @@
 @extends('admin.layouts.master')
-@section('title', 'Feedback Report')
+@section('title', 'Future Treatments Report')
 @section('content')
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.1/css/jquery.dataTables.min.css">
 <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.3.6/css/buttons.dataTables.min.css">
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
-    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Patients Report'])
+    @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Future Treatments Report'])
     <!--begin::Entry-->
         <div class="d-flex flex-column-fluid">
             <!--begin::Container-->
@@ -29,7 +29,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label">Patients Report</h3>
+                            <h3 class="card-label">Future Treatments Report</h3>
                         </div>
                     </div>
                     <div class="card-body">
@@ -37,59 +37,36 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                    <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
-                                             id="locations">
-                                            {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="centre_id" name="centre_id" onchange="getCentreDoctors(this.value);">
-                                                <option value="">Select Centre</option>
+                                        <div class="form-group col-md-4 sn-select @if($errors->has('centre_id')) has-error @endif" id="locations">
+                                            {!! Form::label('centre_id', 'Centre:', ['class' => 'control-label']) !!}
+                                            <select class="form-control select2" id="centre_id" name="centre_id">
+                                                <option value="">All Centres</option>
                                                 @foreach($locations as $location)
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
                                                 @endforeach
                                             </select>
-
                                             <span id="centre_id_handler"></span>
                                         </div>
-                                         <div class="form-group col-md-3">
-                                            <label>Patient Search </label>
-                                            <input class="form-control order_patient_search_id patient_search_id search_field"
-                                                placeholder="Patients Search">
 
-                                            <input type="hidden" id="order_patient_search" name="patient_id" class="filter-field search_field">
-                                            <span onclick="addUsers()" class="croxcli"
-                                                style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times"
-                                                    aria-hidden="true"></i></span>
-                                            <div class="suggesstion-box" style="display: none;">
-                                                <ul class="suggestion-list"></ul>
-                                            </div>
-                                        </div>
-                                                                        <div class="form-group col-md-3 sn-select @if($errors->has('membership_type')) has-error @endif" id="membership_type_id">
-                                        {!! Form::label('membership_type', 'Memberhsip Type:', ['class' => 'control-label']) !!}
-                                        <select class="form-control select2" id="membership_type" name="membership_type_id">
-                                            <option value="">Select Membership Type</option>
-                                            <option value="no_membership">No Membership</option>
-                                            @foreach($membershipTypes as $key=>$membershipType)
-                                            <option value="{{$key}}">{{$membershipType}}</option>
-                                            @endforeach
-                                        </select>
-                                        <span id="location_id_handler"></span>
-                                    </div>
-                                        <div class="col-md-3 form-group sn-select @if($errors->has('date_range')) has-error @endif">
-                                            {!! Form::label('date_range', 'Date Range:', ['class' => 'control-label']) !!}
-                                            <div class="input-group">
-                                                {!! Form::text('date_range', null, ['id' => 'date_range_patients', 'class' => 'form-control']) !!}
-                                            </div>
+                                        <div class="form-group col-md-4 sn-select @if($errors->has('service_id')) has-error @endif" id="services">
+                                            {!! Form::label('service_id', 'Service:', ['class' => 'control-label']) !!}
+                                            <select class="form-control select2" id="service_id" name="service_id">
+                                                <option value="">All Services</option>
+                                                @foreach($services as $service)
+                                                <option value="{{$service->id}}">{{$service->name}}</option>
+                                                @endforeach
+                                            </select>
+                                            <span id="service_id_handler"></span>
                                         </div>
 
-
-
-
-                                        <div class="form-group col-md-2 sn-select @if($errors->has('group_id')) has-error @endif">
+                                        <div class="form-group col-md-4 sn-select">
                                             {!! Form::label('load_report', '&nbsp;', ['class' => 'control-label']) !!}<br/>
-                                            <a href="javascript:void(0);" onclick="loadFutureTreatmentsReport($(this));" id="load_feedback_report"
+                                            <a href="javascript:void(0);" onclick="loadFutureTreatmentsReport();" id="load_future_treatments_report"
                                                class="btn btn-success spinner-button">Load Report</a>
                                         </div>
+
                                         <div class="clear clearfix"></div>
-                                        <div style="overflow: hidden; width: 100%;" id="patients_content">
+                                        <div style="overflow: hidden; width: 100%;" id="future_treatments_content">
 
                                         </div>
                                     </div>
@@ -114,16 +91,47 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
         <script src="https://cdn.datatables.net/buttons/2.3.6/js/buttons.html5.min.js"></script>
-        <script src="{{asset('assets/js/dailyarrival.js')}}"></script>
-
-        <script src="{{ asset('assets/js/pages/admin_settings/orders.js') }}"></script>
 
         <script>
-            $("#patients_table").DataTable({
-                searching: false,     // Disable search box
-                paging: false,        // Disable pagination
-                info: false           // Disable "Showing X of Y entries" info text (optional)
-            });
+            function loadFutureTreatmentsReport() {
+                var centreId = $('#centre_id').val();
+                var serviceId = $('#service_id').val();
+
+                $.ajax({
+                    url: "{{ route('admin.reports.load_future_treatments_report') }}",
+                    type: 'POST',
+                    data: {
+                        _token: "{{ csrf_token() }}",
+                        centre_id: centreId,
+                        service_id: serviceId
+                    },
+                    beforeSend: function() {
+                        $('#load_future_treatments_report').html('<i class="fa fa-spinner fa-spin"></i> Loading...');
+                    },
+                    success: function(response) {
+                        $('#future_treatments_content').html(response);
+
+                        // Initialize DataTable if not already initialized
+                        if (!$.fn.DataTable.isDataTable('#future_treatments_table')) {
+                            $('#future_treatments_table').DataTable({
+                                dom: 'Bfrtip',
+                                buttons: [
+                                    'copy', 'csv', 'excel', 'pdf', 'print'
+                                ],
+                                pageLength: 50,
+                                order: [[2, 'asc']]
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error loading report:', error);
+                        alert('Error loading report. Please try again.');
+                    },
+                    complete: function() {
+                        $('#load_future_treatments_report').html('Load Report');
+                    }
+                });
+            }
         </script>
     @endpush
 @endsection

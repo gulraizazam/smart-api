@@ -1,3 +1,94 @@
+// Load all child services (parent_id != 0) function
+window.loadAllChildServices = function () {
+    resource_id = $("#treatment_resource_id").val();
+
+    console.log('Loading all child services with resource_id:', resource_id);
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.load_all_child_services'),
+        type: 'POST',
+        data: {
+            resource_id: resource_id
+        },
+        cache: false,
+        success: function(response) {
+            console.log('Child services response:', response);
+            if(response.status) {
+                let services = response.data.services;
+                let service_option = '<option value="">Select a Service</option>';
+
+                let serviceCount = 0;
+                Object.entries(services).forEach(function (service) {
+                    service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
+                    serviceCount++;
+                });
+
+                console.log('Loaded ' + serviceCount + ' child services');
+                $('#create_treatment_service').html(service_option);
+
+                // Reinitialize select2 if it exists
+                if ($('#create_treatment_service').hasClass('select2-hidden-accessible')) {
+                    $('#create_treatment_service').select2('destroy');
+                }
+                $('#create_treatment_service').select2();
+            } else {
+                console.error('Failed to load services:', response.message);
+                toastr.error(response.message || 'Failed to load services');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Error loading child services:', thrownError);
+            console.error('Response:', xhr.responseText);
+            toastr.error('Failed to load services. Please try again.');
+        }
+    });
+}
+
+// Define loadEndServices globally before anything else to ensure it's available immediately
+window.loadEndServices = function (baseServiceId) {
+    resource_id = $("#treatment_resource_id").val();
+
+    if(baseServiceId != '') {
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: route('admin.appointments.load_node_service'),
+            type: 'POST',
+            data: {
+                service_id: baseServiceId,
+                resource_id:resource_id
+            },
+            cache: false,
+            success: function(response) {
+                if(response.status) {
+                    let services = response.data.services;
+                    let service_option = '<option value="">Select a Child Service</option>';
+
+                    Object.entries(services).forEach( function (service) {
+                        service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
+                    });
+
+                    $('#create_treatment_service').html(service_option);
+                }
+            },
+            error: function (xhr, ajaxOptions, thrownError) {
+
+            }
+        });
+    } else {
+        if (typeof resetNodeServices === 'function') {
+            resetNodeServices();
+        }
+        if (typeof CreateFormValidation !== 'undefined' && typeof CreateFormValidation.loadLead === 'function') {
+            CreateFormValidation.loadLead();
+        }
+    }
+}
+
 jQuery(document).ready(function() {
 
     var result = get_query();
@@ -52,9 +143,85 @@ jQuery(document).ready(function() {
         $('.appointment_patient_id').val(null).trigger('change');
     });
 
+    // Handle treatment form submission with AJAX
+    $(document).on('submit', '#modal_create_treatment_form', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        console.log('Treatment form submitted via AJAX');
+        
+        var form = $(this);
+        var formData = form.serialize();
+        var submitButton = form.find('[type="submit"]');
+        
+        // Disable submit button
+        submitButton.prop('disabled', true);
+        
+        $.ajax({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
+            url: form.attr('action'),
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                console.log('Treatment creation response:', response);
+                
+                if (response.status) {
+                    toastr.success(response.message || 'Treatment created successfully');
+                    
+                    // Close modal
+                    $('#modal_create_treatment').modal('hide');
+                    
+                    // Reload calendar after a short delay to ensure modal is closed
+                    setTimeout(function() {
+                        console.log('=== Reloading calendar after treatment creation ===');
+                        console.log('custom_treatment_resource_calendar visible?', $('#custom_treatment_resource_calendar').is(':visible'));
+                        console.log('TreatmentResourceCalendar defined?', typeof TreatmentResourceCalendar !== 'undefined');
+                        console.log('treatment_calendar defined?', typeof treatment_calendar !== 'undefined');
+                        
+                        // Reload resource calendar if it's visible
+                        if ($('#custom_treatment_resource_calendar').is(':visible')) {
+                            if (typeof TreatmentResourceCalendar !== 'undefined') {
+                                console.log('✓ Calling TreatmentResourceCalendar.reload()');
+                                TreatmentResourceCalendar.reload();
+                            } else {
+                                console.error('✗ TreatmentResourceCalendar is not defined!');
+                            }
+                        }
+                        // Otherwise reload regular calendar
+                        else if (typeof treatment_calendar !== 'undefined') {
+                            console.log('✓ Calling treatment_calendar.refetchEvents()');
+                            treatment_calendar.refetchEvents();
+                        } else {
+                            console.error('✗ No calendar found to reload!');
+                        }
+                    }, 500);
+                } else {
+                    toastr.error(response.message || 'Error creating treatment');
+                }
+                
+                // Re-enable submit button
+                submitButton.prop('disabled', false);
+            },
+            error: function(xhr) {
+                var errorMessage = 'Error creating treatment';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                toastr.error(errorMessage);
+                
+                // Re-enable submit button
+                submitButton.prop('disabled', false);
+            }
+        });
+        
+        return false;
+    });
+
 });
     var counter = 0;
-    var treatmentDoctorListener = function (doctorId) {
+    window.treatmentDoctorListener = function (doctorId) {
     setQueryStringParameter('doctor_id', doctorId);
     $("#treatment_doctor_filter").val(doctorId);
     if (typeof treatment_calendar !== "undefined") { /*if already initiate then destroy first*/
@@ -74,54 +241,8 @@ jQuery(document).ready(function() {
     }
     counter = counter+1;
 }
-let loadMachine = function(locationId) {
 
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.appointments.center_machines', {
-            location_id: locationId,
-        }),
-        type: 'GET',
-        data: {
-            location_id: locationId
-        },
-        cache: false,
-        success: function(response) {
-            if(response.status) {
-
-                let dropdowns =  response.data.dropdown;
-                let dropdown_options =  '<option value="">Select a Machine</option>';
-
-                Object.entries(dropdowns).forEach(function (dropdown) {
-                    dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
-                });
-
-                let result = get_query();
-
-                $('#treatment_resource_filter').html(dropdown_options);
-
-                if (typeof result.doctor_id !== "undefined" && $("#treatment_doctor_filter").val() === '') {
-                    $("#treatment_doctor_filter").val(result.doctor_id).select2();
-                }
-
-                if (typeof result.machine_id !== "undefined" && $("#treatment_resource_filter").val() === '') {
-                    $("#treatment_resource_filter").val(result.machine_id).select2();
-                }
-
-            } else {
-                resetDoctors();
-            }
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            resetDoctors();
-        }
-    });
-}
-
-
-let machineListener = function (machineId) {
+window.machineListener = function (machineId) {
 
     setQueryStringParameter('machine_id', machineId);
 
@@ -213,53 +334,20 @@ function loadCalendar() {
 }
 
 
-var loadEndServices = function (baseServiceId) {
-     resource_id = $("#treatment_resource_id").val();
-    
-    if(baseServiceId != '') {
-        $.ajax({
-            headers: {
-                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-            },
-            url: route('admin.appointments.load_node_service'),
-            type: 'POST',
-            data: {
-                service_id: baseServiceId,
-                resource_id:resource_id
-            },
-            cache: false,
-            success: function(response) {
-                if(response.status) {
-                    let services = response.data.services;
-                    let service_option = '<option value="">Select a Child Service</option>';
-
-                    Object.entries(services).forEach( function (service) {
-                        service_option += '<option value="'+service[0]+'">'+service[1]+'</option>';
-                    });
-
-                    $('#create_treatment_service').html(service_option);
-                }
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-
-            }
-        });
-    } else {
-        resetNodeServices();
-        CreateFormValidation.loadLead();
-    }
-}
 
 function getTreatmentPatientDetail($this) {
     if ($this.val() != '') {
         $this.parent("div").find(".select2-selection").removeClass("select2-is-invalid");
         $this.parent("div").find(".fv-help-block").text("");
     }
+
+    var patientId = $this.val();
+
     $.ajax({
         type: 'get',
         url: route('admin.users.get_patient_number'),
         data: {
-            'patient_id': $this.val()
+            'patient_id': patientId
         },
         success: function (resposne) {
             if (resposne.status && resposne.data.patient) {
@@ -287,12 +375,89 @@ function getTreatmentPatientDetail($this) {
                     $("#create_treatment_patient_name").removeClass("is-invalid")
                     $("#create_treatment_patient_name").parent("div").find(".fv-help-block").remove();
                 }
+
+                // Check patient's last treatment
+                checkPatientLastTreatment(patientId);
             }
 
         },
     });
 
     $("#treatment_patient_id").val($this.val() != '' ? $this.val() : '0');
+}
+
+function checkPatientLastTreatment(patientId) {
+    // Disable submit button initially
+    $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', true);
+
+    // Hide warning div
+    $('#treatment_doctor_warning').addClass('d-none');
+
+    // Get current service and doctor
+    var currentServiceId = $('#create_treatment_service').val();
+    var currentDoctorId = $('#treatment_doctor_id').val();
+    var currentLocationId = $('#treatment_location_id').val();
+
+    // If service is not selected yet, just enable submit
+    if (!currentServiceId) {
+        $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+        return;
+    }
+
+    $.ajax({
+        type: 'GET',
+        url: route('admin.appointments.check_patient_last_treatment'),
+        data: {
+            patient_id: patientId,
+            service_id: currentServiceId,
+            location_id: currentLocationId
+        },
+        success: function(response) {
+            if (response.status && response.data.last_treatment) {
+                var lastTreatment = response.data.last_treatment;
+                var lastDoctorId = lastTreatment.doctor_id;
+                var lastDoctorName = lastTreatment.doctor_name;
+
+                // Check if service matches
+                if (lastTreatment.service_id == currentServiceId) {
+                    // Service matches, check doctor
+                    if (lastDoctorId == currentDoctorId) {
+                        // Both match, enable submit button
+                        $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+                        $('#treatment_doctor_warning').addClass('d-none');
+                    } else {
+                        // Service matches but doctor is different
+                        // Show warning
+                        $('#warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + '.');
+                        $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
+                        $('#treatment_doctor_warning').removeClass('d-none');
+
+                        // Store previous doctor ID
+                        $('#treatment_doctor_warning').data('previous-doctor-id', lastDoctorId);
+                        $('#treatment_doctor_warning').data('previous-doctor-name', lastDoctorName);
+
+                        // Deselect both radio buttons by default
+                        $('#use_previous_doctor').prop('checked', false);
+                        $('#use_selected_doctor').prop('checked', false);
+
+                        // Keep submit disabled until radio button is selected
+                    }
+                } else {
+                    // Service doesn't match, enable submit button
+                    $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+                    $('#treatment_doctor_warning').addClass('d-none');
+                }
+            } else {
+                // No previous treatment, enable submit button
+                $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+                $('#treatment_doctor_warning').addClass('d-none');
+            }
+        },
+        error: function() {
+            // On error, enable submit button
+            $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+        }
+    });
 }
 
 function setResourceValue(value) {
@@ -333,5 +498,39 @@ jQuery(document).ready(function () {
 
         $("#create_treatment_patient_search").parent("div").find(".select2-selection").addClass("select2-is-invalid");
         $("#create_treatment_patient_search").parent("div").find(".fv-help-block").text("The patient field is required");
+    });
+
+    // Handle doctor choice radio buttons
+    $(document).on('change', 'input[name="doctor_choice"]', function() {
+        var selectedValue = $('input[name="doctor_choice"]:checked').val();
+
+        // Enable submit button since a radio button is selected
+        $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+
+        // If previous doctor is selected, update the hidden doctor field
+        if (selectedValue === 'previous') {
+            var previousDoctorId = $('#treatment_doctor_warning').data('previous-doctor-id');
+            $('#treatment_doctor_id').val(previousDoctorId);
+
+            // Also update the visible doctor select if it exists
+            if ($('#create_treatment_doctor').length) {
+                $('#create_treatment_doctor').val(previousDoctorId).trigger('change');
+            }
+        }
+        // If selected doctor is chosen, the doctor_id is already set in the field, no change needed
+    });
+
+    // Re-check when service changes
+    $(document).on('change', '#create_treatment_service', function() {
+        var patientId = $('#treatment_patient_id').val();
+        if (patientId && patientId != '0') {
+            checkPatientLastTreatment(patientId);
+        }
+    });
+
+    // Reset warning when modal is closed
+    $('#modal_create_treatment').on('hidden.bs.modal', function() {
+        $('#treatment_doctor_warning').addClass('d-none');
+        $('input[name="doctor_choice"]').prop('checked', false);
     });
 })
