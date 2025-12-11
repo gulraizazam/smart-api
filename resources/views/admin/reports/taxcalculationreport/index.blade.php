@@ -18,8 +18,58 @@
             .category-small { background-color: #c6f6d5 !important; }
             .status-success { color: #276749; font-weight: bold; }
             .status-warning { color: #c53030; font-weight: bold; }
+
+            /* Loader Styles */
+            .calculation-loader {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 9999;
+                justify-content: center;
+                align-items: center;
+            }
+            .calculation-loader.active {
+                display: flex;
+            }
+            .loader-content {
+                background: white;
+                padding: 30px 40px;
+                border-radius: 10px;
+                text-align: center;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            }
+            .loader-spinner {
+                border: 4px solid #f3f3f3;
+                border-top: 4px solid #1a365d;
+                border-radius: 50%;
+                width: 50px;
+                height: 50px;
+                animation: spin 1s linear infinite;
+                margin: 0 auto 15px;
+            }
+            @keyframes spin {
+                0% { transform: rotate(0deg); }
+                100% { transform: rotate(360deg); }
+            }
+            .loader-text {
+                color: #1a365d;
+                font-size: 16px;
+                font-weight: 600;
+            }
         </style>
     @endpush
+
+    <!-- Loading Overlay -->
+    <div class="calculation-loader" id="calculationLoader">
+        <div class="loader-content">
+            <div class="loader-spinner"></div>
+            <div class="loader-text">Calculating tax report...</div>
+        </div>
+    </div>
 
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
         @include('admin.partials.breadcrumb', ['module' => 'Reports', 'title' => 'Tax Calculation Report'])
@@ -129,6 +179,17 @@
 
     <script>
         var calculationData = null;
+
+        // Loader functions
+        function showSpinner() {
+            $('#calculationLoader').addClass('active');
+            $('#load_report').prop('disabled', true);
+        }
+
+        function hideSpinner() {
+            $('#calculationLoader').removeClass('active');
+            $('#load_report').prop('disabled', false);
+        }
 
         $('#date_range').daterangepicker({
             ranges: {
