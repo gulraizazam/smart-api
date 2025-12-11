@@ -229,7 +229,7 @@
             html += '<div class="col-md-4"><div class="summary-card">';
             html += '<h5><i class="fa fa-check-circle"></i> Feasibility</h5>';
             html += '<div class="summary-item"><span>Max Possible:</span><span>' + formatNumber(data.feasibility.max_possible_exempt) + ' (' + data.feasibility.max_possible_percent + '%)</span></div>';
-            html += '<div class="summary-item"><span>Target:</span><span>68-72%</span></div>';
+            html += '<div class="summary-item"><span>Target:</span><span>' + data.feasibility.target_range + '</span></div>';
             html += '<div class="summary-item"><span>Status:</span><span class="' + statusClass + '">' + statusText + '</span></div>';
             html += '</div></div>';
             html += '</div>';
@@ -253,7 +253,7 @@
             html += '<div class="summary-item"><span>Pool (Bank+Card+Cash%):</span><span>' + formatNumber(data.pool.total) + '</span></div>';
             html += '<div class="summary-item"><span>Target Exempt (' + data.pool.exempt_percent + '%):</span><span>' + formatNumber(data.pool.target_exempt) + '</span></div>';
             html += '<div class="summary-item"><span>Target Taxable (' + data.pool.taxable_percent + '%):</span><span>' + formatNumber(data.pool.target_taxable) + '</span></div>';
-            html += '<div class="summary-item total"><span>Target Range (68-72%):</span><span>' + formatNumber(data.pool.target_range.min) + ' - ' + formatNumber(data.pool.target_range.max) + '</span></div>';
+            html += '<div class="summary-item total"><span>Target Range (' + data.pool.target_range.min_percent + '-' + data.pool.target_range.max_percent + '%):</span><span>' + formatNumber(data.pool.target_range.min) + ' - ' + formatNumber(data.pool.target_range.max) + '</span></div>';
             html += '</div></div>';
             html += '</div>';
 

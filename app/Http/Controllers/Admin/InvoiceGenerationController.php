@@ -244,7 +244,7 @@ class InvoiceGenerationController extends Controller
         $sheet->setCellValue('B' . $row, number_format($pool['target_taxable'], 2));
         $row++;
         $sheet->setCellValue('A' . $row, 'Target Range:');
-        $sheet->setCellValue('B' . $row, '68-72% (' . number_format($pool['target_range']['min'], 2) . ' - ' . number_format($pool['target_range']['max'], 2) . ')');
+        $sheet->setCellValue('B' . $row, $pool['target_range']['min_percent'] . '-' . $pool['target_range']['max_percent'] . '% (' . number_format($pool['target_range']['min'], 2) . ' - ' . number_format($pool['target_range']['max'], 2) . ')');
         $row += 2;
 
         // Feasibility Section
