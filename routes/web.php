@@ -72,7 +72,7 @@ use App\Http\Controllers\FeedbacksReportController;
 use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
 use App\Http\Controllers\UpsellingReportController;
-use App\Http\Controllers\InvoiceGenerationController;
+use App\Http\Controllers\Admin\InvoiceGenerationController;
 use App\Models\PackageService;
 
 /*
@@ -173,8 +173,12 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::get('updatestatusleads', [LeadsController::class, 'leadstatusupdate']);
         Route::prefix('invoices')->name('invoices.')->group(function () {
-            Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
-        });
+        // Calculate amounts and get JSON response
+        Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
+        
+        // Export exempt invoices to Excel
+        Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
+    });
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

@@ -16,33 +16,52 @@ class InvoiceGenerationService
     protected $dateTo;
     protected $locationIds;
     protected $bankTaxablePercent;
-    protected $cashTaxablePercent;
+    protected $cashPercent;
     protected $consultationAmount;
+    protected $maxExemptPerPatient;
+    protected $workingDays = [];
 
     /**
-     * Step 1: Calculate all amounts
-     * 
-     * @param array $params
-     * @return array
+     * Main function to calculate and generate exempt invoices
      */
-    public function calculateAmounts(array $params): array
+    public function generateExemptInvoices(array $params): array
     {
         // Set parameters
         $this->dateFrom = Carbon::parse($params['date_from'])->startOfDay();
         $this->dateTo = Carbon::parse($params['date_to'])->endOfDay();
         $this->locationIds = $params['location_ids'];
-        $this->bankTaxablePercent = $params['bank_taxable'];      // e.g., 30
-        $this->cashTaxablePercent = $params['cash_taxable'];      // e.g., 0
+        $this->bankTaxablePercent = $params['bank_taxable'];      // e.g., 30 means 30% taxable, 70% exempt
+        $this->cashPercent = $params['cash_percent'];              // e.g., 5 means only 5% of cash is used
         $this->consultationAmount = $params['consultation_amount']; // e.g., 1500
 
-        // Step 1a: Get total amounts by payment method
-        $totals = $this->getTotalsByPaymentMethod();
+        // Step 1: Calculate working days and max capacity
+        $this->calculateWorkingDays();
+        $maxInvoicesPerPatient = $this->calculateMaxInvoicesPerPatient();
+        $this->maxExemptPerPatient = $maxInvoicesPerPatient * $this->consultationAmount;
 
-        // Step 1b: Calculate taxable and non-taxable splits
-        $splits = $this->calculateTaxableSplits($totals);
+        // Step 2: Get payment totals
+        $totals = $this->getPaymentTotals();
 
-        // Step 1c: Get patient-wise breakdown
-        $patientShares = $this->calculatePatientShares($totals, $splits);
+        // Step 3: Calculate pool
+        $pool = $this->calculatePool($totals);
+
+        // Step 4: Get patient-wise data
+        $patients = $this->getPatientPayments($totals, $pool);
+
+        // Step 5: Categorize patients
+        $categorizedPatients = $this->categorizePatients($patients);
+
+        // Step 6: Check if target is achievable
+        $feasibility = $this->checkFeasibility($categorizedPatients, $pool);
+
+        // Step 7: Distribute exempt percentages using smart algorithm
+        $distribution = $this->distributeExemptPercentages($categorizedPatients, $pool, $feasibility);
+
+        // Step 8: Generate exempt invoices
+        $invoices = $this->generateInvoices($distribution);
+
+        // Step 9: Calculate final summary
+        $summary = $this->calculateSummary($distribution, $invoices, $pool);
 
         return [
             'parameters' => [
@@ -50,23 +69,59 @@ class InvoiceGenerationService
                 'date_to' => $this->dateTo->toDateString(),
                 'location_ids' => $this->locationIds,
                 'bank_taxable_percent' => $this->bankTaxablePercent,
-                'cash_taxable_percent' => $this->cashTaxablePercent,
+                'cash_percent' => $this->cashPercent,
                 'consultation_amount' => $this->consultationAmount,
             ],
+            'capacity' => [
+                'working_days' => count($this->workingDays),
+                'invoice_days_per_patient' => floor(count($this->workingDays) / 2), // with 1-day gap
+                'max_invoices_per_patient' => $maxInvoicesPerPatient,
+                'max_exempt_per_patient' => $this->maxExemptPerPatient,
+            ],
             'totals' => $totals,
-            'splits' => $splits,
-            'patient_shares' => $patientShares,
-            'summary' => $this->generateSummary($totals, $splits, $patientShares),
+            'pool' => $pool,
+            'feasibility' => $feasibility,
+            'patient_distribution' => $distribution,
+            'invoices' => $invoices,
+            'summary' => $summary,
         ];
     }
 
     /**
-     * Get total amounts grouped by payment method
-     * Note: Card payments are summed into Bank
-     * 
-     * @return array
+     * Calculate working days (excluding Sundays) in the date range
      */
-    protected function getTotalsByPaymentMethod(): array
+    protected function calculateWorkingDays(): void
+    {
+        $this->workingDays = [];
+        $current = $this->dateFrom->copy();
+
+        while ($current <= $this->dateTo) {
+            // Exclude Sundays (0 = Sunday in Carbon)
+            if ($current->dayOfWeek !== Carbon::SUNDAY) {
+                $this->workingDays[] = $current->copy();
+            }
+            $current->addDay();
+        }
+    }
+
+    /**
+     * Calculate maximum invoices per patient based on date range
+     */
+    protected function calculateMaxInvoicesPerPatient(): int
+    {
+        $totalWorkingDays = count($this->workingDays);
+        
+        // With 1-day gap, usable days = ceil(working_days / 2)
+        $usableInvoiceDays = ceil($totalWorkingDays / 2);
+        
+        // Max 3 invoices per day
+        return $usableInvoiceDays * 3;
+    }
+
+    /**
+     * Get total payments by payment method
+     */
+    protected function getPaymentTotals(): array
     {
         $results = DB::table('package_advances')
             ->select(
@@ -102,85 +157,54 @@ class InvoiceGenerationService
             }
         }
 
-        // Combine bank + card as "bank" for calculation purposes
-        $combinedBankTotal = $bankTotal + $cardTotal;
-        $combinedBankCount = $bankCount + $cardCount;
-
         return [
             'bank' => [
-                'total' => $combinedBankTotal,
-                'count' => $combinedBankCount,
-                'breakdown' => [
-                    'bank_transfer' => ['total' => $bankTotal, 'count' => $bankCount],
-                    'card' => ['total' => $cardTotal, 'count' => $cardCount],
-                ],
+                'total' => $bankTotal,
+                'count' => $bankCount,
+            ],
+            'card' => [
+                'total' => $cardTotal,
+                'count' => $cardCount,
             ],
             'cash' => [
                 'total' => $cashTotal,
                 'count' => $cashCount,
+                'percent_used' => $this->cashPercent,
+                'amount_used' => $cashTotal * ($this->cashPercent / 100),
             ],
-            'grand_total' => $combinedBankTotal + $cashTotal,
-            'total_records' => $combinedBankCount + $cashCount,
+            'bank_plus_card' => $bankTotal + $cardTotal,
+            'grand_total' => $bankTotal + $cardTotal + $cashTotal,
         ];
     }
 
     /**
-     * Calculate taxable and non-taxable splits
-     * 
-     * @param array $totals
-     * @return array
+     * Calculate the pool (Bank + Card + Cash%)
      */
-    protected function calculateTaxableSplits(array $totals): array
+    protected function calculatePool(array $totals): array
     {
-        $bankTotal = $totals['bank']['total'];
-        $cashTotal = $totals['cash']['total'];
+        $cashToUse = $totals['cash']['total'] * ($this->cashPercent / 100);
+        $poolTotal = $totals['bank']['total'] + $totals['card']['total'] + $cashToUse;
 
-        // Bank: e.g., 30% non-taxable, 70% taxable
-        $bankNonTaxablePercent = $this->bankTaxablePercent;
-        $bankTaxablePercent = 100 - $this->bankTaxablePercent;
-
-        // Cash: e.g., 0% non-taxable, 100% taxable (when cash_taxable = 0)
-        $cashNonTaxablePercent = $this->cashTaxablePercent;
-        $cashTaxablePercent = 100 - $this->cashTaxablePercent;
-
-        // Calculate amounts
-        $bankTaxableAmount = $bankTotal * ($bankTaxablePercent / 100);
-        $bankNonTaxableAmount = $bankTotal * ($bankNonTaxablePercent / 100);
-
-        $cashTaxableAmount = $cashTotal * ($cashTaxablePercent / 100);
-        $cashNonTaxableAmount = $cashTotal * ($cashNonTaxablePercent / 100);
+        $exemptPercent = 100 - $this->bankTaxablePercent;
 
         return [
-            'bank' => [
-                'taxable_percent' => $bankTaxablePercent,
-                'non_taxable_percent' => $bankNonTaxablePercent,
-                'taxable_amount' => round($bankTaxableAmount, 2),
-                'non_taxable_amount' => round($bankNonTaxableAmount, 2),
-            ],
-            'cash' => [
-                'taxable_percent' => $cashTaxablePercent,
-                'non_taxable_percent' => $cashNonTaxablePercent,
-                'taxable_amount' => round($cashTaxableAmount, 2),
-                'non_taxable_amount' => round($cashNonTaxableAmount, 2),
-            ],
-            'combined' => [
-                'taxable_amount' => round($bankTaxableAmount + $cashTaxableAmount, 2),
-                'non_taxable_amount' => round($bankNonTaxableAmount + $cashNonTaxableAmount, 2),
+            'total' => $poolTotal,
+            'exempt_percent' => $exemptPercent,
+            'taxable_percent' => $this->bankTaxablePercent,
+            'target_exempt' => $poolTotal * ($exemptPercent / 100),
+            'target_taxable' => $poolTotal * ($this->bankTaxablePercent / 100),
+            'target_range' => [
+                'min' => $poolTotal * 0.68,
+                'max' => $poolTotal * 0.72,
             ],
         ];
     }
 
     /**
-     * Calculate each patient's share in taxable and non-taxable amounts
-     * Note: Card payments are summed into Bank for each patient
-     * 
-     * @param array $totals
-     * @param array $splits
-     * @return array
+     * Get patient-wise payment breakdown
      */
-    protected function calculatePatientShares(array $totals, array $splits): array
+    protected function getPatientPayments(array $totals, array $pool): array
     {
-        // Get patient-wise totals by payment method
         $patientPayments = DB::table('package_advances')
             ->select(
                 'patient_id',
@@ -200,122 +224,306 @@ class InvoiceGenerationService
         $patients = [];
         foreach ($patientPayments as $payment) {
             $patientId = $payment->patient_id;
-            
+
             if (!isset($patients[$patientId])) {
                 $patients[$patientId] = [
                     'patient_id' => $patientId,
                     'bank_paid' => 0,
                     'card_paid' => 0,
                     'cash_paid' => 0,
-                    'bank_payment_count' => 0,
-                    'card_payment_count' => 0,
-                    'cash_payment_count' => 0,
                 ];
             }
 
             if ($payment->payment_mode_id == self::PAYMENT_MODE_BANK) {
                 $patients[$patientId]['bank_paid'] = (float) $payment->total_amount;
-                $patients[$patientId]['bank_payment_count'] = (int) $payment->payment_count;
             } elseif ($payment->payment_mode_id == self::PAYMENT_MODE_CARD) {
                 $patients[$patientId]['card_paid'] = (float) $payment->total_amount;
-                $patients[$patientId]['card_payment_count'] = (int) $payment->payment_count;
             } elseif ($payment->payment_mode_id == self::PAYMENT_MODE_CASH) {
                 $patients[$patientId]['cash_paid'] = (float) $payment->total_amount;
-                $patients[$patientId]['cash_payment_count'] = (int) $payment->payment_count;
             }
         }
 
-        // Calculate shares for each patient
-        $bankTotal = $totals['bank']['total']; // This already includes card
-        $cashTotal = $totals['cash']['total'];
+        // Calculate pool share for each patient
+        foreach ($patients as $patientId => &$data) {
+            $cashUsed = $data['cash_paid'] * ($this->cashPercent / 100);
+            $poolShare = $data['bank_paid'] + $data['card_paid'] + $cashUsed;
 
-        $patientShares = [];
-        foreach ($patients as $patientId => $data) {
-            // Combine bank + card for this patient
-            $combinedBankPaid = $data['bank_paid'] + $data['card_paid'];
-            $combinedBankPaymentCount = $data['bank_payment_count'] + $data['card_payment_count'];
-
-            // Calculate percentages
-            $bankPercent = $bankTotal > 0 ? ($combinedBankPaid / $bankTotal) : 0;
-            $cashPercent = $cashTotal > 0 ? ($data['cash_paid'] / $cashTotal) : 0;
-
-            // Calculate taxable shares
-            $bankTaxableShare = $splits['bank']['taxable_amount'] * $bankPercent;
-            $cashTaxableShare = $splits['cash']['taxable_amount'] * $cashPercent;
-
-            // Calculate non-taxable shares
-            $bankNonTaxableShare = $splits['bank']['non_taxable_amount'] * $bankPercent;
-            $cashNonTaxableShare = $splits['cash']['non_taxable_amount'] * $cashPercent;
-
-            $totalPaid = $combinedBankPaid + $data['cash_paid'];
-            $totalTaxableShare = $bankTaxableShare + $cashTaxableShare;
-            $totalNonTaxableShare = $bankNonTaxableShare + $cashNonTaxableShare;
-
-            $patientShares[] = [
-                'patient_id' => $patientId,
-                'bank_paid' => round($combinedBankPaid, 2), // Bank + Card combined
-                'bank_paid_breakdown' => [
-                    'bank_transfer' => round($data['bank_paid'], 2),
-                    'card' => round($data['card_paid'], 2),
-                ],
-                'cash_paid' => round($data['cash_paid'], 2),
-                'total_paid' => round($totalPaid, 2),
-                'bank_percent' => round($bankPercent * 100, 4),
-                'cash_percent' => round($cashPercent * 100, 4),
-                'taxable_share' => [
-                    'bank' => round($bankTaxableShare, 2),
-                    'cash' => round($cashTaxableShare, 2),
-                    'total' => round($totalTaxableShare, 2),
-                ],
-                'non_taxable_share' => [
-                    'bank' => round($bankNonTaxableShare, 2),
-                    'cash' => round($cashNonTaxableShare, 2),
-                    'total' => round($totalNonTaxableShare, 2),
-                ],
-                'payment_count' => $combinedBankPaymentCount + $data['cash_payment_count'],
-                // Verification: taxable + non_taxable should equal total_paid
-                'verification' => round($totalTaxableShare + $totalNonTaxableShare, 2),
-            ];
+            $data['cash_used'] = $cashUsed;
+            $data['pool_share'] = $poolShare;
+            $data['pool_percent'] = $pool['total'] > 0 ? ($poolShare / $pool['total']) * 100 : 0;
         }
 
-        // Sort by total_paid descending
-        usort($patientShares, function ($a, $b) {
-            return $b['total_paid'] <=> $a['total_paid'];
+        // Sort by pool_share descending
+        uasort($patients, function ($a, $b) {
+            return $b['pool_share'] <=> $a['pool_share'];
         });
 
-        return $patientShares;
+        return array_values($patients);
     }
 
     /**
-     * Generate summary statistics
-     * 
-     * @param array $totals
-     * @param array $splits
-     * @param array $patientShares
-     * @return array
+     * Categorize patients into Capped, Medium, Small
      */
-    protected function generateSummary(array $totals, array $splits, array $patientShares): array
+    protected function categorizePatients(array $patients): array
     {
-        $totalTaxableShare = array_sum(array_column($patientShares, 'taxable_share'));
-        $totalNonTaxableShare = array_sum(array_column($patientShares, 'non_taxable_share'));
+        $capped = [];   // Pool share > max_exempt (58,500)
+        $medium = [];   // Pool share > 30,000 and <= max_exempt
+        $small = [];    // Pool share <= 30,000
 
-        // Fix: Calculate from nested arrays
-        $taxableSum = 0;
-        $nonTaxableSum = 0;
-        foreach ($patientShares as $share) {
-            $taxableSum += $share['taxable_share']['total'];
-            $nonTaxableSum += $share['non_taxable_share']['total'];
+        foreach ($patients as $patient) {
+            $poolShare = $patient['pool_share'];
+
+            if ($poolShare > $this->maxExemptPerPatient) {
+                $patient['category'] = 'capped';
+                $patient['max_exempt'] = $this->maxExemptPerPatient;
+                $patient['max_exempt_percent'] = ($this->maxExemptPerPatient / $poolShare) * 100;
+                $capped[] = $patient;
+            } elseif ($poolShare > 30000) {
+                $patient['category'] = 'medium';
+                $patient['max_exempt'] = $poolShare;
+                $patient['max_exempt_percent'] = 100;
+                $medium[] = $patient;
+            } else {
+                $patient['category'] = 'small';
+                $patient['max_exempt'] = $poolShare;
+                $patient['max_exempt_percent'] = 100;
+                $small[] = $patient;
+            }
         }
 
         return [
-            'total_patients' => count($patientShares),
-            'total_payments' => $totals['total_records'],
-            'grand_total' => $totals['grand_total'],
-            'taxable_total' => $splits['combined']['taxable_amount'],
-            'non_taxable_total' => $splits['combined']['non_taxable_amount'],
-            'patient_taxable_sum' => round($taxableSum, 2),
-            'patient_non_taxable_sum' => round($nonTaxableSum, 2),
-            'verification_match' => abs($totals['grand_total'] - ($taxableSum + $nonTaxableSum)) < 0.01,
+            'capped' => $capped,
+            'medium' => $medium,
+            'small' => $small,
+            'summary' => [
+                'capped_count' => count($capped),
+                'capped_pool' => array_sum(array_column($capped, 'pool_share')),
+                'capped_max_exempt' => count($capped) * $this->maxExemptPerPatient,
+                'medium_count' => count($medium),
+                'medium_pool' => array_sum(array_column($medium, 'pool_share')),
+                'medium_max_exempt' => array_sum(array_column($medium, 'pool_share')),
+                'small_count' => count($small),
+                'small_pool' => array_sum(array_column($small, 'pool_share')),
+                'small_max_exempt' => array_sum(array_column($small, 'pool_share')),
+            ],
+        ];
+    }
+
+    /**
+     * Check if 68-72% target is achievable
+     */
+    protected function checkFeasibility(array $categorized, array $pool): array
+    {
+        $summary = $categorized['summary'];
+
+        $maxPossibleExempt = $summary['capped_max_exempt'] + $summary['medium_max_exempt'] + $summary['small_max_exempt'];
+        $maxPossiblePercent = $pool['total'] > 0 ? ($maxPossibleExempt / $pool['total']) * 100 : 0;
+
+        $isAchievable = $maxPossiblePercent >= 68;
+
+        return [
+            'max_possible_exempt' => $maxPossibleExempt,
+            'max_possible_percent' => round($maxPossiblePercent, 2),
+            'target_percent' => 70,
+            'target_range' => '68-72%',
+            'is_achievable' => $isAchievable,
+            'shortfall' => $isAchievable ? 0 : ($pool['target_range']['min'] - $maxPossibleExempt),
+        ];
+    }
+
+    /**
+     * Smart algorithm to distribute exempt percentages
+     */
+    protected function distributeExemptPercentages(array $categorized, array $pool, array $feasibility): array
+    {
+        $distribution = [];
+        $targetExempt = $pool['total'] * 0.70; // Target 70%
+
+        // If not achievable, use max possible
+        if (!$feasibility['is_achievable']) {
+            $targetExempt = $feasibility['max_possible_exempt'];
+        }
+
+        // Step 1: Allocate capped patients (give them max: 58,500)
+        $cappedExempt = 0;
+        foreach ($categorized['capped'] as $patient) {
+            $exemptAmount = $this->maxExemptPerPatient;
+            $exemptPercent = ($exemptAmount / $patient['pool_share']) * 100;
+            
+            $distribution[] = [
+                'patient_id' => $patient['patient_id'],
+                'pool_share' => $patient['pool_share'],
+                'category' => 'capped',
+                'exempt_percent' => round($exemptPercent, 2),
+                'exempt_amount' => $exemptAmount,
+                'taxable_amount' => $patient['pool_share'] - $exemptAmount,
+            ];
+            $cappedExempt += $exemptAmount;
+        }
+
+        // Step 2: Allocate small patients (give them 100%)
+        $smallExempt = 0;
+        foreach ($categorized['small'] as $patient) {
+            $exemptAmount = $patient['pool_share'];
+            
+            $distribution[] = [
+                'patient_id' => $patient['patient_id'],
+                'pool_share' => $patient['pool_share'],
+                'category' => 'small',
+                'exempt_percent' => 100,
+                'exempt_amount' => $exemptAmount,
+                'taxable_amount' => 0,
+            ];
+            $smallExempt += $exemptAmount;
+        }
+
+        // Step 3: Calculate remaining for medium patients
+        $remainingForMedium = $targetExempt - $cappedExempt - $smallExempt;
+        $mediumPoolTotal = $categorized['summary']['medium_pool'];
+
+        // Calculate required percentage for medium patients
+        $mediumPercent = $mediumPoolTotal > 0 ? ($remainingForMedium / $mediumPoolTotal) * 100 : 0;
+        $mediumPercent = min(100, max(0, $mediumPercent)); // Clamp between 0-100
+
+        $mediumExempt = 0;
+        foreach ($categorized['medium'] as $patient) {
+            $exemptAmount = $patient['pool_share'] * ($mediumPercent / 100);
+            
+            $distribution[] = [
+                'patient_id' => $patient['patient_id'],
+                'pool_share' => $patient['pool_share'],
+                'category' => 'medium',
+                'exempt_percent' => round($mediumPercent, 2),
+                'exempt_amount' => round($exemptAmount, 2),
+                'taxable_amount' => round($patient['pool_share'] - $exemptAmount, 2),
+            ];
+            $mediumExempt += $exemptAmount;
+        }
+
+        // Sort by pool_share descending
+        usort($distribution, function ($a, $b) {
+            return $b['pool_share'] <=> $a['pool_share'];
+        });
+
+        return $distribution;
+    }
+
+    /**
+     * Generate exempt invoices for each patient
+     */
+    protected function generateInvoices(array $distribution): array
+    {
+        $invoices = [];
+        $invoiceNumber = 1;
+
+        foreach ($distribution as $patient) {
+            $exemptAmount = $patient['exempt_amount'];
+            
+            // Calculate number of invoices (each invoice = consultation_amount)
+            $numInvoices = floor($exemptAmount / $this->consultationAmount);
+            $remainder = $exemptAmount - ($numInvoices * $this->consultationAmount);
+
+            if ($numInvoices == 0) {
+                continue;
+            }
+
+            // Get available dates for this patient (with 1-day gap)
+            $patientDates = $this->getPatientInvoiceDates($numInvoices);
+
+            $invoiceIndex = 0;
+            foreach ($patientDates as $dateInfo) {
+                $date = $dateInfo['date'];
+                $invoicesOnThisDay = $dateInfo['count'];
+
+                for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
+                    $invoices[] = [
+                        'invoice_number' => sprintf('INV-%s-%05d', $this->dateFrom->format('Ym'), $invoiceNumber),
+                        'patient_id' => $patient['patient_id'],
+                        'invoice_date' => $date->format('Y-m-d'),
+                        'amount' => $this->consultationAmount,
+                        'type' => 'exempt',
+                    ];
+                    $invoiceNumber++;
+                    $invoiceIndex++;
+                }
+            }
+        }
+
+        return $invoices;
+    }
+
+    /**
+     * Get invoice dates for a patient with 1-day gap rule
+     */
+    protected function getPatientInvoiceDates(int $numInvoices): array
+    {
+        $dates = [];
+        $invoicesRemaining = $numInvoices;
+        $workingDayIndex = 0;
+        $totalWorkingDays = count($this->workingDays);
+
+        while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
+            $invoicesOnThisDay = min(3, $invoicesRemaining); // Max 3 per day
+            
+            $dates[] = [
+                'date' => $this->workingDays[$workingDayIndex],
+                'count' => $invoicesOnThisDay,
+            ];
+            
+            $invoicesRemaining -= $invoicesOnThisDay;
+            $workingDayIndex += 2; // Skip 1 day (1-day gap)
+        }
+
+        // If we still have invoices remaining, fill in the gaps
+        if ($invoicesRemaining > 0) {
+            $workingDayIndex = 1; // Start from first skipped day
+            while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
+                $invoicesOnThisDay = min(3, $invoicesRemaining);
+                
+                $dates[] = [
+                    'date' => $this->workingDays[$workingDayIndex],
+                    'count' => $invoicesOnThisDay,
+                ];
+                
+                $invoicesRemaining -= $invoicesOnThisDay;
+                $workingDayIndex += 2;
+            }
+        }
+
+        // Sort dates
+        usort($dates, function ($a, $b) {
+            return $a['date'] <=> $b['date'];
+        });
+
+        return $dates;
+    }
+
+    /**
+     * Calculate final summary
+     */
+    protected function calculateSummary(array $distribution, array $invoices, array $pool): array
+    {
+        $totalExemptAmount = array_sum(array_column($distribution, 'exempt_amount'));
+        $totalTaxableAmount = array_sum(array_column($distribution, 'taxable_amount'));
+        $totalInvoiceAmount = array_sum(array_column($invoices, 'amount'));
+
+        // Calculate remainder (exempt amount that couldn't become invoices)
+        $remainder = $totalExemptAmount - $totalInvoiceAmount;
+
+        return [
+            'total_patients' => count($distribution),
+            'total_pool' => $pool['total'],
+            'total_exempt_calculated' => round($totalExemptAmount, 2),
+            'total_exempt_invoiced' => $totalInvoiceAmount,
+            'total_taxable' => round($totalTaxableAmount + $remainder, 2),
+            'remainder_to_taxable' => round($remainder, 2),
+            'exempt_percent' => $pool['total'] > 0 ? round(($totalInvoiceAmount / $pool['total']) * 100, 2) : 0,
+            'total_invoices' => count($invoices),
+            'verification' => [
+                'pool_total' => $pool['total'],
+                'invoiced_plus_taxable' => $totalInvoiceAmount + $totalTaxableAmount + $remainder,
+                'match' => abs($pool['total'] - ($totalInvoiceAmount + $totalTaxableAmount + $remainder)) < 1,
+            ],
         ];
     }
 }
