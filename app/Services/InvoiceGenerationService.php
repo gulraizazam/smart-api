@@ -334,7 +334,7 @@ class InvoiceGenerationService
     }
 
     /**
-     * Check if 68-72% target is achievable
+     * Check if target range is achievable
      */
     protected function checkFeasibility(array $categorized, array $pool): array
     {
@@ -343,13 +343,15 @@ class InvoiceGenerationService
         $maxPossibleExempt = $summary['capped_max_exempt'] + $summary['medium_max_exempt'] + $summary['small_max_exempt'];
         $maxPossiblePercent = $pool['total'] > 0 ? ($maxPossibleExempt / $pool['total']) * 100 : 0;
 
-        $isAchievable = $maxPossiblePercent >= 68;
+        // Use dynamic target range minimum
+        $minTargetPercent = $pool['target_range']['min_percent'];
+        $isAchievable = $maxPossiblePercent >= $minTargetPercent;
 
         return [
             'max_possible_exempt' => $maxPossibleExempt,
             'max_possible_percent' => round($maxPossiblePercent, 2),
-            'target_percent' => 70,
-            'target_range' => '68-72%',
+            'target_percent' => $pool['exempt_percent'],
+            'target_range' => $minTargetPercent . '-' . $pool['target_range']['max_percent'] . '%',
             'is_achievable' => $isAchievable,
             'shortfall' => $isAchievable ? 0 : ($pool['target_range']['min'] - $maxPossibleExempt),
         ];
@@ -361,7 +363,8 @@ class InvoiceGenerationService
     protected function distributeExemptPercentages(array $categorized, array $pool, array $feasibility): array
     {
         $distribution = [];
-        $targetExempt = $pool['total'] * 0.70; // Target 70%
+        // Use dynamic exempt percent from pool
+        $targetExempt = $pool['target_exempt'];
 
         // If not achievable, use max possible
         if (!$feasibility['is_achievable']) {
