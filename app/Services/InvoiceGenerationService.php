@@ -451,6 +451,8 @@ class InvoiceGenerationService
     protected function generateInvoices(array $distribution, string $type = 'exempt'): array
     {
         $invoices = [];
+        // Get month from date range (use start date)
+        $month = $this->dateFrom->format('m');
 
         foreach ($distribution as $patient) {
             $exemptAmount = $patient['exempt_amount'];
@@ -475,18 +477,20 @@ class InvoiceGenerationService
             // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
+            // Generate random number (1-999) for this patient
+            $randomNum = rand(1, 999);
+
             // Get available dates for this patient (with 1-day gap)
             $patientDates = $this->getPatientInvoiceDates($numInvoices);
 
             $invoiceIndex = 0;
-            $increment = 1;
             foreach ($patientDates as $dateInfo) {
                 $date = $dateInfo['date'];
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < $numInvoices; $i++) {
-                    // Format: patientID-planID-increment
-                    $invoiceNumber = sprintf('%d-%d-%d', $patientId, $planId, $increment);
+                    // Format: patientID-planID-month-random
+                    $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
                     
                     $invoices[] = [
                         'invoice_number' => $invoiceNumber,
@@ -496,7 +500,7 @@ class InvoiceGenerationService
                         'amount' => $this->consultationAmount,
                         'type' => $type,
                     ];
-                    $increment++;
+                    
                     $invoiceIndex++;
                 }
             }
@@ -516,6 +520,8 @@ class InvoiceGenerationService
    protected function generateTaxableInvoices(array $distribution): array
     {
         $invoices = [];
+        // Get month from date range (use start date)
+        $month = $this->dateFrom->format('m');
 
         foreach ($distribution as $patient) {
             $taxableAmount = $patient['taxable_amount'];
@@ -534,8 +540,11 @@ class InvoiceGenerationService
                 ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
                 ->value('package_id');
 
-            // If no plan_id found, use 0 as default
+           // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
+
+            // Generate random number (1-999) for this patient
+            $randomNum = rand(1, 999);
 
             // Generate random invoice amounts between 1000-10000
             $remainingAmount = $taxableAmount;
@@ -564,9 +573,8 @@ class InvoiceGenerationService
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
-                    // Format: patientID-planID-AlphabeticSuffix (A, B, C... Z, AA, AB...)
-                    $alphaSuffix = $this->numberToAlpha($invoiceIndex + 1);
-                    $invoiceNumber = sprintf('%d-%d-%s', $patientId, $planId, $alphaSuffix);
+                    // Format: patientID-planID-month-random
+                    $invoiceNumber = sprintf('%d-%d-%s-%d', $patientId, $planId, $month, $randomNum);
                     
                     $invoices[] = [
                         'invoice_number' => $invoiceNumber,
