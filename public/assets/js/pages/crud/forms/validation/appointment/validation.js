@@ -158,7 +158,18 @@ var EditAppointmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                  reInitTable('consultancy');
+
+                    // Check if calendar view is active
+                    if ($('.consultancy-section').is(':visible') && !$('.consultancy-section').hasClass('d-none')) {
+                        // Refresh calendar if visible
+                        if (typeof calendar !== 'undefined' && typeof start_date !== 'undefined') {
+                            reInitCalendar(start_date, calendar, ConsultancyCalendar);
+                        } else {
+                            reInitTable('consultancy');
+                        }
+                    } else {
+                        reInitTable('consultancy');
+                    }
                 } else {
                     toastr.error(response.message);
                 }
@@ -248,7 +259,17 @@ var CreateConsultancytValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
+
+                    // Store the newly created appointment ID for highlighting
+                    var newAppointmentId = response.data && response.data.appointment ? response.data.appointment.id : null;
+
+                    // Refresh calendar
                     reInitCalendar(start_date, calendar, ConsultancyCalendar);
+
+                    // Highlight the new appointment if ID is available
+                    if (newAppointmentId && $('#custom_resource_calendar').is(':visible')) {
+                        CustomResourceCalendar.highlightNewAppointment(newAppointmentId);
+                    }
                 } else {
                     toastr.error(response.message);
                 }
@@ -273,17 +294,11 @@ var CreateTreatmentValidation = function () {
             form,
             {
                 fields: {
-                    base_service_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The service field is required'
-                            }
-                        }
-                    },
+                    // base_service_id validation removed - now auto-populated from service_id parent
                     service_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The child service field is required'
+                                message: 'The service field is required'
                             }
                         }
                     },
@@ -345,7 +360,24 @@ var CreateTreatmentValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
+
+                    // Hide warning div and reset checkboxes
+                    $('#treatment_doctor_warning').addClass('d-none');
+                    $('#use_previous_doctor').prop('checked', false);
+                    $('#use_selected_doctor').prop('checked', false);
+
+                    // Check if resource calendar is visible
+                    if ($('#custom_treatment_resource_calendar').is(':visible')) {
+                        // Reload resource calendar
+                        if (typeof TreatmentResourceCalendar !== 'undefined') {
+                            TreatmentResourceCalendar.reload();
+                        }
+                    } else {
+                        // Refresh regular calendar
+                        if (typeof treatment_calendar !== 'undefined') {
+                            treatment_calendar.refetchEvents();
+                        }
+                    }
                 } else {
                     toastr.error(response.message);
                 }
@@ -489,7 +521,7 @@ var AppointPlanValidation = function () {
                     city_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The city field is required'
+                                message: 'The location field is required'
                             }
                         }
                     },
@@ -563,7 +595,19 @@ var AppointPlanValidation = function () {
                 if (response.status) {
                     toastr.success(response.message);
                     closePopup(modal_id);
-                    reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
+
+                    // Check if resource calendar is visible
+                    if ($('#custom_treatment_resource_calendar').is(':visible')) {
+                        // Reload resource calendar
+                        if (typeof TreatmentResourceCalendar !== 'undefined') {
+                            TreatmentResourceCalendar.reload();
+                        }
+                    } else {
+                        // Refresh regular calendar
+                        if (typeof treatment_calendar !== 'undefined') {
+                            treatment_calendar.refetchEvents();
+                        }
+                    }
                 } else {
                     toastr.error(response.message);
                 }

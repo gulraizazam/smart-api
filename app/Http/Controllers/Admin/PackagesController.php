@@ -1209,6 +1209,10 @@ class PackagesController extends Controller
         /*end*/
         $today = Carbon::now()->toDateString();
 
+        // Get logged-in user's role IDs
+        $userRoleIds = Auth::user()->user_roles()->pluck('role_id')->toArray();
+        $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+
         $bundle = Bundles::find($request->bundle_id);
 
         if ($bundle && $bundle->type == 'single') {
@@ -1224,12 +1228,20 @@ class PackagesController extends Controller
 
             $discountIds = DiscountWidget::loadPlanDsicountByLocationService($location_id, $service_id, Auth::User()->account_id);
            
-            $generalDiscounts = Discounts::whereIn('id', $discountIds)
+            $generalDiscountsQuery = Discounts::whereIn('id', $discountIds)
             ->where('discount_type', '!=', 'voucher')
             ->where('active', '=', '1')
             ->whereDate('start', '<=', $today)
-            ->whereDate('end', '>=', $today)
-            ->get();
+            ->whereDate('end', '>=', $today);
+
+            // Apply role filter only if not super admin
+            if (!$isSuperAdmin) {
+                $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
+                    $query->whereIn('role_id', $userRoleIds);
+                });
+            }
+
+            $generalDiscounts = $generalDiscountsQuery->get();
 
         // Fetch VOUCHER discounts (user-specific)
         $voucherDiscounts = Collection::make();
@@ -1240,13 +1252,14 @@ class PackagesController extends Controller
         
         if ($checkUserVouchers) {
             // Get voucher discounts that match BOTH location/service AND user assignment
-            $voucherDiscounts = Discounts::whereIn('id', $discountIds)
+            $voucherDiscountsQuery = Discounts::whereIn('id', $discountIds)
                 ->whereIn('id', $checkUserVouchers)
-                ->where('discount_type', '=', 'voucher')
-              
-              
-                ->get();
-                  
+                ->where('discount_type', '=', 'voucher');
+
+            // Apply role filter only if not super admin
+            
+
+            $voucherDiscounts = $voucherDiscountsQuery->get();
         }
 
         // Merge both collections
@@ -1275,12 +1288,20 @@ class PackagesController extends Controller
                     }
                 }
                // Fetch NON-VOUCHER discounts
-            $generalDiscounts = Discounts::whereIn('id', $uniq_array)
+            $generalDiscountsQuery = Discounts::whereIn('id', $uniq_array)
                 ->where('discount_type', '!=', 'voucher')
                 ->where('active', '=', '1')
                 ->whereDate('start', '<=', $today)
-                ->whereDate('end', '>=', $today)
-                ->get();
+                ->whereDate('end', '>=', $today);
+
+            // Apply role filter only if not super admin
+            if (!$isSuperAdmin) {
+                $generalDiscountsQuery->whereHas('roles', function($query) use ($userRoleIds) {
+                    $query->whereIn('role_id', $userRoleIds);
+                });
+            }
+
+            $generalDiscounts = $generalDiscountsQuery->get();
 
             // Fetch VOUCHER discounts
             $voucherDiscounts = Collection::make();
@@ -1289,12 +1310,14 @@ class PackagesController extends Controller
                 ->toArray();
             
             if ($checkUserVouchers) {
-                $voucherDiscounts = Discounts::whereIn('id', $uniq_array)
+                $voucherDiscountsQuery = Discounts::whereIn('id', $uniq_array)
                     ->whereIn('id', $checkUserVouchers)
-                    ->where('discount_type', '=', 'voucher')
-                    
-                   
-                    ->get();
+                    ->where('discount_type', '=', 'voucher');
+
+                // Apply role filter only if not super admin
+               
+
+                $voucherDiscounts = $voucherDiscountsQuery->get();
             }
 
                 // Merge both collections
@@ -2324,7 +2347,7 @@ class PackagesController extends Controller
 
         // Fetch active doctors as an associative array
         $allDoctors = User::whereIn('id', $doctorsIds)
-            ->where('active', 1)
+           // ->where('active', 1)
             ->pluck('name', 'id')
             ->toArray();
 
@@ -2405,6 +2428,7 @@ class PackagesController extends Controller
                 $locationId = $request->location_id ?? $package->location_id;
                 $currentSoldBy = $packageService->sold_by;
                 $packageServices = [$packageService];
+                $serviceId = $packageService->service_id;
             } elseif ($request->has('package_bundle_id')) {
                 $packageBundle = PackageBundles::find($request->package_bundle_id);
 
@@ -2424,10 +2448,10 @@ class PackagesController extends Controller
 
                 // Get the first service's sold_by as default
                 $currentSoldBy = $packageServices->first()->sold_by;
+                $serviceId = $packageServices->first()->service_id;
             } else {
                 return ApiHelper::apiResponse($this->notfound, 'Package service or bundle ID required', false);
             }
-
             // Get all active doctors from the location
             $doctorsIds = DoctorHasLocations::where('is_allocated',1)->where('location_id', $locationId)->pluck('user_id')->toArray();
 
@@ -2455,46 +2479,26 @@ class PackagesController extends Controller
             // Get selected user ID (current sold_by)
             $selectedUserId = $currentSoldBy;
 
-            // Check for treatments in last 30 days
-            $thirtyDaysAgo = now()->subDays(30);
-
-            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
-                ->where('location_id', $locationId)
-                ->where('appointment_status_id', 2)
-                ->where('appointment_type_id', 2)
-                ->where('scheduled_date', '>=', $thirtyDaysAgo)
-                ->pluck('doctor_id')
-                ->unique()
-                ->toArray();
-
-            // Determine which users to show: selected user + recent treatment doctors + FDM users
-            $userIdsToShow = [];
-            if (!empty($recentTreatmentDoctorIds)) {
-                // Treatments found in last 30 days: show selectedUserId + recent treatment doctors + FDM users
-                $userIdsToShow = array_unique(array_merge(
-                    $selectedUserId ? [$selectedUserId] : [],
-                    $recentTreatmentDoctorIds,
-                    $fdmUserIds
-                ));
-            } else {
-                // No treatments in last 30 days: show only selectedUserId + FDM users
-                $userIdsToShow = array_unique(array_merge(
-                    $selectedUserId ? [$selectedUserId] : [],
-                    $fdmUserIds
-                ));
-            }
-
-            // Filter users to only those that should be shown
+            // Show all active doctors and FDM users from the branch (no date filtering)
             $usersToShow = [];
 
-            // First add doctors from allDoctors
-            foreach ($userIdsToShow as $userId) {
-                if (array_key_exists($userId, $allDoctors)) {
-                    $usersToShow[$userId] = $allDoctors[$userId];
+            // First, ensure the currently selected user (sold_by) is ALWAYS included, even if inactive
+            // This is important for editing - user needs to see who it's currently assigned to
+            if ($selectedUserId) {
+                $currentSoldByUser = User::find($selectedUserId);
+                if ($currentSoldByUser) {
+                    $usersToShow[$currentSoldByUser->id] = $currentSoldByUser->name;
                 }
             }
 
-            // Then add FDM users
+            // Add all active doctors from the location
+            foreach ($allDoctors as $doctorId => $doctorName) {
+                if (!array_key_exists($doctorId, $usersToShow)) {
+                    $usersToShow[$doctorId] = $doctorName;
+                }
+            }
+
+            // Add all active FDM users from the location
             if (!empty($fdmUserIds)) {
                 $FDMUsers = User::whereIn('id', $fdmUserIds)
                     ->where('active', 1)
@@ -2556,6 +2560,107 @@ class PackagesController extends Controller
             }
 
             return ApiHelper::apiResponse($this->notfound, 'Package service ID required', false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /*
+     * Check if service is duplicate and return appropriate sold by users
+     */
+    public function checkDuplicateServiceForSoldBy(Request $request)
+    {
+        try {
+            $bundleId = $request->bundle_id;
+            $packageId = $request->package_id;
+            $locationId = $request->location_id;
+
+            // Find the package by random_id
+            $package = Packages::where('random_id', $packageId)->first();
+
+            if (!$package) {
+                return ApiHelper::apiResponse($this->notfound, 'Package not found', false);
+            }
+
+            // Get all services in the current package for this bundle
+            $existingServices = PackageService::join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                ->where('package_services.package_id', $package->id)
+                ->where('package_bundles.bundle_id', $bundleId)
+                ->count();
+
+            $isDuplicateService = $existingServices > 0;
+
+            // If duplicate service, only show the doctor from the appointment (even if inactive)
+            if ($isDuplicateService) {
+                $package->load('appointment.doctor');
+
+                $usersToShow = [];
+
+                // Always include appointment doctor, even if inactive
+                if ($package->appointment && $package->appointment->doctor_id) {
+                    $appointmentDoctor = User::find($package->appointment->doctor_id);
+
+                    if ($appointmentDoctor) {
+                        $usersToShow[$appointmentDoctor->id] = $appointmentDoctor->name;
+                    }
+                }
+
+                return ApiHelper::apiResponse($this->success, 'Duplicate service detected', true, [
+                    'users' => $usersToShow,
+                    'is_duplicate' => true
+                ]);
+            }
+
+            // If not duplicate, show doctors who have treated this patient in last 60 days
+            $sixtyDaysAgo = now()->subDays(60);
+
+            $recentTreatmentDoctorIds = Appointments::where('patient_id', $package->patient_id)
+                ->where('location_id', $locationId)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $sixtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Get all active doctors from the location
+            $doctorsIds = DoctorHasLocations::where('is_allocated', 1)
+                ->where('location_id', $locationId)
+                ->pluck('user_id')
+                ->toArray();
+
+            $allDoctors = User::whereIn('id', $doctorsIds)
+                ->where('active', 1)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            $usersToShow = [];
+
+            // Add doctors who treated patient in last 60 days
+            foreach ($recentTreatmentDoctorIds as $doctorId) {
+                if (array_key_exists($doctorId, $allDoctors)) {
+                    $usersToShow[$doctorId] = $allDoctors[$doctorId];
+                }
+            }
+
+            // If no recent history and no doctors found, return the appointment doctor
+            if (empty($usersToShow)) {
+                $package->load('appointment.doctor');
+
+                // Include appointment doctor, even if inactive
+                if ($package->appointment && $package->appointment->doctor_id) {
+                    $appointmentDoctor = User::find($package->appointment->doctor_id);
+
+                    if ($appointmentDoctor) {
+                        $usersToShow[$appointmentDoctor->id] = $appointmentDoctor->name;
+                    }
+                }
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Service not duplicate', true, [
+                'users' => $usersToShow,
+                'is_duplicate' => false
+            ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }

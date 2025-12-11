@@ -41,16 +41,33 @@
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_appointment_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
+                {{-- Warning div for doctor mismatch --}}
+                <div id="treatment_doctor_warning" class="alert alert-warning d-none" style="background-color: #FFEB3B; border-color: #FDD835; color: #000000;">
+                    <div class="mb-3">
+                        <strong>Attention:</strong> <span id="warning_message"></span>
+                    </div>
+                    <div class="form-check mb-2" style="display: flex; align-items: center;">
+                        <input class="form-check-input" type="radio" id="use_previous_doctor" name="doctor_choice" value="previous" style="width: 20px; height: 20px; cursor: pointer; margin: 0; flex-shrink: 0;">
+                        <label class="form-check-label" for="use_previous_doctor" style="cursor: pointer; margin-left: 10px; margin-bottom: 0;">
+                            <span id="previous_doctor_option" style="margin-left:15px"></span>
+                        </label>
+                    </div>
+                    <div class="form-check" style="display: flex; align-items: center;">
+                        <input class="form-check-input" type="radio" id="use_selected_doctor" name="doctor_choice" value="selected" style="width: 20px; height: 20px; cursor: pointer; margin: 0; flex-shrink: 0;">
+                        <label class="form-check-label" for="use_selected_doctor" style="cursor: pointer; margin-left: 24px; margin-bottom: 0;">
+                            Proceed with <span id="selected_doctor_option"></span>
+                        </label>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Service <span class="text text-danger">*</span> </label>
-                            <select id="create_treatment_base_service" onchange="loadEndServices($(this).val());" class="form-control select2" name="base_service_id"></select>
-                        </div>
+                        {{-- Hide base service dropdown - validation removed since it's auto-populated from service_id --}}
+                        <input type="hidden" id="create_treatment_base_service" name="base_service_id">
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Child Service <span class="text text-danger">*</span> </label>
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Service <span class="text text-danger">*</span> </label>
                             <select id="create_treatment_service" class="form-control select2" name="service_id"></select>
                         </div>
 

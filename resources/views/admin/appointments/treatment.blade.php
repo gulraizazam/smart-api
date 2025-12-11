@@ -4,6 +4,215 @@
 
     @push('css')
         <link href="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.css')}}" rel="stylesheet" type="text/css" />
+        <style>
+            /* Custom Resource Calendar Styles */
+            .resource-calendar-container {
+                display: flex;
+                flex-direction: column;
+                border: 1px solid #e4e6ef;
+                background: #fff;
+                min-height: 600px;
+            }
+            .resource-calendar-container * {
+                box-sizing: border-box;
+            }
+            .resource-calendar-header {
+                display: flex;
+                border-bottom: 2px solid #e4e6ef;
+                background: #f3f6f9;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                overflow-y: scroll;
+                overflow-x: hidden;
+            }
+            .resource-calendar-header::-webkit-scrollbar {
+                width: 17px;
+                height: 0;
+            }
+            .resource-calendar-header::-webkit-scrollbar-track {
+                background: transparent;
+            }
+            .resource-calendar-header::-webkit-scrollbar-thumb {
+                background: transparent;
+            }
+            .resource-calendar-header-doctors {
+                display: flex;
+                flex: 1;
+                min-width: 0;
+            }
+            .resource-time-column {
+                width: 80px;
+                min-width: 80px;
+                max-width: 80px;
+                flex: 0 0 80px;
+                border-right: 2px solid #e4e6ef;
+                background: #f3f6f9;
+                font-weight: 600;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 15px 5px;
+            }
+            .resource-doctor-header {
+                flex: 1;
+                min-width: 0;
+                padding: 15px 10px;
+                text-align: center;
+                font-weight: 600;
+                border-right: 1px solid #e4e6ef;
+                background: #043464;
+                color: #fff;
+                word-wrap: break-word;
+                overflow: hidden;
+            }
+            .resource-calendar-body {
+                display: flex;
+                overflow-y: scroll;
+                overflow-x: hidden;
+                max-height: 700px;
+            }
+            .resource-time-slots {
+                width: 80px;
+                min-width: 80px;
+                max-width: 80px;
+                flex: 0 0 80px;
+                border-right: 2px solid #e4e6ef;
+                background: #f3f6f9;
+                display: flex;
+                flex-direction: column;
+            }
+            .resource-time-slot {
+                height: 60px;
+                min-height: 60px;
+                flex-shrink: 0;
+                border-bottom: 1px solid #e4e6ef;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: 600;
+                color: #7e8299;
+                box-sizing: border-box;
+            }
+            .resource-time-slot:last-child {
+                border-bottom: 1px solid #e4e6ef;
+            }
+            .resource-doctors-container {
+                display: flex;
+                flex: 1;
+                min-width: 0;
+                align-items: stretch;
+            }
+            .resource-doctor-column {
+                flex: 1 1 0;
+                min-width: 0;
+                border-right: 1px solid #e4e6ef;
+                position: relative;
+                background: #fff;
+                display: flex;
+                flex-direction: column;
+            }
+            .resource-doctor-slot {
+                height: 60px;
+                min-height: 60px;
+                flex-shrink: 0;
+                border-bottom: 1px solid #e4e6ef;
+                position: relative;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+            }
+            .resource-doctor-slot:last-child {
+                border-bottom: 1px solid #e4e6ef;
+            }
+            .resource-doctor-slot:hover {
+                background: #f3f6f9;
+            }
+            .resource-doctor-slot.has-rota {
+                background: #e8fff3 !important;
+                cursor: pointer !important;
+            }
+            .resource-doctor-slot.has-rota:hover {
+                background: #d4f7e3 !important;
+            }
+            .resource-appointment {
+                position: absolute;
+                left: 2px;
+                right: 2px;
+                background: #3699ff;
+                color: #fff;
+                padding: 8px 10px;
+                border-radius: 6px;
+                font-size: 11px;
+                overflow: hidden;
+                cursor: move;
+                border: 1px solid transparent;
+                border-left: 4px solid #187de4;
+                z-index: 5;
+                line-height: 1.4;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .resource-appointment:hover {
+                transform: translateY(-2px) scale(1.02);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.2), 0 0 0 1px rgba(255,255,255,0.3);
+                z-index: 10;
+                filter: brightness(1.1);
+            }
+            .resource-appointment.modern-card {
+                backdrop-filter: blur(10px);
+            }
+            .resource-calendar-nav {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 15px 20px;
+                background: #f3f6f9;
+                border-bottom: 1px solid #e4e6ef;
+                margin-bottom: 10px;
+            }
+            .resource-calendar-nav button {
+                padding: 8px 16px;
+                margin: 0 5px;
+            }
+            .resource-calendar-nav .current-date {
+                font-weight: 600;
+                font-size: 16px;
+                padding: 8px 16px;
+                background: #fff;
+                border-radius: 4px;
+                border: 1px solid #e4e6ef;
+                transition: all 0.2s;
+                display: inline-flex;
+                align-items: center;
+                margin-right: 600px;
+            }
+            .resource-calendar-nav .current-date:hover {
+                background: #f3f6f9;
+                border-color: #3699ff;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            }
+            /* Drag and Drop Styles */
+            .resource-appointment.dragging {
+                opacity: 0.3;
+                cursor: move;
+                pointer-events: none !important;
+            }
+            .resource-appointment.dragging * {
+                pointer-events: none !important;
+            }
+            .resource-doctor-slot.drag-over {
+                background: #d4f7e3 !important;
+                border: 2px dashed #1BC5BD !important;
+            }
+            .resource-appointment {
+                cursor: move;
+            }
+            .resource-appointment:hover {
+                cursor: move;
+            }
+        </style>
     @endpush
     <!--begin::Content-->
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -20,7 +229,7 @@
                 <!--begin::Card-->
                 <div class="card card-custom">
                     <div class="card-header py-3">
-                        <div class="card-title">
+                        <div class="card-title align-items-center">
                             <span class="card-icon">
                                 <span class="svg-icon svg-icon-md svg-icon-primary">
                                     <!--begin::Svg Icon | path:assets/media/svg/icons/Shopping/Chart-bar1.svg-->
@@ -36,7 +245,24 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                            <h3 class="card-label change-label">Treatments</h3>
+                            <h3 class="card-label change-label">Manage Treatment</h3>
+
+                            @php
+                                $userCentres = $userCentres ?? [];
+                                $showDropdown = count($userCentres) > 1;
+                            @endphp
+
+                            @if($showDropdown)
+                            <div class="ml-5 treatment-location-header-dropdown d-none" style="min-width: 250px;">
+                               
+                                <select class="form-control" id="treatment_location_filter"></select>
+                            </div>
+                            @else
+                            <!-- Hidden dropdown for single-centre users -->
+                            <div style="display: none;">
+                                <select class="form-control" id="treatment_location_filter"></select>
+                            </div>
+                            @endif
 
                         </div>
 
@@ -133,9 +359,20 @@
                     <!--End Consultancy Section-->
 
                     <!--Start Treatment Section-->
-                    <div class="card-body appointment treatment-section d-none">
+                    <div class="card-body appointment treatment-section d-none" style="padding:0 !important">
 
                         @include('admin.appointments.services.filters')
+
+                        {{-- Custom Resource Calendar View for Treatments --}}
+                        <div id="custom_treatment_resource_calendar" style="display: none; position: relative;">
+                            <div class="appointment-loader-base" style="display: none;">
+                                <div class="blockui"> <span>Please wait...</span>
+                                    <span>
+                                        <div class="spinner spinner-primary"></div>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
 
                         <div id="treatment_calendar" style="position: relative">
 
@@ -173,6 +410,17 @@
                 console.log(result);
                 if (typeof result.tab !== 'undefined') {
                     $("." + result.tab+ '-tab').click();
+                    // Show location dropdown if tab is treatment
+                    if (result.tab === 'treatment') {
+                        $(".treatment-location-header-dropdown").removeClass("d-none");
+                        // Initialize select2 and load locations for treatment dropdown
+                        setTimeout(function() {
+                            $('#treatment_location_filter').select2({ width: '100%' });
+                            if ($('#treatment_location_filter option').length <= 1) {
+                                loadLocations('', 'treatment');
+                            }
+                        }, 300);
+                    }
                 } else {
                     $(".appointment-tab").addClass("nav-bar-active")
                 }
@@ -338,16 +586,80 @@
                 });
             }
 
+            // Auto-trigger calendar for single centre users (Treatment)
+            function autoTriggerTreatmentCalendarForSingleCentre() {
+                // Check if userCentres is defined and has exactly one centre
+                if (typeof window.userCentres !== 'undefined' && window.userCentres.length === 1) {
+                    var singleCentreId = window.userCentres[0];
+
+                    // Check if treatment section is visible
+                    var result = get_query();
+                    var isTreatmentVisible = $('.treatment-section').is(':visible') && !$('.treatment-section').hasClass('d-none');
+
+                    if (isTreatmentVisible || (typeof result.tab !== 'undefined' && result.tab === 'treatment')) {
+                        // Only trigger if calendar is not already loaded
+                        if ($('#treatment_location_filter').val() === '' || $('#treatment_location_filter').val() === null) {
+                            // First, ensure the location dropdown is populated
+                            $.ajax({
+                                headers: {
+                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                },
+                                url: route('admin.appointments.load_locations'),
+                                type: 'POST',
+                                data: {
+                                    city_id: ''
+                                },
+                                cache: false,
+                                success: function(response) {
+                                    if (response.status && response.data.dropdown) {
+                                        var dropdown_options = '';
+                                        Object.entries(response.data.dropdown).forEach(function (dropdown) {
+                                            dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
+                                        });
+                                        $('#treatment_location_filter').html(dropdown_options);
+
+                                        // Now set the value and trigger calendar
+                                        setTimeout(function() {
+                                            $("#treatment_location_filter").val(singleCentreId);
+                                            console.log('Auto-triggering treatment calendar for centre ID:', singleCentreId);
+                                            loadDoctors(singleCentreId, 'treatment');
+                                        }, 300);
+                                    }
+                                },
+                                error: function(xhr, ajaxOptions, thrownError) {
+                                    console.error('Failed to load locations for treatment auto-trigger');
+                                }
+                            });
+                        }
+                    }
+                }
+            }
+
+            // Call auto-trigger on page load and when treatment tab is clicked
+            $(document).ready(function() {
+                // Trigger after a delay to ensure page is fully loaded
+                setTimeout(function() {
+                    autoTriggerTreatmentCalendarForSingleCentre();
+                }, 800);
+            });
+
+            // Also trigger when treatment tab is clicked
+            $(document).on('click', '.treatment-tab', function() {
+                setTimeout(function() {
+                    autoTriggerTreatmentCalendarForSingleCentre();
+                }, 800);
+            });
+
         </script>
         <script src="{{asset('assets/js/pages/appointment/invoice.js?v=1')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-calendar.js?v=' . time())}}"></script>
 
         <script src="{{asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/treatment-data.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/treatment-data.js?v=6')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/feedbacks/feedbacks.js')}}"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/appointment/validation.js')}}"></script>
         <script src="{{asset('assets/js/pages/appointment/plan/create.js')}}"></script>
-        <script src="{{asset('assets/js/pages/appointment/common.js')}}"></script>
+        <script src="{{asset('assets/js/pages/appointment/common.js?v=8')}}"></script>
 
     @endpush
 

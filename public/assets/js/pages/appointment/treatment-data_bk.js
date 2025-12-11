@@ -66,7 +66,7 @@ jQuery(document).ready(function() {
 
 
 var counter = 0;
-var treatmentDoctorListener = function (doctorId) {
+window.treatmentDoctorListener = function (doctorId) {
 
     setQueryStringParameter('doctor_id', doctorId);
 
@@ -76,50 +76,6 @@ var treatmentDoctorListener = function (doctorId) {
 
     counter = counter+1;
 }
-
-let loadMachine = function(locationId) {
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.appointments.center_machines', {
-            location_id: locationId,
-        }),
-        type: 'GET',
-        data: {
-            location_id: locationId
-        },
-        cache: false,
-        success: function(response) {
-            if(response.status) {
-
-                let dropdowns =  response.data.dropdown;
-                let dropdown_options =  '<option value="">Select a Machine</option>';
-
-                Object.entries(dropdowns).forEach(function (dropdown) {
-                    dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
-                });
-
-                let result = get_query();
-
-                $('#treatment_resource_filter').html(dropdown_options);
-
-                if (typeof result.machine_id !== "undefined") {
-                   // $("#treatment_resource_filter").val(result.machine_id).change();
-                }
-
-              //  $('.select2').select2({ width: '100%' });
-            } else {
-                resetDoctors();
-            }
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            resetDoctors();
-        }
-    });
-}
-
 
 let machineListener = function (machineId) {
 
@@ -162,7 +118,7 @@ function loadCalendar() {
 }
 
 
-var loadEndServices = function (baseServiceId) {
+window.loadEndServices = function (baseServiceId) {
     if(baseServiceId != '') {
         $.ajax({
             headers: {
