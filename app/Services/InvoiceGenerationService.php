@@ -401,6 +401,12 @@ class InvoiceGenerationService
             $exemptAmount = $numInvoices * $this->consultationAmount;
             $taxableAmount = $patient['pool_share'] - $exemptAmount;
             
+            // If taxable remainder is less than 1000, move last exempt invoice to taxable
+            if ($taxableAmount > 0 && $taxableAmount < 1000 && $numInvoices > 0) {
+                $exemptAmount -= $this->consultationAmount;
+                $taxableAmount += $this->consultationAmount;
+            }
+            
             $distribution[] = [
                 'patient_id' => $patient['patient_id'],
                 'pool_share' => $patient['pool_share'],
