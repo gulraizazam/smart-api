@@ -117,8 +117,8 @@ class InvoiceGenerationService
     {
         $totalWorkingDays = count($this->workingDays);
         
-        // With 1-day gap, usable days = ceil(working_days / 2)
-        $usableInvoiceDays = ceil($totalWorkingDays / 2);
+        // With 1-day gap, usable days = floor(working_days / 2)
+        $usableInvoiceDays = floor($totalWorkingDays / 2);
         
         // Max 3 invoices per day
         return $usableInvoiceDays * 3;
