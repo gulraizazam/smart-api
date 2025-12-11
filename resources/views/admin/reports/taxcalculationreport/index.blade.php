@@ -223,16 +223,16 @@
             html += '<div class="summary-item"><span>Max Exempt/Patient:</span><span>' + formatNumber(data.capacity.max_exempt_per_patient) + '</span></div>';
             html += '</div></div>';
 
-            // // Feasibility
-            // var statusClass = data.feasibility.is_achievable ? 'status-success' : 'status-warning';
-            // var statusText = data.feasibility.is_achievable ? '✓ ACHIEVABLE' : '✗ NOT ACHIEVABLE';
-            // html += '<div class="col-md-4"><div class="summary-card">';
-            // html += '<h5><i class="fa fa-check-circle"></i> Feasibility</h5>';
+            // Feasibility
+            var statusClass = data.feasibility.is_achievable ? 'status-success' : 'status-warning';
+            var statusText = data.feasibility.is_achievable ? '✓ ACHIEVABLE' : '✗ NOT ACHIEVABLE';
+            html += '<div class="col-md-4"><div class="summary-card">';
+            html += '<h5><i class="fa fa-check-circle"></i> Feasibility</h5>';
             // html += '<div class="summary-item"><span>Max Possible:</span><span>' + formatNumber(data.feasibility.max_possible_exempt) + ' (' + data.feasibility.max_possible_percent + '%)</span></div>';
-            // html += '<div class="summary-item"><span>Target:</span><span>' + data.feasibility.target_range + '</span></div>';
-            // html += '<div class="summary-item"><span>Status:</span><span class="' + statusClass + '">' + statusText + '</span></div>';
-            // html += '</div></div>';
-            // html += '</div>';
+            html += '<div class="summary-item"><span>Target:</span><span>' + data.feasibility.target_range + '</span></div>';
+            html += '<div class="summary-item"><span>Status:</span><span class="' + statusClass + '">' + statusText + '</span></div>';
+            html += '</div></div>';
+            html += '</div>';
 
             // Row 2: Payment Totals & Pool
             html += '<div class="row">';
