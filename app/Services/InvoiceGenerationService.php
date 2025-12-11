@@ -502,6 +502,11 @@ class InvoiceGenerationService
             }
         }
 
+        // Sort invoices by date (ascending)
+        usort($invoices, function ($a, $b) {
+            return strcmp($a['invoice_date'], $b['invoice_date']);
+        });
+
         return $invoices;
     }
 
@@ -575,6 +580,11 @@ class InvoiceGenerationService
                 }
             }
         }
+
+        // Sort invoices by date (ascending)
+        usort($invoices, function ($a, $b) {
+            return strcmp($a['invoice_date'], $b['invoice_date']);
+        });
 
         return $invoices;
     }
