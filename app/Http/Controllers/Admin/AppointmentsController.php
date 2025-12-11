@@ -1245,7 +1245,10 @@ class AppointmentsController extends Controller
         $records['data'] = [];
          $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
         if (Gate::allows('appointments_services')) {
-            $resultQuery = Appointments::with(['patient','invoice' => function ($q) use ($invoice_status) {
+            $resultQuery = Appointments::join('users', function ($join) {
+                $join->on('users.id', '=', 'appointments.patient_id')
+                    ->where('users.user_type_id', '=', config('constants.patient_id'));
+            })->with(['patient','invoice' => function ($q) use ($invoice_status) {
                 $q->where('invoice_status_id', $invoice_status->id);
             }])
             ->where('appointments.appointment_type_id', '=', $treatmentslug->id)
@@ -1254,6 +1257,7 @@ class AppointmentsController extends Controller
         }
 
 
+        
         $resultQuery->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $resultQuery->where($where);
@@ -1288,7 +1292,7 @@ class AppointmentsController extends Controller
         if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
             $orderBy = 'appointments.name';
         }
-        $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+        $Appointments = $resultQuery->select('appointments.*', 'users.phone', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy('appointments.created_at', 'DESC')
