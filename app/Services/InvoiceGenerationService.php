@@ -393,7 +393,7 @@ class InvoiceGenerationService
             $cappedExempt += $exemptAmount;
         }
 
-        // Step 2: Allocate small patients (give them 100% exempt intent)
+       // Step 2: Allocate small patients (give them 100% exempt intent)
         $smallExempt = 0;
         foreach ($categorized['small'] as $patient) {
             // Calculate how many invoices can be created (each = consultation_amount)
@@ -548,25 +548,29 @@ class InvoiceGenerationService
            // If no plan_id found, use 0 as default
             $planId = $planId ?? 0;
 
-            // Generate random invoice amounts between 100-10000
-            $remainingAmount = $taxableAmount;
+            // Generate invoice amounts
             $invoiceAmounts = [];
             
-            // Determine minimum invoice amount based on total taxable amount
-            $minInvoiceAmount = $taxableAmount >= 1000 ? 1000 : 100;
-            
-            while ($remainingAmount >= $minInvoiceAmount) {
-                // Random amount between minInvoiceAmount and min(10000, remainingAmount)
-                $maxAmount = min(10000, $remainingAmount);
-                $amount = rand($minInvoiceAmount, (int)$maxAmount);
+            // If taxable amount is less than 1000, create single invoice with full amount
+            if ($taxableAmount < 1000) {
+                $invoiceAmounts[] = $taxableAmount;
+            } else {
+                // For amounts >= 1000, generate random invoices between 1000-10000
+                $remainingAmount = $taxableAmount;
                 
-                // If this would leave less than minInvoiceAmount, add it to this invoice
-                if ($remainingAmount - $amount < $minInvoiceAmount) {
-                    $amount = $remainingAmount;
+                while ($remainingAmount >= 1000) {
+                    // Random amount between 1000 and min(10000, remainingAmount)
+                    $maxAmount = min(10000, $remainingAmount);
+                    $amount = rand(1000, (int)$maxAmount);
+                    
+                    // If this would leave less than 1000, add it to this invoice
+                    if ($remainingAmount - $amount < 1000) {
+                        $amount = $remainingAmount;
+                    }
+                    
+                    $invoiceAmounts[] = $amount;
+                    $remainingAmount -= $amount;
                 }
-                
-                $invoiceAmounts[] = $amount;
-                $remainingAmount -= $amount;
             }
             
             // If there's still a small remainder, add it to the last invoice
