@@ -554,14 +554,14 @@ class InvoiceGenerationService
             $patientDates = $this->getPatientInvoiceDates(count($invoiceAmounts));
 
             $invoiceIndex = 0;
-            $increment = 1;
             foreach ($patientDates as $dateInfo) {
                 $date = $dateInfo['date'];
                 $invoicesOnThisDay = $dateInfo['count'];
 
                 for ($i = 0; $i < $invoicesOnThisDay && $invoiceIndex < count($invoiceAmounts); $i++) {
-                    // Format: patientID-planID-increment
-                    $invoiceNumber = sprintf('%d-%d-%d', $patientId, $planId, $increment);
+                    // Format: patientID-planID-AlphabeticSuffix (A, B, C... Z, AA, AB...)
+                    $alphaSuffix = $this->numberToAlpha($invoiceIndex + 1);
+                    $invoiceNumber = sprintf('%d-%d-%s', $patientId, $planId, $alphaSuffix);
                     
                     $invoices[] = [
                         'invoice_number' => $invoiceNumber,
@@ -571,13 +571,28 @@ class InvoiceGenerationService
                         'amount' => $invoiceAmounts[$invoiceIndex],
                         'type' => 'taxable',
                     ];
-                    $increment++;
                     $invoiceIndex++;
                 }
             }
         }
 
         return $invoices;
+    }
+
+    /**
+     * Convert number to alphabetic format (1=A, 2=B... 26=Z, 27=AA, 28=AB...)
+     */
+    protected function numberToAlpha(int $number): string
+    {
+        $alpha = '';
+        
+        while ($number > 0) {
+            $number--; // Adjust for 0-based indexing
+            $alpha = chr(65 + ($number % 26)) . $alpha;
+            $number = intdiv($number, 26);
+        }
+        
+        return $alpha;
     }
 
     /**
