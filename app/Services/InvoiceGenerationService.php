@@ -7,10 +7,11 @@ use Carbon\Carbon;
 
 class InvoiceGenerationService
 {
-    // Payment Mode IDs - adjust these according to your payment_modes table
-    const PAYMENT_MODE_BANK = 4;  // Bank Transfer
+    // Payment Mode IDs - Only active payment modes in payment_modes table
     const PAYMENT_MODE_CASH = 1;  // Cash
-    const PAYMENT_MODE_CARD = 2;  // Card (will be summed into bank)
+    const PAYMENT_MODE_CARD = 2;  // Card
+    const PAYMENT_MODE_BANK = 4;  // Bank/Wire Transfer
+    // Note: PayPal (ID 3) is deleted, Settle Amount (ID 5) is excluded from calculations
 
     protected $dateFrom;
     protected $dateTo;
@@ -123,14 +124,13 @@ class InvoiceGenerationService
      */
     protected function getPaymentTotals(): array
     {
-        $results = DB::table('package_advances')
+        $results = DB::table('plan_invoices')
             ->select(
                 'payment_mode_id',
-                DB::raw('SUM(cash_amount) as total_amount'),
+                DB::raw('SUM(total_price) as total_amount'),
                 DB::raw('COUNT(*) as record_count')
             )
-            ->where('cash_flow', 'in')
-            ->where('cash_amount', '>', 0)
+            ->where('total_price', '>', 0)
             ->whereIn('location_id', $this->locationIds)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
@@ -205,15 +205,14 @@ class InvoiceGenerationService
      */
     protected function getPatientPayments(array $totals, array $pool): array
     {
-        $patientPayments = DB::table('package_advances')
+        $patientPayments = DB::table('plan_invoices')
             ->select(
                 'patient_id',
                 'payment_mode_id',
-                DB::raw('SUM(cash_amount) as total_amount'),
+                DB::raw('SUM(total_price) as total_amount'),
                 DB::raw('COUNT(*) as payment_count')
             )
-            ->where('cash_flow', 'in')
-            ->where('cash_amount', '>', 0)
+            ->where('total_price', '>', 0)
             ->whereIn('location_id', $this->locationIds)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [$this->dateFrom, $this->dateTo])
