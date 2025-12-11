@@ -41,7 +41,7 @@
                                     </svg>
                                 </span>
                             </span>
-                            <h3 class="card-label">Tax Calculation Report - Exempt Invoices</h3>
+                            <h3 class="card-label">Tax Calculation Report</h3>
                         </div>
                     </div>
 
