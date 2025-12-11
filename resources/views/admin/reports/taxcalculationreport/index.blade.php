@@ -252,7 +252,7 @@
             html += '<h5><i class="fa fa-calculator"></i> Pool & Targets</h5>';
             html += '<div class="summary-item"><span>Pool (Bank+Card+Cash%):</span><span>' + formatNumber(data.pool.total) + '</span></div>';
             html += '<div class="summary-item"><span>Target Exempt (' + data.pool.exempt_percent + '%):</span><span>' + formatNumber(data.pool.target_exempt) + '</span></div>';
-            // html += '<div class="summary-item"><span>Target Taxable (' + data.pool.taxable_percent + '%):</span><span>' + formatNumber(data.pool.target_taxable) + '</span></div>';
+            html += '<div class="summary-item"><span>Target Taxable (' + data.pool.taxable_percent + '%):</span><span>' + formatNumber(data.pool.target_taxable) + '</span></div>';
             html += '<div class="summary-item total"><span>Target Range (' + data.pool.target_range.min_percent + '-' + data.pool.target_range.max_percent + '%):</span><span>' + formatNumber(data.pool.target_range.min) + ' - ' + formatNumber(data.pool.target_range.max) + '</span></div>';
             html += '</div></div>';
             html += '</div>';
@@ -264,7 +264,7 @@
             html += '<div class="col-md-2 text-center"><strong>Patients</strong><br><h4>' + data.summary.total_patients + '</h4></div>';
             html += '<div class="col-md-2 text-center"><strong>Pool</strong><br><h4>' + formatNumber(data.summary.total_pool) + '</h4></div>';
             html += '<div class="col-md-2 text-center"><strong>Exempt</strong><br><h4>' + formatNumber(data.summary.total_exempt_invoiced) + '</h4></div>';
-            html += '<div class="col-md-2 text-center"><strong>Taxable</strong><br><h4>' + formatNumber(data.summary.total_taxable) + '</h4></div>';
+            //html += '<div class="col-md-2 text-center"><strong>Taxable</strong><br><h4>' + formatNumber(data.summary.total_taxable) + '</h4></div>';
             html += '<div class="col-md-2 text-center"><strong>Exempt %</strong><br><h4 class="status-success">' + data.summary.exempt_percent + '%</h4></div>';
             html += '<div class="col-md-2 text-center"><strong>Invoices</strong><br><h4>' + data.summary.total_invoices + '</h4></div>';
             html += '</div></div></div></div>';
