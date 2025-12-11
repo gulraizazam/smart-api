@@ -563,8 +563,8 @@ class InvoiceGenerationService
                 $remainingAmount -= $amount;
             }
 
-            // Get available dates for this patient
-            $patientDates = $this->getPatientInvoiceDates(count($invoiceAmounts));
+            // Get available dates for this patient (with 2-day gap for taxable)
+            $patientDates = $this->getTaxableInvoiceDates(count($invoiceAmounts));
 
             $invoiceIndex = 0;
             foreach ($patientDates as $dateInfo) {
@@ -684,6 +684,86 @@ class InvoiceGenerationService
         // Second pass: if still have invoices, fill in gaps with minimum spacing
         if ($invoicesRemaining > 0) {
             $workingDayIndex = 1; // Start from first skipped day
+            while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
+                // Check if this day is already used
+                $dayAlreadyUsed = false;
+                foreach ($dates as $existingDate) {
+                    if ($existingDate['date']->format('Y-m-d') === $this->workingDays[$workingDayIndex]->format('Y-m-d')) {
+                        $dayAlreadyUsed = true;
+                        break;
+                    }
+                }
+                
+                if (!$dayAlreadyUsed) {
+                    $invoicesOnThisDay = min(3, $invoicesRemaining); // Don't exceed 3 per day
+                    
+                    $dates[] = [
+                        'date' => $this->workingDays[$workingDayIndex],
+                        'count' => $invoicesOnThisDay,
+                    ];
+                    
+                    $invoicesRemaining -= $invoicesOnThisDay;
+                }
+                
+                $workingDayIndex++;
+            }
+        }
+
+        // Sort dates chronologically
+        usort($dates, function ($a, $b) {
+            return $a['date'] <=> $b['date'];
+        });
+
+        return $dates;
+    }
+
+    /**
+     * Get invoice dates for taxable invoices with 2-day minimum gap
+     */
+    protected function getTaxableInvoiceDates(int $numInvoices): array
+    {
+        $dates = [];
+        $totalWorkingDays = count($this->workingDays);
+        
+        if ($numInvoices == 0 || $totalWorkingDays == 0) {
+            return $dates;
+        }
+
+        // Determine strategy based on invoice count - with 2-day minimum gap
+        if ($numInvoices > 20) {
+            // High count: Aggressive - 3 per day, 2-day gap
+            $invoicesPerDay = 3;
+            $dayGap = 3; // Index increment (2-day gap)
+        } elseif ($numInvoices >= 10) {
+            // Medium count: Moderate - 2 per day, 3-4 day gap
+            $invoicesPerDay = 2;
+            $dayGap = 4; // Index increment (3-day gap)
+        } else {
+            // Low count: Conservative - spread across month
+            $invoicesPerDay = 1;
+            // Calculate spacing to spread across the month (minimum 3 for 2-day gap)
+            $dayGap = max(3, floor($totalWorkingDays / $numInvoices));
+        }
+
+        $invoicesRemaining = $numInvoices;
+        $workingDayIndex = 0;
+
+        // First pass: distribute with calculated strategy
+        while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
+            $invoicesOnThisDay = min($invoicesPerDay, $invoicesRemaining);
+            
+            $dates[] = [
+                'date' => $this->workingDays[$workingDayIndex],
+                'count' => $invoicesOnThisDay,
+            ];
+            
+            $invoicesRemaining -= $invoicesOnThisDay;
+            $workingDayIndex += $dayGap;
+        }
+
+        // Second pass: if still have invoices, fill in gaps with minimum 2-day spacing
+        if ($invoicesRemaining > 0) {
+            $workingDayIndex = 2; // Start from 2 days after first (2-day gap)
             while ($invoicesRemaining > 0 && $workingDayIndex < $totalWorkingDays) {
                 // Check if this day is already used
                 $dayAlreadyUsed = false;
