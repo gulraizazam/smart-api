@@ -3320,9 +3320,9 @@ public static function revenueByGenderAndService($request)
      */
     public function taxCalculationReport()
     {
-        if (!Gate::allows('tax_calculation_report_manage')) {
-            return abort(401);
-        }
+        // if (!Gate::allows('tax_calculation_report_manage')) {
+        //     return abort(401);
+        // }
 
         $locations = Locations::getActiveSorted(ACL::getUserCentres());
 
