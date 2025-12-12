@@ -424,7 +424,7 @@ class RolesController extends Controller
             'dar_report' => 'DAR Report',
             'complimentory_report' => 'Complimentory Treatment',
             'dtr_report' => 'DTR Report',
-            'tax_calculation_report' =>'Tax Calculation Report',
+            'operations_tax_calculation_report' =>'Tax Calculation Report',
             'client_with_not_Completed_treatment' => 'Clients with not completed treatments',
             'clients_took_treatments_particular_month' => 'Clients with treatments in a particular month',
             'clients_with_birthday_days' => 'Clients with birthday + x days',
