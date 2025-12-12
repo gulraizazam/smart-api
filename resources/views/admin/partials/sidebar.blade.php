@@ -1008,7 +1008,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('finance_general_revenue_reports_manage')
+                    <!-- @can('finance_general_revenue_reports_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -1023,7 +1023,7 @@
 
                         </ul>
                     </div>
-                    @endcan
+                    @endcan -->
                     @can('operations_reports_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
@@ -1210,7 +1210,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('consultant_revenue_report')
+                    <!-- @can('consultant_revenue_report')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -1224,7 +1224,7 @@
                             </li>
                         </ul>
                     </div>
-                    @endcan
+                    @endcan -->
                 </li>
 
 
