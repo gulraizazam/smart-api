@@ -1414,14 +1414,80 @@ class LeadsController extends Controller
                 }
             }
 
+            // PERFORMANCE OPTIMIZATION: Load all lookup data once before the loop
+            $account_id = Auth::User()->account_id;
+            
+            // Cache cities with both id and region_id - using lowercase keys for case-insensitive matching
+            $cities_data = Cities::where('account_id', $account_id)->get();
+            $cities_id_cache = [];
+            $cities_region_cache = [];
+            foreach ($cities_data as $city) {
+                $key = strtolower(trim($city->name));
+                $cities_id_cache[$key] = $city->id;
+                $cities_region_cache[$key] = $city->region_id;
+            }
+            
+            // Cache lead sources - case-insensitive
+            $lead_sources_data = LeadSources::where('account_id', $account_id)->get();
+            $lead_sources_cache = [];
+            foreach ($lead_sources_data as $source) {
+                $lead_sources_cache[strtolower(trim($source->name))] = $source->id;
+            }
+            
+            // Cache lead statuses - case-insensitive
+            $lead_statuses_data = LeadStatuses::where('account_id', $account_id)->get();
+            $lead_statuses_cache = [];
+            foreach ($lead_statuses_data as $status) {
+                $lead_statuses_cache[strtolower(trim($status->name))] = $status->id;
+            }
+            
+            // Cache services (parent services) - case-insensitive
+            $services_data = Services::where('account_id', $account_id)->whereNull('parent_id')->get();
+            $services_cache = [];
+            foreach ($services_data as $service) {
+                $services_cache[strtolower(trim($service->name))] = $service->id;
+            }
+            
+            // Cache child services grouped by parent_id - case-insensitive
+            $child_services_data = Services::where('account_id', $account_id)->whereNotNull('parent_id')->get();
+            $child_services_cache = [];
+            foreach ($child_services_data as $child) {
+                if (!isset($child_services_cache[$child->parent_id])) {
+                    $child_services_cache[$child->parent_id] = [];
+                }
+                $child_services_cache[$child->parent_id][strtolower(trim($child->name))] = $child->id;
+            }
+            
+            // Cache locations - case-insensitive
+            $locations_data = Locations::where('account_id', $account_id)->get();
+            $locations_cache = [];
+            foreach ($locations_data as $location) {
+                $locations_cache[strtolower(trim($location->name))] = $location->id;
+            }
+
             foreach ($rows as $row) {
-                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id ?? null;
-                $region_id = Cities::where(['account_id' => Auth::User()->account_id, 'id' => $city_id])->first()->region_id ?? null;
-                $lead_source_id = LeadSources::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_source']])->first()->id ?? Config::get('constants.lead_source_social_media');
-                $lead_status_id = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_status']])->first()->id ?? Config::get('constants.lead_status_open');
-                $service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['service']])->first()->id ?? null;
-                $child_service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['treatment'], 'parent_id' => $service_id])->first()->id ?? null;
-                $location_id = Locations::where(['account_id' => Auth::User()->account_id, 'name' => $row['centre']])->first()->id ?? null;
+                // Use cached data with case-insensitive lookup
+                $city_key = strtolower(trim($row['city'] ?? ''));
+                $city_id = $cities_id_cache[$city_key] ?? null;
+                $region_id = $cities_region_cache[$city_key] ?? null;
+                
+                $lead_source_key = strtolower(trim($row['lead_source'] ?? ''));
+                $lead_source_id = $lead_sources_cache[$lead_source_key] ?? Config::get('constants.lead_source_social_media');
+                
+                $lead_status_key = strtolower(trim($row['lead_status'] ?? ''));
+                $lead_status_id = $lead_statuses_cache[$lead_status_key] ?? Config::get('constants.lead_status_open');
+                
+                $service_key = strtolower(trim($row['service'] ?? ''));
+                $service_id = $services_cache[$service_key] ?? null;
+                
+                $child_service_id = null;
+                if ($service_id && isset($row['treatment'])) {
+                    $treatment_key = strtolower(trim($row['treatment']));
+                    $child_service_id = $child_services_cache[$service_id][$treatment_key] ?? null;
+                }
+                
+                $location_key = strtolower(trim($row['centre'] ?? ''));
+                $location_id = $locations_cache[$location_key] ?? null;
 
                 $gender = 1;
                 $check_gender = trim($row['gender'], " ");
