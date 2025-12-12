@@ -1489,26 +1489,15 @@ class LeadsController extends Controller
                 $service_id = null;
                 $child_service_id = null;
                 
-                // First, try to find as parent service
-                if (isset($services_cache[$service_key])) {
-                    $service_id = $services_cache[$service_key];
+                // Look for service in all_services_lookup (matches original behavior - finds any service)
+                if (isset($all_services_lookup[$service_key])) {
+                    $service_data = $all_services_lookup[$service_key];
+                    $service_id = $service_data['id'];
                     
-                    // If treatment is provided, look for child service
+                    // If treatment is provided, look for child service under this service
                     if (isset($row['treatment']) && !empty(trim($row['treatment']))) {
                         $treatment_key = strtolower(trim($row['treatment']));
                         $child_service_id = $child_services_cache[$service_id][$treatment_key] ?? null;
-                    }
-                } 
-                // If not found as parent, check if it exists as a child service (use it as main service)
-                elseif (isset($all_services_lookup[$service_key])) {
-                    $service_data = $all_services_lookup[$service_key];
-                    // If it's a child service, use its parent as service_id and itself as child_service_id
-                    if ($service_data['parent_id'] !== null) {
-                        $service_id = $service_data['parent_id'];
-                        $child_service_id = $service_data['id'];
-                    } else {
-                        // It's a parent service (shouldn't happen as it should be in services_cache, but handle it)
-                        $service_id = $service_data['id'];
                     }
                 }
                 
