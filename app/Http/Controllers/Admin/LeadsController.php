@@ -1506,6 +1506,9 @@ class LeadsController extends Controller
                     if ($service_data['parent_id'] !== null) {
                         $service_id = $service_data['parent_id'];
                         $child_service_id = $service_data['id'];
+                    } else {
+                        // It's a parent service (shouldn't happen as it should be in services_cache, but handle it)
+                        $service_id = $service_data['id'];
                     }
                 }
                 
