@@ -84,9 +84,9 @@
                                                     <option value="dar_report">DAR Report</option>
                                                 @endif -->
 
-                                                <!-- @if(Gate::allows('operations_reports_dar_report'))
+                                                @if(Gate::allows('operations_reports_dar_report'))
                                                     <option value="agent_report">Agent Report</option>
-                                                @endif -->
+                                                @endif
 
                                                 @if(Gate::allows('operations_reports_dar_report'))
                                                     <option value="walking_report">Walkin Report</option>
