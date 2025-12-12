@@ -1351,6 +1351,9 @@ function get_query() {
 function patientSearch(search_id = 'patient_id', flag = 1) {
    
     let debounceTimer;
+    // Unbind previous event handlers to prevent multiple bindings
+    $("." + search_id).off("keyup");
+    
     $("." + search_id).on("keyup", function () {
 
         $(".suggestion-list").html('<li>Searching...</li>');
@@ -1396,6 +1399,9 @@ function patientSearch(search_id = 'patient_id', flag = 1) {
 function orderPatientSearch(search_id = 'patient_id', flag = 1) {
    
     let debounceTimer;
+    // Unbind previous event handlers to prevent multiple bindings
+    $("." + search_id).off("keyup");
+    
     $("." + search_id).on("keyup", function () {
 
         $(".suggestion-list").html('<li>Searching...</li>');
@@ -1444,7 +1450,10 @@ function orderPatientSearch(search_id = 'patient_id', flag = 1) {
 }
 function patientSearchRefund(search_id = 'patient_id', flag = 1) {
 
-    $("." + search_id).on("keyup", function () {
+    // Unbind previous event handlers to prevent multiple bindings
+    $("."+search_id).off("keyup");
+    
+    $("."+search_id).on("keyup", function () {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box-refund").show();
         if ($(this).val().length < 2) {
@@ -1485,7 +1494,10 @@ function patientSearchRefund(search_id = 'patient_id', flag = 1) {
 function patientSearchPlan(search_id = 'patient_id', flag = 1) {
   
     let debounceTimer;
-    $("." + search_id).on("keyup", function () {
+    // Unbind previous event handlers to prevent multiple bindings
+    $("."+search_id).off("keyup");
+    
+    $("."+search_id).on("keyup", function () {
 
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box-plan").show();
