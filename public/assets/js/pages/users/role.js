@@ -41,8 +41,9 @@ function actions(data) {
     let csrf = $('meta[name="csrf-token"]').attr('content');
     let url = route('admin.roles.edit', {id: id});
     let delete_url = route('admin.roles.destroy', {id: id});
+    let duplicate_url = route('admin.roles.duplicate', {id: id});
 
-    if (permissions.edit || permissions.delete) {
+    if (permissions.edit || permissions.delete || permissions.duplicate) {
         let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -57,6 +58,14 @@ function actions(data) {
                     <a href="'+url+'" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+        }
+        if (permissions.duplicate) {
+            actions += '<li class="navi-item">\
+                    <a href="'+duplicate_url+'" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-copy"></i></span>\
+                        <span class="navi-text">Duplicate</span>\
                     </a>\
                 </li>';
         }

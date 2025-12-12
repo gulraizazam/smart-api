@@ -205,6 +205,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::resource('permissions', PermissionsController::class)->middleware('permission:permissions_manage');
 
         Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
+        Route::get('roles/{id}/duplicate', [RolesController::class, 'duplicate'])->name('roles.duplicate');
+        Route::post('roles/duplicate', [RolesController::class, 'storeDuplicate'])->name('roles.duplicate.store');
         Route::resource('roles', RolesController::class)->middleware('permission:roles_manage');
         // Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
 
