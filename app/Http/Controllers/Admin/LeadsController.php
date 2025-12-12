@@ -1414,55 +1414,14 @@ class LeadsController extends Controller
                 }
             }
 
-            // PERFORMANCE OPTIMIZATION: Load all lookup data once before the loop
-            $account_id = Auth::User()->account_id;
-            
-            // Cache cities with region_id
-            $cities_cache = Cities::where('account_id', $account_id)
-                ->pluck('region_id', 'name')->toArray();
-            $cities_id_cache = Cities::where('account_id', $account_id)
-                ->pluck('id', 'name')->toArray();
-            
-            // Cache lead sources
-            $lead_sources_cache = LeadSources::where('account_id', $account_id)
-                ->pluck('id', 'name')->toArray();
-            
-            // Cache lead statuses
-            $lead_statuses_cache = LeadStatuses::where('account_id', $account_id)
-                ->pluck('id', 'name')->toArray();
-            
-            // Cache services (parent services)
-            $services_cache = Services::where('account_id', $account_id)
-                ->whereNull('parent_id')
-                ->pluck('id', 'name')->toArray();
-            
-            // Cache child services with parent_id as key
-            $child_services_cache = Services::where('account_id', $account_id)
-                ->whereNotNull('parent_id')
-                ->get()
-                ->groupBy('parent_id')
-                ->map(function($items) {
-                    return $items->pluck('id', 'name')->toArray();
-                })->toArray();
-            
-            // Cache locations
-            $locations_cache = Locations::where('account_id', $account_id)
-                ->pluck('id', 'name')->toArray();
-
-            // Use database transaction for better performance and data integrity
-            DB::beginTransaction();
-            
-            try {
-                foreach ($rows as $row) {
-                $city_id = $cities_id_cache[$row['city']] ?? null;
-                $region_id = $cities_cache[$row['city']] ?? null;
-                $lead_source_id = $lead_sources_cache[$row['lead_source']] ?? Config::get('constants.lead_source_social_media');
-                $lead_status_id = $lead_statuses_cache[$row['lead_status']] ?? Config::get('constants.lead_status_open');
-                $service_id = $services_cache[$row['service']] ?? null;
-                $child_service_id = ($service_id && isset($child_services_cache[$service_id])) 
-                    ? ($child_services_cache[$service_id][$row['treatment']] ?? null) 
-                    : null;
-                $location_id = $locations_cache[$row['centre']] ?? null;
+            foreach ($rows as $row) {
+                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id ?? null;
+                $region_id = Cities::where(['account_id' => Auth::User()->account_id, 'id' => $city_id])->first()->region_id ?? null;
+                $lead_source_id = LeadSources::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_source']])->first()->id ?? Config::get('constants.lead_source_social_media');
+                $lead_status_id = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_status']])->first()->id ?? Config::get('constants.lead_status_open');
+                $service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['service']])->first()->id ?? null;
+                $child_service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['treatment'], 'parent_id' => $service_id])->first()->id ?? null;
+                $location_id = Locations::where(['account_id' => Auth::User()->account_id, 'name' => $row['centre']])->first()->id ?? null;
 
                 $gender = 1;
                 $check_gender = trim($row['gender'], " ");
@@ -1537,21 +1496,11 @@ class LeadsController extends Controller
                         $un_valid_service_list[] = $row['service'];
                     }
                 }
-            }
-            
-            // Commit the transaction
-            DB::commit();
-            
+            };
             $msg_service = (count($un_valid_service_list)) ? '. In_valid service list in this row: ' . implode(', ', $un_valid_service_list) : '';
             $msg_phone = (count($un_valid_phone_list)) ? '. In_valid phone list: ' . implode(', ', $un_valid_phone_list) : '';
             // Invalid data is provided
             return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($new_patient_phones) . ', Duplicates: ' . count($found_patients) . $msg_phone . $msg_service);
-            
-            } catch (\Exception $e) {
-                // Rollback transaction on error
-                DB::rollBack();
-                return ApiHelper::apiResponse($this->success, 'Import failed: ' . $e->getMessage(), false);
-            }
         } catch (\Exception $e) {
             return ApiHelper::apiResponse($this->success, $e->getMessage(), 'false');
         }
