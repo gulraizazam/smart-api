@@ -1441,21 +1441,29 @@ class LeadsController extends Controller
                 $lead_statuses_cache[strtolower(trim($status->name))] = $status->id;
             }
             
-            // Cache services (parent services) - case-insensitive
-            $services_data = Services::where('account_id', $account_id)->whereNull('parent_id')->get();
+            // Cache ALL services (both parent and child) - case-insensitive
+            $all_services_data = Services::where('account_id', $account_id)->get();
             $services_cache = [];
-            foreach ($services_data as $service) {
-                $services_cache[strtolower(trim($service->name))] = $service->id;
-            }
-            
-            // Cache child services grouped by parent_id - case-insensitive
-            $child_services_data = Services::where('account_id', $account_id)->whereNotNull('parent_id')->get();
             $child_services_cache = [];
-            foreach ($child_services_data as $child) {
-                if (!isset($child_services_cache[$child->parent_id])) {
-                    $child_services_cache[$child->parent_id] = [];
+            $all_services_lookup = []; // For finding any service by name
+            
+            foreach ($all_services_data as $service) {
+                $key = strtolower(trim($service->name));
+                $all_services_lookup[$key] = [
+                    'id' => $service->id,
+                    'parent_id' => $service->parent_id
+                ];
+                
+                // If it's a parent service, add to services_cache
+                if ($service->parent_id === null) {
+                    $services_cache[$key] = $service->id;
+                } else {
+                    // If it's a child service, add to child_services_cache
+                    if (!isset($child_services_cache[$service->parent_id])) {
+                        $child_services_cache[$service->parent_id] = [];
+                    }
+                    $child_services_cache[$service->parent_id][$key] = $service->id;
                 }
-                $child_services_cache[$child->parent_id][strtolower(trim($child->name))] = $child->id;
             }
             
             // Cache locations - case-insensitive
@@ -1478,12 +1486,27 @@ class LeadsController extends Controller
                 $lead_status_id = $lead_statuses_cache[$lead_status_key] ?? Config::get('constants.lead_status_open');
                 
                 $service_key = strtolower(trim($row['service'] ?? ''));
-                $service_id = $services_cache[$service_key] ?? null;
-                
+                $service_id = null;
                 $child_service_id = null;
-                if ($service_id && isset($row['treatment'])) {
-                    $treatment_key = strtolower(trim($row['treatment']));
-                    $child_service_id = $child_services_cache[$service_id][$treatment_key] ?? null;
+                
+                // First, try to find as parent service
+                if (isset($services_cache[$service_key])) {
+                    $service_id = $services_cache[$service_key];
+                    
+                    // If treatment is provided, look for child service
+                    if (isset($row['treatment']) && !empty(trim($row['treatment']))) {
+                        $treatment_key = strtolower(trim($row['treatment']));
+                        $child_service_id = $child_services_cache[$service_id][$treatment_key] ?? null;
+                    }
+                } 
+                // If not found as parent, check if it exists as a child service (use it as main service)
+                elseif (isset($all_services_lookup[$service_key])) {
+                    $service_data = $all_services_lookup[$service_key];
+                    // If it's a child service, use its parent as service_id and itself as child_service_id
+                    if ($service_data['parent_id'] !== null) {
+                        $service_id = $service_data['parent_id'];
+                        $child_service_id = $service_data['id'];
+                    }
                 }
                 
                 $location_key = strtolower(trim($row['centre'] ?? ''));
@@ -1573,18 +1596,20 @@ class LeadsController extends Controller
             if (count($un_valid_service_list)) {
                 $msg_service = '. Invalid service(s) not found: ' . implode(', ', array_unique($un_valid_service_list));
                 
-                // Show available parent services that might match
-                $available_services = array_keys($services_cache);
+                // Show available services (both parent and child) that might match
+                $available_services = array_keys($all_services_lookup);
                 $suggestions = [];
                 foreach ($un_valid_service_list as $invalid) {
                     foreach ($available_services as $available) {
-                        if (stripos($available, $invalid) !== false || stripos($invalid, $available) !== false) {
+                        // Use similarity check for better suggestions
+                        similar_text($invalid, $available, $percent);
+                        if ($percent > 60 || stripos($available, $invalid) !== false || stripos($invalid, $available) !== false) {
                             $suggestions[] = $available;
                         }
                     }
                 }
                 if (!empty($suggestions)) {
-                    $msg_service .= '. Did you mean: ' . implode(', ', array_unique($suggestions));
+                    $msg_service .= '. Did you mean: ' . implode(', ', array_unique(array_slice($suggestions, 0, 5)));
                 }
             }
             
