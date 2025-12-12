@@ -975,6 +975,23 @@
                     </div>
                     @endcan
 
+                    @can('operations_reports_operations_tax_calculation_report')
+                    <div class="menu-submenu">
+                        <i class="menu-arrow"></i>
+                        <ul class="menu-subnav">
+                            <li class="menu-item {{ activeMenu('admin.reports.tax_calculation_report') }}" aria-haspopup="true">
+                                <a href="{{ route('admin.reports.tax_calculation_report') }}" class="menu-link">
+                                    <i class="menu-bullet menu-bullet-dot">
+                                        <span></span>
+                                    </i>
+                                    <span class="menu-text">Tax Calculation Report</span>
+                                </a>
+                            </li>
+
+                        </ul>
+                    </div>
+                    @endcan
+
                     @can('operations_reports_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>

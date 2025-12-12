@@ -2983,6 +2983,9 @@ class DashboardReportsController extends Controller
             ];
         }
 
+        // Track which categories have been processed
+        $processedCategories = [];
+
         foreach ($total_arrived_appointments->toArray() as $key => $arrive_category) {
             if (array_key_exists($arrive_category['name'], $new_array)) {
                 $name = [$arrive_category['name']][0];
@@ -3038,6 +3041,21 @@ class DashboardReportsController extends Controller
                 'total_conversion' => $sum_conversion_total,
                 'avg' => $avg_valu
             ];
+
+            // Mark this category as processed
+            $processedCategories[] = $name;
+        }
+
+        // Add categories that have conversions but no arrivals in this period
+        foreach ($new_array as $category_name => $category_data) {
+            if (!in_array($category_name, $processedCategories)) {
+                $returnCategoryData[] = [
+                    'service' => $category_name,
+                    'total_arrival' => 0,
+                    'total_conversion' => $category_data['total_conversion'],
+                    'avg' => $category_data['avg']
+                ];
+            }
         }
         // dd($lables);
         return ApiHelper::apiResponse($this->success, 'doctor wise conversion data', true, [
