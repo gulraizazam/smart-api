@@ -1560,15 +1560,35 @@ class LeadsController extends Controller
                 } else {
                     if ($service_id == null && !empty(trim($row['service'] ?? ''))) {
                         // Only add unique invalid services to avoid duplicates in error message
-                        $invalid_service = trim($row['service']);
+                        $invalid_service = strtolower(trim($row['service']));
                         if (!in_array($invalid_service, $un_valid_service_list)) {
-                            $un_valid_service_list[] = '"' . $invalid_service . '" (searched as: "' . strtolower($invalid_service) . '")';
+                            $un_valid_service_list[] = $invalid_service;
                         }
                     }
                 }
             };
-            $msg_service = (count($un_valid_service_list)) ? '. Invalid service(s) not found in database: ' . implode(', ', $un_valid_service_list) : '';
-            $msg_phone = (count($un_valid_phone_list)) ? '. Invalid phone number(s): ' . implode(', ', $un_valid_phone_list) : '';
+            
+            // Build error message with suggestions
+            $msg_service = '';
+            if (count($un_valid_service_list)) {
+                $msg_service = '. Invalid service(s) not found: ' . implode(', ', array_unique($un_valid_service_list));
+                
+                // Show available parent services that might match
+                $available_services = array_keys($services_cache);
+                $suggestions = [];
+                foreach ($un_valid_service_list as $invalid) {
+                    foreach ($available_services as $available) {
+                        if (stripos($available, $invalid) !== false || stripos($invalid, $available) !== false) {
+                            $suggestions[] = $available;
+                        }
+                    }
+                }
+                if (!empty($suggestions)) {
+                    $msg_service .= '. Did you mean: ' . implode(', ', array_unique($suggestions));
+                }
+            }
+            
+            $msg_phone = (count($un_valid_phone_list)) ? '. Invalid phone number(s): ' . count($un_valid_phone_list) . ' records' : '';
             // Invalid data is provided
             return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($new_patient_phones) . ', Duplicates: ' . count($found_patients) . $msg_phone . $msg_service);
         } catch (\Exception $e) {
