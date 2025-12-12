@@ -72,6 +72,7 @@ use App\Http\Controllers\FeedbacksReportController;
 use App\Http\Controllers\InventoryReportsController;
 use App\Http\Controllers\MembershipReportsController;
 use App\Http\Controllers\UpsellingReportController;
+use App\Http\Controllers\Admin\InvoiceGenerationController;
 use App\Models\PackageService;
 
 /*
@@ -171,7 +172,13 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('error-logs', [LogViewerController::class, 'index']);
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::get('updatestatusleads', [LeadsController::class, 'leadstatusupdate']);
-
+        Route::prefix('invoices')->name('invoices.')->group(function () {
+        // Calculate amounts and get JSON response
+        Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
+        
+        // Export exempt invoices to Excel
+        Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
+    });
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -598,6 +605,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         //Route::get('reports/inventory_reports', [InventoryReportController::class, 'report'])->name('reports.inventory_report');
 
         Route::get('reports/revenue_reports', [FinanceReportController::class, 'report'])->name('reports.finance_reports')->middleware('permission:finance_general_revenue_reports_manage');
+        Route::get('reports/tax_calculation_report', [FinanceReportController::class, 'taxCalculationReport'])->name('reports.tax_calculation_report');
+        Route::post('reports/tax_calculation_report_load', [FinanceReportController::class, 'taxCalculationReportLoad'])->name('reports.tax_calculation_report_load');
         Route::get('service-report/{service_id}', [FinanceReportController::class, 'serviceBarChart'])->name('service.barchart');
         Route::get('reports/load_revenue_reports', [FinanceReportController::class, 'revenue_reports'])->name('reports.revenue_reports')->middleware('permission:finance_general_revenue_reports_manage');
         Route::get('reports/arrived_not_converted', [FinanceReportController::class, 'ArrivedNotConverted'])->name('reports.arrived_not_converted')->middleware('permission:non_converted_customers_manage');

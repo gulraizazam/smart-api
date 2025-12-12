@@ -3312,4 +3312,83 @@ public static function revenueByGenderAndService($request)
         $locations = Locations::getActiveRecordsByCity('', ACL::getUserCentres(), Auth::User()->account_id);
         return view('admin.reports.appointments_report', get_defined_vars());
     }
+
+    /**
+     * Display Tax Calculation Report filter page.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function taxCalculationReport()
+    {
+        
+        $locations = Locations::getActiveSorted(ACL::getUserCentres());
+
+        return view('admin.reports.taxcalculationreport.index', compact('locations'));
+    }
+
+    /**
+     * Load Tax Calculation Report data.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\Response
+     */
+    public function taxCalculationReportLoad(Request $request)
+    {
+        // Validate request
+        $request->validate([
+            'bank_taxable' => 'nullable|numeric|min:0|max:100',
+            'cash_taxable' => 'nullable|numeric|min:0|max:100',
+            'consultation_amount' => 'nullable|numeric|min:0',
+        ]);
+
+        // Parse date range
+        $date_range = explode(' - ', $request->get('date_range'));
+        $start_date = date('Y-m-d', strtotime($date_range[0]));
+        $end_date = date('Y-m-d', strtotime($date_range[1]));
+
+        // Get filter parameters
+        $location_id = $request->get('location_id');
+        $bank_taxable = $request->get('bank_taxable');
+        $cash_taxable = $request->get('cash_taxable');
+        $consultation_amount = $request->get('consultation_amount');
+        $medium_type = $request->get('medium_type');
+
+        // TODO: Add your report logic here
+        // For now, just passing the parameters to a view
+        $report_data = [];
+
+        switch ($medium_type) {
+            case 'web':
+                return view('admin.reports.taxcalculationreport.report', compact(
+                    'report_data',
+                    'start_date',
+                    'end_date',
+                    'bank_taxable',
+                    'cash_taxable',
+                    'consultation_amount'
+                ));
+            case 'print':
+                return view('admin.reports.taxcalculationreport.reportprint', compact(
+                    'report_data',
+                    'start_date',
+                    'end_date',
+                    'bank_taxable',
+                    'cash_taxable',
+                    'consultation_amount'
+                ));
+            case 'pdf':
+                $pdf = PDF::loadView('admin.reports.taxcalculationreport.reportpdf', compact(
+                    'report_data',
+                    'start_date',
+                    'end_date',
+                    'bank_taxable',
+                    'cash_taxable',
+                    'consultation_amount'
+                ));
+                return $pdf->stream('tax-calculation-report.pdf');
+            case 'excel':
+                // TODO: Implement Excel export
+                break;
+        }
+    }
 }
