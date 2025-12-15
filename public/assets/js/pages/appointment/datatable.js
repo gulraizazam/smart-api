@@ -1497,6 +1497,10 @@ var AppointScheduleValidation = function () {
 }();
 
 function sendWhatsApp(appointmentId) {
+    console.log('=== WhatsApp Function Called ===');
+    console.log('Appointment ID:', appointmentId);
+    console.log('Ajax URL:', route('admin.appointments.get_whatsapp_data'));
+
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -1506,8 +1510,17 @@ function sendWhatsApp(appointmentId) {
         data: { id: appointmentId },
         cache: false,
         success: function (response) {
+            console.log('=== WhatsApp AJAX Success ===');
+            console.log('Full Response:', response);
+            console.log('Response Status:', response.status);
+
             if (response.status) {
+                console.log('Response Data:', response.data);
+                console.log('WhatsApp Number:', response.data.whatsapp);
+                console.log('Original Message:', response.data.message);
+
                 if (!response.data.whatsapp) {
+                    console.error('ERROR: WhatsApp number not found');
                     toastr.error('Customer WhatsApp number not found');
                     return;
                 }
@@ -1517,20 +1530,36 @@ function sendWhatsApp(appointmentId) {
                 let phoneNumber = response.data.whatsapp;
                 let encodedMessage = encodeURIComponent(message);
 
+                console.log('Processed Message:', message);
+                console.log('Phone Number:', phoneNumber);
+                console.log('Encoded Message:', encodedMessage);
+
                 // Use WhatsApp Web URL (always opens in browser, not desktop app)
                 let whatsappUrl = 'https://web.whatsapp.com/send?phone=' + phoneNumber + '&text=' + encodedMessage;
+                console.log('WhatsApp URL:', whatsappUrl);
 
                 // Open in named window (browser will try to reuse when possible)
                 let whatsappWindow = window.open(whatsappUrl, 'whatsapp_window');
+                console.log('Window Opened:', whatsappWindow !== null);
 
                 if (whatsappWindow) {
                     whatsappWindow.focus();
+                    console.log('SUCCESS: WhatsApp window opened and focused');
+                } else {
+                    console.error('ERROR: Failed to open WhatsApp window (popup blocker?)');
                 }
             } else {
+                console.error('ERROR: Response status false');
+                console.error('Error Message:', response.message);
                 toastr.error(response.message || 'Unable to fetch WhatsApp data');
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
+            console.error('=== WhatsApp AJAX Error ===');
+            console.error('XHR:', xhr);
+            console.error('Status:', xhr.status);
+            console.error('Response Text:', xhr.responseText);
+            console.error('Thrown Error:', thrownError);
             errorMessage(xhr);
         }
     });
