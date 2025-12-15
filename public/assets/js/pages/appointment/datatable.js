@@ -448,6 +448,31 @@ function actions(data) {
         actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`' + sms_logs_url + '`);" class="d-lg-inline-flex d-none btn btn-icon btn-success btn-sm ml-2">\
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                     </a>';
+
+        // Show WhatsApp icon only if appointment_status is NOT 2 and scheduled_date is today
+        let today = new Date();
+        let todayString = today.getFullYear() + '-' +
+                         String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                         String(today.getDate()).padStart(2, '0');
+
+        // Parse scheduled_date to check if it's today
+        let isToday = false;
+        if (data.scheduled_date && data.scheduled_date !== '-') {
+            // Parse "Dec 15, 2025 at 12:45 PM" format
+            let scheduledDatePart = data.scheduled_date.split(' at ')[0]; // Get "Dec 15, 2025"
+            let scheduledDate = new Date(scheduledDatePart);
+            let scheduledDateString = scheduledDate.getFullYear() + '-' +
+                                     String(scheduledDate.getMonth() + 1).padStart(2, '0') + '-' +
+                                     String(scheduledDate.getDate()).padStart(2, '0');
+            isToday = scheduledDateString === todayString;
+        }
+
+        if (data.appointment_status != 2 && isToday) {
+            actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
+                            <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
+                        </a>';
+        }
+
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                         <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
                     </a>';
@@ -617,6 +642,16 @@ function actions(data) {
                             <span class="navi-text">SMS Logs</span>\
                         </a>\
                     </li>';
+
+        // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today
+        if (data.appointment_status != 2 && isToday) {
+            actions += '<li class="navi-item  d-lg-none">\
+                            <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
+                                <span class="navi-icon"><i class="lab la-whatsapp"></i></span>\
+                                <span class="navi-text">Send WhatsApp</span>\
+                            </a>\
+                        </li>';
+        }
 
 
         if (permissions.invoice) {
@@ -1460,6 +1495,46 @@ var AppointScheduleValidation = function () {
         }
     };
 }();
+
+function sendWhatsApp(appointmentId) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.get_whatsapp_data'),
+        type: 'GET',
+        data: { id: appointmentId },
+        cache: false,
+        success: function (response) {
+            if (response.status) {
+                if (!response.data.whatsapp) {
+                    toastr.error('Customer WhatsApp number not found');
+                    return;
+                }
+
+                // Replace \n with actual line breaks
+                let message = response.data.message.replace(/\\n/g, '\n');
+                let phoneNumber = response.data.whatsapp;
+                let encodedMessage = encodeURIComponent(message);
+
+                // Use WhatsApp Web URL (always opens in browser, not desktop app)
+                let whatsappUrl = 'https://web.whatsapp.com/send?phone=' + phoneNumber + '&text=' + encodedMessage;
+
+                // Open in named window (browser will try to reuse when possible)
+                let whatsappWindow = window.open(whatsappUrl, 'whatsapp_window');
+
+                if (whatsappWindow) {
+                    whatsappWindow.focus();
+                }
+            } else {
+                toastr.error(response.message || 'Unable to fetch WhatsApp data');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+}
 
 jQuery(document).ready(function () {
     AppointScheduleValidation.init();

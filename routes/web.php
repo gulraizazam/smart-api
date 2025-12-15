@@ -585,6 +585,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('download-today-treatments', [AppointmentsController::class, 'todaytreatments']);
         Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
         Route::post('download-filter-data', [AppointmentsController::class, 'downloadExportdata']);
+        Route::get('appointments/get-whatsapp-data', [AppointmentsController::class, 'getWhatsAppData'])->name('appointments.get_whatsapp_data');
         /*Inventory Routes*/
         Route::get('warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
 

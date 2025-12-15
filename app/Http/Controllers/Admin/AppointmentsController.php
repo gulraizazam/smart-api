@@ -6110,4 +6110,119 @@ class AppointmentsController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Get WhatsApp data for appointment
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getWhatsAppData(Request $request)
+    {
+        try {
+            $appointmentId = $request->input('id');
+
+            // Fetch appointment with patient details
+            $appointment = Appointments::with([
+                'patient',
+                'doctor',
+                'location',
+                'service',
+                'appointment_status'
+            ])->find($appointmentId);
+
+            if (!$appointment) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Appointment not found'
+                ]);
+            }
+
+            // Check if patient has WhatsApp number
+            $whatsappNumber = $appointment->patient->phone ?? null;
+
+            if (!$whatsappNumber) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Customer WhatsApp number not found'
+                ]);
+            }
+
+            // Clean the phone number (remove spaces, dashes, etc.)
+            $whatsappNumber = preg_replace('/[^0-9]/', '', $whatsappNumber);
+
+            // Ensure phone number has country code (Pakistan = 92)
+            // If number starts with 0, replace with 92
+            if (substr($whatsappNumber, 0, 1) === '0') {
+                $whatsappNumber = '92' . substr($whatsappNumber, 1);
+            }
+            // If number doesn't start with 92 and is 10 digits, add 92
+            elseif (strlen($whatsappNumber) === 10 && substr($whatsappNumber, 0, 2) !== '92') {
+                $whatsappNumber = '92' . $whatsappNumber;
+            }
+
+            // Fetch SMS template with slug 'consultancy_whatsapp'
+            $template = SMSTemplates::getBySlug('consultancy_whatsapp', Auth::user()->account_id);
+
+            if (!$template) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'WhatsApp template not found. Please create a template with slug "consultancy_whatsapp"'
+                ]);
+            }
+
+            // Replace variables in template content
+            $message = $template->content;
+
+            // Format appointment time (combine date and time)
+            $appointmentTime = 'N/A';
+            if ($appointment->scheduled_date && $appointment->scheduled_time) {
+                try {
+                    $date = \Carbon\Carbon::parse($appointment->scheduled_date);
+                    $time = \Carbon\Carbon::parse($appointment->scheduled_time);
+                    $appointmentTime = $date->format('d M Y') . ' at ' . $time->format('h:i A');
+                } catch (\Exception $e) {
+                    $appointmentTime = ($appointment->scheduled_date ?? '') . ' at ' . ($appointment->scheduled_time ?? '');
+                }
+            }
+
+            // Replace single # variables
+            $message = str_replace('#patient_name#', $appointment->patient->name ?? 'N/A', $message);
+            $message = str_replace('#appointment_time#', $appointmentTime, $message);
+            $message = str_replace('#patient_id#', $appointment->patient->id ?? 'N/A', $message);
+            $message = str_replace('#appointment_id#', $appointment->id ?? 'N/A', $message);
+            $message = str_replace('#doctor_name#', $appointment->doctor->name ?? 'N/A', $message);
+            $message = str_replace('#location_name#', $appointment->location->name ?? 'N/A', $message);
+            $message = str_replace('#service_name#', $appointment->service->name ?? 'N/A', $message);
+            $message = str_replace('#scheduled_date#', $appointment->scheduled_date ?? 'N/A', $message);
+            $message = str_replace('#scheduled_time#', $appointment->scheduled_time ?? 'N/A', $message);
+            $message = str_replace('#status#', $appointment->appointment_status->name ?? 'N/A', $message);
+
+            // Also support double ## format for backward compatibility
+            $message = str_replace('##patient_name##', $appointment->patient->name ?? 'N/A', $message);
+            $message = str_replace('##appointment_time##', $appointmentTime, $message);
+            $message = str_replace('##patient_id##', $appointment->patient->id ?? 'N/A', $message);
+            $message = str_replace('##appointment_id##', $appointment->id ?? 'N/A', $message);
+            $message = str_replace('##doctor_name##', $appointment->doctor->name ?? 'N/A', $message);
+            $message = str_replace('##location_name##', $appointment->location->name ?? 'N/A', $message);
+            $message = str_replace('##service_name##', $appointment->service->name ?? 'N/A', $message);
+            $message = str_replace('##scheduled_date##', $appointment->scheduled_date ?? 'N/A', $message);
+            $message = str_replace('##scheduled_time##', $appointment->scheduled_time ?? 'N/A', $message);
+            $message = str_replace('##status##', $appointment->appointment_status->name ?? 'N/A', $message);
+
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'whatsapp' => $whatsappNumber,
+                    'message' => $message
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error fetching WhatsApp data: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }
