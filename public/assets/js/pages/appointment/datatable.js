@@ -467,10 +467,23 @@ function actions(data) {
             isToday = scheduledDateString === todayString;
         }
 
+        // Debug logging for WhatsApp icon rendering
+        console.log('WhatsApp Icon Check for ID ' + id + ':', {
+            scheduled_date: data.scheduled_date,
+            appointment_status: data.appointment_status,
+            todayString: todayString,
+            isToday: isToday,
+            statusCheck: data.appointment_status != 2,
+            willShowIcon: (data.appointment_status != 2 && isToday)
+        });
+
         if (data.appointment_status != 2 && isToday) {
+            console.log('✓ WhatsApp icon WILL SHOW for ID ' + id);
             actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
                             <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
                         </a>';
+        } else {
+            console.log('✗ WhatsApp icon WILL NOT SHOW for ID ' + id);
         }
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -644,6 +657,7 @@ function actions(data) {
                     </li>';
 
         // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today
+        console.log('WhatsApp Mobile Menu Check for ID ' + id + ': will show =', (data.appointment_status != 2 && isToday));
         if (data.appointment_status != 2 && isToday) {
             actions += '<li class="navi-item  d-lg-none">\
                             <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
