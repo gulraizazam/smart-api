@@ -6174,15 +6174,14 @@ class AppointmentsController extends Controller
             // Replace variables in template content
             $message = $template->content;
 
-            // Format appointment time (combine date and time)
+            // Format appointment time (only time, not date)
             $appointmentTime = 'N/A';
             if ($appointment->scheduled_date && $appointment->scheduled_time) {
                 try {
-                    $date = \Carbon\Carbon::parse($appointment->scheduled_date);
                     $time = \Carbon\Carbon::parse($appointment->scheduled_time);
-                    $appointmentTime = $date->format('d M Y') . ' at ' . $time->format('h:i A');
+                    $appointmentTime = $time->format('h:i A');
                 } catch (\Exception $e) {
-                    $appointmentTime = ($appointment->scheduled_date ?? '') . ' at ' . ($appointment->scheduled_time ?? '');
+                    $appointmentTime = $appointment->scheduled_time ?? 'N/A';
                 }
             }
 
