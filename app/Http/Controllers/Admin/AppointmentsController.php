@@ -6161,13 +6161,18 @@ class AppointmentsController extends Controller
                 $whatsappNumber = '92' . $whatsappNumber;
             }
 
-            // Fetch SMS template with slug 'consultancy_whatsapp'
-            $template = SMSTemplates::getBySlug('consultancy_whatsapp', Auth::user()->account_id);
+            // Determine template slug based on appointment type
+            // appointment_type_id: 1 = Consultancy, 2 = Treatment
+            $templateSlug = ($appointment->appointment_type_id == 2) ? 'treatment_whatsapp' : 'consultancy_whatsapp';
+
+            // Fetch SMS template
+            $template = SMSTemplates::getBySlug($templateSlug, Auth::user()->account_id);
 
             if (!$template) {
+                $templateType = ($appointment->appointment_type_id == 2) ? 'Treatment' : 'Consultancy';
                 return response()->json([
                     'status' => false,
-                    'message' => 'WhatsApp template not found. Please create a template with slug "consultancy_whatsapp"'
+                    'message' => 'WhatsApp template not found. Please create a template with slug "' . $templateSlug . '" for ' . $templateType . ' appointments'
                 ]);
             }
 
