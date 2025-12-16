@@ -48,6 +48,36 @@
             trix-editor .trix-content {
                 overflow: visible !important;
             } */
+
+            /* Make datatable responsive on mobile */
+            @media (max-width: 768px) {
+                .datatable {
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                .datatable table {
+                    min-width: 100%;
+                    width: auto !important;
+                }
+
+                /* Ensure actions column is always visible */
+                .datatable-cell:last-child {
+                    position: sticky !important;
+                    right: 0 !important;
+                    background-color: #fff !important;
+                    z-index: 2 !important;
+                    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+                }
+
+                .datatable-row .datatable-cell:last-child {
+                    background-color: #fff !important;
+                }
+
+                .datatable-row:hover .datatable-cell:last-child {
+                    background-color: #f3f6f9 !important;
+                }
+            }
         </style>
     @endpush
 
