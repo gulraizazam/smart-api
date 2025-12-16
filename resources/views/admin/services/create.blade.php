@@ -51,6 +51,11 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Price <span class="text text-danger">*</span></label>
                             <input name="price" class="form-control" type="number">
                         </div>
+                        <div class="fv-row col-md-12 mt-5 servicefield" style="display: none;">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Description</label>
+                            <input id="add_description" type="hidden" name="description">
+                            <trix-editor input="add_description"></trix-editor>
+                        </div>
                         <div class="fv-row col-md-6 mt-5 servicefield" style="display: none;">
                             <label class="required fw-bold fs-6 mb-2 pl-0">End Node? <span class="text text-danger">*</span></label>
                             <label class="checkbox checkbox-single">

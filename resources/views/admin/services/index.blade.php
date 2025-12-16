@@ -2,6 +2,7 @@
 @section('title', 'Services')
 @section('content')
     @push('css')
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
         <style>
             .datatable-pager {
                 display: none !important;
@@ -110,6 +111,7 @@
     @endpush
 
     @push('js')
+        <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/services.js')}}"></script>
         <script>
             function SetName()

@@ -13,9 +13,9 @@ class Services extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'slug', 'end_node', 'complimentory', 'account_id', 'active', 'tax_treatment_type_id', 'created_at', 'updated_at', 'parent_id', 'duration', 'price', 'color', 'sort_no'];
+    protected $fillable = ['name', 'slug', 'end_node', 'complimentory', 'account_id', 'active', 'tax_treatment_type_id', 'created_at', 'updated_at', 'parent_id', 'duration', 'price', 'description', 'color', 'sort_no'];
 
-    protected static $_fillable = ['name', 'slug', 'end_node', 'complimentory', 'active', 'tax_treatment_type_id', 'parent_id', 'duration', 'price', 'color'];
+    protected static $_fillable = ['name', 'slug', 'end_node', 'complimentory', 'active', 'tax_treatment_type_id', 'parent_id', 'duration', 'price', 'description', 'color'];
 
     protected $table = 'services';
 
