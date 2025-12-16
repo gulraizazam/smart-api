@@ -86,9 +86,7 @@ var table_columns = [
         width: 80,
         overflow: 'visible',
         autoHide: false,
-        locked: {
-            right: true
-        },
+        
         template: function (data) {
             return actions(data);
         }
