@@ -83,10 +83,9 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 80,
+        width: 70,
         overflow: 'visible',
         autoHide: false,
-        
         template: function (data) {
             return actions(data);
         }
