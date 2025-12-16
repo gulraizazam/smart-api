@@ -1548,20 +1548,62 @@ function sendWhatsApp(appointmentId) {
                 console.log('Phone Number:', phoneNumber);
                 console.log('Encoded Message:', encodedMessage);
 
-                // Use WhatsApp Web URL (always opens in browser, not desktop app)
-                let whatsappUrl = 'https://web.whatsapp.com/send?phone=' + phoneNumber + '&text=' + encodedMessage;
-                console.log('WhatsApp URL:', whatsappUrl);
+                // Try to open WhatsApp desktop app first
+                let whatsappAppUrl = 'whatsapp://send?phone=' + phoneNumber + '&text=' + encodedMessage;
+                let whatsappWebUrl = 'https://web.whatsapp.com/send?phone=' + phoneNumber + '&text=' + encodedMessage;
 
-                // Open in named window (browser will try to reuse when possible)
-                let whatsappWindow = window.open(whatsappUrl, 'whatsapp_window');
-                console.log('Window Opened:', whatsappWindow !== null);
+                console.log('Trying WhatsApp App URL:', whatsappAppUrl);
 
-                if (whatsappWindow) {
-                    whatsappWindow.focus();
-                    console.log('SUCCESS: WhatsApp window opened and focused');
-                } else {
-                    console.error('ERROR: Failed to open WhatsApp window (popup blocker?)');
-                }
+                // Track if app opened successfully
+                let appOpened = false;
+                let startTime = Date.now();
+
+                // Try to open WhatsApp app directly
+                window.location.href = whatsappAppUrl;
+
+                // Detect if user switched to WhatsApp app using blur event
+                let blurHandler = function() {
+                    let blurTime = Date.now();
+                    // If blur happens quickly (within 2 seconds), likely the app opened
+                    if (blurTime - startTime < 2000) {
+                        console.log('Window blur detected - WhatsApp app likely opened');
+                        appOpened = true;
+                        window.removeEventListener('blur', blurHandler);
+                    }
+                };
+                window.addEventListener('blur', blurHandler);
+
+                // Also check visibility change
+                let visibilityHandler = function() {
+                    if (document.hidden) {
+                        console.log('Page hidden - WhatsApp app likely opened');
+                        appOpened = true;
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                    }
+                };
+                document.addEventListener('visibilitychange', visibilityHandler);
+
+                // Wait and check if app opened, if not fall back to web
+                setTimeout(function() {
+                    // Clean up listeners
+                    window.removeEventListener('blur', blurHandler);
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+
+                    // If app didn't open, fall back to web
+                    if (!appOpened) {
+                        console.log('WhatsApp app not detected, falling back to WhatsApp Web');
+                        let whatsappWindow = window.open(whatsappWebUrl, 'whatsapp_window');
+                        if (whatsappWindow) {
+                            whatsappWindow.focus();
+                            console.log('SUCCESS: WhatsApp Web opened');
+                        } else {
+                            console.error('ERROR: Failed to open WhatsApp Web (popup blocker?)');
+                        }
+                    } else {
+                        console.log('WhatsApp app opened successfully - not opening web version');
+                    }
+                }, 1500);
+
             } else {
                 console.error('ERROR: Response status false');
                 console.error('Error Message:', response.message);
