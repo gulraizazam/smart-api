@@ -5265,7 +5265,7 @@ class AppointmentsController extends Controller
         $appointment->comment = $req->comment;
         $appointment->appointment_id = $req->appointment_id;
         $appointment->created_by = Auth::user()->id;
-        $appointmentCommentDate = \Carbon\Carbon::parse($appointment->created_at)->format('D M, j Y h:i A');
+        $appointmentCommentDate = \Carbon\Carbon::parse($appointment->created_at)->format('D M d, Y g:i A');
         $appointment->save();
         $username = Auth::user()->name;
         $myarray = ['username' => $username, 'appointment' => $appointment, 'appointmentCommentDate' => $appointmentCommentDate, 'appointmentCommentSection' => $appointmentComment];
