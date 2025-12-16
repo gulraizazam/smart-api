@@ -61,6 +61,12 @@
                             <input id="edit_price" name="price" class="form-control" type="number">
                         </div>
 
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Description</label>
+                            <input id="edit_description" type="hidden" name="description">
+                            <trix-editor input="edit_description"></trix-editor>
+                        </div>
+
                         <div class="fv-row col-md-6 mt-5 " >
                             <label class="required fw-bold fs-6 mb-2 pl-0">End Node? <span class="text text-danger">*</span></label>
                             <label class="checkbox checkbox-single">

@@ -260,7 +260,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('lead_statuses/sort', [LeadStatusesController::class, 'sortOrder'])->name('lead_statuses.sort');
 
         // Services
-        Route::resource('services', ServicesController::class)->only('index')->middleware('permission:services_manage');
+        Route::resource('services', ServicesController::class)->only(['index', 'show'])->middleware('permission:services_manage');
 
         // Appointment Statuses
         Route::get('appointment_statuses', [AppointmentStatusesController::class, 'index'])->name('appointment_statuses.index');

@@ -93,6 +93,7 @@ var table_columns = [
 
 
 function actions(data) {
+    console.log(permissions);
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
@@ -100,7 +101,7 @@ function actions(data) {
         let delete_url = route('admin.services.destroy', {id: id});
         let duplicate_url = route('admin.services.duplicate', {id: id});
 
-        if (permissions.edit || permissions.delete) {
+        
             let actions = '<div class="dropdown dropdown-inline action-dots">\
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -115,6 +116,17 @@ function actions(data) {
                     <a href="javascript:void(0);" onclick="editRow(`' + url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
+                    </a>\
+                </li>';
+            }
+            // Add detail option only for child services
+            console.log('Parent ID:', data.parent_id, 'Detail Permission:', permissions.detail);
+            if (permissions.detail && data.parent_id != 0) {
+                let detail_url = route('admin.services.show', {id: id});
+                actions += '<li class="navi-item">\
+                    <a href="' + detail_url + '" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-eye"></i></span>\
+                        <span class="navi-text">Detail</span>\
                     </a>\
                 </li>';
             }
@@ -141,7 +153,7 @@ function actions(data) {
     </div>';
 
             return actions;
-        }
+        
     }
     return '';
 }
@@ -229,6 +241,7 @@ function setEditData(response) {
         $("#edit_duration").val(service.duration);
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
+        $("#edit_description").val(service.description || '');
 
         if (service.end_node == 1) {
             $("#edit_end_node").prop("checked", true);
@@ -330,6 +343,7 @@ function setDuplicateData(response) {
         $("#edit_duration").val(service.duration);
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
+        $("#edit_description").val(service.description || '');
 
         if (service.end_node == 1) {
             $("#edit_end_node").prop("checked", true);

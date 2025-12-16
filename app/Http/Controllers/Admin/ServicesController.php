@@ -83,6 +83,7 @@ class ServicesController extends Controller
                     'create' => Gate::allows('services_create'),
                     'sort' => Gate::allows('services_sort'),
                     'duplicate' => Gate::allows('services_duplicate'),
+                    'detail'=> Gate::allows('services_detail'),
                 ];
                 $records['meta'] = [
                     'field' => $orderBy,
@@ -297,6 +298,35 @@ class ServicesController extends Controller
             'tax_treatment_types' => $tax_treatment_types,
             'select_tax_treatment_type' => $select_tax_treatment_type,
         ]);
+    }
+
+    /**
+     * Display the specified service.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        if (! Gate::allows('services_manage')) {
+            return abort(401);
+        }
+
+        $service = Services::findOrFail($id);
+
+        // Get parent service if exists
+        $parent = null;
+        if ($service->parent_id) {
+            $parent = Services::find($service->parent_id);
+        }
+
+        // Get child services if this is a parent
+        $children = Services::where('parent_id', $id)->get();
+
+        // Get tax treatment type
+        $taxTreatmentType = TaxTreatmentType::find($service->tax_treatment_type_id);
+
+        return view('admin.services.show', compact('service', 'parent', 'children', 'taxTreatmentType'));
     }
 
     /**
