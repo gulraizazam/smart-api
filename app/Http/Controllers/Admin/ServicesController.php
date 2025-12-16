@@ -306,13 +306,20 @@ class ServicesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(Request $request, $id)
     {
         if (! Gate::allows('services_manage')) {
             return abort(401);
         }
 
         $service = Services::findOrFail($id);
+
+        // If AJAX request, return JSON with description only
+        if ($request->ajax() || $request->wantsJson()) {
+            return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                'description' => $service->description,
+            ]);
+        }
 
         // Get parent service if exists
         $parent = null;

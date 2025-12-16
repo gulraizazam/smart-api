@@ -119,14 +119,12 @@ function actions(data) {
                     </a>\
                 </li>';
             }
-            // Add detail option only for child services
-            console.log('Parent ID:', data.parent_id, 'Detail Permission:', permissions.detail);
+            // Add instructions option only for child services
             if (permissions.detail && data.parent_id != 0) {
-                let detail_url = route('admin.services.show', {id: id});
                 actions += '<li class="navi-item">\
-                    <a href="' + detail_url + '" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-eye"></i></span>\
-                        <span class="navi-text">Detail</span>\
+                    <a href="javascript:void(0);" onclick="showInstructions(' + id + ');" class="navi-link">\
+                        <span class="navi-icon"><i class="la la-file-text"></i></span>\
+                        <span class="navi-text">Instructions</span>\
                     </a>\
                 </li>';
             }
@@ -241,7 +239,13 @@ function setEditData(response) {
         $("#edit_duration").val(service.duration);
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
+
+        // Set Trix editor content
         $("#edit_description").val(service.description || '');
+        let trixEditor = document.querySelector("trix-editor[input='edit_description']");
+        if (trixEditor && trixEditor.editor) {
+            trixEditor.editor.loadHTML(service.description || '');
+        }
 
         if (service.end_node == 1) {
             $("#edit_end_node").prop("checked", true);
@@ -343,7 +347,13 @@ function setDuplicateData(response) {
         $("#edit_duration").val(service.duration);
         $("#edit_color").val(service.color);
         $("#edit_price").val(service.price);
+
+        // Set Trix editor content
         $("#edit_description").val(service.description || '');
+        let trixEditor = document.querySelector("trix-editor[input='edit_description']");
+        if (trixEditor && trixEditor.editor) {
+            trixEditor.editor.loadHTML(service.description || '');
+        }
 
         if (service.end_node == 1) {
             $("#edit_end_node").prop("checked", true);
@@ -481,4 +491,30 @@ function setCreateData(response) {
     } catch (error) {
         showException(error);
     }
+}
+
+function showInstructions(serviceId) {
+    $("#modal_service_instructions").modal("show");
+    $("#service_instructions_content").html('<div class="text-center"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.services.show', {id: serviceId}),
+        type: "GET",
+        cache: false,
+        dataType: 'json',
+        success: function (response) {
+            if (response.status && response.data && response.data.description) {
+                $("#service_instructions_content").html(response.data.description);
+            } else {
+                $("#service_instructions_content").html('<div class="alert alert-info">No instructions available for this service.</div>');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            $("#service_instructions_content").html('<div class="alert alert-danger">Failed to load instructions.</div>');
+            errorMessage(xhr);
+        }
+    });
 }
