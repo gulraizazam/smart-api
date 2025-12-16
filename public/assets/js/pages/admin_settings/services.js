@@ -86,6 +86,9 @@ var table_columns = [
         width: 80,
         overflow: 'visible',
         autoHide: false,
+        locked: {
+            right: true
+        },
         template: function (data) {
             return actions(data);
         }
@@ -93,7 +96,6 @@ var table_columns = [
 
 
 function actions(data) {
-    console.log(permissions);
     if (typeof data.id !== 'undefined') {
         let id = data.id;
 
