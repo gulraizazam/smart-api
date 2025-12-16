@@ -71,7 +71,7 @@
 
                         <form id="appointment_cment" style="margin-top: 35px;">
 
-                            <h3 class="box-title">Comment</h3>
+                            <h3 class="box-title">Notes</h3>
 
                             <div class="row">
                                 <div class="col-md-11">
@@ -87,8 +87,8 @@
                             <div class="row">
 
                                 <div class="col-md-12">
-                                    <label>Comment</label>
-                                    <input type="text" id="appointment_comment" name="comment" class="form-control" required="">
+                                    
+                                    <textarea id="appointment_comment" name="comment" class="form-control" required=""></textarea>
                                 </div>
                                 <input type="hidden" name="appointment_id" id="appointment_comment_appointment_id" class="form-control" value=""><br>
                                 <div class="col-md-12 mt-5">

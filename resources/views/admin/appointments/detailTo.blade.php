@@ -174,7 +174,7 @@
                                                 <span class="mt-comment-author"
                                                       id="creat_by">@if($comment->created_by){{ $comment->user->name }}@else{{'N/A'}}@endif</span>
                                                 <span class="mt-comment-date"
-                                                      id="datetime">{{ \Carbon\Carbon::parse($comment->created_at)->format('D M, j Y h:i A') }}</span>
+                                                      id="datetime">{{ \Carbon\Carbon::parse($comment->created_at)->format('D M d, Y g:i A') }}</span>
                                             </div>
                                             <div class="mt-comment-text"
                                                  id="message">@if($comment->comment){{ $comment->comment }}@else{{'N/A'}}@endif</div>
