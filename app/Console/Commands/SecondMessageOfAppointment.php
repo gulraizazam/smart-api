@@ -75,6 +75,7 @@ class SecondMessageOfAppointment extends Command
             ->where('patient_id')
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id', 'appointments.consultancy_type')
             ->get();
+            dd( $appointments);
             
         $log_type = '2nd_sms';
         
