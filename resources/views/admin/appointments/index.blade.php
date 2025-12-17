@@ -403,6 +403,10 @@
 
     @push('js')
         <script>
+            // Pass user role to JavaScript
+            window.userRole = '{{ Auth::user()->getRoleNames()->first() ?? '' }}';
+            window.canSendWhatsApp = {{ Auth::user()->hasRole('FDM') || Auth::user()->hasRole('Super-Admin') ? 'true' : 'false' }};
+
             let appointment_limit = '{{ config('constants.export-appointment-limit') }}';
             var limit = '{{ config('constants.export-appointment-limit') }}';
             var offset = 0;

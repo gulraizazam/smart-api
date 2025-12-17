@@ -472,13 +472,16 @@ function actions(data) {
             willShowIcon: (data.appointment_status != 2 && isToday)
         });
 
-        if (data.appointment_status != 2 && isToday) {
+        // Check user role permission for WhatsApp button (only FDM and Super-Admin)
+        let canSendWhatsApp = window.canSendWhatsApp || false;
+
+        if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
             console.log('✓ WhatsApp icon WILL SHOW for ID ' + id);
             actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
                             <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
                         </a>';
         } else {
-            console.log('✗ WhatsApp icon WILL NOT SHOW for ID ' + id);
+            console.log('✗ WhatsApp icon WILL NOT SHOW for ID ' + id + ' (Status: ' + data.appointment_status + ', Today: ' + isToday + ', Permission: ' + canSendWhatsApp + ')');
         }
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -644,9 +647,9 @@ function actions(data) {
                         </a>\
                     </li>';
 
-        // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today
-        console.log('WhatsApp Mobile Menu Check for ID ' + id + ': will show =', (data.appointment_status != 2 && isToday));
-        if (data.appointment_status != 2 && isToday) {
+        // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today and user has permission
+        console.log('WhatsApp Mobile Menu Check for ID ' + id + ': will show =', (data.appointment_status != 2 && isToday && canSendWhatsApp));
+        if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
             actions += '<li class="navi-item  d-lg-none">\
                             <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
                                 <span class="navi-icon"><i class="lab la-whatsapp"></i></span>\

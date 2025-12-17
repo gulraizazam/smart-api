@@ -404,6 +404,11 @@
     {{--All forms popups--}}
     @include('admin.appointments.appointment-forms.modals')
     @push('js')
+        <script>
+            // Pass user role to JavaScript
+            window.userRole = '{{ Auth::user()->getRoleNames()->first() ?? '' }}';
+            window.canSendWhatsApp = {{ Auth::user()->hasRole('FDM') || Auth::user()->hasRole('Super-Admin') ? 'true' : 'false' }};
+        </script>
         <script defer>
             $(document).ready(function () {
                 var result = get_query();
