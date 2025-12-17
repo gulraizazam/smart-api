@@ -2860,14 +2860,20 @@ class DashboardReportsController extends Controller
 
         if (count($converted_appointments)) {
             foreach ($converted_appointments as $appointment) {
+
                 if (!in_array($appointment->id, $appointments)) {
+                     if(Gate::allows('contact')){
+                        $phoneNumber = $appointment->patient->phone;
+                        }else{
+                            $phoneNumber ='***********';
+                        }
                     $appointments_info[$appointment->id] = array(
                         'patient_id' => $appointment->patient_id,
                         'appointment_id' => $appointment->id,
                         'doctor_id' => $appointment->doctor_id,
                         'doctor' => $appointment->doctor->name,
                         'client' => $appointment->patient->name,
-                        'phone' => $appointment->patient->phone,
+                        'phone' => $phoneNumber,
                         'service' => $appointment->service->name,
                         'service_id' => $appointment->service->id,
                         'region' => $appointment->region->name,
@@ -3240,13 +3246,18 @@ class DashboardReportsController extends Controller
             if (count($converted_appointments)) {
                 foreach ($converted_appointments as $appointment) {
                     if (!in_array($appointment->id, $appointments)) {
+                        if(Gate::allows('contact')){
+                        $phoneNumber = $appointment->patient->phone;
+                        }else{
+                            $phoneNumber ='***********';
+                        }
                         $appointments_info[$appointment->id] = array(
                             'patient_id' => $appointment->patient_id,
                             'appointment_id' => $appointment->id,
                             'doctor_id' => $appointment->doctor_id,
                             'doctor' => $appointment->doctor->name,
                             'client' => $appointment->patient->name,
-                            'phone' => $appointment->patient->phone,
+                            'phone' =>$phoneNumber,
                             'service' => $appointment->service->name,
                             'service_id' => $appointment->service->id,
                             'region' => $appointment->region->name,
