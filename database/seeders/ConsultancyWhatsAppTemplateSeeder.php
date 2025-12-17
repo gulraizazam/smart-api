@@ -28,7 +28,9 @@ class ConsultancyWhatsAppTemplateSeeder extends Seeder
             if (!$existingTemplate) {
                 SMSTemplates::create([
                     'name' => 'Consultancy WhatsApp Message',
-                    'content' => 'Dear #patient_name#, your consultation at Cutera is scheduled for #appointment_time#, today. We look forward to seeing you on time.
+                    'content' => 'Dear #patient_name#, your consultation at Cutera is scheduled for #appointment_time#, today.
+
+Location: ##centre_google_map## . We look forward to seeing you on time.
 
 For any assistance, please communicate here.',
                     'slug' => 'consultancy_whatsapp',
