@@ -54,7 +54,7 @@ class SecondMessageOfAppointment extends Command
      */
     public function handle()
     {
-        DB::enableQueryLog();
+        \DB::enableQueryLog();
         $day = Carbon::now()->format('Y-m-d');
         $tomorrow = Carbon::parse(Carbon::now())->addDay()->format('Y-m-d');
 
@@ -76,7 +76,7 @@ class SecondMessageOfAppointment extends Command
             ->where('patient_id')
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id', 'appointments.consultancy_type')
             ->get();
-            dd( DB::getQueryLog());
+            dd( \DB::getQueryLog());
             
         $log_type = '2nd_sms';
         
