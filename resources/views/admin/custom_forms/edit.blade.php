@@ -336,7 +336,7 @@ function fieldHoverBinding() {
 
 function fieldItemRemoveBinding() {
     $('.remove-me').click(function (e) {
-        console.log("I am in remove me function");
+  
         e.preventDefault();
         $(this).parent(".cf-q-option-list-item").remove();
         $(".update-question-fields").change();
@@ -354,7 +354,7 @@ function fieldChangeUpdateBinding() {
         field_id = this.id.split("cs_field_")[1];
 
         if (field_id != "") {
-            console.log(this.id);
+
             fields_data = $(this).find("input")
             data = fields_data.serializeArray();
             update_form_field(field_id, data, (response) => {
@@ -404,7 +404,7 @@ function addMoreTableInputBinding() {
 function addMoreRadioButtonBinding() {
 
     $(".add-more-radio").click(function (e) {
-        console.log("adding radio ");
+
 
         var newIn = '{!!str_replace(array("\n\r", "\n", "\r"), '', view("admin.custom_forms.field_template.sub.single_select"))!!}';
 
@@ -561,7 +561,7 @@ $(function () {
 
 
     $(document).on('click', '.remove-question-me', function (e) {
-        console.log("removing question");
+
         field_id = $(this).parent(".update-question-fields").attr("id");
         id = field_id.split("cs_field_")[1];
         if (id) {

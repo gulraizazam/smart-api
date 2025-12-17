@@ -1545,7 +1545,7 @@ function formatCurrency(amount) {
     const warning = '#FFA800';
     
     // Debug logging
-    console.log('Chart data received:', service.data);
+
     
     // Process locations
     let locations = service.data.bar;
@@ -1627,12 +1627,7 @@ function formatCurrency(amount) {
     centre_wise_arrival = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
     centre_wise_arrival.render();
     
-    console.log('Chart rendered with data:', {
-        categories: modifiedLocations,
-        total: totalData,
-        arrived: arrivedData,
-        walkin: walkinData
-    });
+    
 }
             $(document).on('click', '.planIdText', function () {
                 $('.planIdText').tooltip();

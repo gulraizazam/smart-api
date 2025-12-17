@@ -309,7 +309,7 @@ function sendCancelMembershipRequest(route) {
         type: 'post',
         cache: false,
         success: function (response) {
-            console.log(response);
+      
             if (response.status) {
                 toastr.success(response.message);
 

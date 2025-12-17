@@ -252,7 +252,7 @@ function productSelect(product_id, id = null) {
             product_id: product_id,
         },
         success: function (response) {
-            console.log(response);
+            
             let products = response.data.products;
             if (products.length) {
 
@@ -286,14 +286,14 @@ function productSelectTransfer(product_id, id = null) {
             warehouse_id:warehouse_id,
         },
         success: function (response) {
-            console.log(response);
+        
             let products = response.data.products;
             
             $("#add_total_stock").val(products.quantity);
             
             let warehouse_options = '<option value="">Select Warehouse</option>';
             var warehousesArray = response.data.warehouses;
-            console.log('warehousesArray', warehousesArray);
+           
             for(var i = 0; i < warehousesArray.length; i++){
                 warehouse_options += '<option value="' + warehousesArray[i].id + '">' + warehousesArray[i].name + '</option>';
             }
@@ -388,14 +388,14 @@ $(document).ready(function () {
         var selected = $('select#search_transfer_from option:selected');
         let location = selected.closest('optgroup').attr('value');
         $('#search_location_from').val(location);
-        console.log(location)
+    
     });
 
     $("#search_transfer_to").change(function () {
         let selected = $('select#search_transfer_to option:selected');
         let location = selected.closest('optgroup').attr('value');
         $('#search_location_to').val(location);
-        console.log(location)
+
     });
 
 })

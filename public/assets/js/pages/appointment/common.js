@@ -58,30 +58,30 @@ function toggleSection($this, $class) {
 
     // Show/hide location dropdown in header based on active tab
     if ($class == 'treatment') {
-        console.log('Treatment tab activated');
+       
         $(".treatment-location-header-dropdown").removeClass("d-none");
         $(".consultancy-location-header-dropdown").addClass("d-none");
         // Initialize select2 and load locations for treatment dropdown
         setTimeout(function() {
-            console.log('Initializing treatment location dropdown, current options:', $('#treatment_location_filter option').length);
+         
             $('#treatment_location_filter').select2({ width: '100%' });
             if ($('#treatment_location_filter option').length <= 1) {
-                console.log('Loading locations for treatment');
+                
                 loadLocations('', 'treatment');
             } else {
                 console.log('Locations already loaded, skipping');
             }
         }, 200);
     } else if ($class == 'consultancy') {
-        console.log('Consultancy tab activated');
+        
         $(".consultancy-location-header-dropdown").removeClass("d-none");
         $(".treatment-location-header-dropdown").addClass("d-none");
         // Initialize select2 and load locations for consultancy dropdown
         setTimeout(function() {
-            console.log('Initializing consultancy location dropdown, current options:', $('#consultancy_location_filter option').length);
+           
             $('#consultancy_location_filter').select2({ width: '100%' });
             if ($('#consultancy_location_filter option').length <= 1) {
-                console.log('Loading locations for consultancy');
+                
                 loadLocations('', 'consultancy');
             } else {
                 console.log('Locations already loaded, skipping');
@@ -246,7 +246,7 @@ var something = (function() {
     };
 })();
 window.loadDoctors = function (locationId, appointment = null) {
-    console.log('loadDoctors called with locationId:', locationId, 'appointment:', appointment);
+   
   
     if (locationId != '' && locationId != null) {
         $('#treatment_doctor_filter').removeAttr('disabled');
@@ -757,6 +757,13 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     if (permissions.log) {
         buttons += '<li><a class="text text-primary" target="_blank" href="'+log_url+'">\
         <i class="la la-history" title="Log"></i> Log\
+        </a></li>';
+    }
+
+    if (permissions.delete) {
+        let delete_url = route('admin.appointments.destroy', {id: appointment.id});
+        buttons += '<li id="delete-appointment-action" style="background-color: #F64E60; border-radius: 4px; margin-top: 5px;"><a style="color: white !important; " href="javascript:void(0);" onclick="deleteRow(`' + delete_url + '`);">\
+        <i class="la la-trash" title="Delete"></i> Delete\
         </a></li>';
     }
 

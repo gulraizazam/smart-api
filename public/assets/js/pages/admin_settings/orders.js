@@ -21,7 +21,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-            console.log(data);
+           
             return displayProducts(data.order_detail);
         }
     }, {
@@ -405,7 +405,7 @@ function setRefundOrderData(response) {
     let loop = 0;
 
     orderDetail.forEach(function (value, index) {
-        console.log('value',value);
+    
         let product = value.product;
         loop++;
         if(value.quantity > 0){
@@ -692,7 +692,7 @@ function productSearch(from_id, id = null, type = null) {
             success: function (response) {
                 let products = response.data.products;
                 let doctors = response.data.doctors;
-                console.log('doc',doctors);
+               
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
@@ -758,13 +758,13 @@ $(document).ready(function () {
         var $input = $(this).parent().find('.quantity_input');
         var input2 = $(this).closest("tr").find('.product_quantity_input');
         var stock = $(this).closest("tr").find('input[name="stock[]"]').val();
-        var count = parseInt($input.val()) + 1; console.log(stock);
+        var count = parseInt($input.val()) + 1; 
         if (stock >= count) {
             $input.val(count);
             $input.change();
             input2.val(count).change();
             calculateTotal($(this));
-            console.log($input.val(count), stock, count, ProductStock);
+       
         } else {
             toastr.error("This Product is out of stock");
         }

@@ -988,7 +988,7 @@ function getLeadDetail($this) {
         success: function (resposne) {
             if (resposne.status && resposne.data.lead) {
                 lead = resposne.data.lead;
-                console.log(lead)
+          
                 $('#add_phone').val(lead?.phone);
 
                 if (permissions.contact) {

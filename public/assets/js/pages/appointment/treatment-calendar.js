@@ -215,7 +215,7 @@ var TreatmentCalendar = function() {
                         });
 
                         if (window.eventData.createdId == appointmentObj.id) {
-                            console.log("moving to that date " + window.eventData.createdId + " dand date : " + appointmentObj.start);
+                           
                             var date = moment(appointmentObj.start, "YYYY-MM-DD");
                             //   $("#calendar").fullCalendar('gotoDate', date);
                             window.eventData.createdId = null;

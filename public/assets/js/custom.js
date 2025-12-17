@@ -1067,6 +1067,11 @@ function advanceFilters() {
     $(".advance-arrow").toggleClass("fa-caret-right").toggleClass("fa-caret-down")
 }
 
+function toggleAllFilters() {
+    $(".all-filters-wrapper").slideToggle(300);
+    $(".filter-toggle-arrow").toggleClass("fa-chevron-down").toggleClass("fa-chevron-up");
+}
+
 function phoneReset(className) {
     $("." + className).val('');
 }

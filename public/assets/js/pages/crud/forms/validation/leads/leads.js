@@ -64,7 +64,7 @@ var ConvertValidation = function () {
                     toastr.success(response.message);
                     closePopup(modal_id);
                     //reInitTable();
-                    console.log(response)
+                
                     window.location.href =  route('admin.appointments.index', {
                         tab: response.data.appointment_type,
                         city_id: response.data.city_id,

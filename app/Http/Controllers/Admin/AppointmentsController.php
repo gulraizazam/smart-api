@@ -2214,6 +2214,7 @@ class AppointmentsController extends Controller
                 'patient_card' => Gate::allows('appointments_patient_card'),
                 'log' => Gate::allows('appointments_log'),
                 'contact' => Gate::allows('contact'),
+                'delete' => Gate::allows('appointments_destroy'),
             ],
         ]);
     }

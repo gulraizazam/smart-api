@@ -64,7 +64,7 @@ $(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                    console.log('res2',resposne);
+                
                     let consume = 'NO';
                     if (resposne.status == '1') {
 
@@ -339,7 +339,7 @@ function setPlanData(response) {
 
     if (discount_types) {
         Object.entries(discount_types).forEach(function (discount_type) {
-            console.log(discount_type)
+            
             discount_type_options += '<option value="' + discount_type[0] + '">' + discount_type[1] + '</option>';
         });
     }
@@ -636,7 +636,7 @@ function setSmsLogs(response) {
         if (SMSLogs.length) {
             let rows = '<tr>';
             Object.entries(SMSLogs).forEach(function (value, index) {
-                console.log(value)
+            
                 rows += '<td></td>';
             });
             rows += '</tr>';

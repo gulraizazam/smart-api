@@ -312,7 +312,7 @@
                     i.html(response.message);
                     window.location = route('admin.appointments.index');
                 } else {
-                    console.log('Here I am');
+            
                     // $("input[type=submit]",form).removeAttr('disabled');
                     i.hide();
                     r.html(response.message);
