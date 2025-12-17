@@ -6197,6 +6197,7 @@ class AppointmentsController extends Controller
             $message = str_replace('#appointment_id#', $appointment->id ?? 'N/A', $message);
             $message = str_replace('#doctor_name#', $appointment->doctor->name ?? 'N/A', $message);
             $message = str_replace('#location_name#', $appointment->location->name ?? 'N/A', $message);
+            $message = str_replace('#centre_google_map#', $appointment->location->google_map ?? 'N/A', $message);
             $message = str_replace('#service_name#', $appointment->service->name ?? 'N/A', $message);
             $message = str_replace('#scheduled_date#', $appointment->scheduled_date ?? 'N/A', $message);
             $message = str_replace('#scheduled_time#', $appointment->scheduled_time ?? 'N/A', $message);
@@ -6209,6 +6210,7 @@ class AppointmentsController extends Controller
             $message = str_replace('##appointment_id##', $appointment->id ?? 'N/A', $message);
             $message = str_replace('##doctor_name##', $appointment->doctor->name ?? 'N/A', $message);
             $message = str_replace('##location_name##', $appointment->location->name ?? 'N/A', $message);
+            $message = str_replace('##centre_google_map##', $appointment->location->google_map ?? 'N/A', $message);
             $message = str_replace('##service_name##', $appointment->service->name ?? 'N/A', $message);
             $message = str_replace('##scheduled_date##', $appointment->scheduled_date ?? 'N/A', $message);
             $message = str_replace('##scheduled_time##', $appointment->scheduled_time ?? 'N/A', $message);
