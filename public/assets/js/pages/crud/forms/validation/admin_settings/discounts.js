@@ -226,13 +226,6 @@ function submitData(callback) {
     ids.push($("#locations").val());
     ids.push($("#services").val());
 
-    console.log('=== DISCOUNT ALLOCATE DEBUG ===');
-    console.log('Location ID:', $("#locations").val());
-    console.log('Service ID:', $("#services").val());
-    console.log('Discount ID:', $("#discount_id").val());
-    console.log('Combined IDs:', ids.join(','));
-    console.log('URL:', '/api/saveDervice');
-    console.log('Data:', {voucher_id: $("#discount_id").val(), id: ids.join(',')});
 
     showSpinner();
     $.ajax({
@@ -248,7 +241,7 @@ function submitData(callback) {
             console.log('Request sending...');
         },
         success: function (response) {
-            console.log('Success Response:', response);
+           
             if (response.status == true) {
                 var data = response.data;
                 $('#allocate_services').append(serviceLocation(data.record.id, data.record_locaiton_name, data.record_service_name));

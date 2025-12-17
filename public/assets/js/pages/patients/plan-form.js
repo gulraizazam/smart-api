@@ -564,7 +564,7 @@ function setEditData(response) {
 
         let discount_type_options = '<option value="">Select Discount Type</option>';
 
-        console.log(discount_types)
+  
         if (discount_types) {
             Object.entries(discount_types).forEach(function (discount_type) {
                 discount_type_options += '<option value="' + discount_type[0] + '">' + discount_type[1] + '</option>';
@@ -1544,7 +1544,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                    console.log('res4',resposne);
+                 
                     let consume = 'NO';
                     if (resposne.status) {
 

@@ -518,7 +518,7 @@
                     },
                     cache: false,
                     success: function(response) {
-                        console.log(response);
+                    
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
@@ -685,7 +685,7 @@
                                         // Now set the value and trigger calendar
                                         setTimeout(function() {
                                             $("#consultancy_location_filter").val(singleCentreId);
-                                            console.log('Auto-triggering calendar for centre ID:', singleCentreId);
+                                      
                                             loadConsultantDoctors(singleCentreId, 'consultancy');
                                         }, 300);
                                     }

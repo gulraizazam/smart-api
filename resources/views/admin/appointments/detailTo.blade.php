@@ -223,7 +223,7 @@
                 'appointment_id': $('input[name=appointment_id]').val(),
             },
             success: function (myarray) {
-                console.log(myarray);
+             
                 $('#commentsection').prepend('<div class="tab-content" id="itemComment"><div class="tab-pane active" id="portlet_comments_1"><div class="mt-comments"><div class="mt-comment"><div class="mt-comment-img"><img src="{{ url('img/avatar.jpg') }}" alt="Avatar"></div><div class="mt-comment-body"><div class="mt-comment-info"><span class="mt-comment-author">' + myarray.username + '</span><span class="mt-comment-date">' + myarray.appointmentCommentDate + '</span></div><div class="mt-comment-text">' + myarray.appointment.comment + '</div></div></div></div></div></div>')
             },
 

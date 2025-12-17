@@ -2,8 +2,7 @@
 window.loadAllChildServices = function () {
     resource_id = $("#treatment_resource_id").val();
 
-    console.log('Loading all child services with resource_id:', resource_id);
-
+   
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -15,7 +14,7 @@ window.loadAllChildServices = function () {
         },
         cache: false,
         success: function(response) {
-            console.log('Child services response:', response);
+            
             if(response.status) {
                 let services = response.data.services;
                 let service_option = '<option value="">Select a Service</option>';
@@ -26,7 +25,7 @@ window.loadAllChildServices = function () {
                     serviceCount++;
                 });
 
-                console.log('Loaded ' + serviceCount + ' child services');
+        
                 $('#create_treatment_service').html(service_option);
 
                 // Reinitialize select2 if it exists
@@ -148,7 +147,6 @@ jQuery(document).ready(function() {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log('Treatment form submitted via AJAX');
         
         var form = $(this);
         var formData = form.serialize();
@@ -165,8 +163,7 @@ jQuery(document).ready(function() {
             type: 'POST',
             data: formData,
             success: function(response) {
-                console.log('Treatment creation response:', response);
-                
+           
                 if (response.status) {
                     toastr.success(response.message || 'Treatment created successfully');
                     
@@ -175,15 +172,11 @@ jQuery(document).ready(function() {
                     
                     // Reload calendar after a short delay to ensure modal is closed
                     setTimeout(function() {
-                        console.log('=== Reloading calendar after treatment creation ===');
-                        console.log('custom_treatment_resource_calendar visible?', $('#custom_treatment_resource_calendar').is(':visible'));
-                        console.log('TreatmentResourceCalendar defined?', typeof TreatmentResourceCalendar !== 'undefined');
-                        console.log('treatment_calendar defined?', typeof treatment_calendar !== 'undefined');
-                        
+                     
                         // Reload resource calendar if it's visible
                         if ($('#custom_treatment_resource_calendar').is(':visible')) {
                             if (typeof TreatmentResourceCalendar !== 'undefined') {
-                                console.log('✓ Calling TreatmentResourceCalendar.reload()');
+                       
                                 TreatmentResourceCalendar.reload();
                             } else {
                                 console.error('✗ TreatmentResourceCalendar is not defined!');

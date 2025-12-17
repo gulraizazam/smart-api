@@ -131,7 +131,7 @@
     <script>
         $(document).ready(function() {
             $(".btn-pdf").on("click", function(e) {
-                console.log("Button clicked!");
+          
                 e.preventDefault();
                 var url = $(this).attr("href");
                 $("#modal_display_invoice").modal("hide");

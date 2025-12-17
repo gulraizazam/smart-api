@@ -36,15 +36,11 @@ var table_columns = [
     },{
         field: 'service_id',
         title: 'Service',
-        width: 'auto',
-    },{
-        field: 'appointment_type_id',
-        title: 'Type',
-        width: 85,
+        width: 90,
     },{
         field: 'doctor_id',
         title: 'Doctor',
-        width: 90,
+        width: 80,
     },{
         field: 'appointment_status_id',
         title: 'Status',
@@ -69,20 +65,16 @@ var table_columns = [
     },{
         field: 'location_id',
         title: 'Centre',
-        width: 'auto',
+        width: 90,
     },{
         field: 'city_id',
         title: 'City',
-        width: 'auto',
-    },{
-        field: 'region_id',
-        title: 'Region',
-        width: 'auto',
-    },{
-        field: 'consultancy_type',
-        title: 'Consultancy Type',
-        width: 'auto',
-    },{
+        width: 80,
+    // },{
+    //     field: 'consultancy_type',
+    //     title: 'Consultancy Type',
+    //     width: 100,
+    // },{
         field: 'created_at',
         title: 'Created At',
         width: 'auto',
@@ -105,7 +97,7 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 125,
+        width: 180,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
@@ -463,26 +455,22 @@ function actions(data) {
         }
 
         // Debug logging for WhatsApp icon rendering
-        console.log('WhatsApp Icon Check for ID ' + id + ':', {
-            scheduled_date: data.scheduled_date,
-            appointment_status: data.appointment_status,
-            todayString: todayString,
-            isToday: isToday,
-            statusCheck: data.appointment_status != 2,
-            willShowIcon: (data.appointment_status != 2 && isToday)
-        });
+     
 
         // Check user role permission for WhatsApp button (only FDM and Super-Admin)
         let canSendWhatsApp = window.canSendWhatsApp || false;
 
         if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
-            console.log('✓ WhatsApp icon WILL SHOW for ID ' + id);
+            // Copy WhatsApp Message Button
+            actions += '<a href="javascript:void(0);" onclick="copyWhatsAppMessage(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-primary btn-sm ml-2" title="Copy Message">\
+                            <span class="navi-icon"><i class="la la-copy" style="color: white;"></i></span>\
+                        </a>';
+
+            // Send WhatsApp Button
             actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
                             <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
                         </a>';
-        } else {
-            console.log('✗ WhatsApp icon WILL NOT SHOW for ID ' + id + ' (Status: ' + data.appointment_status + ', Today: ' + isToday + ', Permission: ' + canSendWhatsApp + ')');
-        }
+        } 
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                         <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -648,7 +636,6 @@ function actions(data) {
                     </li>';
 
         // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today and user has permission
-        console.log('WhatsApp Mobile Menu Check for ID ' + id + ': will show =', (data.appointment_status != 2 && isToday && canSendWhatsApp));
         if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
             actions += '<li class="navi-item  d-lg-none">\
                             <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
@@ -769,7 +756,7 @@ function addFeedback(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-            console.log('res', response);
+          
             $('#add_patients_name').val(response.data.appointment.name);
             $('#treatment_name').val(response.data.appointment.service.name);
             $('#add_doctor_name').val(response.data.appointment.doctor.name);
@@ -790,7 +777,7 @@ function setAppointmentDetailData(response) {
     try {
 
         let appointment = response.data.appointment;
-        console.log(appointment);
+  
         let permissions = response.data.permissions;
         let patient = appointment.patient;
         let doctor = appointment.doctor;
@@ -867,7 +854,7 @@ function editRow(url, id, $class = 'detail-actions') {
 }
 
 function setEditData(response) {
-console.log(response);
+
     try {
 
         let appointment = response.data.appointment;
@@ -1660,10 +1647,71 @@ $(document).on('change', '#edit_treatment_doctor_id', function() {
     checkEditTreatmentDoctorChange();
 });
 
+function copyWhatsAppMessage(appointmentId) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.get_whatsapp_data'),
+        type: 'GET',
+        data: { id: appointmentId },
+        cache: false,
+        success: function (response) {
+            if (response.status) {
+                // Replace \n with actual line breaks
+                let message = response.data.message.replace(/\\n/g, '\n');
+
+                // Copy to clipboard
+                if (navigator.clipboard && window.isSecureContext) {
+                    // Use modern clipboard API
+                    navigator.clipboard.writeText(message).then(function() {
+                        toastr.success('Message copied to clipboard!');
+                    }).catch(function(err) {
+                        console.error('Failed to copy message:', err);
+                        fallbackCopyTextToClipboard(message);
+                    });
+                } else {
+                    // Fallback for older browsers or non-HTTPS
+                    fallbackCopyTextToClipboard(message);
+                }
+            } else {
+                toastr.error(response.message || 'Unable to fetch WhatsApp message');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Copy Message Error:', xhr);
+            errorMessage(xhr);
+        }
+    });
+}
+
+// Fallback function for copying text to clipboard
+function fallbackCopyTextToClipboard(text) {
+    let textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.top = "-9999px";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        let successful = document.execCommand('copy');
+        if (successful) {
+            toastr.success('Message copied to clipboard!');
+        } else {
+            toastr.error('Failed to copy message');
+        }
+    } catch (err) {
+        console.error('Fallback: Unable to copy', err);
+        toastr.error('Failed to copy message');
+    }
+
+    document.body.removeChild(textArea);
+}
+
 function sendWhatsApp(appointmentId) {
-    console.log('=== WhatsApp Function Called ===');
-    console.log('Appointment ID:', appointmentId);
-    console.log('Ajax URL:', route('admin.appointments.get_whatsapp_data'));
 
     $.ajax({
         headers: {
@@ -1674,15 +1722,9 @@ function sendWhatsApp(appointmentId) {
         data: { id: appointmentId },
         cache: false,
         success: function (response) {
-            console.log('=== WhatsApp AJAX Success ===');
-            console.log('Full Response:', response);
-            console.log('Response Status:', response.status);
-
+         
             if (response.status) {
-                console.log('Response Data:', response.data);
-                console.log('WhatsApp Number:', response.data.whatsapp);
-                console.log('Original Message:', response.data.message);
-
+            
                 if (!response.data.whatsapp) {
                     console.error('ERROR: WhatsApp number not found');
                     toastr.error('Customer WhatsApp number not found');
@@ -1694,16 +1736,12 @@ function sendWhatsApp(appointmentId) {
                 let phoneNumber = response.data.whatsapp;
                 let encodedMessage = encodeURIComponent(message);
 
-                console.log('Processed Message:', message);
-                console.log('Phone Number:', phoneNumber);
-                console.log('Encoded Message:', encodedMessage);
-
+             
                 // Try to open WhatsApp desktop app first
                 let whatsappAppUrl = 'whatsapp://send?phone=' + phoneNumber + '&text=' + encodedMessage;
                 let whatsappWebUrl = 'https://web.whatsapp.com/send?phone=' + phoneNumber + '&text=' + encodedMessage;
 
-                console.log('Trying WhatsApp App URL:', whatsappAppUrl);
-
+              
                 // Track if app opened successfully
                 let appOpened = false;
                 let startTime = Date.now();
@@ -1716,7 +1754,7 @@ function sendWhatsApp(appointmentId) {
                     let blurTime = Date.now();
                     // If blur happens quickly (within 2 seconds), likely the app opened
                     if (blurTime - startTime < 2000) {
-                        console.log('Window blur detected - WhatsApp app likely opened');
+           
                         appOpened = true;
                         window.removeEventListener('blur', blurHandler);
                     }
@@ -1726,7 +1764,7 @@ function sendWhatsApp(appointmentId) {
                 // Also check visibility change
                 let visibilityHandler = function() {
                     if (document.hidden) {
-                        console.log('Page hidden - WhatsApp app likely opened');
+                    
                         appOpened = true;
                         document.removeEventListener('visibilitychange', visibilityHandler);
                     }
@@ -1741,11 +1779,11 @@ function sendWhatsApp(appointmentId) {
 
                     // If app didn't open, fall back to web
                     if (!appOpened) {
-                        console.log('WhatsApp app not detected, falling back to WhatsApp Web');
+                    
                         let whatsappWindow = window.open(whatsappWebUrl, 'whatsapp_window');
                         if (whatsappWindow) {
                             whatsappWindow.focus();
-                            console.log('SUCCESS: WhatsApp Web opened');
+          
                         } else {
                             console.error('ERROR: Failed to open WhatsApp Web (popup blocker?)');
                         }

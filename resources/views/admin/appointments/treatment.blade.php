@@ -412,7 +412,7 @@
         <script defer>
             $(document).ready(function () {
                 var result = get_query();
-                console.log(result);
+            
                 if (typeof result.tab !== 'undefined') {
                     $("." + result.tab+ '-tab').click();
                     // Show location dropdown if tab is treatment
@@ -436,7 +436,7 @@
                     && typeof result.tab !== 'undefined') {
                     loadDoctors(result.location_id, result.tab);
                     setTimeout( function () {
-                        console.log('result.city_id', result.city_id);
+                  
                         $("#treatment_city_filter option[value='"+result.city_id+"']").attr('selected','selected');
                         $("#treatment_city_filter").val(result.city_id).change();
                         setDashboardFilters();
@@ -626,7 +626,7 @@
                                         // Now set the value and trigger calendar
                                         setTimeout(function() {
                                             $("#treatment_location_filter").val(singleCentreId);
-                                            console.log('Auto-triggering treatment calendar for centre ID:', singleCentreId);
+                                 
                                             loadDoctors(singleCentreId, 'treatment');
                                         }, 300);
                                     }

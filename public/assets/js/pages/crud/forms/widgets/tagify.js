@@ -25,8 +25,7 @@ var KTTagifyDemos = function() {
 
         // tag added callback
         function onAddTag(e) {
-            console.log("onAddTag: ", e.detail);
-            console.log("original input value: ", input.value)
+          
             tagify.off('add', onAddTag) // exmaple of removing a custom Tagify event
         }
 
