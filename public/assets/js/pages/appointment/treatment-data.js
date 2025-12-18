@@ -429,13 +429,27 @@ function checkPatientLastTreatment(patientId) {
                         $('#warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + '.');
                         
                         if (hasDoctorRota) {
-                            // Doctor has rota, enable option 1
+                            // Doctor has rota, enable option 1 and auto-select it
                             $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
                             $('#use_previous_doctor').prop('disabled', false);
+                            $('#use_previous_doctor').prop('checked', true);
+                            
+                            // Update doctor ID to previous doctor
+                            $('#treatment_doctor_id').val(lastDoctorId);
+                            if ($('#create_treatment_doctor').length) {
+                                $('#create_treatment_doctor').val(lastDoctorId).trigger('change');
+                            }
+                            
+                            // Enable submit button
+                            $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
                         } else {
                             // Doctor doesn't have rota, disable option 1 with message
                             $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(No rota available for selected date/time)</span>');
                             $('#use_previous_doctor').prop('disabled', true);
+                            $('#use_previous_doctor').prop('checked', false);
+                            
+                            // Keep submit disabled - user cannot proceed
+                            $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', true);
                         }
                         
                         $('#treatment_doctor_warning').removeClass('d-none');
@@ -444,12 +458,6 @@ function checkPatientLastTreatment(patientId) {
                         $('#treatment_doctor_warning').data('previous-doctor-id', lastDoctorId);
                         $('#treatment_doctor_warning').data('previous-doctor-name', lastDoctorName);
                         $('#treatment_doctor_warning').data('has-doctor-rota', hasDoctorRota);
-
-                        // Deselect both radio buttons by default
-                        $('#use_previous_doctor').prop('checked', false);
-                        $('#use_selected_doctor').prop('checked', false);
-
-                        // Keep submit disabled until radio button is selected
                     }
                 } else {
                     // Service doesn't match, enable submit button

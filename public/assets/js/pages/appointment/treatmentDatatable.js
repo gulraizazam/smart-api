@@ -1552,6 +1552,11 @@ function checkEditTreatmentDoctorChange() {
         return;
     }
 
+    // Get the scheduled date and time for rota check
+    var scheduledDate = $("#edit_treatment_scheduled_date").val();
+    var scheduledTime = $("#edit_treatment_scheduled_time").val();
+    var startDateTime = scheduledDate && scheduledTime ? scheduledDate + 'T' + scheduledTime : null;
+
     // Call backend to check if patient has past arrived treatments of the same service
     $.ajax({
         type: 'GET',
@@ -1560,7 +1565,8 @@ function checkEditTreatmentDoctorChange() {
             patient_id: patientId,
             service_id: serviceId,
             location_id: locationId,
-            exclude_appointment_id: currentAppointmentId // Exclude current appointment
+            exclude_appointment_id: currentAppointmentId, // Exclude current appointment
+            start: startDateTime
         },
         success: function(response) {
             if (response.status && response.data.last_treatment) {
@@ -1568,31 +1574,46 @@ function checkEditTreatmentDoctorChange() {
                 var lastDoctorId = lastTreatment.doctor_id;
                 var lastDoctorName = lastTreatment.doctor_name;
                 var lastServiceId = lastTreatment.service_id;
+                var hasDoctorRota = lastTreatment.has_doctor_rota;
 
                 // Check if the last treatment's service matches current service
                 if (lastServiceId == serviceId) {
                     // Service matches, now check if doctor is different
                     if (lastDoctorId != selectedDoctorId) {
-                        // Get selected doctor name from dropdown
-                        var selectedDoctorName = $("#edit_treatment_doctor_id option[value='" + selectedDoctorId + "']").text();
-
                         // Show warning message
                         $('#edit_warning_message').html(' The last session for this treatment was performed by ' + lastDoctorName + '');
-                        $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
-                        $('#edit_selected_doctor_option').html('' + selectedDoctorName + '');
+                        
+                        if (hasDoctorRota) {
+                            // Doctor has rota, enable option 1 and auto-select it
+                            $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
+                            $('#edit_use_previous_doctor').prop('disabled', false);
+                            $('#edit_use_previous_doctor').prop('checked', true);
+                            
+                            // Update doctor to previous doctor
+                            isResettingDoctor = true;
+                            $('#edit_treatment_doctor_id').val(lastDoctorId).trigger('change.select2');
+                            setTimeout(function() {
+                                isResettingDoctor = false;
+                            }, 100);
+                            
+                            // Enable submit button
+                            $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                        } else {
+                            // Doctor doesn't have rota, disable option 1 with message
+                            $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(No rota available for selected date/time)</span>');
+                            $('#edit_use_previous_doctor').prop('disabled', true);
+                            $('#edit_use_previous_doctor').prop('checked', false);
+                            
+                            // Keep submit disabled - user cannot proceed
+                            $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
+                        }
 
                         // Show the warning div
                         $('#edit_treatment_doctor_warning').removeClass('d-none');
 
-                        // Deselect both radio buttons by default
-                        $('#edit_use_previous_doctor').prop('checked', false);
-                        $('#edit_use_selected_doctor').prop('checked', false);
-
                         // Store the last doctor ID for the radio button handler
                         $('#edit_treatment_doctor_warning').data('last-doctor-id', lastDoctorId);
-
-                        // Disable the submit button until user makes a choice
-                        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
+                        $('#edit_treatment_doctor_warning').data('has-doctor-rota', hasDoctorRota);
                     } else {
                         // Last treatment was with the same doctor, no warning needed
                         $('#edit_treatment_doctor_warning').addClass('d-none');
