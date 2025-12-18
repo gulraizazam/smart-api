@@ -1372,6 +1372,9 @@ class LeadsController extends Controller
      */
     public function uploadLeads(FileUploadLeadsRequest $request)
     {
+        set_time_limit(300); // 5 minutes
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
         if (!Gate::allows('leads_import')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
