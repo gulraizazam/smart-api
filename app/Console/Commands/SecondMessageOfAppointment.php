@@ -73,7 +73,7 @@ class SecondMessageOfAppointment extends Command
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
-             ->whereDate('appointments.created_at', today())
+             
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id', 'appointments.consultancy_type')
             ->get();
            
