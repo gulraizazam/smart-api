@@ -5998,6 +5998,7 @@ class AppointmentsController extends Controller
             $serviceId = $request->input('service_id');
             $locationId = $request->input('location_id'); // Current location
             $excludeAppointmentId = $request->input('exclude_appointment_id'); // For edit mode
+            $startDateTime = $request->input('start'); // The selected date/time for the new treatment
 
             // Build query for the last arrived treatment for this patient with the same service
             // Join with invoices table to get the latest treatment based on invoice creation date
@@ -6078,6 +6079,52 @@ class AppointmentsController extends Controller
 
                 // Only return the last treatment if the doctor is active and still allocated to the location
                 if ($isDoctorActive && $isDoctorAllocated) {
+                    // Check if the previous doctor has a rota for the selected date/time
+                    $hasDoctorRota = false;
+                    if ($startDateTime && $lastTreatment->doctor_id) {
+                        $start = \Carbon\Carbon::parse($startDateTime)->format('Y-m-d');
+                        $startedTime = \Carbon\Carbon::parse($startDateTime)->format('Y-m-d H:i:s');
+                        
+                        // Get doctor's resource
+                        $resourceIdDoctor = \App\Models\Resources::where('external_id', '=', $lastTreatment->doctor_id)->first();
+                        
+                        if ($resourceIdDoctor) {
+                            // Check if doctor has an active rota for this date at this location
+                            $resourceRotaDoctor = \App\Models\ResourceHasRota::where([
+                                ['resource_id', '=', $resourceIdDoctor->id],
+                                ['location_id', '=', $locationId]
+                            ])->get();
+                            
+                            $continueRotaDoctor = [];
+                            foreach ($resourceRotaDoctor as $resourceroata) {
+                                if (($start >= \Carbon\Carbon::parse($resourceroata->created_at)->format('Y-m-d')) && ($start <= $resourceroata->end)) {
+                                    $continueRotaDoctor[0] = $resourceroata;
+                                }
+                            }
+                            
+                            if (count($continueRotaDoctor) > 0) {
+                                // Check if doctor has rota for this specific day and time
+                                $resourceHasRotaDaysDoctor = \App\Models\ResourceHasRotaDays::where([
+                                    ['resource_has_rota_id', '=', $continueRotaDoctor[0]->id],
+                                    ['date', '=', $start],
+                                    ['active', '=', '1'],
+                                    ['resource_has_rota_days.start_timestamp', '<=', $startedTime],
+                                    ['resource_has_rota_days.end_timestamp', '>', $startedTime],
+                                ])->first();
+                                
+                                $hasDoctorRota = $resourceHasRotaDaysDoctor ? true : false;
+                            }
+                        }
+                        
+                        \Log::info('Doctor rota check for previous doctor', [
+                            'doctor_id' => $lastTreatment->doctor_id,
+                            'location_id' => $locationId,
+                            'start_date' => $start,
+                            'start_time' => $startedTime,
+                            'has_rota' => $hasDoctorRota
+                        ]);
+                    }
+                    
                     return response()->json([
                         'status' => true,
                         'data' => [
@@ -6089,6 +6136,7 @@ class AppointmentsController extends Controller
                                 'service_name' => $lastTreatment->service->name ?? 'Unknown',
                                 'scheduled_date' => $lastTreatment->scheduled_date,
                                 'scheduled_time' => $lastTreatment->scheduled_time,
+                                'has_doctor_rota' => $hasDoctorRota,
                             ]
                         ]
                     ]);
