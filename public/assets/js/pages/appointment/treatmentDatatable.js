@@ -1600,7 +1600,7 @@ function checkEditTreatmentDoctorChange() {
                             $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
                         } else {
                             // Doctor doesn't have rota, disable option 1 with message
-                            $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(No rota available for selected date/time)</span>');
+                            $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(Doctor is not available in this time slot)</span>');
                             $('#edit_use_previous_doctor').prop('disabled', true);
                             $('#edit_use_previous_doctor').prop('checked', false);
                             

@@ -444,7 +444,7 @@ function checkPatientLastTreatment(patientId) {
                             $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
                         } else {
                             // Doctor doesn't have rota, disable option 1 with message
-                            $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(No rota available for selected date/time)</span>');
+                            $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(Doctor is not available in this time slot)</span>');
                             $('#use_previous_doctor').prop('disabled', true);
                             $('#use_previous_doctor').prop('checked', false);
                             
