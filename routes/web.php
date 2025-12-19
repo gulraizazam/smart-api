@@ -89,6 +89,16 @@ use App\Models\PackageService;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get('/package-advances-sum', function () {
+    $sum = PackageAdvances::where('cash_flow', 'in')
+        ->where('payment_mode_id', 4)
+        ->whereNull('deleted_at')
+        ->whereBetween('created_at', ['2024-07-01 00:00:00', '2025-06-30 23:59:59'])
+        ->sum('cash_amount');
+    
+    return response()->json(['sum' => $sum]);
+});
 Route::get('/services/export-pdf', [ServicesController::class, 'exportPdf'])->name('services.export.pdf');
 Route::get('/download-student-membership-patients', [MembershipsController::class, 'downloadStudentMembershipPatients'])
     ->name('download.student.membership.patients');
