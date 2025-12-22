@@ -1210,7 +1210,7 @@
                         </ul>
                     </div>
                     @endcan
-                    <!-- @can('consultant_revenue_report')
+                    @can('consultant_revenue_report')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -1224,7 +1224,7 @@
                             </li>
                         </ul>
                     </div>
-                    @endcan -->
+                    @endcan
                 </li>
 
 
