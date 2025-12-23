@@ -145,7 +145,13 @@ class PackageAdvances extends BaseModal
         public static function updateRecord($data, $parent_data)
         {
             $id = $parent_data->id;
-            $appointment_id = $parent_data->appointment_id; // Default to original package appointment
+            
+            // Get the original package creation date
+            $package = Packages::find($data['package_id']);
+            $packageCreatedAt = $package ? $package->created_at : null;
+            
+            // Default to the package's current appointment_id
+            $appointment_id = $parent_data->appointment_id;
             
             // Get the arrived appointment status
             $arrivedStatus = AppointmentStatuses::where([
@@ -153,33 +159,34 @@ class PackageAdvances extends BaseModal
                 'is_arrived' => 1
             ])->first();
             
-            if ($arrivedStatus) {
-                // Get the latest ARRIVED consultation appointment for this patient
-                $latestArrivedAppointment = Appointments::where([
-                    'patient_id' => $data['patient_id'],
-                    'appointment_type_id' => 1, // Consultation
-                    'base_appointment_status_id' => $arrivedStatus->id
-                ])
-                ->orderBy('scheduled_date', 'desc')
-                ->orderBy('scheduled_time', 'desc')
-                ->first();
+            if ($arrivedStatus && $packageCreatedAt) {
+                // Get package bundle IDs for this package
+                $packagebundleIds = PackageBundles::where([
+                    'package_id' => $data['package_id'],
+                    'is_allocate' => '1',
+                ])->pluck('id');
                 
-                if ($latestArrivedAppointment) {
-                    // Get package bundle IDs for this package
-                    $packagebundleIds = PackageBundles::where([
-                        'package_id' => $data['package_id'],
-                        'is_allocate' => '1',
-                    ])->pluck('id');
+                // Check if any package services were added AFTER the original package was created
+                // (these are new services added during subsequent visits)
+                $newPackageServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                    ->where('created_at', '>', $packageCreatedAt)
+                    ->count();
+                
+                // If new services were added after package creation,
+                // find the latest arrived consultation and link payment to it
+                if ($newPackageServices > 0) {
+                    // Get the latest ARRIVED consultation appointment for this patient
+                    // that arrived AFTER the package was created
+                    $latestArrivedAppointment = Appointments::where([
+                        'patient_id' => $data['patient_id'],
+                        'appointment_type_id' => 1, // Consultation
+                        'base_appointment_status_id' => $arrivedStatus->id
+                    ])
+                    ->where('updated_at', '>', $packageCreatedAt)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
                     
-                    // Check if any package services were added AFTER this appointment arrived
-                    // (using the appointment's scheduled_date as reference)
-                    $packageServicesAfterArrival = PackageService::whereIn('package_bundle_id', $packagebundleIds)
-                        ->where('created_at', '>', $latestArrivedAppointment->scheduled_date . ' ' . $latestArrivedAppointment->scheduled_time)
-                        ->count();
-                    
-                    // If services were added after the latest arrived appointment, 
-                    // link payment to that appointment for doctor conversion credit
-                    if ($packageServicesAfterArrival > 0) {
+                    if ($latestArrivedAppointment) {
                         $appointment_id = $latestArrivedAppointment->id;
                     }
                 }
