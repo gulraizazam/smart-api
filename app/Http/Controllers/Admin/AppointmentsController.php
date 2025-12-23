@@ -1698,21 +1698,20 @@ class AppointmentsController extends Controller
              */
             if (! $request->lead_id) {
                 $lead_obj = $appointment_data;
-                // Convert Lead status to Converted
-                $DefaultConvertedLeadStatus = LeadStatuses::where([
+                // Set Lead status to Booked when consultation is created
+                $DefaultBookedLeadStatus = LeadStatuses::where([
                     'account_id' => Auth::User()->account_id,
-                    'is_converted' => 1,
+                    'is_booked' => 1,
                 ])->first();
-                if ($DefaultConvertedLeadStatus) {
-                    $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
+                if ($DefaultBookedLeadStatus) {
+                    $default_booked_lead_status_id = $DefaultBookedLeadStatus->id;
                 } else {
-                    $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
+                    $default_booked_lead_status_id = Config::get('constants.lead_status_booked');
                 }
-                $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
+                $lead_obj['lead_status_id'] = $default_booked_lead_status_id;
                 $lead_obj['created_at'] = Filters::getCurrentTimeStamp();
                 $lead_obj['updated_at'] = Filters::getCurrentTimeStamp();
                 $lead_obj['location_id'] = $request->location_id;
-                $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
                 if($request->lead_id){
                     $patient = Patients::where(['id' => $request->lead_id])->first();
                 }else{
@@ -1789,7 +1788,15 @@ class AppointmentsController extends Controller
             $appointment = Appointments::create($appointment_data);
             $find_cons = Appointments::latest()->first();
             if ($find_cons) {
-                $lead = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointment_data['patient_id']]);
+                // Get the default Booked lead status
+                $bookedStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_booked' => 1])->first();
+                $bookedStatusId = $bookedStatus ? $bookedStatus->id : null;
+                $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                $openStatusId = $openStatus ? $openStatus->id : null;
+                
+                if ($bookedStatusId) {
+                    $lead = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->update(['name' => $patient->name, 'lead_status_id' => $bookedStatusId, 'location_id' => $find_cons->location_id, 'patient_id' => $appointment_data['patient_id']]);
+                }
                 
                 // Check if lead_service exists for this service
                 $existingLeadService = LeadsServices::where([
@@ -1801,15 +1808,17 @@ class AppointmentsController extends Controller
                     // Service exists - update it
                     $existingLeadService->update([
                         'consultancy_id' => $find_cons->id,
-                        'lead_status_id' => 4, // Booked
+                        'lead_status_id' => $bookedStatusId,
                         'status' => 1, // Set as active
                     ]);
                 } else {
                     // Service doesn't exist - check if there's an open service we can update
                     $openLeadService = LeadsServices::where('lead_id', $appointment_data['lead_id'])
-                        ->where(function($query) {
-                            $query->whereNull('lead_status_id')
-                                  ->orWhere('lead_status_id', 1);
+                        ->where(function($query) use ($openStatusId) {
+                            $query->whereNull('lead_status_id');
+                            if ($openStatusId) {
+                                $query->orWhere('lead_status_id', $openStatusId);
+                            }
                         })->first();
                     
                     if ($openLeadService) {
@@ -1817,7 +1826,7 @@ class AppointmentsController extends Controller
                         $openLeadService->update([
                             'service_id' => $find_cons->service_id,
                             'consultancy_id' => $find_cons->id,
-                            'lead_status_id' => 4, // Booked
+                            'lead_status_id' => $bookedStatusId,
                             'status' => 1, // Set as active
                         ]);
                     } else {
@@ -1826,7 +1835,7 @@ class AppointmentsController extends Controller
                             'lead_id' => $appointment_data['lead_id'],
                             'service_id' => $find_cons->service_id,
                             'consultancy_id' => $find_cons->id,
-                            'lead_status_id' => 4, // Booked
+                            'lead_status_id' => $bookedStatusId,
                             'status' => 1, // Set as active
                         ]);
                     }
@@ -2728,9 +2737,15 @@ class AppointmentsController extends Controller
             }
             Appointments::where(['patient_id' => $appointment->patient_id])->update(['name' => $patient->name]);
             if ($appointment_data['appointment_status_id'] == 1) {
-                $appointment_data['lead_status_id'] = 4;
+                $bookedStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_booked' => 1])->first();
+                if ($bookedStatus) {
+                    $appointment_data['lead_status_id'] = $bookedStatus->id;
+                }
             } elseif ($appointment_data['appointment_status_id'] == 3) {
-                $appointment_data['lead_status_id'] = 1;
+                $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                if ($openStatus) {
+                    $appointment_data['lead_status_id'] = $openStatus->id;
+                }
             }
             $lead = Leads::find($appointment_data['lead_id']);
             if (! $lead) {
@@ -3001,31 +3016,41 @@ class AppointmentsController extends Controller
 
         /** When appointment status will be 'No Show' then lead status will be automatically changed to 'Open' */
         if ($data['base_appointment_status_id'] == 3) {
-            $lead = Leads::findOrFail($appointment->lead_id);
-            $lead->lead_status_id = 1;
-            $lead->save();
-            // Update lead_services status to Open (No Show)
-            LeadsServices::where([
-                'lead_id' => $appointment->lead_id,
-                'service_id' => $appointment->service_id,
-            ])->update(['lead_status_id' => 1]);
-        }if ($data['base_appointment_status_id'] == 1) {
-            $lead = Leads::findOrFail($appointment->lead_id);
-            $lead->lead_status_id = 4;
-            $lead->save();
-            // Update lead_services status to Booked
-            LeadsServices::where([
-                'lead_id' => $appointment->lead_id,
-                'service_id' => $appointment->service_id,
-            ])->update(['lead_status_id' => 4]);
+            $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+            if ($openStatus && $appointment->lead_id) {
+                $lead = Leads::findOrFail($appointment->lead_id);
+                $lead->lead_status_id = $openStatus->id;
+                $lead->save();
+                // Update lead_services status to Open (No Show)
+                LeadsServices::where([
+                    'lead_id' => $appointment->lead_id,
+                    'service_id' => $appointment->service_id,
+                ])->update(['lead_status_id' => $openStatus->id]);
+            }
+        }
+        if ($data['base_appointment_status_id'] == 1) {
+            $bookedStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_booked' => 1])->first();
+            if ($bookedStatus && $appointment->lead_id) {
+                $lead = Leads::findOrFail($appointment->lead_id);
+                $lead->lead_status_id = $bookedStatus->id;
+                $lead->save();
+                // Update lead_services status to Booked
+                LeadsServices::where([
+                    'lead_id' => $appointment->lead_id,
+                    'service_id' => $appointment->service_id,
+                ])->update(['lead_status_id' => $bookedStatus->id]);
+            }
         }
         if ($data['base_appointment_status_id'] == 14) {
-            $lead = Leads::where(['id' => $appointment->lead_id])->update(['lead_status_id' => 2]);
-            // Update lead_services status to Arrived
-            LeadsServices::where([
-                'lead_id' => $appointment->lead_id,
-                'service_id' => $appointment->service_id,
-            ])->update(['lead_status_id' => 2]);
+            $arrivedStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+            if ($arrivedStatus && $appointment->lead_id) {
+                Leads::where(['id' => $appointment->lead_id])->update(['lead_status_id' => $arrivedStatus->id]);
+                // Update lead_services status to Arrived
+                LeadsServices::where([
+                    'lead_id' => $appointment->lead_id,
+                    'service_id' => $appointment->service_id,
+                ])->update(['lead_status_id' => $arrivedStatus->id]);
+            }
         }
 
         /**
@@ -4623,21 +4648,20 @@ class AppointmentsController extends Controller
         if (!$lead) {
             $lead_obj = $appointment_data;
            $patient = Patients::whereId($lead_obj['patient_id'])->first();
-            // Convert Lead status to Converted
-            $DefaultConvertedLeadStatus = LeadStatuses::where([
+            // Set Lead status to Booked when consultation is created
+            $DefaultBookedLeadStatus = LeadStatuses::where([
                 'account_id' => Auth::User()->account_id,
-                'is_converted' => 1,
+                'is_booked' => 1,
             ])->first();
-            if ($DefaultConvertedLeadStatus) {
-                $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
+            if ($DefaultBookedLeadStatus) {
+                $default_booked_lead_status_id = $DefaultBookedLeadStatus->id;
             } else {
-                $default_converted_lead_status_id = Config::get('constants.lead_status_converted');
+                $default_booked_lead_status_id = Config::get('constants.lead_status_booked');
             }
-            $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
+            $lead_obj['lead_status_id'] = $default_booked_lead_status_id;
             $lead_obj['created_at'] = Filters::getCurrentTimeStamp();
             $lead_obj['updated_at'] = Filters::getCurrentTimeStamp();
             $lead_obj['location_id'] = $request->location_id;
-            $lead_obj['lead_status_id'] = $default_converted_lead_status_id;
             $lead_obj['gender'] = $patient->gender;
 
                 $appointment_data['user_type_id'] = 3;

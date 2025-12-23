@@ -17,6 +17,8 @@ use App\Models\InvoiceDetails;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Leads;
+use App\Models\LeadStatuses;
+use App\Models\LeadsServices;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\PaymentModes;
@@ -515,7 +517,18 @@ class ConsultancyInvoiceController extends Controller
         $appointment_data_status['updated_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
         // End
-        Leads::where('patient_id', $appointmentinfo->patient_id)->update(['lead_status_id' => 4]);
+        // Update lead status to Arrived when consultation invoice is created
+        $arrivedLeadStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        if ($arrivedLeadStatus) {
+            Leads::where('patient_id', $appointmentinfo->patient_id)->update(['lead_status_id' => $arrivedLeadStatus->id]);
+            // Also update lead_services
+            if ($appointmentinfo->lead_id) {
+                LeadsServices::where([
+                    'lead_id' => $appointmentinfo->lead_id,
+                    'service_id' => $appointmentinfo->service_id,
+                ])->update(['lead_status_id' => $arrivedLeadStatus->id]);
+            }
+        }
         /////Save activity////
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();

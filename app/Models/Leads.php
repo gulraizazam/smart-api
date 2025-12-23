@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
+use App\Models\LeadStatuses;
 use Auth;
 use Carbon\Carbon;
 use Config;
@@ -252,7 +253,11 @@ class Leads extends BaseModal
             if (! $check_lead_existance) {
                 $record = Leads::create($leads_data);
             } else {
-                $check_lead_existance->lead_status_id = 1;
+                // Get default Open lead status
+                $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                if ($openStatus) {
+                    $check_lead_existance->lead_status_id = $openStatus->id;
+                }
                 $check_lead_existance->created_at = Carbon::now()->timestamp;
                 $check_lead_existance->update();
                 $record = $check_lead_existance;

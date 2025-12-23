@@ -10,6 +10,11 @@ use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Packages;
+use App\Models\Appointments;
+use App\Models\LeadStatuses;
+use App\Models\Leads;
+use App\Models\LeadsServices;
 
 class PackageAdvances extends BaseModal
 {
@@ -220,7 +225,56 @@ class PackageAdvances extends BaseModal
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
+        // If payment is received (cash_flow = 'in'), update lead status to Converted
+        if (isset($data['cash_flow']) && $data['cash_flow'] === 'in' && isset($data['package_id'])) {
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
+        }
+
         return $record;
+    }
+
+    /**
+     * Update lead status to Converted when payment is received
+     * Flow: package_advances -> packages (appointment_id) -> appointments (lead_id) -> leads
+     */
+    public static function updateLeadStatusToConverted($packageId, $accountId)
+    {
+        try {
+            // Get the package to find the appointment_id
+            $package = Packages::find($packageId);
+            if (!$package || !$package->appointment_id) {
+                return;
+            }
+
+            // Get the appointment to find the lead_id
+            $appointment = Appointments::find($package->appointment_id);
+            if (!$appointment || !$appointment->lead_id) {
+                return;
+            }
+
+            // Get the default Converted lead status
+            $convertedStatus = LeadStatuses::where([
+                'account_id' => $accountId,
+                'is_converted' => 1,
+            ])->first();
+
+            if (!$convertedStatus) {
+                return;
+            }
+
+            // Update the lead status to Converted
+            Leads::where('id', $appointment->lead_id)->update([
+                'lead_status_id' => $convertedStatus->id,
+            ]);
+
+            // Also update the lead_services status
+            LeadsServices::where('lead_id', $appointment->lead_id)
+                ->where('service_id', $appointment->service_id)
+                ->update(['lead_status_id' => $convertedStatus->id]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to update lead status to converted: ' . $e->getMessage());
+        }
     }
 
     /*
