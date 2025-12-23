@@ -76,6 +76,7 @@ use App\Helpers\Widgets\PlanAppointmentCalculation;
 use PhpOffice\PhpSpreadsheet\Calculation\Web\Service;
 use App\Http\Requests\Admin\StoreUpdateAppointmentCommentsRequest;
 use App\Models\MachineTypeHasServices;
+use App\Services\MetaConversionApiService;
 
 class AppointmentsController extends Controller
 {
@@ -1796,6 +1797,22 @@ class AppointmentsController extends Controller
                 
                 if ($bookedStatusId) {
                     $lead = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->update(['name' => $patient->name, 'lead_status_id' => $bookedStatusId, 'location_id' => $find_cons->location_id, 'patient_id' => $appointment_data['patient_id']]);
+                    
+                    // Send Meta CAPI event for booked status
+                    $leadRecord = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->first();
+                    if ($leadRecord) {
+                        try {
+                            $metaService = new MetaConversionApiService();
+                            $metaService->sendLeadStatus(
+                                $leadRecord->phone,
+                                'booked',
+                                $leadRecord->meta_lead_id,
+                                $leadRecord->email
+                            );
+                        } catch (\Exception $e) {
+                            \Log::error('Meta CAPI booked event failed: ' . $e->getMessage());
+                        }
+                    }
                 }
                 
                 // Check if lead_service exists for this service
@@ -3050,6 +3067,22 @@ class AppointmentsController extends Controller
                     'lead_id' => $appointment->lead_id,
                     'service_id' => $appointment->service_id,
                 ])->update(['lead_status_id' => $arrivedStatus->id]);
+                
+                // Send Meta CAPI event for arrived status
+                $leadRecord = Leads::find($appointment->lead_id);
+                if ($leadRecord) {
+                    try {
+                        $metaService = new MetaConversionApiService();
+                        $metaService->sendLeadStatus(
+                            $leadRecord->phone,
+                            'arrived',
+                            $leadRecord->meta_lead_id,
+                            $leadRecord->email
+                        );
+                    } catch (\Exception $e) {
+                        \Log::error('Meta CAPI arrived event failed: ' . $e->getMessage());
+                    }
+                }
             }
         }
 
