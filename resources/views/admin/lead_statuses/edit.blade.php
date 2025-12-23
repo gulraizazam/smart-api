@@ -49,14 +49,21 @@
                             </div>
                         </div>
                         <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Default for Booked Leads</label>
+                            <div class="radio-inline">
+                                <label class="radio"><input name="is_booked" value="1" type="radio"/><span></span>Yes</label>
+                                <label class="radio"><input name="is_booked" value="0" type="radio"><span></span>No</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-5">
+                        <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Default for Arrived Leads</label>
                             <div class="radio-inline">
                                 <label class="radio"><input name="is_arrived" value="1" type="radio"/><span></span>Yes</label>
                                 <label class="radio"><input name="is_arrived" value="0" type="radio"><span></span>No</label>
                             </div>
                         </div>
-                    </div>
-                    <div class="row mt-5">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Default for Converted Leads</label>
                             <div class="radio-inline">
@@ -64,6 +71,8 @@
                                 <label class="radio"><input name="is_converted" value="0" type="radio"><span></span>No</label>
                             </div>
                         </div>
+                    </div>
+                    <div class="row mt-5">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Default for Junk Leads</label>
                             <div class="radio-inline">
