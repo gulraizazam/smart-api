@@ -1790,12 +1790,53 @@ class AppointmentsController extends Controller
             $find_cons = Appointments::latest()->first();
             if ($find_cons) {
                 $lead = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->update(['name' => $patient->name, 'lead_status_id' => 4, 'location_id' => $find_cons->location_id, 'patient_id' => $appointment_data['patient_id']]);
-                LeadsServices::where([
+                
+                // Check if lead_service exists for this service
+                $existingLeadService = LeadsServices::where([
                     'lead_id' => $appointment_data['lead_id'],
                     'service_id' => $find_cons->service_id,
-                ])->update([
-                    'consultancy_id' => $find_cons->id,
-                ]);
+                ])->first();
+                
+                if ($existingLeadService) {
+                    // Service exists - update it
+                    $existingLeadService->update([
+                        'consultancy_id' => $find_cons->id,
+                        'lead_status_id' => 4, // Booked
+                        'status' => 1, // Set as active
+                    ]);
+                } else {
+                    // Service doesn't exist - check if there's an open service we can update
+                    $openLeadService = LeadsServices::where('lead_id', $appointment_data['lead_id'])
+                        ->where(function($query) {
+                            $query->whereNull('lead_status_id')
+                                  ->orWhere('lead_status_id', 1);
+                        })->first();
+                    
+                    if ($openLeadService) {
+                        // Update the open service to the new service
+                        $openLeadService->update([
+                            'service_id' => $find_cons->service_id,
+                            'consultancy_id' => $find_cons->id,
+                            'lead_status_id' => 4, // Booked
+                            'status' => 1, // Set as active
+                        ]);
+                    } else {
+                        // Create new lead_service entry
+                        LeadsServices::create([
+                            'lead_id' => $appointment_data['lead_id'],
+                            'service_id' => $find_cons->service_id,
+                            'consultancy_id' => $find_cons->id,
+                            'lead_status_id' => 4, // Booked
+                            'status' => 1, // Set as active
+                        ]);
+                    }
+                }
+                
+                // Set other services for this lead as inactive (keep their lead_status_id unchanged)
+                LeadsServices::where('lead_id', $appointment_data['lead_id'])
+                    ->where('service_id', '!=', $find_cons->service_id)
+                    ->where('status', 1)
+                    ->update(['status' => 0]);
             }
             /* Now We need to update name of all appointments that already in appointment table against patient
              */
@@ -2963,13 +3004,28 @@ class AppointmentsController extends Controller
             $lead = Leads::findOrFail($appointment->lead_id);
             $lead->lead_status_id = 1;
             $lead->save();
+            // Update lead_services status to Open (No Show)
+            LeadsServices::where([
+                'lead_id' => $appointment->lead_id,
+                'service_id' => $appointment->service_id,
+            ])->update(['lead_status_id' => 1]);
         }if ($data['base_appointment_status_id'] == 1) {
             $lead = Leads::findOrFail($appointment->lead_id);
             $lead->lead_status_id = 4;
             $lead->save();
+            // Update lead_services status to Booked
+            LeadsServices::where([
+                'lead_id' => $appointment->lead_id,
+                'service_id' => $appointment->service_id,
+            ])->update(['lead_status_id' => 4]);
         }
         if ($data['base_appointment_status_id'] == 14) {
             $lead = Leads::where(['id' => $appointment->lead_id])->update(['lead_status_id' => 2]);
+            // Update lead_services status to Arrived
+            LeadsServices::where([
+                'lead_id' => $appointment->lead_id,
+                'service_id' => $appointment->service_id,
+            ])->update(['lead_status_id' => 2]);
         }
 
         /**
