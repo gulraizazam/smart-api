@@ -48,7 +48,15 @@ class AppointmentStatuses extends BaseModal
             return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('id', '!=', $exclude_appointment_status_id)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
         }
 
-        return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('name','!=','Arrived')->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+        return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])
+            ->where('name', '!=', 'Arrived')
+            ->where(function($query) {
+                $query->where('is_converted', '!=', 1)
+                      ->orWhereNull('is_converted');
+            })
+            ->OrderBy('sort_no', 'asc')
+            ->get()
+            ->pluck('name', 'id');
     }
 
     /**
