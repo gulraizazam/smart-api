@@ -38,7 +38,9 @@ class MetaConversionApiService
         string $phone,
         string $status,
         ?string $leadId = null,
-        ?string $email = null
+        ?string $email = null,
+        ?string $currency = null,
+        $value = null
     ): array {
         if (!$this->enabled) {
             return [
@@ -82,6 +84,12 @@ class MetaConversionApiService
 
         if ($leadId) {
             $customData['lead_id'] = $leadId;
+        }
+
+        // Add currency and value for Purchase events (required by Meta)
+        if ($statusMapping['event'] === 'Purchase') {
+            $customData['currency'] = $currency ?? 'PKR';
+            $customData['value'] = floatval($value ?? 0);
         }
 
         // Build the event data

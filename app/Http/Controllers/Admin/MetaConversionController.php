@@ -42,13 +42,17 @@ class MetaConversionController extends Controller
             'status' => 'required|string',
             'lead_id' => 'nullable|string',
             'email' => 'nullable|email',
+            'currency' => 'nullable|string|size:3',
+            'value' => 'nullable|numeric',
         ]);
 
         $result = $this->metaService->sendLeadStatus(
             $request->phone,
             $request->status,
             $request->lead_id,
-            $request->email
+            $request->email,
+            $request->currency,
+            $request->value
         );
 
         return response()->json($result);
