@@ -80,10 +80,8 @@
                                 <label class="radio"><input name="is_junk" value="0" type="radio"><span></span>No</label>
                             </div>
                         </div>
-                    </div>
-                    <div class="row mt-5">
-                        <div class="fv-row col-md-12">
-                            <div class="checkbox-inline">
+                        <div class="fv-row col-md-6">
+                            <div class="checkbox-inline mt-8">
                                 <label class="checkbox"><input id="add_lead_statuses_is_comment" name="is_comment" value="1" type="checkbox"/><span></span>Ask for Comments</label>
                             </div>
                         </div>
