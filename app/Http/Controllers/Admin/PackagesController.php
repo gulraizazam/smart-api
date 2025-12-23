@@ -1256,94 +1256,100 @@ class PackagesController extends Controller
             'is_arrived' => 1
         ])->first();
         
-        // Get the converted appointment status (to check if already converted)
-        $convertedStatusCheck = AppointmentStatuses::where([
-            'account_id' => $appointment->account_id,
-            'is_converted' => 1
-        ])->first();
-        
-        \Log::info('Checking arrived/converted status', [
-            'arrivedStatus_id' => $arrivedStatus ? $arrivedStatus->id : null,
-            'convertedStatus_id' => $convertedStatusCheck ? $convertedStatusCheck->id : null,
-            'appointment_base_status_id' => $appointment->base_appointment_status_id
-        ]);
-        
-        // Check if appointment is arrived OR already converted
-        $isArrived = $arrivedStatus && $appointment->base_appointment_status_id == $arrivedStatus->id;
-        $isConverted = $convertedStatusCheck && $appointment->base_appointment_status_id == $convertedStatusCheck->id;
-        
-        if (!$isArrived && !$isConverted) {
-            \Log::info('Appointment not arrived or converted yet, skipping conversion');
-            return; // Appointment is not arrived or converted yet, don't mark as converted
-        }
-        
-        // If already converted, no need to update again
-        if ($isConverted) {
-            \Log::info('Appointment already converted, skipping');
-            return;
-        }
-        
-        // If package_id is provided, check if package has services
-        if ($package_id) {
-            // Get package bundle IDs
-            $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
-            
-            \Log::info('Package bundle IDs', ['ids' => $packagebundleIds->toArray()]);
-            
-            // Check if package has any services
-            $totalServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)->count();
-            
-            \Log::info('Total services in package', ['count' => $totalServices]);
-            
-            if ($totalServices == 0) {
-                \Log::info('No services in package, skipping conversion');
-                return; // No services in package, don't mark as converted
-            }
-            
-            // Get the package to check if this is the original appointment or a subsequent one
-            $package = Packages::find($package_id);
-            
-            \Log::info('Package appointment check', [
-                'package_appointment_id' => $package ? $package->appointment_id : null,
-                'current_appointment_id' => $appointment_id,
-                'is_same' => $package && $package->appointment_id == $appointment_id
-            ]);
-            
-            // If this is a different appointment than the original package appointment,
-            // check if services were added after this appointment arrived
-            if ($package && $package->appointment_id != $appointment_id) {
-                $servicesAfterArrival = PackageService::whereIn('package_bundle_id', $packagebundleIds)
-                    ->where('created_at', '>', $appointment->updated_at)
-                    ->count();
-                
-                \Log::info('Services after arrival check', ['count' => $servicesAfterArrival]);
-                
-                if ($servicesAfterArrival == 0) {
-                    \Log::info('No services added after this appointment arrived, skipping');
-                    return; // No services added after this appointment arrived
-                }
-            }
-        }
-        
         // Get the converted appointment status
         $convertedStatus = AppointmentStatuses::where([
             'account_id' => $appointment->account_id,
             'is_converted' => 1
         ])->first();
         
-        \Log::info('Converted status lookup', [
-            'convertedStatus_id' => $convertedStatus ? $convertedStatus->id : null
+        if (!$convertedStatus) {
+            \Log::info('No converted status found in appointment_statuses');
+            return;
+        }
+        
+        \Log::info('Checking arrived/converted status', [
+            'arrivedStatus_id' => $arrivedStatus ? $arrivedStatus->id : null,
+            'convertedStatus_id' => $convertedStatus ? $convertedStatus->id : null,
+            'appointment_base_status_id' => $appointment->base_appointment_status_id
         ]);
         
-        if ($convertedStatus) {
+        // Check if the passed appointment is arrived
+        $isArrived = $arrivedStatus && $appointment->base_appointment_status_id == $arrivedStatus->id;
+        $isConverted = $appointment->base_appointment_status_id == $convertedStatus->id;
+        
+        // If the passed appointment is arrived, mark it as converted
+        if ($isArrived) {
+            // Check if package has services before converting
+            if ($package_id) {
+                $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
+                $totalServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)->count();
+                
+                if ($totalServices == 0) {
+                    \Log::info('No services in package, skipping conversion');
+                    return;
+                }
+            }
+            
             $appointment->update([
                 'base_appointment_status_id' => $convertedStatus->id,
                 'appointment_status_id' => $convertedStatus->id
             ]);
-            \Log::info('Appointment marked as converted successfully');
-        } else {
-            \Log::info('No converted status found in appointment_statuses');
+            \Log::info('Appointment marked as converted successfully', ['appointment_id' => $appointment_id]);
+            return;
         }
+        
+        // If the passed appointment is already converted, look for the latest arrived consultation
+        // that has services added after it arrived
+        if ($isConverted && $package_id) {
+            \Log::info('Passed appointment already converted, looking for latest arrived consultation');
+            
+            $package = Packages::find($package_id);
+            if (!$package) {
+                return;
+            }
+            
+            // Get package bundle IDs and find the latest service added
+            $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
+            $latestService = PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                ->orderBy('created_at', 'desc')
+                ->first();
+            
+            if (!$latestService) {
+                \Log::info('No services found in package');
+                return;
+            }
+            
+            \Log::info('Latest service created at', ['created_at' => $latestService->created_at]);
+            
+            // Find the latest arrived consultation for this patient at this location
+            // that arrived BEFORE the latest service was added
+            $latestArrivedConsultation = Appointments::where([
+                'patient_id' => $package->patient_id,
+                'location_id' => $package->location_id,
+                'appointment_type_id' => 1, // Consultation
+                'base_appointment_status_id' => $arrivedStatus->id
+            ])
+            ->where('updated_at', '<', $latestService->created_at)
+            ->orderBy('updated_at', 'desc')
+            ->first();
+            
+            if ($latestArrivedConsultation) {
+                \Log::info('Found latest arrived consultation to convert', [
+                    'appointment_id' => $latestArrivedConsultation->id
+                ]);
+                
+                $latestArrivedConsultation->update([
+                    'base_appointment_status_id' => $convertedStatus->id,
+                    'appointment_status_id' => $convertedStatus->id
+                ]);
+                \Log::info('Latest arrived consultation marked as converted');
+            } else {
+                \Log::info('No arrived consultation found to convert');
+            }
+            return;
+        }
+        
+        \Log::info('Appointment not arrived, skipping conversion');
     }
 
     /**

@@ -28,7 +28,7 @@ var table_columns = [
         title: 'Scheduled',
         width: 80,
         template: function (data) {
-            if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled") {
+            if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled" || data.appointment_status_id == "Converted") {
                 return '<span>' + data.scheduled_date + '</span>';
             } else {
                 return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ',' + data.doctorId + ',' + data.locationId + ');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
@@ -56,6 +56,8 @@ var table_columns = [
                     return '<span>Un-Scheduled</span>';
                 }else if (data.appointment_status_id === 'Arrived') {
                     return '<span style="color:#8950FC;">' + data.appointment_status_id + '</span>';
+                }else if (data.appointment_status_id === 'Converted') {
+                    return '<span style="color:#50CD89;">' + data.appointment_status_id + '</span>';
                 }
                  else {
                     return '<a href="javascript:void(0);" onclick="editStatus(' + data.id + ');">' + data.appointment_status_id + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
