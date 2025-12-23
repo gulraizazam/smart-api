@@ -120,9 +120,10 @@ class MetaConversionApiService
         $normalizedStatus = strtolower(str_replace([' ', '-'], '_', $status));
 
         // Positive statuses - Meta will show ads to similar people
+        // Note: Use standard Meta events or custom events that are configured in Events Manager
         $positiveStatuses = [
             'booked' => ['event' => 'Schedule', 'quality' => 'neutral'],
-            'arrived' => ['event' => 'Arrived', 'quality' => 'qualified'],
+            'arrived' => ['event' => 'Contact', 'quality' => 'qualified'], // Contact = customer showed up/engaged
             'converted' => ['event' => 'Purchase', 'quality' => 'qualified'],  
         ];
 

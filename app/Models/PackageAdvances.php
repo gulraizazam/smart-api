@@ -159,18 +159,27 @@ class PackageAdvances extends BaseModal
                 'is_arrived' => 1
             ])->first();
             
+            \Log::info('PackageAdvances::updateRecord Debug', [
+                'package_id' => $data['package_id'],
+                'patient_id' => $data['patient_id'],
+                'packageCreatedAt' => $packageCreatedAt,
+                'arrivedStatus' => $arrivedStatus ? $arrivedStatus->id : null,
+                'default_appointment_id' => $appointment_id,
+            ]);
+            
             if ($arrivedStatus && $packageCreatedAt) {
-                // Get package bundle IDs for this package
-                $packagebundleIds = PackageBundles::where([
-                    'package_id' => $data['package_id'],
-                    'is_allocate' => '1',
-                ])->pluck('id');
+                // Get package bundle IDs for this package (all bundles, not just allocated)
+                $packagebundleIds = PackageBundles::where('package_id', $data['package_id'])->pluck('id');
+                
+                \Log::info('Package Bundle IDs', ['ids' => $packagebundleIds->toArray()]);
                 
                 // Check if any package services were added AFTER the original package was created
                 // (these are new services added during subsequent visits)
                 $newPackageServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)
                     ->where('created_at', '>', $packageCreatedAt)
                     ->count();
+                
+                \Log::info('New Package Services Count', ['count' => $newPackageServices]);
                 
                 // If new services were added after package creation,
                 // find the latest arrived consultation and link payment to it
@@ -186,11 +195,19 @@ class PackageAdvances extends BaseModal
                     ->orderBy('updated_at', 'desc')
                     ->first();
                     
+                    \Log::info('Latest Arrived Appointment', [
+                        'found' => $latestArrivedAppointment ? true : false,
+                        'appointment_id' => $latestArrivedAppointment ? $latestArrivedAppointment->id : null,
+                        'doctor_id' => $latestArrivedAppointment ? $latestArrivedAppointment->doctor_id : null,
+                    ]);
+                    
                     if ($latestArrivedAppointment) {
                         $appointment_id = $latestArrivedAppointment->id;
                     }
                 }
             }
+            
+            \Log::info('Final appointment_id for payment', ['appointment_id' => $appointment_id]);
             
             // Create the payment record
             $record = new PackageAdvances();
