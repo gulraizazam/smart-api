@@ -113,10 +113,9 @@ class MetaConversionApiService
 
         // Positive statuses - Meta will show ads to similar people
         $positiveStatuses = [
-            'booked' => ['event' => 'Schedule', 'quality' => 'qualified'],
-            'arrived' => ['event' => 'Schedule', 'quality' => 'qualified'],
-            'converted' => ['event' => 'Purchase', 'quality' => 'qualified'],
-            'closed_won' => ['event' => 'Purchase', 'quality' => 'qualified'],
+            'booked' => ['event' => 'Schedule', 'quality' => 'neutral'],
+            'arrived' => ['event' => 'Arrived', 'quality' => 'qualified'],
+            'converted' => ['event' => 'Purchase', 'quality' => 'qualified'],  
         ];
 
         // Negative statuses - don't send to Meta (no value for optimization)
