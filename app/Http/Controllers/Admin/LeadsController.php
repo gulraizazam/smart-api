@@ -630,10 +630,7 @@ class LeadsController extends Controller
                     ]);
                 }
             } else {
-                $lead_check = Leads::with(['lead_service' => function ($q) use ($data) {
-                    $q->where(['service_id' => $data['service_id']]);
-                }])
-                    ->where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])
+                $lead_check = Leads::where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])
                     ->orderBy('id', 'desc')
                     ->first();
                 
@@ -647,53 +644,30 @@ class LeadsController extends Controller
                     $data['meta_lead_id'] = $meta_lead_id;
                 }
                 
-                if ($lead_check->lead_service->count()) {
-                    $child_service_id = (array_key_exists('child_service_id', $data)) ? $data['child_service_id'] : null;
-                    $data['created_at'] = Carbon::now();
-                    $data['updated_at'] = Carbon::now();
-                    $data['updated_by'] = Auth::User()->id;
-                    // Get default Open lead status
-                    $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
-                    if ($openStatus) {
-                        $data['lead_status_id'] = $openStatus->id;
-                    }
-                    $lead = Leads::updateRecord($lead_check->id, $data);
-                    $lead_services = LeadsServices::updateOrCreate([
-                        'lead_id' => $lead->id,
-                        'service_id' => $data['service_id'],
-                    ], [
-                        'lead_id' => $lead->id,
-                        'service_id' => $data['service_id'],
-                        'child_service_id' => $child_service_id,
-                        'status' => 1,
-                        'lead_status_id' => $openStatus ? $openStatus->id : null,
-                        'meta_lead_id' => $meta_lead_id,
-                    ]);
-                    LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
-                        'status' => 0,
-                    ]);
-                } else {
-                    $data['created_at'] = Carbon::now();
-                    $data['updated_at'] = Carbon::now();
-                    $data['updated_by'] = Auth::User()->id;
-                    // Get default Open lead status
-                    $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
-                    if ($openStatus) {
-                        $data['lead_status_id'] = $openStatus->id;
-                    }
-                    $lead = Leads::updateRecord($lead_check->id, $data);
-                    $lead_services = LeadsServices::create([
-                        'lead_id' => $lead->id,
-                        'service_id' => $data['service_id'],
-                        'child_service_id' => $data['child_service_id'] ?? null,
-                        'status' => 1,
-                        'lead_status_id' => $openStatus ? $openStatus->id : null,
-                        'meta_lead_id' => $meta_lead_id,
-                    ]);
-                    LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
-                        'status' => 0,
-                    ]);
+                $child_service_id = (array_key_exists('child_service_id', $data)) ? $data['child_service_id'] : null;
+                $data['created_at'] = Carbon::now();
+                $data['updated_at'] = Carbon::now();
+                $data['updated_by'] = Auth::User()->id;
+                // Get default Open lead status
+                $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                if ($openStatus) {
+                    $data['lead_status_id'] = $openStatus->id;
                 }
+                $lead = Leads::updateRecord($lead_check->id, $data);
+                
+                // Always create new lead_service entry to maintain history (allow duplicates)
+                $lead_services = LeadsServices::create([
+                    'lead_id' => $lead->id,
+                    'service_id' => $data['service_id'],
+                    'child_service_id' => $child_service_id,
+                    'status' => 1,
+                    'lead_status_id' => $openStatus ? $openStatus->id : null,
+                    'meta_lead_id' => $meta_lead_id,
+                ]);
+                // Set previous services as inactive but keep their history
+                LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
+                    'status' => 0,
+                ]);
             }
 
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
@@ -913,6 +887,19 @@ class LeadsController extends Controller
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
         }
+        
+        // Check if current lead status is Arrived or Converted - prevent changing status
+        $existingLead = Leads::find($id);
+        if ($existingLead && $existingLead->lead_status_id && isset($request->lead_status_id)) {
+            $currentStatus = LeadStatuses::find($existingLead->lead_status_id);
+            if ($currentStatus && ($currentStatus->is_arrived == 1 || $currentStatus->is_converted == 1)) {
+                // If trying to change to a different status, prevent it
+                if ($request->lead_status_id != $existingLead->lead_status_id) {
+                    return ApiHelper::apiResponse($this->error, 'Cannot change status. Lead is already marked as ' . $currentStatus->name . '.');
+                }
+            }
+        }
+        
         // Get all request data into a var
         $data = $request->all();
         $data['updated_at'] = Carbon::now();
@@ -1120,6 +1107,15 @@ class LeadsController extends Controller
         try {
             $data = $request->all();
             $lead = Leads::find($request->get('id'));
+            
+            // Check if current lead status is Arrived or Converted - prevent changing
+            if ($lead && $lead->lead_status_id) {
+                $currentStatus = LeadStatuses::find($lead->lead_status_id);
+                if ($currentStatus && ($currentStatus->is_arrived == 1 || $currentStatus->is_converted == 1)) {
+                    return ApiHelper::apiResponse($this->error, 'Cannot change status. Lead is already marked as ' . $currentStatus->name . '.');
+                }
+            }
+            
             //Always save child id because our code mange it for parent id
             if ($request->get('lead_status_chalid_id') != null) {
                 DB::table('leads')
@@ -1639,20 +1635,21 @@ class LeadsController extends Controller
 
     public static function leadService($lead_id, $service_id, $child_service_id, $meta_lead_id = null)
     {
-        $lead_service = [
-            'service_id' => $service_id,
-            'child_service_id' => $child_service_id,
-            'meta_lead_id' => $meta_lead_id,
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ];
-        $lead_service['lead_id'] = $lead_id;
-        $lead_service['status'] = 1;
-        $lead_service_data = LeadsServices::updateOrCreate([
+        // Get default Open lead status
+        $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+        
+        // Always create new lead_service entry to maintain history (allow duplicates)
+        $lead_service_data = LeadsServices::create([
             'lead_id' => $lead_id,
             'service_id' => $service_id,
             'child_service_id' => $child_service_id,
-        ], $lead_service);
+            'meta_lead_id' => $meta_lead_id,
+            'status' => 1,
+            'lead_status_id' => $openStatus ? $openStatus->id : null,
+            'created_at' => Carbon::now(),
+            'updated_at' => Carbon::now(),
+        ]);
+        // Set previous services as inactive but keep their history
         LeadsServices::where([
             'lead_id' => $lead_id,
         ])->where('id', '!=', $lead_service_data->id)->update(['status' => 0]);
