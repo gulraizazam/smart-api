@@ -1223,8 +1223,11 @@ class PackagesController extends Controller
      * Mark appointment status as converted
      * Only converts if:
      * 1. The appointment is already arrived
-     * 2. A service was added to the package AFTER the appointment arrived
-     * 3. Payment is being made after the service was added
+     * 2. The package has services
+     * 3. Payment is being made
+     * 
+     * For subsequent appointments (not the original package appointment):
+     * - Only converts if services were added AFTER that appointment arrived
      * 
      * @param int $appointment_id
      * @param int $package_id
@@ -1251,18 +1254,31 @@ class PackagesController extends Controller
             return; // Appointment is not arrived yet, don't mark as converted
         }
         
-        // If package_id is provided, check if services were added after appointment arrived
+        // If package_id is provided, check if package has services
         if ($package_id) {
             // Get package bundle IDs
             $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
             
-            // Check if any package services were added AFTER the appointment was marked as arrived
-            $servicesAfterArrival = PackageService::whereIn('package_bundle_id', $packagebundleIds)
-                ->where('created_at', '>', $appointment->updated_at)
-                ->count();
+            // Check if package has any services
+            $totalServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)->count();
             
-            if ($servicesAfterArrival == 0) {
-                return; // No services added after arrival, don't mark as converted
+            if ($totalServices == 0) {
+                return; // No services in package, don't mark as converted
+            }
+            
+            // Get the package to check if this is the original appointment or a subsequent one
+            $package = Packages::find($package_id);
+            
+            // If this is a different appointment than the original package appointment,
+            // check if services were added after this appointment arrived
+            if ($package && $package->appointment_id != $appointment_id) {
+                $servicesAfterArrival = PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                    ->where('created_at', '>', $appointment->updated_at)
+                    ->count();
+                
+                if ($servicesAfterArrival == 0) {
+                    return; // No services added after this appointment arrived
+                }
             }
         }
         
