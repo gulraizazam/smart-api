@@ -405,7 +405,7 @@ function statusesProduct(data, status_url, is_column_name_change = false) {
 }
 
 function addProductStock(id,inventory_id) {
-    console.log(inventory_id);
+  
     let action = route('admin.products.add-stock', { id: id });
     $("#modal_add_product_stock_form").attr("action", action);
     $("#modal_add_product_stock").modal("show");
@@ -462,7 +462,7 @@ function transferProductRow(url) {
 function transferProductSetData(response) {
     
     let transferProduct = response.data.product;
-    console.log(transferProduct);
+    
     $("#transfer_product_id").val(transferProduct.id);
    // $("#transfer_transfer_product").attr('disabled', 'true');
     $("#transfer_location_id_from").val(transferProduct.location_id);

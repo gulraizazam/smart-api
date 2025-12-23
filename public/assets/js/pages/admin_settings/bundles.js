@@ -216,7 +216,7 @@ function setConfEditData(response) {
     $('#tes_container').empty();
     let bundle = response.data.bundle;
     let base_service_id = response.data.base_service[0].service_id;
-    console.log(base_service_id);
+   
     let action = route('admin.bundles.update', {id: bundle.id});
     $("#modal_edit_conf_bundles_form").attr("action", action);
     $('#editput_input').html('<input type="hidden" name="_method" value="put">');
@@ -371,7 +371,7 @@ function addRow() {
         let service_id = $('#services').find(':selected').attr('data-id');
         let service_name = $('#services').find(':selected').attr('data-name');
         let service_price = $('#services').find(':selected').attr('data-price');
-        console.log("1st "+service_id);
+  
         $('#service_body').append(setService($("#service_body tr").length+1,service_id, service_name, service_price));
         calculateServicesTotal();
     }
@@ -393,7 +393,7 @@ function setDetailService(service_name, price) {
 }
 
 function setService(id, service_id,service_name, price) {
-    console.log("2nd "+id);
+
     return '<tr id="HR_" class="HR_SERVICES HR_' + id + '"> <input type="hidden" name="service_id[]" value="' + service_id + '"> <input type="hidden" name="service_price[]" value="' + price + '"> <input type="hidden" class="servicePriceValue" value="' + price + '"> <td>' + service_name + '</td><td>' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
 }
 

@@ -992,7 +992,7 @@ function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true)
 
         },
         success: function (response) {
-            console.log(response);
+         
             $("#doctor_wise_feedback_section .loader-img-attended").css('display', 'none');
             $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', '');
 

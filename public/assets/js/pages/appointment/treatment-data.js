@@ -2,8 +2,7 @@
 window.loadAllChildServices = function () {
     resource_id = $("#treatment_resource_id").val();
 
-    console.log('Loading all child services with resource_id:', resource_id);
-
+   
     $.ajax({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
@@ -15,7 +14,7 @@ window.loadAllChildServices = function () {
         },
         cache: false,
         success: function(response) {
-            console.log('Child services response:', response);
+            
             if(response.status) {
                 let services = response.data.services;
                 let service_option = '<option value="">Select a Service</option>';
@@ -26,7 +25,7 @@ window.loadAllChildServices = function () {
                     serviceCount++;
                 });
 
-                console.log('Loaded ' + serviceCount + ' child services');
+        
                 $('#create_treatment_service').html(service_option);
 
                 // Reinitialize select2 if it exists
@@ -148,7 +147,6 @@ jQuery(document).ready(function() {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log('Treatment form submitted via AJAX');
         
         var form = $(this);
         var formData = form.serialize();
@@ -165,8 +163,7 @@ jQuery(document).ready(function() {
             type: 'POST',
             data: formData,
             success: function(response) {
-                console.log('Treatment creation response:', response);
-                
+           
                 if (response.status) {
                     toastr.success(response.message || 'Treatment created successfully');
                     
@@ -175,15 +172,11 @@ jQuery(document).ready(function() {
                     
                     // Reload calendar after a short delay to ensure modal is closed
                     setTimeout(function() {
-                        console.log('=== Reloading calendar after treatment creation ===');
-                        console.log('custom_treatment_resource_calendar visible?', $('#custom_treatment_resource_calendar').is(':visible'));
-                        console.log('TreatmentResourceCalendar defined?', typeof TreatmentResourceCalendar !== 'undefined');
-                        console.log('treatment_calendar defined?', typeof treatment_calendar !== 'undefined');
-                        
+                     
                         // Reload resource calendar if it's visible
                         if ($('#custom_treatment_resource_calendar').is(':visible')) {
                             if (typeof TreatmentResourceCalendar !== 'undefined') {
-                                console.log('✓ Calling TreatmentResourceCalendar.reload()');
+                       
                                 TreatmentResourceCalendar.reload();
                             } else {
                                 console.error('✗ TreatmentResourceCalendar is not defined!');
@@ -397,6 +390,7 @@ function checkPatientLastTreatment(patientId) {
     var currentServiceId = $('#create_treatment_service').val();
     var currentDoctorId = $('#treatment_doctor_id').val();
     var currentLocationId = $('#treatment_location_id').val();
+    var currentStart = $('#treatment_start').val(); // Get the selected date/time
 
     // If service is not selected yet, just enable submit
     if (!currentServiceId) {
@@ -410,7 +404,8 @@ function checkPatientLastTreatment(patientId) {
         data: {
             patient_id: patientId,
             service_id: currentServiceId,
-            location_id: currentLocationId
+            location_id: currentLocationId,
+            start: currentStart
         },
         success: function(response) {
             if (response.status && response.data.last_treatment) {
@@ -427,20 +422,42 @@ function checkPatientLastTreatment(patientId) {
                         $('#treatment_doctor_warning').addClass('d-none');
                     } else {
                         // Service matches but doctor is different
+                        // Check if previous doctor has rota for the selected date/time
+                        var hasDoctorRota = lastTreatment.has_doctor_rota;
+                        
                         // Show warning
                         $('#warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + '.');
-                        $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
+                        
+                        if (hasDoctorRota) {
+                            // Doctor has rota, enable option 1 and auto-select it
+                            $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
+                            $('#use_previous_doctor').prop('disabled', false);
+                            $('#use_previous_doctor').prop('checked', true);
+                            
+                            // Update doctor ID to previous doctor
+                            $('#treatment_doctor_id').val(lastDoctorId);
+                            if ($('#create_treatment_doctor').length) {
+                                $('#create_treatment_doctor').val(lastDoctorId).trigger('change');
+                            }
+                            
+                            // Enable submit button
+                            $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', false);
+                        } else {
+                            // Doctor doesn't have rota, disable option 1 with message
+                            $('#previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(Doctor is not available in this time slot)</span>');
+                            $('#use_previous_doctor').prop('disabled', true);
+                            $('#use_previous_doctor').prop('checked', false);
+                            
+                            // Keep submit disabled - user cannot proceed
+                            $('#modal_create_treatment_form').find('[type="submit"]').prop('disabled', true);
+                        }
+                        
                         $('#treatment_doctor_warning').removeClass('d-none');
 
                         // Store previous doctor ID
                         $('#treatment_doctor_warning').data('previous-doctor-id', lastDoctorId);
                         $('#treatment_doctor_warning').data('previous-doctor-name', lastDoctorName);
-
-                        // Deselect both radio buttons by default
-                        $('#use_previous_doctor').prop('checked', false);
-                        $('#use_selected_doctor').prop('checked', false);
-
-                        // Keep submit disabled until radio button is selected
+                        $('#treatment_doctor_warning').data('has-doctor-rota', hasDoctorRota);
                     }
                 } else {
                     // Service doesn't match, enable submit button

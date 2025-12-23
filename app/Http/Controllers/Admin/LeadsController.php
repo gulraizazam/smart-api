@@ -1372,6 +1372,9 @@ class LeadsController extends Controller
      */
     public function uploadLeads(FileUploadLeadsRequest $request)
     {
+        set_time_limit(300); // 5 minutes
+        ini_set('max_execution_time', 300);
+        ini_set('memory_limit', '512M');
         if (!Gate::allows('leads_import')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
@@ -1414,14 +1417,95 @@ class LeadsController extends Controller
                 }
             }
 
+            // PERFORMANCE OPTIMIZATION: Load all lookup data once before the loop
+            $account_id = Auth::User()->account_id;
+            
+            // Cache cities with both id and region_id - using lowercase keys for case-insensitive matching
+            $cities_data = Cities::where('account_id', $account_id)->get();
+            $cities_id_cache = [];
+            $cities_region_cache = [];
+            foreach ($cities_data as $city) {
+                $key = strtolower(trim($city->name));
+                $cities_id_cache[$key] = $city->id;
+                $cities_region_cache[$key] = $city->region_id;
+            }
+            
+            // Cache lead sources - case-insensitive
+            $lead_sources_data = LeadSources::where('account_id', $account_id)->get();
+            $lead_sources_cache = [];
+            foreach ($lead_sources_data as $source) {
+                $lead_sources_cache[strtolower(trim($source->name))] = $source->id;
+            }
+            
+            // Cache lead statuses - case-insensitive
+            $lead_statuses_data = LeadStatuses::where('account_id', $account_id)->get();
+            $lead_statuses_cache = [];
+            foreach ($lead_statuses_data as $status) {
+                $lead_statuses_cache[strtolower(trim($status->name))] = $status->id;
+            }
+            
+            // Cache ALL services (both parent and child) - case-insensitive
+            $all_services_data = Services::where('account_id', $account_id)->get();
+            $services_cache = [];
+            $child_services_cache = [];
+            $all_services_lookup = []; // For finding any service by name
+            
+            foreach ($all_services_data as $service) {
+                $key = strtolower(trim($service->name));
+                $all_services_lookup[$key] = [
+                    'id' => $service->id,
+                    'parent_id' => $service->parent_id
+                ];
+                
+                // If it's a parent service, add to services_cache
+                if ($service->parent_id === null) {
+                    $services_cache[$key] = $service->id;
+                } else {
+                    // If it's a child service, add to child_services_cache
+                    if (!isset($child_services_cache[$service->parent_id])) {
+                        $child_services_cache[$service->parent_id] = [];
+                    }
+                    $child_services_cache[$service->parent_id][$key] = $service->id;
+                }
+            }
+            
+            // Cache locations - case-insensitive
+            $locations_data = Locations::where('account_id', $account_id)->get();
+            $locations_cache = [];
+            foreach ($locations_data as $location) {
+                $locations_cache[strtolower(trim($location->name))] = $location->id;
+            }
+
             foreach ($rows as $row) {
-                $city_id = Cities::where(['account_id' => Auth::User()->account_id, 'name' => $row['city']])->first()->id ?? null;
-                $region_id = Cities::where(['account_id' => Auth::User()->account_id, 'id' => $city_id])->first()->region_id ?? null;
-                $lead_source_id = LeadSources::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_source']])->first()->id ?? Config::get('constants.lead_source_social_media');
-                $lead_status_id = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'name' => $row['lead_status']])->first()->id ?? Config::get('constants.lead_status_open');
-                $service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['service']])->first()->id ?? null;
-                $child_service_id = Services::where(['account_id' => Auth::User()->account_id, 'name' => $row['treatment'], 'parent_id' => $service_id])->first()->id ?? null;
-                $location_id = Locations::where(['account_id' => Auth::User()->account_id, 'name' => $row['centre']])->first()->id ?? null;
+                // Use cached data with case-insensitive lookup
+                $city_key = strtolower(trim($row['city'] ?? ''));
+                $city_id = $cities_id_cache[$city_key] ?? null;
+                $region_id = $cities_region_cache[$city_key] ?? null;
+                
+                $lead_source_key = strtolower(trim($row['lead_source'] ?? ''));
+                $lead_source_id = $lead_sources_cache[$lead_source_key] ?? Config::get('constants.lead_source_social_media');
+                
+                $lead_status_key = strtolower(trim($row['lead_status'] ?? ''));
+                $lead_status_id = $lead_statuses_cache[$lead_status_key] ?? Config::get('constants.lead_status_open');
+                
+                $service_key = strtolower(trim($row['service'] ?? ''));
+                $service_id = null;
+                $child_service_id = null;
+                
+                // Look for service in all_services_lookup (matches original behavior - finds any service)
+                if (isset($all_services_lookup[$service_key])) {
+                    $service_data = $all_services_lookup[$service_key];
+                    $service_id = $service_data['id'];
+                    
+                    // If treatment is provided, look for child service under this service
+                    if (isset($row['treatment']) && !empty(trim($row['treatment']))) {
+                        $treatment_key = strtolower(trim($row['treatment']));
+                        $child_service_id = $child_services_cache[$service_id][$treatment_key] ?? null;
+                    }
+                }
+                
+                $location_key = strtolower(trim($row['centre'] ?? ''));
+                $location_id = $locations_cache[$location_key] ?? null;
 
                 $gender = 1;
                 $check_gender = trim($row['gender'], " ");
@@ -1492,13 +1576,39 @@ class LeadsController extends Controller
                         }
                     }
                 } else {
-                    if ($service_id == null) {
-                        $un_valid_service_list[] = $row['service'];
+                    if ($service_id == null && !empty(trim($row['service'] ?? ''))) {
+                        // Only add unique invalid services to avoid duplicates in error message
+                        $invalid_service = strtolower(trim($row['service']));
+                        if (!in_array($invalid_service, $un_valid_service_list)) {
+                            $un_valid_service_list[] = $invalid_service;
+                        }
                     }
                 }
             };
-            $msg_service = (count($un_valid_service_list)) ? '. In_valid service list in this row: ' . implode(', ', $un_valid_service_list) : '';
-            $msg_phone = (count($un_valid_phone_list)) ? '. In_valid phone list: ' . implode(', ', $un_valid_phone_list) : '';
+            
+            // Build error message with suggestions
+            $msg_service = '';
+            if (count($un_valid_service_list)) {
+                $msg_service = '. Invalid service(s) not found: ' . implode(', ', array_unique($un_valid_service_list));
+                
+                // Show available services (both parent and child) that might match
+                $available_services = array_keys($all_services_lookup);
+                $suggestions = [];
+                foreach ($un_valid_service_list as $invalid) {
+                    foreach ($available_services as $available) {
+                        // Use similarity check for better suggestions
+                        similar_text($invalid, $available, $percent);
+                        if ($percent > 60 || stripos($available, $invalid) !== false || stripos($invalid, $available) !== false) {
+                            $suggestions[] = $available;
+                        }
+                    }
+                }
+                if (!empty($suggestions)) {
+                    $msg_service .= '. Did you mean: ' . implode(', ', array_unique(array_slice($suggestions, 0, 5)));
+                }
+            }
+            
+            $msg_phone = (count($un_valid_phone_list)) ? '. Invalid phone number(s): ' . count($un_valid_phone_list) . ' records' : '';
             // Invalid data is provided
             return ApiHelper::apiResponse($this->success, 'Leads has been imported. Created: ' . count($new_patient_phones) . ', Duplicates: ' . count($found_patients) . $msg_phone . $msg_service);
         } catch (\Exception $e) {

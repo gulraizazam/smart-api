@@ -162,15 +162,15 @@ class Patients extends BaseModal
                 'user_type_id' => '3',
                 'active' => '1',
                 'account_id' => $account_id,
-                'phone' => 'LIKE', "%{$phone}%"
-            ])->select('name', 'id', 'phone')->get();
+            ])->where('phone', 'LIKE', "%{$phone}%")
+              ->select('name', 'id', 'phone')->get();
         } else {
             $users = self::where([
                 'user_type_id' => '3',
                 'active' => '1',
                 'account_id' => $account_id,
-                'name' => 'LIKE', "%{$name}%"
-            ])->select('name', 'id', 'phone')->get();
+            ])->where('name', 'LIKE', "%{$name}%")
+              ->select('name', 'id', 'phone')->get();
         }
     }
 

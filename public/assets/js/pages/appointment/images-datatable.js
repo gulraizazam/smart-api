@@ -36,7 +36,7 @@ var table_columns = [
 
 function actions(data) {
 
-    console.log(data)
+
     let delete_url = route('admin.appointmentsimage.destroy', {id: data.id});
     let image_url = asset_url + 'storage/appointment_image/' + data.image_path;
 

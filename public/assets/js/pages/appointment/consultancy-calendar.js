@@ -319,7 +319,7 @@ var ConsultancyCalendar = function() {
                         });
 
                         if (window.eventData.createdId == appointmentObj.id) {
-                            console.log("moving to that date " + window.eventData.createdId + " dand date : " + appointmentObj.start);
+                            
                             var date = moment(appointmentObj.start, "YYYY-MM-DD");
                             //   $("#calendar").fullCalendar('gotoDate', date);
                             window.eventData.createdId = null;
@@ -714,49 +714,46 @@ var CustomResourceCalendar = function() {
 
         renderRotas: function(rotasData) {
             if (!rotasData || rotasData.length === 0) {
-                console.log('No rotas data');
+               
                 return;
             }
 
-            console.log('=== RENDERING ROTAS ===');
-            console.log('Rotas data received:', rotasData);
+          
 
             rotasData.forEach(function(rotaGroup) {
-                console.log('--- Processing rota group ---');
-                console.log('Rota group:', rotaGroup);
+                
 
                 if (!rotaGroup.doctor_rotas || rotaGroup.doctor_rotas.length === 0) {
-                    console.log('❌ No doctor_rotas in group');
+                   
                     return;
                 }
 
                 // The doctor_id is the external_id field in the rotaGroup
                 var doctorId = rotaGroup.external_id;
 
-                console.log('✓ Processing rotas for doctor ID:', doctorId, '(' + rotaGroup.name + ')');
+                
 
                 rotaGroup.doctor_rotas.forEach(function(rota) {
-                    console.log('  Rota details:', rota);
+                  
 
                     if (rota.active !== '1' && rota.active !== 1) {
-                        console.log('  ❌ Rota not active:', rota.active);
+                        
                         return;
                     }
 
                     // Check if rota date matches current date
                     var rotaDate = moment(rota.date, 'YYYY-MM-DD');
                     if (!rotaDate.isSame(currentDate, 'day')) {
-                        console.log('  ❌ Rota date mismatch:', rota.date, 'vs', currentDate.format('YYYY-MM-DD'));
+                       
                         return;
                     }
 
-                    console.log('  ✓ Rota date matches! Marking slots...');
-                    console.log('  Start:', rota.start_time, 'End:', rota.end_time);
+            
 
                     // Case 1: Has break time (start_off and end_off)
                     // This means: available from start_time to start_off, then break, then end_off to end_time
                     if (rota.start_time && rota.start_off && rota.end_off && rota.end_time) {
-                        console.log('  ✓ Has break time - marking two sessions');
+                       
                         // Morning session: start_time to start_off
                         CustomResourceCalendar.markRotaSlots(doctorId, rota.start_time, rota.start_off);
 
@@ -765,7 +762,7 @@ var CustomResourceCalendar = function() {
                     }
                     // Case 2: No break time - continuous availability
                     else if (rota.start_time && rota.end_time) {
-                        console.log('  ✓ No break time - continuous session');
+                       
                         CustomResourceCalendar.markRotaSlots(doctorId, rota.start_time, rota.end_time);
                     } else {
                         console.log('  ❌ Missing start_time or end_time');
@@ -773,7 +770,7 @@ var CustomResourceCalendar = function() {
                 });
             });
 
-            console.log('=== ROTAS RENDERING COMPLETE ===');
+            
         },
 
         markRotaSlots: function(doctorId, startTime, endTime) {
@@ -781,12 +778,10 @@ var CustomResourceCalendar = function() {
             var startMoment = moment(startTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
             var endMoment = moment(endTime, ['h:mm A', 'HH:mm:ss', 'HH:mm']);
 
-            console.log('Marking slots for doctor:', doctorId);
-            console.log('Start time:', startTime, '→', startMoment.format('HH:mm'));
-            console.log('End time:', endTime, '→', endMoment.format('HH:mm'));
+          
 
             var slots = $('.resource-doctor-slot[data-doctor-id="' + doctorId + '"]');
-            console.log('Found ' + slots.length + ' slots for doctor ' + doctorId);
+          
 
             var markedCount = 0;
             slots.each(function() {
@@ -800,7 +795,7 @@ var CustomResourceCalendar = function() {
                 }
             });
 
-            console.log('Marked ' + markedCount + ' slots as has-rota for doctor ' + doctorId + ' (from ' + startMoment.format('HH:mm') + ' to ' + endMoment.format('HH:mm') + ')');
+         
         },
 
         createAppointment: function(doctorId, time, element) {

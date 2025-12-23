@@ -314,7 +314,7 @@ function changePassword(id) {
                     $('#password_change_id').val(id);
                }
                else{
-                   console.log(response);
+               
                    toastr.error(response.message);
                }
         },

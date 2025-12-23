@@ -682,6 +682,9 @@ function getCentreDoctors(locationId){
 }
 function patientSearch(search_id = 'patient_id',flag=1) {
 
+    // Unbind previous event handlers to prevent multiple bindings
+    $("." + search_id).off("keyup");
+    
     $("." + search_id).on("keyup",function() {
         $(".suggestion-list").html('<li>Searching...</li>');
         $(".suggesstion-box").show();

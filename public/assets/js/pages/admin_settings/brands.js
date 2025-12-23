@@ -88,7 +88,7 @@ function statusesBrand(data, status_url, is_column_name_change = false) {
 
     let active = is_column_name_change == false ? data.active : data.status;
     let status = '';
-console.log(permissions);
+
     if (active) {
         if (permissions.b_active) {
             status += '<span class="switch switch-icon">\

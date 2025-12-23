@@ -379,7 +379,7 @@
         function addMoreOptionButtonBinding() {
 
             $(".add-more-option").click(function (e) {
-                console.log("adding option ");
+      
 
                 var newIn = '<div id="field" class="mt-repeater-cell rs-shrt cf-q-option-list-item">\n' +
                     '                <label class="optlbl">\n' +

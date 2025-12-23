@@ -1,5 +1,5 @@
 
-@if(Gate::allows('roles_edit') || Gate::allows('roles_destroy'))
+@if(Gate::allows('roles_edit') || Gate::allows('roles_duplicate') || Gate::allows('roles_destroy'))
     <div class="dropdown dropdown-inline action-dots">
         <a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">
             <i class="ki ki-bold-more-hor" aria-hidden="true"></i>
@@ -15,6 +15,14 @@
                         <a href="{{ route('admin.roles.edit', $role) }}" class="navi-link">
                             <span class="navi-icon"><i class="la la-pencil"></i></span>
                             <span class="navi-text">Edit</span>
+                        </a>
+                    </li>
+                @endif
+                @if(Gate::allows('roles_duplicate'))
+                    <li class="navi-item">
+                        <a href="{{ route('admin.roles.duplicate', $role) }}" class="navi-link">
+                            <span class="navi-icon"><i class="la la-copy"></i></span>
+                            <span class="navi-text">Duplicate</span>
                         </a>
                     </li>
                 @endif

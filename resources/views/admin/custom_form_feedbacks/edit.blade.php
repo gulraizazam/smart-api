@@ -148,7 +148,7 @@
                     $(".update_patient_data").bind("change", function () {
 
                         patient_id = $("select[name=reference_id]").val();
-                        console.log("new id: "  + patient_id);
+           
                         if(parseInt(patient_id) > 0 ){
                             update_feedback({'reference_id':patient_id}, (res)=>{
 
@@ -173,11 +173,9 @@
                         field_id = this.id.split("cs_field_")[1];
 
                         if (field_id != "") {
-                            console.log(this.id);
+                  
                             field_type = $(this).find("input#field_type[type=hidden]").val();
 
-                            console.log("field_id : " + field_id);
-                            console.log("field_type : " + field_type);
                             data = {};
                             if (field_type == 1) {
                                 text_answer = this.querySelector("input[name=answer]").value;
@@ -244,8 +242,7 @@
                             }
 
 
-                            console.log("data : ");
-                            console.log(data);
+                          
                             update_form_field(field_id, data, (response) => {
 
                                 if (response.status) {

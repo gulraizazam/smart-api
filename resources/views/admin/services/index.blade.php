@@ -2,9 +2,81 @@
 @section('title', 'Services')
 @section('content')
     @push('css')
+        <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
         <style>
             .datatable-pager {
                 display: none !important;
+            }
+
+            /* Style Trix editor to match form-control */
+            trix-editor {
+                border: 1px solid #E4E6EF !important;
+                border-radius: 0 !important;
+                padding: 0.75rem 1rem !important;
+                background-color: #ffffff !important;
+                min-height: 150px;
+                overflow: visible !important;
+            }
+
+            /* trix-editor:focus {
+                border-color: #80bdff !important;
+                outline: 0 !important;
+                box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+            }
+
+            trix-toolbar {
+                border: 1px solid #E4E6EF !important;
+                border-radius: 0 !important;
+                background-color: #F3F6F9 !important;
+                margin-bottom: 0 !important;
+                overflow-x: hidden !important;
+            }
+
+            trix-toolbar .trix-button-group {
+                margin-bottom: 0 !important;
+            }
+
+            trix-toolbar .trix-button-row {
+                overflow-x: visible !important;
+                flex-wrap: wrap !important;
+            }
+
+            .trix-content {
+                overflow: visible !important;
+            }
+
+            trix-editor .trix-content {
+                overflow: visible !important;
+            } */
+
+            /* Make datatable responsive on mobile */
+            @media (max-width: 768px) {
+                .datatable {
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch;
+                }
+
+                .datatable table {
+                    min-width: 100%;
+                    width: auto !important;
+                }
+
+                /* Ensure actions column is always visible */
+                .datatable-cell:last-child {
+                    position: sticky !important;
+                    right: 0 !important;
+                    background-color: #fff !important;
+                    z-index: 2 !important;
+                    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+                }
+
+                .datatable-row .datatable-cell:last-child {
+                    background-color: #fff !important;
+                }
+
+                .datatable-row:hover .datatable-cell:last-child {
+                    background-color: #f3f6f9 !important;
+                }
             }
         </style>
     @endpush
@@ -104,12 +176,44 @@
         <!--end::Modal dialog-->
     </div>
 
+    <div class="modal fade" id="modal_service_instructions" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <!--begin::Modal content-->
+            <div class="modal-content">
+                <!--begin::Modal header-->
+                <div class="modal-header">
+                    <h2 class="fw-bolder">Service Instructions</h2>
+                    <div class="btn btn-icon btn-sm btn-active-icon-primary" data-dismiss="modal">
+                        <span class="svg-icon svg-icon-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black" />
+                                <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black" />
+                            </svg>
+                        </span>
+                    </div>
+                </div>
+                <!--end::Modal header-->
+                <!--begin::Modal body-->
+                <div class="modal-body">
+                    <div id="service_instructions_content" style="min-height: 200px;padding:20px">
+                        <!-- Instructions will be loaded here -->
+                    </div>
+                </div>
+                <!--end::Modal body-->
+            </div>
+            <!--end::Modal content-->
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
 
     @push('datatable-js')
         <script src="{{asset('assets/js/pages/admin_settings/services.js')}}"></script>
     @endpush
 
     @push('js')
+        <script type="text/javascript" src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js"></script>
         <script src="{{asset('assets/js/pages/crud/forms/validation/admin_settings/services.js')}}"></script>
         <script>
             function SetName()

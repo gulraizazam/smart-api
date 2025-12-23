@@ -54,6 +54,7 @@ class SecondMessageOfAppointment extends Command
      */
     public function handle()
     {
+        
         $day = Carbon::now()->format('Y-m-d');
         $tomorrow = Carbon::parse(Carbon::now())->addDay()->format('Y-m-d');
 
@@ -62,7 +63,7 @@ class SecondMessageOfAppointment extends Command
         $where[] = [
             'scheduled_date',
             '=',
-            $day,
+            $tomorrow,  // tomorrow
         ];
         $where[] = [
             'base_appointment_status_id',
@@ -72,9 +73,10 @@ class SecondMessageOfAppointment extends Command
         $appointments = Appointments::join('users', 'users.id', '=', 'appointments.patient_id')->where($where)
             ->where(['appointments.appointment_status_allow_message' => 1])
             ->whereNull('coming_from')
-
+             
             ->select('appointments.id as appointment_id', 'appointments.account_id', 'users.phone','appointments.appointment_type_id', 'appointments.consultancy_type')
             ->get();
+           
             
         $log_type = '2nd_sms';
         
