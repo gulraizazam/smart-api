@@ -29,7 +29,7 @@ class Leads extends BaseModal
      */
     public function lead_service()
     {
-        return $this->hasMany(LeadsServices::class, 'lead_id')->with('service:id,name,parent_id', 'childservice:id,name,parent_id');
+        return $this->hasMany(LeadsServices::class, 'lead_id')->with('service:id,name,parent_id', 'childservice:id,name,parent_id', 'leadStatus:id,name');
     }
 
     public function active_lead_service()

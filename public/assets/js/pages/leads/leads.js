@@ -514,20 +514,22 @@ function setServicesHistory(lead) {
         services.forEach(function(service) {
             let serviceName = service?.service?.name ?? 'N/A';
             let treatmentName = service?.childservice?.name ?? 'N/A';
+            let leadStatusName = service?.lead_status?.name ?? 'N/A';
             let status = service?.status == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
-            let createdAt = service?.created_at ? formatDate(service.created_at, 'ddd MMM, mm yyyy') : 'N/A';
+            let createdAt = service?.created_at ? formatDate(service.created_at, 'ddd MMM, DD yyyy') : 'N/A';
             
             history_html += '<tr>';
             history_html += '<td>' + index + '</td>';
             history_html += '<td>' + serviceName + '</td>';
             history_html += '<td>' + treatmentName + '</td>';
+            history_html += '<td>' + leadStatusName + '</td>';
             history_html += '<td>' + status + '</td>';
             history_html += '<td>' + createdAt + '</td>';
             history_html += '</tr>';
             index++;
         });
     } else {
-        history_html = '<tr><td colspan="5" class="text-center">No services found</td></tr>';
+        history_html = '<tr><td colspan="6" class="text-center">No services found</td></tr>';
     }
     
     $("#services_history_table").html(history_html);

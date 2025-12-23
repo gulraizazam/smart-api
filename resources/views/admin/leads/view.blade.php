@@ -72,13 +72,14 @@
                             <th>#</th>
                             <th>Service</th>
                             <th>Treatment</th>
+                            <th>Lead Status</th>
                             <th>Status</th>
                             <th>Date</th>
                         </tr>
                     </thead>
                     <tbody id="services_history_table">
                         <tr>
-                            <td colspan="5" class="text-center">No services found</td>
+                            <td colspan="6" class="text-center">No services found</td>
                         </tr>
                     </tbody>
                 </table>
