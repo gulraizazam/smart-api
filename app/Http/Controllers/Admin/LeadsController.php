@@ -649,7 +649,11 @@ class LeadsController extends Controller
                     $data['created_at'] = Carbon::now();
                     $data['updated_at'] = Carbon::now();
                     $data['updated_by'] = Auth::User()->id;
-                    $data['lead_status_id'] = 1;
+                    // Get default Open lead status
+                    $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                    if ($openStatus) {
+                        $data['lead_status_id'] = $openStatus->id;
+                    }
                     $lead = Leads::updateRecord($lead_check->id, $data);
                     $lead_services = LeadsServices::updateOrCreate([
                         'lead_id' => $lead->id,
@@ -659,6 +663,7 @@ class LeadsController extends Controller
                         'service_id' => $data['service_id'],
                         'child_service_id' => $child_service_id,
                         'status' => 1,
+                        'lead_status_id' => $openStatus ? $openStatus->id : null,
                     ]);
                     LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                         'status' => 0,
@@ -668,13 +673,18 @@ class LeadsController extends Controller
                     $data['created_at'] = Carbon::now();
                     $data['updated_at'] = Carbon::now();
                     $data['updated_by'] = Auth::User()->id;
-                    $data['lead_status_id'] = 1;
+                    // Get default Open lead status
+                    $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                    if ($openStatus) {
+                        $data['lead_status_id'] = $openStatus->id;
+                    }
                     $lead = Leads::updateRecord($lead_check->id, $data);
                     $lead_services = LeadsServices::create([
                         'lead_id' => $lead->id,
                         'service_id' => $data['service_id'],
                         'child_service_id' => $data['child_service_id'] ?? null,
                         'status' => 1,
+                        'lead_status_id' => $openStatus ? $openStatus->id : null,
                     ]);
                     LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                         'status' => 0,
