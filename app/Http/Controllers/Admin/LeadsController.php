@@ -606,12 +606,27 @@ class LeadsController extends Controller
                 if ($lead) {
                     return ApiHelper::apiResponse($this->error, 'Phone number is already exist.');
                 } else {
+                    // Get default Open lead status
+                    $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                    
+                    // Get meta_lead_id from request if available
+                    $meta_lead_id = isset($data['meta_lead_id']) && !empty(trim($data['meta_lead_id'])) 
+                        ? trim($data['meta_lead_id']) 
+                        : null;
+                    
+                    // Set meta_lead_id in lead data
+                    if ($meta_lead_id) {
+                        $data['meta_lead_id'] = $meta_lead_id;
+                    }
+                    
                     $lead = Leads::createRecord($data, $status = 'Lead');
                     $lead_services = LeadsServices::create([
                         'lead_id' => $lead->id,
                         'service_id' => $data['service_id'],
                         'child_service_id' => $data['child_service_id'] ?? null,
                         'status' => 1,
+                        'lead_status_id' => $openStatus ? $openStatus->id : null,
+                        'meta_lead_id' => $meta_lead_id,
                     ]);
                 }
             } else {
@@ -621,31 +636,19 @@ class LeadsController extends Controller
                     ->where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])
                     ->orderBy('id', 'desc')
                     ->first();
+                
+                // Get meta_lead_id from request if available
+                $meta_lead_id = isset($data['meta_lead_id']) && !empty(trim($data['meta_lead_id'])) 
+                    ? trim($data['meta_lead_id']) 
+                    : null;
+                
+                // Set meta_lead_id in lead data
+                if ($meta_lead_id) {
+                    $data['meta_lead_id'] = $meta_lead_id;
+                }
+                
                 if ($lead_check->lead_service->count()) {
                     $child_service_id = (array_key_exists('child_service_id', $data)) ? $data['child_service_id'] : null;
-                    /* if(array_key_exists('child_service_id', $data)){
-                        $child_service_check = $lead_check->lead_service->whereIn('child_service_id', $child_service_id);
-                        if($child_service_check->count()){
-                            return ApiHelper::apiResponse($this->error, 'Service and child service already exist.');
-                        } else {
-                            if($data['child_service_id'] != null){
-                                $data['created_at'] = Carbon::now();
-                                $data['updated_at'] = Carbon::now();
-                                $data['updated_by'] = Auth::User()->id;
-                                $data['lead_status_id'] = 1;
-                                $lead = Leads::updateRecord($lead_check->id, $data);
-                                $lead_services = LeadsServices::create([
-                                    'lead_id' => $lead->id,
-                                    'service_id' => $data['service_id'],
-                                    'child_service_id' => $data['child_service_id'] ?? null,
-                                    'status' => 1
-                                ]);
-                                LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
-                                    'status' => 0
-                                ]);
-                            }
-                        }
-                    } else { */
                     $data['created_at'] = Carbon::now();
                     $data['updated_at'] = Carbon::now();
                     $data['updated_by'] = Auth::User()->id;
@@ -664,11 +667,11 @@ class LeadsController extends Controller
                         'child_service_id' => $child_service_id,
                         'status' => 1,
                         'lead_status_id' => $openStatus ? $openStatus->id : null,
+                        'meta_lead_id' => $meta_lead_id,
                     ]);
                     LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                         'status' => 0,
                     ]);
-                    //}
                 } else {
                     $data['created_at'] = Carbon::now();
                     $data['updated_at'] = Carbon::now();
@@ -685,6 +688,7 @@ class LeadsController extends Controller
                         'child_service_id' => $data['child_service_id'] ?? null,
                         'status' => 1,
                         'lead_status_id' => $openStatus ? $openStatus->id : null,
+                        'meta_lead_id' => $meta_lead_id,
                     ]);
                     LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                         'status' => 0,

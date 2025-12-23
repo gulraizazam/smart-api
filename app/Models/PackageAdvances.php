@@ -103,6 +103,9 @@ class PackageAdvances extends BaseModal
             $record->save();
             AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
 
+            // Update lead status to Converted when payment is received
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
+
             return $record;
         }
 
@@ -119,6 +122,11 @@ class PackageAdvances extends BaseModal
         $record = self::create($data);
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+
+        // Update lead status to Converted when payment is received (cash_flow = 'in')
+        if (isset($data['cash_flow']) && $data['cash_flow'] === 'in' && isset($data['package_id'])) {
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
+        }
 
         return $record;
     }
@@ -179,6 +187,9 @@ class PackageAdvances extends BaseModal
             $old_data = '0';
 
             AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
+
+            // Update lead status to Converted when payment is received
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
 
             return $record;
         }
