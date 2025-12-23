@@ -1234,12 +1234,19 @@ class PackagesController extends Controller
      */
     private static function markAppointmentAsConverted($appointment_id, $package_id = null)
     {
+        \Log::info('markAppointmentAsConverted called', [
+            'appointment_id' => $appointment_id,
+            'package_id' => $package_id
+        ]);
+        
         if (!$appointment_id) {
+            \Log::info('No appointment_id provided');
             return;
         }
         
         $appointment = Appointments::find($appointment_id);
         if (!$appointment) {
+            \Log::info('Appointment not found');
             return;
         }
         
@@ -1249,9 +1256,31 @@ class PackagesController extends Controller
             'is_arrived' => 1
         ])->first();
         
-        // Check if appointment is already arrived
-        if (!$arrivedStatus || $appointment->base_appointment_status_id != $arrivedStatus->id) {
-            return; // Appointment is not arrived yet, don't mark as converted
+        // Get the converted appointment status (to check if already converted)
+        $convertedStatusCheck = AppointmentStatuses::where([
+            'account_id' => $appointment->account_id,
+            'is_converted' => 1
+        ])->first();
+        
+        \Log::info('Checking arrived/converted status', [
+            'arrivedStatus_id' => $arrivedStatus ? $arrivedStatus->id : null,
+            'convertedStatus_id' => $convertedStatusCheck ? $convertedStatusCheck->id : null,
+            'appointment_base_status_id' => $appointment->base_appointment_status_id
+        ]);
+        
+        // Check if appointment is arrived OR already converted
+        $isArrived = $arrivedStatus && $appointment->base_appointment_status_id == $arrivedStatus->id;
+        $isConverted = $convertedStatusCheck && $appointment->base_appointment_status_id == $convertedStatusCheck->id;
+        
+        if (!$isArrived && !$isConverted) {
+            \Log::info('Appointment not arrived or converted yet, skipping conversion');
+            return; // Appointment is not arrived or converted yet, don't mark as converted
+        }
+        
+        // If already converted, no need to update again
+        if ($isConverted) {
+            \Log::info('Appointment already converted, skipping');
+            return;
         }
         
         // If package_id is provided, check if package has services
@@ -1259,15 +1288,26 @@ class PackagesController extends Controller
             // Get package bundle IDs
             $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
             
+            \Log::info('Package bundle IDs', ['ids' => $packagebundleIds->toArray()]);
+            
             // Check if package has any services
             $totalServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)->count();
             
+            \Log::info('Total services in package', ['count' => $totalServices]);
+            
             if ($totalServices == 0) {
+                \Log::info('No services in package, skipping conversion');
                 return; // No services in package, don't mark as converted
             }
             
             // Get the package to check if this is the original appointment or a subsequent one
             $package = Packages::find($package_id);
+            
+            \Log::info('Package appointment check', [
+                'package_appointment_id' => $package ? $package->appointment_id : null,
+                'current_appointment_id' => $appointment_id,
+                'is_same' => $package && $package->appointment_id == $appointment_id
+            ]);
             
             // If this is a different appointment than the original package appointment,
             // check if services were added after this appointment arrived
@@ -1276,7 +1316,10 @@ class PackagesController extends Controller
                     ->where('created_at', '>', $appointment->updated_at)
                     ->count();
                 
+                \Log::info('Services after arrival check', ['count' => $servicesAfterArrival]);
+                
                 if ($servicesAfterArrival == 0) {
+                    \Log::info('No services added after this appointment arrived, skipping');
                     return; // No services added after this appointment arrived
                 }
             }
@@ -1288,10 +1331,18 @@ class PackagesController extends Controller
             'is_converted' => 1
         ])->first();
         
+        \Log::info('Converted status lookup', [
+            'convertedStatus_id' => $convertedStatus ? $convertedStatus->id : null
+        ]);
+        
         if ($convertedStatus) {
             $appointment->update([
-                'base_appointment_status_id' => $convertedStatus->id
+                'base_appointment_status_id' => $convertedStatus->id,
+                'appointment_status_id' => $convertedStatus->id
             ]);
+            \Log::info('Appointment marked as converted successfully');
+        } else {
+            \Log::info('No converted status found in appointment_statuses');
         }
     }
 

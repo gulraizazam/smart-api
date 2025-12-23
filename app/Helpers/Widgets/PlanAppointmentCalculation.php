@@ -46,19 +46,30 @@ class PlanAppointmentCalculation
 
             $appointmentArray_doctor = [];
 
-            $appointment_status = AppointmentStatuses::where('is_arrived', '=', '1')->first();
+            // Get both arrived and converted appointment statuses
+            $arrivedStatus = AppointmentStatuses::where('is_arrived', '=', '1')->first();
+            $convertedStatus = AppointmentStatuses::where('is_converted', '=', '1')->first();
+            
+            // Build array of valid status IDs (arrived or converted)
+            $validStatusIds = [];
+            if ($arrivedStatus) {
+                $validStatusIds[] = $arrivedStatus->id;
+            }
+            if ($convertedStatus) {
+                $validStatusIds[] = $convertedStatus->id;
+            }
 
             $appointment_type = AppointmentTypes::where('slug', '=', 'consultancy')->first();
 
             $appointment_type_treatment = AppointmentTypes::where('slug', '=', 'treatment')->first();
 
-            // First we need to find appointment with arrived status
+            // First we need to find appointment with arrived or converted status
             $appointment_info = Appointments::where([
                 ['patient_id', '=', $request->patient_id],
-                ['base_appointment_status_id', '=', $appointment_status?->id],
                 ['appointment_type_id', '=', $appointment_type?->id],
                 ['location_id', '=', $request?->location_id],
-            ])->orderBy('created_at', 'desc')->get();
+            ])->whereIn('base_appointment_status_id', $validStatusIds)
+            ->orderBy('created_at', 'desc')->get();
 
             // Making array for above data
             foreach ($appointment_info as $appointment) {
