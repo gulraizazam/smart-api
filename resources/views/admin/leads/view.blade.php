@@ -74,7 +74,7 @@
                             <th>Treatment</th>
                             <th>Lead Status</th>
                             <th>Status</th>
-                            <th>Date</th>
+                            <th>Created Date</th>
                         </tr>
                     </thead>
                     <tbody id="services_history_table">
