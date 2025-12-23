@@ -22,6 +22,7 @@ use App\Helpers\Financelog;
 use App\Helpers\JazzSMSAPI;
 use App\Models\AuditTrails;
 use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
 use App\Models\PaymentModes;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
@@ -1199,6 +1200,10 @@ class PackagesController extends Controller
                 $activity->save();
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
+                
+                // Mark appointment as converted when payment is received
+                self::markAppointmentAsConverted($appointment_id, $package->id);
+                
                 // Commit Transaction
                 DB::commit();
 
@@ -1210,6 +1215,66 @@ class PackagesController extends Controller
             DB::rollback();
             return response()->json([
                 'status' => false,
+            ]);
+        }
+    }
+
+    /**
+     * Mark appointment status as converted
+     * Only converts if:
+     * 1. The appointment is already arrived
+     * 2. A service was added to the package AFTER the appointment arrived
+     * 3. Payment is being made after the service was added
+     * 
+     * @param int $appointment_id
+     * @param int $package_id
+     */
+    private static function markAppointmentAsConverted($appointment_id, $package_id = null)
+    {
+        if (!$appointment_id) {
+            return;
+        }
+        
+        $appointment = Appointments::find($appointment_id);
+        if (!$appointment) {
+            return;
+        }
+        
+        // Get the arrived appointment status
+        $arrivedStatus = AppointmentStatuses::where([
+            'account_id' => $appointment->account_id,
+            'is_arrived' => 1
+        ])->first();
+        
+        // Check if appointment is already arrived
+        if (!$arrivedStatus || $appointment->base_appointment_status_id != $arrivedStatus->id) {
+            return; // Appointment is not arrived yet, don't mark as converted
+        }
+        
+        // If package_id is provided, check if services were added after appointment arrived
+        if ($package_id) {
+            // Get package bundle IDs
+            $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
+            
+            // Check if any package services were added AFTER the appointment was marked as arrived
+            $servicesAfterArrival = PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                ->where('created_at', '>', $appointment->updated_at)
+                ->count();
+            
+            if ($servicesAfterArrival == 0) {
+                return; // No services added after arrival, don't mark as converted
+            }
+        }
+        
+        // Get the converted appointment status
+        $convertedStatus = AppointmentStatuses::where([
+            'account_id' => $appointment->account_id,
+            'is_converted' => 1
+        ])->first();
+        
+        if ($convertedStatus) {
+            $appointment->update([
+                'base_appointment_status_id' => $convertedStatus->id
             ]);
         }
     }
@@ -2087,6 +2152,9 @@ class PackagesController extends Controller
                 $activity->save();
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
+
+                // Mark appointment as converted when payment is received
+                self::markAppointmentAsConverted($appointment_id, $package->id);
 
                 // Commit Transaction
                 DB::commit();
