@@ -1520,6 +1520,11 @@ class LeadsController extends Controller
                     $phone = GeneralFunctions::cleanNumber($row['phone']);
                 }
 
+                // Get meta_lead_id from import if available
+                $meta_lead_id = isset($row['meta_lead_id']) && !empty(trim($row['meta_lead_id'])) 
+                    ? trim($row['meta_lead_id']) 
+                    : null;
+
                 $lead_data = [
                     'name' => $row['full_name'],
                     'email' => $row['email'],
@@ -1535,6 +1540,7 @@ class LeadsController extends Controller
                     'updated_at' => Carbon::now(),
                     'account_id' => Auth::User()->account_id,
                     'location_id' => $location_id,
+                    'meta_lead_id' => $meta_lead_id,
                 ];
                 if ($phone != null && $service_id != null) {
                     if ($request->update_records == '1' && !in_array($phone, $new_patient_phones) && in_array($phone, $found_patients)) {
@@ -1545,7 +1551,7 @@ class LeadsController extends Controller
                             'phone' => $phone,
                         ], $lead_data);
 
-                        $this->leadService($lead->id, $service_id, $child_service_id);
+                        $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
                     } else {
                         if (in_array($phone, $new_patient_phones)) {
                             $lead_data['lead_status_id'] = $lead_status_id;
@@ -1554,7 +1560,7 @@ class LeadsController extends Controller
                                 'phone' => $phone,
                             ], $lead_data);
 
-                            $this->leadService($lead->id, $service_id, $child_service_id);
+                            $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
                         }
                         if ($request->update_records != '1' && in_array($phone, $found_patients)) {
                             $update_lead = [
@@ -1564,6 +1570,7 @@ class LeadsController extends Controller
                                 'created_at' => Carbon::now(),
                                 'updated_at' => Carbon::now(),
                                 'location_id' => $location_id,
+                                'meta_lead_id' => $meta_lead_id,
                             ];
                             if ($request->get('skip_lead_statuses') != '1') {
                                 $update_lead['lead_status_id'] = $lead_status_id;
@@ -1572,7 +1579,7 @@ class LeadsController extends Controller
                                 'phone' => $phone,
                             ], $update_lead);
 
-                            $this->leadService($lead->id, $service_id, $child_service_id);
+                            $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
                         }
                     }
                 } else {
@@ -1616,11 +1623,12 @@ class LeadsController extends Controller
         }
     }
 
-    public static function leadService($lead_id, $service_id, $child_service_id)
+    public static function leadService($lead_id, $service_id, $child_service_id, $meta_lead_id = null)
     {
         $lead_service = [
             'service_id' => $service_id,
             'child_service_id' => $child_service_id,
+            'meta_lead_id' => $meta_lead_id,
             'created_at' => Carbon::now(),
             'updated_at' => Carbon::now(),
         ];
