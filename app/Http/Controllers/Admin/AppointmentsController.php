@@ -1010,12 +1010,17 @@ class AppointmentsController extends Controller
                 } else {
                     $consultancy_type = '';
                 }
+                if(Gate::allows('contact')){
+                    $phoneNumber = $appointment->patient->phone;
+                }else{
+                    $phoneNumber ='***********';
+                }
                 $records['data'][$index] = [
                     'id' => $appointment->app_id,
                     'patient_id' => $appointment->patient_id,
                     'Patient_ID' => GeneralFunctions::patientSearchStringAdd($appointment->patient_id),
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
-                    'phone' => $appointment->phone,
+                    'phone' => $phoneNumber,
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y').' at '.Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name ?? 'N/A',
                     'doctorId' => $appointment->doctor->id ?? 0,
@@ -2209,6 +2214,7 @@ class AppointmentsController extends Controller
                 'patient_card' => Gate::allows('appointments_patient_card'),
                 'log' => Gate::allows('appointments_log'),
                 'contact' => Gate::allows('contact'),
+                'delete' => Gate::allows('appointments_destroy'),
             ],
         ]);
     }
@@ -5265,7 +5271,7 @@ class AppointmentsController extends Controller
         $appointment->comment = $req->comment;
         $appointment->appointment_id = $req->appointment_id;
         $appointment->created_by = Auth::user()->id;
-        $appointmentCommentDate = \Carbon\Carbon::parse($appointment->created_at)->format('D M, j Y h:i A');
+        $appointmentCommentDate = \Carbon\Carbon::parse($appointment->created_at)->format('D M d, Y g:i A');
         $appointment->save();
         $username = Auth::user()->name;
         $myarray = ['username' => $username, 'appointment' => $appointment, 'appointmentCommentDate' => $appointmentCommentDate, 'appointmentCommentSection' => $appointmentComment];
@@ -5992,6 +5998,7 @@ class AppointmentsController extends Controller
             $serviceId = $request->input('service_id');
             $locationId = $request->input('location_id'); // Current location
             $excludeAppointmentId = $request->input('exclude_appointment_id'); // For edit mode
+            $startDateTime = $request->input('start'); // The selected date/time for the new treatment
 
             // Build query for the last arrived treatment for this patient with the same service
             // Join with invoices table to get the latest treatment based on invoice creation date
@@ -6072,6 +6079,52 @@ class AppointmentsController extends Controller
 
                 // Only return the last treatment if the doctor is active and still allocated to the location
                 if ($isDoctorActive && $isDoctorAllocated) {
+                    // Check if the previous doctor has a rota for the selected date/time
+                    $hasDoctorRota = false;
+                    if ($startDateTime && $lastTreatment->doctor_id) {
+                        $start = \Carbon\Carbon::parse($startDateTime)->format('Y-m-d');
+                        $startedTime = \Carbon\Carbon::parse($startDateTime)->format('Y-m-d H:i:s');
+                        
+                        // Get doctor's resource
+                        $resourceIdDoctor = \App\Models\Resources::where('external_id', '=', $lastTreatment->doctor_id)->first();
+                        
+                        if ($resourceIdDoctor) {
+                            // Check if doctor has an active rota for this date at this location
+                            $resourceRotaDoctor = \App\Models\ResourceHasRota::where([
+                                ['resource_id', '=', $resourceIdDoctor->id],
+                                ['location_id', '=', $locationId]
+                            ])->get();
+                            
+                            $continueRotaDoctor = [];
+                            foreach ($resourceRotaDoctor as $resourceroata) {
+                                if (($start >= \Carbon\Carbon::parse($resourceroata->created_at)->format('Y-m-d')) && ($start <= $resourceroata->end)) {
+                                    $continueRotaDoctor[0] = $resourceroata;
+                                }
+                            }
+                            
+                            if (count($continueRotaDoctor) > 0) {
+                                // Check if doctor has rota for this specific day and time
+                                $resourceHasRotaDaysDoctor = \App\Models\ResourceHasRotaDays::where([
+                                    ['resource_has_rota_id', '=', $continueRotaDoctor[0]->id],
+                                    ['date', '=', $start],
+                                    ['active', '=', '1'],
+                                    ['resource_has_rota_days.start_timestamp', '<=', $startedTime],
+                                    ['resource_has_rota_days.end_timestamp', '>', $startedTime],
+                                ])->first();
+                                
+                                $hasDoctorRota = $resourceHasRotaDaysDoctor ? true : false;
+                            }
+                        }
+                        
+                        \Log::info('Doctor rota check for previous doctor', [
+                            'doctor_id' => $lastTreatment->doctor_id,
+                            'location_id' => $locationId,
+                            'start_date' => $start,
+                            'start_time' => $startedTime,
+                            'has_rota' => $hasDoctorRota
+                        ]);
+                    }
+                    
                     return response()->json([
                         'status' => true,
                         'data' => [
@@ -6083,6 +6136,7 @@ class AppointmentsController extends Controller
                                 'service_name' => $lastTreatment->service->name ?? 'Unknown',
                                 'scheduled_date' => $lastTreatment->scheduled_date,
                                 'scheduled_time' => $lastTreatment->scheduled_time,
+                                'has_doctor_rota' => $hasDoctorRota,
                             ]
                         ]
                     ]);
@@ -6107,6 +6161,127 @@ class AppointmentsController extends Controller
             return response()->json([
                 'status' => false,
                 'message' => 'Error checking patient treatment history: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get WhatsApp data for appointment
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getWhatsAppData(Request $request)
+    {
+        try {
+            $appointmentId = $request->input('id');
+
+            // Fetch appointment with patient details
+            $appointment = Appointments::with([
+                'patient',
+                'doctor',
+                'location',
+                'service',
+                'appointment_status'
+            ])->find($appointmentId);
+
+            if (!$appointment) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Appointment not found'
+                ]);
+            }
+
+            // Check if patient has WhatsApp number
+            $whatsappNumber = $appointment->patient->phone ?? null;
+
+            if (!$whatsappNumber) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Customer WhatsApp number not found'
+                ]);
+            }
+
+            // Clean the phone number (remove spaces, dashes, etc.)
+            $whatsappNumber = preg_replace('/[^0-9]/', '', $whatsappNumber);
+
+            // Ensure phone number has country code (Pakistan = 92)
+            // If number starts with 0, replace with 92
+            if (substr($whatsappNumber, 0, 1) === '0') {
+                $whatsappNumber = '92' . substr($whatsappNumber, 1);
+            }
+            // If number doesn't start with 92 and is 10 digits, add 92
+            elseif (strlen($whatsappNumber) === 10 && substr($whatsappNumber, 0, 2) !== '92') {
+                $whatsappNumber = '92' . $whatsappNumber;
+            }
+
+            // Determine template slug based on appointment type
+            // appointment_type_id: 1 = Consultancy, 2 = Treatment
+            $templateSlug = ($appointment->appointment_type_id == 2) ? 'treatment_whatsapp' : 'consultancy_whatsapp';
+
+            // Fetch SMS template
+            $template = SMSTemplates::getBySlug($templateSlug, Auth::user()->account_id);
+
+            if (!$template) {
+                $templateType = ($appointment->appointment_type_id == 2) ? 'Treatment' : 'Consultancy';
+                return response()->json([
+                    'status' => false,
+                    'message' => 'WhatsApp template not found. Please create a template with slug "' . $templateSlug . '" for ' . $templateType . ' appointments'
+                ]);
+            }
+
+            // Replace variables in template content
+            $message = $template->content;
+
+            // Format appointment time (only time, not date)
+            $appointmentTime = 'N/A';
+            if ($appointment->scheduled_date && $appointment->scheduled_time) {
+                try {
+                    $time = \Carbon\Carbon::parse($appointment->scheduled_time);
+                    $appointmentTime = $time->format('h:i A');
+                } catch (\Exception $e) {
+                    $appointmentTime = $appointment->scheduled_time ?? 'N/A';
+                }
+            }
+
+            // Replace single # variables
+            $message = str_replace('#patient_name#', $appointment->patient->name ?? 'N/A', $message);
+            $message = str_replace('#appointment_time#', $appointmentTime, $message);
+            $message = str_replace('#patient_id#', $appointment->patient->id ?? 'N/A', $message);
+            $message = str_replace('#appointment_id#', $appointment->id ?? 'N/A', $message);
+            $message = str_replace('#doctor_name#', $appointment->doctor->name ?? 'N/A', $message);
+            $message = str_replace('#location_name#', $appointment->location->name ?? 'N/A', $message);
+            $message = str_replace('#centre_google_map#', $appointment->location->google_map ?? 'N/A', $message);
+            $message = str_replace('#service_name#', $appointment->service->name ?? 'N/A', $message);
+            $message = str_replace('#scheduled_date#', $appointment->scheduled_date ?? 'N/A', $message);
+            $message = str_replace('#scheduled_time#', $appointment->scheduled_time ?? 'N/A', $message);
+            $message = str_replace('#status#', $appointment->appointment_status->name ?? 'N/A', $message);
+
+            // Also support double ## format for backward compatibility
+            $message = str_replace('##patient_name##', $appointment->patient->name ?? 'N/A', $message);
+            $message = str_replace('##appointment_time##', $appointmentTime, $message);
+            $message = str_replace('##patient_id##', $appointment->patient->id ?? 'N/A', $message);
+            $message = str_replace('##appointment_id##', $appointment->id ?? 'N/A', $message);
+            $message = str_replace('##doctor_name##', $appointment->doctor->name ?? 'N/A', $message);
+            $message = str_replace('##location_name##', $appointment->location->name ?? 'N/A', $message);
+            $message = str_replace('##centre_google_map##', $appointment->location->google_map ?? 'N/A', $message);
+            $message = str_replace('##service_name##', $appointment->service->name ?? 'N/A', $message);
+            $message = str_replace('##scheduled_date##', $appointment->scheduled_date ?? 'N/A', $message);
+            $message = str_replace('##scheduled_time##', $appointment->scheduled_time ?? 'N/A', $message);
+            $message = str_replace('##status##', $appointment->appointment_status->name ?? 'N/A', $message);
+
+            return response()->json([
+                'status' => true,
+                'data' => [
+                    'whatsapp' => $whatsappNumber,
+                    'message' => $message
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error fetching WhatsApp data: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -161,7 +161,7 @@
                 field_id = this.id.split("cs_field_")[1];
 
                 if (field_id != "") {
-                    console.log(this.id);
+            
                     field_type = $(this).find("input#field_type[type=hidden]").val();
 
 
@@ -271,7 +271,7 @@
                 type: $("[name=type]").val(),
                 medical_id: $("[name=medical_id]").val(),
             };
-            console.log(data);
+     
             $.ajax({
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')

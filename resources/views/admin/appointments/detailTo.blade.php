@@ -174,7 +174,7 @@
                                                 <span class="mt-comment-author"
                                                       id="creat_by">@if($comment->created_by){{ $comment->user->name }}@else{{'N/A'}}@endif</span>
                                                 <span class="mt-comment-date"
-                                                      id="datetime">{{ \Carbon\Carbon::parse($comment->created_at)->format('D M, j Y h:i A') }}</span>
+                                                      id="datetime">{{ \Carbon\Carbon::parse($comment->created_at)->format('D M d, Y g:i A') }}</span>
                                             </div>
                                             <div class="mt-comment-text"
                                                  id="message">@if($comment->comment){{ $comment->comment }}@else{{'N/A'}}@endif</div>
@@ -223,7 +223,7 @@
                 'appointment_id': $('input[name=appointment_id]').val(),
             },
             success: function (myarray) {
-                console.log(myarray);
+             
                 $('#commentsection').prepend('<div class="tab-content" id="itemComment"><div class="tab-pane active" id="portlet_comments_1"><div class="mt-comments"><div class="mt-comment"><div class="mt-comment-img"><img src="{{ url('img/avatar.jpg') }}" alt="Avatar"></div><div class="mt-comment-body"><div class="mt-comment-info"><span class="mt-comment-author">' + myarray.username + '</span><span class="mt-comment-date">' + myarray.appointmentCommentDate + '</span></div><div class="mt-comment-text">' + myarray.appointment.comment + '</div></div></div></div></div></div>')
             },
 

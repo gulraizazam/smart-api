@@ -174,7 +174,7 @@
                     },
                     cache: false,
                     success: function(response) {
-                        console.log(response);
+                      
                         if(response.status == '1' && (response.appointment_status.is_comment == '1' || response.base_appointment_status.is_comment == '1')) {
                             $('.reason').show();
                         } else {

@@ -618,7 +618,7 @@ jQuery(document).ready(function () {
                 data: formData,
 
                 success: function (resposne) {
-                    console.log('res3',resposne);
+                  
                     let consume = 'NO';
                     if (resposne.status) {
 

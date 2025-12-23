@@ -34,14 +34,6 @@
                         <div class="row" style="margin-right: 0;">
                             <div class="col-md-3">
                                 <ul class="calendar-left-menu list-unstyled treatment-detail-actions"></ul>
-                                
-                                @if(Gate::allows('appointments_destroy'))
-                                <div class="mt-3">
-                                    <button type="button" id="delete_treatment_appointment_btn" class="btn btn-danger btn-block font-weight-bolder" onclick="deleteAppointmentFromModal(this);">
-                                        <i class="la la-trash"></i> Delete Appointment
-                                    </button>
-                                </div>
-                                @endif
                             </div>
 
                             <div class="col-md-9">
@@ -85,7 +77,7 @@
                                 <form id="treatment_cment" style="margin-top: 35px;max-width: 95%;">
 
 
-                            <h3 class="box-title">Comment</h3>
+                            <h3 class="box-title">Notes</h3>
 
                             <div class="row">
                                 <div class="col-md-11">
@@ -101,8 +93,8 @@
                                 <div class="row">
 
                                 <div class="col-md-12">
-                                    <label>Comment</label>
-                                    <input type="text" id="treatment_comment" name="comment" class="form-control" required="">
+                                   
+                                    <textarea id="treatment_comment" name="comment" class="form-control" required=""></textarea>
                                 </div>
                                 <input type="hidden" name="appointment_id" id="treatment_comment_appointment_id" class="form-control" value=""><br>
                                 <div class="col-md-12 mt-5">

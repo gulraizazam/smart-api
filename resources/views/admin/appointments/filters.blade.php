@@ -13,23 +13,79 @@
             padding: 9px 11px;
         }
 
+        /* Mobile Filter Toggle Styles */
+        @media (max-width: 991px) {
+            .all-filters-wrapper {
+                display: none;
+            }
+            .mobile-filter-toggle {
+                margin-bottom: 10px;
+            }
+            /* Hide advance button on mobile */
+            .advance-search {
+                display: none !important;
+            }
+            /* Show all filters expanded on mobile when opened */
+            .all-filters-wrapper .advance-filters {
+                display: block !important;
+            }
+            .all-filters-wrapper hr.advance-filters {
+                display: block !important;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .mobile-filter-toggle {
+                display: none !important;
+            }
+        }
+
+        .mobile-filter-toggle .btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            padding: 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .filter-toggle-arrow {
+            margin-left: auto;
+            transition: transform 0.3s ease;
+        }
+
     </style>
 @endpush
 
 <div class="mt-2 mb-7">
 
-    <div class="row align-items-center">
-        <div class="advance-search col-md-12 col-lg-12 col-xl-12">
-            <div class="row align-items-center mr-2" style="float: right;">
-                <div class="row">
-                    <button class="btn btn-sm btn-default ml-2 mt-10" onclick="advanceFilters();">
-                        <i class="advance-arrow fa fa-caret-right"></i>
-                        Advance
-                    </button>
+    <!-- Mobile Filter Toggle Button (visible only on mobile) -->
+    <div class="row mb-3 mobile-filter-toggle">
+        <div class="col-12">
+            <button class="btn btn-primary btn-block" onclick="toggleAllFilters();">
+                <i class="fa fa-filter mr-2"></i>
+                <span>Filters</span>
+                <i class="filter-toggle-arrow fa fa-chevron-down"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- All Filters Wrapper -->
+    <div class="all-filters-wrapper">
+
+        <div class="row align-items-center">
+            <div class="advance-search col-md-12 col-lg-12 col-xl-12">
+                <div class="row align-items-center mr-2" style="float: right;">
+                    <div class="row">
+                        <button class="btn btn-sm btn-default ml-2 mt-10" onclick="advanceFilters();">
+                            <i class="advance-arrow fa fa-caret-right"></i>
+                            Advance
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
 
     <div class="row mb-0 flex-column flex-sm-row">
@@ -138,5 +194,8 @@
         </div>
 
     </div>
+
+    </div>
+    <!-- End All Filters Wrapper -->
 
 </div>

@@ -89,6 +89,16 @@ use App\Models\PackageService;
 Route::get('/', function () {
     return redirect()->route('login');
 });
+
+Route::get('/package-advances-sum', function () {
+    $sum = PackageAdvances::where('cash_flow', 'in')
+        ->where('payment_mode_id', 4)
+        ->whereNull('deleted_at')
+        ->whereBetween('created_at', ['2024-07-01 00:00:00', '2025-06-30 23:59:59'])
+        ->sum('cash_amount');
+    
+    return response()->json(['sum' => $sum]);
+});
 Route::get('/services/export-pdf', [ServicesController::class, 'exportPdf'])->name('services.export.pdf');
 Route::get('/download-student-membership-patients', [MembershipsController::class, 'downloadStudentMembershipPatients'])
     ->name('download.student.membership.patients');
@@ -205,6 +215,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::resource('permissions', PermissionsController::class)->middleware('permission:permissions_manage');
 
         Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
+        Route::get('roles/{id}/duplicate', [RolesController::class, 'duplicate'])->name('roles.duplicate');
+        Route::post('roles/duplicate', [RolesController::class, 'storeDuplicate'])->name('roles.duplicate.store');
         Route::resource('roles', RolesController::class)->middleware('permission:roles_manage');
         // Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
 
@@ -258,7 +270,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('lead_statuses/sort', [LeadStatusesController::class, 'sortOrder'])->name('lead_statuses.sort');
 
         // Services
-        Route::resource('services', ServicesController::class)->only('index')->middleware('permission:services_manage');
+        Route::resource('services', ServicesController::class)->only(['index', 'show'])->middleware('permission:services_manage');
 
         // Appointment Statuses
         Route::get('appointment_statuses', [AppointmentStatusesController::class, 'index'])->name('appointment_statuses.index');
@@ -583,6 +595,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('download-today-treatments', [AppointmentsController::class, 'todaytreatments']);
         Route::get('appointments/view/log/{id}/{type}', [AppointmentsController::class, 'logPage'])->name('appointments.loadPage');
         Route::post('download-filter-data', [AppointmentsController::class, 'downloadExportdata']);
+        Route::get('appointments/get-whatsapp-data', [AppointmentsController::class, 'getWhatsAppData'])->name('appointments.get_whatsapp_data');
         /*Inventory Routes*/
         Route::get('warehouse', [WarehouseController::class, 'index'])->name('warehouse.index');
 

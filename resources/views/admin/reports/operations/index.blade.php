@@ -80,9 +80,9 @@
                                             {!! Form::label('report_type', 'Report Type*', ['class' => 'control-label']) !!}
                                             <select name="report_type" id="report_type" style="width: 100%;"
                                                     class="form-control select2">
-                                                @if(Gate::allows('operations_reports_dar_report'))
+                                                <!-- @if(Gate::allows('operations_reports_dar_report'))
                                                     <option value="dar_report">DAR Report</option>
-                                                @endif
+                                                @endif -->
 
                                                 @if(Gate::allows('operations_reports_dar_report'))
                                                     <option value="agent_report">Agent Report</option>

@@ -1743,7 +1743,7 @@ function editDiscountValue($this) {
                 $("#edit_discount_value_1").val(discount_value);
             }
         }
-        console.log('discount_type1',discount_type);
+      
         if (discount_type == 'Percentage') {
             if (discount_value > 100) {
                 $('#edit_percentageMessage').show();
@@ -2614,7 +2614,7 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                    console.log('resposne', resposne);
+                  
 
                     let consume = 'No';
                     if (resposne.status) {
@@ -2669,7 +2669,7 @@ jQuery(document).ready(function () {
 
                         // Display voucher balance if available
                         if (resposne.data.servicesData.voucher_balance) {
-                            console.log(resposne.data.servicesData.voucher_balance.remaining_balance);
+                           
                            // 
                             var voucherBalance = resposne.data.servicesData.voucher_balance;
                           $("#discount_value_1").val(voucherBalance.remaining_balance);
@@ -2752,7 +2752,7 @@ jQuery(document).ready(function () {
 
             });
         });
-        console.log('formData', formData);
+       
         var status = 0;
         if (cash_amount > 0) {
             var status = 1;
@@ -2895,7 +2895,7 @@ jQuery(document).ready(function () {
                     // $('#edit_inputfieldMessage').show();
                     return false;
                 }
-                console.log('discount_type3',discount_type);
+                
                 if (discount_type == 'Percentage') {
                     if (discount_price > 100) {
                         $('#edit_percentageMessage').show();
@@ -3316,13 +3316,13 @@ function resetVoucherEdit(event) {
     
     try {
         const packageBundles = getPackageBundlesArray();
-        console.log("Package bundles found:", packageBundles);
+        
         
         // Send the array to Laravel backend via AJAX if bundles exist
         if (packageBundles.length > 0) {
             sendPackageBundlesToLaravelJQuery(packageBundles);
         } else {
-            console.log("No package bundles found - hiding modal without AJAX");
+        
             // No package bundles, just hide modal
             $('#modal_edit_plan').modal('hide');
         }
@@ -3368,12 +3368,12 @@ function sendPackageBundlesToLaravelJQuery(packageBundles) {
             },
             dataType: 'json',
             beforeSend: function() {
-                console.log("AJAX request starting...");
+                
                 // Optional: Show loading indicator
                 // showLoadingIndicator();
             },
             success: function(response) {
-                console.log('Package bundles sent successfully:', response);
+               
                 
                 // Hide modal on successful response
                 $('#modal_edit_plan').modal('hide');
@@ -3396,7 +3396,7 @@ function sendPackageBundlesToLaravelJQuery(packageBundles) {
                 $('#modal_edit_plan').modal('hide');
             },
             complete: function() {
-                console.log("AJAX request completed");
+                
                 // Optional: Hide loading indicator
                 // hideLoadingIndicator();
             }
@@ -3427,13 +3427,12 @@ function sendPackageBundlesToLaravel(packageBundles) {
             },
             dataType: 'json',
             beforeSend: function() {
-                console.log("AJAX request starting...");
+                
                 // Optional: Show loading indicator
                 // showLoadingIndicator();
             },
             success: function(response) {
-                console.log('Package bundles sent successfully:', response);
-                
+               
                 // Hide modal on successful response
                 $('#modal_add_plan').modal('hide');
                 
@@ -3455,7 +3454,7 @@ function sendPackageBundlesToLaravel(packageBundles) {
                $('#modal_add_plan').modal('hide');
             },
             complete: function() {
-                console.log("AJAX request completed");
+             
                 // Optional: Hide loading indicator
                 // hideLoadingIndicator();
             }
@@ -3476,7 +3475,7 @@ function hideModal() {
             const modalInstance = bootstrap.Modal.getInstance(modal);
             if (modalInstance) {
                 modalInstance.hide();
-                console.log("Bootstrap modal hidden");
+              
                 return;
             }
         }
@@ -3485,7 +3484,7 @@ function hideModal() {
         const $modal = $('.modal:visible');
         if ($modal.length > 0) {
             $modal.modal('hide');
-            console.log("jQuery Bootstrap modal hidden");
+            
             return;
         }
         
@@ -3510,7 +3509,7 @@ function hideModal() {
                 }
                 document.body.classList.remove('modal-open');
             }
-            console.log("Custom modal hidden");
+           
             return;
         }
         
@@ -3521,12 +3520,12 @@ function hideModal() {
             if (popup) {
                 popup.style.display = 'none';
                 popup.classList.remove('show', 'open');
-                console.log("Popup hidden using popup-close");
+           
                 return;
             }
         }
         
-        console.log("No modal found to hide");
+    
 
     } catch (error) {
         console.error("Error hiding modal:", error);

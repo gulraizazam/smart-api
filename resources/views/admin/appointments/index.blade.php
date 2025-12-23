@@ -403,6 +403,10 @@
 
     @push('js')
         <script>
+            // Pass user role to JavaScript
+            window.userRole = '{{ Auth::user()->getRoleNames()->first() ?? '' }}';
+            window.canSendWhatsApp = {{ Auth::user()->hasRole('FDM') || Auth::user()->hasRole('Super-Admin') ? 'true' : 'false' }};
+
             let appointment_limit = '{{ config('constants.export-appointment-limit') }}';
             var limit = '{{ config('constants.export-appointment-limit') }}';
             var offset = 0;
@@ -514,7 +518,7 @@
                     },
                     cache: false,
                     success: function(response) {
-                        console.log(response);
+                    
                     },
                     error: function(xhr, ajaxOptions, thrownError) {
                         errorMessage(xhr);
@@ -681,7 +685,7 @@
                                         // Now set the value and trigger calendar
                                         setTimeout(function() {
                                             $("#consultancy_location_filter").val(singleCentreId);
-                                            console.log('Auto-triggering calendar for centre ID:', singleCentreId);
+                                      
                                             loadConsultantDoctors(singleCentreId, 'consultancy');
                                         }, 300);
                                     }

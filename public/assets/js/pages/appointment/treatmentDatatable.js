@@ -36,15 +36,11 @@ var table_columns = [
     },{
         field: 'service_id',
         title: 'Service',
-        width: 'auto',
-    },{
-        field: 'appointment_type_id',
-        title: 'Type',
-        width: 85,
+        width: 90,
     },{
         field: 'doctor_id',
         title: 'Doctor',
-        width: 90,
+        width: 80,
     },{
         field: 'appointment_status_id',
         title: 'Status',
@@ -69,20 +65,16 @@ var table_columns = [
     },{
         field: 'location_id',
         title: 'Centre',
-        width: 'auto',
+        width: 90,
     },{
         field: 'city_id',
         title: 'City',
-        width: 'auto',
-    },{
-        field: 'region_id',
-        title: 'Region',
-        width: 'auto',
-    },{
-        field: 'consultancy_type',
-        title: 'Consultancy Type',
-        width: 'auto',
-    },{
+        width: 80,
+    // },{
+    //     field: 'consultancy_type',
+    //     title: 'Consultancy Type',
+    //     width: 100,
+    // },{
         field: 'created_at',
         title: 'Created At',
         width: 'auto',
@@ -105,7 +97,7 @@ var table_columns = [
         field: 'actions',
         title: 'Actions',
         sortable: false,
-        width: 125,
+        width: 190,
         overflow: 'visible',
         autoHide: false,
         template: function (data) {
@@ -443,6 +435,43 @@ function actions(data) {
         actions += '<a href="javascript:void(0);" onclick="viewSmsLogs(`'+sms_logs_url+'`);" class="d-lg-inline-flex d-none btn btn-icon btn-success btn-sm ml-2">\
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                         </a>';
+
+        // Show WhatsApp icon only if appointment_status is NOT 2 and scheduled_date is today
+        let today = new Date();
+        let todayString = today.getFullYear() + '-' +
+                         String(today.getMonth() + 1).padStart(2, '0') + '-' +
+                         String(today.getDate()).padStart(2, '0');
+
+        // Parse scheduled_date to check if it's today
+        let isToday = false;
+        if (data.scheduled_date && data.scheduled_date !== '-') {
+            // Parse "Dec 15, 2025 at 12:45 PM" format
+            let scheduledDatePart = data.scheduled_date.split(' at ')[0]; // Get "Dec 15, 2025"
+            let scheduledDate = new Date(scheduledDatePart);
+            let scheduledDateString = scheduledDate.getFullYear() + '-' +
+                                     String(scheduledDate.getMonth() + 1).padStart(2, '0') + '-' +
+                                     String(scheduledDate.getDate()).padStart(2, '0');
+            isToday = scheduledDateString === todayString;
+        }
+
+        // Debug logging for WhatsApp icon rendering
+     
+
+        // Check user role permission for WhatsApp button (only FDM and Super-Admin)
+        let canSendWhatsApp = window.canSendWhatsApp || false;
+
+        if (data.appointment_status != 2 && isToday ) {
+            // Copy WhatsApp Message Button
+            actions += '<a href="javascript:void(0);" onclick="copyWhatsAppMessage(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-primary btn-sm ml-2" title="Copy Message">\
+                            <span class="navi-icon"><i class="la la-copy" style="color: white;"></i></span>\
+                        </a>';
+
+            // Send WhatsApp Button
+            actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
+                            <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
+                        </a>';
+        } 
+
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                         <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
                     </a>';
@@ -606,6 +635,16 @@ function actions(data) {
                         </a>\
                     </li>';
 
+        // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today and user has permission
+        if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
+            actions += '<li class="navi-item  d-lg-none">\
+                            <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
+                                <span class="navi-icon"><i class="lab la-whatsapp"></i></span>\
+                                <span class="navi-text">Send WhatsApp</span>\
+                            </a>\
+                        </li>';
+        }
+
 
         if (permissions.invoice_display) {
             if(data.invoice) {
@@ -717,7 +756,7 @@ function addFeedback(url) {
         type: "GET",
         cache: false,
         success: function (response) {
-            console.log('res', response);
+          
             $('#add_patients_name').val(response.data.appointment.name);
             $('#treatment_name').val(response.data.appointment.service.name);
             $('#add_doctor_name').val(response.data.appointment.doctor.name);
@@ -738,7 +777,7 @@ function setAppointmentDetailData(response) {
     try {
 
         let appointment = response.data.appointment;
-        console.log(appointment);
+  
         let permissions = response.data.permissions;
         let patient = appointment.patient;
         let doctor = appointment.doctor;
@@ -815,7 +854,7 @@ function editRow(url, id, $class = 'detail-actions') {
 }
 
 function setEditData(response) {
-console.log(response);
+
     try {
 
         let appointment = response.data.appointment;
@@ -1513,6 +1552,11 @@ function checkEditTreatmentDoctorChange() {
         return;
     }
 
+    // Get the scheduled date and time for rota check
+    var scheduledDate = $("#edit_treatment_scheduled_date").val();
+    var scheduledTime = $("#edit_treatment_scheduled_time").val();
+    var startDateTime = scheduledDate && scheduledTime ? scheduledDate + 'T' + scheduledTime : null;
+
     // Call backend to check if patient has past arrived treatments of the same service
     $.ajax({
         type: 'GET',
@@ -1521,7 +1565,8 @@ function checkEditTreatmentDoctorChange() {
             patient_id: patientId,
             service_id: serviceId,
             location_id: locationId,
-            exclude_appointment_id: currentAppointmentId // Exclude current appointment
+            exclude_appointment_id: currentAppointmentId, // Exclude current appointment
+            start: startDateTime
         },
         success: function(response) {
             if (response.status && response.data.last_treatment) {
@@ -1529,31 +1574,46 @@ function checkEditTreatmentDoctorChange() {
                 var lastDoctorId = lastTreatment.doctor_id;
                 var lastDoctorName = lastTreatment.doctor_name;
                 var lastServiceId = lastTreatment.service_id;
+                var hasDoctorRota = lastTreatment.has_doctor_rota;
 
                 // Check if the last treatment's service matches current service
                 if (lastServiceId == serviceId) {
                     // Service matches, now check if doctor is different
                     if (lastDoctorId != selectedDoctorId) {
-                        // Get selected doctor name from dropdown
-                        var selectedDoctorName = $("#edit_treatment_doctor_id option[value='" + selectedDoctorId + "']").text();
-
                         // Show warning message
                         $('#edit_warning_message').html(' The last session for this treatment was performed by ' + lastDoctorName + '');
-                        $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
-                        $('#edit_selected_doctor_option').html('' + selectedDoctorName + '');
+                        
+                        if (hasDoctorRota) {
+                            // Doctor has rota, enable option 1 and auto-select it
+                            $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
+                            $('#edit_use_previous_doctor').prop('disabled', false);
+                            $('#edit_use_previous_doctor').prop('checked', true);
+                            
+                            // Update doctor to previous doctor
+                            isResettingDoctor = true;
+                            $('#edit_treatment_doctor_id').val(lastDoctorId).trigger('change.select2');
+                            setTimeout(function() {
+                                isResettingDoctor = false;
+                            }, 100);
+                            
+                            // Enable submit button
+                            $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                        } else {
+                            // Doctor doesn't have rota, disable option 1 with message
+                            $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(Doctor is not available in this time slot)</span>');
+                            $('#edit_use_previous_doctor').prop('disabled', true);
+                            $('#edit_use_previous_doctor').prop('checked', false);
+                            
+                            // Keep submit disabled - user cannot proceed
+                            $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
+                        }
 
                         // Show the warning div
                         $('#edit_treatment_doctor_warning').removeClass('d-none');
 
-                        // Deselect both radio buttons by default
-                        $('#edit_use_previous_doctor').prop('checked', false);
-                        $('#edit_use_selected_doctor').prop('checked', false);
-
                         // Store the last doctor ID for the radio button handler
                         $('#edit_treatment_doctor_warning').data('last-doctor-id', lastDoctorId);
-
-                        // Disable the submit button until user makes a choice
-                        $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
+                        $('#edit_treatment_doctor_warning').data('has-doctor-rota', hasDoctorRota);
                     } else {
                         // Last treatment was with the same doctor, no warning needed
                         $('#edit_treatment_doctor_warning').addClass('d-none');
@@ -1607,6 +1667,168 @@ $(document).on('change', '#edit_use_selected_doctor', function() {
 $(document).on('change', '#edit_treatment_doctor_id', function() {
     checkEditTreatmentDoctorChange();
 });
+
+function copyWhatsAppMessage(appointmentId) {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.get_whatsapp_data'),
+        type: 'GET',
+        data: { id: appointmentId },
+        cache: false,
+        success: function (response) {
+            if (response.status) {
+                // Replace \n with actual line breaks
+                let message = response.data.message.replace(/\\n/g, '\n');
+
+                // Copy to clipboard
+                if (navigator.clipboard && window.isSecureContext) {
+                    // Use modern clipboard API
+                    navigator.clipboard.writeText(message).then(function() {
+                        toastr.success('Message copied to clipboard!');
+                    }).catch(function(err) {
+                        console.error('Failed to copy message:', err);
+                        fallbackCopyTextToClipboard(message);
+                    });
+                } else {
+                    // Fallback for older browsers or non-HTTPS
+                    fallbackCopyTextToClipboard(message);
+                }
+            } else {
+                toastr.error(response.message || 'Unable to fetch WhatsApp message');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Copy Message Error:', xhr);
+            errorMessage(xhr);
+        }
+    });
+}
+
+// Fallback function for copying text to clipboard
+function fallbackCopyTextToClipboard(text) {
+    let textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed";
+    textArea.style.top = "-9999px";
+    textArea.style.left = "-9999px";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+        let successful = document.execCommand('copy');
+        if (successful) {
+            toastr.success('Message copied to clipboard!');
+        } else {
+            toastr.error('Failed to copy message');
+        }
+    } catch (err) {
+        console.error('Fallback: Unable to copy', err);
+        toastr.error('Failed to copy message');
+    }
+
+    document.body.removeChild(textArea);
+}
+
+function sendWhatsApp(appointmentId) {
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.get_whatsapp_data'),
+        type: 'GET',
+        data: { id: appointmentId },
+        cache: false,
+        success: function (response) {
+         
+            if (response.status) {
+            
+                if (!response.data.whatsapp) {
+                    console.error('ERROR: WhatsApp number not found');
+                    toastr.error('Customer WhatsApp number not found');
+                    return;
+                }
+
+                // Replace \n with actual line breaks
+                let message = response.data.message.replace(/\\n/g, '\n');
+                let phoneNumber = response.data.whatsapp;
+                let encodedMessage = encodeURIComponent(message);
+
+             
+                // Try to open WhatsApp desktop app first
+                let whatsappAppUrl = 'whatsapp://send?phone=' + phoneNumber + '&text=' + encodedMessage;
+                let whatsappWebUrl = 'https://web.whatsapp.com/send?phone=' + phoneNumber + '&text=' + encodedMessage;
+
+              
+                // Track if app opened successfully
+                let appOpened = false;
+                let startTime = Date.now();
+
+                // Try to open WhatsApp app directly
+                window.location.href = whatsappAppUrl;
+
+                // Detect if user switched to WhatsApp app using blur event
+                let blurHandler = function() {
+                    let blurTime = Date.now();
+                    // If blur happens quickly (within 2 seconds), likely the app opened
+                    if (blurTime - startTime < 2000) {
+           
+                        appOpened = true;
+                        window.removeEventListener('blur', blurHandler);
+                    }
+                };
+                window.addEventListener('blur', blurHandler);
+
+                // Also check visibility change
+                let visibilityHandler = function() {
+                    if (document.hidden) {
+                    
+                        appOpened = true;
+                        document.removeEventListener('visibilitychange', visibilityHandler);
+                    }
+                };
+                document.addEventListener('visibilitychange', visibilityHandler);
+
+                // Wait and check if app opened, if not fall back to web
+                setTimeout(function() {
+                    // Clean up listeners
+                    window.removeEventListener('blur', blurHandler);
+                    document.removeEventListener('visibilitychange', visibilityHandler);
+
+                    // If app didn't open, fall back to web
+                    if (!appOpened) {
+                    
+                        let whatsappWindow = window.open(whatsappWebUrl, 'whatsapp_window');
+                        if (whatsappWindow) {
+                            whatsappWindow.focus();
+          
+                        } else {
+                            console.error('ERROR: Failed to open WhatsApp Web (popup blocker?)');
+                        }
+                    } else {
+                        console.log('WhatsApp app opened successfully - not opening web version');
+                    }
+                }, 1500);
+
+            } else {
+                console.error('ERROR: Response status false');
+                console.error('Error Message:', response.message);
+                toastr.error(response.message || 'Unable to fetch WhatsApp data');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('=== WhatsApp AJAX Error ===');
+            console.error('XHR:', xhr);
+            console.error('Status:', xhr.status);
+            console.error('Response Text:', xhr.responseText);
+            console.error('Thrown Error:', thrownError);
+            errorMessage(xhr);
+        }
+    });
+}
 
 jQuery(document).ready(function() {
     AppointScheduleValidation.init();

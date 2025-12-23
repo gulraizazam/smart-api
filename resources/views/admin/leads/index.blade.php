@@ -367,7 +367,7 @@
                         if(response.status) {
                             let dropdowns =  response.data.dropdown;
                             let old_child_service = response.data.lead_child_service;
-                            console.log(old_child_service);
+             
                             let dropdown_options = '<option value="">Select Service</option>';
                             Object.entries(dropdowns).forEach(function (dropdown) {
                                 dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';

@@ -146,6 +146,7 @@ class RolesController extends Controller
             $records['data'] = $Roles;
             $records['permissions'] = [
                 'edit' => Gate::allows('roles_edit'),
+                'duplicate' => Gate::allows('roles_duplicate'),
                 'delete' => Gate::allows('roles_destroy'),
             ];
             $records['meta'] = [
@@ -701,6 +702,77 @@ class RolesController extends Controller
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
+    }
+
+    /**
+     * Duplicate Role.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function duplicate($id)
+    {
+        if (!Gate::allows('roles_duplicate')) {
+            return abort(401);
+        }
+
+        $role = Role::findOrFail($id);
+
+        // Get list of all allowed permissions for current role.
+        $allowed_permissions = Permission::join('role_has_permissions', 'role_has_permissions.permission_id', '=', 'permissions.id')
+            ->where(['role_has_permissions.role_id' => $role->id])
+            ->get()->pluck('name', 'id');
+        if (!$allowed_permissions) {
+            $allowed_permissions = [];
+        }
+
+        $mapping = $this->getAllPermissionsMapping();
+
+        $permissions = $mapping['permissions'];
+        $dashboard_permissions = $mapping['dashboard_permissions'];
+        $reports_permissions = $mapping['reports_permissions'];
+
+        $permissions_mapping = $mapping['permissions_mapping'];
+        $dashboard_permissions_mapping = $mapping['dashboard_permissions_mapping'];
+        $reports_permissions_mapping = $mapping['reports_permissions_mapping'];
+
+        return view('admin.roles.duplicate', compact(
+            'role',
+            'allowed_permissions',
+            'dashboard_permissions_mapping',
+            'dashboard_permissions',
+            'permissions',
+            'permissions_mapping',
+            'reports_permissions_mapping',
+            'reports_permissions'
+        ));
+    }
+
+    /**
+     * Store duplicated role.
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function storeDuplicate(Request $request)
+    {
+        if (!Gate::allows('roles_duplicate')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+        }
+
+        $validator = $this->verifyFields($request);
+
+        if ($validator->fails()) {
+            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
+        }
+
+        unset($request['DataTables_Table_0_length']);
+        $role = Role::create($request->except('permission'));
+        $permissions = $request->input('permission') ? $request->input('permission') : [];
+        $role->givePermissionTo($permissions);
+
+        session()->flash('success', 'Role has been duplicated successfully.');
+
+        return ApiHelper::apiResponse($this->success, 'Role has been duplicated successfully.');
     }
 
     /**
