@@ -59,6 +59,8 @@ use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
 use App\Models\RoleHasUsers;
+use App\Models\Leads;
+use App\Services\MetaConversionApiService;
 use Illuminate\Support\Facades\Log;
 
 
@@ -1202,7 +1204,7 @@ class PackagesController extends Controller
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
                 
                 // Mark appointment as converted when payment is received
-                self::markAppointmentAsConverted($appointment_id, $package->id);
+                self::markAppointmentAsConverted($appointment_id, $package->id, $request->cash_amount);
                 
                 // Commit Transaction
                 DB::commit();
@@ -1231,8 +1233,9 @@ class PackagesController extends Controller
      * 
      * @param int $appointment_id
      * @param int $package_id
+     * @param float $payment_amount
      */
-    private static function markAppointmentAsConverted($appointment_id, $package_id = null)
+    private static function markAppointmentAsConverted($appointment_id, $package_id = null, $payment_amount = null)
     {
         \Log::info('markAppointmentAsConverted called', [
             'appointment_id' => $appointment_id,
@@ -1295,6 +1298,9 @@ class PackagesController extends Controller
                 'appointment_status_id' => $convertedStatus->id
             ]);
             \Log::info('Appointment marked as converted successfully', ['appointment_id' => $appointment_id]);
+            
+            // Send Meta CAPI event for converted status (first payment)
+            self::sendMetaConvertedEvent($appointment, $package_id, $payment_amount);
             return;
         }
         
@@ -1343,6 +1349,9 @@ class PackagesController extends Controller
                     'appointment_status_id' => $convertedStatus->id
                 ]);
                 \Log::info('Latest arrived consultation marked as converted');
+                
+                // Send Meta CAPI event for converted status
+                self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
             } else {
                 \Log::info('No arrived consultation found to convert');
             }
@@ -1350,6 +1359,42 @@ class PackagesController extends Controller
         }
         
         \Log::info('Appointment not arrived, skipping conversion');
+    }
+    
+    /**
+     * Send Meta CAPI event for converted status
+     * 
+     * @param Appointments $appointment
+     * @param int $package_id
+     * @param float $payment_amount
+     */
+    private static function sendMetaConvertedEvent($appointment, $package_id, $payment_amount)
+    {
+        if (!$appointment || !$appointment->lead_id) {
+            return;
+        }
+        
+        $lead = Leads::find($appointment->lead_id);
+        if (!$lead) {
+            return;
+        }
+        
+        try {
+            $metaService = new MetaConversionApiService();
+            $metaService->sendLeadStatus(
+                $lead->phone,
+                'converted',
+                $lead->meta_lead_id,
+                $lead->email,
+                'PKR',
+                0
+            );
+            \Log::info('Meta CAPI converted event sent', [
+                'lead_id' => $lead->id
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Meta CAPI converted event failed: ' . $e->getMessage());
+        }
     }
 
     /**
@@ -2227,7 +2272,7 @@ class PackagesController extends Controller
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
 
                 // Mark appointment as converted when payment is received
-                self::markAppointmentAsConverted($appointment_id, $package->id);
+                self::markAppointmentAsConverted($appointment_id, $package->id, $request->cash_amount);
 
                 // Commit Transaction
                 DB::commit();
