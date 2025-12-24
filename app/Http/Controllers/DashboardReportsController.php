@@ -2559,10 +2559,21 @@ class DashboardReportsController extends Controller
             ],
         ];
 
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+
+        // Build the arrived condition for SQL
+        $arrivedCondition = $convertedStatusId 
+            ? "appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
+            : "appointment_status_id = {$arrivedStatusId}";
+
         $stats = AppointmentsDailyStats::select('centre_id')
             ->selectRaw('count(*) as total')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
+            ->selectRaw("SUM(CASE WHEN {$arrivedCondition} THEN 1 ELSE 0 END) as arrived")
+            ->selectRaw("SUM(CASE WHEN ({$arrivedCondition}) AND user_id IN (" . implode(',', $fdm_users) . ") THEN 1 ELSE 0 END) as walkin")
             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->whereIn('centre_id', $center_id)
             ->groupBy('centre_id')
