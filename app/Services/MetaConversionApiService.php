@@ -86,17 +86,34 @@ class MetaConversionApiService
             ];
         }
         // Build user data for matching
-        $userData = [
-            'ph' => $this->hashValue($this->normalizePhone($phone)),
-        ];
+        $userData = [];
+
+        if ($phone) {
+            $userData['ph'] = $this->hashValue($this->normalizePhone($phone));
+        }
 
         if ($email) {
             $userData['em'] = $this->hashValue(strtolower(trim($email)));
         }
 
+        if ($leadId) {
+            $userData['lead_id'] = $leadId;
+        }
+
+        // Ensure at least one identifier exists
+        if (empty($userData)) {
+            Log::warning('Meta CAPI: No valid user identifiers provided');
+            return [
+                'success' => false,
+                'message' => 'No valid user identifiers (phone, email, or lead_id)'
+            ];
+        }
+
         // Build custom data with lead quality indicator
         $customData = [
-            'lead_event_source' => 'crm',
+           
+            'lead_event_source' => 'CuteraCRM',
+             //'event_source' => 'crm',
             'lead_status' => $status,
             'lead_quality' => $statusMapping['quality'], // qualified or disqualified
         ];
