@@ -71,6 +71,7 @@ class BackfillConvertedAt extends Command
 
         foreach ($appointments as $appointment) {
             $arrivedAt = $appointment->arrived_at;
+            $this->info("Checking appointment ID: {$appointment->id}, arrived_at: {$arrivedAt}");
 
             // Check if package exists for this appointment
             $package = DB::table('packages')
@@ -79,8 +80,10 @@ class BackfillConvertedAt extends Command
                 ->first();
 
             if (!$package) {
+                $this->warn("  - No package found for appointment {$appointment->id}");
                 continue;
             }
+            $this->info("  - Found package ID: {$package->id}");
 
             // Check if at least 1 service was added after arrival
             $serviceAfterArrival = DB::table('package_services')
@@ -89,8 +92,10 @@ class BackfillConvertedAt extends Command
                 ->exists();
 
             if (!$serviceAfterArrival) {
+                $this->warn("  - No service found after arrival for package {$package->id}");
                 continue;
             }
+            $this->info("  - Service found after arrival");
 
             // Check if at least 1 "in" payment exists after arrival
             $paymentAfterArrival = DB::table('package_advances')
@@ -101,8 +106,10 @@ class BackfillConvertedAt extends Command
                 ->first();
 
             if (!$paymentAfterArrival) {
+                $this->warn("  - No 'in' payment found after arrival for package {$package->id}");
                 continue;
             }
+            $this->info("  - Payment found after arrival: {$paymentAfterArrival->created_at}");
 
             // Update converted_at and status with the payment created_at date
             DB::table('appointments')
