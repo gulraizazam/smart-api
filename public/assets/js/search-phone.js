@@ -60,11 +60,11 @@ function loadLeadData(value) {
             if (resposne.status) {
                 lead = resposne.data.lead;
                 $('#add_old_phone').val(lead?.phone);
-                if (permissions.contact) {
+                //if (permissions.contact) {
                     $('#add_phone').val(lead?.phone).prop("readonly", true);
-                } else {
-                    $('#add_phone').val("***********").prop("readonly", true);
-                }
+                // } else {
+                //     $('#add_phone').val("***********").prop("readonly", true);
+                // }
                 $('#add_full_name').val(lead?.name).prop("readonly", false);
 
                 if (lead?.gender) {
