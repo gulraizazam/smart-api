@@ -3162,7 +3162,23 @@ public static function revenueByGenderAndService($request)
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->get();
 
-        $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+
+        // Count arrived with OR condition for arrived/converted status
+        $arrivedQuery = AppointmentsDailyStats::whereIn('centre_id', $locations)
+            ->whereBetween('scheduled_date', [$start_date, $end_date]);
+        if (count($where)) {
+            $arrivedQuery->where($where);
+        }
+        if ($convertedStatusId) {
+            $arrived = $arrivedQuery->whereIn('appointment_status_id', [$arrivedStatusId, $convertedStatusId])->count();
+        } else {
+            $arrived = $arrivedQuery->where('appointment_status_id', $arrivedStatusId)->count();
+        }
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
         $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
 
