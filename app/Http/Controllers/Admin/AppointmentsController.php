@@ -820,6 +820,7 @@ class AppointmentsController extends Controller
             $where[] = [['appointments.updated_by' => $filters['updated_by']]];
             Filters::put(Auth::User()->id, $filename, 'updated_by', $filters['updated_by']);
         }
+        $statusIdsToFilter = [];
         if (hasFilter($filters, 'appointment_status_id')) {
             // Check if the selected status is "arrived" - if so, include both arrived and converted
             $selectedStatus = AppointmentStatuses::find($filters['appointment_status_id']);
@@ -830,12 +831,12 @@ class AppointmentsController extends Controller
                     'is_converted' => 1
                 ])->first();
                 if ($convertedStatus) {
-                    $where[] = ['appointments.base_appointment_status_id', 'IN', [$filters['appointment_status_id'], $convertedStatus->id]];
+                    $statusIdsToFilter = [$filters['appointment_status_id'], $convertedStatus->id];
                 } else {
-                    $where[] = [['appointments.base_appointment_status_id' => $filters['appointment_status_id']]];
+                    $statusIdsToFilter = [$filters['appointment_status_id']];
                 }
             } else {
-                $where[] = [['appointments.base_appointment_status_id' => $filters['appointment_status_id']]];
+                $statusIdsToFilter = [$filters['appointment_status_id']];
             }
             Filters::put(Auth::User()->id, $filename, 'appointment_status_id', $filters['appointment_status_id']);
         }
@@ -898,6 +899,9 @@ class AppointmentsController extends Controller
         $count_query->where('appointment_type_id', config('constants.appointment_type_consultancy'));
         if (count($where)) {
             $count_query->where($where);
+        }
+        if (count($statusIdsToFilter)) {
+            $count_query->whereIn('appointments.base_appointment_status_id', $statusIdsToFilter);
         }
         if (hasFilter($filters, 'location_id')) {
             $ids = explode(',', $filters['location_id']);
@@ -964,6 +968,9 @@ class AppointmentsController extends Controller
         $result_query->where('appointment_type_id', config('constants.appointment_type_consultancy'));
         if (count($where)) {
             $result_query->where($where);
+        }
+        if (count($statusIdsToFilter)) {
+            $result_query->whereIn('appointments.base_appointment_status_id', $statusIdsToFilter);
         }
         if (hasFilter($filters, 'location_id')) {
             $ids = explode(',', $filters['location_id']);
@@ -1199,6 +1206,7 @@ class AppointmentsController extends Controller
             $where[] = [['appointments.updated_by' => $filters['updated_by']]];
             Filters::put(Auth::User()->id, $filename, 'updated_by', $filters['updated_by']);
         }
+        $statusIdsToFilterTreatment = [];
         if (hasFilter($filters, 'appointment_status_id')) {
             // Check if the selected status is "arrived" - if so, include both arrived and converted
             $selectedStatusTreatment = AppointmentStatuses::find($filters['appointment_status_id']);
@@ -1209,12 +1217,12 @@ class AppointmentsController extends Controller
                     'is_converted' => 1
                 ])->first();
                 if ($convertedStatusTreatment) {
-                    $where[] = ['appointments.base_appointment_status_id', 'IN', [$filters['appointment_status_id'], $convertedStatusTreatment->id]];
+                    $statusIdsToFilterTreatment = [$filters['appointment_status_id'], $convertedStatusTreatment->id];
                 } else {
-                    $where[] = [['appointments.base_appointment_status_id' => $filters['appointment_status_id']]];
+                    $statusIdsToFilterTreatment = [$filters['appointment_status_id']];
                 }
             } else {
-                $where[] = [['appointments.base_appointment_status_id' => $filters['appointment_status_id']]];
+                $statusIdsToFilterTreatment = [$filters['appointment_status_id']];
             }
             Filters::put(Auth::User()->id, $filename, 'appointment_status_id', $filters['appointment_status_id']);
         }
@@ -1247,6 +1255,9 @@ class AppointmentsController extends Controller
         $count_query->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $count_query->where($where);
+        }
+        if (count($statusIdsToFilterTreatment)) {
+            $count_query->whereIn('appointments.base_appointment_status_id', $statusIdsToFilterTreatment);
         }
         if (hasFilter($filters, 'service_id')) {
             $count_query->whereIn('service_id', $service_ids);
@@ -1297,6 +1308,9 @@ class AppointmentsController extends Controller
         $resultQuery->where('appointment_type_id', config('constants.appointment_type_service'));
         if (count($where)) {
             $resultQuery->where($where);
+        }
+        if (count($statusIdsToFilterTreatment)) {
+            $resultQuery->whereIn('appointments.base_appointment_status_id', $statusIdsToFilterTreatment);
         }
         if (hasFilter($filters, 'service_id')) {
             $resultQuery->whereIn('service_id', $service_ids);
