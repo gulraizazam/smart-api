@@ -73,7 +73,7 @@ class BackfillConvertedAt extends Command
             $arrivedAt = $appointment->arrived_at;
             $this->info("Checking appointment ID: {$appointment->id}, arrived_at: {$arrivedAt}");
 
-            // Check if package exists for this appointment
+            // Check if package exists for this appointment (no time check on package creation)
             $package = DB::table('packages')
                 ->where('appointment_id', $appointment->id)
                 ->whereNull('deleted_at')
@@ -85,23 +85,23 @@ class BackfillConvertedAt extends Command
             }
             $this->info("  - Found package ID: {$package->id}");
 
-            // Check if at least 1 service was added after arrival
+            // Check if at least 1 service was added in package after arrival
             $serviceAfterArrival = DB::table('package_services')
                 ->where('package_id', $package->id)
-                ->where('created_at', '>=', $arrivedAt)
-                ->exists();
+                ->where('created_at', '>', $arrivedAt)
+                ->first();
 
             if (!$serviceAfterArrival) {
                 $this->warn("  - No service found after arrival for package {$package->id}");
                 continue;
             }
-            $this->info("  - Service found after arrival");
+            $this->info("  - Service found after arrival: {$serviceAfterArrival->created_at}");
 
-            // Check if at least 1 "in" payment exists after arrival
+            // Check if at least 1 "in" payment exists in package after arrival
             $paymentAfterArrival = DB::table('package_advances')
                 ->where('package_id', $package->id)
                 ->where('cash_flow', 'in')
-                ->where('created_at', '>=', $arrivedAt)
+                ->where('created_at', '>', $arrivedAt)
                 ->whereNull('deleted_at')
                 ->first();
 
