@@ -2841,12 +2841,21 @@ class DashboardReportsController extends Controller
         //$consultant = collect($consultants)->pluck('id');
         $sum_conversion_spend2 = 0;
 
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : config('constants.appointment_status_arrived');
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+
         $converted_appointments =  Appointments::with('location:id,name')
             ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-            ->where([
-                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                'appointments.appointment_type_id' => 1
-            ])
+            ->where('appointments.appointment_type_id', 1)
+            ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                if ($convertedStatusId) {
+                    $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                }
+            })
             ->whereIn('appointments.doctor_id', $consultant)
             ->whereIn('appointments.location_id', $locations)
             ->where('package_advances.cash_amount', '>', 0)
