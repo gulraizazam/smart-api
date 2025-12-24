@@ -3299,11 +3299,19 @@ public static function revenueByGenderAndService($request)
 
         $centerId = $request->input('centre_id');
         $createdBy = $request->input('created_by');
+
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
         $appointments = Appointments::with(['patient','location','user', 'hasInvoices' => function ($query) {
             $query->orderBy('created_at', 'asc'); // Order invoices by creation time
         }])
             ->where('appointment_type_id', 1)
-            ->where('appointment_status_id', 2)
+            ->whereIn('appointment_status_id', $statusIds)
             ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
                 $query->havingRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, MIN(invoices.created_at)) <= ?', [$timeInterval]);
             })
