@@ -327,7 +327,7 @@ class LeadsController extends Controller
             // Convert Lead status to Converted
             $DefaultConvertedLeadStatus = LeadStatuses::where([
                 'account_id' => Auth::User()->account_id,
-                'is_converted' => 1,
+                'is_booked' => 1,
             ])->first();
             if ($DefaultConvertedLeadStatus) {
                 $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
@@ -1958,7 +1958,7 @@ class LeadsController extends Controller
         // Convert Lead status to Converted
         $DefaultConvertedLeadStatus = LeadStatuses::where([
             'account_id' => Auth::User()->account_id,
-            'is_converted' => 1,
+            'is_booked' => 1,
         ])->first();
         if ($DefaultConvertedLeadStatus) {
             $default_converted_lead_status_id = $DefaultConvertedLeadStatus->id;
