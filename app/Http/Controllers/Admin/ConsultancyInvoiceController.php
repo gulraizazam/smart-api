@@ -517,6 +517,10 @@ class ConsultancyInvoiceController extends Controller
         // In case of auto change status we need to update by so that s why we did
         $appointment_data_status['updated_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
+        
+        // Set arrived_at timestamp when consultancy invoice is created
+        Appointments::where('id', '=', $request->appointment_id)->update(['arrived_at' => now()]);
+        
         // End
         // Update lead status to Arrived when consultation invoice is created
         $arrivedLeadStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
