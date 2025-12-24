@@ -1796,11 +1796,27 @@ class AppointmentsController extends Controller
                 $openStatusId = $openStatus ? $openStatus->id : null;
                 
                 if ($bookedStatusId) {
+                    \Log::info('Consultancy Created - Updating lead status to Booked', [
+                        'phone' => $appointment_data['phone'],
+                        'patient_id' => $appointment_data['patient_id'],
+                        'appointment_id' => $find_cons->id,
+                        'booked_status_id' => $bookedStatusId,
+                    ]);
                     $lead = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->update(['name' => $patient->name, 'lead_status_id' => $bookedStatusId, 'location_id' => $find_cons->location_id, 'patient_id' => $appointment_data['patient_id']]);
+                    \Log::info('Lead status updated to Booked', [
+                        'phone' => $appointment_data['phone'],
+                        'new_status_id' => $bookedStatusId,
+                    ]);
                     
                     // Send Meta CAPI event for booked status
                     $leadRecord = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->first();
                     if ($leadRecord) {
+                        \Log::info('Sending Meta CAPI booked event', [
+                            'lead_id' => $leadRecord->id,
+                            'phone' => $leadRecord->phone,
+                            'meta_lead_id' => $leadRecord->meta_lead_id,
+                            'email' => $leadRecord->email,
+                        ]);
                         try {
                             $metaService = new MetaConversionApiService();
                             $metaService->sendLeadStatus(
@@ -1809,9 +1825,19 @@ class AppointmentsController extends Controller
                                 $leadRecord->meta_lead_id,
                                 $leadRecord->email
                             );
+                            \Log::info('Meta CAPI booked event sent successfully', [
+                                'lead_id' => $leadRecord->id,
+                            ]);
                         } catch (\Exception $e) {
-                            \Log::error('Meta CAPI booked event failed: ' . $e->getMessage());
+                            \Log::error('Meta CAPI booked event failed: ' . $e->getMessage(), [
+                                'lead_id' => $leadRecord->id,
+                                'exception' => $e->getTraceAsString(),
+                            ]);
                         }
+                    } else {
+                        \Log::warning('No lead record found for Meta CAPI booked event', [
+                            'phone' => $appointment_data['phone'],
+                        ]);
                     }
                 }
                 
