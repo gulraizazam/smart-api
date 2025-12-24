@@ -62,7 +62,7 @@ class BackfillConvertedAt extends Command
             ->whereNull('converted_at')
             ->whereNull('deleted_at')
             ->whereNotNull('arrived_at')
-            ->select('id', 'arrived_at')
+            ->select('id', 'arrived_at', 'patient_id')
             ->get();
 
         $this->info("Found {$appointments->count()} appointments to check");
@@ -71,42 +71,44 @@ class BackfillConvertedAt extends Command
 
         foreach ($appointments as $appointment) {
             $arrivedAt = $appointment->arrived_at;
-            $this->info("Checking appointment ID: {$appointment->id}, arrived_at: {$arrivedAt}");
+            $patientId = $appointment->patient_id;
+            $this->info("Checking appointment ID: {$appointment->id}, patient_id: {$patientId}, arrived_at: {$arrivedAt}");
 
-            // Check if package exists for this appointment (no time check on package creation)
-            $package = DB::table('packages')
-                ->where('appointment_id', $appointment->id)
+            // Get all packages for this patient (not just for this appointment)
+            $packages = DB::table('packages')
+                ->where('patient_id', $patientId)
                 ->whereNull('deleted_at')
-                ->first();
+                ->pluck('id')
+                ->toArray();
 
-            if (!$package) {
-                $this->warn("  - No package found for appointment {$appointment->id}");
+            if (empty($packages)) {
+                $this->warn("  - No packages found for patient {$patientId}");
                 continue;
             }
-            $this->info("  - Found package ID: {$package->id}");
+            $this->info("  - Found " . count($packages) . " package(s) for patient");
 
-            // Check if at least 1 service was added in package after arrival
+            // Check if at least 1 service was added in any of patient's packages after arrival
             $serviceAfterArrival = DB::table('package_services')
-                ->where('package_id', $package->id)
+                ->whereIn('package_id', $packages)
                 ->where('created_at', '>', $arrivedAt)
                 ->first();
 
             if (!$serviceAfterArrival) {
-                $this->warn("  - No service found after arrival for package {$package->id}");
+                $this->warn("  - No service found after arrival in any package");
                 continue;
             }
             $this->info("  - Service found after arrival: {$serviceAfterArrival->created_at}");
 
-            // Check if at least 1 "in" payment exists in package after arrival
+            // Check if at least 1 "in" payment exists in any of patient's packages after arrival
             $paymentAfterArrival = DB::table('package_advances')
-                ->where('package_id', $package->id)
+                ->whereIn('package_id', $packages)
                 ->where('cash_flow', 'in')
                 ->where('created_at', '>', $arrivedAt)
                 ->whereNull('deleted_at')
                 ->first();
 
             if (!$paymentAfterArrival) {
-                $this->warn("  - No 'in' payment found after arrival for package {$package->id}");
+                $this->warn("  - No 'in' payment found after arrival in any package");
                 continue;
             }
             $this->info("  - Payment found after arrival: {$paymentAfterArrival->created_at}");
