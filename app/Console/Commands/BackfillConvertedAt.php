@@ -40,6 +40,20 @@ class BackfillConvertedAt extends Command
 
         $this->info("Fetching appointments from {$startDate} to {$endDate}");
 
+        // Get converted status ID (status with is_converted = 1)
+        $convertedStatus = DB::table('appointment_statuses')
+            ->where('is_converted', 1)
+            ->whereNull('deleted_at')
+            ->first();
+
+        if (!$convertedStatus) {
+            $this->error('Converted status not found in appointment_statuses table');
+            return Command::FAILURE;
+        }
+
+        $convertedStatusId = $convertedStatus->id;
+        $this->info("Found converted status ID: {$convertedStatusId}");
+
         // Fetch appointments with type_id=1 (consultation), status_id=2 (arrived)
         $appointments = DB::table('appointments')
             ->where('appointment_type_id', 1)
@@ -90,25 +104,16 @@ class BackfillConvertedAt extends Command
                 continue;
             }
 
-            // Get converted status ID (status with is_converted = 1)
-            $convertedStatus = DB::table('appointment_statuses')
-                ->where('is_converted', 1)
-                ->whereNull('deleted_at')
-                ->first();
-
-            $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
-
             // Update converted_at and status with the payment created_at date
-            $updateData = ['converted_at' => $paymentAfterArrival->created_at];
-            
-            if ($convertedStatusId) {
-                $updateData['base_appointment_status_id'] = $convertedStatusId;
-                $updateData['appointment_status_id'] = $convertedStatusId;
-            }
-
             DB::table('appointments')
                 ->where('id', $appointment->id)
-                ->update($updateData);
+                ->update([
+                    'converted_at' => $paymentAfterArrival->created_at,
+                    'base_appointment_status_id' => $convertedStatusId,
+                    'appointment_status_id' => $convertedStatusId
+                ]);
+
+            $this->info("Updated appointment ID: {$appointment->id}");
 
             $updatedCount++;
         }
