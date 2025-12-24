@@ -1295,7 +1295,8 @@ class PackagesController extends Controller
             
             $appointment->update([
                 'base_appointment_status_id' => $convertedStatus->id,
-                'appointment_status_id' => $convertedStatus->id
+                'appointment_status_id' => $convertedStatus->id,
+                'converted_at' => now()
             ]);
             \Log::info('Appointment marked as converted successfully', ['appointment_id' => $appointment_id]);
             
@@ -1346,7 +1347,8 @@ class PackagesController extends Controller
                 
                 $latestArrivedConsultation->update([
                     'base_appointment_status_id' => $convertedStatus->id,
-                    'appointment_status_id' => $convertedStatus->id
+                    'appointment_status_id' => $convertedStatus->id,
+                    'converted_at' => now()
                 ]);
                 \Log::info('Latest arrived consultation marked as converted');
                 
