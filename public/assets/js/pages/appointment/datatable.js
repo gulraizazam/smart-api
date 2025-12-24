@@ -467,7 +467,7 @@ function actions(data) {
         // Check user role permission for WhatsApp button (only FDM and Super-Admin)
         let canSendWhatsApp = window.canSendWhatsApp || false;
 
-        if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
+        if (data.appointment_status != 2 && data.appointment_status != 16&& isToday && canSendWhatsApp) {
             // Copy WhatsApp Message Button
             actions += '<a href="javascript:void(0);" onclick="copyWhatsAppMessage(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-primary btn-sm ml-2" title="Copy Message">\
                             <span class="navi-icon"><i class="la la-copy" style="color: white;"></i></span>\
