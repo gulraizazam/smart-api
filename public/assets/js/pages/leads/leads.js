@@ -624,7 +624,7 @@ function commentData(user_name, created_at, comment) {
         '<span class="mt-comment-author" id="creat_by">';
     comment_html += user_name ?? 'N/A';
     comment_html += '</span> <span class="mt-comment-date" id="datetime">';
-     comment_html += formatDate(created_at, 'ddd MMM, mm yyyy HH:mm A');
+     comment_html += formatDate(created_at, 'ddd MMM, DD YYYY hh:mm A');
     comment_html += '</span> </div>' +
         '<div class="mt-comment-text" id="message">';
     comment_html += comment ?? 'N/A';
