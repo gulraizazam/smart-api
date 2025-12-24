@@ -35,7 +35,7 @@ class BackfillConvertedAt extends Command
     {
         $this->info('Starting backfill of converted_at column...');
 
-        $startDate = '2025-09-01';
+        $startDate = '2025-12-01';
         $endDate = Carbon::now()->format('Y-m-d');
 
         $this->info("Fetching appointments from {$startDate} to {$endDate}");
