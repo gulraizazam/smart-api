@@ -90,10 +90,25 @@ class BackfillConvertedAt extends Command
                 continue;
             }
 
-            // Update converted_at with the payment created_at date
+            // Get converted status ID (status with is_converted = 1)
+            $convertedStatus = DB::table('appointment_statuses')
+                ->where('is_converted', 1)
+                ->whereNull('deleted_at')
+                ->first();
+
+            $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+
+            // Update converted_at and status with the payment created_at date
+            $updateData = ['converted_at' => $paymentAfterArrival->created_at];
+            
+            if ($convertedStatusId) {
+                $updateData['base_appointment_status_id'] = $convertedStatusId;
+                $updateData['appointment_status_id'] = $convertedStatusId;
+            }
+
             DB::table('appointments')
                 ->where('id', $appointment->id)
-                ->update(['converted_at' => $paymentAfterArrival->created_at]);
+                ->update($updateData);
 
             $updatedCount++;
         }
