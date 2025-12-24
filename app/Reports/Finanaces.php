@@ -2849,14 +2849,23 @@ class Finanaces
         }
         if (isset($data['doctor_id'])) {
             $total_appointments = Appointments::whereBetween('scheduled_date', [$start_date, $end_date])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
+                ->where('appointment_type_id' , 1)
+                ->where(function ($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId)
+                        ->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                })
+                
                 ->whereIn('appointments.doctor_id', $consultants)
                 ->whereIn('appointments.location_id', $locations)
                 ->where($where)
                 ->count();
         } else {
             $total_appointments = Appointments::whereBetween('scheduled_date', [$start_date, $end_date])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
+                ->where('appointment_type_id' , 1)
+                ->where(function ($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId)
+                        ->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                })
                 //->whereIn('appointments.doctor_id', $consultants)
                 ->whereIn('appointments.location_id', $locations)
                 ->where($where)
