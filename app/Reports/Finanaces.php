@@ -2742,10 +2742,10 @@ class Finanaces
             ->join('services', 'appointments.service_id', 'services.id')
             ->where('appointments.appointment_type_id', 1)
             ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
-                $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
-                if ($convertedStatusId) {
-                    $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
-                }
+                $query->where('appointments.base_appointment_status_id', $convertedStatusId);
+                // if ($convertedStatusId) {
+                //     $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                // }
             })
             ->whereIn('doctor_id', $consultants)
             ->whereIn('appointments.location_id', $locations)
@@ -2761,10 +2761,10 @@ class Finanaces
             ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
             ->where('appointments.appointment_type_id', 1)
             ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
-                $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
-                if ($convertedStatusId) {
-                    $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
-                }
+                $query->where('appointments.base_appointment_status_id', $convertedStatusId);
+                // if ($convertedStatusId) {
+                //     $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                // }
             })
             ->whereIn('appointments.doctor_id', $consultants)
             ->whereIn('appointments.location_id', $locations)
@@ -2849,14 +2849,14 @@ class Finanaces
         }
         if (isset($data['doctor_id'])) {
             $total_appointments = Appointments::whereBetween('scheduled_date', [$start_date, $end_date])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
+                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => $convertedStatusId])
                 ->whereIn('appointments.doctor_id', $consultants)
                 ->whereIn('appointments.location_id', $locations)
                 ->where($where)
                 ->count();
         } else {
             $total_appointments = Appointments::whereBetween('scheduled_date', [$start_date, $end_date])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
+                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => $convertedStatusId])
                 //->whereIn('appointments.doctor_id', $consultants)
                 ->whereIn('appointments.location_id', $locations)
                 ->where($where)
@@ -2902,7 +2902,7 @@ class Finanaces
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
                 $sum_valu = $new_array[$arrive_category['name']]['sum'];
                 if (isset($data['doctor_id'])) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => $convertedStatusId, 'appointment_type_id' => 1])
                         ->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
@@ -2910,7 +2910,7 @@ class Finanaces
 
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => $convertedStatusId, 'appointment_type_id' => 1])
                         //->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
@@ -2924,14 +2924,14 @@ class Finanaces
                 $sum_valu = 0;
 
                 if (isset($data['doctor_id'])) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' =>$convertedStatusId, 'appointment_type_id' => 1])
                         ->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
                         ->where('scheduled_date', '<=', $end_date)
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' =>$convertedStatusId, 'appointment_type_id' => 1])
                         //->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
@@ -2954,7 +2954,7 @@ class Finanaces
 
         $totalamount = collect($appointments_info)->where('conversion_spend', '!=', '')->sum('conversion_spend');
         $total_appointments = Appointments::where('scheduled_date', '>=', $start_date)
-            ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
+            ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => $convertedStatusId])
             ->where($where)
             //->whereIn('doctor_id', $consultants)
             ->whereIn('location_id', $locations)
