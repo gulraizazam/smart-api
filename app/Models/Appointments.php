@@ -571,7 +571,11 @@ class Appointments extends Model
             ];
         }
         AppointmentsDailyStats::where('appointment_id',$id)->delete();
-        $appointment->whereId($id)->update(['deleted_by' => Auth::id()]);
+        $appointment->whereId($id)->update([
+            'deleted_by' => Auth::id(),
+            'arrived_at' => null,
+            'converted_at' => null
+        ]);
         $appointment->delete();
         Activity::where('appointment_id',$id)->update(['deleted_by'=>Auth::id(),'action'=>'deleted','deleted_date'=>Carbon::now()->format('Y-m-d'),'updated_at'=>Carbon::now()]);
         //log request for delete for audit trail
