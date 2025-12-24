@@ -9,7 +9,7 @@ class LeadsServices extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['lead_id', 'service_id', 'child_service_id', 'status'];
+    protected $fillable = ['lead_id', 'service_id', 'child_service_id', 'status', 'meta_lead_id'];
 
     public function service()
     {
