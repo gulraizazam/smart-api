@@ -2960,7 +2960,13 @@ class DashboardReportsController extends Controller
             array_push($lables, $doctor->name);
             $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
+                ->where('appointment_type_id' , 1)
+                ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                 ->whereIn('doctor_id', $doctor_id)
                 ->whereIn('appointments.location_id', $locations)
                 ->count();
@@ -2970,10 +2976,13 @@ class DashboardReportsController extends Controller
         }
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
-            ->where([
-                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                'appointments.appointment_type_id' => 1
-            ])
+            ->where('appointments.appointment_type_id' , 1)
+            ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                if ($convertedStatusId) {
+                    $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                }
+            })
             ->where($where)
             ->whereIn('doctor_id', $consultant)
             ->whereIn('appointments.location_id', $locations)
@@ -3019,7 +3028,13 @@ class DashboardReportsController extends Controller
                 $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
                 if ($request->doc_id) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         ->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
@@ -3028,7 +3043,13 @@ class DashboardReportsController extends Controller
                         //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         //->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
@@ -3041,7 +3062,13 @@ class DashboardReportsController extends Controller
                 $avg_valu = 0;
 
                 if ($request->doc_id) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         ->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
@@ -3050,7 +3077,13 @@ class DashboardReportsController extends Controller
                         // ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         //->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
