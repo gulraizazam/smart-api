@@ -42,7 +42,18 @@ class MetaConversionApiService
         ?string $currency = null,
         $value = null
     ): array {
+        Log::info('Meta CAPI: sendLeadStatus called', [
+            'phone' => $phone,
+            'status' => $status,
+            'lead_id' => $leadId,
+            'email' => $email,
+            'enabled' => $this->enabled,
+            'pixel_id_set' => !empty($this->pixelId),
+            'access_token_set' => !empty($this->accessToken),
+        ]);
+
         if (!$this->enabled) {
+            Log::warning('Meta CAPI: API is disabled');
             return [
                 'success' => false,
                 'message' => 'Meta Conversion API is disabled'
@@ -50,6 +61,7 @@ class MetaConversionApiService
         }
 
         if (empty($this->pixelId) || empty($this->accessToken)) {
+            Log::warning('Meta CAPI: Pixel ID or Access Token not configured');
             return [
                 'success' => false,
                 'message' => 'Meta Pixel ID or Access Token is not configured'
@@ -58,9 +70,16 @@ class MetaConversionApiService
 
         // Map your CRM status to Meta's lead event
         $statusMapping = $this->mapStatusToMeta($status);
+        Log::info('Meta CAPI: Status mapping result', [
+            'status' => $status,
+            'mapping' => $statusMapping,
+        ]);
         
         // If status doesn't qualify (negative or unknown), don't send to Meta
         if (!$statusMapping) {
+            Log::info('Meta CAPI: Status does not qualify for Meta optimization', [
+                'status' => $status,
+            ]);
             return [
                 'success' => true,
                 'message' => 'Status does not qualify for Meta optimization (ignored)'

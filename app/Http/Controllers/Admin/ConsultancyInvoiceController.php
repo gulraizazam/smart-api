@@ -24,6 +24,7 @@ use App\Models\PackageAdvances;
 use App\Models\PaymentModes;
 use App\Models\Services;
 use App\Models\User;
+use App\Services\MetaConversionApiService;
 use Auth;
 use Config;
 use Illuminate\Http\Request;
@@ -519,8 +520,47 @@ class ConsultancyInvoiceController extends Controller
         // End
         // Update lead status to Arrived when consultation invoice is created
         $arrivedLeadStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        \Log::info('Consultancy Invoice Created - Updating lead status to Arrived', [
+            'patient_id' => $appointmentinfo->patient_id,
+            'appointment_id' => $appointmentinfo->id,
+            'arrived_status_id' => $arrivedLeadStatus ? $arrivedLeadStatus->id : null,
+        ]);
         if ($arrivedLeadStatus) {
+            $leadRecord = Leads::where('patient_id', $appointmentinfo->patient_id)->orderBy('id', 'desc')->first();
             Leads::where('patient_id', $appointmentinfo->patient_id)->update(['lead_status_id' => $arrivedLeadStatus->id]);
+            \Log::info('Lead status updated to Arrived', [
+                'patient_id' => $appointmentinfo->patient_id,
+                'lead_id' => $leadRecord ? $leadRecord->id : null,
+                'new_status_id' => $arrivedLeadStatus->id,
+            ]);
+            
+            // Send Meta CAPI event for arrived status
+            if ($leadRecord) {
+                \Log::info('Sending Meta CAPI arrived event', [
+                    'lead_id' => $leadRecord->id,
+                    'phone' => $leadRecord->phone,
+                    'meta_lead_id' => $leadRecord->meta_lead_id,
+                    'email' => $leadRecord->email,
+                ]);
+                try {
+                    $metaService = new MetaConversionApiService();
+                    $metaService->sendLeadStatus(
+                        $leadRecord->phone,
+                        'arrived',
+                        $leadRecord->meta_lead_id,
+                        $leadRecord->email
+                    );
+                    \Log::info('Meta CAPI arrived event sent successfully', [
+                        'lead_id' => $leadRecord->id,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Meta CAPI arrived event failed: ' . $e->getMessage(), [
+                        'lead_id' => $leadRecord->id,
+                        'exception' => $e->getTraceAsString(),
+                    ]);
+                }
+            }
+            
             // Also update lead_services
             if ($appointmentinfo->lead_id) {
                 LeadsServices::where([
