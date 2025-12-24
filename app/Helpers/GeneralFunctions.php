@@ -1028,12 +1028,22 @@ class GeneralFunctions
     public static function PatientFollowUpReport($data, $where)
     {
         $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
+        
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $statusCondition = $convertedStatusId 
+            ? "appointment.base_appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
+            : "appointment.base_appointment_status_id = {$arrivedStatusId}";
+
         $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
                 WHERE appointment.appointment_type_id = 1
-                    AND appointment.base_appointment_status_id = 2
+                    AND ' . $statusCondition . '
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
 
                 GROUP BY appointment.patient_id
@@ -1139,12 +1149,22 @@ class GeneralFunctions
     {
 
         $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
+        
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $statusCondition = $convertedStatusId 
+            ? "appointment.base_appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
+            : "appointment.base_appointment_status_id = {$arrivedStatusId}";
+
         $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
             ->join(DB::raw('(
                 SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
                 FROM appointments appointment
                 WHERE appointment.appointment_type_id = 1
-                    AND appointment.base_appointment_status_id = 2
+                    AND ' . $statusCondition . '
                     AND appointment.location_id IN (' . implode(',', $center_id) . ')
                 GROUP BY appointment.patient_id
             ) latest_appointments'), function ($join) {
