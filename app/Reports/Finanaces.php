@@ -2911,7 +2911,11 @@ class Finanaces
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
                 $sum_valu = $new_array[$arrive_category['name']]['sum'];
                 if (isset($data['doctor_id'])) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'appointment_type_id' => 1])
+                    ->where(function ($query) use ($arrivedStatusId, $convertedStatusId) {
+                            $query->where('appointments.base_appointment_status_id', $arrivedStatusId)
+                                ->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                        })
                         ->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
@@ -2919,7 +2923,11 @@ class Finanaces
 
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function ($query) use ($arrivedStatusId, $convertedStatusId) {
+                            $query->where('appointments.base_appointment_status_id', $arrivedStatusId)
+                                ->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                        })
                         //->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
@@ -2933,14 +2941,22 @@ class Finanaces
                 $sum_valu = 0;
 
                 if (isset($data['doctor_id'])) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function ($query) use ($arrivedStatusId, $convertedStatusId) {
+                            $query->where('appointments.base_appointment_status_id', $arrivedStatusId)
+                                ->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                        })
                         ->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
                         ->where('scheduled_date', '<=', $end_date)
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function ($query) use ($arrivedStatusId, $convertedStatusId) {
+                            $query->where('appointments.base_appointment_status_id', $arrivedStatusId)
+                                ->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                        })
                         //->whereIn('doctor_id', $consultants)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('scheduled_date', '>=', $start_date)
