@@ -103,7 +103,7 @@ class BackfillConvertedAt extends Command
             $paymentAfterArrival = DB::table('package_advances')
                 ->whereIn('package_id', $packages)
                 ->where('cash_flow', 'in')
-                ->where('amount','>',0)
+                ->where('cash_amount','>',0)
                 ->where('created_at', '>', $arrivedAt)
                 ->whereNull('deleted_at')
                 ->first();
