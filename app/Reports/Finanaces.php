@@ -2839,9 +2839,12 @@ class Finanaces
                     continue;
                 }
 
+                // Use date only (ignore time) for same-day comparisons
+                $invoiceDate = $invoiceCreatedAt->format('Y-m-d');
+
                 // Check if there's at least one service added in package on same day or after invoice creation date
                 $firstPackageServiceQuery = PackageService::where('package_id', $package->id)
-                    ->where('created_at', '>=', $invoiceCreatedAt);
+                    ->whereDate('created_at', '>=', $invoiceDate);
                 
                 if ($maxDateLimit) {
                     $firstPackageServiceQuery->where('created_at', '<', $maxDateLimit);
@@ -2853,14 +2856,14 @@ class Finanaces
                     continue;
                 }
 
-                $serviceAddedAt = Carbon::parse($firstPackageService->created_at);
+                $serviceAddedDate = Carbon::parse($firstPackageService->created_at)->format('Y-m-d');
 
-                // Get the FIRST "in" payment in package_advances on same day or after service addition date, before max date limit
+                // Get the FIRST "in" payment in package_advances on same day or after invoice creation date, before max date limit
                 $firstPaymentQuery = PackageAdvances::where('package_id', $package->id)
                     ->where('cash_flow', 'in')
                     ->where('cash_amount', '>', 0)
                     ->whereNull('deleted_at')
-                    ->where('created_at', '>=', $serviceAddedAt);
+                    ->whereDate('created_at', '>=', $invoiceDate);
                 
                 if ($maxDateLimit) {
                     $firstPaymentQuery->where('created_at', '<', $maxDateLimit);
@@ -2878,12 +2881,12 @@ class Finanaces
                     continue;
                 }
 
-                // Get all payments for conversion spend calculation (from service date to max date limit, within report range)
+                // Get all payments for conversion spend calculation (from invoice date to max date limit, within report range)
                 $packagesadvancesQuery = PackageAdvances::where('package_id', $package->id)
                     ->where('cash_flow', 'in')
                     ->where('cash_amount', '>', 0)
                     ->whereNull('deleted_at')
-                    ->where('created_at', '>=', $serviceAddedAt)
+                    ->whereDate('created_at', '>=', $invoiceDate)
                     ->where('package_advances.created_at', '>=', $start_date . ' 00:00:00')
                     ->where('package_advances.created_at', '<=', $end_date . ' 23:59:59');
                 
