@@ -247,7 +247,7 @@ class AppointmentStatuses extends BaseModal
      */
     public static function getAllParentRecords($account_id)
     {
-        return self::where(['account_id' => $account_id, 'parent_id' => 0])->get();
+        return self::where(['account_id' => $account_id, 'parent_id' => 0, 'active' => 1])->get();
     }
 
     /**
