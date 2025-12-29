@@ -2231,7 +2231,14 @@ class HomeController extends Controller
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->whereIn('location_id', ACL::getUserCentres());
         $data['all_consultancies'] = $query->count();
-        $query->where('appointment_status_id', config('constants.appointment_status_arrived'));
+
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : config('constants.appointment_status_arrived');
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
+        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
+        $query->whereIn('appointment_status_id', $statusIds);
         $data['done_consultancies'] = $query->count();
 
         return $data;
