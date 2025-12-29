@@ -3193,7 +3193,7 @@ public static function revenueByGenderAndService($request)
         $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
         $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
         $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
 
         // Count arrived with OR condition for arrived/converted status
         $arrivedQuery = AppointmentsDailyStats::whereIn('centre_id', $locations)
