@@ -2563,12 +2563,10 @@ class DashboardReportsController extends Controller
         $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
         $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
         $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
 
-        // Build the arrived condition for SQL
-        $arrivedCondition = $convertedStatusId 
-            ? "appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
-            : "appointment_status_id = {$arrivedStatusId}";
+        // Build the arrived condition for SQL - always include both arrived and converted
+        $arrivedCondition = "appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})";
 
         $stats = AppointmentsDailyStats::select('centre_id')
             ->selectRaw('count(*) as total')
