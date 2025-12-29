@@ -33,7 +33,7 @@
                                 <td class="bg-light" style="text-align:right;">{{(count($Appointments)-$walkin_customers) ?? 0}}</td>
                             </tr>
                             <tr class="">
-                                <td class="border-top bg-light"> Arrived </td>
+                                <td class="border-top bg-light"> Arrived (without walk-in)</td>
                                 <td class="border-top bg-light" style="text-align:right;">{{$arrived-$walkin_customers ?? 0}}</td>
                             </tr>
                             @if(isset($walkin_customers))
