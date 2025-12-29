@@ -2827,10 +2827,10 @@ class Finanaces
                     ->orderBy('created_at', 'asc')
                     ->first();
 
-                // Set max date limit: next consultation invoice creation date or end of report date range
+                // Set max date limit: next consultation invoice creation date or null if no next consultation
                 $maxDateLimit = $nextConsultationInvoice 
                     ? Carbon::parse($nextConsultationInvoice->created_at) 
-                    : Carbon::parse($end_date . ' 23:59:59');
+                    : null;
 
                 // Get package linked to this appointment
                 $package = Packages::where('appointment_id', $appointment->id)->first();
@@ -2839,12 +2839,15 @@ class Finanaces
                     continue;
                 }
 
-                // Check if there's at least one service added in package AFTER invoice creation date (not same day) and before max date limit
-                $firstPackageService = PackageService::where('package_id', $package->id)
-                    ->where('created_at', '>', $invoiceCreatedAt)
-                    ->where('created_at', '<', $maxDateLimit)
-                    ->orderBy('created_at', 'asc')
-                    ->first();
+                // Check if there's at least one service added in package on same day or after invoice creation date
+                $firstPackageServiceQuery = PackageService::where('package_id', $package->id)
+                    ->where('created_at', '>=', $invoiceCreatedAt);
+                
+                if ($maxDateLimit) {
+                    $firstPackageServiceQuery->where('created_at', '<', $maxDateLimit);
+                }
+                
+                $firstPackageService = $firstPackageServiceQuery->orderBy('created_at', 'asc')->first();
 
                 if (!$firstPackageService) {
                     continue;
@@ -2852,16 +2855,43 @@ class Finanaces
 
                 $serviceAddedAt = Carbon::parse($firstPackageService->created_at);
 
-                // Check for "in" payment in package_advances on same day or after service addition date, before max date limit
-                $packagesadvances = PackageAdvances::where('package_id', $package->id)
+                // Get the FIRST "in" payment in package_advances on same day or after service addition date, before max date limit
+                $firstPaymentQuery = PackageAdvances::where('package_id', $package->id)
+                    ->where('cash_flow', 'in')
+                    ->where('cash_amount', '>', 0)
+                    ->whereNull('deleted_at')
+                    ->where('created_at', '>=', $serviceAddedAt);
+                
+                if ($maxDateLimit) {
+                    $firstPaymentQuery->where('created_at', '<', $maxDateLimit);
+                }
+                
+                $firstPayment = $firstPaymentQuery->orderBy('created_at', 'asc')->first();
+
+                if (!$firstPayment) {
+                    continue;
+                }
+
+                // Check if the FIRST payment date falls within the report date range
+                $firstPaymentDate = Carbon::parse($firstPayment->created_at)->format('Y-m-d');
+                if ($firstPaymentDate < $start_date || $firstPaymentDate > $end_date) {
+                    continue;
+                }
+
+                // Get all payments for conversion spend calculation (from service date to max date limit, within report range)
+                $packagesadvancesQuery = PackageAdvances::where('package_id', $package->id)
                     ->where('cash_flow', 'in')
                     ->where('cash_amount', '>', 0)
                     ->whereNull('deleted_at')
                     ->where('created_at', '>=', $serviceAddedAt)
-                    ->where('created_at', '<', $maxDateLimit)
                     ->where('package_advances.created_at', '>=', $start_date . ' 00:00:00')
-                    ->where('package_advances.created_at', '<=', $end_date . ' 23:59:59')
-                    ->get();
+                    ->where('package_advances.created_at', '<=', $end_date . ' 23:59:59');
+                
+                if ($maxDateLimit) {
+                    $packagesadvancesQuery->where('created_at', '<', $maxDateLimit);
+                }
+                
+                $packagesadvances = $packagesadvancesQuery->get();
 
                 if (count($packagesadvances) > 0) {
                     $actual = 0;
@@ -2878,7 +2908,7 @@ class Finanaces
                     }
                     $actual = $revenue_in - $out;
                     $appointments_info[$appointment->id]['conversion_spend'] = $actual;
-                    $appointments_info[$appointment->id]['conversion_date'] = $packagesadvances->first()->created_at;
+                    $appointments_info[$appointment->id]['conversion_date'] = $firstPayment->created_at;
                     $count[$appointment->location->id][] = 1;
                     $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
                     if ($appointment['converted'] != '') {
