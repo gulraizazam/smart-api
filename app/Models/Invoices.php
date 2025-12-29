@@ -69,6 +69,14 @@ class Invoices extends Model
         return $this->belongsTo(Appointments::class, 'id');
     }
 
+    /*
+     * Get the appointment of the invoice
+     * */
+    public function appointment()
+    {
+        return $this->belongsTo(Appointments::class, 'appointment_id');
+    }
+
     /**
      * Cancel Record
      *

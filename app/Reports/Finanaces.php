@@ -2810,7 +2810,27 @@ class Finanaces
                 }
 
                 $invoiceCreatedAt = Carbon::parse($invoice->created_at);
-                $invoiceDate = $invoiceCreatedAt->format('Y-m-d');
+
+                // Find next consultation invoice for this patient (to set max date limit)
+                $nextConsultationInvoice = \App\Models\Invoices::where('patient_id', $appointment->patient_id)
+                    ->whereNull('deleted_at')
+                    ->where('created_at', '>', $invoice->created_at)
+                    ->whereHas('appointment', function($q) use ($arrivedStatusId, $convertedStatusId) {
+                        $q->where('appointment_type_id', 1)
+                          ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                              $query->where('base_appointment_status_id', $arrivedStatusId);
+                              if ($convertedStatusId) {
+                                  $query->orWhere('base_appointment_status_id', $convertedStatusId);
+                              }
+                          });
+                    })
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+
+                // Set max date limit: next consultation invoice creation date or end of report date range
+                $maxDateLimit = $nextConsultationInvoice 
+                    ? Carbon::parse($nextConsultationInvoice->created_at) 
+                    : Carbon::parse($end_date . ' 23:59:59');
 
                 // Get package linked to this appointment
                 $package = Packages::where('appointment_id', $appointment->id)->first();
@@ -2819,23 +2839,26 @@ class Finanaces
                     continue;
                 }
 
-                // Check if there's at least one service added in package on the same day after invoice creation
-                $packageServiceExists = PackageService::where('package_id', $package->id)
-                    ->whereDate('created_at', $invoiceDate)
-                    ->where('created_at', '>=', $invoice->created_at)
-                    ->exists();
+                // Check if there's at least one service added in package AFTER invoice creation date (not same day) and before max date limit
+                $firstPackageService = PackageService::where('package_id', $package->id)
+                    ->where('created_at', '>', $invoiceCreatedAt)
+                    ->where('created_at', '<', $maxDateLimit)
+                    ->orderBy('created_at', 'asc')
+                    ->first();
 
-                if (!$packageServiceExists) {
+                if (!$firstPackageService) {
                     continue;
                 }
 
-                // Check for "in" payment in package_advances on the same day after invoice creation
+                $serviceAddedAt = Carbon::parse($firstPackageService->created_at);
+
+                // Check for "in" payment in package_advances on same day or after service addition date, before max date limit
                 $packagesadvances = PackageAdvances::where('package_id', $package->id)
                     ->where('cash_flow', 'in')
                     ->where('cash_amount', '>', 0)
                     ->whereNull('deleted_at')
-                    ->whereDate('created_at', $invoiceDate)
-                    ->where('created_at', '>=', $invoice->created_at)
+                    ->where('created_at', '>=', $serviceAddedAt)
+                    ->where('created_at', '<', $maxDateLimit)
                     ->where('package_advances.created_at', '>=', $start_date . ' 00:00:00')
                     ->where('package_advances.created_at', '<=', $end_date . ' 23:59:59')
                     ->get();
