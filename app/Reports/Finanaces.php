@@ -2798,52 +2798,72 @@ class Finanaces
                     );
                 }
                 $appointments[] = $appointment->id;
-                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
-                if (count($package_info)) {
+
+                // Get invoice creation date for this appointment
+                $invoice = \App\Models\Invoices::where('appointment_id', $appointment->id)
+                    ->whereNull('deleted_at')
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+
+                if (!$invoice) {
+                    continue;
+                }
+
+                $invoiceCreatedAt = Carbon::parse($invoice->created_at);
+                $invoiceDate = $invoiceCreatedAt->format('Y-m-d');
+
+                // Get package linked to this appointment
+                $package = Packages::where('appointment_id', $appointment->id)->first();
+
+                if (!$package) {
+                    continue;
+                }
+
+                // Check if there's at least one service added in package on the same day after invoice creation
+                $packageServiceExists = PackageService::where('package_id', $package->id)
+                    ->whereDate('created_at', $invoiceDate)
+                    ->where('created_at', '>=', $invoice->created_at)
+                    ->exists();
+
+                if (!$packageServiceExists) {
+                    continue;
+                }
+
+                // Check for "in" payment in package_advances on the same day after invoice creation
+                $packagesadvances = PackageAdvances::where('package_id', $package->id)
+                    ->where('cash_flow', 'in')
+                    ->where('cash_amount', '>', 0)
+                    ->whereNull('deleted_at')
+                    ->whereDate('created_at', $invoiceDate)
+                    ->where('created_at', '>=', $invoice->created_at)
+                    ->where('package_advances.created_at', '>=', $start_date . ' 00:00:00')
+                    ->where('package_advances.created_at', '<=', $end_date . ' 23:59:59')
+                    ->get();
+
+                if (count($packagesadvances) > 0) {
                     $actual = 0;
                     $revenue_in = 0;
                     $out = 0;
-                    $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        ->where(['cash_flow' => "in"])
-                        ->where('cash_amount', '>', 0)
-                        ->where('deleted_at', null)
-                        ->where('package_advances.created_at', '>=', $start_date . ' 00:00:00')
-                        ->where('package_advances.created_at', '<=', $end_date . ' 23:59:59')
-                        ->get();
-                    if (count($packagesadvances) > 0) {
-                        $check = 0;
-                        $first_advance = PackageAdvances::whereIn('id', $package_info)
-                            ->where('cash_amount', '>', 0)
-                            ->where('deleted_at', null)
-                            ->orderBy('created_at', 'asc')
-                            ->first();
-                        $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
-                        if (($date >= $start_date) && ($date <= $end_date)) {
-                            $check = 1;
-                        }
-                        if ($check == 1) {
-                            $appointments_info[$appointment->id]['converted'] = 'Yes';
-                            foreach ($packagesadvances as $packagesadvance) {
-                                $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
-                                if ($package_advance) {
-                                    $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
-                                    $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
-                                }
-                            }
-                            $actual = $revenue_in - $out;
-                            $appointments_info[$appointment->id]['conversion_spend'] = $actual;
-                            $appointments_info[$appointment->id]['converted'] = 'Yes';
-                            $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
-                            $count[$appointment->location->id][] = 1;
-                            $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                            if ($appointment['converted'] != '') {
-                                $arrived_count[$appointment->location->id][] = 1;
-                                $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
-                            }
-                            $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
-                            $locationData[$appointment->location->name]['total'] = $total;
+
+                    $appointments_info[$appointment->id]['converted'] = 'Yes';
+                    foreach ($packagesadvances as $packagesadvance) {
+                        $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
+                        if ($package_advance) {
+                            $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
+                            $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
                         }
                     }
+                    $actual = $revenue_in - $out;
+                    $appointments_info[$appointment->id]['conversion_spend'] = $actual;
+                    $appointments_info[$appointment->id]['conversion_date'] = $packagesadvances->first()->created_at;
+                    $count[$appointment->location->id][] = 1;
+                    $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+                    if ($appointment['converted'] != '') {
+                        $arrived_count[$appointment->location->id][] = 1;
+                        $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+                    }
+                    $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
+                    $locationData[$appointment->location->name]['total'] = $total;
                 }
             }
         }
