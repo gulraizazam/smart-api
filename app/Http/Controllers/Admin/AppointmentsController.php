@@ -3023,6 +3023,7 @@ class AppointmentsController extends Controller
      */
     public function storeAppointmentStatuses(Request $request)
     {
+       
         $data = $request->all();
         $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
         $appointment = Appointments::find($request->id);
@@ -3139,20 +3140,20 @@ class AppointmentsController extends Controller
                 ])->update(['lead_status_id' => $arrivedStatus->id]);
                 
                 // Send Meta CAPI event for arrived status
-                $leadRecord = Leads::find($appointment->lead_id);
-                if ($leadRecord) {
-                    try {
-                        $metaService = new MetaConversionApiService();
-                        $metaService->sendLeadStatus(
-                            $leadRecord->phone,
-                            'arrived',
-                            $leadRecord->meta_lead_id,
-                            $leadRecord->email
-                        );
-                    } catch (\Exception $e) {
-                        \Log::error('Meta CAPI arrived event failed: ' . $e->getMessage());
-                    }
-                }
+                // $leadRecord = Leads::find($appointment->lead_id);
+                // if ($leadRecord) {
+                //     try {
+                //         $metaService = new MetaConversionApiService();
+                //         $metaService->sendLeadStatus(
+                //             $leadRecord->phone,
+                //             'arrived',
+                //             $leadRecord->meta_lead_id,
+                //             $leadRecord->email
+                //         );
+                //     } catch (\Exception $e) {
+                //         \Log::error('Meta CAPI arrived event failed: ' . $e->getMessage());
+                //     }
+                // }
             }
         }
 
