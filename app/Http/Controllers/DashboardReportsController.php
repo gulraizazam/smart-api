@@ -1947,11 +1947,17 @@ class DashboardReportsController extends Controller
         $today = [];
         $colors = [];
         if (Gate::allows('dashboard_appointment_by_status')) {
+            // Get arrived and converted status IDs
+            $arrivedStatus = AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+            $convertedStatus = AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+            $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+            $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
+
             $appointment_statuses = AppointmentStatuses::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
                 ['parent_id', '=', '0'],
-            ])->get();
+            ])->where('id', '!=', $convertedStatusId)->get();
             if ($request->period == '') {
                 $today_records = Appointments::whereDate('scheduled_date', '=', Carbon::now()->format('Y-m-d'))
                     ->where(['appointment_type_id' => $request->type])
@@ -1962,6 +1968,17 @@ class DashboardReportsController extends Controller
                 $today_records = $today_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($today_records) {
+                    foreach ($today_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -1972,9 +1989,14 @@ class DashboardReportsController extends Controller
                         if ($today_records) {
                             foreach ($today_records as $todayRecord) {
                                 if ($todayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $todayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $today[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $todayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2000,6 +2022,17 @@ class DashboardReportsController extends Controller
                 $today_records = $today_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($today_records) {
+                    foreach ($today_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2010,9 +2043,14 @@ class DashboardReportsController extends Controller
                         if ($today_records) {
                             foreach ($today_records as $todayRecord) {
                                 if ($todayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $todayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $today[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $todayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2035,6 +2073,17 @@ class DashboardReportsController extends Controller
                 $yesterdayRecords = $yesterdayRecords->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($yesterdayRecords) {
+                    foreach ($yesterdayRecords as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2045,9 +2094,14 @@ class DashboardReportsController extends Controller
                         if ($yesterdayRecords) {
                             foreach ($yesterdayRecords as $yestersdayRecord) {
                                 if ($yestersdayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $yestersdayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $yesterday[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $yestersdayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2074,6 +2128,17 @@ class DashboardReportsController extends Controller
                 $last7_days_records = $last7_days_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($last7_days_records) {
+                    foreach ($last7_days_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2084,9 +2149,14 @@ class DashboardReportsController extends Controller
                         if ($last7_days_records) {
                             foreach ($last7_days_records as $last7DayRecord) {
                                 if ($last7DayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $last7DayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $last7days[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $last7DayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2113,6 +2183,17 @@ class DashboardReportsController extends Controller
                 $last7_days_records = $last7_days_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($last7_days_records) {
+                    foreach ($last7_days_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2123,9 +2204,14 @@ class DashboardReportsController extends Controller
                         if ($last7_days_records) {
                             foreach ($last7_days_records as $last7DayRecord) {
                                 if ($last7DayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $last7DayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $last7days[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $last7DayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2152,6 +2238,17 @@ class DashboardReportsController extends Controller
                 $monthlyRecords = $monthlyRecords->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($monthlyRecords) {
+                    foreach ($monthlyRecords as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2162,9 +2259,14 @@ class DashboardReportsController extends Controller
                         if ($monthlyRecords) {
                             foreach ($monthlyRecords as $monthRecord) {
                                 if ($monthRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $monthRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $monthlyRecord[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $monthRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2191,6 +2293,17 @@ class DashboardReportsController extends Controller
                 $monthlyRecords = $monthlyRecords->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($monthlyRecords) {
+                    foreach ($monthlyRecords as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2201,9 +2314,14 @@ class DashboardReportsController extends Controller
                         if ($monthlyRecords) {
                             foreach ($monthlyRecords as $monthRecord) {
                                 if ($monthRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $monthRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $monthlyRecord[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $monthRecord->total,
+                                        $statusTotal,
 
                                     ];
 
