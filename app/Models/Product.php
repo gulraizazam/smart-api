@@ -205,6 +205,7 @@ class Product extends BaseModal
         $product->sale_price =  $data['sale_price'];
         $product->sku =  $data['sku'];
         $product->product_type = 'for_sale';
+        $product->created_by = Auth::user()->id;
         $product->save();
 
        
