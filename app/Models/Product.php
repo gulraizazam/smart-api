@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Product extends BaseModal
 {
@@ -186,8 +187,19 @@ class Product extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::user()->id;
+        
+        // Generate unique slug from name
+        $slug = Str::slug($data['name']);
+        $originalSlug = $slug;
+        $counter = 1;
+        while (self::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+        
         $product = new Product();
         $product->name =  $data['name'];
+        $product->slug = $slug;
         $product->account_id =  $data['account_id'];
         $product->brand_id =  $data['brand_id'];
         $product->sale_price =  $data['sale_price'];
