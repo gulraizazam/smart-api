@@ -14,10 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('orders', function (Blueprint $table) {
-            if (!Schema::hasColumn('orders', 'prescribed_by')) {
-                $table->unsignedBigInteger('prescribed_by')->nullable()->after('patient_id');
+            if (!Schema::hasColumn('orders', 'employee_id')) {
+                $table->unsignedBigInteger('employee_id')->nullable()->after('prescribed_by');
             }
-           
         });
     }
 
@@ -29,8 +28,8 @@ return new class extends Migration
     public function down()
     {
         Schema::table('orders', function (Blueprint $table) {
-            if (Schema::hasColumn('orders', 'prescribed_by')) {
-                $table->dropColumn('prescribed_by');
+            if (Schema::hasColumn('orders', 'employee_id')) {
+                $table->dropColumn('employee_id');
             }
         });
     }
