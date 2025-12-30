@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::table('orders', function (Blueprint $table) {
             if (!Schema::hasColumn('orders', 'prescribed_by')) {
-                $table->unsignedBigInteger('prescribed_by')->nullable()->after('doctor_id');
+                $table->unsignedBigInteger('prescribed_by')->nullable()->after('patient_id');
             }
         });
     }
