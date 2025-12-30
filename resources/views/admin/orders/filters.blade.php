@@ -27,9 +27,16 @@
             </div>
         </div>
 
-        <div class="col-md-3 mb-lg-0 mb-6">
-            <label>Product:</label>
-            <input class="form-control" id="search_product_id" name="product_id" placeholder="Product Search">
+        <div class="fv-row col-md-3">
+            <label>Product Search</label>
+            <input class="form-control product_search_id" placeholder="Product Search">
+            <input type="hidden" id="search_product_id" name="product_id" class="filter-field search_product_field">
+            <span onclick="clearProductSearchFilter()" class="product-croxcli"
+                style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times"
+                    aria-hidden="true"></i></span>
+            <div class="product-suggesstion-box" style="display: none;">
+                <ul class="product-suggestion-list suggestion-list"></ul>
+            </div>
         </div>
         <div class="col-md-3 mb-lg-0 mb-6">
             <label>Location:</label>

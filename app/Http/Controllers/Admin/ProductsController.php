@@ -833,4 +833,26 @@ class ProductsController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+
+    /**
+     * Search products by name
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function searchProducts(Request $request)
+    {
+        try {
+            $search = $request->search;
+            $products = Product::where('account_id', Auth::user()->account_id)
+                ->where('name', 'like', '%' . $search . '%')
+                ->select('id', 'name')
+                ->limit(20)
+                ->get();
+
+            return ApiHelper::apiResponse($this->success, 'Success', true, ['products' => $products]);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
 }

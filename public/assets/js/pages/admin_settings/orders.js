@@ -2,6 +2,66 @@ var ProductStock = [];
 let refundProductId = [];
 let refundProductPrice = [];
 
+// Product search autocomplete function
+function initProductSearch() {
+    let debounceTimer;
+    $(document).off("keyup", ".product_search_id");
+    
+    $(document).on("keyup", ".product_search_id", function () {
+        $(this).parent().find(".product-suggestion-list").html('<li>Searching...</li>');
+        $(this).parent().find(".product-suggesstion-box").show();
+        if ($(this).val().length < 2) {
+            $(this).parent().find(".product-suggesstion-box").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.products.search'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        that.parent().find(".product-suggestion-list").html(html);
+                        let products = response.data.products;
+                        if (products.length) {
+                            products.forEach(function (product) {
+                                html += '<li onClick="selectProductFilter(`' + product.name + '`, `' + product.id + '`);">' + product.name + '</li>'
+                            });
+                            that.parent().find(".product-suggestion-list").html(html);
+                            that.parent().find(".product-suggesstion-box").show();
+                            that.parent().find(".product-croxcli").show();
+                        } else {
+                            that.parent().find(".product-suggesstion-box").hide();
+                        }
+                    }
+                });
+            }, 700);
+        } else {
+            $(this).parent().find(".product-suggesstion-box").hide();
+            $(this).parent().find(".product-croxcli").hide();
+        }
+    });
+    $(".product-croxcli").hide();
+}
+
+function selectProductFilter(name, id) {
+    $(".product_search_id").val(name);
+    $(".search_product_field").val(id).change();
+    $(".product-suggesstion-box").hide();
+    $(".product-croxcli").show();
+}
+
+function clearProductSearchFilter() {
+    $(".product_search_id").val('');
+    $(".search_product_field").val('').change();
+    $(".product-suggesstion-box").hide();
+    $(".product-croxcli").hide();
+}
+
 var table_url = route('admin.orders.datatable');
 
 var table_columns = [
@@ -484,6 +544,7 @@ function resetAllFilters(datatable) {
             created_at: '',
             filter: 'filter_cancel',
         }
+        clearProductSearchFilter();
         datatable.search(filters, 'search');
     });
 }
@@ -718,6 +779,7 @@ $("#reset-filters").on('click', function (e) {
 
 $(document).ready(function () {
     patientSearch('order_patient_search_id');
+    initProductSearch();
 
     $("#search_location").change(function () {
         var selected = $('select#search_location option:selected');
