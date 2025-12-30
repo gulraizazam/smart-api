@@ -42,10 +42,8 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
                             <input type="text" id="name" name="name" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                        <div class="fv-row col-md-6" id="sale_price_section">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price<small> (per unit)</small></label>
-                            <input type="number" id="sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2">
-                        </div>
+                        <!-- Sale price is now set at inventory allocation level -->
+                        <input type="hidden" id="sale_price" name="sale_price" value="0">
                     </div>
                     <div class="row">
                         <!-- <div class="fv-row col-md-6">
