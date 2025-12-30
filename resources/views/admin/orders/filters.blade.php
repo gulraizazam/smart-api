@@ -13,10 +13,6 @@
     </div>
     <div class="row mb-6">
         <input type="hidden" name="location_type" id="search_location_type">
-        <div class="col-md-3 mb-lg-0 mb-6">
-            <label>Order Id:</label>
-            <input class="form-control" id="search_order_id" name="order_id" placeholder="Order Id Search">
-        </div>
         <div class="fv-row col-md-3">
             <label>Patient Search </label>
             <input class="form-control order_patient_search_id patient_search_id search_field"
