@@ -137,6 +137,7 @@ function sumProductsQuantity(orders) {
 function addRow() {
     if ($('#add_order_product').val() != '') {
         let product_id = $('#add_order_product').find(':selected').attr('data-id');
+        let inventory_id = $('#add_order_product').find(':selected').attr('data-inventory_id');
         let product_name = $('#add_order_product').find(':selected').attr('data-name');
         let product_price = $('#add_order_product').find(':selected').attr('data-price');
         let location_id = $("#add_order_location").val();
@@ -144,45 +145,30 @@ function addRow() {
         let employee_id = $("#add_employee_id").val();
         let quantity = 0;
         ProductStock.forEach(function (element) {
-            if (element == product_id) {
+            if (element == inventory_id) {
                 quantity++;
             }
         });
 
         $("#add_service_btn").attr('disabled', 'disabled');
-        $.ajax({
-            type: "GET",
-            url: route('admin.transfer_products.get_products'),
-            dataType: 'json',
-            data: {
-                product_id: product_id,
-                location_id: location_id,
-                patient_id:patient_id,
-                employee_id:employee_id
-            },
-            success: function (response) {
-                
-                let products = response.data.products;
-                
-                if (products.quantity - quantity == 0 || products.quantity - quantity < 0) {
-                    toastr.error("This Product is out of stock");
-                    $("#add_service_btn").removeAttr('disabled');
-                } else {
-                   
-                    if (ProductStock.includes(product_id)) {
-                        toastr.error("Product already add in list.");
-                        $("#add_service_btn").removeAttr('disabled');
-                    } else {
-                        $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price, products.quantity));
-                        calculateTotal($(this));
-                        ProductStock.push(product_id);
-                        $("#add_service_btn").removeAttr('disabled');
-                    }
-                }
+        
+        // Get available quantity from the selected option
+        let available_quantity = parseInt($('#add_order_product').find(':selected').text().match(/(\d+) available/)?.[1] || 0);
+        
+        if (available_quantity - quantity == 0 || available_quantity - quantity < 0) {
+            toastr.error("This Product is out of stock");
+            $("#add_service_btn").removeAttr('disabled');
+        } else {
+            if (ProductStock.includes(inventory_id)) {
+                toastr.error("This inventory item is already added to the list.");
+                $("#add_service_btn").removeAttr('disabled');
+            } else {
+                $('#product_list').append(setProduct($("#product_list tr").length + 1, product_id, product_name, product_price, available_quantity, inventory_id));
+                calculateTotal($(this));
+                ProductStock.push(inventory_id);
+                $("#add_service_btn").removeAttr('disabled');
             }
-        });
-
-
+        }
     }
 }
 
@@ -250,8 +236,9 @@ function calculateTotal(data) {
 }
 
 
-function setProduct(id, product_id, product_name, price, stock) {
-    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + price + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + price + '"> <td>' + product_name + '</td><td>' + price + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td></td><td class="sub-total">' + price + '</td><td>' + deleteIcon(id) + '</td></tr>';
+function setProduct(id, product_id, product_name, price, stock, inventory_id) {
+    let safePrice = parseFloat(price) || 0;
+    return '<tr id="order_" class="order_product product_' + id + '"> <input type="hidden" name="product_id[]" value="' + product_id + '"> <input type="hidden" name="inventory_id[]" value="' + inventory_id + '"> <input type="hidden" name="stock[]" value="' + stock + '"><input type="hidden" name="product_price[]" value="' + safePrice + '"><input type="hidden" name="quantity[]" class="product_quantity_input" value="1"/> <input type="hidden" class="productPriceValue" value="' + safePrice + '"> <td>' + product_name + '</td><td>' + safePrice + '</td><td><div class="number"><span class="minus">-</span><input type="number" class="quantity_input" value="1"/><span class="plus">+</span></div></td><td></td><td class="sub-total">' + safePrice + '</td><td>' + deleteIcon(id) + '</td></tr>';
 }
 
 
@@ -696,7 +683,9 @@ function productSearch(from_id, id = null, type = null) {
                 if (products.length) {
                     html = '<option value="">Select Product</option>';
                     products.forEach(function (product) {
-                        html += '<option value="' + product.id + '" data-name = "' + product.name + '" data-price = "' + product.sale_price + '" data-id = "' + product.id + '" data-product_type = "' + product.product_type + '">' + product.name +' - '+product.available_quantity+' products available' + '</option>';
+                        let price = product.sale_price || 0;
+                        let priceDisplay = price > 0 ? ' @ Rs.' + price : '';
+                        html += '<option value="' + product.inventory_id + '" data-name="' + product.name + '" data-price="' + price + '" data-id="' + product.id + '" data-inventory_id="' + product.inventory_id + '" data-product_type="' + product.product_type + '">' + product.name + priceDisplay + ' - ' + product.available_quantity + ' available' + '</option>';
                     });
                 } else {
                     html = '<option value="">No Product Found</option>';

@@ -809,12 +809,17 @@ class ProductsController extends Controller
     {
         $myarray = [];
         try {
+            \Log::info('saveAllocate request data:', $request->all());
+            
             $inventory = new Inventory();
             $inventory->product_id =  $request->product_id;
             $inventory->location_id = $request->location_id;
             $inventory->is_saleable =  1;
             $inventory->quantity =  $request->quantity;
+            $inventory->sale_price = $request->sale_price;
             $inventory->save();
+            
+            \Log::info('Inventory saved with sale_price:', ['sale_price' => $inventory->sale_price]);
             $stock = new Stock();
             $stock->account_id = 1;
             $stock->product_id = $request->product_id;
