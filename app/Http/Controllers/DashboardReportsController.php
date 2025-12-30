@@ -3022,51 +3022,91 @@ class DashboardReportsController extends Controller
                     );
                 }
                 $appointments[] = $appointment->id;
-                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
-                if (count($package_info)) {
+                
+                // Get invoice creation date for this appointment
+                $invoice = Invoices::where('appointment_id', $appointment->id)
+                    ->whereNull('deleted_at')
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+
+                if (!$invoice) {
+                    continue;
+                }
+
+                $invoiceCreatedAt = Carbon::parse($invoice->created_at);
+                $invoiceDate = $invoiceCreatedAt->format('Y-m-d');
+
+                // Get package linked to this appointment
+                $package = Packages::where('appointment_id', $appointment->id)->first();
+
+                if (!$package) {
+                    continue;
+                }
+
+                // Get package bundle IDs
+                $packagebundleIds = PackageBundles::where('package_id', $package->id)->pluck('id');
+
+                // Check if there's at least one service added in package on same day or after invoice creation date
+                $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                    ->whereDate('created_at', '>=', $invoiceDate)
+                    ->exists();
+
+                if (!$serviceAfterInvoice) {
+                    continue;
+                }
+
+                // Check if there's at least one payment on same day or after invoice creation date
+                $firstPayment = PackageAdvances::where('package_id', $package->id)
+                    ->where('cash_flow', 'in')
+                    ->where('cash_amount', '>', 0)
+                    ->whereNull('deleted_at')
+                    ->whereDate('created_at', '>=', $invoiceDate)
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+
+                if (!$firstPayment) {
+                    continue;
+                }
+
+                // Check if the FIRST payment date falls within the report date range
+                $firstPaymentDate = Carbon::parse($firstPayment->created_at)->format('Y-m-d');
+                if ($firstPaymentDate < $periods[$period]['start_date'] || $firstPaymentDate > $periods[$period]['end_date']) {
+                    continue;
+                }
+
+                // Get all payments for conversion spend calculation (from invoice date, within report range)
+                $packagesadvances = PackageAdvances::where('package_id', $package->id)
+                    ->where('cash_amount', '>', 0)
+                    ->whereNull('deleted_at')
+                    ->whereDate('created_at', '>=', $invoiceDate)
+                    ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+                    ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
+                    ->get();
+
+                if (count($packagesadvances) > 0) {
                     $actual = 0;
                     $revenue_in = 0;
                     $out = 0;
-                    $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        ->where(['cash_flow' => "in"])
-                        ->where('cash_amount', '>', 0)
-                        ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
-                        ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
 
-                        ->get();
-                    if (count($packagesadvances) > 0) {
-                        $check = 0;
-                        $first_advance = PackageAdvances::whereIn('id', $package_info)
-                            ->where('cash_amount', '>', 0)
-                            ->orderBy('created_at', 'asc')
-                            ->first();
-                        $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
-                        if (($date >= $periods[$period]['start_date']) && ($date <= $periods[$period]['end_date'])) {
-                            $check = 1;
-                        }
-                        if ($check == 1) {
-                            $appointments_info[$appointment->id]['converted'] = 'Yes';
-                            foreach ($packagesadvances as $packagesadvance) {
-                                $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
-                                if ($package_advance) {
-                                    $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
-                                    $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
-                                }
-                            }
-                            $actual = $revenue_in - $out;
-                            $appointments_info[$appointment->id]['conversion_spend'] = $actual;
-                            $appointments_info[$appointment->id]['converted'] = 'Yes';
-                            $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
-                            $count[$appointment->location->id][] = 1;
-                            $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                            if ($appointment['converted'] != '') {
-                                $arrived_count[$appointment->location->id][] = 1;
-                                $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
-                            }
-                            $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
-                            $locationData[$appointment->location->name]['total'] = $total;
+                    $appointments_info[$appointment->id]['converted'] = 'Yes';
+                    foreach ($packagesadvances as $packagesadvance) {
+                        $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
+                        if ($package_advance) {
+                            $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
+                            $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
                         }
                     }
+                    $actual = $revenue_in - $out;
+                    $appointments_info[$appointment->id]['conversion_spend'] = $actual;
+                    $appointments_info[$appointment->id]['conversion_date'] = $firstPayment->created_at;
+                    $count[$appointment->location->id][] = 1;
+                    $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+                    if ($appointment['converted'] != '') {
+                        $arrived_count[$appointment->location->id][] = 1;
+                        $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+                    }
+                    $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
+                    $locationData[$appointment->location->name]['total'] = $total;
                 }
             }
         }
