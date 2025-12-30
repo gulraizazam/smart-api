@@ -17,6 +17,9 @@ return new class extends Migration
             if (!Schema::hasColumn('orders', 'prescribed_by')) {
                 $table->unsignedBigInteger('prescribed_by')->nullable()->after('patient_id');
             }
+            if (!Schema::hasColumn('orders', 'employee_id')) {
+                $table->unsignedBigInteger('employee_id')->nullable()->after('prescribed_by');
+            }
         });
     }
 
