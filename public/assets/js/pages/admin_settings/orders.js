@@ -30,8 +30,7 @@ var table_columns = [
         sortable: false,
         width: 'auto',
         template: function (data) {
-           
-            return data.quantity;
+            return sumProductsQuantity(data.order_detail);
         }
     }, {
         field: 'order_have',
