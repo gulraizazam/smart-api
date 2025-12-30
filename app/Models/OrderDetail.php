@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Support\Facades\DB;
 
 class OrderDetail extends BaseModal
 {
@@ -24,52 +25,55 @@ class OrderDetail extends BaseModal
      */
     public static function createRecord($request, $account_id, $order_id)
     {
-        $data = $request->all();
+        return DB::transaction(function () use ($request, $account_id, $order_id) {
+            $data = $request->all();
 
-        $discount = $data['discount'] ?? 0;
-        $inventory_ids = is_array($data['inventory_id'] ?? []) ? ($data['inventory_id'] ?? []) : [$data['inventory_id']];
-        $quantities = is_array($data['quantity']) ? $data['quantity'] : [$data['quantity']];
-        $product_prices = is_array($data['product_price']) ? $data['product_price'] : [$data['product_price']];
-        $product_ids = is_array($data['product_id']) ? $data['product_id'] : [$data['product_id']];
-        
-        foreach ($product_ids as $index => $product_id) {
-            $quantity = $quantities[$index] ?? 1;
-            $originalPrice = $product_prices[$index] ?? 0;
-            $inventory_id = $inventory_ids[$index] ?? null;
+            $discount = $data['discount'] ?? 0;
+            $inventory_ids = is_array($data['inventory_id'] ?? []) ? ($data['inventory_id'] ?? []) : [$data['inventory_id']];
+            $quantities = is_array($data['quantity']) ? $data['quantity'] : [$data['quantity']];
+            $product_prices = is_array($data['product_price']) ? $data['product_price'] : [$data['product_price']];
+            $product_ids = is_array($data['product_id']) ? $data['product_id'] : [$data['product_id']];
             
-            $data['product_id'] = $product_id;
-            $data['quantity'] = $quantity;
-            $data['account_id'] = $account_id;
-            $data['order_id'] = $order_id;
-            $data['inventory_id'] = $inventory_id;
-            
-            $discountedPrice = $discount > 0 ? $originalPrice - ($originalPrice * ($discount / 100)) : $originalPrice;
-            $data['sale_price'] = $discountedPrice;
-            $data['stock_type'] = 'out';
+            foreach ($product_ids as $index => $product_id) {
+                $quantity = $quantities[$index] ?? 1;
+                $originalPrice = $product_prices[$index] ?? 0;
+                $inventory_id = $inventory_ids[$index] ?? null;
+                
+                $data['product_id'] = $product_id;
+                $data['quantity'] = $quantity;
+                $data['account_id'] = $account_id;
+                $data['order_id'] = $order_id;
+                $data['inventory_id'] = $inventory_id;
+                
+                $discountedPrice = $discount > 0 ? $originalPrice - ($originalPrice * ($discount / 100)) : $originalPrice;
+                $data['sale_price'] = $discountedPrice;
+                $data['stock_type'] = 'out';
 
-            // Deduct from specific inventory entry (FIFO)
-            if ($inventory_id) {
-                $inventory = Inventory::find($inventory_id);
-                if ($inventory) {
-                    $updated_quantity = $inventory->quantity - $quantity;
-                    $inventory->update(['quantity' => $updated_quantity]);
+                // Deduct from specific inventory entry (FIFO) with row locking
+                if ($inventory_id) {
+                    $inventory = Inventory::lockForUpdate()->find($inventory_id);
+                    if ($inventory) {
+                        $updated_quantity = $inventory->quantity - $quantity;
+                        $inventory->update(['quantity' => $updated_quantity]);
+                    }
+                } else {
+                    // Legacy: Deduct from first available inventory at location
+                    $inventory = Inventory::where('product_id', $product_id)
+                        ->where('location_id', $request->location_id)
+                        ->where('quantity', '>', 0)
+                        ->orderBy('created_at', 'asc')
+                        ->lockForUpdate()
+                        ->first();
+                    if ($inventory) {
+                        $updated_quantity = $inventory->quantity - $quantity;
+                        $inventory->update(['quantity' => $updated_quantity]);
+                    }
                 }
-            } else {
-                // Legacy: Deduct from first available inventory at location
-                $inventory = Inventory::where('product_id', $product_id)
-                    ->where('location_id', $request->location_id)
-                    ->where('quantity', '>', 0)
-                    ->orderBy('created_at', 'asc')
-                    ->first();
-                if ($inventory) {
-                    $updated_quantity = $inventory->quantity - $quantity;
-                    $inventory->update(['quantity' => $updated_quantity]);
-                }
+                
+                self::create($data);
             }
-            
-            self::create($data);
-        }
-        return true;
+            return true;
+        });
     }
 
     /**
