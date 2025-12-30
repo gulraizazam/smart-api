@@ -386,9 +386,9 @@
                 <tr>
                     <td>{{ $loop->iteration }}</td>
                     <td>{{ $product->product->name }} </td>
-                    <td>{{ $product->product->sale_price }}</td>
+                    <td>{{ $product->sale_price }}</td>
                     <td>{{ $product->quantity }}</td>
-                    <td>{{ $product->product->sale_price * $product->quantity }}</td>
+                    <td>{{ $product->sale_price * $product->quantity }}</td>
                     <td>{{ $invoice_info->discount }}</td>
                 </tr>
             @endforeach
