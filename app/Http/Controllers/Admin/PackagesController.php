@@ -1197,6 +1197,7 @@ class PackagesController extends Controller
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
                 $activity->location = $location->name;
+                $activity->centre_id = $request->location_id;
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
                 $activity->save();
@@ -2296,6 +2297,7 @@ class PackagesController extends Controller
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
                 $activity->location = $location->name;
+                $activity->centre_id = $request->location_id;
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
                 $activity->save();

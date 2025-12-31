@@ -584,6 +584,7 @@ class ConsultancyInvoiceController extends Controller
         $activity->invoice_id = $invoice->id;
         $activity->amount = $request->price;
         $activity->location = $location->name;
+         $activity->centre_id = $appointmentinfo->location_id;
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();

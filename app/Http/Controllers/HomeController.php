@@ -2376,13 +2376,21 @@ class HomeController extends Controller
 
         $centres = ACL::getUserCentres();
 
-        $center_names = Locations::whereIn('id', $centres)->pluck('name')->toArray();
+        // Use date range instead of whereDate for better index usage
+        $todayStart = Carbon::today();
+        $todayEnd = Carbon::tomorrow();
+        
+        // Use centre_id (integer) instead of location name (string) for better performance
         $activities = Activity::with([
-            'plan' => fn ($q) => $q->select('id', 'name')
-        ])->whereIn('location', $center_names)
-            ->whereIn('action', ['received', 'consumed'])
-            ->whereDate('created_at', Carbon::now()
-                ->format('Y-m-d'))->latest()->get();
+            'plan' => fn ($q) => $q->select('id', 'name'),
+            'centre' => fn ($q) => $q->select('id', 'name')
+        ])
+            ->whereIn('centre_id', $centres)
+            ->whereIn('action', ['received', 'consumed', 'refunded'])
+            ->where('created_at', '>=', $todayStart)
+            ->where('created_at', '<', $todayEnd)
+            ->latest()
+            ->get();
 
         return $data['recent_activities'] = [
             'finance_log' => $activities,
