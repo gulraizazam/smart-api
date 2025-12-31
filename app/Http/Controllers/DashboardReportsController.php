@@ -17,6 +17,9 @@ use Illuminate\Support\Carbon;
 use App\HelperModule\ApiHelper;
 use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
+use App\Models\Packages;
+use App\Models\PackageBundles;
+use App\Models\PackageService;
 use App\Models\ResourceHasRota;
 use App\Models\AppointmentTypes;
 use App\Reports\dashboardreport;
@@ -1947,11 +1950,17 @@ class DashboardReportsController extends Controller
         $today = [];
         $colors = [];
         if (Gate::allows('dashboard_appointment_by_status')) {
+            // Get arrived and converted status IDs
+            $arrivedStatus = AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+            $convertedStatus = AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+            $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+            $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
+
             $appointment_statuses = AppointmentStatuses::where([
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
                 ['parent_id', '=', '0'],
-            ])->get();
+            ])->where('id', '!=', $convertedStatusId)->get();
             if ($request->period == '') {
                 $today_records = Appointments::whereDate('scheduled_date', '=', Carbon::now()->format('Y-m-d'))
                     ->where(['appointment_type_id' => $request->type])
@@ -1962,6 +1971,17 @@ class DashboardReportsController extends Controller
                 $today_records = $today_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($today_records) {
+                    foreach ($today_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -1972,9 +1992,14 @@ class DashboardReportsController extends Controller
                         if ($today_records) {
                             foreach ($today_records as $todayRecord) {
                                 if ($todayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $todayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $today[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $todayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2000,6 +2025,17 @@ class DashboardReportsController extends Controller
                 $today_records = $today_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($today_records) {
+                    foreach ($today_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2010,9 +2046,14 @@ class DashboardReportsController extends Controller
                         if ($today_records) {
                             foreach ($today_records as $todayRecord) {
                                 if ($todayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $todayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $today[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $todayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2035,6 +2076,17 @@ class DashboardReportsController extends Controller
                 $yesterdayRecords = $yesterdayRecords->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($yesterdayRecords) {
+                    foreach ($yesterdayRecords as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2045,9 +2097,14 @@ class DashboardReportsController extends Controller
                         if ($yesterdayRecords) {
                             foreach ($yesterdayRecords as $yestersdayRecord) {
                                 if ($yestersdayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $yestersdayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $yesterday[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $yestersdayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2074,6 +2131,17 @@ class DashboardReportsController extends Controller
                 $last7_days_records = $last7_days_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($last7_days_records) {
+                    foreach ($last7_days_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2084,9 +2152,14 @@ class DashboardReportsController extends Controller
                         if ($last7_days_records) {
                             foreach ($last7_days_records as $last7DayRecord) {
                                 if ($last7DayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $last7DayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $last7days[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $last7DayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2113,6 +2186,17 @@ class DashboardReportsController extends Controller
                 $last7_days_records = $last7_days_records->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($last7_days_records) {
+                    foreach ($last7_days_records as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2123,9 +2207,14 @@ class DashboardReportsController extends Controller
                         if ($last7_days_records) {
                             foreach ($last7_days_records as $last7DayRecord) {
                                 if ($last7DayRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $last7DayRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $last7days[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $last7DayRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2152,6 +2241,17 @@ class DashboardReportsController extends Controller
                 $monthlyRecords = $monthlyRecords->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($monthlyRecords) {
+                    foreach ($monthlyRecords as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2162,9 +2262,14 @@ class DashboardReportsController extends Controller
                         if ($monthlyRecords) {
                             foreach ($monthlyRecords as $monthRecord) {
                                 if ($monthRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $monthRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $monthlyRecord[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $monthRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2191,6 +2296,17 @@ class DashboardReportsController extends Controller
                 $monthlyRecords = $monthlyRecords->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
                     ->groupBy('base_appointment_status_id')
                     ->get();
+                // Get converted count to add to arrived
+                $convertedCount = 0;
+                if ($monthlyRecords) {
+                    foreach ($monthlyRecords as $record) {
+                        if ($record->appointment_status_id == $convertedStatusId) {
+                            $convertedCount = $record->total;
+                            break;
+                        }
+                    }
+                }
+
                 if ($appointment_statuses) {
                     $total = 0;
                     foreach ($appointment_statuses as $appointment_status) {
@@ -2201,9 +2317,14 @@ class DashboardReportsController extends Controller
                         if ($monthlyRecords) {
                             foreach ($monthlyRecords as $monthRecord) {
                                 if ($monthRecord->appointment_status_id == $appointment_status->id) {
+                                    $statusTotal = $monthRecord->total;
+                                    // Add converted count to arrived
+                                    if ($appointment_status->id == $arrivedStatusId) {
+                                        $statusTotal += $convertedCount;
+                                    }
                                     $monthlyRecord[$appointment_status->id] = [
                                         $appointment_status->name,
-                                        $monthRecord->total,
+                                        $statusTotal,
 
                                     ];
 
@@ -2559,10 +2680,19 @@ class DashboardReportsController extends Controller
             ],
         ];
 
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
+
+        // Build the arrived condition for SQL - always include both arrived and converted
+        $arrivedCondition = "appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})";
+
         $stats = AppointmentsDailyStats::select('centre_id')
             ->selectRaw('count(*) as total')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 AND user_id IN (' . implode(',', $fdm_users) . ') THEN 1 ELSE 0 END) as walkin')
+            ->selectRaw("SUM(CASE WHEN {$arrivedCondition} THEN 1 ELSE 0 END) as arrived")
+            ->selectRaw("SUM(CASE WHEN ({$arrivedCondition}) AND user_id IN (" . implode(',', $fdm_users) . ") THEN 1 ELSE 0 END) as walkin")
             ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
             ->whereIn('centre_id', $center_id)
             ->groupBy('centre_id')
@@ -2841,12 +2971,21 @@ class DashboardReportsController extends Controller
         //$consultant = collect($consultants)->pluck('id');
         $sum_conversion_spend2 = 0;
 
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : config('constants.appointment_status_arrived');
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+
         $converted_appointments =  Appointments::with('location:id,name')
             ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
-            ->where([
-                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                'appointments.appointment_type_id' => 1
-            ])
+            ->where('appointments.appointment_type_id', 1)
+            ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                if ($convertedStatusId) {
+                    $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                }
+            })
             ->whereIn('appointments.doctor_id', $consultant)
             ->whereIn('appointments.location_id', $locations)
             ->where('package_advances.cash_amount', '>', 0)
@@ -2886,51 +3025,91 @@ class DashboardReportsController extends Controller
                     );
                 }
                 $appointments[] = $appointment->id;
-                $package_info = PackageAdvances::where(['appointment_id' => $appointment->id])->pluck('id');
-                if (count($package_info)) {
+                
+                // Get invoice creation date for this appointment
+                $invoice = Invoices::where('appointment_id', $appointment->id)
+                    ->whereNull('deleted_at')
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+
+                if (!$invoice) {
+                    continue;
+                }
+
+                $invoiceCreatedAt = Carbon::parse($invoice->created_at);
+                $invoiceDate = $invoiceCreatedAt->format('Y-m-d');
+
+                // Get package linked to this appointment
+                $package = Packages::where('appointment_id', $appointment->id)->first();
+
+                if (!$package) {
+                    continue;
+                }
+
+                // Get package bundle IDs
+                $packagebundleIds = PackageBundles::where('package_id', $package->id)->pluck('id');
+
+                // Check if there's at least one service added in package on same day or after invoice creation date
+                $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                    ->whereDate('created_at', '>=', $invoiceDate)
+                    ->exists();
+
+                if (!$serviceAfterInvoice) {
+                    continue;
+                }
+
+                // Check if there's at least one payment on same day or after invoice creation date
+                $firstPayment = PackageAdvances::where('package_id', $package->id)
+                    ->where('cash_flow', 'in')
+                    ->where('cash_amount', '>', 0)
+                    ->whereNull('deleted_at')
+                    ->whereDate('created_at', '>=', $invoiceDate)
+                    ->orderBy('created_at', 'asc')
+                    ->first();
+
+                if (!$firstPayment) {
+                    continue;
+                }
+
+                // Check if the FIRST payment date falls within the report date range
+                $firstPaymentDate = Carbon::parse($firstPayment->created_at)->format('Y-m-d');
+                if ($firstPaymentDate < $periods[$period]['start_date'] || $firstPaymentDate > $periods[$period]['end_date']) {
+                    continue;
+                }
+
+                // Get all payments for conversion spend calculation (from invoice date, within report range)
+                $packagesadvances = PackageAdvances::where('package_id', $package->id)
+                    ->where('cash_amount', '>', 0)
+                    ->whereNull('deleted_at')
+                    ->whereDate('created_at', '>=', $invoiceDate)
+                    ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
+                    ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
+                    ->get();
+
+                if (count($packagesadvances) > 0) {
                     $actual = 0;
                     $revenue_in = 0;
                     $out = 0;
-                    $packagesadvances = PackageAdvances::whereIn('id', $package_info)
-                        ->where(['cash_flow' => "in"])
-                        ->where('cash_amount', '>', 0)
-                        ->where('package_advances.created_at', '>=', $periods[$period]['start_date'] . ' 00:00:00')
-                        ->where('package_advances.created_at', '<=', $periods[$period]['end_date'] . ' 23:59:59')
 
-                        ->get();
-                    if (count($packagesadvances) > 0) {
-                        $check = 0;
-                        $first_advance = PackageAdvances::whereIn('id', $package_info)
-                            ->where('cash_amount', '>', 0)
-                            ->orderBy('created_at', 'asc')
-                            ->first();
-                        $date = Carbon::parse($first_advance->updated_at)->format('Y-m-d');
-                        if (($date >= $periods[$period]['start_date']) && ($date <= $periods[$period]['end_date'])) {
-                            $check = 1;
-                        }
-                        if ($check == 1) {
-                            $appointments_info[$appointment->id]['converted'] = 'Yes';
-                            foreach ($packagesadvances as $packagesadvance) {
-                                $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
-                                if ($package_advance) {
-                                    $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
-                                    $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
-                                }
-                            }
-                            $actual = $revenue_in - $out;
-                            $appointments_info[$appointment->id]['conversion_spend'] = $actual;
-                            $appointments_info[$appointment->id]['converted'] = 'Yes';
-                            $appointments_info[$appointment->id]['conversion_date'] = $first_advance->created_at;
-                            $count[$appointment->location->id][] = 1;
-                            $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
-                            if ($appointment['converted'] != '') {
-                                $arrived_count[$appointment->location->id][] = 1;
-                                $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
-                            }
-                            $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
-                            $locationData[$appointment->location->name]['total'] = $total;
+                    $appointments_info[$appointment->id]['converted'] = 'Yes';
+                    foreach ($packagesadvances as $packagesadvance) {
+                        $package_advance = GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
+                        if ($package_advance) {
+                            $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
+                            $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
                         }
                     }
+                    $actual = $revenue_in - $out;
+                    $appointments_info[$appointment->id]['conversion_spend'] = $actual;
+                    $appointments_info[$appointment->id]['conversion_date'] = $firstPayment->created_at;
+                    $count[$appointment->location->id][] = 1;
+                    $locationData[$appointment->location->name]['total_count'] = count($count[$appointment->location->id]);
+                    if ($appointment['converted'] != '') {
+                        $arrived_count[$appointment->location->id][] = 1;
+                        $locationData[$appointment->location->name]['total_count'] = count($arrived_count[$appointment->location->id]);
+                    }
+                    $total += $appointments_info[$appointment->id]['conversion_spend'] ? $appointments_info[$appointment->id]['conversion_spend'] : 0;
+                    $locationData[$appointment->location->name]['total'] = $total;
                 }
             }
         }
@@ -2940,7 +3119,13 @@ class DashboardReportsController extends Controller
             array_push($lables, $doctor->name);
             $doctor_id = [$doctor->id];
             $total_appointments = Appointments::whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-                ->where(['appointment_type_id' => 1, 'base_appointment_status_id' => 2])
+                ->where('appointment_type_id' , 1)
+                ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                 ->whereIn('doctor_id', $doctor_id)
                 ->whereIn('appointments.location_id', $locations)
                 ->count();
@@ -2950,10 +3135,13 @@ class DashboardReportsController extends Controller
         }
         $total_arrived_appointments = Appointments::with('location:id,name')
             ->join('services', 'appointments.service_id', 'services.id')
-            ->where([
-                'appointments.base_appointment_status_id' => config('constants.appointment_status_arrived'),
-                'appointments.appointment_type_id' => 1
-            ])
+            ->where('appointments.appointment_type_id' , 1)
+            ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                if ($convertedStatusId) {
+                    $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                }
+            })
             ->where($where)
             ->whereIn('doctor_id', $consultant)
             ->whereIn('appointments.location_id', $locations)
@@ -2999,7 +3187,13 @@ class DashboardReportsController extends Controller
                 $sum_conversion_total = $new_array[$arrive_category['name']]['total_conversion'];
                 $avg_valu = $new_array[$arrive_category['name']]['avg'];
                 if ($request->doc_id) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         ->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
@@ -3008,7 +3202,13 @@ class DashboardReportsController extends Controller
                         //->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         //->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
@@ -3021,7 +3221,13 @@ class DashboardReportsController extends Controller
                 $avg_valu = 0;
 
                 if ($request->doc_id) {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         ->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])
@@ -3030,7 +3236,13 @@ class DashboardReportsController extends Controller
                         // ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
                         ->count();
                 } else {
-                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'], 'base_appointment_status_id' => 2, 'appointment_type_id' => 1])
+                    $category_total_records = Appointments::where(['service_id' => $arrive_category['service_id'],  'appointment_type_id' => 1])
+                    ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                    $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                    if ($convertedStatusId) {
+                        $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                    }
+                })
                         //->whereIn('doctor_id', $consultant)
                         ->whereIn('appointments.location_id', $locations)
                         ->where('appointments.scheduled_date', '>=', $periods[$period]['start_date'])

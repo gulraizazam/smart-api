@@ -22,6 +22,7 @@ use App\Helpers\Financelog;
 use App\Helpers\JazzSMSAPI;
 use App\Models\AuditTrails;
 use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
 use App\Models\PaymentModes;
 use App\Models\Voucher;
 use Illuminate\Http\Request;
@@ -58,6 +59,8 @@ use App\Helpers\Widgets\PlanAppointmentCalculation;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
 use App\Models\RoleHasUsers;
+use App\Models\Leads;
+use App\Services\MetaConversionApiService;
 use Illuminate\Support\Facades\Log;
 
 
@@ -1199,6 +1202,10 @@ class PackagesController extends Controller
                 $activity->save();
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
+                
+                // Mark appointment as converted when payment is received
+                self::markAppointmentAsConverted($appointment_id, $package->id, $request->cash_amount);
+                
                 // Commit Transaction
                 DB::commit();
 
@@ -1211,6 +1218,213 @@ class PackagesController extends Controller
             return response()->json([
                 'status' => false,
             ]);
+        }
+    }
+
+    /**
+     * Mark appointment status as converted
+     * Conversion Logic:
+     * 1. Find the latest arrived consultation for the patient (appointment_type_id=1, base_appointment_status_id=arrived)
+     * 2. Get the invoice creation date of this consultation
+     * 3. Check if a service is added on/after invoice creation date in any package for this patient
+     * 4. Check if this is the FIRST payment after invoice creation date (no prior payments exist)
+     * 5. If all conditions met, mark the consultation as converted and send Meta event
+     * 
+     * NOTE: If consultation is already converted OR this is 2nd/3rd payment OR no new service added,
+     *       do NOT mark as converted and do NOT send Meta event
+     * 
+     * @param int $appointment_id - The appointment being processed (used to get account_id and patient context)
+     * @param int $package_id - The package where service/payment was added
+     * @param float $payment_amount - The payment amount for Meta event
+     */
+    private static function markAppointmentAsConverted($appointment_id, $package_id = null, $payment_amount = null)
+    {
+        if (!$appointment_id || !$package_id) {
+            \Log::info('markAppointmentAsConverted: Missing appointment_id or package_id');
+            return;
+        }
+        
+        $appointment = Appointments::find($appointment_id);
+        if (!$appointment) {
+            \Log::info('markAppointmentAsConverted: Appointment not found');
+            return;
+        }
+        
+        $package = Packages::find($package_id);
+        if (!$package) {
+            \Log::info('markAppointmentAsConverted: Package not found');
+            return;
+        }
+        
+        // Get the arrived and converted appointment statuses
+        $arrivedStatus = AppointmentStatuses::where([
+            'account_id' => $appointment->account_id,
+            'is_arrived' => 1
+        ])->first();
+        
+        $convertedStatus = AppointmentStatuses::where([
+            'account_id' => $appointment->account_id,
+            'is_converted' => 1
+        ])->first();
+        
+        if (!$arrivedStatus || !$convertedStatus) {
+            \Log::info('markAppointmentAsConverted: Arrived or Converted status not found');
+            return;
+        }
+        
+        // Step 1: Find the latest arrived consultation for this patient
+        // Only look for consultations that are still in "arrived" status (not already converted)
+        $latestArrivedConsultation = Appointments::where([
+                'patient_id' => $package->patient_id,
+                'appointment_type_id' => 1, // Consultation
+                'base_appointment_status_id' => $arrivedStatus->id
+            ])
+            ->whereNull('deleted_at')
+            ->orderBy('scheduled_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->first();
+        
+        if (!$latestArrivedConsultation) {
+            \Log::info('markAppointmentAsConverted: No arrived consultation found for patient (may already be converted)', [
+                'patient_id' => $package->patient_id
+            ]);
+            return;
+        }
+        
+        \Log::info('markAppointmentAsConverted: Found latest arrived consultation', [
+            'appointment_id' => $latestArrivedConsultation->id,
+            'patient_id' => $package->patient_id
+        ]);
+        
+        // Step 2: Get the invoice creation date of this consultation
+        $consultationInvoice = \App\Models\Invoices::where('appointment_id', $latestArrivedConsultation->id)
+            ->whereNull('deleted_at')
+            ->orderBy('created_at', 'asc')
+            ->first();
+        
+        if (!$consultationInvoice) {
+            \Log::info('markAppointmentAsConverted: No invoice found for consultation', [
+                'appointment_id' => $latestArrivedConsultation->id
+            ]);
+            return;
+        }
+        
+        $invoiceCreatedAt = $consultationInvoice->created_at;
+        $invoiceDate = \Carbon\Carbon::parse($invoiceCreatedAt)->format('Y-m-d');
+        
+        \Log::info('markAppointmentAsConverted: Invoice found', [
+            'invoice_id' => $consultationInvoice->id,
+            'invoice_date' => $invoiceDate
+        ]);
+        
+        // Step 3: Check if a service is added on/after invoice creation date in any package for this patient
+        $patientPackageIds = Packages::where('patient_id', $package->patient_id)
+            ->whereNull('deleted_at')
+            ->pluck('id');
+        
+        $packageBundleIds = PackageBundles::whereIn('package_id', $patientPackageIds)->pluck('id');
+        
+        $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packageBundleIds)
+            ->whereDate('created_at', '>=', $invoiceDate)
+            ->exists();
+        
+        if (!$serviceAfterInvoice) {
+            \Log::info('markAppointmentAsConverted: No service found on/after invoice date - not converting', [
+                'invoice_date' => $invoiceDate
+            ]);
+            return;
+        }
+        
+        // Step 4: Check if this is the FIRST payment after invoice creation date
+        // Count how many payments exist on/after invoice date (excluding the current one being added)
+        $existingPaymentsCount = PackageAdvances::whereIn('package_id', $patientPackageIds)
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->whereNull('deleted_at')
+            ->whereDate('created_at', '>=', $invoiceDate)
+            ->count();
+        
+        // If more than 1 payment exists (current + previous), this is not the first payment
+        // Note: The current payment is already saved when this function is called, so count > 1 means duplicate
+        if ($existingPaymentsCount > 1) {
+            \Log::info('markAppointmentAsConverted: This is not the first payment after invoice date - not converting', [
+                'invoice_date' => $invoiceDate,
+                'existing_payments_count' => $existingPaymentsCount
+            ]);
+            return;
+        }
+        
+        \Log::info('markAppointmentAsConverted: Conversion criteria met (first payment + service after invoice), marking as converted', [
+            'appointment_id' => $latestArrivedConsultation->id,
+            'invoice_date' => $invoiceDate
+        ]);
+        
+        // Step 5: Mark the consultation as converted
+        $latestArrivedConsultation->update([
+            'base_appointment_status_id' => $convertedStatus->id,
+            'appointment_status_id' => $convertedStatus->id,
+            'converted_at' => now()
+        ]);
+        
+        // Send Meta CAPI event
+        self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
+    }
+    
+    /**
+     * Send Meta CAPI event for converted status
+     * 
+     * @param Appointments $appointment
+     * @param int $package_id
+     * @param float $payment_amount
+     */
+    private static function sendMetaConvertedEvent($appointment, $package_id, $payment_amount)
+    {
+        if (!$appointment || !$appointment->lead_id) {
+            return;
+        }
+        
+        $lead = Leads::find($appointment->lead_id);
+        if (!$lead) {
+            return;
+        }
+        
+        // Check if Meta event was already sent for this lead (to prevent duplicates)
+        // We check if any appointment for this lead already has meta_purchase_sent flag
+        $alreadySent = Appointments::where('lead_id', $lead->id)
+            ->where('meta_purchase_sent', 1)
+            ->exists();
+        
+        if ($alreadySent) {
+            \Log::info('Meta CAPI converted event already sent for this lead, skipping', [
+                'lead_id' => $lead->id,
+                'appointment_id' => $appointment->id
+            ]);
+            return;
+        }
+        
+        try {
+            $metaService = new MetaConversionApiService();
+            // Use appointment_id as lead_id for event_id if meta_lead_id is null
+            $eventLeadId = $lead->meta_lead_id ?? 'apt_' . $appointment->id;
+            $metaService->sendLeadStatus(
+                $lead->phone,
+                'converted',
+                $eventLeadId,
+                $lead->email,
+                'PKR',
+                $payment_amount ?? 0
+            );
+            
+            // Mark this appointment as having sent the Meta purchase event
+            $appointment->update(['meta_purchase_sent' => 1]);
+            
+            \Log::info('Meta CAPI converted event sent', [
+                'lead_id' => $lead->id,
+                'appointment_id' => $appointment->id,
+                'event_lead_id' => $eventLeadId
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Meta CAPI converted event failed: ' . $e->getMessage());
         }
     }
 
@@ -2087,6 +2301,9 @@ class PackagesController extends Controller
                 $activity->save();
                 /*Now sent message to user about cash received*/
                 Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
+
+                // Mark appointment as converted when payment is received
+                self::markAppointmentAsConverted($appointment_id, $package->id, $request->cash_amount);
 
                 // Commit Transaction
                 DB::commit();

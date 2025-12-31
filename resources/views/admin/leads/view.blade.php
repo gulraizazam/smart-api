@@ -60,6 +60,34 @@
         </table>
 
         <hr>
+        <!--begin::Services History-->
+        <div class="col-md-12">
+            <div class="box-header ui-sortable-handle">
+                <h3 class="box-title">Services History</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-bordered table-sm">
+                    <thead class="thead-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Service</th>
+                            <th>Treatment</th>
+                            <th>Lead Status</th>
+                            <th>Status</th>
+                            <th>Created Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="services_history_table">
+                        <tr>
+                            <td colspan="6" class="text-center">No services found</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!--end::Services History-->
+
+        <hr>
         <div class="col-md-11">
             <div class="col-md-12">
                 <div class="box-header ui-sortable-handle">

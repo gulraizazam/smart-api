@@ -465,6 +465,7 @@ function submitData(callback) {
     
     var location_id = $("#locations").val();
     var quantity =$("#quantity").val();
+    var sale_price = $("#allocate_sale_price").val();
     showSpinner();
     $.ajax({
         headers: {
@@ -472,7 +473,7 @@ function submitData(callback) {
         },
         url: route('admin.products.save_allocate'),
         type: "POST",
-        data: {product_id: $("#product_id").val(), location_id:location_id, quantity:quantity},
+        data: {product_id: $("#product_id").val(), location_id:location_id, quantity:quantity, sale_price:sale_price},
         cache: false,
         success: function (response) {
             if (response.status == true) {

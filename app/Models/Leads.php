@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
 use App\Helpers\Widgets\LocationsWidget;
+use App\Models\LeadStatuses;
 use Auth;
 use Carbon\Carbon;
 use Config;
@@ -16,7 +17,7 @@ class Leads extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by'];
+    protected $fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by', 'meta_lead_id'];
 
     protected static $_fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'town_id'];
 
@@ -29,7 +30,7 @@ class Leads extends BaseModal
      */
     public function lead_service()
     {
-        return $this->hasMany(LeadsServices::class, 'lead_id')->with('service:id,name,parent_id', 'childservice:id,name,parent_id');
+        return $this->hasMany(LeadsServices::class, 'lead_id')->with('service:id,name,parent_id', 'childservice:id,name,parent_id', 'leadStatus:id,name');
     }
 
     public function active_lead_service()
@@ -252,7 +253,11 @@ class Leads extends BaseModal
             if (! $check_lead_existance) {
                 $record = Leads::create($leads_data);
             } else {
-                $check_lead_existance->lead_status_id = 1;
+                // Get default Open lead status
+                $openStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_default' => 1])->first();
+                if ($openStatus) {
+                    $check_lead_existance->lead_status_id = $openStatus->id;
+                }
                 $check_lead_existance->created_at = Carbon::now()->timestamp;
                 $check_lead_existance->update();
                 $record = $check_lead_existance;

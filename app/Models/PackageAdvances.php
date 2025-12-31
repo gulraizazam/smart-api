@@ -10,6 +10,14 @@ use App\Helpers\GeneralFunctions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Packages;
+use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
+use App\Models\LeadStatuses;
+use App\Models\Leads;
+use App\Models\LeadsServices;
+use App\Models\PackageBundles;
+use App\Models\PackageService;
 
 class PackageAdvances extends BaseModal
 {
@@ -98,6 +106,9 @@ class PackageAdvances extends BaseModal
             $record->save();
             AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
 
+            // Update lead status to Converted when payment is received
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
+
             return $record;
         }
 
@@ -115,6 +126,11 @@ class PackageAdvances extends BaseModal
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
+        // Update lead status to Converted when payment is received (cash_flow = 'in')
+        if (isset($data['cash_flow']) && $data['cash_flow'] === 'in' && isset($data['package_id'])) {
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
+        }
+
         return $record;
     }
 
@@ -128,52 +144,92 @@ class PackageAdvances extends BaseModal
          * */
         public static function updateRecord($data, $parent_data)
         {
-            $packagebundleIds = PackageBundles::where([
-                'package_id' => $data['package_id'],
-                'is_allocate' => '1',
-            ])->pluck('id');
-
-            $GetAppointment = Appointments::join('invoices', 'appointments.id', 'invoices.appointment_id')
-                ->where(['appointments.patient_id' => $data['patient_id'], 'appointments.appointment_type_id' => 1])
-                ->select('appointments.id')
-                ->latest('invoices.created_at')->first();
-            $GetInvoiceInfo = Invoices::where(['appointment_id' => $GetAppointment->id])->first();
-            $packageservicez = PackageService::with('service')->whereIn('package_bundle_id', $packagebundleIds)
-                ->where('created_at', '>', Carbon::parse($GetInvoiceInfo->created_at))
-                ->get();
             $id = $parent_data->id;
-            if (count($packageservicez) > 0) {
-                $record = new PackageAdvances();
-                $record->cash_flow = 'in';
-                $record->cash_amount = $data['cash_amount'];
-                $record->account_id = Auth::User()->account_id;
-                $record->patient_id = $data['patient_id'];
-                $record->payment_mode_id = $data['payment_mode_id'];
-                $record->created_by = Auth::User()->id;
-                $record->updated_by = Auth::User()->id;
-                $record->package_id = $data['package_id'];
-                $record->location_id = $data['location_id'];
-                $record->updated_at = Filters::getCurrentTimeStamp();
-                $record->appointment_id = $GetAppointment->id;
-                $record->save();
-            } else {
-                $record = new PackageAdvances();
-                $record->cash_flow = 'in';
-                $record->cash_amount = $data['cash_amount'];
-                $record->account_id = Auth::User()->account_id;
-                $record->patient_id = $data['patient_id'];
-                $record->payment_mode_id = $data['payment_mode_id'];
-                $record->created_by = Auth::User()->id;
-                $record->updated_by = Auth::User()->id;
-                $record->package_id = $data['package_id'];
-                $record->location_id = $data['location_id'];
-                $record->updated_at = Filters::getCurrentTimeStamp();
-                $record->appointment_id = $parent_data->appointment_id;
-                $record->save();
+            
+            // Get the original package creation date
+            $package = Packages::find($data['package_id']);
+            $packageCreatedAt = $package ? $package->created_at : null;
+            
+            // Default to the package's current appointment_id
+            $appointment_id = $parent_data->appointment_id;
+            
+            // Get the arrived appointment status
+            $arrivedStatus = AppointmentStatuses::where([
+                'account_id' => Auth::User()->account_id,
+                'is_arrived' => 1
+            ])->first();
+            
+            \Log::info('PackageAdvances::updateRecord Debug', [
+                'package_id' => $data['package_id'],
+                'patient_id' => $data['patient_id'],
+                'packageCreatedAt' => $packageCreatedAt,
+                'arrivedStatus' => $arrivedStatus ? $arrivedStatus->id : null,
+                'default_appointment_id' => $appointment_id,
+            ]);
+            
+            if ($arrivedStatus && $packageCreatedAt) {
+                // Get package bundle IDs for this package (all bundles, not just allocated)
+                $packagebundleIds = PackageBundles::where('package_id', $data['package_id'])->pluck('id');
+                
+                \Log::info('Package Bundle IDs', ['ids' => $packagebundleIds->toArray()]);
+                
+                // Check if any package services were added AFTER the original package was created
+                // (these are new services added during subsequent visits)
+                $newPackageServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                    ->where('created_at', '>', $packageCreatedAt)
+                    ->count();
+                
+                \Log::info('New Package Services Count', ['count' => $newPackageServices]);
+                
+                // If new services were added after package creation,
+                // find the latest arrived consultation and link payment to it
+                if ($newPackageServices > 0) {
+                    // Get the latest ARRIVED consultation appointment for this patient
+                    // that arrived AFTER the package was created
+                    $latestArrivedAppointment = Appointments::where([
+                        'patient_id' => $data['patient_id'],
+                        'appointment_type_id' => 1, // Consultation
+                        'base_appointment_status_id' => $arrivedStatus->id
+                    ])
+                    ->where('updated_at', '>', $packageCreatedAt)
+                    ->orderBy('updated_at', 'desc')
+                    ->first();
+                    
+                    \Log::info('Latest Arrived Appointment', [
+                        'found' => $latestArrivedAppointment ? true : false,
+                        'appointment_id' => $latestArrivedAppointment ? $latestArrivedAppointment->id : null,
+                        'doctor_id' => $latestArrivedAppointment ? $latestArrivedAppointment->doctor_id : null,
+                    ]);
+                    
+                    if ($latestArrivedAppointment) {
+                        $appointment_id = $latestArrivedAppointment->id;
+                    }
+                }
             }
+            
+            \Log::info('Final appointment_id for payment', ['appointment_id' => $appointment_id]);
+            
+            // Create the payment record
+            $record = new PackageAdvances();
+            $record->cash_flow = 'in';
+            $record->cash_amount = $data['cash_amount'];
+            $record->account_id = Auth::User()->account_id;
+            $record->patient_id = $data['patient_id'];
+            $record->payment_mode_id = $data['payment_mode_id'];
+            $record->created_by = Auth::User()->id;
+            $record->updated_by = Auth::User()->id;
+            $record->package_id = $data['package_id'];
+            $record->location_id = $data['location_id'];
+            $record->updated_at = Filters::getCurrentTimeStamp();
+            $record->appointment_id = $appointment_id;
+            $record->save();
+            
             $old_data = '0';
 
             AuditTrails::EditEventLogger(self::$_table, 'edit', $data, self::$_fillable, $old_data, $id);
+
+            // Update lead status to Converted when payment is received
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
 
             return $record;
         }
@@ -220,7 +276,56 @@ class PackageAdvances extends BaseModal
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
+        // If payment is received (cash_flow = 'in'), update lead status to Converted
+        if (isset($data['cash_flow']) && $data['cash_flow'] === 'in' && isset($data['package_id'])) {
+            self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
+        }
+
         return $record;
+    }
+
+    /**
+     * Update lead status to Converted when payment is received
+     * Flow: package_advances -> packages (appointment_id) -> appointments (lead_id) -> leads
+     */
+    public static function updateLeadStatusToConverted($packageId, $accountId)
+    {
+        try {
+            // Get the package to find the appointment_id
+            $package = Packages::find($packageId);
+            if (!$package || !$package->appointment_id) {
+                return;
+            }
+
+            // Get the appointment to find the lead_id
+            $appointment = Appointments::find($package->appointment_id);
+            if (!$appointment || !$appointment->lead_id) {
+                return;
+            }
+
+            // Get the default Converted lead status
+            $convertedStatus = LeadStatuses::where([
+                'account_id' => $accountId,
+                'is_converted' => 1,
+            ])->first();
+
+            if (!$convertedStatus) {
+                return;
+            }
+
+            // Update the lead status to Converted
+            Leads::where('id', $appointment->lead_id)->update([
+                'lead_status_id' => $convertedStatus->id,
+            ]);
+
+            // Also update the lead_services status
+            LeadsServices::where('lead_id', $appointment->lead_id)
+                ->where('service_id', $appointment->service_id)
+                ->update(['lead_status_id' => $convertedStatus->id]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to update lead status to converted: ' . $e->getMessage());
+        }
     }
 
     /*
