@@ -297,13 +297,21 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            // Get individual inventory entries with their prices, ordered by FIFO (oldest first)
+            // FIFO: Get only the oldest inventory entry per product with quantity > 0
+            // This ensures we sell oldest stock first
+            $location_id = $request->from_id;
+            
             $result = Inventory::join('products', 'products.id', '=', 'inventories.product_id')
+                ->whereRaw('inventories.id = (
+                    SELECT MIN(inv.id) FROM inventories inv 
+                    WHERE inv.product_id = inventories.product_id 
+                    AND inv.location_id = ? 
+                    AND inv.quantity > 0
+                )', [$location_id])
                 ->where([
                     ['products.status', '=', '1'],
                     ['products.account_id', '=', $account_id],
-                    ['inventories.location_id', '=', $request->from_id],
-                    ['inventories.quantity', '>', 0],
+                    ['inventories.location_id', '=', $location_id],
                 ])
                 ->when($request->type == 'order', function ($q) {
                     return $q->where(['products.product_type' => 'for_sale']);
@@ -318,7 +326,7 @@ class Product extends BaseModal
                     inventories.quantity as available_quantity,
                     inventories.created_at as inventory_date'
                 )
-                ->orderBy('inventories.created_at', 'asc')
+                ->orderBy('products.name', 'asc')
                 ->get();
         
             return $result;
