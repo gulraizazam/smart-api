@@ -603,62 +603,64 @@ class ProductsController extends Controller
             $request['type'] = 'product_transfer_create';
             $request['message'] = 'Product transfer';
            
-            $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
-         
-            if ($transfer_product['record']) {
-                $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id);
-                if ($product_detail) {
-                    TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
-                    
-                    $product_type = Product::find($request->product_id);
-                
-                    if($request->from_warehouse_id){
-                       
-                        $minus_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->from_warehouse_id)->first();
-                        if($request->to_warehouse_id){
-                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->first();
-                        }else{
-                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->first();
-                       
-                        }
+            return \DB::transaction(function () use ($request) {
+                $transfer_product = TransferProduct::createRecord($request, Auth::User()->account_id);
+             
+                if ($transfer_product['record']) {
+                    $product_detail = ProductDetail::createRecordTransferProduct($transfer_product['data'], Auth::User()->account_id);
+                    if ($product_detail) {
+                        TransferProduct::where(['id' => $transfer_product['record']->id])->update(['product_detail_id' => $product_detail->id]);
                         
-                    }else{
-                        if($request->to_warehouse_id){
-                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->first();
+                        $product_type = Product::find($request->product_id);
+                    
+                        if($request->from_warehouse_id){
+                           
+                            $minus_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->from_warehouse_id)->lockForUpdate()->first();
+                            if($request->to_warehouse_id){
+                                $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->lockForUpdate()->first();
+                            }else{
+                                $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->lockForUpdate()->first();
+                           
+                            }
+                            
                         }else{
-                            $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->first();
+                            if($request->to_warehouse_id){
+                                $update_inventory = Inventory::where('product_id',$request->product_id)->where('warehouse_id',$request->to_warehouse_id)->lockForUpdate()->first();
+                            }else{
+                                $update_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->to_location_id)->lockForUpdate()->first();
+                            }
+                            $minus_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->from_location_id)->lockForUpdate()->first();
+                           
                         }
-                        $minus_inventory = Inventory::where('product_id',$request->product_id)->where('location_id',$request->from_location_id)->first();
+                        $updated_quantity = $minus_inventory->quantity - $request->quantity;
                        
-                    }
-                    $updated_quantity = $minus_inventory->quantity - $request->quantity;
-                   
-                    $minus_inventory->update(['quantity'=>$updated_quantity]);
-                    if($update_inventory){
-                      
-                        $latest_updated_quantity = $update_inventory->quantity + $request->quantity;
+                        $minus_inventory->update(['quantity'=>$updated_quantity]);
+                        if($update_inventory){
+                          
+                            $latest_updated_quantity = $update_inventory->quantity + $request->quantity;
 
-                        $update_inventory->update(['quantity'=>$latest_updated_quantity]);
-                    }else{
-                       
-                        $inventory = new Inventory();
-                        $inventory->product_id = $request->product_id;
-                        if($request->to_warehouse_id){
-                            $inventory->warehouse_id = $request->to_warehouse_id;
+                            $update_inventory->update(['quantity'=>$latest_updated_quantity]);
                         }else{
-                            $inventory->location_id = $request->to_location_id;
-                        }
-                        $inventory->quantity = $request->quantity;
-                        $inventory->is_saleable = $product_type->product_type == 'for_sale' ? 1 : 0;
-                        $inventory->save();
+                           
+                            $inventory = new Inventory();
+                            $inventory->product_id = $request->product_id;
+                            if($request->to_warehouse_id){
+                                $inventory->warehouse_id = $request->to_warehouse_id;
+                            }else{
+                                $inventory->location_id = $request->to_location_id;
+                            }
+                            $inventory->quantity = $request->quantity;
+                            $inventory->is_saleable = $product_type->product_type == 'for_sale' ? 1 : 0;
+                            $inventory->save();
 
+                        }
+                       
+                        return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                     }
-                   
-                    return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
                 }
-            }
-            $message = ($transfer_product['message'] != null) ? $transfer_product['message'] : 'Something went wrong, please try again later.';
-            return ApiHelper::apiResponse($this->success, $message, false);
+                $message = ($transfer_product['message'] != null) ? $transfer_product['message'] : 'Something went wrong, please try again later.';
+                return ApiHelper::apiResponse($this->success, $message, false);
+            });
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -809,22 +811,46 @@ class ProductsController extends Controller
     {
         $myarray = [];
         try {
-            $inventory = new Inventory();
-            $inventory->product_id =  $request->product_id;
-            $inventory->location_id = $request->location_id;
-            $inventory->is_saleable =  1;
-            $inventory->quantity =  $request->quantity;
-            $inventory->save();
-            $stock = new Stock();
-            $stock->account_id = 1;
-            $stock->product_id = $request->product_id;
-            $stock->quantity = $request->quantity;
-            $stock->location_id = $request->location_id;
-            $stock->save();
+            \DB::transaction(function () use ($request) {
+                $inventory = new Inventory();
+                $inventory->product_id =  $request->product_id;
+                $inventory->location_id = $request->location_id;
+                $inventory->is_saleable =  1;
+                $inventory->quantity =  $request->quantity;
+                $inventory->sale_price = $request->sale_price;
+                $inventory->save();
+                
+                $stock = new Stock();
+                $stock->account_id = 1;
+                $stock->product_id = $request->product_id;
+                $stock->quantity = $request->quantity;
+                $stock->location_id = $request->location_id;
+                $stock->save();
+            });
+            
             return ApiHelper::apiResponse($this->success, 'Success', true, $myarray);
-            
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
 
-            
+    /**
+     * Search products by name
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function searchProducts(Request $request)
+    {
+        try {
+            $search = $request->search;
+            $products = Product::where('account_id', Auth::user()->account_id)
+                ->where('name', 'like', '%' . $search . '%')
+                ->select('id', 'name')
+                ->limit(20)
+                ->get();
+
+            return ApiHelper::apiResponse($this->success, 'Success', true, ['products' => $products]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }

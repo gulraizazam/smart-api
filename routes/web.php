@@ -614,6 +614,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         Route::get('products/stock/{id}', [ProductsController::class, 'productStock'])->name('products.stock');
         Route::get('products/inventory/{id}', [ProductsController::class, 'productInventory'])->name('products.inventory');
+        Route::get('products/search', [ProductsController::class, 'searchProducts'])->name('products.search');
         Route::get('inventory/edit/{id}', [ProductsController::class, 'editInventory'])->name('inventory.edit');
         //Route::get('reports/inventory_reports', [InventoryReportController::class, 'report'])->name('reports.inventory_report');
 
@@ -711,5 +712,10 @@ Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [Upselli
         ///////////Memberships routes/////
         Route::resource('membershiptypes', MembershipTypesController::class)->only('index');
         Route::resource('memberships', MembershipsController::class)->only('index');
+        
+        // Wrong Conversions Report
+        Route::get('wrong-conversions', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'index'])->name('wrong-conversions.index');
+        Route::post('wrong-conversions/reset/{id}', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'reset'])->name('wrong-conversions.reset');
+        Route::post('wrong-conversions/reset-all', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'resetAll'])->name('wrong-conversions.reset-all');
     });
 });

@@ -39,7 +39,12 @@
                             <label class="required fw-bold fs-6 mb-2 pl-0">Quantity <span class="text text-danger">*</span></label>
                            <input type="number" id="quantity" name="quantity" class="form-control form-control-lg form-control-solid mb-2">
                         </div>
-                       
+                    </div>
+                    <div class="row mt-4">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Sale Price <span class="text text-danger">*</span></label>
+                           <input type="number" step="0.01" id="allocate_sale_price" name="sale_price" class="form-control form-control-lg form-control-solid mb-2" placeholder="Enter sale price for this inventory">
+                        </div>
                     </div>
                 </div>
             </div>

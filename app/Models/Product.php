@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class Product extends BaseModal
 {
@@ -186,13 +187,25 @@ class Product extends BaseModal
         // Set Account ID
         $data['account_id'] = $account_id;
         $data['created_by'] = Auth::user()->id;
+        
+        // Generate unique slug from name
+        $slug = Str::slug($data['name']);
+        $originalSlug = $slug;
+        $counter = 1;
+        while (self::where('slug', $slug)->exists()) {
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+        }
+        
         $product = new Product();
         $product->name =  $data['name'];
+        $product->slug = $slug;
         $product->account_id =  $data['account_id'];
         $product->brand_id =  $data['brand_id'];
         $product->sale_price =  $data['sale_price'];
         $product->sku =  $data['sku'];
         $product->product_type = 'for_sale';
+        $product->created_by = Auth::user()->id;
         $product->save();
 
        
@@ -284,41 +297,28 @@ class Product extends BaseModal
     public static function getProductsAjax($request, $account_id)
     {
         if (isset($request->from_id)) {
-            $totalQuantitySubquery = \DB::table('inventories')
-                ->selectRaw('product_id, location_id, SUM(quantity) as total_quantity')
-                ->groupBy('product_id', 'location_id');
-        
-            $soldQuantitySubquery = \DB::table('order_details')
-                ->join('orders', 'orders.id', '=', 'order_details.order_id')
-                ->selectRaw('order_details.product_id, orders.location_id, SUM(order_details.quantity) as sold_quantity')
-                ->where('orders.location_id', $request->from_id) // Filter by location_id
-                ->groupBy('order_details.product_id', 'orders.location_id');
-        
-            $result = self::leftJoinSub($totalQuantitySubquery, 'inventory_totals', function ($join) {
-                    $join->on('products.id', '=', 'inventory_totals.product_id');
-                })
-                ->leftJoinSub($soldQuantitySubquery, 'sold_totals', function ($join) {
-                    $join->on('products.id', '=', 'sold_totals.product_id')
-                         ->on('inventory_totals.location_id', '=', 'sold_totals.location_id');
-                })
+            // Get individual inventory entries with their prices, ordered by FIFO (oldest first)
+            $result = Inventory::join('products', 'products.id', '=', 'inventories.product_id')
                 ->where([
                     ['products.status', '=', '1'],
                     ['products.account_id', '=', $account_id],
-                    ['inventory_totals.location_id', '=', $request->from_id],
+                    ['inventories.location_id', '=', $request->from_id],
+                    ['inventories.quantity', '>', 0],
                 ])
                 ->when($request->type == 'order', function ($q) {
-                    return $q->where(['product_type' => 'for_sale']);
+                    return $q->where(['products.product_type' => 'for_sale']);
                 })
                 ->selectRaw(
-                    'products.id, 
-                     products.name, 
-                     products.product_type, 
-                     products.sale_price, 
-                     inventory_totals.location_id, 
-                     COALESCE(inventory_totals.total_quantity, 0) as total_quantity, 
-                     COALESCE(sold_totals.sold_quantity, 0) as sold_quantity, 
-                     COALESCE(inventory_totals.total_quantity, 0) - COALESCE(sold_totals.sold_quantity, 0) as available_quantity'
+                    'inventories.id as inventory_id,
+                    products.id,
+                    products.name,
+                    products.product_type,
+                    COALESCE(inventories.sale_price, products.sale_price) as sale_price,
+                    inventories.location_id,
+                    inventories.quantity as available_quantity,
+                    inventories.created_at as inventory_date'
                 )
+                ->orderBy('inventories.created_at', 'asc')
                 ->get();
         
             return $result;
@@ -328,18 +328,19 @@ class Product extends BaseModal
                 ['products.account_id', '=', $account_id],
                 ['products.id', $request->product_id],
             ])->when($request->type == 'order', function ($q) {
-                return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
-            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+                return $q->where(['product_type' => 'for_sale']);
+            })->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
         } else if ($request['request_from'] == 'order') {
             return self::join('inventories','products.id','inventories.product_id')->where([
                 ['products.status', '=', '1'],
                 ['products.account_id', '=', $account_id],
                 [$request['from_key'], $request['from_id']]
             ])->when(isset($request->type) && $request->type == 'order', function ($q) {
-                return $q->join('inventories','products.id','inventories.product_id')->where(['product_type' => 'for_sale']);
-            })->select('id', 'name', 'product_type', 'sale_price', 'warehouse_id', 'location_id')->get();
+                return $q->where(['product_type' => 'for_sale']);
+            })->select('products.id', 'products.name', 'products.product_type', 'inventories.sale_price', 'inventories.warehouse_id', 'inventories.location_id', 'inventories.id as inventory_id', 'inventories.quantity as available_quantity')->get();
         }
     }
+
     public static function  getTransferProductsAjax($request, $account_id)
     {
        if($request->location_id){

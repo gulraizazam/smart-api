@@ -57,8 +57,8 @@ var AddOrderValidation = function () {
 
                     openInNewTab(response.data);
                     closePopup(modal_id);
+                    $("#product_list").empty();
                     $("#product_discount").text('');
-                    $("#sold_to").change();
                     
                     reInitTable();
                 } else {

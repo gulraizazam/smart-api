@@ -1453,6 +1453,69 @@ function orderPatientSearch(search_id = 'patient_id', flag = 1) {
     $(".croxcli").hide();
     return false;
 }
+function productSearch(search_id = 'product_search_id', flag = 1) {
+   
+    let debounceTimer;
+    // Unbind previous event handlers to prevent multiple bindings
+    $(document).off("keyup", "." + search_id);
+    
+    $(document).on("keyup", "." + search_id, function () {
+
+        $(this).parent().find(".product-suggestion-list").html('<li>Searching...</li>');
+        $(this).parent().find(".product-suggesstion-box").show();
+        if ($(this).val().length < 2) {
+            $(this).parent().find(".product-suggesstion-box").hide();
+            return false;
+        }
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.products.search'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        that.parent().find(".product-suggestion-list").html(html);
+                        let products = response.data.products;
+                        if (products.length) {
+                            products.forEach(function (product) {
+                                html += '<li onClick="selectProduct(`' + product.name + '`, `' + product.id + '`, `' + search_id + '`);">' + product.name + '</li>'
+                            });
+                            that.parent().find(".product-suggestion-list").html(html);
+                            that.parent().find(".product-suggesstion-box").show();
+                            that.parent().find(".product-croxcli").show();
+                        } else {
+                            that.parent().find(".product-suggesstion-box").hide();
+                        }
+                    }
+                });
+            }, 700);
+        } else {
+            $(this).parent().find(".product-suggesstion-box").hide();
+            $(this).parent().find(".product-croxcli").hide();
+        }
+    });
+    $(".product-croxcli").hide();
+    return false;
+}
+
+function selectProduct(name, id, search_id) {
+    $("." + search_id).val(name);
+    $("." + search_id).parent().find(".search_product_field").val(id).change();
+    $(".product-suggesstion-box").hide();
+    $(".product-croxcli").show();
+}
+
+function clearProductSearch() {
+    $(".product_search_id").val('');
+    $(".search_product_field").val('').change();
+    $(".product-suggesstion-box").hide();
+    $(".product-croxcli").hide();
+}
+
 function patientSearchRefund(search_id = 'patient_id', flag = 1) {
 
     // Unbind previous event handlers to prevent multiple bindings

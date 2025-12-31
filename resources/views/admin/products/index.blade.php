@@ -135,7 +135,7 @@
     @endpush
 
     @push('js')
-        <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/products.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/products.js') }}?v={{ time() }}"></script>
     @endpush
 
 @endsection
