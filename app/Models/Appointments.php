@@ -22,7 +22,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from','deleted_by',
-        'arrived_at', 'converted_at'
+        'arrived_at', 'converted_at', 'meta_purchase_sent'
     ];
 
     protected $table = 'appointments';
@@ -41,7 +41,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
-        'arrived_at', 'converted_at',
+        'arrived_at', 'converted_at', 'meta_purchase_sent',
     ];
 
     /**
@@ -54,7 +54,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
-        'arrived_at', 'converted_at',
+        'arrived_at', 'converted_at', 'meta_purchase_sent',
     ];
 
     protected $attributes = [
