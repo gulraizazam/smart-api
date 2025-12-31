@@ -797,8 +797,8 @@
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                                     Week</option> -->
 
-                                                <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
-                                                <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time
+                                                <!-- <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
+                                                <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time -->
 
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This Month</option>
                                                 <option value="all" {{ request('type')=='all' ? 'selected' : '' }}>Life Time
@@ -815,7 +815,7 @@
                             </div>
 
                             <div class="row pt-7">
-                                <div class="col-12">
+                                <div class="col-12" style="overflow-x: auto; overflow-y: hidden;">
                                     <div id="doc_wise_feedback_data"></div>
                                 </div>
 
@@ -1069,19 +1069,21 @@ function generateDoctorUpsellingChart(data) {
                 columnWidth: '55%',
                 endingShape: 'rounded',
                 dataLabels: {
-                    position: 'top'
+                    position: 'top',
+                    orientation: 'horizontal'
                 }
             }
         },
         dataLabels: {
             enabled: true,
-            formatter: function (val) {
+            formatter: function (val, opts) {
                 return formatCurrency(val);
             },
             offsetY: -20,
             style: {
                 fontSize: '12px',
-                colors: ["#304758"]
+                fontWeight: 600,
+                colors: ['#304758']
             }
         },
         stroke: {
@@ -1597,13 +1599,20 @@ function formatCurrency(amount) {
         }],
         chart: {
             type: 'bar',
-            height: 350,
+            height: 400,
+            stacked: false,
+            toolbar: {
+                show: true
+            }
         },
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded'
+                columnWidth: '70%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'top'
+                }
             },
         },
         stroke: {
@@ -1613,13 +1622,30 @@ function formatCurrency(amount) {
         },
         xaxis: {
             categories: modifiedLocations,
+            labels: {
+                rotate: -45,
+                rotateAlways: true,
+                style: {
+                    fontSize: '11px'
+                }
+            }
         },
         colors: [primary, success, warning],
         dataLabels: {
             enabled: false
         },
         legend: {
-            show: true
+            show: true,
+            position: 'top'
+        },
+        tooltip: {
+            shared: true,
+            intersect: false
+        },
+        yaxis: {
+            title: {
+                text: 'Count'
+            }
         }
     };
     

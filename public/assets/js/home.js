@@ -789,17 +789,23 @@ function ConsultanciesByStatus(bar) {
         }, {
             name: 'Walk-in',
             data: bar.data.walkin ?? []
-        },],
+        }],
         chart: {
             type: 'bar',
-            height: 350,
-
+            height: 400,
+            toolbar: {
+                show: true
+            }
         },
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded'
+                columnWidth: '70%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'center',
+                    orientation: 'vertical'
+                }
             },
         },
         stroke: {
@@ -809,8 +815,37 @@ function ConsultanciesByStatus(bar) {
         },
         xaxis: {
             categories: modifiedData,
+            labels: {
+                rotate: -45,
+                rotateAlways: true,
+                style: {
+                    fontSize: '10px'
+                }
+            }
         },
-        colors: [primary, success, warning]
+        colors: [primary, success, warning],
+        dataLabels: {
+            enabled: true,
+            offsetY: 0,
+            textAnchor: 'middle',
+            style: {
+                fontSize: '11px',
+                fontWeight: 600,
+                colors: ['#fff']
+            },
+            formatter: function (val) {
+                return val > 0 ? val : '';
+            }
+        },
+        legend: {
+            show: true,
+            position: 'top'
+        },
+        tooltip: {
+            enabled: true,
+            shared: true,
+            intersect: false
+        }
     };
     central_wise_arrival_chart = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
     central_wise_arrival_chart.render();
@@ -1211,32 +1246,59 @@ function DoctorWiseFeedback(bar) {
     const danger = '#F64E60';
     let labels = bar.data.labels;
     let totals = bar.data.total;
+    let ratings = bar.data.rating;
+
+    // Calculate dynamic width based on number of doctors (min 100%, 50px per doctor)
+    let dynamicWidth = Math.max(800, labels.length * 50);
+    
+    // Calculate bar width and dynamic font size based on number of doctors
+    let barWidthPx = (dynamicWidth * 0.7) / labels.length; // 70% columnWidth divided by number of bars
+    let dynamicFontSize = Math.min(16, Math.max(9, Math.floor(barWidthPx * 0.35))); // Scale font: min 9px, max 16px
 
     var options = {
         series: [{
-            name: 'Rating ' + `(${bar.data.rating.reduce((a, b) => a + b, 0)})`,
-            data: bar.data.rating
+            name: 'Rating ' + `(${ratings.reduce((a, b) => a + b, 0).toFixed(1)})`,
+            data: ratings
         }],
         chart: {
             type: 'bar',
             height: 350,
+            width: dynamicWidth,
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false
+                }
+            }
         },
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded'
+                columnWidth: '70%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'center',
+                    orientation: 'vertical'
+                }
             },
         },
         dataLabels: {
             enabled: true,
             formatter: function (val, opts) {
-                return val + ' (' + totals[opts.dataPointIndex] + ')';
+                return val.toFixed(1) + ' (' + totals[opts.dataPointIndex] + ')';
             },
             style: {
-                fontSize: '14px',
-                colors: ['#fff']
-            }
+                fontSize: dynamicFontSize + 'px',
+                colors: ['#fff'],
+                fontWeight: 600
+            },
+            offsetY: 0
         },
         stroke: {
             show: true,
@@ -1245,6 +1307,15 @@ function DoctorWiseFeedback(bar) {
         },
         xaxis: {
             categories: labels,
+            labels: {
+                rotate: -45,
+                rotateAlways: true,
+                style: {
+                    fontSize: '11px'
+                },
+                trim: true,
+                maxHeight: 100
+            }
         },
         yaxis: {
             min: 0,
@@ -1256,7 +1327,14 @@ function DoctorWiseFeedback(bar) {
                 }
             }
         },
-        colors: [primary, success, warning]
+        tooltip: {
+            y: {
+                formatter: function (val, opts) {
+                    return 'Rating: ' + val.toFixed(2) + ' (' + totals[opts.dataPointIndex] + ' reviews)';
+                }
+            }
+        },
+        colors: [primary]
     };
 
     $("#doc_wise_feedback_data").html("");
