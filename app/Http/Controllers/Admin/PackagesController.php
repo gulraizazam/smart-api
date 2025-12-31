@@ -1223,12 +1223,15 @@ class PackagesController extends Controller
 
     /**
      * Mark appointment status as converted
-     * Conversion Logic (matches conversion report):
+     * Conversion Logic:
      * 1. Find the latest arrived consultation for the patient (appointment_type_id=1, base_appointment_status_id=arrived)
      * 2. Get the invoice creation date of this consultation
      * 3. Check if a service is added on/after invoice creation date in any package for this patient
-     * 4. Check if a payment is added on/after invoice creation date in any package for this patient
-     * 5. If both conditions met, mark the consultation as converted and send Meta event
+     * 4. Check if this is the FIRST payment after invoice creation date (no prior payments exist)
+     * 5. If all conditions met, mark the consultation as converted and send Meta event
+     * 
+     * NOTE: If consultation is already converted OR this is 2nd/3rd payment OR no new service added,
+     *       do NOT mark as converted and do NOT send Meta event
      * 
      * @param int $appointment_id - The appointment being processed (used to get account_id and patient context)
      * @param int $package_id - The package where service/payment was added
@@ -1270,6 +1273,7 @@ class PackagesController extends Controller
         }
         
         // Step 1: Find the latest arrived consultation for this patient
+        // Only look for consultations that are still in "arrived" status (not already converted)
         $latestArrivedConsultation = Appointments::where([
                 'patient_id' => $package->patient_id,
                 'appointment_type_id' => 1, // Consultation
@@ -1281,7 +1285,7 @@ class PackagesController extends Controller
             ->first();
         
         if (!$latestArrivedConsultation) {
-            \Log::info('markAppointmentAsConverted: No arrived consultation found for patient', [
+            \Log::info('markAppointmentAsConverted: No arrived consultation found for patient (may already be converted)', [
                 'patient_id' => $package->patient_id
             ]);
             return;
@@ -1325,29 +1329,34 @@ class PackagesController extends Controller
             ->exists();
         
         if (!$serviceAfterInvoice) {
-            \Log::info('markAppointmentAsConverted: No service found on/after invoice date', [
+            \Log::info('markAppointmentAsConverted: No service found on/after invoice date - not converting', [
                 'invoice_date' => $invoiceDate
             ]);
             return;
         }
         
-        // Step 4: Check if a payment is added on/after invoice creation date in any package for this patient
-        $paymentAfterInvoice = PackageAdvances::whereIn('package_id', $patientPackageIds)
+        // Step 4: Check if this is the FIRST payment after invoice creation date
+        // Count how many payments exist on/after invoice date (excluding the current one being added)
+        $existingPaymentsCount = PackageAdvances::whereIn('package_id', $patientPackageIds)
             ->where('cash_flow', 'in')
             ->where('cash_amount', '>', 0)
             ->whereNull('deleted_at')
             ->whereDate('created_at', '>=', $invoiceDate)
-            ->exists();
+            ->count();
         
-        if (!$paymentAfterInvoice) {
-            \Log::info('markAppointmentAsConverted: No payment found on/after invoice date', [
-                'invoice_date' => $invoiceDate
+        // If more than 1 payment exists (current + previous), this is not the first payment
+        // Note: The current payment is already saved when this function is called, so count > 1 means duplicate
+        if ($existingPaymentsCount > 1) {
+            \Log::info('markAppointmentAsConverted: This is not the first payment after invoice date - not converting', [
+                'invoice_date' => $invoiceDate,
+                'existing_payments_count' => $existingPaymentsCount
             ]);
             return;
         }
         
-        \Log::info('markAppointmentAsConverted: Conversion criteria met, marking as converted', [
-            'appointment_id' => $latestArrivedConsultation->id
+        \Log::info('markAppointmentAsConverted: Conversion criteria met (first payment + service after invoice), marking as converted', [
+            'appointment_id' => $latestArrivedConsultation->id,
+            'invoice_date' => $invoiceDate
         ]);
         
         // Step 5: Mark the consultation as converted
