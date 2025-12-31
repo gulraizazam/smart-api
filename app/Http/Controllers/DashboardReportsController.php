@@ -2637,21 +2637,34 @@ class DashboardReportsController extends Controller
     $total_apts = [];
     $arrived_apts = [];
     $walkin_apts = [];
-    $center_name = [];
     
     try {
-        $role_id = Role::where(['name' => 'FDM'])->first()->id;
         $period = $request->period == '' ? 'thismonth' : $request->period;
-        $fdm_users = RoleHasUsers::where(['role_id' => $role_id])->pluck('user_id')->toArray();
-        $center_id = $request->centre_id == 'All' ? ACL::getUserCentres() : [$request->centre_id];
+        $center_ids = $request->centre_id == 'All' ? ACL::getUserCentres() : [$request->centre_id];
 
-        // Build center names array (skip where ntn and stn are null)
-        foreach ($center_id as $data) {
-            $location = Locations::find($data);
-            if ($location && ($location->ntn !== null || $location->stn !== null)) {
-                array_push($center_name, $location->name);
-            }
+        // Fetch all locations in a single query and filter valid ones (ntn or stn not null)
+        $locations = Locations::whereIn('id', $center_ids)
+            ->where(function ($q) {
+                $q->whereNotNull('ntn')->orWhereNotNull('stn');
+            })
+            ->pluck('name', 'id')
+            ->toArray();
+        
+        // Get only valid center IDs
+        $validCenterIds = array_keys($locations);
+        
+        if (empty($validCenterIds)) {
+            return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
+                'bar' => [],
+                'total' => [],
+                'arrived' => [],
+                'walkin' => [],
+            ]);
         }
+
+        // Get FDM role and users in optimized queries
+        $fdm_role = Role::where('name', 'FDM')->first();
+        $fdm_users = $fdm_role ? RoleHasUsers::where('role_id', $fdm_role->id)->pluck('user_id')->toArray() : [];
 
         $periods = [
             'today' => [
@@ -2681,41 +2694,44 @@ class DashboardReportsController extends Controller
         ];
 
         // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
-        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
-
-        // Build the arrived condition for SQL - always include both arrived and converted
-        $arrivedCondition = "appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})";
-
-        $stats = AppointmentsDailyStats::select('centre_id')
-            ->selectRaw('count(*) as total')
-            ->selectRaw("SUM(CASE WHEN {$arrivedCondition} THEN 1 ELSE 0 END) as arrived")
-            ->selectRaw("SUM(CASE WHEN ({$arrivedCondition}) AND user_id IN (" . implode(',', $fdm_users) . ") THEN 1 ELSE 0 END) as walkin")
-            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-            ->whereIn('centre_id', $center_id)
-            ->groupBy('centre_id')
-            ->get()
+        $accountId = Auth::User()->account_id;
+        $statusIds = \App\Models\AppointmentStatuses::where('account_id', $accountId)
+            ->where(function ($q) {
+                $q->where('is_arrived', 1)->orWhere('is_converted', 1);
+            })
+            ->pluck('id')
             ->toArray();
+        
+        $arrivedStatusIds = !empty($statusIds) ? $statusIds : [2, 16];
 
-        if (!empty($stats)) {
-            foreach ($stats as $stat) {
-                $centre = Locations::find($stat['centre_id']);
-                // Skip centers where ntn and stn are null
-                if ($centre && ($centre->ntn !== null || $centre->stn !== null)) {
-                    array_push($lables, $centre['name']);
-                    array_push($total_apts, (int) $stat['total']);
-                    array_push($arrived_apts, (int) $stat['arrived']);
-                    array_push($walkin_apts, (int) $stat['walkin']);
-                }
-            }
+        // Build query with proper parameter binding
+        $query = AppointmentsDailyStats::select('centre_id')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(CASE WHEN appointment_status_id IN (' . implode(',', array_map('intval', $arrivedStatusIds)) . ') THEN 1 ELSE 0 END) as arrived')
+            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
+            ->whereIn('centre_id', $validCenterIds)
+            ->groupBy('centre_id');
+
+        // Add walkin calculation only if FDM users exist
+        if (!empty($fdm_users)) {
+            $fdmUserIds = implode(',', array_map('intval', $fdm_users));
+            $arrivedIds = implode(',', array_map('intval', $arrivedStatusIds));
+            $query->selectRaw("SUM(CASE WHEN appointment_status_id IN ({$arrivedIds}) AND user_id IN ({$fdmUserIds}) THEN 1 ELSE 0 END) as walkin");
         } else {
-            // When no stats found, initialize arrays with zeros for valid centers only
-            $lables = $center_name;
-            $total_apts = array_fill(0, count($center_name), 0);
-            $arrived_apts = array_fill(0, count($center_name), 0);
-            $walkin_apts = array_fill(0, count($center_name), 0);
+            $query->selectRaw('0 as walkin');
+        }
+
+        $stats = $query->get()->keyBy('centre_id')->toArray();
+
+        // Build result arrays using pre-fetched locations map
+        foreach ($validCenterIds as $centreId) {
+            $centreName = $locations[$centreId] ?? null;
+            if ($centreName) {
+                $lables[] = $centreName;
+                $total_apts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['total'] : 0;
+                $arrived_apts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['arrived'] : 0;
+                $walkin_apts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['walkin'] : 0;
+            }
         }
 
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [

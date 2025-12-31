@@ -4428,6 +4428,7 @@ class AppointmentsController extends Controller
                 $activity->planId = $package_advances->package_id;
                 $activity->amount = $request->cash;
                 $activity->location = $location->name;
+                $activity->centre_id = $appointmentinfo->location_id;
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
                 $activity->save();
@@ -4469,6 +4470,7 @@ class AppointmentsController extends Controller
         $activity->invoice_id = $invoice->id;
         $activity->amount = $invoice_detail->net_amount;
         $activity->location = $location->name;
+        $activity->centre_id = $appointmentinfo->location_id;
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();

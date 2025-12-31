@@ -139,6 +139,7 @@ class Refunds extends Model
         $activity->planId =  $request->package_id;
         $activity->amount = $request->refund_amount;
         $activity->location = $location->name;
+        $activity->centre_id = $request->location_id;
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();

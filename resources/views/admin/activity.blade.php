@@ -38,7 +38,7 @@
                                     @endif
                                     <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
                                     <span style="color: #F5B183;" >Plan Id: <a href="{{ route('admin.packages.view.package', $log['planId']) }}" >{{ $log['planId'] }}</a>
-                                    at {{ $log['location'] }} Centre.
+                                    at {{ $log->centre->name ?? $log['location'] }} Centre.
                                 </div>
                             </div>
                         @elseif($log['appointment_type'] == 'Consultancy')
@@ -55,7 +55,7 @@
                                     <strong>Rs. {{ round($log['amount']) }}</strong> from
                                     <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
                                     <span style="color: #F5B183;">{{ $log['appointment_type'] }}</span>
-                                    at {{ $log['location'] }} Centre.
+                                    at {{ $log->centre->name ?? $log['location'] }} Centre.
                                 </div>
                             </div>
                         @else
@@ -72,7 +72,7 @@
                                     <strong>Rs. {{ round($log['amount']) }}</strong> from
                                     <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
                                     <span style="color: #F5B183;">{{ $log['appointment_type'] }}</span>
-                                    at {{ $log['location'] }} Centre.
+                                    at {{ $log->centre->name ?? $log['location'] }} Centre.
                                 </div>
                             </div>
                         @endif
