@@ -285,7 +285,10 @@ class HomeController extends Controller
                 ->where('appointments.scheduled_time', '>=', $todayTime)->pluck('appointments.id')->toArray();
         }
 
-        $Appointments = $resultQuery->orWhereIn('appointments.id', $todayData)->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
+        // Add eager loading for relationships to avoid N+1 queries
+        $Appointments = $resultQuery->orWhereIn('appointments.id', $todayData)
+            ->with(['doctor', 'city', 'location', 'service', 'appointment_type', 'appointment_status'])
+            ->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->limit($iDisplayLength)
             ->offset($iDisplayStart)
             ->orderBy($orderBy, $order)
@@ -304,14 +307,18 @@ class HomeController extends Controller
             $unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id, ['id']);
             $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly(Auth::User()->account_id);
 
+            // Fetch all invoices for these appointments in a single query
+            $appointmentIds = $Appointments->pluck('app_id')->toArray();
+            $invoicesMap = Invoices::whereIn('appointment_id', $appointmentIds)
+                ->where('invoice_status_id', $invoice_status->id)
+                ->get()
+                ->keyBy('appointment_id');
+
             $index = 0;
             $invoiceid = 0;
             foreach ($Appointments as $appointment) {
-
-                $invoice = Invoices::where([
-                    ['appointment_id', '=', $appointment->app_id],
-                    ['invoice_status_id', '=', $invoice_status->id],
-                ])->first();
+                // Get invoice from pre-fetched map instead of querying each time
+                $invoice = $invoicesMap->get($appointment->app_id);
                 $invoicearray[] = $invoice;
                 if ($invoice) {
                     $invoiceid = $invoice->id;
