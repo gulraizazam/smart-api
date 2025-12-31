@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App;
 use Gate;
-use App\Helpers\ACL;
 use App\Helpers\DashboardHelper;
 use App\Models\User;
 use App\Models\Invoices;
@@ -16,7 +15,6 @@ use App\Models\RoleHasUsers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\HelperModule\ApiHelper;
-use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
 use App\Models\Packages;
 use App\Models\PackageBundles;
@@ -33,7 +31,6 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\AppointmentsDailyStats;
 use App\Models\Feedback;
 use Illuminate\Support\Facades\Config;
-use Symfony\Component\Routing\Generator\Dumper\GeneratorDumper;
 
 class DashboardReportsController extends Controller
 {

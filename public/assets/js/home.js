@@ -1203,7 +1203,15 @@ function DoctorWiseConversion(bar) {
     const info = '#8950FC';
     const warning = '#FFA800';
     const danger = '#F64E60';
-    let lables = bar.data.labels;
+    let labels = bar.data.labels;
+    
+    // Calculate dynamic width based on number of doctors (min 800px, 60px per doctor)
+    let dynamicWidth = Math.max(800, labels.length * 60);
+    
+    // Calculate bar width and dynamic font size based on number of doctors
+    let barWidthPx = (dynamicWidth * 0.55) / (labels.length * 2); // 55% columnWidth divided by number of bar groups (2 series)
+    let dynamicFontSize = Math.min(14, Math.max(9, Math.floor(barWidthPx * 0.4))); // Scale font: min 9px, max 14px
+
     var options = {
         series: [{
             name: 'Total Appointments ' + `(${bar.data.total_appointments.reduce((a, b) => a + b, 0)})`,
@@ -1214,15 +1222,43 @@ function DoctorWiseConversion(bar) {
         }],
         chart: {
             type: 'bar',
-            height: 350,
-
+            height: 400,
+            width: dynamicWidth,
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false
+                }
+            }
         },
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded'
+                columnWidth: '70%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'center',
+                    orientation: 'vertical'
+                }
             },
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val > 0 ? val : '';
+            },
+            style: {
+                fontSize: dynamicFontSize + 'px',
+                colors: ['#fff'],
+                fontWeight: 600
+            },
+            offsetY: 0
         },
         stroke: {
             show: true,
@@ -1230,9 +1266,26 @@ function DoctorWiseConversion(bar) {
             colors: ['transparent']
         },
         xaxis: {
-            categories: lables,
+            categories: labels,
+            labels: {
+                rotate: -45,
+                rotateAlways: true,
+                style: {
+                    fontSize: '10px'
+                },
+                trim: true,
+                maxHeight: 100
+            }
         },
-        colors: [primary, success, warning]
+        legend: {
+            show: true,
+            position: 'top'
+        },
+        tooltip: {
+            shared: true,
+            intersect: false
+        },
+        colors: [primary, success]
     };
     $("#doc_wise_conversion").html("");
     doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);
@@ -1347,17 +1400,22 @@ function AllDoctorWiseConversion(bar) {
     const info = '#8950FC';
     const warning = '#FFA800';
     const danger = '#F64E60';
-    let lables = bar.data.labels;
-    if (lables.some(str => str.includes('All Centres'))) {
-        modifiedData = lables.map(location => location.replace('All Centres ', ''));
-    } else {
-        modifiedData = lables;
+    let labels = bar.data.labels;
+    let modifiedData = labels;
+    
+    if (labels.some(str => str.includes('All Centres'))) {
+        modifiedData = labels.map(location => location.replace('All Centres ', ''));
     }
-    if (lables.some(str => str.includes('CUTERA'))) {
-        modifiedData = lables.map(location => location.replace('CUTERA ', ''));
-    } else {
-        modifiedData = lables;
+    if (labels.some(str => str.includes('CUTERA'))) {
+        modifiedData = labels.map(location => location.replace('CUTERA ', ''));
     }
+
+    // Calculate dynamic width based on number of items (min 800px, 60px per item)
+    let dynamicWidth = Math.max(800, modifiedData.length * 60);
+    
+    // Calculate bar width and dynamic font size
+    let barWidthPx = (dynamicWidth * 0.55) / (modifiedData.length * 2);
+    let dynamicFontSize = Math.min(14, Math.max(9, Math.floor(barWidthPx * 0.4)));
 
     var options = {
         series: [{
@@ -1369,15 +1427,43 @@ function AllDoctorWiseConversion(bar) {
         }],
         chart: {
             type: 'bar',
-            height: 350,
-
+            height: 400,
+            width: dynamicWidth,
+            toolbar: {
+                show: true,
+                tools: {
+                    download: true,
+                    selection: false,
+                    zoom: false,
+                    zoomin: false,
+                    zoomout: false,
+                    pan: false,
+                    reset: false
+                }
+            }
         },
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded'
+                columnWidth: '70%',
+                endingShape: 'rounded',
+                dataLabels: {
+                    position: 'center',
+                    orientation: 'vertical'
+                }
             },
+        },
+        dataLabels: {
+            enabled: true,
+            formatter: function (val) {
+                return val > 0 ? val : '';
+            },
+            style: {
+                fontSize: dynamicFontSize + 'px',
+                colors: ['#fff'],
+                fontWeight: 600
+            },
+            offsetY: 0
         },
         stroke: {
             show: true,
@@ -1386,8 +1472,25 @@ function AllDoctorWiseConversion(bar) {
         },
         xaxis: {
             categories: modifiedData,
+            labels: {
+                rotate: -45,
+                rotateAlways: true,
+                style: {
+                    fontSize: '10px'
+                },
+                trim: true,
+                maxHeight: 100
+            }
         },
-        colors: [primary, success, warning]
+        legend: {
+            show: true,
+            position: 'top'
+        },
+        tooltip: {
+            shared: true,
+            intersect: false
+        },
+        colors: [primary, success]
     };
     $("#doc_wise_conversion").html("");
     doc_wise_conversion_chart = new ApexCharts(document.querySelector("#doc_wise_conversion"), options);

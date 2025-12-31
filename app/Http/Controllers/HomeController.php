@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Helpers\ACL;
 use App\Helpers\DashboardHelper;
 use App\Models\User;
 use App\Models\Leads;
@@ -18,7 +17,6 @@ use Illuminate\Http\Request;
 use App\Models\AppointmentLog;
 use Illuminate\Support\Carbon;
 use App\HelperModule\ApiHelper;
-use App\Models\InvoiceStatuses;
 use App\Models\PackageAdvances;
 use App\Models\AuditTrailTables;
 use App\Models\UserHasLocations;

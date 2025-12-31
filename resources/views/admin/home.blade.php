@@ -703,7 +703,7 @@
                             </div>
 
                             <div class="row pt-7">
-                                <div class="col-7">
+                                <div class="col-7" style="overflow-x: auto;">
                                     <div id="doc_wise_conversion"></div>
                                 </div>
                                 <div class="col-5 appenddoctorlist" id="centre_wise_arrival_02">
