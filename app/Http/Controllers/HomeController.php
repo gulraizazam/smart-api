@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Helpers\ACL;
+use App\Helpers\DashboardHelper;
 use App\Models\User;
 use App\Models\Leads;
 use App\Models\Regions;
@@ -59,25 +60,25 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $data = [];
-        $timeZone = 'Asia/Karachi';
-        $location_id = $this->getUserLocation();
-        [$start_date, $end_date] = $this->getDates($request);
-        $data = $this->consultancies($data, $start_date, $end_date);
-        $data = $this->treatments($data, $start_date, $end_date);
-        $data = $this->salesByCentre($request, $data);
-        $data = $this->collection_by_center($request, $data);
-        $data['today'] = Carbon::now()->timezone($timeZone)->format('Y-m-d');
-        $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format('Y-m-d');
-        $data['month'] = Carbon::now()->timezone($timeZone)->format('Y-m-d');
-        $data['currentTime'] = Carbon::now()->timezone($timeZone)->format('H:i:s');
-        if (auth()->id() == 1) {
-            $data['location_id'] = [];
-        } else {
-            $data['location_id'] = ACL::getUserCentres();
-        }
+        
+        // Use DashboardHelper for common data (cached within request)
+        $userCentres = DashboardHelper::getUserCentres();
+        [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
+        $dateTimeInfo = DashboardHelper::getDateTimeInfo();
+        
+        $data = $this->consultancies($data, $start_date, $end_date, $userCentres);
+        $data = $this->treatments($data, $start_date, $end_date, $userCentres);
+        $data = $this->salesByCentre($request, $data, $userCentres, $start_date, $end_date);
+        $data = $this->collection_by_center($request, $data, $userCentres);
+        
+        $data['today'] = $dateTimeInfo['today'];
+        $data['startWeek'] = $dateTimeInfo['startWeek'];
+        $data['month'] = $dateTimeInfo['month'];
+        $data['currentTime'] = $dateTimeInfo['currentTime'];
+        $data['location_id'] = $userCentres;
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
-        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+        $data['appointment_status_arrived'] = DashboardHelper::getArrivedStatusId();
 
         return view('admin.home', $data);
     }
@@ -85,25 +86,27 @@ class HomeController extends Controller
     public function getStats(Request $request)
     {
         $data = [];
-        $timeZone = 'Asia/Karachi';
-        $location_id = $this->getUserLocation();
-        [$start_date, $end_date] = $this->getDates($request);
-        $data = $this->consultancies($data, $start_date, $end_date);
-        $data = $this->treatments($data, $start_date, $end_date);
-        $data = $this->salesByCentre($request, $data);
-        $data = $this->collection_by_center($request, $data);
-        $data['today'] = Carbon::now()->timezone($timeZone)->format('Y-m-d');
-        $data['startWeek'] = Carbon::now()->timezone($timeZone)->startOfWeek()->format('Y-m-d');
-        $data['month'] = Carbon::now()->timezone($timeZone)->format('Y-m-d');
-        $data['currentTime'] = Carbon::now()->timezone($timeZone)->format('H:i:s');
-        if (auth()->id() == 1) {
-            $data['location_id'] = [];
-        } else {
-            $data['location_id'] = ACL::getUserCentres();
-        }
+        
+        // Use DashboardHelper for common data (cached within request)
+        $userCentres = DashboardHelper::getUserCentres();
+        [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
+        $dateTimeInfo = DashboardHelper::getDateTimeInfo();
+        
+        // Pass pre-fetched data to helper methods
+        $data = $this->consultancies($data, $start_date, $end_date, $userCentres);
+        $data = $this->treatments($data, $start_date, $end_date, $userCentres);
+        $data = $this->salesByCentre($request, $data, $userCentres, $start_date, $end_date);
+        $data = $this->collection_by_center($request, $data, $userCentres);
+        
+        // Set date/time data from helper
+        $data['today'] = $dateTimeInfo['today'];
+        $data['startWeek'] = $dateTimeInfo['startWeek'];
+        $data['month'] = $dateTimeInfo['month'];
+        $data['currentTime'] = $dateTimeInfo['currentTime'];
+        $data['location_id'] = $userCentres;
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
-        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+        $data['appointment_status_arrived'] = DashboardHelper::getArrivedStatusId();
 
         return response()->json(['status' => 200, 'msg' => 'All stats', 'data' => $data]);
     }
@@ -111,14 +114,12 @@ class HomeController extends Controller
     public function getActivity(Request $request)
     {
         $data = [];
-        $timeZone = 'Asia/Karachi';
-        $location_id = $this->getUserLocation();
-        [$start_date, $end_date] = $this->getDates($request);
+        [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
         $data = $this->recentActivities($data);
-        $data['location_id'] = auth()->id() == 1 ? [] : ACL::getUserCentres();
+        $data['location_id'] = DashboardHelper::getUserCentres();
         $data['start_date'] = $start_date;
         $data['end_date'] = $end_date;
-        $data['appointment_status_arrived'] = config('constants.appointment_status_arrived');
+        $data['appointment_status_arrived'] = DashboardHelper::getArrivedStatusId();
 
         return view('admin.activity', $data);
     }
@@ -152,21 +153,24 @@ class HomeController extends Controller
             }
         }
 
+        $userCentres = DashboardHelper::getUserCentres();
+        $userCities = DashboardHelper::getUserCities();
+        
         $countQuery = Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })
             ->where('appointment_status_id', config('constants.appointment_status_pending'))
-            ->whereIn('appointments.city_id', ACL::getUserCities())
-            ->whereIn('appointments.location_id', ACL::getUserCentres());
+            ->whereIn('appointments.city_id', $userCities)
+            ->whereIn('appointments.location_id', $userCentres);
 
         $appoints = Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })
             ->where('appointment_status_id', config('constants.appointment_status_pending'))
-            ->whereIn('appointments.city_id', ACL::getUserCities())
-            ->whereIn('appointments.location_id', ACL::getUserCentres());
+            ->whereIn('appointments.city_id', $userCities)
+            ->whereIn('appointments.location_id', $userCentres);
 
         $todayAppoints = 0;
         if (hasFilter($filter, 'type') && $filter['type'] != 'today') {
@@ -225,16 +229,16 @@ class HomeController extends Controller
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })
             ->where('appointment_status_id', config('constants.appointment_status_pending'))
-            ->whereIn('appointments.city_id', ACL::getUserCities())
-            ->whereIn('appointments.location_id', ACL::getUserCentres());
+            ->whereIn('appointments.city_id', $userCities)
+            ->whereIn('appointments.location_id', $userCentres);
 
         $todayResult = Appointments::join('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id')
                 ->where('users.user_type_id', '=', config('constants.patient_id'));
         })
             ->where('appointment_status_id', config('constants.appointment_status_pending'))
-            ->whereIn('appointments.city_id', ACL::getUserCities())
-            ->whereIn('appointments.location_id', ACL::getUserCentres());
+            ->whereIn('appointments.city_id', $userCities)
+            ->whereIn('appointments.location_id', $userCentres);
 
         if ($orderBy == 'name') { /* Need to append appropriate table name to order by, it was missing before*/
             $orderBy = 'appointments.name';
@@ -301,7 +305,7 @@ class HomeController extends Controller
             $Regions = Regions::getAllRecordsDictionary(Auth::User()->account_id);
             $Users = User::getAllRecords(Auth::User()->account_id)->getDictionary();
             $AppointmentStatuses = AppointmentStatuses::getAllRecordsDictionary(Auth::User()->account_id);
-            $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
+            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
 
             // Default Un-scheduled Appointment Status
             $unscheduled_appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id, ['id']);
@@ -310,7 +314,7 @@ class HomeController extends Controller
             // Fetch all invoices for these appointments in a single query
             $appointmentIds = $Appointments->pluck('app_id')->toArray();
             $invoicesMap = Invoices::whereIn('appointment_id', $appointmentIds)
-                ->where('invoice_status_id', $invoice_status->id)
+                ->where('invoice_status_id', $invoiceStatusId)
                 ->get()
                 ->keyBy('appointment_id');
 
@@ -381,51 +385,19 @@ class HomeController extends Controller
         return ApiHelper::apiDataTable($records);
     }
 
-    private function collection_by_center(Request $request, $data)
+    private function collection_by_center(Request $request, $data, $userCentres = null)
     {
-
         $data['collection'] = 0;
         if (!Gate::allows('dashboard_states')) {
             $data['collection'] = null;
-
             return $data;
         }
-        $locations = ACL::getUserCentres();
-        [$start_date, $end_date] = $this->getDates($request);
-        switch ($request->type) {
-            case 'today':
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'today', $request);
-                $data['todaycollection'][] = $total;
-                break;
-            case 'yesterday':
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'yesterday', $request);
-                $data['todaycollection'][] = $total;
-                break;
-            case 'last7days':
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'last7days', $request);
-                $data['todaycollection'][] = $total;
-                break;
-            case 'week':
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'week', $request);
-                $data['todaycollection'][] = $total;
-                break;
-            case 'month':
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
-                $data['todaycollection'][] = $total;
-                break;
-            case 'thismonth':
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'thisMonth', $request);
-                $data['todaycollection'][] = $total;
-                break;
-            case 'lastmonth':
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'lastmonth', $request);
-                $data['todaycollection'][] = $total;
-                break;
-            default:
-                [$total] = dashboardreport::collectionbycenter($locations, Auth::User()->account_id, 'today', $request);
-                $data['todaycollection'][] = $total;
-                break;
-        }
+
+        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
+        $period = DashboardHelper::mapPeriod($request->type);
+        
+        [$total] = dashboardreport::collectionbycenter($userCentres, Auth::User()->account_id, $period, $request);
+        $data['todaycollection'][] = $total;
 
         return $data;
     }
@@ -440,53 +412,23 @@ class HomeController extends Controller
         ];
 
         if (Gate::allows('dashboard_collection_by_centre')) {
-
-            $location_information = ACL::getUserCentres();
-            switch ($request->type) {
-                case 'today':
-                    [$report_data, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
-
-                case 'yesterday':
-                    [$report_data, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['yesterday'][] = $record;
-                        }
-                    }
-                    break;
-
-                case 'week':
-                    [$report_data, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['week'][] = $record;
-                        }
-                    }
-                    break;
-
-                case 'month':
-                    [$report_data, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['month'][] = $record;
-                        }
-                    }
-                    break;
-
-                default:
-                    [$report_data, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
+            $location_information = DashboardHelper::getUserCentres();
+            
+            // Map request type to period and data key
+            $periodMap = [
+                'today' => ['period' => 'today', 'key' => 'today'],
+                'yesterday' => ['period' => 'yesterday', 'key' => 'yesterday'],
+                'week' => ['period' => 'last7day', 'key' => 'week'],
+                'month' => ['period' => 'thisMonth', 'key' => 'month'],
+            ];
+            
+            $config = $periodMap[$request->type] ?? $periodMap['today'];
+            [$report_data, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, $config['period'], $request);
+            
+            if (count($report_data)) {
+                foreach ($report_data as $record) {
+                    $data[$config['key']][] = $record;
+                }
             }
         }
         $day = $request->type ?? 'today';
@@ -517,55 +459,23 @@ class HomeController extends Controller
         ];
 
         if (Gate::allows('dashboard_my_collection_by_centre')) {
+            $location_information = Locations::getActiveSorted(DashboardHelper::getUserCentres());
 
-            $location_information = Locations::getActiveSorted(ACL::getUserCentres());
-
-            switch ($request->type) {
-                case 'today':
-                    [$report_data, $total] = dashboardreport::myCollectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
-
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
-
-                case 'yesterday':
-                    [$report_data, $total] = dashboardreport::myCollectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['yesterday'][] = $record;
-                        }
-                    }
-                    break;
-
-                case 'week':
-                    [$report_data, $total] = dashboardreport::myCollectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'last7day', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['week'][] = $record;
-                        }
-                    }
-                    break;
-
-                case 'month':
-                    [$report_data, $total] = dashboardreport::myCollectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['month'][] = $record;
-                        }
-                    }
-                    break;
-                default:
-                    [$report_data, $total] = dashboardreport::myCollectionbyrevenuewidgets($location_information, Auth::User()->account_id, 'today', $request);
-
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
+            // Map request type to period and data key
+            $periodMap = [
+                'today' => ['period' => 'today', 'key' => 'today'],
+                'yesterday' => ['period' => 'yesterday', 'key' => 'yesterday'],
+                'week' => ['period' => 'last7day', 'key' => 'week'],
+                'month' => ['period' => 'thisMonth', 'key' => 'month'],
+            ];
+            
+            $config = $periodMap[$request->type] ?? $periodMap['today'];
+            [$report_data, $total] = dashboardreport::myCollectionbyrevenuewidgets($location_information, Auth::User()->account_id, $config['period'], $request);
+            
+            if (count($report_data)) {
+                foreach ($report_data as $record) {
+                    $data[$config['key']][] = $record;
+                }
             }
         }
 
@@ -587,12 +497,14 @@ class HomeController extends Controller
                 'active' => '1',
                 'parent_id' => '0',
             ])->get();
-            $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
+            $userCentres = DashboardHelper::getUserCentres();
+            
             if ($request->type == '') {
                 $todayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
                 }
@@ -635,8 +547,8 @@ class HomeController extends Controller
             if ($request->type == 'today') {
                 $todayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
                 }
@@ -663,8 +575,8 @@ class HomeController extends Controller
                 $yesterdayRecords = Invoices::leftjoin('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
                 $yesterdayRecords = $yesterdayRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                     ->groupBy('invoice_details.service_id')
                     ->get();
@@ -689,8 +601,8 @@ class HomeController extends Controller
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
                 if ($request->get('performance')) {
                     $last7DaysRecords = $last7DaysRecords->where('invoices.created_by', Auth::User()->id);
                 }
@@ -732,8 +644,8 @@ class HomeController extends Controller
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
                 if ($request->get('performance')) {
                     $thisMonthRecords = $thisMonthRecords->where('invoices.created_by', Auth::User()->id);
                 }
@@ -1544,13 +1456,13 @@ class HomeController extends Controller
                 ['active', '=', '1'],
             ])->get();
 
-            $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-
-            [$start_date, $end_date] = $this->getDates($request);
+            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
+            [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
+            
             $todayRecords = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->where('invoice_status_id', '=', $invoicestatus->id);
+                ->whereIn('location_id', DashboardHelper::getUserCentres())
+                ->where('invoice_status_id', '=', $invoiceStatusId);
 
             if ($request->get('performance') == '1') {
                 $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
@@ -1612,16 +1524,16 @@ class HomeController extends Controller
 
         if (Gate::allows('dashboard_my_revenue_by_centre')) {
 
-            $locations = Locations::getActiveSortedLocations(ACL::getUserCentres());
+            $userCentres = DashboardHelper::getUserCentres();
+            $locations = Locations::getActiveSortedLocations($userCentres);
 
-            $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-
-            [$start_date, $end_date] = $this->getDates($request);
+            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
+            [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
 
             $todayRecords = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
                 ->whereDate('created_at', '<=', $end_date)
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->where('invoice_status_id', '=', $invoicestatus->id);
+                ->whereIn('location_id', $userCentres)
+                ->where('invoice_status_id', '=', $invoiceStatusId);
 
             if ($request->get('performance') == '1') {
                 $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
@@ -1680,12 +1592,14 @@ class HomeController extends Controller
                 ['active', '=', '1'],
             ])->get();
 
-            $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
+            $userCentres = DashboardHelper::getUserCentres();
+            
             if ($request->type == '') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
@@ -1726,8 +1640,8 @@ class HomeController extends Controller
             if ($request->type == 'today') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
@@ -1770,8 +1684,8 @@ class HomeController extends Controller
                 $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $yesterdayRecords->where('invoices.created_by', Auth::User()->id);
@@ -1816,8 +1730,8 @@ class HomeController extends Controller
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $last7DaysRecords = $last7DaysRecords->where('invoices.created_by', Auth::User()->id);
@@ -1861,8 +1775,8 @@ class HomeController extends Controller
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $thisMonthRecords = $thisMonthRecords->where('invoices.created_by', Auth::User()->id);
@@ -1941,12 +1855,14 @@ class HomeController extends Controller
                 ['account_id', '=', Auth::User()->account_id],
                 ['active', '=', '1'],
             ])->get();
-            $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
+            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
+            $userCentres = DashboardHelper::getUserCentres();
+            
             if ($request->type == '') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
@@ -1987,8 +1903,8 @@ class HomeController extends Controller
             if ($request->type == 'today') {
                 $todayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $todayRecords->where('invoices.created_by', Auth::User()->id);
@@ -2031,8 +1947,8 @@ class HomeController extends Controller
                 $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $yesterdayRecords->where('invoices.created_by', Auth::User()->id);
@@ -2077,8 +1993,8 @@ class HomeController extends Controller
                 $last7DaysRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $last7DaysRecords = $last7DaysRecords->where('invoices.created_by', Auth::User()->id);
@@ -2122,8 +2038,8 @@ class HomeController extends Controller
                 $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
                     ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
                     ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', '=', $invoicestatus->id)
-                    ->whereIn('invoices.location_id', ACL::getUserCentres());
+                    ->where('invoices.invoice_status_id', '=', $invoiceStatusId)
+                    ->whereIn('invoices.location_id', $userCentres);
 
                 if ($request->get('performance')) {
                     $thisMonthRecords = $thisMonthRecords->where('invoices.created_by', Auth::User()->id);
@@ -2172,50 +2088,6 @@ class HomeController extends Controller
         ]);
     }
 
-    public function getDates($request)
-    {
-
-        switch ($request->type) {
-            case 'today':
-                $start_date = Carbon::now()->format('Y-m-d');
-                $end_date = Carbon::now()->format('Y-m-d');
-                break;
-            case 'yesterday':
-                $start_date = Carbon::now()->subDay(1)->format('Y-m-d');
-                $end_date = Carbon::now()->subDay(1)->format('Y-m-d');
-                break;
-            case 'last7days':
-                $start_date = Carbon::now()->subDay(6)->format('Y-m-d');
-                $end_date = Carbon::now()->format('Y-m-d');
-                break;
-            case 'week':
-                $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
-                $end_date = Carbon::now()->endOfWeek()->format('Y-m-d');
-                break;
-            case 'month':
-                $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
-                $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
-                break;
-            case 'thismonth':
-                $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
-                $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
-                break;
-            case 'lastmonth':
-                $start_date = Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d');
-                $end_date = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
-                break;
-            default:
-                $start_date = Carbon::now()->format('Y-m-d');
-                $end_date = Carbon::now()->format('Y-m-d');
-                break;
-        }
-
-        return [
-            $start_date,
-            $end_date,
-        ];
-    }
-
     private function getTableFilter($filters)
     {
         if (isset($filters['query']) && isset($filters['query']['filter'])) {
@@ -2225,50 +2097,50 @@ class HomeController extends Controller
         return [];
     }
 
-    private function consultancies($data, $start_date, $end_date)
+    private function consultancies($data, $start_date, $end_date, $userCentres = null, $statusIds = null)
     {
-
         if (!Gate::allows('dashboard_states')) {
             $data['all_consultancies'] = null;
             $data['done_consultancies'] = null;
-
             return $data;
         }
-        $query = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
+
+        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
+        $statusIds = $statusIds ?? DashboardHelper::getArrivedAndConvertedStatusIds();
+
+        // Get both counts in single query using conditional aggregation
+        $counts = Appointments::where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
-            ->whereIn('location_id', ACL::getUserCentres());
-        $data['all_consultancies'] = $query->count();
+            ->whereIn('location_id', $userCentres)
+            ->selectRaw('COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id IN (' . implode(',', $statusIds) . ') THEN 1 ELSE 0 END) as done_count')
+            ->first();
 
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
-        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : config('constants.appointment_status_arrived');
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
-        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
-
-        $query->whereIn('appointment_status_id', $statusIds);
-        $data['done_consultancies'] = $query->count();
+        $data['all_consultancies'] = $counts->all_count ?? 0;
+        $data['done_consultancies'] = $counts->done_count ?? 0;
 
         return $data;
     }
 
-    private function treatments($data, $start_date, $end_date)
+    private function treatments($data, $start_date, $end_date, $userCentres = null)
     {
-
         if (!Gate::allows('dashboard_states')) {
             $data['all_treatments'] = null;
             $data['done_treatments'] = null;
-
             return $data;
         }
 
-        $query = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
+        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
+        $arrivedStatusId = DashboardHelper::getArrivedStatusId();
+
+        // Get both counts in single query using conditional aggregation
+        $counts = Appointments::where('appointment_type_id', config('constants.appointment_type_service'))
             ->whereBetween('scheduled_date', [$start_date, $end_date])
-            ->whereIn('location_id', ACL::getUserCentres());
+            ->whereIn('location_id', $userCentres)
+            ->selectRaw('COUNT(*) as all_count, SUM(CASE WHEN appointment_status_id = ? THEN 1 ELSE 0 END) as done_count', [$arrivedStatusId])
+            ->first();
 
-        $data['all_treatments'] = $query->count();
-
-        $query->where('appointment_status_id', config('constants.appointment_status_arrived'));
-        $data['done_treatments'] = $query->count();
+        $data['all_treatments'] = $counts->all_count ?? 0;
+        $data['done_treatments'] = $counts->done_count ?? 0;
 
         return $data;
     }
@@ -2298,7 +2170,7 @@ class HomeController extends Controller
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
             ->where(function ($query) {
                 $query->where('leads.active', 1);
-                $query->whereIn('leads.city_id', ACL::getUserCities());
+                $query->whereIn('leads.city_id', DashboardHelper::getUserCities());
                 $query->orWhereNull('leads.city_id');
             });
 
@@ -2310,7 +2182,7 @@ class HomeController extends Controller
             ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
             ->where(function ($query) {
                 $query->where('leads.active', 1);
-                $query->whereIn('leads.city_id', ACL::getUserCities());
+                $query->whereIn('leads.city_id', DashboardHelper::getUserCities());
                 $query->orWhereNull('leads.city_id');
             })->count();
 
@@ -2322,7 +2194,7 @@ class HomeController extends Controller
         return UserHasLocations::where('user_id', auth()->id())->value('location_id');
     }
 
-    private function salesByCentre(Request $request, $data)
+    private function salesByCentre(Request $request, $data, $userCentres = null, $start_date = null, $end_date = null)
     {
         $data['revenue'] = 0;
         if (!Gate::allows('dashboard_states')) {
@@ -2330,35 +2202,27 @@ class HomeController extends Controller
             return $data;
         }
 
-        $locations = ACL::getUserCentres();
-        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-        [$start_date, $end_date] = $this->getDates($request);
-        $where[] = ['created_at', '>=', $start_date . ' 00:00:00',];
-        $where[] = ['created_at', '<=', $end_date . ' 23:59:59'];
+        $userCentres = $userCentres ?? DashboardHelper::getUserCentres();
+        if ($start_date === null || $end_date === null) {
+            [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
+        }
+        
+        $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
+        if (!$invoiceStatusId) {
+            return $data;
+        }
 
-        $todayRecords = \App\Models\Invoices::where($where)
-            ->whereIn('location_id', ACL::getUserCentres())
-            ->where('invoice_status_id', '=', $invoicestatus->id);
-
+        // Get total revenue in single query (no nested loops)
+        $query = \App\Models\Invoices::where('created_at', '>=', $start_date . ' 00:00:00')
+            ->where('created_at', '<=', $end_date . ' 23:59:59')
+            ->whereIn('location_id', $userCentres)
+            ->where('invoice_status_id', $invoiceStatusId);
 
         if ($request->get('performance') == '1') {
-            $todayRecords = $todayRecords->where('created_by', '=', Auth::User()->id);
+            $query->where('created_by', Auth::User()->id);
         }
 
-        $todayRecords = $todayRecords->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-            ->groupBy('location_id')->get();
-
-        if ($locations) {
-            foreach ($locations as $location) {
-                if ($todayRecords) {
-                    foreach ($todayRecords as $todayRecord) {
-                        if ($todayRecord->location_id == $location) {
-                            $data['revenue'] += $todayRecord->total_price;
-                        }
-                    }
-                }
-            }
-        }
+        $data['revenue'] = $query->sum('total_price') ?? 0;
 
         return $data;
     }
@@ -2374,7 +2238,7 @@ class HomeController extends Controller
             
         }
 
-        $centres = ACL::getUserCentres();
+        $centres = DashboardHelper::getUserCentres();
 
         // Use date range instead of whereDate for better index usage
         $todayStart = Carbon::today();
@@ -2399,23 +2263,11 @@ class HomeController extends Controller
 
     private function viewAppointmentLog()
     {
-
         try {
+            [$start, $end] = DashboardHelper::getDateRangeFromRequest(request());
 
-            [$start, $end] = $this->getDates(request());
-
-            $where[] = [
-                'date',
-                '>=',
-                $start,
-            ];
-            $where[] = [
-                'date',
-                '<=',
-                $end,
-            ];
-
-            $query = AppointmentLog::where('date', [$start, $end]);
+            $query = AppointmentLog::where('date', '>=', $start)
+                ->where('date', '<=', $end);
 
             if (auth()->id() != 1) {
                 $query->where('user_id', auth()->id());
