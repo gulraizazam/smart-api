@@ -1223,199 +1223,142 @@ class PackagesController extends Controller
 
     /**
      * Mark appointment status as converted
-     * Only converts if:
-     * 1. The appointment is already arrived
-     * 2. The package has services
-     * 3. Payment is being made
+     * Conversion Logic (matches conversion report):
+     * 1. Find the latest arrived consultation for the patient (appointment_type_id=1, base_appointment_status_id=arrived)
+     * 2. Get the invoice creation date of this consultation
+     * 3. Check if a service is added on/after invoice creation date in any package for this patient
+     * 4. Check if a payment is added on/after invoice creation date in any package for this patient
+     * 5. If both conditions met, mark the consultation as converted and send Meta event
      * 
-     * For subsequent appointments (not the original package appointment):
-     * - Only converts if services were added AFTER that appointment arrived
-     * 
-     * @param int $appointment_id
-     * @param int $package_id
-     * @param float $payment_amount
+     * @param int $appointment_id - The appointment being processed (used to get account_id and patient context)
+     * @param int $package_id - The package where service/payment was added
+     * @param float $payment_amount - The payment amount for Meta event
      */
     private static function markAppointmentAsConverted($appointment_id, $package_id = null, $payment_amount = null)
     {
-        
-        if (!$appointment_id) {
-            \Log::info('No appointment_id provided');
+        if (!$appointment_id || !$package_id) {
+            \Log::info('markAppointmentAsConverted: Missing appointment_id or package_id');
             return;
         }
         
         $appointment = Appointments::find($appointment_id);
         if (!$appointment) {
-            \Log::info('Appointment not found');
+            \Log::info('markAppointmentAsConverted: Appointment not found');
             return;
         }
         
-        // Get the arrived appointment status
+        $package = Packages::find($package_id);
+        if (!$package) {
+            \Log::info('markAppointmentAsConverted: Package not found');
+            return;
+        }
+        
+        // Get the arrived and converted appointment statuses
         $arrivedStatus = AppointmentStatuses::where([
             'account_id' => $appointment->account_id,
             'is_arrived' => 1
         ])->first();
         
-        // Get the converted appointment status
         $convertedStatus = AppointmentStatuses::where([
             'account_id' => $appointment->account_id,
             'is_converted' => 1
         ])->first();
         
-        if (!$convertedStatus) {
-            \Log::info('No converted status found in appointment_statuses');
+        if (!$arrivedStatus || !$convertedStatus) {
+            \Log::info('markAppointmentAsConverted: Arrived or Converted status not found');
             return;
         }
         
-       
-        
-        // Check if the passed appointment is arrived
-        $isArrived = $arrivedStatus && $appointment->base_appointment_status_id == $arrivedStatus->id;
-        $isConverted = $appointment->base_appointment_status_id == $convertedStatus->id;
-        
-        // If the passed appointment is arrived, mark it as converted
-        if ($isArrived) {
-            // Check if package has services before converting
-            if ($package_id) {
-                $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
-                $totalServices = PackageService::whereIn('package_bundle_id', $packagebundleIds)->count();
-                
-                if ($totalServices == 0) {
-                    \Log::info('No services in package, skipping conversion');
-                    return;
-                }
-            }
-            
-            $appointment->update([
-                'base_appointment_status_id' => $convertedStatus->id,
-                'appointment_status_id' => $convertedStatus->id,
-                'converted_at' => now()
-            ]);
-            
-            // Send Meta CAPI event only if service AND payment are added after consultation invoice creation
-            $shouldSendMetaEvent = false;
-            if ($package_id) {
-                // Get invoice creation date for this appointment
-                $appointmentInvoice = \App\Models\Invoices::where('appointment_id', $appointment->id)
-                    ->whereNull('deleted_at')
-                    ->orderBy('created_at', 'asc')
-                    ->first();
-                
-                if ($appointmentInvoice) {
-                    $invoiceCreatedAt = $appointmentInvoice->created_at;
-                    
-                    // Check if service was added after invoice creation
-                    $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
-                    $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packagebundleIds)
-                        ->whereDate('created_at', '>=', \Carbon\Carbon::parse($invoiceCreatedAt)->format('Y-m-d'))
-                        ->exists();
-                    
-                    // Check if payment was made after invoice creation
-                    $paymentAfterInvoice = PackageAdvances::where('package_id', $package_id)
-                        ->where('cash_flow', 'in')
-                        ->where('cash_amount', '>', 0)
-                        ->whereNull('deleted_at')
-                        ->whereDate('created_at', '>=', \Carbon\Carbon::parse($invoiceCreatedAt)->format('Y-m-d'))
-                        ->exists();
-                    
-                    $shouldSendMetaEvent = $serviceAfterInvoice && $paymentAfterInvoice;
-                }
-            }
-            
-            if ($shouldSendMetaEvent) {
-                self::sendMetaConvertedEvent($appointment, $package_id, $payment_amount);
-            }
-            return;
-        }
-        
-        // If the passed appointment is already converted, look for the latest arrived consultation
-        // that has services added after it arrived
-        if ($isConverted && $package_id) {
-            \Log::info('Passed appointment already converted, looking for latest arrived consultation');
-            
-            $package = Packages::find($package_id);
-            if (!$package) {
-                return;
-            }
-            
-            // Get package bundle IDs and find the latest service added
-            $packagebundleIds = PackageBundles::where('package_id', $package_id)->pluck('id');
-            $latestService = PackageService::whereIn('package_bundle_id', $packagebundleIds)
-                ->orderBy('created_at', 'desc')
-                ->first();
-            
-            if (!$latestService) {
-                \Log::info('No services found in package');
-                return;
-            }
-            
-           
-            
-            // Find the latest arrived consultation for this patient at this location
-            // that has an invoice created BEFORE the latest service was added
-            $latestArrivedConsultation = Appointments::where([
+        // Step 1: Find the latest arrived consultation for this patient
+        $latestArrivedConsultation = Appointments::where([
                 'patient_id' => $package->patient_id,
-                'location_id' => $package->location_id,
                 'appointment_type_id' => 1, // Consultation
                 'base_appointment_status_id' => $arrivedStatus->id
             ])
-            ->whereHas('invoice', function($q) use ($latestService) {
-                $q->whereNull('deleted_at')
-                  ->where('created_at', '<', $latestService->created_at);
-            })
-            ->orderByDesc(
-                \App\Models\Invoices::select('created_at')
-                    ->whereColumn('appointment_id', 'appointments.id')
-                    ->whereNull('deleted_at')
-                    ->orderBy('created_at', 'desc')
-                    ->limit(1)
-            )
+            ->whereNull('deleted_at')
+            ->orderBy('scheduled_date', 'desc')
+            ->orderBy('id', 'desc')
             ->first();
-            
-            if ($latestArrivedConsultation) {
-                \Log::info('Found latest arrived consultation to convert', [
-                    'appointment_id' => $latestArrivedConsultation->id
-                ]);
-                
-                $latestArrivedConsultation->update([
-                    'base_appointment_status_id' => $convertedStatus->id,
-                    'appointment_status_id' => $convertedStatus->id,
-                    'converted_at' => now()
-                ]);
-                \Log::info('Latest arrived consultation marked as converted');
-                
-                // Send Meta CAPI event only if service AND payment are added after consultation invoice creation
-                $consultationInvoice = \App\Models\Invoices::where('appointment_id', $latestArrivedConsultation->id)
-                    ->whereNull('deleted_at')
-                    ->orderBy('created_at', 'asc')
-                    ->first();
-                
-                if ($consultationInvoice) {
-                    $invoiceCreatedAt = $consultationInvoice->created_at;
-                    
-                    // Check if service was added after invoice creation
-                    $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packagebundleIds)
-                        ->whereDate('created_at', '>=', \Carbon\Carbon::parse($invoiceCreatedAt)->format('Y-m-d'))
-                        ->exists();
-                    
-                    // Check if payment was made after invoice creation
-                    $paymentAfterInvoice = PackageAdvances::where('package_id', $package_id)
-                        ->where('cash_flow', 'in')
-                        ->where('cash_amount', '>', 0)
-                        ->whereNull('deleted_at')
-                        ->whereDate('created_at', '>=', \Carbon\Carbon::parse($invoiceCreatedAt)->format('Y-m-d'))
-                        ->exists();
-                    
-                    if ($serviceAfterInvoice && $paymentAfterInvoice) {
-                        self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
-                    }
-                }
-            } else {
-                \Log::info('No arrived consultation found to convert');
-            }
+        
+        if (!$latestArrivedConsultation) {
+            \Log::info('markAppointmentAsConverted: No arrived consultation found for patient', [
+                'patient_id' => $package->patient_id
+            ]);
             return;
         }
         
-        \Log::info('Appointment not arrived, skipping conversion');
+        \Log::info('markAppointmentAsConverted: Found latest arrived consultation', [
+            'appointment_id' => $latestArrivedConsultation->id,
+            'patient_id' => $package->patient_id
+        ]);
+        
+        // Step 2: Get the invoice creation date of this consultation
+        $consultationInvoice = \App\Models\Invoices::where('appointment_id', $latestArrivedConsultation->id)
+            ->whereNull('deleted_at')
+            ->orderBy('created_at', 'asc')
+            ->first();
+        
+        if (!$consultationInvoice) {
+            \Log::info('markAppointmentAsConverted: No invoice found for consultation', [
+                'appointment_id' => $latestArrivedConsultation->id
+            ]);
+            return;
+        }
+        
+        $invoiceCreatedAt = $consultationInvoice->created_at;
+        $invoiceDate = \Carbon\Carbon::parse($invoiceCreatedAt)->format('Y-m-d');
+        
+        \Log::info('markAppointmentAsConverted: Invoice found', [
+            'invoice_id' => $consultationInvoice->id,
+            'invoice_date' => $invoiceDate
+        ]);
+        
+        // Step 3: Check if a service is added on/after invoice creation date in any package for this patient
+        $patientPackageIds = Packages::where('patient_id', $package->patient_id)
+            ->whereNull('deleted_at')
+            ->pluck('id');
+        
+        $packageBundleIds = PackageBundles::whereIn('package_id', $patientPackageIds)->pluck('id');
+        
+        $serviceAfterInvoice = PackageService::whereIn('package_bundle_id', $packageBundleIds)
+            ->whereDate('created_at', '>=', $invoiceDate)
+            ->exists();
+        
+        if (!$serviceAfterInvoice) {
+            \Log::info('markAppointmentAsConverted: No service found on/after invoice date', [
+                'invoice_date' => $invoiceDate
+            ]);
+            return;
+        }
+        
+        // Step 4: Check if a payment is added on/after invoice creation date in any package for this patient
+        $paymentAfterInvoice = PackageAdvances::whereIn('package_id', $patientPackageIds)
+            ->where('cash_flow', 'in')
+            ->where('cash_amount', '>', 0)
+            ->whereNull('deleted_at')
+            ->whereDate('created_at', '>=', $invoiceDate)
+            ->exists();
+        
+        if (!$paymentAfterInvoice) {
+            \Log::info('markAppointmentAsConverted: No payment found on/after invoice date', [
+                'invoice_date' => $invoiceDate
+            ]);
+            return;
+        }
+        
+        \Log::info('markAppointmentAsConverted: Conversion criteria met, marking as converted', [
+            'appointment_id' => $latestArrivedConsultation->id
+        ]);
+        
+        // Step 5: Mark the consultation as converted
+        $latestArrivedConsultation->update([
+            'base_appointment_status_id' => $convertedStatus->id,
+            'appointment_status_id' => $convertedStatus->id,
+            'converted_at' => now()
+        ]);
+        
+        // Send Meta CAPI event
+        self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
     }
     
     /**
@@ -1436,18 +1379,40 @@ class PackagesController extends Controller
             return;
         }
         
+        // Check if Meta event was already sent for this lead (to prevent duplicates)
+        // We check if any appointment for this lead already has meta_purchase_sent flag
+        $alreadySent = Appointments::where('lead_id', $lead->id)
+            ->where('meta_purchase_sent', 1)
+            ->exists();
+        
+        if ($alreadySent) {
+            \Log::info('Meta CAPI converted event already sent for this lead, skipping', [
+                'lead_id' => $lead->id,
+                'appointment_id' => $appointment->id
+            ]);
+            return;
+        }
+        
         try {
             $metaService = new MetaConversionApiService();
+            // Use appointment_id as lead_id for event_id if meta_lead_id is null
+            $eventLeadId = $lead->meta_lead_id ?? 'apt_' . $appointment->id;
             $metaService->sendLeadStatus(
                 $lead->phone,
                 'converted',
-                $lead->meta_lead_id,
+                $eventLeadId,
                 $lead->email,
                 'PKR',
-                0
+                $payment_amount ?? 0
             );
+            
+            // Mark this appointment as having sent the Meta purchase event
+            $appointment->update(['meta_purchase_sent' => 1]);
+            
             \Log::info('Meta CAPI converted event sent', [
-                'lead_id' => $lead->id
+                'lead_id' => $lead->id,
+                'appointment_id' => $appointment->id,
+                'event_lead_id' => $eventLeadId
             ]);
         } catch (\Exception $e) {
             \Log::error('Meta CAPI converted event failed: ' . $e->getMessage());
