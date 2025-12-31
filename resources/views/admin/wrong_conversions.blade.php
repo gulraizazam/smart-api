@@ -62,7 +62,7 @@
 
                         @if($appointments->count() > 0)
                             <!-- Reset All Form -->
-                            <form method="POST" action="{{ route('wrong-conversions.reset-all') }}" class="mb-3">
+                            <form method="POST" action="{{ route('admin.wrong-conversions.reset-all') }}" class="mb-3">
                                 @csrf
                                 @foreach($appointments as $apt)
                                     <input type="hidden" name="ids[]" value="{{ $apt->id }}">
@@ -100,7 +100,7 @@
                                                 <td>{{ \Carbon\Carbon::parse($appointment->scheduled_date)->format('M d, Y') }}</td>
                                                 <td>{{ \Carbon\Carbon::parse($appointment->converted_at)->format('M d, Y H:i') }}</td>
                                                 <td>
-                                                    <form method="POST" action="{{ route('wrong-conversions.reset', $appointment->id) }}" style="display:inline;">
+                                                    <form method="POST" action="{{ route('admin.wrong-conversions.reset', $appointment->id) }}" style="display:inline;">
                                                         @csrf
                                                         <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Reset this appointment to arrived?')">
                                                             Reset
