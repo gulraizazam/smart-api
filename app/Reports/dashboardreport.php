@@ -35,28 +35,31 @@ class dashboardreport
             ->where('account_id', $account_id)
             ->whereIn('location_id', $location_informations);
 
+        // Use date range queries instead of whereDate for better index usage
         switch ($where) {
             case 'today':
-                $query->whereDate('created_at', '=', Carbon::now()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::today())
+                      ->where('created_at', '<', Carbon::tomorrow());
                 break;
             case 'yesterday':
-                $query->whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::yesterday())
+                      ->where('created_at', '<', Carbon::today());
                 break;
             case 'last7day':
-                $query->whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
+                      ->where('created_at', '<', Carbon::tomorrow());
                 break;
             case 'week':
-                $query->whereDate('created_at', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->endOfWeek()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::now()->startOfWeek())
+                      ->where('created_at', '<', Carbon::now()->endOfWeek()->addDay());
                 break;
             case 'thisMonth':
-                $query->whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::now()->startOfMonth())
+                      ->where('created_at', '<', Carbon::now()->endOfMonth()->addDay());
                 break;
             case 'lastMonth':
-                $query->whereDate('created_at', '>=', Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::now()->subMonth()->startOfMonth())
+                      ->where('created_at', '<', Carbon::now()->subMonth()->endOfMonth()->addDay());
                 break;
         }
 
@@ -155,24 +158,27 @@ class dashboardreport
             ->whereIn('location_id', $locationIds)
             ->where('created_by', Auth::User()->id);
 
+        // Use date range queries instead of whereDate for better index usage
         switch ($where) {
             case 'today':
-                $query->whereDate('created_at', '=', Carbon::now()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::today())
+                      ->where('created_at', '<', Carbon::tomorrow());
                 break;
             case 'yesterday':
-                $query->whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::yesterday())
+                      ->where('created_at', '<', Carbon::today());
                 break;
             case 'last7day':
-                $query->whereDate('created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::now()->subDays(6)->startOfDay())
+                      ->where('created_at', '<', Carbon::tomorrow());
                 break;
             case 'thisMonth':
-                $query->whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::now()->startOfMonth())
+                      ->where('created_at', '<', Carbon::now()->endOfMonth()->addDay());
                 break;
             case 'lastMonth':
-                $query->whereDate('created_at', '>=', Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'))
-                      ->whereDate('created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'));
+                $query->where('created_at', '>=', Carbon::now()->subMonth()->startOfMonth())
+                      ->where('created_at', '<', Carbon::now()->subMonth()->endOfMonth()->addDay());
                 break;
         }
 

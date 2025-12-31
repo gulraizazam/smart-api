@@ -66,78 +66,40 @@ class DashboardReportsController extends Controller
             'thismonth' => [],
             'lastmonth' => [],
         ];
-        $location_information = ACL::getUserCentres();
-        if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            switch ($request->type) {
-                case 'today':
-                    [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
-                    if (count($today_records)) {
-                        foreach ($today_records as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
-
-                case ('yesterday'):
-                    [$yesterdayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
-                    if (count($yesterdayRecords)) {
-                        foreach ($yesterdayRecords as $record) {
-                            $data['yesterday'][] = $record;
-                        }
-                    }
-                    break;
-                case ('last7days'):
-                    [$last7dayRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
-                    if (count($last7dayRecords)) {
-                        foreach ($last7dayRecords as $record) {
-                            $data['last7days'][] = $record;
-                        }
-                    }
-                    break;
-                case ('week'):
-                    [$weekRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'week', $request);
-                    if (count($weekRecords)) {
-                        foreach ($weekRecords as $record) {
-                            $data['week'][] = $record;
-                        }
-                    }
-                    break;
-                case ('thismonth'):
-                    [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
-                    if (count($thisMonthRecords)) {
-                        foreach ($thisMonthRecords as $record) {
-                            $data['thismonth'][] = $record;
-                        }
-                    }
-                    break;
-                case ('lastmonth'):
-                    [$thisMonthRecords, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
-                    if (count($thisMonthRecords)) {
-                        foreach ($thisMonthRecords as $record) {
-                            $data['lastmonth'][] = $record;
-                        }
-                    }
-                    break;
-                default:
-                    [$today_records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
-                    if (count($today_records)) {
-                        foreach ($today_records as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
-            }
-        }
+        
+        $total = 0;
         $day = $request->type ?? 'today';
-        $dataArray = $data[$day];
+        
+        // Map request type to report parameter
+        $periodMap = [
+            'today' => 'today',
+            'yesterday' => 'yesterday',
+            'last7days' => 'last7day',
+            'week' => 'week',
+            'thismonth' => 'thisMonth',
+            'lastmonth' => 'lastMonth',
+        ];
+        
+        $location_information = ACL::getUserCentres();
+        
+        if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
+            $period = $periodMap[$day] ?? 'today';
+            [$records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, $period, $request);
+            $data[$day] = $records;
+        }
+        
+        $dataArray = array_values($data[$day]); // Convert to sequential array for Google Charts
 
-        $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+        // Calculate percentage for each slice (skip header row at index 0)
+        if (count($dataArray) > 1) {
+            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
 
-        // Step 2 and 3: Calculate the percentage for each slice
-        for ($i = 1; $i < count($dataArray); $i++) {
-            $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
-
-            $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+            for ($i = 1; $i < count($dataArray); $i++) {
+                if (is_array($dataArray[$i]) && isset($dataArray[$i][0], $dataArray[$i][1])) {
+                    $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+                    $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage, 1) . "%)";
+                }
+            }
         }
 
         $data[$day] = $dataArray;
@@ -1184,122 +1146,129 @@ class DashboardReportsController extends Controller
 
     public function revenueByCentre(Request $request)
     {
-        $data = [];
+        $data = [['Task', 'Hours per Day']];
+        $total = 0;
+        
         if (Gate::allows('dashboard_revenue_by_centre')) {
-            $locations = ACL::getUserCentres();
+            $locationIds = ACL::getUserCentres();
+            
+            if (empty($locationIds)) {
+                return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
+                    'pie' => $data,
+                    'total' => '0.00',
+                ]);
+            }
+
+            // Fetch all locations with city in ONE query (fixes N+1)
+            $locations = Locations::with('city')->whereIn('id', $locationIds)->get()->keyBy('id');
 
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
             [$start_date, $end_date] = $this->getDates($request);
-            $today_records = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
-                ->whereDate('created_at', '<=', $end_date)
+            
+            // Use date range instead of whereDate for better index usage
+            $query = \App\Models\Invoices::where('created_at', '>=', $start_date . ' 00:00:00')
+                ->where('created_at', '<=', $end_date . ' 23:59:59')
                 ->where('total_price', '>', 0)
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->where(['invoice_status_id' => $invoicestatus->id]);
+                ->whereIn('location_id', $locationIds)
+                ->where('invoice_status_id', $invoicestatus->id);
 
             if ($request->get('performance') == '1') {
-                $today_records = $today_records->where(['created_by' => Auth::User()->id]);
+                $query->where('created_by', Auth::User()->id);
             }
 
-            $today_records = $today_records->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))->groupBy('location_id')->get();
-            $total = 0;
-            $data[0] = [
-                'Task',
-                'Hours per Day',
-            ];
-            if ($locations) {
-                foreach ($locations as $counter => $location) {
-                    $location_detail = Locations::find($location);
-                    if ($location_detail) {
-                        if ($counter == 0) {
-                            $data[0] = [
-                                'Task',
-                                'Hours per Day',
-                            ];
-                        }
+            // Get records keyed by location_id for O(1) lookup
+            $today_records = $query->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+                ->groupBy('location_id')
+                ->get()
+                ->keyBy('location_id');
 
-                        if ($today_records) {
-                            foreach ($today_records as $todayRecord) {
-                                if ($todayRecord->location_id == $location_detail->id) {
-                                    $data[] = [
-                                        $location_detail->city->name . ' - ' . $location_detail->name,
-                                        $todayRecord->total_price,
-                                    ];
-
-                                    $total += $todayRecord->total_price;
-                                }
-                            }
-                        }
-                    }
+            // Build data array efficiently (no nested loops)
+            foreach ($locationIds as $locationId) {
+                $location = $locations->get($locationId);
+                $record = $today_records->get($locationId);
+                
+                if ($location && $record) {
+                    $cityName = $location->city->name ?? '';
+                    $data[] = [
+                        $cityName . ' - ' . $location->name,
+                        $record->total_price,
+                    ];
+                    $total += $record->total_price;
                 }
             }
 
-            $dataArray = $data;
-
-            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
-
-            // Step 2 and 3: Calculate the percentage for each slice
-            for ($i = 1; $i < count($dataArray); $i++) {
-                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
-
-                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage ?? 0, 1) . "%)";
+            // Calculate percentages
+            if (count($data) > 1) {
+                $totalValue = array_sum(array_column(array_slice($data, 1), 1));
+                
+                for ($i = 1; $i < count($data); $i++) {
+                    $percentage = $totalValue != 0 ? ($data[$i][1] / $totalValue) * 100 : 0;
+                    $data[$i][0] = $data[$i][0] . " (" . number_format($percentage, 1) . "%)";
+                }
             }
-
-            $data = $dataArray;
 
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
-                'total' => number_format($total ?? 0, 2),
+                'total' => number_format($total, 2),
             ]);
         }
     }
 
     public function myRevenueByCentre(Request $request)
     {
-        $data = [];
+        $data = [['Task', 'Hours per Day']];
+        $total = 0;
+        
         if (Gate::allows('dashboard_my_revenue_by_centre')) {
-            $locations = Locations::getActiveSortedLocations(ACL::getUserCentres());
+            $locationIds = ACL::getUserCentres();
+            
+            if (empty($locationIds)) {
+                return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
+                    'pie' => $data,
+                    'total' => '0.00',
+                ]);
+            }
+
+            // Fetch locations with city relationship
+            $locations = Locations::getActiveSortedLocations($locationIds);
+            
             $invoicestatus = InvoiceStatuses::where(['slug' => 'paid'])->first();
             [$start_date, $end_date] = $this->getDates($request);
-            $today_records = \App\Models\Invoices::whereDate('created_at', '>=', $start_date)
-                ->whereDate('created_at', '<=', $end_date)
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->where(['invoice_status_id' => $invoicestatus->id]);
+            
+            // Use date range instead of whereDate for better index usage
+            $query = \App\Models\Invoices::where('created_at', '>=', $start_date . ' 00:00:00')
+                ->where('created_at', '<=', $end_date . ' 23:59:59')
+                ->whereIn('location_id', $locationIds)
+                ->where('invoice_status_id', $invoicestatus->id);
+                
             if ($request->get('performance') == '1') {
-                $today_records = $today_records->where(['created_by' => Auth::User()->id]);
+                $query->where('created_by', Auth::User()->id);
             }
-            $today_records = $today_records->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
+            
+            // Get records keyed by location_id for O(1) lookup
+            $today_records = $query->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
                 ->groupBy('location_id')
-                ->get();
-            $total = 0;
-            $data[0] = [
-                'Task',
-                'Hours per Day',
-            ];
+                ->get()
+                ->keyBy('location_id');
+
+            // Build data array efficiently (no nested loops)
             if ($locations) {
-                foreach ($locations as $counter => $location) {
-                    if ($counter == 0) {
-                        $data[0] = [
-                            'Task',
-                            'Hours per Day',
+                foreach ($locations as $location) {
+                    $record = $today_records->get($location->id);
+                    if ($record) {
+                        $cityName = $location->city->name ?? '';
+                        $data[] = [
+                            $cityName . ' - ' . $location->name,
+                            $record->total_price,
                         ];
-                    }
-                    if ($today_records) {
-                        foreach ($today_records as $todayRecord) {
-                            if ($todayRecord->location_id == $location->id) {
-                                $data[] = [
-                                    $location->city->name . ' - ' . $location->name,
-                                    $todayRecord->total_price,
-                                ];
-                                $total += $todayRecord->total_price;
-                            }
-                        }
+                        $total += $record->total_price;
                     }
                 }
             }
 
             return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
                 'pie' => $data,
-                'total' => number_format($total ?? 0, 2),
+                'total' => number_format($total, 2),
             ]);
         }
     }
@@ -3626,31 +3595,17 @@ class DashboardReportsController extends Controller
     }
     public function GetCentreDoctors(Request $request)
     {
-        if ($request->centre_id == 'all') {
-
-            $consultant = DoctorHasLocations::where('is_allocated',1)->distinct('user_id')
-                ->pluck('user_id');
-
-            $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
-
-            // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-            //     ->join('users', 'resources.external_id', 'users.id')
-            //     ->select('users.name', 'users.id')
-            //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1])
-            //     ->distinct('user_id')
-            //     ->get();
-        } else {
-            $consultant = DoctorHasLocations::where('is_allocated',1)->where('location_id', $request->centre_id)
-                ->distinct('user_id')
-                ->pluck('user_id');
-            $consultants = User::whereIn('id', $consultant)->where('active', 1)->get();
-            // $consultants = DB::table('resource_has_rota')->join('resources', 'resources.id', 'resource_has_rota.resource_id')
-            //     ->join('users', 'resources.external_id', 'users.id')
-            //     ->select('users.name', 'users.id')
-            //     ->where(['resource_has_rota.is_consultancy' => 1, 'users.active' => 1, 'resource_has_rota.location_id' => $request->centre_id])
-            //     ->distinct('user_id')
-            //     ->get();
+        // Single optimized query using join instead of two separate queries
+        $query = User::select('users.id', 'users.name')
+            ->join('doctor_has_locations', 'doctor_has_locations.user_id', '=', 'users.id')
+            ->where('doctor_has_locations.is_allocated', 1)
+            ->where('users.active', 1);
+        
+        if ($request->centre_id != 'all') {
+            $query->where('doctor_has_locations.location_id', $request->centre_id);
         }
+        
+        $consultants = $query->distinct()->get();
 
         return response()->json(['status' => 1, 'doctors' => $consultants]);
     }
