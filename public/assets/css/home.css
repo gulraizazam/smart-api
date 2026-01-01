@@ -467,7 +467,7 @@ select.form-control {
         max-width: calc(50% - 10px) !important;
         margin-right: 0 !important;
         margin-left: 0 !important;
-        margin-bottom: 0 !important;
+        margin-bottom: 10px !important;
     }
     
     /* Smaller dashboard counter text */
