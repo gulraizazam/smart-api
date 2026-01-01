@@ -408,11 +408,42 @@ class DashboardChartService
         $ratings = array_column($doctorRatings, 'rating');
         $totals = array_column($doctorRatings, 'total');
 
+        // Calculate feedback statistics: total treatments vs feedbacks recorded
+        $treatmentStatusId = 2; // Treatment appointment status
+        $treatmentTypeId = 2; // Treatment appointment type
+        
+        // Get total treatments scheduled in the date range
+        $treatmentsQuery = Appointments::whereIn('location_id', $locationIds)
+            ->where('appointment_type_id', $treatmentTypeId)
+            ->where('appointment_status_id', $treatmentStatusId);
+        
+        // Get feedbacks count for treatments in the date range
+        $feedbacksCountQuery = Feedback::join('appointments', 'feedback.appointment_id', '=', 'appointments.id')
+            ->whereIn('appointments.location_id', $locationIds)
+            ->where('appointments.appointment_type_id', $treatmentTypeId)
+            ->where('appointments.appointment_status_id', $treatmentStatusId);
+        
+        // Apply date filter based on period
+        if ($period !== 'all' && $period !== 'All') {
+            [$startDate, $endDate] = DashboardHelper::getDateRange($period);
+            $treatmentsQuery->whereBetween('scheduled_date', [$startDate, $endDate]);
+            $feedbacksCountQuery->whereBetween('appointments.scheduled_date', [$startDate, $endDate]);
+        }
+        
+        $totalTreatments = $treatmentsQuery->count();
+        $totalFeedbacks = $feedbacksCountQuery->count();
+        $feedbackPercentage = $totalTreatments > 0 ? round(($totalFeedbacks / $totalTreatments) * 100, 2) : 0;
+
         return [
             'labels' => $labels,
             'data' => [
                 'rating' => $ratings,
                 'total' => $totals,
+            ],
+            'feedback_stats' => [
+                'total_treatments' => $totalTreatments,
+                'total_feedbacks' => $totalFeedbacks,
+                'percentage' => $feedbackPercentage,
             ],
         ];
     }

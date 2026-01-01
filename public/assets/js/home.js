@@ -947,9 +947,11 @@ function DoctorWiseFeedback(bar) {
     const info = '#8950FC';
     const warning = '#FFA800';
     const danger = '#F64E60';
-    let labels = bar.data.labels;
-    let totals = bar.data.total;
-    let ratings = bar.data.rating;
+    // Handle both response structures (direct or wrapped in data)
+    let responseData = bar.data || bar;
+    let labels = responseData.labels || [];
+    let totals = responseData.total || [];
+    let ratings = responseData.rating || [];
 
     // Calculate dynamic width based on number of doctors (min 100%, 60px per doctor)
     let dynamicWidth = Math.max(800, labels.length * 60);
@@ -1043,8 +1045,25 @@ function DoctorWiseFeedback(bar) {
     };
 
     $("#doc_wise_feedback_data").html("");
+    
+    // Remove any previous stats info first
+    $('.feedback-stats-info').remove();
+    
     doc_wise_feedback_chart = new ApexCharts(document.querySelector("#doc_wise_feedback_data"), options);
     doc_wise_feedback_chart.render();
+    
+    // Display feedback statistics under the chart
+    var feedbackStats = responseData.feedback_stats || bar.feedback_stats;
+    if (feedbackStats) {
+        var stats = feedbackStats;
+        var badgeClass = stats.percentage >= 50 ? 'success' : (stats.percentage >= 25 ? 'warning' : 'danger');
+        var statsHtml = '<div class="feedback-stats-info text-center mt-3 p-2 col-12" style="background: #f8f9fa; border-radius: 5px;">' +
+            '<span class="font-weight-bold">Feedback Response Rate: </span>' +
+            '<span class="text-primary">' + stats.total_feedbacks + '/' + stats.total_treatments + '</span>' +
+            ' <span class="badge badge-' + badgeClass + '">' + stats.percentage + '%</span>' +
+            '</div>';
+        $("#doc_wise_feedback_data").closest('.row').append(statsHtml);
+    }
 }
 function AllDoctorWiseConversion(bar) {
     const primary = '#6993FF';
