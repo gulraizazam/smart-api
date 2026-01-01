@@ -1335,10 +1335,14 @@ $(document).ready(function () {
         var period = 'thismonth';
         changeCenterDoct(period, selectedValue)
     });
+    
+    $('.selectcenterfeedback').select2();
     $('.selectcenterfeedback').on('change', function () {
         var selectedValue = $(this).val();
         var period = 'thismonth';
         changeCenterFeedback(period, selectedValue)
     });
+    
+    $('.selectcenterupselling').select2();
 });
 

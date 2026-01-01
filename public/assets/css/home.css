@@ -379,13 +379,23 @@ select.form-control {
         margin-bottom: 5px;
     }
     
-    /* Make select dropdowns smaller on mobile */
+    /* Make select dropdowns uniform size on mobile */
     .card-spacer2 select.form-control,
     .nav-tabs select.form-control {
-        font-size: 10px;
-        padding: 3px 5px;
-        min-width: 70px;
-        max-width: 100px;
+        font-size: 11px;
+        padding: 4px 8px;
+        min-width: 85px;
+        max-width: 95px;
+        height: 30px;
+    }
+    
+    /* Reduce space between dropdowns */
+    .nav-tabs > li {
+        margin-right: 3px !important;
+    }
+    
+    .card-spacer2 .nav-tabs {
+        gap: 3px;
     }
     
     /* Fix table overflow on mobile */
@@ -393,6 +403,20 @@ select.form-control {
     .appenddoctorlist .table-responsive {
         max-width: 100%;
         overflow-x: auto;
+        padding: 0 5px;
+    }
+    
+    /* Add padding to table content */
+    .centre_wise_arrival_wrap .table,
+    .appenddoctorlist .table {
+        margin: 0;
+    }
+    
+    .centre_wise_arrival_wrap .table td,
+    .centre_wise_arrival_wrap .table th,
+    .appenddoctorlist .table td,
+    .appenddoctorlist .table th {
+        padding: 8px 10px;
     }
     
     /* Doctor Upselling - show only table */
@@ -431,12 +455,17 @@ select.form-control {
         padding: 1rem !important;
     }
     
-    /* Make stats boxes stack better */
+    /* Make stats boxes stack better with gaps */
+    .card-spacer .row {
+        gap: 10px;
+    }
+    
     .card-spacer .row .col {
-        flex: 0 0 50%;
-        max-width: 50%;
+        flex: 0 0 calc(50% - 5px);
+        max-width: calc(50% - 5px);
         margin-right: 0 !important;
         margin-left: 0 !important;
+        margin-bottom: 10px;
     }
     
     /* Smaller dashboard counter text */
