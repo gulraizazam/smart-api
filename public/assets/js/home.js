@@ -951,12 +951,14 @@ function DoctorWiseFeedback(bar) {
     let totals = bar.data.total;
     let ratings = bar.data.rating;
 
-    // Calculate dynamic width based on number of doctors (min 100%, 50px per doctor)
-    let dynamicWidth = Math.max(800, labels.length * 50);
+    // Calculate dynamic width based on number of doctors (min 100%, 60px per doctor)
+    let dynamicWidth = Math.max(800, labels.length * 60);
     
-    // Calculate bar width and dynamic font size based on number of doctors
-    let barWidthPx = (dynamicWidth * 0.7) / labels.length; // 70% columnWidth divided by number of bars
-    let dynamicFontSize = Math.min(16, Math.max(9, Math.floor(barWidthPx * 0.35))); // Scale font: min 9px, max 16px
+    // Calculate dynamic column width - narrower bars when fewer doctors
+    let columnWidthPercent = labels.length <= 5 ? '35%' : labels.length <= 10 ? '50%' : '60%';
+    
+    // Dynamic font size - larger for fewer doctors, smaller for many
+    let dynamicFontSize = labels.length <= 5 ? 14 : labels.length <= 10 ? 12 : 10;
 
     var options = {
         series: [{
@@ -983,7 +985,7 @@ function DoctorWiseFeedback(bar) {
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '70%',
+                columnWidth: columnWidthPercent,
                 endingShape: 'rounded',
                 dataLabels: {
                     position: 'center',

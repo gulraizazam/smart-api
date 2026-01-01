@@ -45,8 +45,9 @@
     }
 
     function loadDoctorUpsellingData(centreId, period) {
-        // Show loader
+        // Show loader and hide chart area
         $('.loader-img-upselling').show();
+        $('#doctor_upselling_chart').hide();
         
         // Hide table content
         $('#doctor_upselling_tbody').html('');
@@ -55,12 +56,14 @@
         $.ajax({
             url: window.dashboardConfig.routes.doctorUpsellingData,
             method: 'GET',
+            global: false,
             data: {
                 centre_id: centreId,
                 period: period
             },
             success: function(response) {
                 $('.loader-img-upselling').hide();
+                $('#doctor_upselling_chart').show();
                 
                 if (response.success && response.data.length > 0) {
                     populateUpsellingTable(response.data);
@@ -70,6 +73,7 @@
             },
             error: function(xhr, status, error) {
                 $('.loader-img-upselling').hide();
+                $('#doctor_upselling_chart').show();
                 console.error('Error loading doctor upselling data:', error);
                 showUpsellingErrorMessage();
             }
@@ -106,12 +110,14 @@
         // Hide placeholder and show chart
         $('#doctor_upselling_placeholder').hide();
         
-        // Calculate dynamic width based on number of doctors (min 800px, 50px per doctor)
-        let dynamicWidth = Math.max(800, doctorNames.length * 50);
+        // Calculate dynamic width based on number of doctors (min 800px, 60px per doctor)
+        let dynamicWidth = Math.max(800, doctorNames.length * 60);
         
-        // Calculate bar width and dynamic font size based on number of doctors
-        let barWidthPx = (dynamicWidth * 0.7) / doctorNames.length;
-        let dynamicFontSize = Math.min(16, Math.max(9, Math.floor(barWidthPx * 0.35)));
+        // Calculate dynamic column width - narrower bars when fewer doctors
+        let columnWidthPercent = doctorNames.length <= 5 ? '35%' : doctorNames.length <= 10 ? '50%' : '60%';
+        
+        // Dynamic font size - larger for fewer doctors, smaller for many
+        let dynamicFontSize = doctorNames.length <= 5 ? 14 : doctorNames.length <= 10 ? 12 : 10;
         
         // Calculate total for series name
         let totalAmount = upsellingAmounts.reduce((a, b) => a + b, 0);
@@ -141,7 +147,7 @@
             plotOptions: {
                 bar: {
                     horizontal: false,
-                    columnWidth: '70%',
+                    columnWidth: columnWidthPercent,
                     endingShape: 'rounded',
                     dataLabels: {
                         position: 'top',
@@ -153,7 +159,7 @@
                 enabled: true,
                 formatter: function(val) { return formatCurrency(val); },
                 style: {
-                    fontSize: '10px',
+                    fontSize: dynamicFontSize + 'px',
                     colors: ['#304758'],
                     fontWeight: 600
                 },
