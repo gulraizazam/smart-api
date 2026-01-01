@@ -385,19 +385,28 @@ class DashboardChartService
         // Get doctor names
         $doctors = User::whereIn('id', $doctorIds)
             ->where('active', 1)
-            ->orderBy('name')
             ->pluck('name', 'id');
 
-        $labels = [];
-        $ratings = [];
-        $totals = [];
-
+        // Build array with ratings for sorting
+        $doctorRatings = [];
         foreach ($doctors as $doctorId => $doctorName) {
             $feedback = $feedbackData->get($doctorId);
-            $labels[] = $doctorName;
-            $ratings[] = $feedback ? round($feedback->avg_rating, 2) : 0;
-            $totals[] = $feedback ? (int)$feedback->total_feedback : 0;
+            $doctorRatings[] = [
+                'name' => $doctorName,
+                'rating' => $feedback ? round($feedback->avg_rating, 2) : 0,
+                'total' => $feedback ? (int)$feedback->total_feedback : 0,
+            ];
         }
+
+        // Sort by rating high to low
+        usort($doctorRatings, function($a, $b) {
+            return $b['rating'] <=> $a['rating'];
+        });
+
+        // Extract sorted data
+        $labels = array_column($doctorRatings, 'name');
+        $ratings = array_column($doctorRatings, 'rating');
+        $totals = array_column($doctorRatings, 'total');
 
         return [
             'labels' => $labels,
