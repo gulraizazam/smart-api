@@ -187,7 +187,7 @@ class DashboardChartService
         
         if (!empty($convertedAppointmentIds)) {
             $conversionSpendByAppointment = \App\Models\PackageAdvances::whereIn('appointment_id', $convertedAppointmentIds)
-                ->selectRaw('appointment_id, SUM(amount) as total_amount')
+                ->selectRaw('appointment_id, SUM(cash_amount) as total_amount')
                 ->groupBy('appointment_id')
                 ->pluck('total_amount', 'appointment_id')
                 ->toArray();
