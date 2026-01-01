@@ -455,17 +455,19 @@ select.form-control {
         padding: 1rem !important;
     }
     
-    /* Make stats boxes stack better with gaps */
+    /* Make stats boxes 2x2 grid with gaps */
     .card-spacer .row {
+        display: flex !important;
+        flex-wrap: wrap !important;
         gap: 10px;
     }
     
     .card-spacer .row .col {
-        flex: 0 0 calc(50% - 5px);
-        max-width: calc(50% - 5px);
+        flex: 0 0 calc(50% - 10px) !important;
+        max-width: calc(50% - 10px) !important;
         margin-right: 0 !important;
         margin-left: 0 !important;
-        margin-bottom: 10px;
+        margin-bottom: 0 !important;
     }
     
     /* Smaller dashboard counter text */
@@ -499,11 +501,17 @@ select.form-control {
 
 @media (max-width: 575px) {
     /* Keep stats as 2 tiles per row on extra small devices */
+    .card-spacer .row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 8px;
+    }
+    
     .card-spacer .row .col {
-        flex: 0 0 50%;
-        max-width: 50%;
-        margin-bottom: 10px;
-        padding: 10px !important;
+        flex: 0 0 calc(50% - 4px) !important;
+        max-width: calc(50% - 4px) !important;
+        margin: 0 !important;
+        padding: 8px !important;
     }
     
     .dashboard-counter {
