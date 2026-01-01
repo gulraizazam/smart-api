@@ -362,7 +362,30 @@ select.form-control {
     .appenddoctorlist {
         flex: 0 0 100% !important;
         max-width: 100% !important;
-        padding: 0 !important;
+        padding: 0 10px !important;
+    }
+    
+    /* Fix dropdown cutoff on mobile - allow wrapping */
+    .card-spacer2 {
+        flex-wrap: wrap !important;
+    }
+    
+    .card-spacer2 .nav-tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+    
+    .card-spacer2 .nav-tabs > li {
+        margin-bottom: 5px;
+    }
+    
+    /* Make select dropdowns smaller on mobile */
+    .card-spacer2 select.form-control,
+    .nav-tabs select.form-control {
+        font-size: 10px;
+        padding: 3px 5px;
+        min-width: 70px;
+        max-width: 100px;
     }
     
     /* Fix table overflow on mobile */
@@ -446,15 +469,16 @@ select.form-control {
 }
 
 @media (max-width: 575px) {
-    /* Extra small devices */
+    /* Keep stats as 2 tiles per row on extra small devices */
     .card-spacer .row .col {
-        flex: 0 0 100%;
-        max-width: 100%;
+        flex: 0 0 50%;
+        max-width: 50%;
         margin-bottom: 10px;
+        padding: 10px !important;
     }
     
     .dashboard-counter {
-        font-size: 12px;
+        font-size: 11px;
     }
     
     /* Hide some text on very small screens */
