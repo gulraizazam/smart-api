@@ -362,6 +362,14 @@ select.form-control {
     .appenddoctorlist {
         flex: 0 0 100% !important;
         max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    /* Fix table overflow on mobile */
+    .centre_wise_arrival_wrap .table-responsive,
+    .appenddoctorlist .table-responsive {
+        max-width: 100%;
+        overflow-x: auto;
     }
     
     /* Doctor Upselling - show only table */
@@ -372,6 +380,26 @@ select.form-control {
     #doctor_upselling_section .col-5 {
         flex: 0 0 100% !important;
         max-width: 100% !important;
+        padding: 0 !important;
+    }
+    
+    /* Add margin between multiple dropdowns */
+    .nav-tabs > li {
+        margin-right: 8px;
+    }
+    
+    .nav-tabs > li:last-child {
+        margin-right: 0;
+    }
+    
+    /* Fix dropdown spacing in sections with multiple filters */
+    .actions.date_action_dropdown,
+    .actions.action-style {
+        margin-right: 5px;
+    }
+    
+    .btn-group {
+        margin-left: 5px;
     }
     
     /* Reduce padding on cards */
