@@ -247,3 +247,140 @@ select.form-control {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }
 }
+
+/* Mobile Responsive Styles */
+@media (max-width: 991px) {
+    /* Fix loader positioning for tablets and mobile */
+    .loader-img,
+    .loader-img-unattended,
+    .loader-img-attended {
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 50px;
+        display: block;
+    }
+    
+    img.loader-imgs {
+        margin-left: auto;
+        margin-right: auto;
+        margin-top: 60px;
+        display: block;
+    }
+    
+    /* Reduce card min-heights on mobile */
+    .card-stretch-half {
+        min-height: auto !important;
+    }
+    
+    /* Make charts scrollable horizontally */
+    #doc_wise_conversion,
+    #doc_wise_feedback_data,
+    #doctor_upselling_chart,
+    #revenue-centre,
+    #collection-centre {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Stack Doctor Upselling chart and table */
+    #doctor_upselling_section .col-7,
+    #doctor_upselling_section .col-5 {
+        flex: 0 0 100%;
+        max-width: 100%;
+    }
+    
+    /* Adjust dropdown filters */
+    .nav-tabs {
+        float: none;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    /* Fix header spacing */
+    .card-spacer2 {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+    
+    .card-spacer2 .nav-tabs {
+        width: 100%;
+        justify-content: flex-start;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Further adjustments for phones */
+    .loader-img,
+    .loader-img-unattended,
+    .loader-img-attended {
+        margin-top: 30px;
+        height: 40px;
+    }
+    
+    img.loader-imgs {
+        margin-top: 40px;
+        height: 60px;
+    }
+    
+    /* Reduce padding on cards */
+    .card-spacer,
+    .card-spacer2 {
+        padding: 1rem !important;
+    }
+    
+    /* Make stats boxes stack better */
+    .card-spacer .row .col {
+        flex: 0 0 50%;
+        max-width: 50%;
+        margin-right: 0 !important;
+    }
+    
+    /* Smaller dashboard counter text */
+    .dashboard-counter {
+        font-size: 14px;
+    }
+    
+    /* Fix select dropdowns */
+    select.form-control {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+    
+    /* Table responsiveness */
+    .table-responsive {
+        font-size: 12px;
+    }
+    
+    /* Activities container height */
+    #activities-container {
+        height: auto !important;
+        max-height: 400px;
+    }
+    
+    /* Unattended/Overdue sections */
+    #patient-followup-section,
+    #patient-followup-onemonth-section {
+        height: auto !important;
+    }
+}
+
+@media (max-width: 575px) {
+    /* Extra small devices */
+    .card-spacer .row .col {
+        flex: 0 0 100%;
+        max-width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .dashboard-counter {
+        font-size: 12px;
+    }
+    
+    /* Hide some text on very small screens */
+    .btn_Report {
+        font-size: 11px;
+        padding: 5px 10px !important;
+    }
+}
