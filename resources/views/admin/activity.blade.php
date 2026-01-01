@@ -1,89 +1,100 @@
-<div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: auto;">
+<div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: auto;" id="activities-container">
     <!--begin::Header-->
     <div class="card-header align-items-center border-0 mt-4">
         <h3 class="card-title align-items-start flex-column">
             <span class="font-weight-bolder text-dark">Today's Activities!</span>
-            @isset($finance_log)
-    <span class="text-muted mt-3 font-weight-bold font-size-sm" id="totalactivities">{{ count($finance_log) }} activities</span>
-@else
-    <span class="text-muted mt-3 font-weight-bold font-size-sm" id="totalactivities">0 activities</span>
-@endisset
+            <span class="text-muted mt-3 font-weight-bold font-size-sm" id="totalactivities">{{ $total_activities ?? 0 }} activities</span>
         </h3>
     </div>
 
     <div class="card-body pt-4">
-        @if (isset($unauthorized))
+        @if (isset($recent_activities['unauthorized']))
             <div class="text-center">
                 <span>Your are not authorized</span>
             </div>
         @else
-            @if (count($finance_log) > 0)
-                <div class="timeline timeline-6 mt-3">
-                    @foreach ($finance_log as $log)
-                        @if ($log['appointment_type'] == 'Plan')
-                            <div class="timeline-item align-items-start">
-                                <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">
-                                    {{ \Illuminate\Support\Carbon::parse($log['created_at'])->format('h:i') }}
-                                </div>
-                                <div class="timeline-badge">
-                                    <i class="fa fa-genderless text-danger icon-xl"></i>
-                                </div>
-                                <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                    <span style="color: #056FBF;">{{ $log['created_by'] ?? 'N/A' }}</span>
-                                    {{ $log['action'] }}
-                                    @if ($log['action'] == 'refunded')
-                                        <strong>Rs. {{ round($log['amount']) }}</strong> to
-                                    @else
-                                        <strong>Rs. {{ round($log['amount']) }}</strong> from
-                                    @endif
-                                    <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
-                                    <span style="color: #F5B183;" >Plan Id: <a href="{{ route('admin.packages.view.package', $log['planId']) }}" >{{ $log['planId'] }}</a>
-                                    at {{ $log->centre->name ?? $log['location'] }} Centre.
-                                </div>
-                            </div>
-                        @elseif($log['appointment_type'] == 'Consultancy')
-                            <div class="timeline-item align-items-start">
-                                <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">
-                                    {{ \Illuminate\Support\Carbon::parse($log['created_at'])->format('h:i') }}
-                                </div>
-                                <div class="timeline-badge">
-                                    <i class="fa fa-genderless text-danger icon-xl"></i>
-                                </div>
-                                <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                    <span style="color: #056FBF;">{{ $log['created_by'] ?? 'N/A' }}</span>
-                                    {{ $log['action'] }}
-                                    <strong>Rs. {{ round($log['amount']) }}</strong> from
-                                    <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
-                                    <span style="color: #F5B183;">{{ $log['appointment_type'] }}</span>
-                                    at {{ $log->centre->name ?? $log['location'] }} Centre.
-                                </div>
-                            </div>
-                        @else
-                            <div class="timeline-item align-items-start">
-                                <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">
-                                    {{ \Illuminate\Support\Carbon::parse($log['created_at'])->format('h:i') }}
-                                </div>
-                                <div class="timeline-badge">
-                                    <i class="fa fa-genderless text-danger icon-xl"></i>
-                                </div>
-                                <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                                    <span style="color: #056FBF;">{{ $log['created_by'] ?? 'N/A' }}</span>
-                                    {{ $log['action'] }}
-                                    <strong>Rs. {{ round($log['amount']) }}</strong> from
-                                    <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
-                                    <span style="color: #F5B183;">{{ $log['appointment_type'] }}</span>
-                                    at {{ $log->centre->name ?? $log['location'] }} Centre.
-                                </div>
-                            </div>
-                        @endif
-                    @endforeach
+            @if (isset($recent_activities['finance_log']) && count($recent_activities['finance_log']) > 0)
+                <div class="timeline timeline-6 mt-3" id="activities-timeline">
+                    @include('admin.activity-items', ['finance_log' => $recent_activities['finance_log']])
                 </div>
+                @if ($has_more ?? false)
+                <div class="text-center py-3" id="load-more-container">
+                    <div id="activities-loader" style="display: none;">
+                        <img src="{{ asset('assets/media/loader.gif') }}" style="width: 30px;">
+                    </div>
+                    <div id="load-more-trigger" data-page="{{ $current_page ?? 1 }}"></div>
+                </div>
+                @endif
             @else
                 <div class="text-center">
-                    {{-- <span>No Activity Found</span> --}}
                     <span style="color: #000;text-align:center;font-size: 12px;padding: 50px 0px 0px;font-family: Arial; display:block;">No Activity Found</span>
                 </div>
             @endif
         @endif
     </div>
 </div>
+<script>
+(function() {
+    var activitiesPage = {{ $current_page ?? 1 }};
+    var hasMore = {{ ($has_more ?? false) ? 'true' : 'false' }};
+    var isLoading = false;
+    var container = document.getElementById('activities-container');
+    var scrollTimeout = null;
+    
+    if (container && hasMore) {
+        container.addEventListener('scroll', function() {
+            // Debounce scroll events
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function() {
+                checkAndLoadMore();
+            }, 150);
+        });
+    }
+    
+    function checkAndLoadMore() {
+        if (isLoading || !hasMore) return;
+        
+        var scrollTop = container.scrollTop;
+        var scrollHeight = container.scrollHeight;
+        var clientHeight = container.clientHeight;
+        
+        // Load more when 100px from bottom
+        if (scrollTop + clientHeight >= scrollHeight - 100) {
+            loadMoreActivities();
+        }
+    }
+    
+    function loadMoreActivities() {
+        if (isLoading || !hasMore) return;
+        isLoading = true;
+        
+        var loader = document.getElementById('activities-loader');
+        if (loader) loader.style.display = 'block';
+        
+        activitiesPage++;
+        
+        $.ajax({
+            url: route('admin.home.getactivity'),
+            type: 'GET',
+            data: { page: activitiesPage, type: 'today' },
+            success: function(response) {
+                if (response.html) {
+                    $('#activities-timeline').append(response.html);
+                }
+                hasMore = response.has_more;
+                if (!hasMore) {
+                    $('#load-more-container').hide();
+                }
+                isLoading = false;
+                if (loader) loader.style.display = 'none';
+            },
+            error: function() {
+                isLoading = false;
+                hasMore = false; // Stop trying on error
+                if (loader) loader.style.display = 'none';
+                $('#load-more-container').hide();
+            }
+        });
+    }
+})();
+</script>

@@ -468,6 +468,10 @@ public function getDoctorUpsellingData(Request $request)
         
         // Define date ranges
         $periods = [
+            'today' => [
+                'start_date' => Carbon::now()->format('Y-m-d 00:00:00'),
+                'end_date' => Carbon::now()->format('Y-m-d 23:59:59'),
+            ],
             'yesterday' => [
                 'start_date' => Carbon::now()->subDay(1)->format('Y-m-d 00:00:00'),
                 'end_date' => Carbon::now()->subDay(1)->format('Y-m-d 23:59:59'),

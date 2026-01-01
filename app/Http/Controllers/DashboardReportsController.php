@@ -31,6 +31,9 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\AppointmentsDailyStats;
 use App\Models\Feedback;
 use Illuminate\Support\Facades\Config;
+use App\Services\Dashboard\DashboardStatsService;
+use App\Services\Dashboard\DashboardRevenueService;
+use App\Services\Dashboard\DashboardChartService;
 
 class DashboardReportsController extends Controller
 {
@@ -40,58 +43,42 @@ class DashboardReportsController extends Controller
 
     public $unauthorized;
 
+    protected $statsService;
+    protected $revenueService;
+    protected $chartService;
+
     /**
      * Create a new controller instance.
      *
      * @return void
      */
-    public function __construct()
-    {
-
+    public function __construct(
+        DashboardStatsService $statsService,
+        DashboardRevenueService $revenueService,
+        DashboardChartService $chartService
+    ) {
         $this->middleware('auth');
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
+        
+        $this->statsService = $statsService;
+        $this->revenueService = $revenueService;
+        $this->chartService = $chartService;
     }
 
     public function collectionByCentre(Request $request)
     {
-        $data = [
-            'today' => [],
-            'yesterday' => [],
-            'last7days' => [],
-            'week' => [],
-            'thismonth' => [],
-            'lastmonth' => [],
-        ];
-        
-        $total = 0;
         $day = $request->type ?? 'today';
+        $result = $this->revenueService->getCollectionByCentre($day, $request);
+        $data = $result['data'];
+        $total = $result['total'];
         
-        // Map request type to report parameter
-        $periodMap = [
-            'today' => 'today',
-            'yesterday' => 'yesterday',
-            'last7days' => 'last7day',
-            'week' => 'week',
-            'thismonth' => 'thisMonth',
-            'lastmonth' => 'lastMonth',
-        ];
-        
-        $location_information = DashboardHelper::getUserCentres();
-        
-        if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            $period = $periodMap[$day] ?? 'today';
-            [$records, $total] = dashboardreport::CollectionByRevenueWidgets($location_information, Auth::User()->account_id, $period, $request);
-            $data[$day] = $records;
-        }
-        
-        $dataArray = array_values($data[$day]); // Convert to sequential array for Google Charts
+        $dataArray = array_values($data[$day] ?? []);
 
         // Calculate percentage for each slice (skip header row at index 0)
         if (count($dataArray) > 1) {
             $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
-
             for ($i = 1; $i < count($dataArray); $i++) {
                 if (is_array($dataArray[$i]) && isset($dataArray[$i][0], $dataArray[$i][1])) {
                     $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
@@ -110,1279 +97,111 @@ class DashboardReportsController extends Controller
 
     public function CollectionByServiceCategory(Request $request)
     {
-        $data = [
-            'today' => [],
-            'yesterday' => [],
-            'last7days' => [],
-            'thismonth' => [],
-            'lastmonth' => [],
-        ];
-        $services = Services::where([
-            'account_id' => Auth::User()->account_id,
-            'active' => '1',
-            'parent_id' => '0',
-        ])->get();
-        if (Gate::allows('dashboard_collection_by_centre') || Gate::allows('dashboard_my_collection_by_centre')) {
-            if ($request->today) {
-                $total = 0;
-                $today[0] = [
-                    'Task',
-                    'Hours per Day',
-                ];
-                foreach ($services as $service) {
-                    $childServices = Services::where('parent_id', $service->id)->get();
-                    foreach ($childServices as $child) {
-                        $packagesadvances = PackageAdvances::join('appointments', 'appointments.id', 'package_advances.appointment_id')
-                            ->whereDate('package_advances.created_at', '=', Carbon::now()->format('Y-m-d'))
-                            ->where([
-                                'package_advances.account_id' => Auth::User()->account_id,
-                                'appointments.service_id' => $child->id,
-                            ])->get();
-                        if ($packagesadvances) {
-                            $balance = 0;
-                            $total_revenue_cash_in = 0;
-                            $total_revenue_card_in = 0;
-                            $total_refund_out = 0;
-                            foreach ($packagesadvances as $packagesadvance) {
-                                if (
-                                    $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
-                                ) {
-                                    switch ($packagesadvance->cash_flow) {
-                                        case 'in':
-                                            $balance = $balance + $packagesadvance->cash_amount;
-                                            break;
-                                        case 'out':
-                                            $balance = $balance - $packagesadvance->cash_amount;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    if ($packagesadvance->cash_amount != 0) {
-                                        if ($packagesadvance->package_id) {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->is_adjustment == '1') {
-                                            $transtype = Config::get('constants.trans_type.adjustment');
-                                        }
-                                        if ($packagesadvance->is_cancel == '1') {
-                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
-                                            $transtype = Config::get('constants.trans_type.invoice_create');
-                                        }
-                                        if ($packagesadvance->is_refund == '1') {
-                                            $transtype = Config::get('constants.trans_type.refund_in');
-                                        }
-                                        if ($packagesadvance->is_tax == '1') {
-                                            $transtype = Config::get('constants.trans_type.tax_out');
-                                        }
-                                        if ($packagesadvance->cash_flow == 'in') {
-                                            if ($packagesadvance->paymentmode->name == 'Cash') {
-                                                $revenue_cash_in = $packagesadvance->cash_amount;
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Card') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = $packagesadvance->cash_amount;
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = $packagesadvance->cash_amount;
-                                                $refund_out = '';
-                                            }
-                                        } else {
-                                            $revenue_cash_in = '';
-                                            $revenue_card_in = '';
-                                            $revenue_bank_in = '';
-                                            $refund_out = $packagesadvance->cash_amount;
-                                        }
-
-                                        if ($revenue_cash_in) {
-                                            $total_revenue_cash_in += $revenue_cash_in;
-                                        }
-                                        if ($revenue_card_in) {
-                                            $total_revenue_card_in += $revenue_card_in;
-                                        }
-                                        if ($revenue_bank_in) {
-                                            $total_revenue_card_in += $revenue_bank_in;
-                                        }
-                                        if ($refund_out) {
-                                            $total_refund_out += $refund_out;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-                        $In_hand_balance = $total_revenue - $total_refund_out;
-                        if ($In_hand_balance > 0) {
-                            $today[$service->id] = [
-                                $service->name,
-                                $In_hand_balance,
-                            ];
-                            $colors[] = $service->color;
-                            $total += $In_hand_balance;
-                        }
-                    }
-                }
-                if (count($today)) {
-                    foreach ($today as $record) {
-                        $data['today'][] = $record;
-                    }
-                }
-            }
-            if ($request->yesterday) {
-                $total = 0;
-                $yesterday[0] = [
-                    'Task',
-                    'Hours per Day',
-                ];
-                foreach ($services as $service) {
-                    $childServices = Services::where('parent_id', $service->id)->get();
-                    foreach ($childServices as $child) {
-                        $packagesadvances = PackageAdvances::join('appointments', 'appointments.id', 'package_advances.appointment_id')
-                            ->whereDate('package_advances.created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                            ->where([
-                                'package_advances.account_id' => Auth::User()->account_id,
-                                'appointments.service_id' => $child->id,
-                            ])->get();
-                        if ($packagesadvances) {
-                            $balance = 0;
-                            $total_revenue_cash_in = 0;
-                            $total_revenue_card_in = 0;
-                            $total_refund_out = 0;
-                            foreach ($packagesadvances as $packagesadvance) {
-                                if (
-                                    $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
-                                ) {
-                                    switch ($packagesadvance->cash_flow) {
-                                        case 'in':
-                                            $balance = $balance + $packagesadvance->cash_amount;
-                                            break;
-                                        case 'out':
-                                            $balance = $balance - $packagesadvance->cash_amount;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    if ($packagesadvance->cash_amount != 0) {
-                                        if ($packagesadvance->package_id) {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->is_adjustment == '1') {
-                                            $transtype = Config::get('constants.trans_type.adjustment');
-                                        }
-                                        if ($packagesadvance->is_cancel == '1') {
-                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
-                                            $transtype = Config::get('constants.trans_type.invoice_create');
-                                        }
-                                        if ($packagesadvance->is_refund == '1') {
-                                            $transtype = Config::get('constants.trans_type.refund_in');
-                                        }
-                                        if ($packagesadvance->is_tax == '1') {
-                                            $transtype = Config::get('constants.trans_type.tax_out');
-                                        }
-                                        if ($packagesadvance->cash_flow == 'in') {
-                                            if ($packagesadvance->paymentmode->name == 'Cash') {
-                                                $revenue_cash_in = $packagesadvance->cash_amount;
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Card') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = $packagesadvance->cash_amount;
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = $packagesadvance->cash_amount;
-                                                $refund_out = '';
-                                            }
-                                        } else {
-                                            $revenue_cash_in = '';
-                                            $revenue_card_in = '';
-                                            $revenue_bank_in = '';
-                                            $refund_out = $packagesadvance->cash_amount;
-                                        }
-
-                                        if ($revenue_cash_in) {
-                                            $total_revenue_cash_in += $revenue_cash_in;
-                                        }
-                                        if ($revenue_card_in) {
-                                            $total_revenue_card_in += $revenue_card_in;
-                                        }
-                                        if ($revenue_bank_in) {
-                                            $total_revenue_card_in += $revenue_bank_in;
-                                        }
-                                        if ($refund_out) {
-                                            $total_refund_out += $refund_out;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-                        $In_hand_balance = $total_revenue - $total_refund_out;
-                        if ($In_hand_balance > 0) {
-                            $yesterday[$service->id] = [
-                                $service->name,
-                                $In_hand_balance,
-                            ];
-                            $colors[] = $service->color;
-                            $total += $In_hand_balance;
-                        }
-                    }
-                }
-                if (count($yesterday)) {
-                    foreach ($yesterday as $record) {
-                        $data['yesterday'][] = $record;
-                    }
-                }
-            }
-            if ($request->last7days) {
-                $total = 0;
-                $last7days[0] = [
-                    'Task',
-                    'Hours per Day',
-                ];
-                foreach ($services as $service) {
-                    $childServices = Services::where('parent_id', $service->id)->get();
-                    foreach ($childServices as $child) {
-                        $packagesadvances = PackageAdvances::join('appointments', 'appointments.id', 'package_advances.appointment_id')
-                            ->whereDate('package_advances.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                            ->whereDate('package_advances.created_at', '<=', Carbon::now()->format('Y-m-d'))
-                            ->where([
-                                'package_advances.account_id' => Auth::User()->account_id,
-                                'appointments.service_id' => $child->id,
-                            ])->get();
-                        if ($packagesadvances) {
-                            $balance = 0;
-                            $total_balance = 0;
-                            $total_revenue_cash_in = 0;
-                            $total_revenue_card_in = 0;
-                            $total_refund_out = 0;
-                            foreach ($packagesadvances as $packagesadvance) {
-                                if (
-                                    $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
-                                ) {
-                                    switch ($packagesadvance->cash_flow) {
-                                        case 'in':
-                                            $balance = $balance + $packagesadvance->cash_amount;
-                                            break;
-                                        case 'out':
-                                            $balance = $balance - $packagesadvance->cash_amount;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    if ($packagesadvance->cash_amount != 0) {
-                                        if ($packagesadvance->package_id) {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->is_adjustment == '1') {
-                                            $transtype = Config::get('constants.trans_type.adjustment');
-                                        }
-                                        if ($packagesadvance->is_cancel == '1') {
-                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
-                                            $transtype = Config::get('constants.trans_type.invoice_create');
-                                        }
-                                        if ($packagesadvance->is_refund == '1') {
-                                            $transtype = Config::get('constants.trans_type.refund_in');
-                                        }
-                                        if ($packagesadvance->is_tax == '1') {
-                                            $transtype = Config::get('constants.trans_type.tax_out');
-                                        }
-                                        if ($packagesadvance->cash_flow == 'in') {
-                                            if ($packagesadvance->paymentmode->name == 'Cash') {
-                                                $revenue_cash_in = $packagesadvance->cash_amount;
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Card') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = $packagesadvance->cash_amount;
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = $packagesadvance->cash_amount;
-                                                $refund_out = '';
-                                            }
-                                        } else {
-                                            $revenue_cash_in = '';
-                                            $revenue_card_in = '';
-                                            $revenue_bank_in = '';
-                                            $refund_out = $packagesadvance->cash_amount;
-                                        }
-
-                                        if ($revenue_cash_in) {
-                                            $total_revenue_cash_in += $revenue_cash_in;
-                                        }
-                                        if ($revenue_card_in) {
-                                            $total_revenue_card_in += $revenue_card_in;
-                                        }
-                                        if ($revenue_bank_in) {
-                                            $total_revenue_card_in += $revenue_bank_in;
-                                        }
-                                        if ($refund_out) {
-                                            $total_refund_out += $refund_out;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-                        $In_hand_balance = $total_revenue - $total_refund_out;
-                        if ($In_hand_balance > 0) {
-                            $last7days[$service->id] = [
-                                $service->name,
-                                $In_hand_balance,
-                            ];
-                            $colors[] = $service->color;
-                            $total += $In_hand_balance;
-                        }
-                    }
-                }
-                if (count($last7days)) {
-                    foreach ($last7days as $record) {
-                        $data['last7days'][] = $record;
-                    }
-                }
-            }
-            if ($request->thismonth) {
-                $total = 0;
-                $thismonth[0] = [
-                    'Task',
-                    'Hours per Day',
-                ];
-                foreach ($services as $service) {
-                    $childServices = Services::where(['parent_id' => $service->id])->get();
-                    foreach ($childServices as $child) {
-                        $packagesadvances = PackageAdvances::join('appointments', 'appointments.id', 'package_advances.appointment_id')
-                            ->whereDate('package_advances.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                            ->whereDate('package_advances.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                            ->where([
-                                'package_advances.account_id' => Auth::User()->account_id,
-                                'appointments.service_id' => $child->id,
-                            ])->get();
-                        if ($packagesadvances) {
-                            $balance = 0;
-                            $total_balance = 0;
-                            $total_revenue_cash_in = 0;
-                            $total_revenue_card_in = 0;
-                            $total_refund_out = 0;
-                            foreach ($packagesadvances as $packagesadvance) {
-                                if (
-                                    $packagesadvance->cash_flow == 'in' &&
-                                    $packagesadvance->is_adjustment == '0' &&
-                                    $packagesadvance->is_tax == '0' &&
-                                    $packagesadvance->is_cancel == '0'
-                                ) {
-                                    switch ($packagesadvance->cash_flow) {
-                                        case 'in':
-                                            $balance = $balance + $packagesadvance->cash_amount;
-                                            break;
-                                        case 'out':
-                                            $balance = $balance - $packagesadvance->cash_amount;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    $total_balance = $balance;
-                                    if ($packagesadvance->cash_amount != 0) {
-                                        if ($packagesadvance->package_id) {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->is_adjustment == '1') {
-                                            $transtype = Config::get('constants.trans_type.adjustment');
-                                        }
-                                        if ($packagesadvance->is_cancel == '1') {
-                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
-                                            $transtype = Config::get('constants.trans_type.invoice_create');
-                                        }
-                                        if ($packagesadvance->is_refund == '1') {
-                                            $transtype = Config::get('constants.trans_type.refund_in');
-                                        }
-                                        if ($packagesadvance->is_tax == '1') {
-                                            $transtype = Config::get('constants.trans_type.tax_out');
-                                        }
-                                        if ($packagesadvance->cash_flow == 'in') {
-                                            if ($packagesadvance->paymentmode->name == 'Cash') {
-                                                $revenue_cash_in = $packagesadvance->cash_amount;
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Card') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = $packagesadvance->cash_amount;
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = $packagesadvance->cash_amount;
-                                                $refund_out = '';
-                                            }
-                                        } else {
-                                            $revenue_cash_in = '';
-                                            $revenue_card_in = '';
-                                            $revenue_bank_in = '';
-                                            $refund_out = $packagesadvance->cash_amount;
-                                        }
-
-                                        if ($revenue_cash_in) {
-                                            $total_revenue_cash_in += $revenue_cash_in;
-                                        }
-                                        if ($revenue_card_in) {
-                                            $total_revenue_card_in += $revenue_card_in;
-                                        }
-                                        if ($revenue_bank_in) {
-                                            $total_revenue_card_in += $revenue_bank_in;
-                                        }
-                                        if ($refund_out) {
-                                            $total_refund_out += $refund_out;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-                        $In_hand_balance = $total_revenue - $total_refund_out;
-                        if ($In_hand_balance > 0) {
-                            $thismonth[$service->id] = [
-                                $service->name,
-                                $In_hand_balance,
-                            ];
-                            $colors[] = $service->color;
-                            $total += $In_hand_balance;
-                        }
-                    }
-                }
-                if (count($thismonth)) {
-                    foreach ($thismonth as $record) {
-                        $data['thismonth'][] = $record;
-                    }
-                }
-            }
-            if ($request->lastmonth) {
-
-                $total = 0;
-                $lastmonth[0] = [
-                    'Task',
-                    'Hours per Day',
-                ];
-                foreach ($services as $service) {
-                    $childServices = Services::where(['parent_id' => $service->id])->get();
-                    foreach ($childServices as $child) {
-                        $packagesadvances = PackageAdvances::join('appointments', 'appointments.id', 'package_advances.appointment_id')
-                            ->whereDate('package_advances.created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                            ->whereDate('package_advances.created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                            ->where([
-                                'package_advances.account_id' => Auth::User()->account_id,
-                                'appointments.service_id' => $child->id,
-                            ])->get();
-                        if ($packagesadvances) {
-                            $balance = 0;
-                            $total_balance = 0;
-                            $total_revenue_cash_in = 0;
-                            $total_revenue_card_in = 0;
-                            $total_refund_out = 0;
-                            foreach ($packagesadvances as $packagesadvance) {
-                                if (
-                                    ($packagesadvance->cash_flow == 'in' &&
-                                        $packagesadvance->is_adjustment == '0' &&
-                                        $packagesadvance->is_tax == '0' &&
-                                        $packagesadvance->is_cancel == '0'
-                                    )
-                                ) {
-                                    switch ($packagesadvance->cash_flow) {
-                                        case 'in':
-                                            $balance = $balance + $packagesadvance->cash_amount;
-                                            break;
-                                        case 'out':
-                                            $balance = $balance - $packagesadvance->cash_amount;
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    $total_balance = $balance;
-                                    if ($packagesadvance->cash_amount != 0) {
-                                        if ($packagesadvance->package_id) {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'in') {
-                                            $transtype = Config::get('constants.trans_type.advance_in');
-                                        }
-                                        if ($packagesadvance->is_adjustment == '1') {
-                                            $transtype = Config::get('constants.trans_type.adjustment');
-                                        }
-                                        if ($packagesadvance->is_cancel == '1') {
-                                            $transtype = Config::get('constants.trans_type.invoice_cancel');
-                                        }
-                                        if ($packagesadvance->invoice_id && $packagesadvance->cash_flow == 'out') {
-                                            $transtype = Config::get('constants.trans_type.invoice_create');
-                                        }
-                                        if ($packagesadvance->is_refund == '1') {
-                                            $transtype = Config::get('constants.trans_type.refund_in');
-                                        }
-                                        if ($packagesadvance->is_tax == '1') {
-                                            $transtype = Config::get('constants.trans_type.tax_out');
-                                        }
-                                        if ($packagesadvance->cash_flow == 'in') {
-                                            if ($packagesadvance->paymentmode->name == 'Cash') {
-                                                $revenue_cash_in = $packagesadvance->cash_amount;
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Card') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = $packagesadvance->cash_amount;
-                                                $revenue_bank_in = '';
-                                                $refund_out = '';
-                                            }
-                                            if ($packagesadvance->paymentmode->name == 'Bank/Wire Transfer') {
-                                                $revenue_cash_in = '';
-                                                $revenue_card_in = '';
-                                                $revenue_bank_in = $packagesadvance->cash_amount;
-                                                $refund_out = '';
-                                            }
-                                        } else {
-                                            $revenue_cash_in = '';
-                                            $revenue_card_in = '';
-                                            $revenue_bank_in = '';
-                                            $refund_out = $packagesadvance->cash_amount;
-                                        }
-
-                                        if ($revenue_cash_in) {
-                                            $total_revenue_cash_in += $revenue_cash_in;
-                                        }
-                                        if ($revenue_card_in) {
-                                            $total_revenue_card_in += $revenue_card_in;
-                                        }
-                                        if ($revenue_bank_in) {
-                                            $total_revenue_card_in += $revenue_bank_in;
-                                        }
-                                        if ($refund_out) {
-                                            $total_refund_out += $refund_out;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        $total_revenue = $total_revenue_cash_in + $total_revenue_card_in;
-                        $In_hand_balance = $total_revenue - $total_refund_out;
-                        if ($In_hand_balance > 0) {
-                            $lastmonth[$service->id] = [
-                                $service->name,
-                                $In_hand_balance,
-
-                            ];
-                            $colors[] = $service->color;
-                            $total += $In_hand_balance;
-                        }
-                    }
-                }
-                if (count($lastmonth)) {
-                    foreach ($lastmonth as $record) {
-                        $data['lastmonth'][] = $record;
-                    }
-                }
-            }
-        }
-
+        $type = '';
+        if ($request->today) $type = 'today';
+        elseif ($request->yesterday) $type = 'yesterday';
+        elseif ($request->last7days) $type = 'last7days';
+        elseif ($request->thismonth) $type = 'thismonth';
+        elseif ($request->lastmonth) $type = 'lastmonth';
+        
+        $result = $this->revenueService->getCollectionByServiceCategory($type, $request);
+        
         return ApiHelper::apiResponse($this->success, 'service data', true, [
-            'pie' => $data,
-            'colors' => $colors ?? '',
-            'total' => number_format($total ?? 0, 2),
+            'pie' => $result['data'],
+            'colors' => $result['colors'],
+            'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
     public function RevenueByServiceCategory(Request $request)
     {
-        $data = [];
-        $total = 0;
-        $day = $request->type ?? 'today';
-        
-        if (!Gate::allows('dashboard_revenue_by_service')) {
-            return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'pie' => $data,
-                'colors' => [],
-                'total' => '0.00',
-            ]);
-        }
+        $result = $this->revenueService->getRevenueByServiceCategory($request->type ?? '', $request);
+        $data = $result['data'];
+        $total = $result['total'];
+        $colors = $result['colors'];
 
-        // Get date range based on period type
-        $dateRanges = [
-            'today' => [Carbon::today(), Carbon::tomorrow()],
-            'yesterday' => [Carbon::yesterday(), Carbon::today()],
-            'last7days' => [Carbon::now()->subDays(6)->startOfDay(), Carbon::tomorrow()],
-            'week' => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()->addDay()],
-            'thismonth' => [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()->addDay()],
-            'lastmonth' => [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()->addDay()],
-        ];
-        
-        [$startDate, $endDate] = $dateRanges[$day] ?? $dateRanges['today'];
-        
-        $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-        $locationIds = DashboardHelper::getUserCentres();
+        $day = $request->type ?: 'today';
+        $dataArray = $data[$day] ?? [];
 
-        // Build query with date range (better index usage than whereDate)
-        $query = Invoices::where('total_price', '>', 0)
-            ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-            ->whereBetween('invoices.created_at', [$startDate, $endDate])
-            ->where('invoices.invoice_status_id', $invoiceStatusId)
-            ->whereIn('invoices.location_id', $locationIds);
-
-        if ($request->get('performance')) {
-            $query->where('invoices.created_by', Auth::User()->id);
-        }
-
-        $records = $query->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-            ->groupBy('invoice_details.service_id')
-            ->get();
-
-        if ($records->isEmpty()) {
-            $data[$day] = [['Task', 'Hours per Day']];
-            return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'pie' => $data,
-                'colors' => [],
-                'total' => '0.00',
-            ]);
-        }
-
-        // Fetch all services with parent in ONE query (fixes N+1)
-        $serviceIds = $records->pluck('service_id')->filter()->toArray();
-        $services = Services::with('parent')->whereIn('id', $serviceIds)->get()->keyBy('id');
-
-        // Group by parent service category
-        $prepareData = [];
-        foreach ($records as $record) {
-            $service = $services->get($record->service_id);
-            if (!$service) continue;
-            
-            $service_id = $service->parent ? $service->parent->id : $service->id;
-            $service_name = $service->parent ? $service->parent->name : $service->name;
-
-            if (isset($prepareData[$service_id])) {
-                $prepareData[$service_id]['total'] += $record->total_price;
-            } else {
-                $prepareData[$service_id] = [
-                    'id' => $service_id,
-                    'name' => $service_name,
-                    'total' => $record->total_price,
-                ];
-            }
-            $total += $record->total_price;
-        }
-
-        // Build chart data array
-        $chartData = [['Task', 'Hours per Day']];
-        foreach ($prepareData as $item) {
-            $chartData[] = [$item['name'], $item['total']];
-        }
-
-        // Calculate percentages
-        if (count($chartData) > 1) {
-            $totalValue = array_sum(array_column(array_slice($chartData, 1), 1));
-            for ($i = 1; $i < count($chartData); $i++) {
-                $percentage = $totalValue != 0 ? ($chartData[$i][1] / $totalValue) * 100 : 0;
-                $chartData[$i][0] = $chartData[$i][0] . " (" . number_format($percentage, 1) . "%)";
+        // Calculate percentage for each slice
+        if (count($dataArray) > 1) {
+            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+            for ($i = 1; $i < count($dataArray); $i++) {
+                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage, 1) . "%)";
             }
         }
 
-        $data[$day] = $chartData;
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
-            'colors' => [],
-            'total' => number_format($total, 2),
+            'colors' => $colors,
+            'total' => number_format($total ?? 0, 2),
         ]);
     }
 
     public function myCollectionByCentre(Request $request)
     {
-        $data = [
-            'today' => [],
-            'yesterday' => [],
-            'week' => [],
-            'month' => [],
-        ];
-        if (Gate::allows('dashboard_my_collection_by_centre')) {
-            $location_information = Locations::getActiveSorted(DashboardHelper::getUserCentres());
-            switch ($request->type) {
-                case 'today':
-                    [$report_data, $total] = dashboardreport::MyCollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
-                case 'yesterday':
-                    [$report_data, $total] = dashboardreport::MyCollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'yesterday', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['yesterday'][] = $record;
-                        }
-                    }
-                    break;
-                case 'week':
-                    [$report_data, $total] = dashboardreport::MyCollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'last7day', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['week'][] = $record;
-                        }
-                    }
-                    break;
-                case 'month':
-                    [$report_data, $total] = dashboardreport::MyCollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'thisMonth', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['month'][] = $record;
-                        }
-                    }
-                    break;
-                case 'lastmonth':
-                    [$report_data, $total] = dashboardreport::MyCollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'lastMonth', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['lastmonth'][] = $record;
-                        }
-                    }
-                    break;
-                default:
-                    [$report_data, $total] = dashboardreport::MyCollectionByRevenueWidgets($location_information, Auth::User()->account_id, 'today', $request);
-                    if (count($report_data)) {
-                        foreach ($report_data as $record) {
-                            $data['today'][] = $record;
-                        }
-                    }
-                    break;
-            }
-        }
-
+        $result = $this->revenueService->getMyCollectionByCentre($request->type ?? '', $request);
+        
         return ApiHelper::apiResponse($this->success, 'pie chart data', true, [
-            'pie' => $data,
-            'total' => number_format($total ?? 0, 2),
+            'pie' => $result['data'],
+            'total' => number_format($result['total'] ?? 0, 2),
         ]);
     }
 
     public function revenueByCentre(Request $request)
     {
-        $data = [['Task', 'Hours per Day']];
-        $total = 0;
-        
-        if (Gate::allows('dashboard_revenue_by_centre')) {
-            $locationIds = DashboardHelper::getUserCentres();
-            
-            if (empty($locationIds)) {
-                return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
-                    'pie' => $data,
-                    'total' => '0.00',
-                ]);
-            }
-
-            // Fetch all locations with city in ONE query (fixes N+1)
-            $locations = Locations::with('city')->whereIn('id', $locationIds)->get()->keyBy('id');
-
-            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-            [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
-            
-            // Use date range instead of whereDate for better index usage
-            $query = \App\Models\Invoices::where('created_at', '>=', $start_date . ' 00:00:00')
-                ->where('created_at', '<=', $end_date . ' 23:59:59')
-                ->where('total_price', '>', 0)
-                ->whereIn('location_id', $locationIds)
-                ->where('invoice_status_id', $invoiceStatusId);
-
-            if ($request->get('performance') == '1') {
-                $query->where('created_by', Auth::User()->id);
-            }
-
-            // Get records keyed by location_id for O(1) lookup
-            $today_records = $query->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                ->groupBy('location_id')
-                ->get()
-                ->keyBy('location_id');
-
-            // Build data array efficiently (no nested loops)
-            foreach ($locationIds as $locationId) {
-                $location = $locations->get($locationId);
-                $record = $today_records->get($locationId);
-                
-                if ($location && $record) {
-                    $cityName = $location->city->name ?? '';
-                    $data[] = [
-                        $cityName . ' - ' . $location->name,
-                        $record->total_price,
-                    ];
-                    $total += $record->total_price;
-                }
-            }
-
-            // Calculate percentages
-            if (count($data) > 1) {
-                $totalValue = array_sum(array_column(array_slice($data, 1), 1));
-                
-                for ($i = 1; $i < count($data); $i++) {
-                    $percentage = $totalValue != 0 ? ($data[$i][1] / $totalValue) * 100 : 0;
-                    $data[$i][0] = $data[$i][0] . " (" . number_format($percentage, 1) . "%)";
-                }
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
-                'pie' => $data,
-                'total' => number_format($total, 2),
-            ]);
-        }
-    }
-
-    public function myRevenueByCentre(Request $request)
-    {
-        $data = [['Task', 'Hours per Day']];
-        $total = 0;
-        
-        if (Gate::allows('dashboard_my_revenue_by_centre')) {
-            $locationIds = DashboardHelper::getUserCentres();
-            
-            if (empty($locationIds)) {
-                return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
-                    'pie' => $data,
-                    'total' => '0.00',
-                ]);
-            }
-
-            // Fetch locations with city relationship
-            $locations = Locations::getActiveSortedLocations($locationIds);
-            
-            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-            [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
-            
-            // Use date range instead of whereDate for better index usage
-            $query = \App\Models\Invoices::where('created_at', '>=', $start_date . ' 00:00:00')
-                ->where('created_at', '<=', $end_date . ' 23:59:59')
-                ->whereIn('location_id', $locationIds)
-                ->where('invoice_status_id', $invoiceStatusId);
-                
-            if ($request->get('performance') == '1') {
-                $query->where('created_by', Auth::User()->id);
-            }
-            
-            // Get records keyed by location_id for O(1) lookup
-            $today_records = $query->select('location_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                ->groupBy('location_id')
-                ->get()
-                ->keyBy('location_id');
-
-            // Build data array efficiently (no nested loops)
-            if ($locations) {
-                foreach ($locations as $location) {
-                    $record = $today_records->get($location->id);
-                    if ($record) {
-                        $cityName = $location->city->name ?? '';
-                        $data[] = [
-                            $cityName . ' - ' . $location->name,
-                            $record->total_price,
-                        ];
-                        $total += $record->total_price;
-                    }
-                }
-            }
-
-            return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
-                'pie' => $data,
-                'total' => number_format($total, 2),
-            ]);
-        }
-    }
-
-    public function revenueByService(Request $request)
-    {
-        $data = [];
-        $total = 0;
-        $colors = [];
-        $day = $request->type ?? 'today';
-        
-        if (!Gate::allows('dashboard_revenue_by_service')) {
-            return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'pie' => $data,
-                'colors' => [],
-                'total' => '0.00',
-            ]);
-        }
-
-        // Get date range based on period type
-        $dateRanges = [
-            'today' => [Carbon::today(), Carbon::tomorrow()],
-            'yesterday' => [Carbon::yesterday(), Carbon::today()],
-            'last7days' => [Carbon::now()->subDays(6)->startOfDay(), Carbon::tomorrow()],
-            'week' => [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()->addDay()],
-            'thismonth' => [Carbon::now()->startOfMonth(), Carbon::now()->endOfMonth()->addDay()],
-            'lastmonth' => [Carbon::now()->subMonth()->startOfMonth(), Carbon::now()->subMonth()->endOfMonth()->addDay()],
-        ];
-        
-        [$startDate, $endDate] = $dateRanges[$day] ?? $dateRanges['today'];
-        
-        // Fetch services keyed by ID for O(1) lookup
-        $services = Services::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1'],
-        ])->get()->keyBy('id');
-
-        $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-        $locationIds = DashboardHelper::getUserCentres();
-
-        // Build query with date range (better index usage than whereDate)
-        $query = Invoices::where('total_price', '>', 0)
-            ->join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-            ->whereBetween('invoices.created_at', [$startDate, $endDate])
-            ->where('invoices.invoice_status_id', $invoiceStatusId)
-            ->whereIn('invoices.location_id', $locationIds);
-
-        if ($request->get('performance')) {
-            $query->where('invoices.created_by', Auth::User()->id);
-        }
-
-        // Get records keyed by service_id for O(1) lookup
-        $records = $query->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-            ->groupBy('invoice_details.service_id')
-            ->get()
-            ->keyBy('service_id');
-
-        // Build chart data array efficiently (no nested loops)
-        $chartData = [['Task', 'Hours per Day']];
-        
-        foreach ($records as $serviceId => $record) {
-            $service = $services->get($serviceId);
-            if ($service) {
-                $chartData[] = [$service->name, $record->total_price];
-                $colors[] = $service->color;
-                $total += $record->total_price;
-            }
-        }
+        $result = $this->revenueService->getRevenueByCentre($request->type ?? '', $request);
+        $data = $result['data'];
+        $total = $result['total'];
 
         // Calculate percentages
-        if (count($chartData) > 1) {
-            $totalValue = array_sum(array_column(array_slice($chartData, 1), 1));
-            for ($i = 1; $i < count($chartData); $i++) {
-                $percentage = $totalValue != 0 ? ($chartData[$i][1] / $totalValue) * 100 : 0;
-                $chartData[$i][0] = $chartData[$i][0] . " (" . number_format($percentage, 1) . "%)";
+        if (count($data) > 1) {
+            $totalValue = array_sum(array_column(array_slice($data, 1), 1));
+            for ($i = 1; $i < count($data); $i++) {
+                $percentage = $totalValue != 0 ? ($data[$i][1] / $totalValue) * 100 : 0;
+                $data[$i][0] = $data[$i][0] . " (" . number_format($percentage, 1) . "%)";
             }
         }
 
-        $data[$day] = $chartData;
-
-        return ApiHelper::apiResponse($this->success, 'service data', true, [
+        return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
             'pie' => $data,
-            'colors' => $colors,
             'total' => number_format($total, 2),
         ]);
     }
 
-    public function myRevenueByService(Request $request)
+    public function myRevenueByCentre(Request $request)
     {
-        $data = [];
-        $total = 0;
-        $today = [];
-        $colors = [];
-        if (Gate::allows('dashboard_my_revenue_by_service')) {
-            $services = Services::where([
-                ['account_id', '=', Auth::User()->account_id],
-                ['active', '=', '1'],
-            ])->get();
-            $invoiceStatusId = DashboardHelper::getPaidInvoiceStatusId();
-            $userCentres = DashboardHelper::getUserCentres();
-            
-            if ($request->period == '') {
-                $today_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', $invoiceStatusId)
-                    ->whereIn('invoices.location_id', $userCentres);
+        $result = $this->revenueService->getMyRevenueByCentre($request->type ?? '', $request);
+        
+        return ApiHelper::apiResponse($this->success, 'Bar chart data', true, [
+            'pie' => $result['data'],
+            'total' => number_format($result['total'], 2),
+        ]);
+    }
 
-                if ($request->get('performance')) {
-                    $today_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $today[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($today_records) {
-                            foreach ($today_records as $todayRecord) {
-                                if ($todayRecord->service_id == $service->id) {
-                                    $today[$service->id] = [
-                                        $service->name,
-                                        $todayRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
+    public function revenueByService(Request $request)
+    {
+        $result = $this->revenueService->getRevenueByService($request->type ?? '', $request, 'dashboard_revenue_by_service');
+        $data = $result['data'];
+        $total = $result['total'];
+        $colors = $result['colors'];
 
-                                    $total += $todayRecord->total_price;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (count($today)) {
-                    foreach ($today as $record) {
-                        $data['today'][] = $record;
-                    }
-                }
-            }
-            if ($request->period == 'today') {
-                $today_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', $invoiceStatusId)
-                    ->whereIn('invoices.location_id', $userCentres);
-                if ($request->get('performance')) {
-                    $today_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $today_records = $today_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $today[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($today_records) {
-                            foreach ($today_records as $todayRecord) {
-                                if ($todayRecord->service_id == $service->id) {
-                                    $today[$service->id] = [
-                                        $service->name,
-                                        $todayRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
+        $day = $request->type ?: 'today';
+        $dataArray = $data[$day] ?? [];
 
-                                    $total += $todayRecord->total_price;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (count($today)) {
-                    foreach ($today as $record) {
-                        $data['today'][] = $record;
-                    }
-                }
-            }
-            if ($request->period == 'yesterday') {
-                $yesterdayRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', $invoiceStatusId)
-                    ->whereIn('invoices.location_id', $userCentres);
-
-                if ($request->get('performance')) {
-                    $yesterdayRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $yesterdayRecords = $yesterdayRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $yesterday = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $yesterday[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($yesterdayRecords) {
-                            foreach ($yesterdayRecords as $yesterdayRecord) {
-                                if ($yesterdayRecord->service_id == $service->id) {
-                                    $yesterday[$service->id] = [
-                                        $service->name,
-                                        $yesterdayRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
-
-                                    $total += $yesterdayRecord->total_price;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (count($yesterday)) {
-                    foreach ($yesterday as $record) {
-                        $data['yesterday'][] = $record;
-                    }
-                }
-            }
-            if ($request->period == 'last7days') {
-                $last7_days_records = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', $invoiceStatusId)
-                    ->whereIn('invoices.location_id', $userCentres);
-                if ($request->get('performance')) {
-                    $last7_days_records = $last7_days_records->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $last7_days_records = $last7_days_records->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $last7days = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $last7days[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($last7_days_records) {
-                            foreach ($last7_days_records as $last7DaysRecord) {
-                                if ($last7DaysRecord->service_id == $service->id) {
-                                    $last7days[$service->id] = [
-                                        $service->name,
-                                        $last7DaysRecord->total_price,
-                                    ];
-                                    $colors[] = $service->color;
-
-                                    $total += $last7DaysRecord->total_price;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (count($last7days)) {
-                    foreach ($last7days as $record) {
-                        $data['week'][] = $record;
-                    }
-                }
-            }
-            if ($request->period == 'thismonth') {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', $invoiceStatusId)
-                    ->whereIn('invoices.location_id', $userCentres);
-
-                if ($request->get('performance')) {
-                    $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $thisMonth = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $thisMonth[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($thisMonthRecords) {
-                            foreach ($thisMonthRecords as $thisMonthRecord) {
-                                if ($thisMonthRecord->service_id == $service->id) {
-                                    $thisMonth[$service->id] = [
-                                        $service->name,
-                                        $thisMonthRecord->total_price,
-                                    ];
-
-                                    $colors[] = $service->color;
-
-                                    $total += $thisMonthRecord->total_price;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (count($thisMonth)) {
-                    foreach ($thisMonth as $record) {
-                        $data['month'][] = $record;
-                    }
-                }
-            }
-            if ($request->period == 'thismonth') {
-                $thisMonthRecords = Invoices::join('invoice_details', 'invoices.id', '=', 'invoice_details.invoice_id')
-                    ->whereDate('invoices.created_at', '>=', Carbon::now()->subMonth()->StartOfMonth()->format('Y-m-d'))
-                    ->whereDate('invoices.created_at', '<=', Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'))
-                    ->where('invoices.invoice_status_id', $invoiceStatusId)
-                    ->whereIn('invoices.location_id', $userCentres);
-
-                if ($request->get('performance')) {
-                    $thisMonthRecords = $thisMonthRecords->where(['invoices.created_by' => Auth::User()->id]);
-                }
-                $thisMonthRecords = $thisMonthRecords->select('invoice_details.service_id', DB::raw('SUM(invoices.total_price) AS total_price'))
-                    ->groupBy('invoice_details.service_id')
-                    ->get();
-                $thisMonth = [];
-                if ($services) {
-                    $total = 0;
-                    foreach ($services as $service) {
-                        $thisMonth[0] = [
-                            'Task',
-                            'Hours per Day',
-                        ];
-                        if ($thisMonthRecords) {
-                            foreach ($thisMonthRecords as $thisMonthRecord) {
-                                if ($thisMonthRecord->service_id == $service->id) {
-                                    $thisMonth[$service->id] = [
-                                        $service->name,
-                                        $thisMonthRecord->total_price,
-                                    ];
-
-                                    $colors[] = $service->color;
-
-                                    $total += $thisMonthRecord->total_price;
-                                }
-                            }
-                        }
-                    }
-                }
-                if (count($thisMonth)) {
-                    foreach ($thisMonth as $record) {
-                        $data['lastmonth'][] = $record;
-                    }
-                }
+        // Calculate percentage for each slice
+        if (count($dataArray) > 1) {
+            $totalValue = array_sum(array_column(array_slice($dataArray, 1), 1));
+            for ($i = 1; $i < count($dataArray); $i++) {
+                $percentage = $totalValue != 0 ? ($dataArray[$i][1] / $totalValue) * 100 : 0;
+                $dataArray[$i][0] = $dataArray[$i][0] . " (" . number_format($percentage, 1) . "%)";
             }
         }
+
+        $data[$day] = $dataArray;
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
@@ -1391,69 +210,32 @@ class DashboardReportsController extends Controller
         ]);
     }
 
+    public function myRevenueByService(Request $request)
+    {
+        $result = $this->revenueService->getRevenueByService($request->period ?? '', $request, 'dashboard_my_revenue_by_service');
+        
+        return ApiHelper::apiResponse($this->success, 'service data', true, [
+            'pie' => $result['data'],
+            'colors' => $result['colors'],
+            'total' => number_format($result['total'] ?? 0, 2),
+        ]);
+    }
+
     public function AppointmentByStatus(Request $request)
     {
-        $data = [];
-        $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
         $day = $request->period ?: 'today';
         
         if (!Gate::allows('dashboard_appointment_by_status')) {
             return ApiHelper::apiResponse($this->success, 'service data', true, [
-                'pie' => $data,
+                'pie' => [],
                 'colors' => [],
                 'total' => 0,
             ]);
         }
 
-        // Get status IDs from helper (cached)
-        $arrivedStatusId = DashboardHelper::getArrivedStatusId();
-        $convertedStatusId = DashboardHelper::getConvertedStatusId();
-
-        // Fetch appointment statuses keyed by ID for O(1) lookup
-        $appointment_statuses = AppointmentStatuses::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1'],
-            ['parent_id', '=', '0'],
-        ])->where('id', '!=', $convertedStatusId)->get()->keyBy('id');
-
-        // Get date range from helper (cached)
-        [$startDate, $endDate] = DashboardHelper::getDateRange($day);
-        
-        $locationIds = DashboardHelper::getUserCentres();
-
-        // Build query with date range
-        $query = Appointments::where('scheduled_date', '>=', $startDate)
-            ->where('scheduled_date', '<=', $endDate)
-            ->where('appointment_type_id', $request->type)
-            ->whereIn('location_id', $locationIds);
-
-        if ($request->get('performance')) {
-            $query->where('created_by', Auth::User()->id);
-        }
-
-        // Get records keyed by status_id for O(1) lookup
-        $records = $query->select('base_appointment_status_id as appointment_status_id', DB::raw('COUNT(id) AS total'))
-            ->groupBy('base_appointment_status_id')
-            ->get()
-            ->keyBy('appointment_status_id');
-
-        // Get converted count to add to arrived
-        $convertedCount = $records->get($convertedStatusId)->total ?? 0;
-
-        // Build chart data array efficiently (no nested loops)
-        $chartData = [['Task', 'Hours per Day']];
-        
-        foreach ($appointment_statuses as $statusId => $status) {
-            $record = $records->get($statusId);
-            if ($record) {
-                $statusTotal = $record->total;
-                // Add converted count to arrived
-                if ($statusId == $arrivedStatusId) {
-                    $statusTotal += $convertedCount;
-                }
-                $chartData[] = [$status->name, $statusTotal];
-            }
-        }
+        $result = $this->chartService->getAppointmentByStatus($day, $request->type, $request->get('performance'));
+        $chartData = $result['chartData'];
+        $colors = $result['colors'];
 
         // Calculate percentages
         if (count($chartData) > 1) {
@@ -1475,249 +257,16 @@ class DashboardReportsController extends Controller
 
     public function AppointmentByType(Request $request)
     {
+        $period = $request->period ?: 'today';
+        $result = $this->chartService->getAppointmentByType($period, $request->get('performance'));
+        
         $data = [];
-        $total = 0;
-        $today = [];
-        $colors = [];
-        $appointment_types = AppointmentTypes::where([
-            ['account_id', '=', Auth::User()->account_id],
-            ['active', '=', '1'],
-        ])->get();
-        if ($request->period == '') {
-            $today_records = Appointments::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
-                ->whereIn('location_id', DashboardHelper::getUserCentres());
-            if ($request->get('performance')) {
-                $today_records = $today_records->where(['created_by' => Auth::User()->id]);
-            }
-            $today_records = $today_records->select('appointment_type_id', DB::raw('COUNT(id) AS total'))
-                ->groupBy('appointment_type_id')
-                ->get();
-            $today = [];
-            if ($appointment_types) {
-                $total = 0;
-                foreach ($appointment_types as $appointment_type) {
-                    $today[0] = [
-                        'Task',
-                        'Hours per Day',
-                    ];
-                    if ($today_records) {
-                        foreach ($today_records as $todayRecord) {
-                            if ($todayRecord->appointment_type_id == $appointment_type->id) {
-                                $today[$appointment_type->id] = [
-                                    $appointment_type->name,
-                                    $todayRecord->total,
-                                ];
-                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
-                            }
-                        }
-                    }
-                }
-            }
-            if (count($today)) {
-                foreach ($today as $record) {
-                    $data['today'][] = $record;
-                }
-            }
-        }
-        if ($request->period == 'today') {
-            $today_records = Appointments::whereDate('created_at', '=', Carbon::now()->format('Y-m-d'))
-                ->whereIn('location_id', DashboardHelper::getUserCentres());
-            if ($request->get('performance')) {
-                $today_records = $today_records->where(['created_by' => Auth::User()->id]);
-            }
-            $today_records = $today_records->select('appointment_type_id', DB::raw('COUNT(id) AS total'))
-                ->groupBy('appointment_type_id')
-                ->get();
-            $today = [];
-            if ($appointment_types) {
-                $total = 0;
-                foreach ($appointment_types as $appointment_type) {
-                    $today[0] = [
-                        'Task',
-                        'Hours per Day',
-                    ];
-                    if ($today_records) {
-                        foreach ($today_records as $todayRecord) {
-                            if ($todayRecord->appointment_type_id == $appointment_type->id) {
-                                $today[$appointment_type->id] = [
-                                    $appointment_type->name,
-                                    $todayRecord->total,
-
-                                ];
-
-                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
-                            }
-                        }
-                    }
-                }
-            }
-            if (count($today)) {
-                foreach ($today as $record) {
-                    $data['today'][] = $record;
-                }
-            }
-        }
-        if ($request->period == 'yesterday') {
-            $yesterdayRecords = Appointments::whereDate('created_at', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereIn('location_id', DashboardHelper::getUserCentres());
-
-            if ($request->get('performance')) {
-                $yesterdayRecords = $yesterdayRecords->where(['created_by' => Auth::User()->id]);
-            }
-
-            $yesterdayRecords = $yesterdayRecords->select('appointment_type_id', DB::raw('COUNT(id) AS total'))
-                ->groupBy('appointment_type_id')
-                ->get();
-
-            $today = [];
-            if ($appointment_types) {
-                $total = 0;
-                foreach ($appointment_types as $appointment_type) {
-                    $yesterday[0] = [
-                        'Task',
-                        'Hours per Day',
-                    ];
-                    if ($yesterdayRecords) {
-                        foreach ($yesterdayRecords as $yesterdayRecord) {
-                            if ($yesterdayRecord->appointment_type_id == $appointment_type->id) {
-                                $yesterday[$appointment_type->id] = [
-                                    $appointment_type->name,
-                                    $yesterdayRecord->total,
-
-                                ];
-
-                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
-                            }
-                        }
-                    }
-                }
-            }
-            if (count($yesterday)) {
-                foreach ($yesterday as $record) {
-                    $data['yesterday'][] = $record;
-                }
-            }
-        }
-        if ($request->period == 'last7days') {
-            $weeklyRecords = Appointments::whereDate('created_at', '=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->format('Y-m-d'))
-                ->whereIn('location_id', DashboardHelper::getUserCentres());
-
-            if ($request->get('performance')) {
-                $weeklyRecords = $weeklyRecords->where(['created_by' => Auth::User()->id]);
-            }
-            $weeklyRecords = $weeklyRecords->select('appointment_type_id', DB::raw('COUNT(id) AS total'))
-                ->groupBy('appointment_type_id')
-                ->get();
-            if ($appointment_types) {
-                $total = 0;
-                foreach ($appointment_types as $appointment_type) {
-                    $last7days[0] = [
-                        'Task',
-                        'Hours per Day',
-                    ];
-                    if ($weeklyRecords) {
-                        foreach ($weeklyRecords as $weeklyRecord) {
-                            if ($weeklyRecord->appointment_type_id == $appointment_type->id) {
-                                $last7days[$appointment_type->id] = [
-                                    $appointment_type->name,
-                                    $weeklyRecord->total,
-
-                                ];
-
-                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
-                            }
-                        }
-                    }
-                }
-            }
-            if (count($last7days)) {
-                foreach ($last7days as $record) {
-                    $data['last7days'][] = $record;
-                }
-            }
-        }
-        if ($request->period == 'thismonth') {
-            $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->format('Y-m-d'))
-                ->whereIn('location_id', DashboardHelper::getUserCentres());
-            if ($request->get('performance')) {
-                $monthlyRecords = $monthlyRecords->where(['created_by' => Auth::User()->id]);
-            }
-            $monthlyRecords = $monthlyRecords->select('appointment_type_id', DB::raw('COUNT(id) AS total'))
-                ->groupBy('appointment_type_id')
-                ->get();
-            $today = [];
-            if ($appointment_types) {
-                $total = 0;
-                foreach ($appointment_types as $appointment_type) {
-                    $month[0] = [
-                        'Task',
-                        'Hours per Day',
-                    ];
-                    if ($monthlyRecords) {
-                        foreach ($monthlyRecords as $monthlyRecord) {
-                            if ($monthlyRecord->appointment_type_id == $appointment_type->id) {
-                                $month[$appointment_type->id] = [
-                                    $appointment_type->name,
-                                    $monthlyRecord->total,
-
-                                ];
-                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
-                            }
-                        }
-                    }
-                }
-            }
-            if (count($month)) {
-                foreach ($month as $record) {
-                    $data['thismonth'][] = $record;
-                }
-            }
-        }
-        if ($request->period == 'lastmonth') {
-            $monthlyRecords = Appointments::whereDate('created_at', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereDate('created_at', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereIn('location_id', DashboardHelper::getUserCentres());
-            if ($request->get('performance')) {
-                $monthlyRecords = $monthlyRecords->where(['created_by' => Auth::User()->id]);
-            }
-            $monthlyRecords = $monthlyRecords->select('appointment_type_id', DB::raw('COUNT(id) AS total'))
-                ->groupBy('appointment_type_id')
-                ->get();
-            $today = [];
-            if ($appointment_types) {
-                $total = 0;
-                foreach ($appointment_types as $appointment_type) {
-                    $month[0] = [
-                        'Task',
-                        'Hours per Day',
-                    ];
-                    if ($monthlyRecords) {
-                        foreach ($monthlyRecords as $monthlyRecord) {
-                            if ($monthlyRecord->appointment_type_id == $appointment_type->id) {
-                                $month[$appointment_type->id] = [
-                                    $appointment_type->name,
-                                    $monthlyRecord->total,
-
-                                ];
-                                $colors = ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'];
-                            }
-                        }
-                    }
-                }
-            }
-            if (count($month)) {
-                foreach ($month as $record) {
-                    $data['lastmonth'][] = $record;
-                }
-            }
-        }
+        $data[$period] = $result['chartData'];
 
         return ApiHelper::apiResponse($this->success, 'service data', true, [
             'pie' => $data,
-            'colors' => $colors,
-            'total' => 0,
+            'colors' => $result['colors'] ?: ['#3375de', '#c8cf19', '#cf7a19', '#cf1931', '#19cf43', '#a119cf'],
+            'total' => $result['total'],
         ]);
     }
 
@@ -1860,198 +409,25 @@ class DashboardReportsController extends Controller
 
     public function CSRWiseArrival(Request $request)
     {
-        $total_apts = [];
-        $arrived_apts = [];
-        $lables = [];
-
-        $data = ($request->user_id == 'All') ? 'user_id' : 'cron_current_date';
-        $csr_users = RoleHasUsers::whereIn('role_id', [2, 3, 24])->pluck('user_id')->toArray();
-        $csr = User::whereIn('id', $csr_users)->where(['active' => 1])->pluck('id')->toArray();
-        $period = $request->period == '' ? 'thismonth' : $request->period;
-        $user_id = ($request->user_id == 'All') ? $csr : [$request->user_id];
-
-        $periods = [
-            'today' => [
-                'start_date' => Carbon::now()->format('Y-m-d'),
-                'end_date' => Carbon::now()->format('Y-m-d'),
-            ],
-            'yesterday' => [
-                'start_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'last7days' => [
-                'start_date' => Carbon::now()->subDay(6)->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'week' => [
-                'start_date' => Carbon::now()->startOfWeek()->format('Y-m-d'),
-                'end_date' => Carbon::now()->endOfWeek()->subDay(1)->format('Y-m-d'),
-            ],
-            'thismonth' => [
-                'start_date' => Carbon::now()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subDay(1)->format('Y-m-d'),
-            ],
-            'lastmonth' => [
-                'start_date' => Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d'),
-                'end_date' => Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d'),
-            ],
-        ];
-        $stats = AppointmentsDailyStats::select($data)
-            ->selectRaw('count(*) as total')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id = 2 THEN 1 ELSE 0 END) as arrived')
-            ->whereBetween('scheduled_date', [$periods[$period]['start_date'], $periods[$period]['end_date']])
-            ->whereIn('user_id', $user_id)
-            ->orderBy('user_id', 'ASC')
-            ->groupBy($data)
-            ->get()->toArray();
-
-        foreach ($stats as $stat) {
-            if ($data == 'user_id') {
-                $username = User::whereId($stat['user_id'])->where(['active' => 1])->first();
-                if ($username) {
-                    array_push($lables, $username->name);
-                }
-            } else {
-                array_push($lables, $stat['cron_current_date']);
-            }
-            array_push($total_apts, $stat['total']);
-            array_push($arrived_apts, (int) $stat['arrived']);
-        }
+        $period = $request->period ?: 'thismonth';
+        $result = $this->chartService->getCSRWiseArrivalStats($period, $request->user_id ?? 'All');
 
         return ApiHelper::apiResponse($this->success, 'centre wise arrival data', true, [
-            'bar' => $lables,
-            'total' => $total_apts,
-            'arrived' => $arrived_apts,
-
+            'bar' => $result['labels'],
+            'total' => $result['total'],
+            'arrived' => $result['arrived'],
         ]);
     }
 
     public function CallWiseArrival(Request $request)
     {
-        $total_apts = [];
-        $arrived_apts = [];
-        $lables = [];
-        if ($request->period == '') {
-            $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
-            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereNotIn('user_id', $fdm_users)
-                ->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))->whereDate('cron_current_date', '=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->whereNotIn('user_id', $fdm_users)
-                ->where(['appointment_status_id' => 2])
-                ->groupBy('user_id')->get()->toArray();
-            foreach ($yesterday_total_appointments as $loc) {
-                $user = User::find($loc['user_id']);
-                if ($user) {
-                    array_push($lables, $user->name);
-                }
-                array_push($total_apts, $loc['total']);
-            }
-            foreach ($yesterday_arrived_appointments as $apt) {
-                array_push($arrived_apts, $apt['arrived']);
-            }
-        }
-        if ($request->period == 'yesterday') {
-            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->where(['user_id' => $request->user_id])
-                ->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->where(['user_id' => $request->user_id, 'appointment_status_id' => 2])
-                ->groupBy('user_id')->get()->toArray();
-            foreach ($yesterday_total_appointments as $loc) {
-                $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name);
-                array_push($total_apts, $loc['total']);
-            }
-            foreach ($yesterday_arrived_appointments as $apt) {
-                array_push($arrived_apts, $apt['arrived']);
-            }
-        }
-        if ($request->period == 'last7days') {
-            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id])
-                ->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->subDay(6)->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id, 'appointment_status_id' => 2])
-                ->groupBy('user_id')->get()->toArray();
-            foreach ($yesterday_total_appointments as $loc) {
-                $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name);
-                array_push($total_apts, $loc['total']);
-            }
-            foreach ($yesterday_arrived_appointments as $apt) {
-                array_push($arrived_apts, $apt['arrived']);
-            }
-        }
-        if ($request->period == 'week') {
-            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfWeek()->subDay(1)->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id])
-                ->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfWeek()->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfWeek()->subDay(1)->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id])
-                ->where(['appointment_status_id' => 2])
-                ->groupBy('user_id')->get()->toArray();
-            foreach ($yesterday_total_appointments as $loc) {
-                $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name);
-                array_push($total_apts, $loc['total']);
-            }
-            foreach ($yesterday_arrived_appointments as $apt) {
-                array_push($arrived_apts, $apt['arrived']);
-            }
-        }
-        if ($request->period == 'thismonth') {
-            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id])
-                ->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->subDay(1)->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id, 'appointment_status_id' => 2])
-                ->groupBy('user_id')->get()->toArray();
-            foreach ($yesterday_total_appointments as $loc) {
-                $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name);
-                array_push($total_apts, $loc['total']);
-            }
-            foreach ($yesterday_arrived_appointments as $apt) {
-                array_push($arrived_apts, $apt['arrived']);
-            }
-        }
-        if ($request->period == 'lastmonth') {
-            $yesterday_total_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as total'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id])->groupBy('user_id')->get()->toArray();
-            $yesterday_arrived_appointments = AppointmentsDailyStats::select('user_id', DB::raw('count(*) as arrived'))
-                ->whereDate('scheduled_date', '>=', Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d'))
-                ->whereDate('scheduled_date', '<=', Carbon::now()->endOfMonth()->subMonth()->format('Y-m-d'))
-                ->where(['user_id' => $request->user_id, 'appointment_status_id' => 2])->groupBy('user_id')->get()->toArray();
-            foreach ($yesterday_total_appointments as $loc) {
-                $user = User::findOrFail($loc['user_id']);
-                array_push($lables, $user->name);
-                array_push($total_apts, $loc['total']);
-            }
-            foreach ($yesterday_arrived_appointments as $apt) {
-                array_push($arrived_apts, $apt['arrived']);
-            }
-        }
+        $period = $request->period ?: 'today';
+        $result = $this->chartService->getCallWiseArrival($period, $request->user_id);
 
         return ApiHelper::apiResponse($this->success, 'csr wise arrival data', true, [
-            'bar' => $lables,
-            'total' => $total_apts,
-            'arrived' => $arrived_apts,
-
+            'bar' => $result['labels'],
+            'total' => $result['total'],
+            'arrived' => $result['arrived'],
         ]);
     }
 
@@ -2669,18 +1045,7 @@ class DashboardReportsController extends Controller
     }
     public function GetCentreDoctors(Request $request)
     {
-        // Single optimized query using join instead of two separate queries
-        $query = User::select('users.id', 'users.name')
-            ->join('doctor_has_locations', 'doctor_has_locations.user_id', '=', 'users.id')
-            ->where('doctor_has_locations.is_allocated', 1)
-            ->where('users.active', 1);
-        
-        if ($request->centre_id != 'all') {
-            $query->where('doctor_has_locations.location_id', $request->centre_id);
-        }
-        
-        $consultants = $query->distinct()->get();
-
+        $consultants = $this->chartService->getCentreDoctors($request->centre_id ?? 'All');
         return response()->json(['status' => 1, 'doctors' => $consultants]);
     }
     public function FollowUpReport()
