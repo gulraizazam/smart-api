@@ -1,26 +1,6 @@
 @extends('admin.layouts.master')
 @section('title', 'Dashboard')
 @section('content')
-<style>
-    #doc_wise_feedback_data {
-  overflow-x: auto;
-  width: 100%;
-  white-space: nowrap;
-}
-.skeleton-loader {
-    display: inline-block;
-    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-    background-size: 200% 100%;
-    animation: skeleton-loading 1.5s infinite;
-    border-radius: 4px;
-    min-width: 80px;
-    color: transparent;
-}
-@keyframes skeleton-loading {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-</style>
 <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
 
 <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
@@ -124,7 +104,7 @@
                         </div>
                         <div class="card-body pt-4" id="activities-body">
                             <div class="text-center" id="activities-loader">
-                                <img src="{{ asset('assets/media/loader.gif') }}" style="width: 50px;">
+                                <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" style="width: 50px;">
                             </div>
                             <div class="timeline timeline-6 mt-3" id="activities-timeline" style="display: none;"></div>
                             <div class="text-center" id="activities-empty" style="display: none;">
@@ -134,7 +114,7 @@
                                 <span>You are not authorized</span>
                             </div>
                             <div class="text-center py-3" id="load-more-container" style="display: none;">
-                                <img src="{{ asset('assets/media/loader.gif') }}" id="load-more-spinner" style="width: 30px; display: none;">
+                                <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading more" id="load-more-spinner" style="width: 30px; display: none;">
                             </div>
                         </div>
                     </div>
@@ -157,9 +137,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <!-- <option value="lastmonth"
-                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
-                                            </select>
+                                                                                            </select>
                                         </div>
                                     </li>
                                 </ul>
@@ -170,7 +148,7 @@
                                 </div>
                             </div>
                             <div id="collection-by-centre"></div>
-                            <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                            <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                         </div>
                     </div>
                 </div>
@@ -247,9 +225,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <!-- <option value="lastmonth"
-                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
-                                            </select>
+                                                                                            </select>
                                         </div>
                                     </li>
                                 </ul>
@@ -260,7 +236,7 @@
                                 </div>
                             </div>
                             <div id="revenue-centre"></div>
-                            <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                            <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                         </div>
                     </div>
                 </div>
@@ -351,7 +327,7 @@
                                 </div>
                             </div>
                             <div id="revenue-service-category"></div>
-                            <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                            <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                         </div>
                     </div>
                 </div>
@@ -372,9 +348,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <!-- <option value="lastmonth"
-                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
-                                            </select>
+                                                                                            </select>
                                         </div>
                                     </li>
                                 </ul>
@@ -384,7 +358,7 @@
                                 </div>
                             </div>
                             <div id="revenue-service"></div>
-                            <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                            <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                         </div>
                     </div>
                 </div>
@@ -407,9 +381,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <!-- <option value="lastmonth"
-                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
-                                            </select>
+                                                                                            </select>
                                         </div>
                                     </li>
                                 </ul>
@@ -419,7 +391,7 @@
                                 </div>
                             </div>
                             <div id="consultancy_by_status"></div>
-                            <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                            <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                         </div>
                     </div>
                 </div>
@@ -442,9 +414,7 @@
                                                     Week</option>
                                                 <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
                                                     Month</option>
-                                                <!-- <option value="lastmonth"
-                                                            {{ request('type') == 'lastmonth' ? 'selected' : '' }}>Last Month</option> -->
-                                            </select>
+                                                                                            </select>
                                         </div>
                                     </li>
                                 </ul>
@@ -454,7 +424,7 @@
                                 </div>
                             </div>
                             <div id="treatment_by_status"></div>
-                            <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                            <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                         </div>
                     </div>
                 </div>
@@ -565,7 +535,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                                <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                             </div>
                         </div>
                     </div>
@@ -649,7 +619,7 @@
                                         </table>
                                     </div>
                                 </div>
-                                <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                                <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                             </div>
                         </div>
                     </div>
@@ -710,7 +680,7 @@
                                     <div id="doc_wise_feedback_data"></div>
                                 </div>
 
-                                <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                                <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-attended">
                             </div>
                         </div>
                     </div>

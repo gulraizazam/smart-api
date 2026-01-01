@@ -221,6 +221,29 @@ img.loader-imgs {
 .select2-container--default .select2-selection--multiple .select2-selection__arrow{
     margin-right: 5px;
 }
-select.form-control{
- height: 36px;
+select.form-control {
+    height: 36px;
+}
+
+/* Doctor Wise Feedback Data */
+#doc_wise_feedback_data {
+    overflow-x: auto;
+    width: 100%;
+    white-space: nowrap;
+}
+
+/* Skeleton Loader Animation */
+.skeleton-loader {
+    display: inline-block;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    min-width: 80px;
+    color: transparent;
+}
+
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
 }
