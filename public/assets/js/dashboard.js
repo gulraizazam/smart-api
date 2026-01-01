@@ -68,7 +68,11 @@
     }
     
     function numberFormat(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        if (num === null || num === undefined) return '0';
+        // Handle decimal numbers properly - only format the integer part
+        var parts = parseFloat(num).toFixed(2).split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        return parts.join('.');
     }
 
     // Activities pagination state
