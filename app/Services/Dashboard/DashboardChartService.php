@@ -167,47 +167,148 @@ class DashboardChartService
 
         [$startDate, $endDate] = DashboardHelper::getDateRange($period);
 
-        // Get converted status ID
+        // Get arrived and converted status IDs (same as conversion report)
+        $arrivedStatusId = DashboardHelper::getArrivedStatusId();
         $convertedStatusId = DashboardHelper::getConvertedStatusId();
 
-        // Fetch all appointments for all doctors in a single query
-        $appointments = Appointments::whereIn('doctor_id', $consultantIds)
+        // Use the same logic as Finanaces::LoadConversionReport
+        // Get converted appointments with payments
+        $convertedAppointments = Appointments::with('location:id,name')
+            ->leftjoin('package_advances', 'package_advances.appointment_id', '=', 'appointments.id')
+            ->where('appointments.appointment_type_id', 1)
+            ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                $query->where('appointments.base_appointment_status_id', $arrivedStatusId);
+                if ($convertedStatusId) {
+                    $query->orWhere('appointments.base_appointment_status_id', $convertedStatusId);
+                }
+            })
+            ->whereIn('appointments.doctor_id', $consultantIds)
+            ->whereIn('appointments.location_id', $locations)
+            ->where('package_advances.cash_amount', '>', 0)
+            ->select('appointments.*')
+            ->where('package_advances.created_at', '>=', $startDate . ' 00:00:00')
+            ->where('package_advances.created_at', '<=', $endDate . ' 23:59:59')
+            ->get();
+
+        // Process each appointment with full conversion report logic
+        $validConversions = [];
+        $conversionSpendByDoctor = [];
+        
+        foreach ($convertedAppointments as $appointment) {
+            // Skip if already processed
+            if (isset($validConversions[$appointment->id])) {
+                continue;
+            }
+            
+            // Get invoice creation date for this appointment
+            $invoice = \App\Models\Invoices::where('appointment_id', $appointment->id)
+                ->whereNull('deleted_at')
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            if (!$invoice) {
+                continue;
+            }
+
+            $invoiceDate = \Carbon\Carbon::parse($invoice->created_at)->format('Y-m-d');
+
+            // Get package linked to this appointment
+            $package = \App\Models\Packages::where('appointment_id', $appointment->id)->first();
+
+            if (!$package) {
+                continue;
+            }
+
+            // Get package bundle IDs
+            $packagebundleIds = \App\Models\PackageBundles::where('package_id', $package->id)->pluck('id');
+
+            // Check if there's at least one service added in package on same day or after invoice creation date
+            $serviceAfterInvoice = \App\Models\PackageService::whereIn('package_bundle_id', $packagebundleIds)
+                ->whereDate('created_at', '>=', $invoiceDate)
+                ->exists();
+
+            if (!$serviceAfterInvoice) {
+                continue;
+            }
+
+            // Check if there's at least one payment on same day or after invoice creation date
+            $firstPayment = \App\Models\PackageAdvances::where('package_id', $package->id)
+                ->where('cash_flow', 'in')
+                ->where('cash_amount', '>', 0)
+                ->whereNull('deleted_at')
+                ->whereDate('created_at', '>=', $invoiceDate)
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            if (!$firstPayment) {
+                continue;
+            }
+
+            // Check if the FIRST payment date falls within the report date range
+            $firstPaymentDate = \Carbon\Carbon::parse($firstPayment->created_at)->format('Y-m-d');
+            if ($firstPaymentDate < $startDate || $firstPaymentDate > $endDate) {
+                continue;
+            }
+
+            // Get all payments for conversion spend calculation (from invoice date, within report range)
+            $packagesadvances = \App\Models\PackageAdvances::where('package_id', $package->id)
+                ->where('cash_amount', '>', 0)
+                ->whereNull('deleted_at')
+                ->whereDate('created_at', '>=', $invoiceDate)
+                ->where('created_at', '>=', $startDate . ' 00:00:00')
+                ->where('created_at', '<=', $endDate . ' 23:59:59')
+                ->get();
+
+            if (count($packagesadvances) > 0) {
+                $revenue_in = 0;
+                $out = 0;
+
+                foreach ($packagesadvances as $packagesadvance) {
+                    $package_advance = \App\Helpers\GeneralFunctions::genericfunctionforstaffwiserevenue($packagesadvance);
+                    if ($package_advance) {
+                        $revenue_in += $package_advance['revenue'] ? $package_advance['revenue'] : 0;
+                        $out += $package_advance['refund_out'] ? $package_advance['refund_out'] : 0;
+                    }
+                }
+                $actual = $revenue_in - $out;
+                
+                // Mark as valid conversion
+                $validConversions[$appointment->id] = [
+                    'doctor_id' => $appointment->doctor_id,
+                    'conversion_spend' => $actual,
+                ];
+                
+                // Accumulate by doctor
+                if (!isset($conversionSpendByDoctor[$appointment->doctor_id])) {
+                    $conversionSpendByDoctor[$appointment->doctor_id] = ['count' => 0, 'spend' => 0];
+                }
+                $conversionSpendByDoctor[$appointment->doctor_id]['count']++;
+                $conversionSpendByDoctor[$appointment->doctor_id]['spend'] += $actual;
+            }
+        }
+
+        // Get total appointments (arrived + converted) for each doctor
+        $totalAppointmentsByDoctor = Appointments::whereIn('doctor_id', $consultantIds)
             ->whereIn('location_id', $locations)
             ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->select('id', 'doctor_id', 'appointment_status_id')
-            ->get();
-
-        // Group appointments by doctor
-        $appointmentsByDoctor = $appointments->groupBy('doctor_id');
-
-        // Get conversion spend from package advances for converted appointments
-        $convertedAppointmentIds = $appointments->where('appointment_status_id', $convertedStatusId)->pluck('id')->toArray();
-        $conversionSpendByAppointment = [];
-        
-        if (!empty($convertedAppointmentIds)) {
-            $conversionSpendByAppointment = \App\Models\PackageAdvances::whereIn('appointment_id', $convertedAppointmentIds)
-                ->selectRaw('appointment_id, SUM(cash_amount) as total_amount')
-                ->groupBy('appointment_id')
-                ->pluck('total_amount', 'appointment_id')
-                ->toArray();
-        }
+            ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
+                $query->where('base_appointment_status_id', $arrivedStatusId)
+                    ->orWhere('base_appointment_status_id', $convertedStatusId);
+            })
+            ->selectRaw('doctor_id, COUNT(*) as total')
+            ->groupBy('doctor_id')
+            ->pluck('total', 'doctor_id')
+            ->toArray();
 
         $sumConversionSpend = 0;
 
         foreach ($consultants as $consultant) {
             $labels[] = $consultant->name;
-            $doctorAppointments = $appointmentsByDoctor->get($consultant->id, collect());
-
-            $totalAppointments = $doctorAppointments->count();
-            $convertedCount = $doctorAppointments->where('appointment_status_id', $convertedStatusId)->count();
             
-            // Calculate conversion spend from package advances
-            $conversionSpendSum = 0;
-            $convertedDoctorAppointments = $doctorAppointments->where('appointment_status_id', $convertedStatusId);
-            foreach ($convertedDoctorAppointments as $apt) {
-                $conversionSpendSum += $conversionSpendByAppointment[$apt->id] ?? 0;
-            }
+            $totalAppointments = $totalAppointmentsByDoctor[$consultant->id] ?? 0;
+            $convertedCount = $conversionSpendByDoctor[$consultant->id]['count'] ?? 0;
+            $conversionSpendSum = $conversionSpendByDoctor[$consultant->id]['spend'] ?? 0;
 
             $totalApts[] = $totalAppointments;
             $convertedApts[] = $convertedCount;

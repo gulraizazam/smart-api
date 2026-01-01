@@ -730,7 +730,7 @@
                                     </div>
                                 </div>
 
-                                <div class="row pt-7">
+                                <div class="row pt-7" style="position: relative;">
                                     <div class="col-7">
                                         <div id="doctor_upselling_chart" style="min-height: 400px;">
                                             <div class="d-flex align-items-center justify-content-center" style="height: 400px;" id="doctor_upselling_placeholder">
@@ -769,7 +769,7 @@
                                             </table>
                                         </div>
                                     </div>
-                                    <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-upselling" style="display: none;">
+                                    <img src="{{ asset('assets/media/loader.gif') }}" alt="Loading" class="custom_loader loader-img-upselling" style="height: 60px;">
                                 </div>
                             </div>
                         </div>
