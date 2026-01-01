@@ -357,6 +357,7 @@ class DashboardController extends Controller
             'labels' => $result['labels'] ?? [],
             'rating' => $result['data']['rating'] ?? [],
             'total' => $result['data']['total'] ?? [],
+            'feedback_stats' => $result['feedback_stats'] ?? null,
         ]);
     }
 
