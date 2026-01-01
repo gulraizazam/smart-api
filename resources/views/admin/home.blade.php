@@ -143,7 +143,7 @@
                     </div>
                 </div>
                 @if (\Illuminate\Support\Facades\Gate::allows('dashboard_collection_by_centre'))
-                <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                <div class="col-lg-6 col-xxl-6 custom_tabs_style" id="collection-by-centre-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="collectionbycenter">
                         <div class="card-body p-0">
                             <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -179,7 +179,7 @@
                 </div>
                 @endif
                 @if (\Illuminate\Support\Facades\Gate::allows('dashboard_unattended_report'))
-                <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="unattended_payments">
+                <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="patient-followup-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;overflow-y: hidden;">
                         <div class="card card-custom card-stretch gutter-b" style="min-height: 605px">
                             <div class="card-body p-0">
@@ -228,7 +228,7 @@
                 </div>
                 @endif
                 @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_centre'))
-                <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                <div class="col-lg-6 col-xxl-6 custom_tabs_style" id="revenue-by-centre-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="revenue_by_centre">
                         <div class="card-body p-0">
                             <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -264,7 +264,7 @@
                 </div>
                 @endif
                 @if (\Illuminate\Support\Facades\Gate::allows('dashboard_overdue_treatments'))
-                <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="attended_payments">
+                <div class="col-lg-6 col-xxl-6 custom_tabs_style" style="height: 605px;" id="patient-followup-onemonth-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;overflow-y: hidden;">
                         <div class="card card-custom card-stretch gutter-b" style="min-height: 605px;">
                             <div class="card-body p-0">
@@ -315,7 +315,7 @@
                 </div>
                 @endif
                 @if (\Illuminate\Support\Facades\Gate::allows('dashboard_revenue_by_service'))
-                <div class="col-lg-6 col-xxl-6 mt-6">
+                <div class="col-lg-6 col-xxl-6 mt-6" id="revenue-service-category-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="revenue_by_service_category">
                         <div class="card-body p-0">
                             <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -348,7 +348,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-lg-6 col-xxl-6 custom_tabs_style mt-6">
+                <div class="col-lg-6 col-xxl-6 custom_tabs_style mt-6" id="revenue-service-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="revenue_by_service">
                         <div class="card-body p-0">
                             <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -383,7 +383,7 @@
                 </div>
                 @endif
                 @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_status'))
-                <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                <div class="col-lg-6 col-xxl-6 custom_tabs_style" id="consultancy-status-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="consultancy_status1">
                         <div class="card-body p-0">
                             <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -418,7 +418,7 @@
                 </div>
                 @endif
                 @if (\Illuminate\Support\Facades\Gate::allows('dashboard_appointment_by_type'))
-                <div class="col-lg-6 col-xxl-6 custom_tabs_style">
+                <div class="col-lg-6 col-xxl-6 custom_tabs_style" id="treatment-status-section">
                     <div class="card card-custom card-stretch card-stretch-half gutter-b" style="min-height: 605px;" id="treatment_status1">
                         <div class="card-body p-0">
                             <div class="d-flex align-items-center justify-content-between card-spacer2 flex-grow-1">
@@ -461,79 +461,36 @@
                                 <ul class="nav nav-tabs d-flex align-items-center wise_arrival_ul">
                                     <li style="border-bottom: none;">
                                         <div class="actions action-style p-3 mr-3">
-                                            @if (Auth::user()->hasRole('Administrator') ||
-                                            Auth::user()->hasRole('Super-Admin') ||
-                                            Auth::user()->hasRole('Head of Operations') ||
-                                            Auth::user()->hasRole('Finance') ||
-                                            Auth::user()->hasRole('HRM'))
-                                            @php
-                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
-                                            $locations = \App\Helpers\ACL::getUserCentres();
-                                            $centres = \App\Models\Locations::whereIn('id', $locations)
-                                            ->whereNotIn('name', $centres_array)
-                                            ->where('active', 1)
-                                            ->get();
-                                            @endphp
+                                            @if ($isAdmin)
                                             <div class="btn-group">
-                                                {{-- <a data-id="" class="btn form-control btndropdown btn_Report centre_name arrivalbtn" href="javascript:;"
-                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false"> All Centres
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a> --}}
                                                 <select class="dropdown-menu dropdown-menu-right centre_name_ul" id="centervise_center">
-                                                    <option data-period="thismonth" value="All">All Centres</a>
-                                                    </option>
+                                                    <option data-period="thismonth" value="All">All Centres</option>
                                                     @foreach ($centres as $centre)
-                                                    <option data-period="thismonth" value="{{ $centre->id }}">{{ $centre->name }}
-                                                    </option>
+                                                    <option data-period="thismonth" value="{{ $centre->id }}">{{ $centre->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
-                                            @elseif(Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') ||
-                                            Auth::user()->hasRole('CSR'))
-                                            @php
-                                            $all_csr = \App\Models\RoleHasUsers::whereIn('role_id', [2, 3, 24])->pluck('user_id');
-                                            $csr_users = \App\Models\User::whereIn('id', $all_csr)
-                                            ->where('active', 1)
-                                            ->get();
-
-                                            @endphp
+                                            @elseif($isCSRRole)
                                             <div class="btn-group">
-                                                {{-- <a data-id="All" class="btn form-control btndropdown btn_Report centre_name arrivalbtn" href="javascript:;"
-                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false">All
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a> --}}
                                                 <select class="dropdown-menu dropdown-menu-right" id="userwise_arrival">
-                                                    <option onclick="initUserWiseArrival('thismonth', 'All')" value="">All
-                                                    </option>
-                                                    @foreach ($csr_users as $user)
-                                                    <option onclick="initUserWiseArrival('thismonth', {{ $user->id }})" value="{{ $user->id }}"
-                                                        data-period="thismonth">{{ $user->name }}</a>
-                                                    </option>
+                                                    <option onclick="initUserWiseArrival('thismonth', 'All')" value="">All</option>
+                                                    @foreach ($csrUsers as $user)
+                                                    <option onclick="initUserWiseArrival('thismonth', {{ $user->id }})" value="{{ $user->id }}" data-period="thismonth">{{ $user->name }}</option>
                                                     @endforeach
-
                                                 </select>
                                             </div>
                                             @else
-                                            @php
-                                            $centres_array = ['All South Region', 'All Central Region'];
-                                            $locations = \App\Helpers\ACL::getUserCentres();
-                                            $centres = \App\Models\Locations::whereIn('id', $locations)
-                                            ->whereNotIn('name', $centres_array)
-                                            ->first();
-                                            @endphp
                                             <div class="btn-group">
                                                 <select name="" id="centervise_center">
-                                                    <option value="" class="btn form-control btndropdown btn_Report centre_name arrivalbtn" href="javascript:;"
-                                                        data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false">
-                                                        {{ $centres ? $centres->name : 'No Centre Assigned' }}
+                                                    <option value="" class="btn form-control btndropdown btn_Report centre_name arrivalbtn">
+                                                        {{ $firstCentre ? $firstCentre->name : 'No Centre Assigned' }}
                                                     </option>
                                                 </select>
-
                                             </div>
                                             @endif
                                         </div>
                                     </li>
-                                    @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') || Auth::user()->hasRole('CSR'))
+                                    @if ($isCSRRole)
                                     <li style="border-bottom: none;">
                                         <div class="actions date_action_dropdown action-style py-3 mr-0">
                                             <select id="center_wise_arrival" class="form-control" name="type">
@@ -581,8 +538,7 @@
                                         <div class='table-responsive' style="overflow-y: scroll; height: 475px;">
                                             <table class='table'>
                                                 <thead>
-                                                    @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead') ||
-                                                    Auth::user()->hasRole('CSR'))
+                                                    @if ($isCSRRole)
                                                     <tr>
                                                         <th class='table-cols'>CSR Name</th>
                                                         <th class='table-cols'>Arrived</th>
@@ -617,49 +573,14 @@
                                 <ul class="nav nav-tabs d-flex align-items-center  doc_wise_arrival_ul">
                                     <li style="border-bottom: none;">
                                         <div class="actions action-style p-3 mr-3">
-                                            @php
-                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
-                                            $locations = \App\Helpers\ACL::getUserCentres();
-                                            $centres = \App\Models\Locations::whereIn('id', $locations)
-                                            ->whereNotIn('name', $centres_array)
-                                            ->where('active', 1)
-                                            ->get();
-                                            @endphp
                                             <div class="btn-group">
-                                                {{-- @if (Auth::user()->hasRole('Administrator') ||
-                                                Auth::user()->hasRole('Super-Admin') ||
-                                                Auth::user()->hasRole('Head of Operations') ||
-                                                Auth::user()->hasRole('Finance'))
-                                                <a class="btn form-control btndropdown btn_Report doctorwiseconversion" href="javascript:;"
-                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false" data-id="all">
-                                                    All Centres
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                @else
-                                                <a class="btn form-control btndropdown btn_Report doctorwiseconversion" href="javascript:;"
-                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false"
-                                                    data-id="{{ count($centres) > 0 ? $centres[0]->id : '' }}">
-                                                    {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                @endif --}}
                                                 <select class="form-control btndropdown btn_Report doctorwiseconversion selectcenter"
                                                     data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
-                                                    @if (Auth::user()->hasRole('Administrator') ||
-                                                    Auth::user()->hasRole('Super-Admin') ||
-                                                    Auth::user()->hasRole('Head of Operations') ||
-                                                    Auth::user()->hasRole('Finance'))
-                                                    <option value="all" data-period="thismonth" {{-- onclick="changeCenterDoct('thismonth', 'all')" --}}>
-                                                        {{-- <a class="dropdown-item doctor_wise_centre_id" data-id="all"></a> --}}
-                                                        All
-                                                        Centres
-                                                    </option>
+                                                    @if ($hasMultipleCentres)
+                                                    <option value="all" data-period="thismonth">All Centres</option>
                                                     @endif
                                                     @foreach ($centres as $centre)
-                                                    <option value="{{ $centre->id }}" data-period="thismonth">
-                                                        {{-- <a class="dropdown-item doctor_wise_centre_id" data-id="{{ $centre->id }}"></a> --}}
-                                                        {{ $centre->name }}
-                                                    </option>
+                                                    <option value="{{ $centre->id }}" data-period="thismonth">{{ $centre->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -736,51 +657,14 @@
                                 <ul class="nav nav-tabs d-flex align-items-center  doc_feedback_ul">
                                     <li style="border-bottom: none;">
                                         <div class="actions action-style p-3 mr-3">
-                                            @php
-                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
-                                            $locations = \App\Helpers\ACL::getUserCentres();
-                                            $centres = \App\Models\Locations::whereIn('id', $locations)
-                                            ->whereNotIn('name', $centres_array)
-                                            ->where('active', 1)
-                                            ->get();
-                                            @endphp
                                             <div class="btn-group">
-                                                {{-- @if (Auth::user()->hasRole('Administrator') ||
-                                                Auth::user()->hasRole('Super-Admin') ||
-                                                Auth::user()->hasRole('Head of Operations') ||
-                                                Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
-                                                Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
-                                                <a class="btn form-control btndropdown btn_Report doctorwisefeedback" href="javascript:;"
-                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false" data-id="all">
-                                                    All Centres
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                @else
-                                                <a class="btn form-control btndropdown btn_Report doctorwisefeedback" href="javascript:;"
-                                                    data-toggle="dropdown" data-hover="dropdown" data-close-others="true" aria-expanded="false"
-                                                    data-id="{{ count($centres) > 0 ? $centres[0]->id : '' }}">
-                                                    {{ count($centres) > 0 ? $centres[0]->name : 'No Centre Assigned' }}
-                                                    <i class="fa fa-angle-down"></i>
-                                                </a>
-                                                @endif --}}
                                                 <select class="form-control btndropdown btn_Report doctorwisefeedback selectcenterfeedback"
                                                     data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
-                                                    @if (Auth::user()->hasRole('Administrator') ||
-                                                    Auth::user()->hasRole('Super-Admin') ||
-                                                    Auth::user()->hasRole('Head of Operations') ||
-                                                    Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
-                                                    Auth::user()->hasRole('Finance') || Auth::user()->hasRole('CSR') || Auth::user()->hasRole('CSR Supervisor'))
-                                                    <option value="all" data-period="thismonth" {{-- onclick="changeCenterDoct('thismonth', 'all')" --}}>
-                                                        {{-- <a class="dropdown-item doctor_wise_feedback_centre_id" data-id="all"></a> --}}
-                                                        All
-                                                        Centres
-                                                    </option>
+                                                    @if ($hasMultipleCentres)
+                                                    <option value="all" data-period="thismonth">All Centres</option>
                                                     @endif
                                                     @foreach ($centres as $centre)
-                                                    <option value="{{ $centre->id }}" data-period="thismonth">
-                                                        {{-- <a class="dropdown-item doctor_wise_feedback_centre_id" data-id="{{ $centre->id }}"></a> --}}
-                                                        {{ $centre->name }}
-                                                    </option>
+                                                    <option value="{{ $centre->id }}" data-period="thismonth">{{ $centre->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -834,44 +718,18 @@
                                     <ul class="nav nav-tabs d-flex align-items-center  doc_upselling_ul">
                                     <li style="border-bottom: none;">
                                         <div class="actions action-style p-3 mr-3">
-                                            @php
-                                            $centres_array = ['All South Region', 'All Central Region', 'All Centres'];
-                                            $locations = \App\Helpers\ACL::getUserCentres();
-                                            $centres = \App\Models\Locations::whereIn('id', $locations)
-                                            ->whereNotIn('name', $centres_array)
-                                            ->where('active', 1)
-                                            ->get();
-                                            @endphp
                                             <div class="btn-group">
                                                 <select class="form-control btndropdown btn_Report doctorUpselling selectcenterupselling"
                                                     id="doctor_upselling_centre_select"
                                                     data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
-                                                    @php
-                                                    $hasMultipleCentres = (Auth::user()->hasRole('Administrator') || 
-                                                                        Auth::user()->hasRole('Super-Admin') || 
-                                                                        Auth::user()->hasRole('Head of Operations') || 
-                                                                        Auth::user()->hasRole('Finance')) || 
-                                                                        count($centres) > 1;
-                                                    $autoSelectCentre = !$hasMultipleCentres && count($centres) == 1;
-                                                    @endphp
-                                                    
                                                     @if ($hasMultipleCentres)
                                                         <option value="" disabled selected>Select Centre</option>
                                                     @endif
-                                                    
-                                                    @if (Auth::user()->hasRole('Administrator') ||
-                                                    Auth::user()->hasRole('Super-Admin') ||
-                                                    Auth::user()->hasRole('Head of Operations') ||
-                                                    Auth::user()->hasRole('Finance'))
-                                                    <option value="all" data-period="thismonth" {{ !$hasMultipleCentres ? 'selected' : '' }}>
-                                                        All Centres
-                                                    </option>
+                                                    @if ($hasMultipleCentres)
+                                                    <option value="all" data-period="thismonth">All Centres</option>
                                                     @endif
                                                     @foreach ($centres as $centre)
-                                                    <option value="{{ $centre->id }}" data-period="thismonth" 
-                                                            {{ $autoSelectCentre ? 'selected' : '' }}>
-                                                        {{ $centre->name }}
-                                                    </option>
+                                                    <option value="{{ $centre->id }}" data-period="thismonth" {{ (!$hasMultipleCentres && count($centres) == 1) ? 'selected' : '' }}>{{ $centre->name }}</option>
                                                     @endforeach
                                                 </select>
                                             </div>
@@ -881,6 +739,7 @@
                                         <li style="border-bottom: none;">
                                             <div class="actions date_action_dropdown action-style py-3 mr-0">
                                                 <select id="dr_wise_upselling_period" class="form-control" name="type">
+                                                    <option value="today" {{ request('type')=='today' ? 'selected' : '' }}>Today</option>
                                                     <option value="yesterday" {{ request('type')=='yesterday' ? 'selected' : '' }}>Yesterday</option>
                                                     <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                     <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This Week</option>
@@ -955,723 +814,18 @@
 <script src="{{ asset('assets/js/pie.js') }}"></script>
 <script src="{{ asset('assets/js/home.js') }}"></script>
 <script>
-$(document).ready(function() {
-    // Auto-load data on page load if a centre is pre-selected
-    const initialCentreId = $('#doctor_upselling_centre_select').val();
-    const initialPeriod = $('#dr_wise_upselling_period').val();
-    
-    if (initialCentreId) {
-        loadDoctorUpsellingData(initialCentreId, initialPeriod);
+// Dashboard configuration for lazy loading and routes
+window.dashboardConfig = {
+    requestType: '{{ request('type') ?? 'today' }}',
+    isCSR: {{ auth()->user()->hasRole('CSR') ? 'true' : 'false' }},
+    isCSRSupervisor: {{ auth()->user()->hasRole('CSR Supervisor') ? 'true' : 'false' }},
+    isSocialLead: {{ auth()->user()->hasRole('Social Lead') ? 'true' : 'false' }},
+    routes: {
+        doctorUpsellingData: '{{ route("admin.dashboard.doctor.upselling.data") }}'
     }
-    
-    // Handle centre selection change
-    $('#doctor_upselling_centre_select').on('change', function() {
-        const centreId = $(this).val();
-        const period = $('#dr_wise_upselling_period').val();
-        
-        if (centreId) {
-            loadDoctorUpsellingData(centreId, period);
-        } else {
-            resetTable();
-        }
-    });
-    
-    // Handle period change
-    $('#dr_wise_upselling_period').on('change', function() {
-        const centreId = $('#doctor_upselling_centre_select').val();
-        const period = $(this).val();
-        
-        if (centreId) {
-            loadDoctorUpsellingData(centreId, period);
-        }
-    });
-});
-
-function loadDoctorUpsellingData(centreId, period) {
-    // Show loader
-    $('.loader-img-upselling').show();
-    
-    // Hide table content
-    $('#doctor_upselling_tbody').html('');
-    $('#doctor_upselling_tfoot').hide();
-    
-    $.ajax({
-        url: '{{ route("admin.dashboard.doctor.upselling.data") }}',
-        method: 'GET',
-        data: {
-            centre_id: centreId,
-            period: period
-        },
-        success: function(response) {
-            $('.loader-img-upselling').hide();
-            
-            if (response.success && response.data.length > 0) {
-                populateTable(response.data);
-            } else {
-                showNoDataMessage();
-            }
-        },
-        error: function(xhr, status, error) {
-            $('.loader-img-upselling').hide();
-            console.error('Error loading doctor upselling data:', error);
-            showErrorMessage();
-        }
-    });
-}
-
-function populateTable(data) {
-    let tbody = '';
-    let totalUpsellingAmount = 0;
-    
-    data.forEach(function(doctor) {
-        totalUpsellingAmount += parseFloat(doctor.total_upselling_amount || 0);
-        
-        tbody += `
-            <tr>
-                <td class="font-weight-bold">${doctor.doctor_name}</td>
-                <td class="text-right">${formatCurrency(doctor.total_upselling_amount)}</td>
-            </tr>
-        `;
-    });
-    
-    $('#doctor_upselling_tbody').html(tbody);
-    $('#total_upselling_amount').text(formatCurrency(totalUpsellingAmount));
-    $('#doctor_upselling_tfoot').show();
-    
-    // Generate chart
-    generateDoctorUpsellingChart(data);
-}
-
-function generateDoctorUpsellingChart(data) {
-    const primary = '#6993FF';
-    
-    let doctorNames = data.map(doctor => doctor.doctor_name);
-    let upsellingAmounts = data.map(doctor => parseFloat(doctor.total_upselling_amount || 0));
-    
-    // Hide placeholder and show chart
-    $('#doctor_upselling_placeholder').hide();
-    
-    var options = {
-        series: [{
-            name: 'Upselling Amount',
-            data: upsellingAmounts
-        }],
-        chart: {
-            type: 'bar',
-            height: 400,
-            toolbar: {
-                show: true
-            }
-        },
-        plotOptions: {
-            bar: {
-                horizontal: false,
-                columnWidth: '55%',
-                endingShape: 'rounded',
-                dataLabels: {
-                    position: 'top',
-                    orientation: 'horizontal'
-                }
-            }
-        },
-        dataLabels: {
-            enabled: true,
-            formatter: function (val, opts) {
-                return formatCurrency(val);
-            },
-            offsetY: -20,
-            style: {
-                fontSize: '12px',
-                fontWeight: 600,
-                colors: ['#304758']
-            }
-        },
-        stroke: {
-            show: true,
-            width: 2,
-            colors: ['transparent']
-        },
-        xaxis: {
-            categories: doctorNames,
-            labels: {
-                rotate: -45,
-                maxHeight: 120,
-                style: {
-                    fontSize: '11px'
-                }
-            }
-        },
-        yaxis: {
-            title: {
-                text: 'Upselling Amount'
-            },
-            labels: {
-                formatter: function (val) {
-                    return formatCurrency(val);
-                }
-            }
-        },
-        colors: [primary],
-        fill: {
-            opacity: 1
-        },
-        tooltip: {
-            y: {
-                formatter: function (val) {
-                    return formatCurrency(val);
-                }
-            }
-        },
-        legend: {
-            show: false
-        }
-    };
-    
-    // Clear any existing chart
-    $('#doctor_upselling_chart').empty();
-    
-    var chart = new ApexCharts(document.querySelector("#doctor_upselling_chart"), options);
-    chart.render();
-}
-function showNoDataMessage() {
-    $('#doctor_upselling_tbody').html(`
-        <tr>
-            <td colspan="3" class="text-center text-muted py-5">
-                <i class="fas fa-exclamation-triangle mb-2"></i><br>
-                No upselling data found for the selected criteria
-            </td>
-        </tr>
-    `);
-    $('#doctor_upselling_tfoot').hide();
-    
-    // Show placeholder and clear chart
-    $('#doctor_upselling_chart').empty();
-    $('#doctor_upselling_placeholder').show();
-    $('#doctor_upselling_placeholder .text-center').html(`
-        <i class="fas fa-exclamation-triangle mb-2"></i><br>
-        No upselling data found for the selected criteria
-    `);
-}
-
-function showErrorMessage() {
-    $('#doctor_upselling_tbody').html(`
-        <tr>
-            <td colspan="3" class="text-center text-danger py-5">
-                <i class="fas fa-exclamation-circle mb-2"></i><br>
-                Error loading data. Please try again.
-            </td>
-        </tr>
-    `);
-    $('#doctor_upselling_tfoot').hide();
-    
-    // Show placeholder and clear chart
-    $('#doctor_upselling_chart').empty();
-    $('#doctor_upselling_placeholder').show();
-    $('#doctor_upselling_placeholder .text-center').html(`
-        <i class="fas fa-exclamation-circle mb-2"></i><br>
-        Error loading data. Please try again.
-    `);
-}
-
-function resetTable() {
-    $('#doctor_upselling_tbody').html(`
-        <tr id="no_data_row">
-            <td colspan="3" class="text-center text-muted py-5">
-                <i class="fas fa-info-circle mb-2"></i><br>
-                Select a centre to view doctor upselling data
-            </td>
-        </tr>
-    `);
-    $('#doctor_upselling_tfoot').hide();
-    
-    // Show placeholder and clear chart
-    $('#doctor_upselling_chart').empty();
-    $('#doctor_upselling_placeholder').show();
-    $('#doctor_upselling_placeholder .text-center').html(`
-        <i class="fas fa-info-circle mb-2"></i><br>
-        Select a centre to view doctor upselling data
-    `);
-}
-
-function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2
-    }).format(amount || 0);
-}
+};
 </script>
-<script>
-    jQuery('.btn.arrivalbtn + .dropdown-menu li a').on('click', function() {
-                var dataID = jQuery(this).attr('data-id');
-                var dataText = jQuery(this).text();
-                jQuery('.btn.arrivalbtn').attr('data-id', dataID);
-                jQuery('.btn.arrivalbtn').html(dataText + '<i class="fa fa-angle-down"></i>')
-                jQuery('.wise_arrival_ul li a').removeClass('active');
-                jQuery('.wise_arrival_ul li.thismonth a').addClass('active');
-            });
-            jQuery('.btn.doctorwiseconversion + .dropdown-menu li a').on('click', function() {
-                var dataID = jQuery(this).attr('data-id');
-                var dataText = jQuery(this).text();
-                jQuery('.btn.doctorwiseconversion').attr('data-id', dataID);
-                jQuery('.btn.doctorwiseconversion').html(dataText + '<i class="fa fa-angle-down"></i>')
-                jQuery('.doc_wise_arrival_ul li a').removeClass('active');
-                jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
-            });
-            jQuery('.btn.doctorwisefeedback + .dropdown-menu li a').on('click', function() {
-                var dataID = jQuery(this).attr('data-id');
-                var dataText = jQuery(this).text();
-                jQuery('.btn.doctorwisefeedback').attr('data-id', dataID);
-                jQuery('.btn.doctorwisefeedback').html(dataText + '<i class="fa fa-angle-down"></i>')
-                jQuery('.doc_wise_arrival_ul li a').removeClass('active');
-                jQuery('.doc_wise_arrival_ul li.thismonth a').addClass('active');
-            });
-            $(document).ready(function() {
-                period = "today";
-                // activities
-                $.ajax({
-                    url: route('admin.home.getactivity'),
-                    type: "GET",
-                    data: {
-                        'type': period
-                    },
-                    cache: false,
-                    success: function(response) {
-                        $('.loader-img').css('display', "none");
-                        $("#activitydiv").html(response);
-                    },
-                });
-
-                @if (Auth::user()->hasRole('CSR Supervisor') || Auth::user()->hasRole('Social Lead')){
-                    var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    initUserWiseArrival('today', '', 'firsttime');
-                    @if (!auth()->user()->hasRole('CSR'))
-                    initDoctorWiseConversion('today', centre_id, 'firsttime');
-                    @endif
-                }
-                @else
-                    var centre_id = $(".doctorwiseconversion").attr('data-id');
-                    initCentreWiseArrival('yesterday', '', 'firsttime');
-                    @if (!auth()->user()->hasRole('CSR'))
-                    initDoctorWiseConversion('today', centre_id, 'firsttime');
-                    @endif
-                @endif
-
-                    var centre_id = $(".doctorwisefeedback").attr('data-id');
-
-                    @if (!auth()->user()->hasRole('CSR'))
-                    initDoctorWiseFeedback('today', centre_id, 'firsttime');
-                    @endif
-
-
-            });
-
-            var collection_by_center = false;
-            var revenue_by_center = false;
-            var revenue_by_service = false;
-            var revenue_by_service_category = false;
-            var collection_by_service_category = false;
-            var consultancy_by_status = false;
-            var treatment_by_status = false;
-            var centre_wise_arrival = false;
-            var patient_follow_up = false;
-            var patient_follow_up_one_month = false;
-            $(window).scroll(function() {
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && ! collection_by_center) {
-                    collection_by_center = true;
-                    var currentVal = $('#collection_centre').val();
-                    initCollectionByCentre($('#collection_centre').val());
-                }
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.10) && ! revenue_by_center) {
-                    revenue_by_center = true;
-                    initRevenueByCentre($('#revenue_centre').val());
-                }
-
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.15) && ! revenue_by_service_category) {
-                    revenue_by_service_category = true;
-                    @if (!auth()->user()->hasRole('CSR'))
-                        InitRevenueByServiceCategory($('#revenue_service_cate').val());
-                    @endif
-                }
-
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.20) && ! revenue_by_service) {
-                    revenue_by_service = true;
-                    @if (!auth()->user()->hasRole('CSR'))
-                    initRevenueByService($('#revenue_service').val());
-                    @endif
-                }
-
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.24) && !  collection_by_service_category) {
-                    collection_by_service_category = true;
-                    $.ajax({
-                        url: route('admin.home.CollectionByServiceCategory'),
-                        type: "GET",
-                        data: {
-                            'type': '{{ request('type') }}'
-                        },
-                        cache: false,
-                        success: function(response) {
-                            let colors = response.data.colors;
-                            let total = response.data.total;
-
-                            @if (request('type') == 'today')
-                                var pie = response.data.pie.today;
-                            @endif
-                            @if (request('type') == 'yesterday')
-                                var pie = response.data.pie.yesterday;
-                            @endif
-                            @if (request('type') == 'week')
-                                var pie = response.data.pie.week;
-                            @endif
-                            @if (request('type') == 'thismonth')
-                                var pie = response.data.pie.month;
-                            @endif
-                            @if (request('type') == '')
-                                var pie = response.data.pie.today;
-                            @endif
-                            CollectionByServiceCategory(pie, colors);
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            errorMessage(xhr);
-                        }
-                    });
-                }
-
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
-                    consultancy_by_status) {
-                    consultancy_by_status = true;
-                    $.ajax({
-                        url: route('admin.dashboard.appointment_by_status'),
-                        type: "GET",
-                        data: {
-                            // 'period': '{{ request('type') }}',
-                            'period':$('#consultancy_status').val(),
-                            'type': '1'
-                        },
-                        cache: false,
-                        success: function(response) {
-                            $("#consultancy_status1 .loader-img-attended").css('display', 'none');
-                            $("#consultancy_status1 #consultancy_by_status").css('display', '');
-                            let colors = response.data.colors;
-                            @if (request('type') == 'today')
-                                var pie = response.data.pie.today;
-                            @endif
-                            @if (request('type') == 'yesterday')
-                                var pie = response.data.pie.yesterday;
-                            @endif
-                            @if (request('type') == 'week')
-                                var pie = response.data.pie.week;
-                            @endif
-                            @if (request('type') == 'thismonth')
-                                var pie = response.data.pie.month;
-                            @endif
-                            @if (request('type') == '')
-                                var pie = response.data.pie.today;
-                            @endif
-                            setTimeout(() => {
-                                ConsultancyByStatus(pie, colors);
-                            }, 500);
-
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            errorMessage(xhr);
-                        }
-                    });
-                }
-
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.30) && !
-                    treatment_by_status) {
-                    treatment_by_status = true;
-                    $.ajax({
-                        url: route('admin.dashboard.appointment_by_status'),
-                        type: "GET",
-                        data: {
-                            // 'period': '{{ request('type') }}',
-                            'period':$('#treatment_status').val(),
-                            'type': '2'
-                        },
-                        cache: false,
-                        success: function(response) {
-                            $("#treatment_status1 .loader-img-attended").css('display', 'none');
-                            $("#treatment_status1 #treatment_by_status").css('display', '');
-                            let colors = response.data.colors;
-                            @if (request('type') == 'today')
-                                var pie = response.data.pie.today;
-                            @endif
-                            @if (request('type') == 'yesterday')
-                                var pie = response.data.pie.yesterday;
-                            @endif
-                            @if (request('type') == 'week')
-                                var pie = response.data.pie.week;
-                            @endif
-                            @if (request('type') == 'thismonth')
-                                var pie = response.data.pie.month;
-                            @endif
-                            @if (request('type') == '')
-                                var pie = response.data.pie.today;
-                            @endif
-                            setTimeout(() => {
-                                TreatmentByStatus(pie, colors);
-                            }, 500);
-                        },
-                        error: function(xhr, ajaxOptions, thrownError) {
-                            errorMessage(xhr);
-                        }
-                    });
-                }
-
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
-                    patient_follow_up) {
-                    patient_follow_up = true;
-                    initPatientFollowUp('thismonth', '');
-                }
-
-                if (($(window).scrollTop() >= ($(document).height() - $(window).height()) * 0.07) && !
-                    patient_follow_up_one_month) {
-                    patient_follow_up_one_month = true;
-                    initPatientFollowUpOneMonth();
-                }
-            });
-
-            function TreatmentByStatus(pie, colors) {
-                google.load('visualization', '1', {
-                    packages: ['corechart', 'bar', 'line']
-                });
-                google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(pie);
-                    var options = {
-                        colors: colors
-                    };
-                    var chart = new google.visualization.PieChart(document.getElementById('treatment_by_status'));
-                    chart.draw(data, options);
-                });
-                if (pie.length > 1) {
-                    $("#treatment_by_status").css("height", "500px");
-                }
-            }
-
-            function ConsultancyByStatus(pie, colors) {
-                google.load('visualization', '1', {
-                    packages: ['corechart', 'bar', 'line']
-                });
-                google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(pie);
-                    var options = {
-                        colors: colors
-                    };
-                    var chart = new google.visualization.PieChart(document.getElementById('consultancy_by_status'));
-                    chart.draw(data, options);
-                });
-                if (pie.length > 1) {
-                    $("#consultancy_by_status").css("height", "500px");
-                }
-            }
-
-            function collectionCentreChart(pie) {
-                google.load('visualization', '1', {
-                    packages: ['corechart', 'bar', 'line']
-                });
-                google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(pie);
-                    var chart = new google.visualization.PieChart(document.getElementById('collection-by-centre'));
-                    chart.draw(data);
-                });
-                if (pie.length > 1) {
-                    $("#collection-by-centre").css("height", "500px");
-                }
-            }
-
-            function revenueCentreChart(pie) {
-                google.load('visualization', '1', {
-                    packages: ['corechart', 'bar', 'line']
-                });
-                google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(pie);
-                    var chart = new google.visualization.PieChart(document.getElementById('revenue-centre'));
-                    chart.draw(data);
-                });
-                if (pie.length > 1) {
-                    $("#revenue-centre").css("height", "500px");
-                }
-            }
-
-            function revenueByService(service, colors) {
-                google.load('visualization', '1', {
-                    packages: ['corechart', 'bar', 'line']
-                });
-                google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(service);
-                    var options = {
-                        colors: colors
-                    };
-                    var chart = new google.visualization.PieChart(document.getElementById('revenue-service'));
-                    chart.draw(data, options);
-                });
-                if (typeof service !== 'undefined' && service.length > 1) {
-                    $("#revenue-service").css("height", "500px");
-                }
-            }
-
-            // function RevenueByServiceCategory(pie) {
-            //     console.log('here',pie);
-            //     google.load('visualization', '1', {
-            //         packages: ['corechart', 'bar', 'line']
-            //     });
-            //     google.setOnLoadCallback(function() {
-            //         var data = google.visualization.arrayToDataTable(pie);
-            //         var chart = new google.visualization.PieChart(document.getElementById('revenue-service-category'));
-            //         chart.draw(data);
-            //     });
-            //     if (pie && pie.length > 1) {
-            //         $("#revenue-service-category").css("height", "500px");
-            //     }
-            // }
-
-            function CollectionByServiceCategory(service) {
-                google.load('visualization', '1', {
-                    packages: ['corechart', 'bar', 'line']
-                });
-                google.setOnLoadCallback(function() {
-                    var data = google.visualization.arrayToDataTable(service);
-                    var chart = new google.visualization.PieChart(document.getElementById(
-                        'revenue-service-collection'));
-                    chart.draw(data);
-                });
-                if (typeof service !== 'undefined' && service.length > 1) {
-                    $("#revenue-service-collection").css("height", "500px");
-                }
-            }
-
-            function BarChart(service) {
-    const primary = '#6993FF';
-    const success = '#1BC5BD';
-    const warning = '#FFA800';
-    
-    // Debug logging
-
-    
-    // Process locations
-    let locations = service.data.bar;
-    let modifiedLocations;
-    
-    if (locations && locations.length > 0) {
-        if (locations.some(str => str.includes('CUTERA,'))) {
-            modifiedLocations = locations.map(location => location.replace('CUTERA, ', ''));
-        } else {
-            modifiedLocations = locations;
-        }
-    } else {
-        modifiedLocations = ['Bahadurabad Karachi', 'Gulshan Johar', 'DHA Karachi', 
-                            'Johar Town Lahore', 'Gulberg Lahore', 'DHA Lahore'];
-    }
-
-    // Create copies of arrays
-    let totalData = [...(service.data.total || [])];
-    let arrivedData = [...(service.data.arrived || [])];
-    let walkinData = [...(service.data.walkin || [])];
-    
-    // Ensure all arrays have the same length
-    const maxLength = Math.max(totalData.length, arrivedData.length, walkinData.length);
-    while (totalData.length < maxLength) totalData.push(0);
-    while (arrivedData.length < maxLength) arrivedData.push(0);
-    while (walkinData.length < maxLength) walkinData.push(0);
-    
-    // Adjust data: subtract walkin from total and arrived
-    for (let i = 0; i < walkinData.length; i++) {
-        totalData[i] = Math.max(0, totalData[i] - walkinData[i]);
-        arrivedData[i] = Math.max(0, arrivedData[i] - walkinData[i]);
-    }
-
-    // Clear any existing chart (assuming centre_wise_arrival is declared elsewhere)
-    if (typeof centre_wise_arrival !== 'undefined' && centre_wise_arrival) {
-        centre_wise_arrival.destroy();
-    }
-
-    const options = {
-        series: [{
-            name: 'Total Appointments',
-            data: totalData
-        }, {
-            name: 'Arrived',
-            data: arrivedData
-        }, {
-            name: 'Walk-in',
-            data: walkinData
-        }],
-        chart: {
-            type: 'bar',
-            height: 400,
-            stacked: false,
-            toolbar: {
-                show: true
-            }
-        },
-        plotOptions: {
-            bar: {
-                horizontal: false,
-                columnWidth: '70%',
-                endingShape: 'rounded',
-                dataLabels: {
-                    position: 'top'
-                }
-            },
-        },
-        stroke: {
-            show: true,
-            width: 1,
-            colors: ['transparent']
-        },
-        xaxis: {
-            categories: modifiedLocations,
-            labels: {
-                rotate: -45,
-                rotateAlways: true,
-                style: {
-                    fontSize: '11px'
-                }
-            }
-        },
-        colors: [primary, success, warning],
-        dataLabels: {
-            enabled: false
-        },
-        legend: {
-            show: true,
-            position: 'top'
-        },
-        tooltip: {
-            shared: true,
-            intersect: false
-        },
-        yaxis: {
-            title: {
-                text: 'Count'
-            }
-        }
-    };
-    
-    // Create new chart instance
-    centre_wise_arrival = new ApexCharts(document.querySelector("#centre_wise_arrival"), options);
-    centre_wise_arrival.render();
-    
-    
-}
-            $(document).on('click', '.planIdText', function () {
-                $('.planIdText').tooltip();
-                var planId = $(this).text();
-                var tempInput = $('<input>');
-                $('body').append(tempInput);
-                tempInput.val(planId).select();
-                document.execCommand('copy');
-                tempInput.remove();
-
-                // Show a tooltip to indicate that the plan ID has been copied
-                $(this).attr('data-original-title', 'Copied! '+ planId).tooltip('show');
-                setTimeout(() => {
-                    $(this).attr('data-original-title', 'Click to copy');
-                }, 5000);
-            });
-
-
-</script>
+<script src="{{ asset('assets/js/dashboard.js') }}"></script>
+<script src="{{ asset('assets/js/dashboard-charts.js') }}"></script>
 @endpush
 @endsection
