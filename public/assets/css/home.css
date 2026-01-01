@@ -320,8 +320,34 @@ select.form-control {
     }
     
     img.loader-imgs {
+        margin-left: auto;
+        margin-right: auto;
         margin-top: 40px;
         height: 60px;
+    }
+    
+    /* Hide charts on mobile, show only tables */
+    #centre_wise_arrival,
+    #doc_wise_conversion,
+    #doctor_upselling_chart {
+        display: none !important;
+    }
+    
+    /* Make table columns full width when chart is hidden */
+    .centre_wise_arrival_wrap,
+    .appenddoctorlist {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+    
+    /* Doctor Upselling - show only table */
+    #doctor_upselling_section .col-7 {
+        display: none !important;
+    }
+    
+    #doctor_upselling_section .col-5 {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
     }
     
     /* Reduce padding on cards */
