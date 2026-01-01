@@ -361,6 +361,7 @@ select.form-control {
         flex: 0 0 50%;
         max-width: 50%;
         margin-right: 0 !important;
+        margin-left: 0 !important;
     }
     
     /* Smaller dashboard counter text */
