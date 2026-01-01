@@ -1057,7 +1057,7 @@ function DoctorWiseFeedback(bar) {
     if (feedbackStats) {
         var stats = feedbackStats;
         var badgeClass = stats.percentage >= 50 ? 'success' : (stats.percentage >= 25 ? 'warning' : 'danger');
-        var statsHtml = '<div class="feedback-stats-info text-center mt-3 p-2 col-12" style="background: #f8f9fa; border-radius: 5px;">' +
+        var statsHtml = '<div class="feedback-stats-info text-center mt-3 p-2 col-12" style="border-radius: 5px;">' +
             '<span class="font-weight-bold">Feedback Response Rate: </span>' +
             '<span class="text-primary">' + stats.total_feedbacks + '/' + stats.total_treatments + '</span>' +
             ' <span class="badge badge-' + badgeClass + '">' + stats.percentage + '%</span>' +
