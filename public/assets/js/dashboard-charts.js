@@ -106,48 +106,72 @@
         // Hide placeholder and show chart
         $('#doctor_upselling_placeholder').hide();
         
+        // Calculate dynamic width based on number of doctors (min 800px, 50px per doctor)
+        let dynamicWidth = Math.max(800, doctorNames.length * 50);
+        
+        // Calculate bar width and dynamic font size based on number of doctors
+        let barWidthPx = (dynamicWidth * 0.7) / doctorNames.length;
+        let dynamicFontSize = Math.min(16, Math.max(9, Math.floor(barWidthPx * 0.35)));
+        
+        // Calculate total for series name
+        let totalAmount = upsellingAmounts.reduce((a, b) => a + b, 0);
+        
         var options = {
             series: [{
-                name: 'Upselling Amount',
+                name: 'Upselling Amount (' + formatCurrency(totalAmount) + ')',
                 data: upsellingAmounts
             }],
             chart: {
                 type: 'bar',
-                height: 400,
-                toolbar: { show: true }
+                height: 350,
+                width: dynamicWidth,
+                toolbar: {
+                    show: true,
+                    tools: {
+                        download: true,
+                        selection: false,
+                        zoom: false,
+                        zoomin: false,
+                        zoomout: false,
+                        pan: false,
+                        reset: false
+                    }
+                }
             },
             plotOptions: {
                 bar: {
                     horizontal: false,
-                    columnWidth: '55%',
+                    columnWidth: '70%',
                     endingShape: 'rounded',
                     dataLabels: {
                         position: 'top',
-                        orientation: 'horizontal'
+                        orientation: 'vertical'
                     }
                 }
             },
             dataLabels: {
                 enabled: true,
                 formatter: function(val) { return formatCurrency(val); },
-                offsetY: -20,
                 style: {
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    colors: ['#304758']
-                }
+                    fontSize: '10px',
+                    colors: ['#304758'],
+                    fontWeight: 600
+                },
+                offsetY: -5
             },
             stroke: {
                 show: true,
-                width: 2,
+                width: 1,
                 colors: ['transparent']
             },
             xaxis: {
                 categories: doctorNames,
                 labels: {
                     rotate: -45,
-                    maxHeight: 120,
-                    style: { fontSize: '11px' }
+                    rotateAlways: true,
+                    style: { fontSize: '11px' },
+                    trim: true,
+                    maxHeight: 100
                 }
             },
             yaxis: {
@@ -166,8 +190,9 @@
             legend: { show: false }
         };
         
-        // Clear any existing chart
+        // Clear any existing chart and add horizontal scroll only (no vertical scroll)
         $('#doctor_upselling_chart').empty();
+        $('#doctor_upselling_chart').css({'overflow-x': 'auto', 'overflow-y': 'hidden'});
         
         var chart = new ApexCharts(document.querySelector("#doctor_upselling_chart"), options);
         chart.render();

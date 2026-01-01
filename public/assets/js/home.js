@@ -5,68 +5,54 @@ var CENTRE_ID;
 var SELECTED_MONTH;
 var DOC_ID;
 
+// Helper function to update dropdown period labels
+function dropDownList(type, period, centreID) {
+    var labels = {
+        today: 'Today',
+        yesterday: 'Yesterday',
+        last7days: 'Last 7 Days',
+        week: 'This Week',
+        thismonth: 'This Month',
+        lastmonth: 'Last Month'
+    };
+    var label = labels[period] || 'This Month';
+    
+    if (type === 'centre') {
+        $('.centre_wise_arrival_period').html(label + ' <i class="fa fa-angle-down"></i>');
+    } else if (type === 'user') {
+        $('.user_wise_arrival_period').html(label + ' <i class="fa fa-angle-down"></i>');
+    } else if (type === 'doctor') {
+        $('.doctor_wise_period').html(label + ' <i class="fa fa-angle-down"></i>');
+    }
+}
+
 function initCollectionByCentre(type) {
-    $("#collection_by_centre_menu .active").removeClass('active');
-    $("#collection_by_centre_menu").parent().addClass('active');
-    $("#collectionbycenter .loader-img-attended").css('display', '');
-    $("#collectionbycenter #collection-by-centre").css('display', 'none');
+    var $container = $("#collectionbycenter");
+    $container.find(".loader-img-attended").show();
+    $container.find("#collection-by-centre").hide();
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.collection_by_centre'),
+        url: '/api/dashboard/collection-by-centre',
         type: 'GET',
-        data: {
-            'type': type
+        data: { type: type },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#collection-by-centre").show();
+            
+            var pieData = response.data?.pie?.[type] || response.data?.pie?.today || [];
+            $(".total-pie-chart").text(response.data?.total || 0);
+            
+            var labels = {
+                today: 'Today', yesterday: 'Yesterday', last7days: 'Last 7 Days',
+                week: 'This Week', thismonth: 'This Month', lastmonth: 'Last Month'
+            };
+            $(".collection_by_centre_dropdown").text(labels[type] || 'Today');
+            
+            collectionCentreChart(pieData);
         },
-        cache: false,
-        success: function (response) {
-            $("#collectionbycenter .loader-img-attended").css('display', 'none');
-            $("#collectionbycenter #collection-by-centre").css('display', '');
-            if (type == "today") {
-                var pie = response.data.pie.today;
-                let total = response.data.total;
-                $(".total-pie-chart").text(total);
-                $(".collection_by_centre_dropdown").text("Today");
-            }
-            if (type == "yesterday") {
-                $(".pie-income-title").text('Yesterday Income');
-                var pie = response.data.pie.yesterday;
-                let total = response.data.total;
-                $(".total-pie-chart").text(total);
-                $(".collection_by_centre_dropdown").text("Yesterday");
-            }
-            if (type == "last7days") {
-                $(".pie-income-title").text('Weekly Income');
-                var pie = response.data.pie.last7days;
-                let total = response.data.total;
-                $(".total-pie-chart").text(total);
-                $(".collection_by_centre_dropdown").text("Last 7 Days");
-            }
-            if (type == "week") {
-                $(".pie-income-title").text('Weekly Income');
-                var pie = response.data.pie.week;
-                let total = response.data.total;
-                $(".total-pie-chart").text(total);
-                $(".collection_by_centre_dropdown").text("This Week");
-            }
-            if (type == "thismonth") {
-                $(".pie-income-title").text('Monthly Income');
-                var pie = response.data.pie.thismonth;
-                let total = response.data.total;
-                $(".total-pie-chart").text(total);
-                $(".collection_by_centre_dropdown").text("This Month");
-            }
-            if (type == "lastmonth") {
-                $(".pie-income-title").text('Last Month Income');
-                var pie = response.data.pie.lastmonth;
-                let total = response.data.total;
-                $(".total-pie-chart").text(total);
-                $(".collection_by_centre_dropdown").text("Last Month");
-            }
-            collectionCentreChart(pie);
-        },
+        error: function() {
+            $container.find(".loader-img-attended").hide();
+        }
     });
 }
 
@@ -87,69 +73,37 @@ function collectionCentreChart(pie) {
 }
 
 function initRevenueByCentre(period) {
-    $("#revenue_by_centre_menu .active").removeClass('active');
-    $("#revenue_by_centre_menu").parent().addClass('active');
-    $("#revenue_by_centre .loader-img-attended").css('display', '');
-    $("#revenue_by_centre #revenue-centre").css('display', 'none');
+    var $container = $("#revenue_by_centre");
+    $container.find(".loader-img-attended").show();
+    $container.find("#revenue-centre").hide();
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.revenueByCentre'),
+        url: '/api/dashboard/revenue-by-centre',
         type: 'GET',
-        data: {
-            'period': period,
-            'performance': '0'
+        data: { type: period, performance: '0' },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#revenue-centre").show();
+            
+            var labels = {
+                today: { title: 'Today Income', dropdown: 'Today' },
+                yesterday: { title: 'Yesterday Income', dropdown: 'Yesterday' },
+                last7days: { title: 'Weekly Income', dropdown: 'Last 7 days' },
+                week: { title: 'Weekly Income', dropdown: 'This Week' },
+                thismonth: { title: 'Monthly Income', dropdown: 'This Month' },
+                lastmonth: { title: 'Last Month Income', dropdown: 'Last Month' }
+            };
+            
+            var config = labels[period] || labels.today;
+            $(".revenue-centre-title").text(config.title);
+            $(".revenue_by_centre_dropdown").text(config.dropdown);
+            $(".total-centre").text(response.data?.total || 0);
+            
+            revenueCentreChart(response.data?.pie || []);
         },
-        cache: false,
-        success: function (response) {
-            $("#revenue_by_centre .loader-img-attended").css('display', 'none');
-            $("#revenue_by_centre #revenue-centre").css('display', '');
-            if (period == "today") {
-                $(".revenue-centre-title").text('Today Income');
-                let total = response.data.total;
-                $(".total-centre").text(total);
-                $(".revenue_by_centre_dropdown").text("Today");
-                var pie = response.data.pie;
-            }
-            if (period == "yesterday") {
-                $(".revenue-centre-title").text('Yesterday Income');
-                let total = response.data.total;
-                $(".total-centre").text(total);
-                $(".revenue_by_centre_dropdown").text("Yesterday");
-                var pie = response.data.pie;
-            }
-            if (period == "last7days") {
-                let total = response.data.total;
-                $(".revenue-centre-title").text('Weekly Income');
-                $(".revenue_by_centre_dropdown").text("Last 7 days");
-                $(".total-centre").text(total);
-                var pie = response.data.pie;
-            }
-            if (period == "week") {
-                let total = response.data.total;
-                $(".revenue-centre-title").text('Weekly Income');
-                $(".revenue_by_centre_dropdown").text("This Week");
-                $(".total-centre").text(total);
-                var pie = response.data.pie;
-            }
-            if (period == "thismonth") {
-                $(".revenue-centre-title").text('Monthly Income');
-                let total = response.data.total;
-                $(".total-centre").text(total);
-                $(".revenue_by_centre_dropdown").text("This Month");
-                var pie = response.data.pie;
-            }
-            if (period == "lastmonth") {
-                $(".revenue-centre-title").text('Last Month Income');
-                let total = response.data.total;
-                $(".total-centre").text(total);
-                $(".revenue_by_centre_dropdown").text("Last Month");
-                var pie = response.data.pie;
-            }
-            revenueCentreChart(pie);
-        },
+        error: function() {
+            $container.find(".loader-img-attended").hide();
+        }
     });
 }
 
@@ -173,69 +127,39 @@ function revenueCentreChart(pie) {
 }
 
 function initRevenueByService(type) {
-    $("#revenue_by_service_menu .active").removeClass('active');
-    $("#revenue_by_service_menu").parent().addClass('active');
-    $("#revenue_by_service .loader-img-attended").css('display', '');
-    $("#revenue_by_service #revenue-service").css('display', 'none');
+    var $container = $("#revenue_by_service");
+    $container.find(".loader-img-attended").show();
+    $container.find("#revenue-service").hide();
+    
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.revenueByService'),
+        url: '/api/dashboard/revenue-by-service',
         type: 'GET',
-        cache: false,
-        data: {
-            'type': type,
+        data: { type: type },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#revenue-service").show();
+            
+            var labels = {
+                today: { title: 'Today Income', dropdown: 'Today' },
+                yesterday: { title: 'Yesterday Income', dropdown: 'Yesterday' },
+                last7days: { title: 'Weekly Income', dropdown: 'Last 7 Days' },
+                week: { title: 'Weekly Income', dropdown: 'Week' },
+                thismonth: { title: 'Monthly Income', dropdown: 'This Month' },
+                lastmonth: { title: 'Last Month Income', dropdown: 'Last Month' }
+            };
+            
+            var config = labels[type] || labels.today;
+            $(".service-title").text(config.title);
+            $(".revenue_by_service_dropdown").text(config.dropdown);
+            $(".total-service").text(response.data?.total || 0);
+            
+            var pieData = response.data?.pie?.[type] || response.data?.pie?.today || [];
+            var colors = response.data?.colors || [];
+            revenueByService(pieData, colors);
         },
-        success: function (response) {
-            $("#revenue_by_service .loader-img-attended").css('display', 'none');
-            $("#revenue_by_service #revenue-service").css('display', '');
-            let colors = response.data.colors;
-            if (type == "today") {
-                $(".service-title").text('Today Income');
-                let total = response.data.total;
-                $(".total-service").text(total);
-                $(".revenue_by_service_dropdown").text("Today");
-                var pie = response.data.pie.today;
-            }
-            if (type == "yesterday") {
-                $(".service-title").text('Yesterday Income');
-                let total = response.data.total;
-                $(".total-service").text(total);
-                $(".revenue_by_service_dropdown").text("Yesterday");
-                var pie = response.data.pie.yesterday;
-            }
-            if (type == "last7days") {
-                $(".service-title").text('Weekly Income');
-                let total = response.data.total;
-                $(".total-service").text(total);
-                $(".revenue_by_service_dropdown").text("Last 7 Days");
-                var pie = response.data.pie.last7days;
-            }
-            if (type == "week") {
-                $(".service-title").text('Weekly Income');
-                let total = response.data.total;
-                $(".total-service").text(total);
-                $(".revenue_by_service_dropdown").text("Week");
-                var pie = response.data.pie.week;
-            }
-            if (type == "thismonth") {
-                $(".service-title").text('Monthly Income');
-                let total = response.data.total;
-                $(".total-service").text(total);
-                $(".revenue_by_service_dropdown").text("This Month");
-                var pie = response.data.pie.thismonth;
-            }
-            if (type == "lastmonth") {
-                $(".service-title").text('Last Month Income');
-                let total = response.data.total;
-                $(".total-service").text(total);
-                $(".revenue_by_service_dropdown").text("Last Month");
-                var pie = response.data.pie.lastmonth;
-            }
-            revenueByService(pie, colors);
-        },
-
+        error: function() {
+            $container.find(".loader-img-attended").hide();
+        }
     });
 }
 
@@ -265,39 +189,18 @@ function revenueByService(service, colors) {
 
 function initAppointmentsByStatus(period) {
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.appointment_by_status'),
+        url: '/api/dashboard/appointment-by-status',
         type: 'GET',
-        data: { 'period': period },
-        cache: false,
-        success: function (response) {
-            let colors = response.data.colors;
-            if (period == "today") {
-                var pie = response.data.pie.today;
-                $(".revenue_by_service_dropdown").text("Today");
-            }
-            if (period == "yesterday") {
-                var pie = response.data.pie.yesterday;
-                $(".revenue_by_service_dropdown").text("Yesterday");
-            }
-            if (period == "last7days") {
-                var pie = response.data.pie.last7days;
-                $(".revenue_by_service_dropdown").text("Last 7 Days");
-            }
-            if (period == "thismonth") {
-                var pie = response.data.pie.thismonth;
-                $(".revenue_by_service_dropdown").text("This Month");
-            }
-            if (period == "lastmonth") {
-                var pie = response.data.pie.lastmonth;
-                $(".revenue_by_service_dropdown").text("Last Month");
-            }
-            AppointmentByStatus(pie, colors);
-
-        },
-
+        data: { period: period },
+        success: function(response) {
+            var colors = response.data?.colors || [];
+            var pieData = response.data?.pie?.[period] || response.data?.pie?.today || [];
+            
+            var labels = { today: 'Today', yesterday: 'Yesterday', last7days: 'Last 7 Days', thismonth: 'This Month', lastmonth: 'Last Month' };
+            $(".revenue_by_service_dropdown").text(labels[period] || 'Today');
+            
+            AppointmentByStatus(pieData, colors);
+        }
     });
 }
 
@@ -325,34 +228,14 @@ function AppointmentByStatus(pie, colors) {
 
 function initAppointmentsByType(period) {
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.appointment_by_type'),
+        url: '/api/dashboard/appointment-by-type',
         type: 'GET',
-        data: { 'period': period },
-        cache: false,
-        success: function (response) {
-            let colors = response.data.colors;
-            if (period == "today") {
-                var pie = response.data.pie.today;
-            }
-            if (period == "yesterday") {
-                var pie = response.data.pie.yesterday;
-            }
-            if (period == "last7days") {
-                var pie = response.data.pie.last7days;
-            }
-            if (period == "thismonth") {
-                var pie = response.data.pie.thismonth;
-            }
-            if (period == "lastmonth") {
-                var pie = response.data.pie.lastmonth;
-            }
-            AppointmentByType(pie, colors);
-
-        },
-
+        data: { period: period },
+        success: function(response) {
+            var colors = response.data?.colors || [];
+            var pieData = response.data?.pie?.[period] || response.data?.pie?.today || [];
+            AppointmentByType(pieData, colors);
+        }
     });
 }
 
@@ -379,102 +262,52 @@ function AppointmentByType(pie, colors) {
 }
 
 function initConsultancyByStatus(period, type) {
-    $("#appointment_by_status_menu .active").removeClass('active');
-    $("#appointment_by_status_menu").parent().addClass('active');
-    $("#consultancy_status1 .loader-img-attended").css('display', '');
-    $("#consultancy_status1 #consultancy_by_status").css('display', 'none');
+    var $container = $("#consultancy_status1");
+    $container.find(".loader-img-attended").show();
+    $container.find("#consultancy_by_status").hide();
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.appointment_by_status'),
+        url: '/api/dashboard/appointment-by-status',
         type: 'GET',
-        data: { 'period': period, 'type': type },
-        cache: false,
-        success: function (response) {
-            $("#consultancy_status1 .loader-img-attended").css('display', 'none');
-            $("#consultancy_status1 #consultancy_by_status").css('display', '');
-            let colors = response.data.colors;
-            if (period == "today") {
-                var pie = response.data.pie.today;
-                $(".appointment_by_status_dropdown").text("Today");
-            }
-            if (period == "yesterday") {
-                var pie = response.data.pie.yesterday;
-                $(".appointment_by_status_dropdown").text("Yesterday");
-            }
-            if (period == "last7days") {
-                var pie = response.data.pie.last7days;
-                $(".appointment_by_status_dropdown").text("Last 7 Days");
-            }
-            if (period == "week") {
-                var pie = response.data.pie.week;
-                $(".appointment_by_status_dropdown").text("This Week");
-            }
-            if (period == "thismonth") {
-                var pie = response.data.pie.thismonth;
-                $(".appointment_by_status_dropdown").text("This Month");
-            }
-            if (period == "lastmonth") {
-                var pie = response.data.pie.lastmonth;
-                $(".appointment_by_status_dropdown").text("Last Month");
-            }
-            setTimeout(() => {
-                ConsultancyByStatus(pie, colors);
-            }, 500);
+        data: { period: period, type: type },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#consultancy_by_status").show();
+            
+            var colors = response.data?.colors || [];
+            var pieData = response.data?.pie?.[period] || response.data?.pie?.today || [];
+            
+            var labels = { today: 'Today', yesterday: 'Yesterday', last7days: 'Last 7 Days', week: 'This Week', thismonth: 'This Month', lastmonth: 'Last Month' };
+            $(".appointment_by_status_dropdown").text(labels[period] || 'Today');
+            
+            setTimeout(function() { ConsultancyByStatus(pieData, colors); }, 500);
         },
+        error: function() { $container.find(".loader-img-attended").hide(); }
     });
 }
 
 function initTreatmentByStatus(period, type) {
-    $("#appointment_by_type_menu .active").removeClass('active');
-    $("#appointment_by_type_menu").parent().addClass('active');
-    $("#treatment_status1 .loader-img-attended").css('display', '');
-    $("#treatment_status1 #treatment_by_status").css('display', 'none');
+    var $container = $("#treatment_status1");
+    $container.find(".loader-img-attended").show();
+    $container.find("#treatment_by_status").hide();
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.appointment_by_status'),
+        url: '/api/dashboard/appointment-by-status',
         type: 'GET',
-        data: { 'period': period, 'type': type },
-        cache: false,
-        success: function (response) {
-            $("#treatment_status1 .loader-img-attended").css('display', 'none');
-            $("#treatment_status1 #treatment_by_status").css('display', '');
-            let colors = response.data.colors;
-            if (period == "today") {
-                var pie = response.data.pie.today;
-                $(".appointment_by_type_dropdown").text("Today");
-            }
-            if (period == "yesterday") {
-                var pie = response.data.pie.yesterday;
-                $(".appointment_by_type_dropdown").text("Yesterday");
-            }
-            if (period == "last7days") {
-                var pie = response.data.pie.last7days;
-                $(".appointment_by_type_dropdown").text("Last 7 Days");
-            }
-            if (period == "week") {
-                var pie = response.data.pie.week;
-                $(".appointment_by_type_dropdown").text("This Week");
-            }
-            if (period == "thismonth") {
-                var pie = response.data.pie.thismonth;
-                $(".appointment_by_type_dropdown").text("This Month");
-            }
-            if (period == "lastmonth") {
-                var pie = response.data.pie.lastmonth;
-                $(".appointment_by_type_dropdown").text("Last Month");
-            }
-
-            setTimeout(() => {
-                TreatmentByStatus(pie, colors);
-            }, 500);
+        data: { period: period, type: type },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#treatment_by_status").show();
+            
+            var colors = response.data?.colors || [];
+            var pieData = response.data?.pie?.[period] || response.data?.pie?.today || [];
+            
+            var labels = { today: 'Today', yesterday: 'Yesterday', last7days: 'Last 7 Days', week: 'This Week', thismonth: 'This Month', lastmonth: 'Last Month' };
+            $(".appointment_by_type_dropdown").text(labels[period] || 'Today');
+            
+            setTimeout(function() { TreatmentByStatus(pieData, colors); }, 500);
         },
-
+        error: function() { $container.find(".loader-img-attended").hide(); }
     });
 }
 
@@ -513,47 +346,25 @@ function ConsultancyByStatus(pie, colors) {
 }
 
 function InitRevenueByServiceCategory(type) {
-    $("#revenue_by_service_category_menu .active").removeClass('active');
-    $("#revenue_by_service_category_menu").parent().addClass('active');
-    $("#revenue_by_service_category .loader-img-attended").css('display', '');
-    $("#revenue_by_service_category #revenue-service-category").css('display', 'none');
+    var $container = $("#revenue_by_service_category");
+    $container.find(".loader-img-attended").show();
+    $container.find("#revenue-service-category").hide();
+    
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.revenueByServiceCategory'),
+        url: '/api/dashboard/revenue-by-service-category',
         type: 'GET',
-        cache: false,
-        data: {
-            'type': type,
+        data: { type: type },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#revenue-service-category").show();
+            
+            var pieData = response.data?.pie?.[type] || response.data?.pie?.today || [];
+            var labels = { today: 'Today', yesterday: 'Yesterday', last7days: 'Last 7 Days', week: 'This Week', thismonth: 'This Month' };
+            $(".revenue_by_service_category_dropdown").text(labels[type] || 'Today');
+            
+            RevenueByServiceCategory(pieData);
         },
-        success: function (response) {
-            $("#revenue_by_service_category .loader-img-attended").css('display', 'none');
-            $("#revenue_by_service_category #revenue-service-category").css('display', '');
-            let colors = response.data?.colors;
-            if (type == 'today') {
-                var pie = response.data.pie.today;
-                $(".revenue_by_service_category_dropdown").text("Today");
-            }
-            if (type == "yesterday") {
-                var pie = response.data.pie.yesterday;
-                $(".revenue_by_service_category_dropdown").text("Yesterday");
-            }
-            if (type == "last7days") {
-                var pie = response.data.pie.last7days;
-                $(".revenue_by_service_category_dropdown").text("Last 7 Days");
-            }
-            if (type == "week") {
-                var pie = response.data.pie.week;
-                $(".revenue_by_service_category_dropdown").text("This Month");
-            }
-            if (type == "thismonth") {
-                var pie = response.data.pie.thismonth;
-                $(".revenue_by_service_category_dropdown").text("Last Month");
-            }
-
-            RevenueByServiceCategory(pie);
-        },
+        error: function() { $container.find(".loader-img-attended").hide(); }
     });
 }
 
@@ -577,40 +388,16 @@ function RevenueByServiceCategory(service, colors) {
     }
 }
 
-function InitCollectionByServiceCategory(today, yesterday, last7days, thismonth, lastmonth) {
+function InitCollectionByServiceCategory(type) {
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.CollectionByServiceCategory'),
+        url: '/api/dashboard/collection-by-service-category',
         type: 'GET',
-        cache: false,
-        data: {
-            'today': today,
-            'yesterday': yesterday,
-            'last7days': last7days,
-            'thismonth': thismonth,
-            'lastmonth': lastmonth,
-        },
-        success: function (response) {
-            let colors = response.data.colors;
-            if (today != '') {
-                var pie = response.data.pie.today;
-            }
-            if (yesterday != '') {
-                var pie = response.data.pie.yesterday;
-            }
-            if (last7days != '') {
-                var pie = response.data.pie.last7days;
-            }
-            if (thismonth != '') {
-                var pie = response.data.pie.thismonth;
-            }
-            if (lastmonth != '') {
-                var pie = response.data.pie.lastmonth;
-            }
-            CollectionByServiceCategory(pie, colors);
-        },
+        data: { type: type || 'today' },
+        success: function(response) {
+            var pieData = response.data?.pie?.[type] || response.data?.pie?.today || [];
+            var colors = response.data?.colors || [];
+            CollectionByServiceCategory(pieData, colors);
+        }
     });
 }
 
@@ -629,10 +416,11 @@ function CollectionByServiceCategory(service, colors) {
 }
 
 function initCentreWiseArrival(period, centreID, time = '') {
-    $("#staff_wise_arrival .loader-img-attended").css('display', '');
-    $("#staff_wise_arrival #centre_wise_arrival").css('display', 'none');
-    $("#staff_wise_arrival #centre_wise_arrival_02").css('display', 'none');
-    if (time != 'firsttime') {
+    var $container = $("#staff_wise_arrival");
+    $container.find(".loader-img-attended").show();
+    $container.find("#centre_wise_arrival, #centre_wise_arrival_02").hide();
+    
+    if (time != 'firsttime' && central_wise_arrival_chart) {
         central_wise_arrival_chart.destroy();
     }
     if (centreID == 'centre') {
@@ -641,68 +429,53 @@ function initCentreWiseArrival(period, centreID, time = '') {
     if (centreID == '' || centreID == 30 || centreID == 'All') {
         centreID = 'All';
     }
+    
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.centre_wise_arrival'),
+        url: '/api/dashboard/centre-wise-arrival',
         type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'centre_id': centreID
-        },
-        success: function (response) {
-            $("#staff_wise_arrival .loader-img-attended").css('display', 'none');
-            $("#staff_wise_arrival #centre_wise_arrival").css('display', '');
-            $("#staff_wise_arrival #centre_wise_arrival_02").css('display', '');
+        data: { period: period, centre_id: centreID },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#centre_wise_arrival, #centre_wise_arrival_02").show();
 
             $('#table-body').html("");
             dropDownList('centre', period, centreID = '');
             var TABLE_HTML = "";
-            let walkin_t = 0;
-            let arrived_t = 0;
-            let total_t = 0;
-
-            var barLenght = response.data.bar;
+            var walkin_t = 0, arrived_t = 0, total_t = 0;
+            var barLenght = response.data?.bar || [];
+            
             for (var i = 0; i < barLenght.length; i++) {
-                let walkin = response.data.walkin[i] ?? 0;
-                let arrived = response.data.arrived[i] - walkin;
-                let total = response.data.total[i] - walkin;
+                var walkin = response.data?.walkin?.[i] ?? 0;
+                var arrived = (response.data?.arrived?.[i] || 0) - walkin;
+                var total = (response.data?.total?.[i] || 0) - walkin;
                 walkin_t += walkin;
-                arrived_t += response.data.arrived[i];
-                total_t += response.data.total[i];
-
-                let str = barLenght[i];
-                let wordToRemove = "CUTERA ";
-                let centre_name = str.replace(new RegExp('\\b' + wordToRemove + '\\b', 'gi'), '');
+                arrived_t += response.data?.arrived?.[i] || 0;
+                total_t += response.data?.total?.[i] || 0;
+                var centre_name = barLenght[i].replace(/\bCUTERA \b/gi, '');
                 if (total != 0 && !isNaN(total)) {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
             }
-
             arrived_t -= walkin_t;
             total_t -= walkin_t;
-
-            let percentage = ((arrived_t / total_t) * 100).toFixed(2);
-
+            var percentage = ((arrived_t / total_t) * 100).toFixed(2);
             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + (isNaN(arrived_t) ? 0 : arrived_t) + "/" + (isNaN(total_t) ? 0 : total_t) + "</td><td>" + (isNaN(walkin_t) ? 0 : walkin_t) + "</td><td>" + (isNaN(percentage) ? 0 : percentage) + "%</td></tr>";
-
             jQuery('#table-body').append(TABLE_HTML);
             ConsultanciesByStatus(response);
         },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+        error: function(xhr) { 
+            $container.find(".loader-img-attended").hide();
+            if (typeof errorMessage === 'function') errorMessage(xhr);
         }
     });
 }
 
 function initUserWiseArrival(period, userID, time = '') {
-    $("#staff_wise_arrival .loader-img-attended").css('display', '');
-    $("#staff_wise_arrival #centre_wise_arrival").css('display', 'none');
-    $("#staff_wise_arrival #centre_wise_arrival_02").css('display', 'none');
+    var $container = $("#staff_wise_arrival");
+    $container.find(".loader-img-attended").show();
+    $container.find("#centre_wise_arrival, #centre_wise_arrival_02").hide();
 
-    if (time != 'firsttime') {
+    if (time != 'firsttime' && central_wise_arrival_chart) {
         central_wise_arrival_chart.destroy();
     }
     if (userID == 'user') {
@@ -713,45 +486,39 @@ function initUserWiseArrival(period, userID, time = '') {
     }
 
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.csr_wise_arrival'),
+        url: '/api/dashboard/csr-wise-arrival',
         type: 'GET',
-        cache: false,
-        data: {
-            'period': period,
-            'user_id': userID
-        },
-        success: function (response) {
-            $("#staff_wise_arrival .loader-img-attended").css('display', 'none');
-            $("#staff_wise_arrival #centre_wise_arrival").css('display', '');
-            $("#staff_wise_arrival #centre_wise_arrival_02").css('display', '');
+        data: { period: period, user_id: userID },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#centre_wise_arrival, #centre_wise_arrival_02").show();
 
             jQuery('#table-body').html("");
             dropDownList('user', period);
             var TABLE_HTML = "";
-            let total = 0;
-            let arrived = 0;
-            var barLenght = response.data.bar;
+            var total = 0, arrived = 0;
+            var barLenght = response.data?.bar || [];
             var csr_name = $('.arrivalbtn').text();
 
             for (var i = 0; i < barLenght.length; i++) {
-                arrived += response.data.arrived[i];
-                total += response.data.total[i];
+                arrived += response.data?.arrived?.[i] || 0;
+                total += response.data?.total?.[i] || 0;
                 if (userID == 'All') {
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + response.data.arrived[i] + "/" + response.data.total[i] + "</td><td>" + ((response.data.arrived[i] / response.data.total[i]) * 100).toFixed(2) + "%</td></tr>";
+                    var arrVal = response.data?.arrived?.[i] || 0;
+                    var totVal = response.data?.total?.[i] || 0;
+                    var pct = totVal > 0 ? ((arrVal / totVal) * 100).toFixed(2) : 0;
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + barLenght[i] + "</td><td>" + arrVal + "/" + totVal + "</td><td>" + pct + "%</td></tr>";
                 }
             }
             if (total != 0) {
                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + csr_name + "</td><td>" + arrived + "/" + total + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
             }
-
             jQuery('#table-body').append(TABLE_HTML);
             ConsultanciesByStatus(response);
         },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+        error: function(xhr) { 
+            $container.find(".loader-img-attended").hide();
+            if (typeof errorMessage === 'function') errorMessage(xhr);
         }
     });
 }
@@ -858,193 +625,114 @@ function changeCenterFeedback(period, center_id) {
     initDoctorWiseFeedback(period, center_id, '', true);
 }
 function initDoctorWiseConversion(period, centre_id, time = '', nochangeDr = true) {
-    $("#doctor_wise_conversion_section .loader-img-attended").css('display', '');
-    $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', 'none');
-    $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', 'none');
+    var $container = $("#doctor_wise_conversion_section");
+    $container.find(".loader-img-attended").show();
+    $container.find("#doc_wise_conversion, #centre_wise_arrival_02").hide();
     dropDownList('doctor', period);
-    if (time != 'firsttime') {
+    
+    if (time != 'firsttime' && doc_wise_conversion_chart) {
         doc_wise_conversion_chart.destroy();
     }
 
-    $('.loader-imgs').css('display', "block");
+    $('.loader-imgs').show();
     SELECTED_MONTH = period;
-    var centre_id = $('.selectcenter option:selected').val();
+    centre_id = $('.selectcenter option:selected').val();
     CENTRE_ID = centre_id;
-
     var doc_id = $("#doc_nav option:selected").val();
     DOC_ID = doc_id;
 
-    let converted = 0;
-    let arrived = 0;
-    let avg_sum = 0;
-    $('.arrivalbtn').text();
     $("#categories-table-body").html("");
+    
     if (nochangeDr) {
-        var TABLE_HTML = "<option value='all-docs'>All Doctors</option>";
         $.ajax({
             url: route('admin.getdoctors'),
             type: "GET",
-            data: { 'centre_id': centre_id },
-            cache: false,
-            success: function (response) {
-                jQuery('#doc_nav').html("");
-                jQuery.each(response.doctors, function (index, doctor) {
-                    TABLE_HTML += " <option value=" + doctor.id + " >" + doctor.name + "</option>";
+            data: { centre_id: centre_id },
+            success: function(response) {
+                var html = "<option value='all-docs'>All Doctors</option>";
+                jQuery.each(response.doctors, function(index, doctor) {
+                    html += "<option value=" + doctor.id + ">" + doctor.name + "</option>";
                 });
-                jQuery('#doc_nav').append(TABLE_HTML);
-            },
+                jQuery('#doc_nav').html(html);
+            }
         });
     }
 
-    // if (centre_id == 'all' && doc_id == 'all-docs') {
-    //     $.ajax({
-    //         url: route('admin.dashboard.all_doctor_wise_conversion'),
-    //         type: 'GET',
-    //         cache: false,
-    //         data: {
-    //             // 'period': period,
-    //             'period': $('#dr_wise_con option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_con option:selected').val(),
-    //             'centre_id': centre_id
-    //         },
-    //         success: function (response) {
-    //             $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
-    //             $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
-    //             $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
-
-    //             $('.loader-imgs').css('display', "none");
-    //             var categories = response.data.categories
-    //             jQuery('#categories-table-body').html("");
-    //             var TABLE_HTML = "";
-    //             jQuery.each(categories, function (index, category) {
-    //                 arrived += category.total_arrival;
-    //                 converted += category.total_conversion;
-    //                 avg_sum += category.avg;
-    //                 TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
-
-    //             });
-    //             var avg = ((converted / arrived) * 100).toFixed(2);
-    //             var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-    //             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
-
-    //             jQuery('#categories-table-body').append(TABLE_HTML);
-    //             AllDoctorWiseConversion(response);
-    //         },
-    //         error: function (xhr, ajaxOptions, thrownError) {
-    //             errorMessage(xhr);
-    //         }
-    //     });
-    //     var TABLE_HTML = "<option value='all-docs'>All Doctors</option>";
-    //     $.ajax({
-    //         url: route('admin.getdoctors'),
-    //         type: "GET",
-    //         data: { 'centre_id': centre_id },
-    //         cache: false,
-    //         success: function (response) {
-    //             jQuery('#doc_nav').html("");
-    //             jQuery.each(response.doctors, function (index, doctor) {
-    //                 TABLE_HTML += " <option value=" + doctor.id + " >" + doctor.name + "</option>";
-    //             });
-    //             jQuery('#doc_nav').append(TABLE_HTML);
-    //         },
-    //     });
-    // } else {
-
-
+    var selectedPeriod = $('#dr_wise_con option:selected').val();
     var check_doc_id = doc_id == 'all-docs' ? '' : doc_id;
 
     $.ajax({
-        url: route('admin.dashboard.doctor_wise_conversion'),
+        url: '/api/dashboard/doctor-wise-conversion',
         type: 'GET',
-        cache: false,
         data: {
-            // 'period': period,
-            'period': $('#dr_wise_con option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_con option:selected').val(),
-            'centre_id': centre_id,
-            'doc_id': check_doc_id
+            period: selectedPeriod == 'month' ? 'thismonth' : selectedPeriod,
+            centre_id: centre_id,
+            doc_id: check_doc_id
         },
-        success: function (response) {
-            $("#doctor_wise_conversion_section .loader-img-attended").css('display', 'none');
-            $("#doctor_wise_conversion_section #doc_wise_conversion").css('display', '');
-            $("#doctor_wise_conversion_section #centre_wise_arrival_02").css('display', '');
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#doc_wise_conversion, #centre_wise_arrival_02").show();
+            $('.loader-imgs').hide();
 
-            $('.loader-imgs').css('display', "none");
-            var categories = response.data.categories;
-            jQuery('#categories-table-body').html("");
+            var categories = response.data?.categories || [];
+            var converted = 0, arrived = 0;
             var TABLE_HTML = "";
-            jQuery.each(categories, function (index, category) {
-                arrived += category.total_arrival;
-                converted += category.total_conversion;
-                avg_sum += category.avg;
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
-
+            
+            jQuery.each(categories, function(index, category) {
+                arrived += category.total_arrival || 0;
+                converted += category.total_conversion || 0;
+                var pct = category.total_arrival > 0 ? ((category.total_conversion / category.total_arrival) * 100).toFixed(2) : 0;
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + pct + "%</td><td>" + (category.avg || 0).toFixed(2) + "</td></tr>";
             });
-            var avg = ((converted / arrived) * 100).toFixed(2);
-            if (converted === 0) {
-                avgValue = 0;
-            } else {
-                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-            }
-            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+            
+            var avg = arrived > 0 ? ((converted / arrived) * 100).toFixed(2) : 0;
+            var avgValue = converted > 0 ? ((response.data?.sum_val || 0) / converted).toFixed(2) : 0;
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + avg + "%</td><td>" + avgValue + "</td></tr>";
 
-            jQuery('#categories-table-body').append(TABLE_HTML);
+            jQuery('#categories-table-body').html(TABLE_HTML);
             DoctorWiseConversion(response);
         },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+        error: function(xhr) {
+            $container.find(".loader-img-attended").hide();
+            $('.loader-imgs').hide();
+            if (typeof errorMessage === 'function') errorMessage(xhr);
         }
     });
-    return false;
-
-    // }
-
-
 }
 function initDoctorWiseFeedback(period, centre_id, time = '', nochangeDr = true) {
-    $("#doctor_wise_feedback_section .loader-img-attended").css('display', '');
-    $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', 'none');
+    var $container = $("#doctor_wise_feedback_section");
+    $container.find(".loader-img-attended").show();
+    $container.find("#doc_wise_feedback_data").hide();
 
     dropDownList('doctor', period);
-    if (time != 'firsttime') {
+    if (time != 'firsttime' && doc_wise_feedback_chart) {
         doc_wise_feedback_chart.destroy();
     }
 
-    $('.loader-imgs').css('display', "block");
+    $('.loader-imgs').show();
     SELECTED_MONTH = period;
-    var centre_id = $('.selectcenterfeedback option:selected').val();
+    centre_id = $('.selectcenterfeedback option:selected').val();
     CENTRE_ID = centre_id;
 
-
-    $('.arrivalbtn').text();
+    var selectedPeriod = $('#dr_wise_fed option:selected').val() || 'thismonth';
 
     $.ajax({
-        url: route('admin.dashboard.doctor_wise_feedback'),
+        url: '/api/dashboard/doctor-wise-feedback',
         type: 'GET',
-        cache: false,
-        data: {
-            // 'period': period,
-            'period': $('#dr_wise_fed option:selected').val() == 'thismonth' ? 'thismonth' : $('#dr_wise_fed option:selected').val(),
-            'centre_id': centre_id,
-
-        },
-        success: function (response) {
-         
-            $("#doctor_wise_feedback_section .loader-img-attended").css('display', 'none');
-            $("#doctor_wise_feedback_section #doc_wise_feedback_data").css('display', '');
-
-
-            $('.loader-imgs').css('display', "none");
-
+        data: { period: selectedPeriod, centre_id: centre_id },
+        success: function(response) {
+            $container.find(".loader-img-attended").hide();
+            $container.find("#doc_wise_feedback_data").show();
+            $('.loader-imgs').hide();
+            
             DoctorWiseFeedback(response);
         },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+        error: function(xhr) {
+            $container.find(".loader-img-attended").hide();
+            $('.loader-imgs').hide();
+            if (typeof errorMessage === 'function') errorMessage(xhr);
         }
     });
-    return false;
-
-    // }
-
-
 }
 
 function GetDoctors(centre_id, time = '') {
@@ -1056,73 +744,40 @@ function GetDoctors(centre_id, time = '') {
     let converted = 0;
     let arrived = 0;
     let avg_sum = 0;
-    if (centre_id == 'all') {
-        $.ajax({
-            url: route('admin.dashboard.all_doctor_wise_conversion'),
-            type: 'GET',
-            cache: false,
-            data: {
-                'period': 'lastmonth',
-                'centre_id': centre_id
-            },
-            success: function (response) {
-                var categories = response.data.categories
-                jQuery('#categories-table-body').html("");
-                var TABLE_HTML = "";
-                jQuery.each(categories, function (index, category) {
-                    arrived += category.total_arrival;
-                    converted += category.total_conversion;
-                    avg_sum += category.avg;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
-
-                });
-                var avg = ((converted / arrived) * 100).toFixed(2);
-                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
-
-                jQuery('#categories-table-body').append(TABLE_HTML);
+    var period = centre_id == 'all' ? 'lastmonth' : 'thismonth';
+    $.ajax({
+        url: '/api/dashboard/doctor-wise-conversion',
+        type: 'GET',
+        cache: false,
+        data: {
+            'period': period,
+            'centre_id': centre_id
+        },
+        success: function (response) {
+            var categories = response.data?.categories || [];
+            jQuery('#categories-table-body').html("");
+            var TABLE_HTML = "";
+            jQuery.each(categories, function (index, category) {
+                arrived += category.total_arrival || 0;
+                converted += category.total_conversion || 0;
+                avg_sum += category.avg || 0;
+                var pct = category.total_arrival > 0 ? ((category.total_conversion / category.total_arrival) * 100).toFixed(2) : 0;
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + pct + "%</td><td>" + (category.avg || 0).toFixed(2) + "</td></tr>";
+            });
+            var avg = arrived > 0 ? ((converted / arrived) * 100).toFixed(2) : 0;
+            var avgValue = converted > 0 ? ((response.data?.sum_val || 0) / converted).toFixed(2) : 0;
+            TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
+            jQuery('#categories-table-body').append(TABLE_HTML);
+            if (centre_id == 'all') {
                 AllDoctorWiseConversion(response);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
-            }
-        });
-    } else {
-        $.ajax({
-            url: route('admin.dashboard.doctor_wise_conversion'),
-            type: 'GET',
-            cache: false,
-            data: {
-                'period': 'thismonth',
-                'centre_id': centre_id
-            },
-            success: function (response) {
-                var categories = response.data.categories
-                jQuery('#categories-table-body').html("");
-                var TABLE_HTML = "";
-                jQuery.each(categories, function (index, category) {
-                    arrived += category.total_arrival;
-                    converted += category.total_conversion;
-                    avg_sum += category.avg;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
-
-                });
-                var avg = ((converted / arrived) * 100).toFixed(2);
-                if (converted === 0) {
-                    avgValue = 0;
-                } else {
-                    var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-                }
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
-
-                jQuery('#categories-table-body').append(TABLE_HTML);
+            } else {
                 DoctorWiseConversion(response);
-            },
-            error: function (xhr, ajaxOptions, thrownError) {
-                errorMessage(xhr);
             }
-        });
-    }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            if (typeof errorMessage === 'function') errorMessage(xhr);
+        }
+    });
     var TABLE_HTML = " <option  value='all-docs'>All Doctors</option>";
     $.ajax({
         url: route('admin.getdoctors'),
@@ -1132,7 +787,6 @@ function GetDoctors(centre_id, time = '') {
         success: function (response) {
             jQuery('#doc_nav').html("");
             jQuery.each(response.doctors, function (index, doctor) {
-
                 TABLE_HTML += " <option  value=" + doctor.id + ">" + doctor.name + "</option>";
             });
             jQuery('#doc_nav').append(TABLE_HTML);
@@ -1155,11 +809,10 @@ function LoadDocWiseConversion(doc_id, time = '') {
     let arrived = 0;
     let avg_sum = 0;
     $.ajax({
-        url: route('admin.dashboard.doctor_wise_conversion'),
+        url: '/api/dashboard/doctor-wise-conversion',
         type: 'GET',
         cache: false,
         data: {
-            // 'period': 'thismonth',
             'period': $('#dr_wise_con option:selected').val() == 'month' ? 'thismonth' : $('#dr_wise_con option:selected').val(),
             'doc_id': DOC_ID,
             'centre_id': centre_id
@@ -1172,27 +825,24 @@ function LoadDocWiseConversion(doc_id, time = '') {
             $("#doc_wise_conversion").html("");
             jQuery('#categories-table-body').html("");
             var TABLE_HTML = "";
+            var categories = response.data?.categories || [];
 
-            jQuery.each(response.data.categories, function (index, category) {
-                arrived += category.total_arrival;
-                converted += category.total_conversion;
-                avg_sum += category.avg;
-                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + ((category.total_conversion / category.total_arrival) * 100).toFixed(2) + "%</td><td>" + (category.avg).toFixed(2) + "</td></tr>";
-
+            jQuery.each(categories, function (index, category) {
+                arrived += category.total_arrival || 0;
+                converted += category.total_conversion || 0;
+                avg_sum += category.avg || 0;
+                var pct = category.total_arrival > 0 ? ((category.total_conversion / category.total_arrival) * 100).toFixed(2) : 0;
+                TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + category.service + "</td><td>" + category.total_conversion + "/" + category.total_arrival + "</td><td>" + pct + "%</td><td>" + (category.avg || 0).toFixed(2) + "</td></tr>";
             });
-            var avg = ((converted / arrived) * 100).toFixed(2);
-            if (converted === 0) {
-                avgValue = 0;
-            } else {
-                var avgValue = ((response.data.sum_val / converted)).toFixed(2);
-            }
+            var avg = arrived > 0 ? ((converted / arrived) * 100).toFixed(2) : 0;
+            var avgValue = converted > 0 ? ((response.data?.sum_val || 0) / converted).toFixed(2) : 0;
             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + converted + "/" + arrived + "</td><td>" + (avg == "NaN" ? 0 : avg) + "%</td><td>" + (avgValue == "NaN" ? 0 : avgValue) + "</td></tr>";
 
             jQuery('#categories-table-body').append(TABLE_HTML);
             DoctorWiseConversion(response);
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+            if (typeof errorMessage === 'function') errorMessage(xhr);
         }
     });
 }
@@ -1497,118 +1147,162 @@ function AllDoctorWiseConversion(bar) {
     doc_wise_conversion_chart.render();
 }
 
-function initPatientFollowUp(period, centre_id, arrived = null) {
-    if (centre_id == 'centre') {
-        centre_id = $('.btn.arrivalbtn').attr('data-id');
+// Unattended Payments lazy loading state
+var unattendedPaymentsState = {
+    page: 1,
+    loading: false,
+    hasMore: true
+};
+
+function initPatientFollowUp(period, centre_id, arrived, reset = true) {
+    if (reset) {
+        unattendedPaymentsState.page = 1;
+        unattendedPaymentsState.hasMore = true;
+        $('#patient-follow-up').html("");
     }
-    if (centre_id == '' || centre_id == 30) {
-        centre_id = 'All';
+    
+    if (unattendedPaymentsState.loading || !unattendedPaymentsState.hasMore) return;
+    
+    unattendedPaymentsState.loading = true;
+    
+    if (unattendedPaymentsState.page === 1) {
+        $('.loader-img-unattended').show();
+    } else {
+        $('#unattended-loader').show();
     }
+    
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.patient_follow_up'),
+        url: '/api/dashboard/unattended-payments',
         type: 'GET',
-        cache: false,
         data: {
-            'period': period,
-            'centre_id': centre_id,
-            'arrived': arrived
+            page: unattendedPaymentsState.page,
+            per_page: 10
         },
         success: function (response) {
-            $('.loader-img-unattended').css('display', 'none');
-            $('#patient-follow-up').html("");
-            var TABLE_HTML = "";
-            var balance = 0;
-            let patientData = response.data.patient_data;
-
+            $('.loader-img-unattended').hide();
+            $('#unattended-loader').hide();
+            unattendedPaymentsState.loading = false;
+            
+            var patientData = response.data?.patient_data || [];
+            unattendedPaymentsState.hasMore = response.data?.has_more || false;
+            
             if (patientData.length > 0) {
-
+                var TABLE_HTML = "";
                 for (let i = 0; i < patientData.length; i++) {
-
                     let patient = patientData[i];
                     let routeValue = route('admin.reports.follow_up', { patient_id: patient.patient_id, report_type: 'weekly' });
-
-                    balance = patient.cash_receive - patient.settle_amount_with_tax - patient.refunded_amounts;
-                    if (balance > 0) {
-                        TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'><a href='" + routeValue + "'>" + patient.patient_id + "</a></td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: " + (balance).toFixed(2) + "</td><td>" + formatDate(patient.created_at, 'MMM, DD yyyy ') + "</td></tr>";
-                    }
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'><a href='" + routeValue + "'>" + patient.patient_id + "</a></td><td>" + patient.name + "</td><td>" + ((patient.is_treatment == 0) ? 'Not Booked' : 'No Show') + "</td><td>PKR: " + (patient.balance || 0).toFixed(2) + "</td><td>" + formatDate(patient.created_at, 'MMM, DD yyyy ') + "</td></tr>";
                 }
-
-            } else {
-                // TABLE_HTML = "<tr><td colspan='5' style='font-size: 12px;font-weight: bold;text-align:center;'>No Data</td></tr>";
-                TABLE_HTML = "<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>";
+                $('#patient-follow-up').append(TABLE_HTML);
+                unattendedPaymentsState.page++;
+            } else if (unattendedPaymentsState.page === 1) {
+                $('#patient-follow-up').html("<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>");
             }
-
-            $('#patient-follow-up').append(TABLE_HTML);
+            
             $('#followbtn').css('display', 'inline-block');
         },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+        error: function (xhr) {
+            $('.loader-img-unattended').hide();
+            $('#unattended-loader').hide();
+            unattendedPaymentsState.loading = false;
+            if (typeof errorMessage === 'function') errorMessage(xhr);
         }
     });
 }
 
-function initPatientFollowUpOneMonth() {
+// Overdue Treatments lazy loading state
+var overdueTreatmentsState = {
+    page: 1,
+    loading: false,
+    hasMore: true
+};
+
+function initPatientFollowUpOneMonth(reset = true) {
+    if (reset) {
+        overdueTreatmentsState.page = 1;
+        overdueTreatmentsState.hasMore = true;
+        $('#patient-follow-up-one-month').html("");
+    }
+    
+    if (overdueTreatmentsState.loading || !overdueTreatmentsState.hasMore) return;
+    
+    overdueTreatmentsState.loading = true;
+    
+    if (overdueTreatmentsState.page === 1) {
+        $('.loader-img-overdue').show();
+    } else {
+        $('#overdue-loader').show();
+    }
+    
     $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.dashboard.patient_follow_up_one_month'),
+        url: '/api/dashboard/overdue-treatments',
         type: 'GET',
-        cache: false,
-        data: {},
+        data: {
+            page: overdueTreatmentsState.page,
+            per_page: 10
+        },
         success: function (response) {
-            $('.loader-img-attended').css('display', 'none');
-            $('#patient-follow-up-one-month').html("");
-            var TABLE_HTML = "";
-            var balance = 0;
-            let patientData = response.data.patient_data;
+            $('.loader-img-overdue').hide();
+            $('#overdue-loader').hide();
+            overdueTreatmentsState.loading = false;
+            
+            var patientData = response.data?.patient_data || [];
+            overdueTreatmentsState.hasMore = response.data?.has_more || false;
+            
             if (patientData.length > 0) {
+                var TABLE_HTML = "";
                 for (let i = 0; i < patientData.length; i++) {
                     let patient = patientData[i];
                     let routeValue = route('admin.reports.follow_up', { patient_id: patient.patient_id, report_type: 'monthly' });
-
-                    balance = patient.cash_receive - patient.settle_amount_with_tax;
-                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'><a href='" + routeValue + "'>" + patient.patient_id + "</a></td><td>" + patient.name + "</td><td>PKR: " + (balance).toFixed(2) + "</td><td>" + patient.scheduled_date + "</td></tr>";
+                    TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'><a href='" + routeValue + "'>" + patient.patient_id + "</a></td><td>" + patient.name + "</td><td>PKR: " + (patient.balance || 0).toFixed(2) + "</td><td>" + patient.scheduled_date + "</td></tr>";
                 }
-            } else {
-                // TABLE_HTML = "<tr><td colspan='5' style='font-weight: bold;text-align:center;'>No Data</td></tr>";
-                TABLE_HTML = "<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>";
+                $('#patient-follow-up-one-month').append(TABLE_HTML);
+                overdueTreatmentsState.page++;
+            } else if (overdueTreatmentsState.page === 1) {
+                $('#patient-follow-up-one-month').html("<tr><td colspan='5' style='color: #000; text-align:center;font-size: 12px;padding: 90px 0px 0px;font-family: Arial;'>No Data</td></tr>");
             }
-
-            $('#patient-follow-up-one-month').append(TABLE_HTML);
+            
             $('#mfollowbtn').css('display', 'inline-block');
         },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
+        error: function (xhr) {
+            $('.loader-img-overdue').hide();
+            $('#overdue-loader').hide();
+            overdueTreatmentsState.loading = false;
+            if (typeof errorMessage === 'function') errorMessage(xhr);
         }
     });
 }
 
-function dropDownList(report, period) {
-    $("#" + report + "_wise_list .active").removeClass('active');
-    $("#" + report + "_wise_list li." + period + " a").addClass('active');
-    if (period == "today") {
-        $("." + report + "_period").html('Today <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "yesterday") {
-        $("." + report + "_period").html('Yesterday <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "last7days") {
-        $("." + report + "_period").html('Last 7 Days <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "week") {
-        $("." + report + "_period").html('This Week <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "thismonth") {
-        $("." + report + "_period").html('This Month <i class="fa fa-angle-down"></i>');
-    }
-    if (period == "lastmonth") {
-        $("." + report + "_period").html('Last Month <i class="fa fa-angle-down"></i>');
-    }
+// Initialize infinite scroll for Unattended Payments
+$(document).ready(function() {
+    $('#unattended-payments-scroll').on('scroll', function() {
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight - 50) {
+            initPatientFollowUp('', '', '', false);
+        }
+    });
+    
+    // Initialize infinite scroll for Overdue Treatments
+    $('#overdue-treatments-scroll').on('scroll', function() {
+        var $this = $(this);
+        if ($this.scrollTop() + $this.innerHeight() >= $this[0].scrollHeight - 50) {
+            initPatientFollowUpOneMonth(false);
+        }
+    });
+});
+
+function changePeriodDropdown(period, report) {
+    var labels = {
+        today: 'Today',
+        yesterday: 'Yesterday',
+        last7days: 'Last 7 Days',
+        week: 'This Week',
+        thismonth: 'This Month',
+        lastmonth: 'Last Month'
+    };
+    $("." + report + "_period").html((labels[period] || 'Today') + ' <i class="fa fa-angle-down"></i>');
 }
+
 $(document).ready(function () {
     $('#centervise_center').select2();
     $('#centervise_center').on('change', function () {
@@ -1644,12 +1338,5 @@ $(document).ready(function () {
         var period = 'thismonth';
         changeCenterFeedback(period, selectedValue)
     });
-    // $('#doc_nav').select2();
-    // $('#doc_nav').on('change', function () {
-    //     var selectedValue = $(this).val();
-    //     var period = 'thismonth';
-    //     initUserWiseArrival(period, selectedValue, '')
-    // });
-
 });
 
