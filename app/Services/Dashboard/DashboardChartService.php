@@ -13,6 +13,7 @@ use App\Models\Services;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Carbon;
+use Spatie\Permission\Models\Role;
 
 /**
  * Dashboard Chart Service
@@ -49,7 +50,9 @@ class DashboardChartService
             ->pluck('name', 'id')
             ->toArray();
 
-        if (empty($locations)) {
+        $validCenterIds = array_keys($locations);
+
+        if (empty($validCenterIds)) {
             return [
                 'labels' => $labels,
                 'data' => [
@@ -60,8 +63,11 @@ class DashboardChartService
             ];
         }
 
-        $locationIds = array_keys($locations);
         [$startDate, $endDate] = DashboardHelper::getDateRange($period);
+
+        // Get FDM role and users
+        $fdmRole =DB::table('roles')->where('name', 'FDM')->first();
+        $fdmUsers = $fdmRole ? \App\Models\RoleHasUsers::where('role_id', $fdmRole->id)->pluck('user_id')->toArray() : [];
 
         // Get arrived and converted status IDs
         $accountId = Auth::User()->account_id;
@@ -71,27 +77,37 @@ class DashboardChartService
             })
             ->pluck('id')
             ->toArray();
+        
+        $arrivedStatusIds = !empty($statusIds) ? $statusIds : [2, 16];
 
-        // Get all appointment counts in a single query with grouping
-        $appointmentCounts = Appointments::whereIn('location_id', $locationIds)
+        // Build query using appointments_daily_stats table
+        $query = \App\Models\AppointmentsDailyStats::select('centre_id')
+            ->selectRaw('COUNT(*) as total')
+            ->selectRaw('SUM(CASE WHEN appointment_status_id IN (' . implode(',', array_map('intval', $arrivedStatusIds)) . ') THEN 1 ELSE 0 END) as arrived')
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->select(
-                'location_id',
-                DB::raw('COUNT(*) as total'),
-                DB::raw('SUM(CASE WHEN appointment_status_id IN (' . implode(',', $statusIds) . ') THEN 1 ELSE 0 END) as arrived'),
-                DB::raw('SUM(CASE WHEN is_walkin = 1 THEN 1 ELSE 0 END) as walkin')
-            )
-            ->groupBy('location_id')
-            ->get()
-            ->keyBy('location_id');
+            ->whereIn('centre_id', $validCenterIds)
+            ->groupBy('centre_id');
+
+        // Add walkin calculation only if FDM users exist
+        if (!empty($fdmUsers)) {
+            $fdmUserIds = implode(',', array_map('intval', $fdmUsers));
+            $arrivedIds = implode(',', array_map('intval', $arrivedStatusIds));
+            $query->selectRaw("SUM(CASE WHEN appointment_status_id IN ({$arrivedIds}) AND user_id IN ({$fdmUserIds}) THEN 1 ELSE 0 END) as walkin");
+        } else {
+            $query->selectRaw('0 as walkin');
+        }
+
+        $stats = $query->get()->keyBy('centre_id')->toArray();
 
         // Build result arrays
-        foreach ($locations as $locationId => $locationName) {
-            $labels[] = $locationName;
-            $counts = $appointmentCounts->get($locationId);
-            $totalApts[] = $counts ? (int)$counts->total : 0;
-            $arrivedApts[] = $counts ? (int)$counts->arrived : 0;
-            $walkinApts[] = $counts ? (int)$counts->walkin : 0;
+        foreach ($validCenterIds as $centreId) {
+            $centreName = $locations[$centreId] ?? null;
+            if ($centreName) {
+                $labels[] = $centreName;
+                $totalApts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['total'] : 0;
+                $arrivedApts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['arrived'] : 0;
+                $walkinApts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['walkin'] : 0;
+            }
         }
 
         return [
@@ -119,7 +135,7 @@ class DashboardChartService
         $labels = [];
         $appointmentsInfo = [];
 
-        if ($centreId === 'All' || $centreId === '' || $centreId === '30') {
+        if ($centreId === 'All' || $centreId === 'all' || $centreId === '' || $centreId == '30' || $centreId == 30 || empty($centreId)) {
             $locations = DashboardHelper::getUserCentres();
         } else {
             $locations = is_array($centreId) ? $centreId : [$centreId];
@@ -159,11 +175,23 @@ class DashboardChartService
             ->whereIn('location_id', $locations)
             ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$startDate, $endDate])
-            ->select('id', 'doctor_id', 'appointment_status_id', 'conversion_spend')
+            ->select('id', 'doctor_id', 'appointment_status_id')
             ->get();
 
         // Group appointments by doctor
         $appointmentsByDoctor = $appointments->groupBy('doctor_id');
+
+        // Get conversion spend from package advances for converted appointments
+        $convertedAppointmentIds = $appointments->where('appointment_status_id', $convertedStatusId)->pluck('id')->toArray();
+        $conversionSpendByAppointment = [];
+        
+        if (!empty($convertedAppointmentIds)) {
+            $conversionSpendByAppointment = \App\Models\PackageAdvances::whereIn('appointment_id', $convertedAppointmentIds)
+                ->selectRaw('appointment_id, SUM(amount) as total_amount')
+                ->groupBy('appointment_id')
+                ->pluck('total_amount', 'appointment_id')
+                ->toArray();
+        }
 
         $sumConversionSpend = 0;
 
@@ -173,9 +201,13 @@ class DashboardChartService
 
             $totalAppointments = $doctorAppointments->count();
             $convertedCount = $doctorAppointments->where('appointment_status_id', $convertedStatusId)->count();
-            $conversionSpendSum = $doctorAppointments->where('appointment_status_id', $convertedStatusId)
-                ->where('conversion_spend', '!=', '')
-                ->sum('conversion_spend');
+            
+            // Calculate conversion spend from package advances
+            $conversionSpendSum = 0;
+            $convertedDoctorAppointments = $doctorAppointments->where('appointment_status_id', $convertedStatusId);
+            foreach ($convertedDoctorAppointments as $apt) {
+                $conversionSpendSum += $conversionSpendByAppointment[$apt->id] ?? 0;
+            }
 
             $totalApts[] = $totalAppointments;
             $convertedApts[] = $convertedCount;
@@ -210,7 +242,7 @@ class DashboardChartService
      */
     public function getDoctorWiseFeedback($period, $centreId = 'All', $docId = null)
     {
-        if ($centreId === 'All' || $centreId === '' || $centreId === '30') {
+        if ($centreId === 'All' || $centreId === 'all' || $centreId === '' || $centreId == '30' || $centreId == 30 || empty($centreId)) {
             $locationIds = DashboardHelper::getUserCentres();
         } else {
             $locationIds = is_array($centreId) ? $centreId : [$centreId];
@@ -236,15 +268,18 @@ class DashboardChartService
             ];
         }
 
-        [$startDate, $endDate] = DashboardHelper::getDateRange($period);
-
-        // Get feedback aggregated by doctor in single query
-        $feedbackData = Feedback::whereIn('doctor_id', $doctorIds)
-            ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
+        // Build feedback query - if period is 'all', don't apply date filter (lifetime data)
+        $feedbackQuery = Feedback::whereIn('doctor_id', $doctorIds)
             ->select('doctor_id', DB::raw('AVG(rating) as avg_rating'), DB::raw('COUNT(*) as total_feedback'))
-            ->groupBy('doctor_id')
-            ->get()
-            ->keyBy('doctor_id');
+            ->groupBy('doctor_id');
+
+        // Only apply date filter if period is not 'all' (lifetime)
+        if ($period !== 'all' && $period !== 'All') {
+            [$startDate, $endDate] = DashboardHelper::getDateRange($period);
+            $feedbackQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
+        }
+
+        $feedbackData = $feedbackQuery->get()->keyBy('doctor_id');
 
         // Get doctor names
         $doctors = User::whereIn('id', $doctorIds)

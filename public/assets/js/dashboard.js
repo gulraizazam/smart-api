@@ -1,11 +1,211 @@
 /**
  * Dashboard JavaScript
  * Handles lazy loading of dashboard charts using Intersection Observer
- * This improves performance by only loading charts when they become visible
+ * and API-based data loading for improved performance
  */
 
 (function() {
     'use strict';
+
+    // Load stats via API on page load
+    function loadDashboardStats() {
+        const requestType = window.dashboardConfig?.requestType || 'today';
+        const locationIds = window.dashboardConfig?.locationIds || [];
+        
+        $.ajax({
+            url: '/api/dashboard/stats',
+            type: 'GET',
+            data: { type: requestType },
+            success: function(response) {
+                if (response.success && response.data) {
+                    const data = response.data;
+                    
+                    // Update Sales
+                    if (data.todaycollection && data.todaycollection[0] !== false) {
+                        $('#allleads').html('PKR: ' + data.todaycollection[0]);
+                    } else {
+                        $('#allleads').html('Your are not authorized');
+                    }
+                    
+                    // Update Revenue
+                    if (data.revenue !== null) {
+                        $('#allrevenue').html('PKR: ' + numberFormat(data.revenue));
+                    } else {
+                        $('#allrevenue').html('Your are not authorized');
+                    }
+                    
+                    // Update Consultancies
+                    if (data.done_consultancies !== null && data.all_consultancies !== null) {
+                        $('#allconsult').html(data.done_consultancies + '/' + data.all_consultancies);
+                        $('#allconsultantdate').attr('href', route('admin.consultancy.index', {
+                            type: '1',
+                            from: data.start_date || window.dashboardConfig?.startDate,
+                            to: data.end_date || window.dashboardConfig?.endDate,
+                            center_id: locationIds.join(',')
+                        }));
+                    } else {
+                        $('#allconsult').html('Your are not authorized');
+                    }
+                    
+                    // Update Treatments
+                    if (data.done_treatments !== null && data.all_treatments !== null) {
+                        $('#alltreat').html(data.done_treatments + '/' + data.all_treatments);
+                        $('#alltreatmentdate').attr('href', route('admin.treatment.index', {
+                            type: '2',
+                            from: data.start_date || window.dashboardConfig?.startDate,
+                            to: data.end_date || window.dashboardConfig?.endDate,
+                            center_id: locationIds.join(',')
+                        }));
+                    } else {
+                        $('#alltreat').html('Your are not authorized');
+                    }
+                }
+            },
+            error: function() {
+                $('#allleads, #allrevenue, #allconsult, #alltreat').html('Error loading data');
+            }
+        });
+    }
+    
+    function numberFormat(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // Activities pagination state
+    let activitiesPage = 1;
+    let activitiesHasMore = false;
+    let activitiesLoading = false;
+
+    /**
+     * Load activities via API with infinite scroll support
+     */
+    function loadActivities(page = 1, append = false) {
+        if (activitiesLoading) return;
+        activitiesLoading = true;
+        
+        if (page === 1) {
+            $('#activities-loader').show();
+            $('#activities-timeline').hide();
+            $('#activities-empty').hide();
+            $('#activities-unauthorized').hide();
+        } else {
+            $('#load-more-spinner').show();
+        }
+        
+        $.ajax({
+            url: '/api/dashboard/activities',
+            type: 'GET',
+            data: { page: page, per_page: 10 },
+            success: function(response) {
+                $('#activities-loader').hide();
+                $('#load-more-spinner').hide();
+                activitiesLoading = false;
+                
+                if (!response.success) {
+                    if (response.message === 'Unauthorized') {
+                        $('#activities-unauthorized').show();
+                    }
+                    return;
+                }
+                
+                const activities = response.data;
+                activitiesHasMore = response.has_more;
+                activitiesPage = response.current_page;
+                
+                // Update total count
+                $('#totalactivities').text(response.total + ' activities');
+                
+                if (activities.length === 0 && page === 1) {
+                    $('#activities-empty').show();
+                    $('#activities-timeline').hide();
+                    $('#load-more-container').hide();
+                    return;
+                }
+                
+                // Build activity HTML
+                const html = buildActivitiesHtml(activities);
+                
+                if (append) {
+                    $('#activities-timeline').append(html);
+                } else {
+                    $('#activities-timeline').html(html);
+                }
+                
+                $('#activities-timeline').show();
+                
+                // Show/hide load more container
+                if (activitiesHasMore) {
+                    $('#load-more-container').show();
+                } else {
+                    $('#load-more-container').hide();
+                }
+            },
+            error: function() {
+                $('#activities-loader').hide();
+                $('#load-more-spinner').hide();
+                activitiesLoading = false;
+                $('#activities-empty').show();
+            }
+        });
+    }
+
+    /**
+     * Build HTML for activity items
+     */
+    function buildActivitiesHtml(activities) {
+        let html = '';
+        activities.forEach(function(log) {
+            const time = new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const createdBy = log.created_by || 'N/A';
+            const amount = Math.round(log.amount);
+            const patient = log.patient || '';
+            const centreName = log.centre ? log.centre.name : (log.location || '');
+            const action = log.action;
+            const appointmentType = log.appointment_type;
+            const planId = log.planId;
+            
+            let content = '';
+            if (appointmentType === 'Plan') {
+                const actionText = action === 'refunded' ? 'to' : 'from';
+                content = `<span style="color: #056FBF;">${createdBy}</span> ${action} <strong>Rs. ${amount}</strong> ${actionText} <span style="color: #056FBF;"> ${patient}</span> for <span style="color: #F5B183;">Plan Id: <a href="/admin/packages/view/${planId}">${planId}</a></span> at ${centreName} Centre.`;
+            } else {
+                content = `<span style="color: #056FBF;">${createdBy}</span> ${action} <strong>Rs. ${amount}</strong> from <span style="color: #056FBF;"> ${patient}</span> for <span style="color: #F5B183;">${appointmentType}</span> at ${centreName} Centre.`;
+            }
+            
+            html += `
+                <div class="timeline-item align-items-start">
+                    <div class="timeline-label font-weight-bolder text-dark-75 font-size-lg">${time}</div>
+                    <div class="timeline-badge"><i class="fa fa-genderless text-danger icon-xl"></i></div>
+                    <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">${content}</div>
+                </div>
+            `;
+        });
+        return html;
+    }
+
+    /**
+     * Initialize activities infinite scroll
+     */
+    function initActivitiesScroll() {
+        const container = document.getElementById('activities-container');
+        if (!container) return;
+        
+        let scrollTimeout = null;
+        container.addEventListener('scroll', function() {
+            if (scrollTimeout) clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(function() {
+                if (activitiesLoading || !activitiesHasMore) return;
+                
+                const scrollTop = container.scrollTop;
+                const scrollHeight = container.scrollHeight;
+                const clientHeight = container.clientHeight;
+                
+                if (scrollTop + clientHeight >= scrollHeight - 100) {
+                    loadActivities(activitiesPage + 1, true);
+                }
+            }, 150);
+        });
+    }
 
     // Track which charts have been loaded
     const loadedCharts = {
@@ -99,7 +299,7 @@
         const requestType = window.dashboardConfig.requestType || '';
         
         $.ajax({
-            url: route('admin.home.CollectionByServiceCategory'),
+            url: '/api/dashboard/collection-by-service-category',
             type: "GET",
             data: { 'type': requestType },
             cache: false,
@@ -143,7 +343,7 @@
         const period = $('#consultancy_status').val() || window.dashboardConfig.requestType || 'today';
         
         $.ajax({
-            url: route('admin.dashboard.appointment_by_status'),
+            url: '/api/dashboard/appointment-by-status',
             type: "GET",
             data: {
                 'period': period,
@@ -178,7 +378,7 @@
         const period = $('#treatment_status').val() || window.dashboardConfig.requestType || 'today';
         
         $.ajax({
-            url: route('admin.dashboard.appointment_by_status'),
+            url: '/api/dashboard/appointment-by-status',
             type: "GET",
             data: {
                 'period': period,
@@ -297,17 +497,8 @@
     function initDashboard() {
         const period = "today";
         
-        // Load activity
-        $.ajax({
-            url: route('admin.home.getactivity'),
-            type: "GET",
-            data: { 'type': period },
-            cache: false,
-            success: function(response) {
-                $('.loader-img').css('display', "none");
-                $("#activitydiv").html(response);
-            }
-        });
+        // Activity is now loaded via API in dashboard.js loadActivities function
+        // No need to load here as it's handled by the activities API
 
         // Initialize role-specific charts
         const centreId = $(".doctorwiseconversion").attr('data-id');
@@ -392,6 +583,9 @@
 
     // Initialize when document is ready
     $(document).ready(function() {
+        loadDashboardStats(); // Load stats via API first
+        loadActivities(1); // Load activities via API
+        initActivitiesScroll(); // Initialize infinite scroll for activities
         initDropdownHandlers();
         initDashboard();
         initPlanIdCopy();

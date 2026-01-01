@@ -7,6 +7,19 @@
   width: 100%;
   white-space: nowrap;
 }
+.skeleton-loader {
+    display: inline-block;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    min-width: 80px;
+    color: transparent;
+}
+@keyframes skeleton-loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
 </style>
 <link rel="stylesheet" href="{{ asset('assets/css/home.css') }}">
 
@@ -50,8 +63,7 @@
                                                     <rect fill="#000000" x="3" y="13" width="3" height="7" rx="1.5" />
                                                 </g>
                                             </svg>
-                                            <span class="dashboard-counter" id="allleads">{{ isset($todaycollection[0]) && $todaycollection[0] !== false ?
-                                                'PKR:' . $todaycollection[0] : 'Your are not authorized' }}</span>
+                                            <span class="dashboard-counter" id="allleads"><span class="skeleton-loader">Loading...</span></span>
                                         </span>
                                         <a href="javascript:void(0);" style="cursor: pointer;" class="text-success font-weight-bold font-size-h6 mt-2">Sales</a>
                                     </div>
@@ -67,41 +79,25 @@
                                                     <rect fill="#000000" x="3" y="13" width="3" height="7" rx="1.5" />
                                                 </g>
                                             </svg>
-                                            <span class="dashboard-counter" id="allrevenue">{{ !is_null($revenue) ? 'PKR: ' . number_format($revenue) : 'Your
-                                                are not authorized' }}</span>
+                                            <span class="dashboard-counter" id="allrevenue"><span class="skeleton-loader">Loading...</span></span>
                                         </span>
-                                        <a href="javascript:void(0);" style="cursor: pointer;" class="text-warning font-weight-bold font-size-h6">Revenue
-                                            Consumed</a>
+                                        <a href="javascript:void(0);" style="cursor: pointer;" class="text-warning font-weight-bold font-size-h6">Revenue Consumed</a>
                                     </div>
                                 </div>
                                 <div class="row m-0">
                                     <div class="col bg-light-primary px-6 py-8 rounded-xl ">
                                         <span class="svg-icon svg-icon-3x svg-icon-primary d-block my-2">
                                             <i class="la la-stethoscope" style="font-size: 40px;"></i>
-                                            <span class="dashboard-counter" id="allconsult">{{ !is_null($done_consultancies) && !is_null($all_consultancies) ?
-                                                $done_consultancies . '/' . $all_consultancies : 'Your are not authorized' }}</span>
+                                            <span class="dashboard-counter" id="allconsult"><span class="skeleton-loader">Loading...</span></span>
                                         </span>
-                                        @if (!is_null($done_consultancies) && !is_null($all_consultancies))
-                                        <a id="allconsultantdate"
-                                            href="{{ route('admin.consultancy.index', ['type' => '1', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)]) }}"
-                                            class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
-                                        @else
-                                        <a href="javascript:void(0);" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
-                                        @endif
+                                        <a id="allconsultantdate" href="javascript:void(0);" class="text-primary font-weight-bold font-size-h6 mt-2">Consultancies</a>
                                     </div>
                                     <div class="col bg-light-danger px-6 py-8 rounded-xl ml-7">
                                         <span class="svg-icon svg-icon-3x svg-icon-danger d-block my-2">
                                             <i class="la la-medkit" style="font-size: 40px;"></i>
-                                            <span class="dashboard-counter" id="alltreat">{{ !is_null($done_treatments) && !is_null($all_treatments) ?
-                                                $done_treatments . '/' . $all_treatments : 'Your are not authorized' }}</span>
+                                            <span class="dashboard-counter" id="alltreat"><span class="skeleton-loader">Loading...</span></span>
                                         </span>
-                                        @if (!is_null($done_treatments) && !is_null($all_treatments))
-                                        <a id="alltreatmentdate"
-                                            href="{{ route('admin.treatment.index', ['type' => '2', 'from' => $start_date, 'to' => $end_date, 'center_id' => implode(',', $location_id)]) }}"
-                                            class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
-                                        @else
-                                        <a href="javascript:void(0);" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
-                                        @endif
+                                        <a id="alltreatmentdate" href="javascript:void(0);" class="text-danger font-weight-bold font-size-h6 mt-2">Treatments</a>
                                     </div>
                                 </div>
                             </div>
@@ -119,26 +115,27 @@
                     </div>
                 </div>
                 <div class="col-lg-6 col-xxl-6" id="activitydiv">
-                    <div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: auto;">
+                    <div class="card card-custom card-stretch gutter-b" style="height: 600px; overflow-y: auto;" id="activities-container">
                         <div class="card-header align-items-center border-0 mt-4">
                             <h3 class="card-title align-items-start flex-column">
                                 <span class="font-weight-bolder text-dark">Today's Activities!</span>
-                                <span class="text-muted mt-3 font-weight-bold font-size-sm" id="totalactivities">0
-                                    activities</span>
+                                <span class="text-muted mt-3 font-weight-bold font-size-sm" id="totalactivities">0 activities</span>
                             </h3>
                         </div>
-                        <div class="card-body pt-4">
-                            @if (isset($unauthorized))
-                            <div class="text-center">
-                                <span>Your are not authorized</span>
+                        <div class="card-body pt-4" id="activities-body">
+                            <div class="text-center" id="activities-loader">
+                                <img src="{{ asset('assets/media/loader.gif') }}" style="width: 50px;">
                             </div>
-                            @else
-                            <img src="{{ asset('assets/media/loader.gif') }}" class="loader-img">
-                            <div class="text-center">
-                                {{-- <span>No Activity Found</span> --}}
-                                <span style="color: #000;text-align:center;font-size: 12px;padding: 80px 0px 0px;font-family: Arial;">No Activity Found</span>
+                            <div class="timeline timeline-6 mt-3" id="activities-timeline" style="display: none;"></div>
+                            <div class="text-center" id="activities-empty" style="display: none;">
+                                <span style="color: #000;text-align:center;font-size: 12px;padding: 80px 0px 0px;font-family: Arial; display:block;">No Activity Found</span>
                             </div>
-                            @endif
+                            <div class="text-center" id="activities-unauthorized" style="display: none;">
+                                <span>You are not authorized</span>
+                            </div>
+                            <div class="text-center py-3" id="load-more-container" style="display: none;">
+                                <img src="{{ asset('assets/media/loader.gif') }}" id="load-more-spinner" style="width: 30px; display: none;">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -204,7 +201,7 @@
                                         </li>
                                     </ul>
                                 </div>
-                                <div class="card-spacer2 table_v_scroll">
+                                <div class="card-spacer2" id="unattended-payments-scroll" style="max-height: 400px; overflow-y: auto;">
                                     <div class='table-responsive'>
                                         <table class="table">
                                             <thead>
@@ -219,7 +216,12 @@
 
                                             <tbody id="patient-follow-up"></tbody>
                                         </table>
-                                        <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-unattended">
+                                        <div class="text-center py-2" id="unattended-loader" style="display: none;">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="sr-only">Loading...</span>
+                                            </div>
+                                        </div>
+                                        <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-unattended" style="width: 50px; display: block; margin: 50px auto;">
                                     </div>
                                 </div>
                             </div>
@@ -292,7 +294,7 @@
                                     </ul>
 
                                 </div>
-                                <div class="card-spacer2 table_v_scroll">
+                                <div class="card-spacer2" id="overdue-treatments-scroll" style="max-height: 400px; overflow-y: auto;">
                                     <div class='table-responsive'>
                                         <table class="table">
                                             <thead>
@@ -305,7 +307,12 @@
                                             </thead>
                                             <tbody id="patient-follow-up-one-month"></tbody>
                                         </table>
-                                        <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-attended">
+                                        <div class="text-center py-2" id="overdue-loader" style="display: none;">
+                                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                                <span class="sr-only">Loading...</span>
+                                            </div>
+                                        </div>
+                                        <img src="{{ asset('assets/media/loader.gif') }}" class="custom_loader loader-img-overdue" style="width: 50px; display: block; margin: 50px auto;">
                                     </div>
                                 </div>
 
@@ -723,10 +730,7 @@
                                                     id="doctor_upselling_centre_select"
                                                     data-placeholder="Select Centre" data-dropdown-css-class="select2-dropdown">
                                                     @if ($hasMultipleCentres)
-                                                        <option value="" disabled selected>Select Centre</option>
-                                                    @endif
-                                                    @if ($hasMultipleCentres)
-                                                    <option value="all" data-period="thismonth">All Centres</option>
+                                                    <option value="all" data-period="thismonth" selected>All Centres</option>
                                                     @endif
                                                     @foreach ($centres as $centre)
                                                     <option value="{{ $centre->id }}" data-period="thismonth" {{ (!$hasMultipleCentres && count($centres) == 1) ? 'selected' : '' }}>{{ $centre->name }}</option>
@@ -816,12 +820,15 @@
 <script>
 // Dashboard configuration for lazy loading and routes
 window.dashboardConfig = {
-    requestType: '{{ request('type') ?? 'today' }}',
+    requestType: '{{ $requestType ?? 'today' }}',
+    locationIds: {!! json_encode($location_id) !!},
+    startDate: '{{ $today ?? '' }}',
+    endDate: '{{ $today ?? '' }}',
     isCSR: {{ auth()->user()->hasRole('CSR') ? 'true' : 'false' }},
     isCSRSupervisor: {{ auth()->user()->hasRole('CSR Supervisor') ? 'true' : 'false' }},
     isSocialLead: {{ auth()->user()->hasRole('Social Lead') ? 'true' : 'false' }},
     routes: {
-        doctorUpsellingData: '{{ route("admin.dashboard.doctor.upselling.data") }}'
+        doctorUpsellingData: '/api/dashboard/doctor-upselling-data'
     }
 };
 </script>

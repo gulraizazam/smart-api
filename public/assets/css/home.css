@@ -1,8 +1,7 @@
 .nav-tabs {
-    background: 0 0;
+    background: transparent;
     margin: 1px 0 0;
     float: right;
-    display: inline-block;
     border: 0;
 }
 
@@ -11,18 +10,8 @@
     display: table;
 }
 
-.loader-img {
-    height: 60px;
-    margin-top: 106px;
-    margin-left: 244px;
-}
-
-.loader-img-unattended {
-    height: 60px;
-    margin-top: 106px;
-    margin-left: 244px;
-}
-
+.loader-img,
+.loader-img-unattended,
 .loader-img-attended {
     height: 60px;
     margin-top: 106px;
@@ -32,10 +21,9 @@
 .nav-tabs>li {
     margin: 0;
     padding: 0;
-    background: 0 0;
+    background: transparent;
     border: 0;
     float: left;
-    display: block;
     position: relative;
 }
 
@@ -45,12 +33,12 @@
     font-size: 13px;
     color: #666;
     border: 0;
-    background: 0 0;
-
+    background: transparent;
+    transition: all 0.3s ease;
 }
 
 .nav-tabs>li a.active {
-    background: 0 0;
+    background: transparent;
     border-bottom: 4px solid #35a1d4;
     position: relative;
 }
@@ -97,14 +85,11 @@
     position: absolute;
     top: -8px;
     left: 9px;
-    right: auto;
     display: inline-block !important;
     border-right: 8px solid transparent;
     border-bottom: 8px solid #e0e0e0;
     border-left: 8px solid transparent;
     content: '';
-    right: auto;
-    left: 9px;
 }
 
 .btn-group>.dropdown-menu.dropdown-menu-right:before,
@@ -123,6 +108,8 @@
     font-weight: 300;
     line-height: 18px;
     white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
 .centre-name {
@@ -134,16 +121,9 @@
     font-size: 12px;
 }
 
-.wise_arrival_ul .dropdown-menu li a {
-    cursor: pointer;
-}
-
+.dropdown-menu li a:hover,
 .wise_arrival_ul .dropdown-menu li a:hover {
     background: #f3f3f3;
-}
-
-.dropdown-menu li a {
-    cursor: pointer;
 }
 
 .appenddoctorlist .nav.nav-pills.nav-fill .nav-item {
@@ -197,12 +177,9 @@ a.btn.form-control.btndropdown.btn_Report {
     transition: all ease .3s;
 }
 
-.custom_hover_effect li a.active {
-    border-bottom: 0px;
-    background: #eef0f8;
-}
-
+.custom_hover_effect li a.active,
 .custom_hover_effect li a:hover {
+    border-bottom: 0;
     background: #eef0f8;
 }
 
@@ -212,35 +189,25 @@ img.loader-imgs {
     height: 100px;
 }
 
-.dropdown-menu li a:hover {
-    cursor: pointer;
-}
-
-#unattended_payments .wrap_unattended_payment {
-    position: sticky;
-    z-index: 1;
-    background: #fff;
-    top: 0px;
-}
-
-.table_v_scroll {
-    height: 80%;
-    overflow-y: scroll;
-}
-
+#unattended_payments .wrap_unattended_payment,
 #attended_payments .wrap_unattended_payment {
     position: sticky;
     z-index: 1;
     background: #fff;
-    top: 0px;
+    top: 0;
+}
+
+.table_v_scroll {
+    height: 80%;
+    overflow-y: auto;
 }
 
 .custom_loader {
-    margin: 0px auto;
+    margin: 0 auto;
     position: absolute;
     top: 50%;
-    transform: translate(-50%, -50%);
     left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .select2-container--default .select2-selection--single .select2-selection__arrow:after,

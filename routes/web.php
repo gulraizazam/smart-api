@@ -193,22 +193,29 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
         Route::post('/home/datatable', [App\Http\Controllers\HomeController::class, 'datatable'])->name('home.datatable');
-        Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
+        // MIGRATED TO API: /api/dashboard/collection-by-centre
+        // Route::get('/home/collection-by-centre', [App\Http\Controllers\HomeController::class, 'collectionByCentre'])->name('home.collectionByCentre');
         Route::get('/home/my-collection-by-centre', [App\Http\Controllers\HomeController::class, 'myCollectionByCentre'])->name('home.myCollectionByCentre');
-        Route::get('/home/revenue-by-service-category', [App\Http\Controllers\HomeController::class, 'RevenueByServiceCategory'])->name('home.RevenueByServiceCategory');
-        Route::get('/home/revenue-by-centre', [App\Http\Controllers\HomeController::class, 'revenueByCentre'])->name('home.revenueByCentre');
-        Route::get('/home/collection-by-service-category', [App\Http\Controllers\HomeController::class, 'CollectionByServiceCategory'])->name('home.CollectionByServiceCategory');
+        // MIGRATED TO API: /api/dashboard/revenue-by-service-category
+        // Route::get('/home/revenue-by-service-category', [App\Http\Controllers\HomeController::class, 'RevenueByServiceCategory'])->name('home.RevenueByServiceCategory');
+        // MIGRATED TO API: /api/dashboard/revenue-by-centre
+        // Route::get('/home/revenue-by-centre', [App\Http\Controllers\HomeController::class, 'revenueByCentre'])->name('home.revenueByCentre');
+        // MIGRATED TO API: /api/dashboard/collection-by-service-category
+        // Route::get('/home/collection-by-service-category', [App\Http\Controllers\HomeController::class, 'CollectionByServiceCategory'])->name('home.CollectionByServiceCategory');
         Route::get('/home/my-revenue-by-centre', [App\Http\Controllers\HomeController::class, 'myRevenueByCentre'])->name('home.myRevenueByCentre');
-        Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
+        // MIGRATED TO API: /api/dashboard/revenue-by-service
+        // Route::get('/home/revenue-by-service', [App\Http\Controllers\HomeController::class, 'revenueByService'])->name('home.revenueByService');
         Route::get('/home/my-revenue-by-service', [App\Http\Controllers\HomeController::class, 'myRevenueByService'])->name('home.myRevenueByService');
-        Route::get('/home/getstats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.getstats');
+        // MIGRATED TO API: /api/dashboard/stats
+        // Route::get('/home/getstats', [App\Http\Controllers\HomeController::class, 'getStats'])->name('home.getstats');
 
 
         //  ----------------- Dashboard and  Home Routes ----------------- //
 
-        Route::prefix('home')->group(function () {
-            Route::get('getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
-        });
+        // MIGRATED TO API: /api/dashboard/activities
+        // Route::prefix('home')->group(function () {
+        //     Route::get('getactivity', [App\Http\Controllers\HomeController::class, 'getActivity'])->name('home.getactivity');
+        // });
 
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
 
@@ -667,43 +674,30 @@ Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [Upselli
          Route::get('reports/appointments', [FinanceReportController::class, 'appointmentsReport'])->name('reports.appointmentsReport');
          Route::post('reports/appointments_report', [FinanceReportController::class, 'loadAppointmentsReport'])->name('reports.appointments_report');
 
-         //////Dashboard Stats//////
-        Route::get('dashboard/collection-by-centre', [DashboardReportsController::class, 'collectionByCentre'])->name('dashboard.collection_by_centre');
+         //////Dashboard Stats - Now handled by API routes in api.php //////
+        // Kept routes that are still needed (not migrated to API or used elsewhere)
         Route::get('dashboard/my-collection-by-centre', [DashboardReportsController::class, 'myCollectionByCentre'])->name('dashboard.myCollectionByCentre');
-        Route::get('dashboard/revenue-by-centre', [DashboardReportsController::class, 'revenueByCentre'])->name('dashboard.revenueByCentre');
-        Route::get('dashboard/revenue-by-service-category', [DashboardReportsController::class, 'RevenueByServiceCategory'])->name('dashboard.revenueByServiceCategory');
-        Route::get('dashboard/collection-by-service-category', [DashboardReportsController::class, 'CollectionByServiceCategory'])->name('dashboard.CollectionByServiceCategory');
         Route::get('dashboard/my-revenue-by-centre', [DashboardReportsController::class, 'myRevenueByCentre'])->name('dashboard.myRevenueByCentre');
-        Route::get('dashboard/revenue-by-service', [DashboardReportsController::class, 'revenueByService'])->name('dashboard.revenueByService');
         Route::get('dashboard/my-revenue-by-service', [DashboardReportsController::class, 'myRevenueByService'])->name('dashboard.myRevenueByService');
-        Route::get('dashboard/appointment-by-status', [DashboardReportsController::class, 'AppointmentByStatus'])->name('dashboard.appointment_by_status');
-        Route::get('dashboard/appointment-by-type', [DashboardReportsController::class, 'AppointmentByType'])->name('dashboard.appointment_by_type');
-        // Dashboard CENTRE WISE ARRIVAL
-        Route::get('dashboard/centre_wise_arrival', [DashboardReportsController::class, 'CentreWiseArrival'])->name('dashboard.centre_wise_arrival');
-
         Route::get('dashboard/location_wise_arrival', [DashboardReportsController::class, 'LocationWiseArrival'])->name('dashboard.location_wise_arrival');
         Route::get('dashboard/user_wise_arrival', [DashboardReportsController::class, 'UserWiseArrival'])->name('dashboard.user_wise_arrival');
-        // Dashboard CSR WISE ARRIVAL
-        Route::get('dashboard/csr_wise_arrival', [DashboardReportsController::class, 'CSRWiseArrival'])->name('dashboard.csr_wise_arrival');
-        Route::get('dashboard/patient-follow-up', [PatientFollowupController::class, 'patientFollowUp'])->name('dashboard.patient_follow_up');
-        Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
+        // MIGRATED TO API: /api/dashboard/unattended-payments
+        // Route::get('dashboard/patient-follow-up', [PatientFollowupController::class, 'patientFollowUp'])->name('dashboard.patient_follow_up');
+        // MIGRATED TO API: /api/dashboard/overdue-treatments
+        // Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
         Route::get('dashboard/revenue-by-centre/{period}/{medium_type}/{performance?}', [DashboardReportsController::class, 'getRevenueByCenterReport'])->name('dashboardreport.revenue_by_centre');
         Route::get('getcolor', [ServicesController::class, 'GetColor'])->name('dashboard.getcolor');
         Route::get('dashboard/getchild', [DashboardReportsController::class, 'getChild'])->name('dashboard.getchild');
         Route::get('dashboard/agent_wise_arrival', [DashboardReportsController::class, 'AgentWiseArrival'])->name('dashboard.agent_wise_arrival');
-
         Route::get('dashboard/csr_user_wise_arrival', [DashboardReportsController::class, 'CsrUserWiseArrival'])->name('dashboard.csr_user_wise_arrival');
-        Route::get('dashboard/doctore_user_wise_conversion', [DashboardReportsController::class, 'DoctoreWiseConversion'])->name('dashboard.doctor_wise_conversion');
-        Route::get('dashboard/doctore_wise_feedback', [DashboardReportsController::class, 'DoctoreWiseFeedback'])->name('dashboard.doctor_wise_feedback');
-        Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('dashboard.doctor.upselling.data');
+        // MIGRATED TO API: /api/dashboard/doctor-upselling-data
+        // Route::get('dashboard/doctor/upselling/data', [UpsellingReportController::class, 'getDoctorUpsellingData'])->name('dashboard.doctor.upselling.data');
         Route::get('dashboard/doctore_wise_upselling', [DashboardReportsController::class, 'DoctoreWiseUpselling'])->name('dashboard.doctor_wise_upselling');
         Route::get('dashboard/feedback/view/{id}', [DashboardReportsController::class, 'ViewFeedback'])->name('feedback.view');
         Route::get('dashboard/all_doctor_user_wise_conversion', [DashboardReportsController::class, 'AllDoctorsWiseConversion'])->name('dashboard.all_doctor_wise_conversion');
         Route::get('dashboard/follow-up-report', [DashboardReportsController::class, 'FollowUpReport'])->name('reports.follow_up')->middleware('permission:follow_up_manage');
         Route::get('dashboard/follow-up-report-monthly', [DashboardReportsController::class, 'FollowUpReportMonthly'])->name('reports.follow_up_month');
         Route::post('dashboard/patient_follow_up_report', [DashboardReportsController::class, 'loadFollowUpReport'])->name('reports.patient_follow_up_report');
-        //Route::post('dashboard/patient_follow_up_report_monthly', [all_doctor_wise_conversion::class, 'LoadPatientFollowUpReportMonthly'])->name('reports.patient_follow_up_report_monthly');
-        Route::get('dashboard/patient-follow-up-one-month', [PatientFollowupController::class, 'patientFollowUpOneMonth'])->name('dashboard.patient_follow_up_one_month');
         Route::get('dashboard/patient-follow-up/download', [PatientFollowupController::class, 'patientFollowUpDownload'])->name('follow_up.download');
         Route::get('dashboard/patient-monthly-follow-up/download', [PatientFollowupController::class, 'patientMonthlyFollowUpDownload'])->name('monthly_follow_up.download');
         /////Activity Logs Script

@@ -70,6 +70,28 @@ Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])
 
 Route::middleware('auth.common')->name('admin.')->group(function () {
 
+    // Dashboard API Routes
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::get('config', [\App\Http\Controllers\Api\DashboardController::class, 'getConfig'])->name('config');
+        Route::get('stats', [\App\Http\Controllers\Api\DashboardController::class, 'getStats'])->name('stats');
+        Route::get('activities', [\App\Http\Controllers\Api\DashboardController::class, 'getActivities'])->name('activities');
+        Route::get('collection-by-centre', [\App\Http\Controllers\Api\DashboardController::class, 'collectionByCentre'])->name('collection_by_centre');
+        Route::get('revenue-by-centre', [\App\Http\Controllers\Api\DashboardController::class, 'revenueByCentre'])->name('revenue_by_centre');
+        Route::get('collection-by-service-category', [\App\Http\Controllers\Api\DashboardController::class, 'collectionByServiceCategory'])->name('collection_by_service_category');
+        Route::get('revenue-by-service-category', [\App\Http\Controllers\Api\DashboardController::class, 'revenueByServiceCategory'])->name('revenue_by_service_category');
+        Route::get('revenue-by-service', [\App\Http\Controllers\Api\DashboardController::class, 'revenueByService'])->name('revenue_by_service');
+        Route::get('appointment-by-status', [\App\Http\Controllers\Api\DashboardController::class, 'appointmentByStatus'])->name('appointment_by_status');
+        Route::get('appointment-by-type', [\App\Http\Controllers\Api\DashboardController::class, 'appointmentByType'])->name('appointment_by_type');
+        Route::get('centre-wise-arrival', [\App\Http\Controllers\Api\DashboardController::class, 'centreWiseArrival'])->name('centre_wise_arrival');
+        Route::get('csr-wise-arrival', [\App\Http\Controllers\Api\DashboardController::class, 'csrWiseArrival'])->name('csr_wise_arrival');
+        Route::get('call-wise-arrival', [\App\Http\Controllers\Api\DashboardController::class, 'callWiseArrival'])->name('call_wise_arrival');
+        Route::get('doctor-wise-conversion', [\App\Http\Controllers\Api\DashboardController::class, 'doctorWiseConversion'])->name('doctor_wise_conversion');
+        Route::get('doctor-wise-feedback', [\App\Http\Controllers\Api\DashboardController::class, 'doctorWiseFeedback'])->name('doctor_wise_feedback');
+        Route::get('unattended-payments', [\App\Http\Controllers\Api\DashboardController::class, 'unattendedPayments'])->name('unattended_payments');
+        Route::get('overdue-treatments', [\App\Http\Controllers\Api\DashboardController::class, 'overdueTreatments'])->name('overdue_treatments');
+        Route::get('doctor-upselling-data', [\App\Http\Controllers\Api\DashboardController::class, 'doctorUpsellingData'])->name('doctor_upselling_data');
+    });
+
     Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
 
     // Setting Routes

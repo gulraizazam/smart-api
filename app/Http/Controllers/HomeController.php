@@ -69,32 +69,26 @@ class HomeController extends Controller
     public function index(Request $request)
     {
         $userCentres = DashboardHelper::getUserCentres();
-        [$start_date, $end_date] = DashboardHelper::getDateRangeFromRequest($request);
         $dateTimeInfo = DashboardHelper::getDateTimeInfo();
         
-        // Use services for stats and revenue
-        $data = $this->statsService->getConsultancies($start_date, $end_date, $userCentres);
-        $data = array_merge($data, $this->statsService->getTreatments($start_date, $end_date, $userCentres));
-        $data = array_merge($data, $this->revenueService->getSalesByCentre($userCentres, $start_date, $end_date));
-        $data = array_merge($data, $this->revenueService->getCollectionStats($userCentres, $request->type, $request));
+        // Minimal data for initial page load - stats loaded via API
+        $data = [
+            'today' => $dateTimeInfo['today'],
+            'startWeek' => $dateTimeInfo['startWeek'],
+            'month' => $dateTimeInfo['month'],
+            'currentTime' => $dateTimeInfo['currentTime'],
+            'location_id' => $userCentres,
+            'requestType' => $request->type ?? 'today',
+        ];
         
-        $data['today'] = $dateTimeInfo['today'];
-        $data['startWeek'] = $dateTimeInfo['startWeek'];
-        $data['month'] = $dateTimeInfo['month'];
-        $data['currentTime'] = $dateTimeInfo['currentTime'];
-        $data['location_id'] = $userCentres;
-        $data['start_date'] = $start_date;
-        $data['end_date'] = $end_date;
-        $data['appointment_status_arrived'] = DashboardHelper::getArrivedStatusId();
-        
-        // Get centres for dropdowns (moved from blade)
+        // Get centres for dropdowns
         $centresExclude = ['All South Region', 'All Central Region', 'All Centres'];
         $data['centres'] = Locations::whereIn('id', $userCentres)
             ->whereNotIn('name', $centresExclude)
             ->where('active', 1)
+            ->select('id', 'name')
             ->get();
         
-        // Get first centre for single-centre users
         $data['firstCentre'] = $data['centres']->first();
         
         // Check user roles for conditional display
@@ -114,6 +108,7 @@ class HomeController extends Controller
             $csrRoleIds = \App\Models\RoleHasUsers::whereIn('role_id', [2, 3, 24])->pluck('user_id');
             $data['csrUsers'] = User::whereIn('id', $csrRoleIds)
                 ->where('active', 1)
+                ->select('id', 'name')
                 ->get();
         } else {
             $data['csrUsers'] = collect();
