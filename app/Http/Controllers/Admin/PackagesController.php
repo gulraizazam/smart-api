@@ -2235,16 +2235,25 @@ class PackagesController extends Controller
             }
             /*save Package information and also update random id in package service table*/
 
-            $data_package = $request->all();
-            $data_package['total_price'] = str_replace(',', '', $request->total); //filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
-            $data_package['sessioncount'] = '1';
-            $data_package['account_id'] = Auth::User()->account_id;
-            $data_package['appointment_id'] = $appointment_id;
-            $data_package['updated_at'] = Filters::getCurrentTimeStamp();
             $random_id = $request->random_id;
             $package = Packages::where('random_id', '=', $random_id)->first();
             $id = $package->id;
-            $package->update($data_package);
+
+            // Check if new services are being added or payment is being made
+            $hasNewServices = isset($request['package_bundles']) && !empty($request['package_bundles']);
+            $hasPayment = $request->cash_amount != null && $request->cash_amount != '0';
+
+            // Only update package if new services added or payment made
+            if ($hasNewServices || $hasPayment) {
+                $data_package = $request->all();
+                $data_package['total_price'] = str_replace(',', '', $request->total); //filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
+                $data_package['sessioncount'] = '1';
+                $data_package['account_id'] = Auth::User()->account_id;
+                $data_package['appointment_id'] = $appointment_id;
+                $data_package['updated_at'] = Filters::getCurrentTimeStamp();
+                $package->update($data_package);
+            }
+
             $packageBundle = self::storeRecord($package, $request);
 
             /*End*/
