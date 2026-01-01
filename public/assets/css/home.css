@@ -297,20 +297,44 @@ select.form-control {
         justify-content: flex-end;
     }
     
-    /* Fix header spacing */
+    /* Keep header and filters inline on tablets */
     .card-spacer2 {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 10px;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center !important;
+        gap: 5px;
     }
     
     .card-spacer2 .nav-tabs {
-        width: 100%;
-        justify-content: flex-start;
+        flex-shrink: 0;
     }
 }
 
 @media (max-width: 767px) {
+    /* Keep filters inline with title on mobile */
+    .card-spacer2 {
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+    }
+    
+    .card-spacer2 .dashboard-counter {
+        font-size: 12px;
+        white-space: nowrap;
+    }
+    
+    .card-spacer2 .nav-tabs {
+        margin-left: auto;
+    }
+    
+    .card-spacer2 select.form-control {
+        font-size: 11px;
+        padding: 4px 6px;
+        height: auto;
+        min-width: 80px;
+    }
+    
     /* Further adjustments for phones */
     .loader-img,
     .loader-img-unattended,
