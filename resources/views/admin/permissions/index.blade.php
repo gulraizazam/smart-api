@@ -64,7 +64,12 @@
                             <div class="row align-items-center">
                                 <div class="col-lg-12 col-xl-12">
                                     <div class="row align-items-center">
-                                        <div class="col-md-9">
+                                        <div class="col-md-5">
+                                            <select class="form-control filter-field" id="search_parent_id">
+                                                <option value="">All Parent Groups</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-5">
                                             <div class="input-icon">
                                                 <input type="text" value="{{$filters['search'] ?? ''}}" class="form-control filter-field" placeholder="Search..." id="search_search" />
                                                 <span>
@@ -73,7 +78,7 @@
                                             </div>
                                         </div>
 
-                                        <div class="col-md-3">
+                                        <div class="col-md-2">
                                             @include('admin.partials.filter-buttons')
                                         </div>
 
