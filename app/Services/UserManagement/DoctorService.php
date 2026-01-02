@@ -39,9 +39,9 @@ class DoctorService
         // Build filters from params and stored filters
         $where = $this->buildWhereConditions($params, $userId, $accountId);
         
-        // Base query with joins
+        // Base query with joins - doctors have user_type_id = practitioner and resource_type_id = 2
         $baseQuery = User::leftJoin('role_has_users', 'users.id', '=', 'role_has_users.user_id')
-            ->where('users.user_type_id', Config::get('constants.asthatic_operator_id'))
+            ->where('users.user_type_id', Config::get('constants.practitioner_id'))
             ->where('users.account_id', $accountId)
             ->where('users.resource_type_id', 2)
             ->groupBy('users.id');
@@ -174,6 +174,7 @@ class DoctorService
                 'phone' => GeneralFunctions::contactStatus($user->phone),
                 'gender' => config('constants.gender_array.' . $user->gender),
                 'roles' => $user->user_roles()->pluck('name')->toArray(),
+                'active' => $user->active,
                 'status' => $user->active,
                 'created_at' => $user->created_at->format('F j,Y h:i A'),
             ];
