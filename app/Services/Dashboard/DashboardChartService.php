@@ -320,8 +320,9 @@ class DashboardChartService
             $allDoctorIds = array_keys($totalAppointmentsByDoctor);
             // Merge with allocated consultants
             $allDoctorIds = array_unique(array_merge($allDoctorIds, $consultantIds));
-            // Fetch all these doctors
+            // Fetch all these doctors (only active ones to match conversion report)
             $allDoctors = User::whereIn('id', $allDoctorIds)
+                ->where('active', 1)
                 ->orderBy('name')
                 ->get();
             
