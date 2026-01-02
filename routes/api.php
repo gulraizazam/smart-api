@@ -29,7 +29,7 @@ use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\MachineTypeController;
-use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
@@ -92,7 +92,17 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::get('doctor-upselling-data', [\App\Http\Controllers\Api\DashboardController::class, 'doctorUpsellingData'])->name('doctor_upselling_data');
     });
 
-    Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
+    // Permissions API Routes (Optimized)
+    Route::prefix('permissions')->name('permissions.')->middleware('permission:permissions_manage')->group(function () {
+        Route::post('datatable', [PermissionController::class, 'datatable'])->name('datatable');
+        Route::get('parent-groups', [PermissionController::class, 'parentGroups'])->name('parent_groups');
+        Route::get('create', [PermissionController::class, 'create'])->name('create');
+        Route::post('/', [PermissionController::class, 'store'])->name('store');
+        Route::get('{permission}', [PermissionController::class, 'show'])->name('show');
+        Route::get('{permission}/edit', [PermissionController::class, 'edit'])->name('edit');
+        Route::put('{permission}', [PermissionController::class, 'update'])->name('update');
+        Route::delete('{permission}', [PermissionController::class, 'destroy'])->name('destroy');
+    });
 
     // Setting Routes
     Route::get('settings/{id}/edit', [SettingsController::class, 'edit'])->name('settings.edit');

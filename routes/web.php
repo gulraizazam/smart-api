@@ -38,7 +38,7 @@ use App\Http\Controllers\DashboardReportsController;
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\MachineTypeController;
-use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Api\PermissionController;
 use Rap2hpoutre\LaravelLogViewer\LogViewerController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
@@ -219,7 +219,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         Route::get('settings', [SettingsController::class, 'index'])->name('settings.index');
 
-        Route::resource('permissions', PermissionsController::class)->middleware('permission:permissions_manage');
+        // Permissions - using API controller for all routes
+        Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index')->middleware('permission:permissions_manage');
 
         Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
         Route::get('roles/{id}/duplicate', [RolesController::class, 'duplicate'])->name('roles.duplicate');
