@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LeadsController;
-use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
@@ -31,6 +30,7 @@ use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Api\PermissionController;
 use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\ApplicationUserController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
@@ -115,6 +115,19 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::delete('{role}', [RoleController::class, 'destroy'])->name('destroy');
         Route::get('{role}/duplicate', [RoleController::class, 'duplicate'])->name('duplicate');
         Route::post('duplicate', [RoleController::class, 'storeDuplicate'])->name('duplicate.store');
+    });
+
+    // Application Users API Routes (Optimized)
+    Route::prefix('users')->name('users.')->middleware('permission:users_manage')->group(function () {
+        Route::post('datatable', [ApplicationUserController::class, 'datatable'])->name('datatable');
+        Route::get('create', [ApplicationUserController::class, 'create'])->name('create');
+        Route::post('/', [ApplicationUserController::class, 'store'])->name('store');
+        Route::get('{user}/edit', [ApplicationUserController::class, 'edit'])->name('edit');
+        Route::put('{user}', [ApplicationUserController::class, 'update'])->name('update');
+        Route::delete('{user}', [ApplicationUserController::class, 'destroy'])->name('destroy');
+        Route::post('status', [ApplicationUserController::class, 'status'])->name('status');
+        Route::get('password/{id}', [ApplicationUserController::class, 'changePassword'])->name('change_password');
+        Route::patch('password', [ApplicationUserController::class, 'savePassword'])->name('save_password');
     });
 
     // Setting Routes
@@ -345,13 +358,13 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('invoices', InvoicesController::class)->except('index');
     //Invoice Management route end
 
-    Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
-    Route::get('users/getpatientorder', [UsersController::class, 'getpatientidOrder'])->name('users.getpatient.order');
+    Route::get('users/getpatientid', [ApplicationUserController::class, 'getpatientid'])->name('users.getpatient.id');
+    Route::get('users/getpatientorder', [ApplicationUserController::class, 'getpatientidOrder'])->name('users.getpatient.order');
     Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
-    Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
-    Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
-    Route::get('users/get_cities', [UsersController::class, 'getUserCities'])->name('users.get_cities');
-    Route::get('users/get_centers', [UsersController::class, 'getUserCenters'])->name('users.get_centers');
+    Route::get('users/phone/search', [ApplicationUserController::class, 'phoneSearch'])->name('users.phone.search');
+    Route::get('users/get_patient_number', [ApplicationUserController::class, 'getpatientnumber'])->name('users.get_patient_number');
+    Route::get('users/get_cities', [ApplicationUserController::class, 'getUserCities'])->name('users.get_cities');
+    Route::get('users/get_centers', [ApplicationUserController::class, 'getUserCenters'])->name('users.get_centers');
 
     /*packages*/
     Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');

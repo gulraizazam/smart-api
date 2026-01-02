@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\TownController;
 use Facade\Ignition\Support\Packagist\Package;
 use App\Http\Controllers\Admin\LeadsController;
 use App\Http\Controllers\Api\RoleController;
-use App\Http\Controllers\Admin\UsersController;
+use App\Http\Controllers\Api\ApplicationUserController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
@@ -226,14 +226,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('roles', [RoleController::class, 'index'])->name('roles.index')->middleware('permission:roles_manage');
         // Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
 
-        Route::post('users/datatable', [UsersController::class, 'datatable'])->name('users.datatable');
-
-        Route::get('users/password/{id}', [UsersController::class, 'changePassword'])->name('users.change_password');
-        Route::patch('users/password', [UsersController::class, 'savePassword'])->name('users.save_password');
-
-        Route::post('users/status', [UsersController::class, 'status'])->name('users.status');
-
-        Route::resource('users', UsersController::class)->middleware('permission:users_manage');
+        // Application Users - using API controller for all routes
+        Route::get('users', [ApplicationUserController::class, 'index'])->name('users.index')->middleware('permission:users_manage');
 
         Route::post('user_types/datatable', [UserTypesController::class, 'datatable'])->name('user_types.datatable');
         Route::patch('user_types/active/{id}', [UserTypesController::class, 'active'])->name('user_types.active');
