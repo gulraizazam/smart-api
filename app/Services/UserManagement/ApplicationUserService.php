@@ -56,8 +56,9 @@ class ApplicationUserService
             $baseQuery->where($condition[0], $condition[1], $condition[2]);
         }
         
-        // Get total count
-        $total = $baseQuery->count('users.id');
+        // Get all user IDs first for count (groupBy makes count unreliable)
+        $allUserIds = (clone $baseQuery)->pluck('users.id');
+        $total = $allUserIds->count();
         
         // Get paginated data
         $users = (clone $baseQuery)
@@ -113,16 +114,17 @@ class ApplicationUserService
         // Role filter
         $where = $this->addFilter($where, $params, 'role_id', 'role_has_users.role_id', '=', $userId, $applyFilter);
         
-        // Status filter
+        // Status filter - handle "0" as valid value for inactive
         if (isset($params['status']) && $params['status'] !== '' && $params['status'] !== null) {
-            $where[] = ['users.active', '=', $params['status']];
-            Filters::put($userId, self::FILTER_KEY, 'status', $params['status']);
+            $statusValue = (int) $params['status'];
+            $where[] = ['users.active', '=', $statusValue];
+            Filters::put($userId, self::FILTER_KEY, 'status', $statusValue);
         } elseif ($applyFilter) {
             Filters::forget($userId, self::FILTER_KEY, 'status');
         } else {
             $storedStatus = Filters::get($userId, self::FILTER_KEY, 'status');
-            if ($storedStatus !== null && ($storedStatus == 0 || $storedStatus == 1)) {
-                $where[] = ['users.active', '=', $storedStatus];
+            if ($storedStatus !== null && $storedStatus !== '' && ($storedStatus === 0 || $storedStatus === 1 || $storedStatus === '0' || $storedStatus === '1')) {
+                $where[] = ['users.active', '=', (int) $storedStatus];
             }
         }
         

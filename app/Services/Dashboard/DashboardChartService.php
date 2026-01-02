@@ -63,7 +63,13 @@ class DashboardChartService
             ];
         }
 
-        [$startDate, $endDate] = DashboardHelper::getDateRange($period);
+        // For Centre Wise Arrival: "thismonth" means 1st of month to yesterday (excluding today)
+        if ($period === 'thismonth' || $period === 'month') {
+            $startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
+            $endDate = Carbon::now()->subDay(1)->format('Y-m-d');
+        } else {
+            [$startDate, $endDate] = DashboardHelper::getDateRange($period);
+        }
 
         // Get FDM role and users
         $fdmRole =DB::table('roles')->where('name', 'FDM')->first();
