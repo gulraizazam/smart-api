@@ -302,6 +302,9 @@ class DashboardChartService
             $totalAppointmentsQuery->whereIn('doctor_id', $consultantIds);
         }
 
+        // Get total count matching conversion report logic (simple count, no grouping)
+        $grandTotalAppointments = (clone $totalAppointmentsQuery)->count();
+
         $totalAppointmentsByDoctor = $totalAppointmentsQuery
             ->selectRaw('doctor_id, COUNT(*) as total')
             ->groupBy('doctor_id')
@@ -310,23 +313,66 @@ class DashboardChartService
 
         $sumConversionSpend = 0;
 
-        foreach ($consultants as $consultant) {
-            $labels[] = $consultant->name;
+        // When no specific doctor selected, we need to include ALL doctors with appointments
+        // (including unallocated ones) to match conversion report logic
+        if (!$docId || $docId == 0 || $docId == "all-docs") {
+            // Get all doctors who have appointments (including unallocated)
+            $allDoctorIds = array_keys($totalAppointmentsByDoctor);
+            // Merge with allocated consultants
+            $allDoctorIds = array_unique(array_merge($allDoctorIds, $consultantIds));
+            // Fetch all these doctors
+            $allDoctors = User::whereIn('id', $allDoctorIds)
+                ->orderBy('name')
+                ->get();
             
-            $totalAppointments = $totalAppointmentsByDoctor[$consultant->id] ?? 0;
-            $convertedCount = $conversionSpendByDoctor[$consultant->id]['count'] ?? 0;
-            $conversionSpendSum = $conversionSpendByDoctor[$consultant->id]['spend'] ?? 0;
+            foreach ($allDoctors as $doctor) {
+                $labels[] = $doctor->name;
+                
+                $totalAppointments = $totalAppointmentsByDoctor[$doctor->id] ?? 0;
+                $convertedCount = $conversionSpendByDoctor[$doctor->id]['count'] ?? 0;
+                $conversionSpendSum = $conversionSpendByDoctor[$doctor->id]['spend'] ?? 0;
 
-            $totalApts[] = $totalAppointments;
-            $convertedApts[] = $convertedCount;
-            $sumConversionSpend += $conversionSpendSum;
+                $totalApts[] = $totalAppointments;
+                $convertedApts[] = $convertedCount;
+                $sumConversionSpend += $conversionSpendSum;
 
-            $appointmentsInfo[] = [
-                'doctor_id' => $consultant->id,
-                'total' => $totalAppointments,
-                'converted' => $convertedCount,
-                'conversion_spend' => $conversionSpendSum,
-            ];
+                $appointmentsInfo[] = [
+                    'doctor_id' => $doctor->id,
+                    'total' => $totalAppointments,
+                    'converted' => $convertedCount,
+                    'conversion_spend' => $conversionSpendSum,
+                ];
+            }
+            
+            // Add appointments with NULL doctor_id to the total if any exist
+            $summedByDoctor = array_sum($totalAppointmentsByDoctor);
+            $nullDoctorCount = $grandTotalAppointments - $summedByDoctor;
+            if ($nullDoctorCount > 0) {
+                // Add these to the first doctor's count or create an "Unassigned" entry
+                if (!empty($totalApts)) {
+                    $totalApts[0] += $nullDoctorCount;
+                    $appointmentsInfo[0]['total'] += $nullDoctorCount;
+                }
+            }
+        } else {
+            foreach ($consultants as $consultant) {
+                $labels[] = $consultant->name;
+                
+                $totalAppointments = $totalAppointmentsByDoctor[$consultant->id] ?? 0;
+                $convertedCount = $conversionSpendByDoctor[$consultant->id]['count'] ?? 0;
+                $conversionSpendSum = $conversionSpendByDoctor[$consultant->id]['spend'] ?? 0;
+
+                $totalApts[] = $totalAppointments;
+                $convertedApts[] = $convertedCount;
+                $sumConversionSpend += $conversionSpendSum;
+
+                $appointmentsInfo[] = [
+                    'doctor_id' => $consultant->id,
+                    'total' => $totalAppointments,
+                    'converted' => $convertedCount,
+                    'conversion_spend' => $conversionSpendSum,
+                ];
+            }
         }
 
         return [
