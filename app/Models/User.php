@@ -242,36 +242,9 @@ class User extends Authenticatable
         return self::where('account_id', '=', Auth::User()->account_id)->whereNull('resource_type_id')->pluck('name', 'id');
     }
 
-    /*
-     * Get the users with  name & id
-     */
-    public static function getUsersleadReport()
-    {
-        return self::where('account_id', '=', Auth::User()->account_id)->whereIn('user_type_id', [Config::get('constants.administrator_id'), Config::get('constants.application_user_id'), Config::get('constants.practitioner_id')])->pluck('name', 'id');
-    }
-
-    public static function getUsersWithTypeReport()
-    {
-        $allUsersObject = self::where('account_id', '=', Auth::User()->account_id)->whereIn('user_type_id', [Config::get('constants.administrator_id'), Config::get('constants.application_user_id'), Config::get('constants.practitioner_id')])->select('name', 'id', 'user_type_id')->get();
-        $allUsersWithTypes = [];
-        $allUsersWithTypes['doctor'][''] = 'Select Practitioner';
-        $allUsersWithTypes['app_user'][''] = 'Select App user';
-        foreach ($allUsersObject as $user) {
-            //-------------------------- Both Admin & Application User ----------------------------------------
-            if ($user->user_type_id == 1 || $user->user_type_id == 2) {
-                $allUsersWithTypes['app_user'][$user->id] = $user->name;
-            }
-            //-------------------------- Doctors / Practitioner User ----------------------------------------
-            if ($user->user_type_id == 5) {
-                $allUsersWithTypes['doctor'][$user->id] = $user->name;
-            }
-        }
-
-        return $allUsersWithTypes;
-    }
-
     /**
      * Create Record
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param data
      * @return (mixed)
@@ -287,7 +260,8 @@ class User extends Authenticatable
     }
 
     /**
-     * update Record
+     * Update Record
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param data
      * @return (mixed)
@@ -307,7 +281,8 @@ class User extends Authenticatable
     }
 
     /**
-     * delete Record
+     * Delete Record
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param id
      * @return (mixed)
@@ -332,7 +307,8 @@ class User extends Authenticatable
     }
 
     /**
-     * delete Record
+     * Delete Record (for Doctors)
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param id
      * @return (mixed)
@@ -361,7 +337,8 @@ class User extends Authenticatable
     }
 
     /**
-     * isExit
+     * Check if user has child records (appointments, locations)
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param id, account id
      * @return (mixed)
@@ -379,31 +356,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Inactive Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function inactiveRecord($id)
-    {
-
-        $user = User::getData($id);
-        if ($user == null) {
-            return view('error_full');
-        } else {
-
-            $record = $user->update(['active' => 0]);
-
-            session()->flash('success', 'Record has been inactivated successfully.');
-
-            AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-            return $record;
-        }
-    }
-
-    /**
-     * Active Record
+     * Active/Inactive Record
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param id
      * @return (mixed)
@@ -430,6 +384,7 @@ class User extends Authenticatable
 
     /**
      * Get patients
+     * @deprecated Move to PatientService when optimizing Patients module
      *
      * @return (mixed)
      */
@@ -442,13 +397,14 @@ class User extends Authenticatable
         ])->get();
     }
 
-    /*
-    * Get Bulk Data
-    *
-    * @param (int)|(array) $id
-    *
-    * @return (mixed)
-    */
+    /**
+     * Get Bulk Data
+     * @deprecated Move to DoctorService when optimizing Doctors module
+     *
+     * @param (int)|(array) $id
+     *
+     * @return (mixed)
+     */
     public static function getBulkData($id)
     {
         if (!is_array($id)) {
@@ -461,13 +417,14 @@ class User extends Authenticatable
             ->get();
     }
 
-    /*
+    /**
      * Find user for patient profile and checkout account id
+     * @deprecated Move to PatientService when optimizing Patients module
      *
      * @param id
      *
      * @return patient
-     * */
+     */
     public static function finduser($id)
     {
         return self::where([
@@ -478,6 +435,7 @@ class User extends Authenticatable
 
     /**
      * Get All Records
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -488,7 +446,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Get All Records
+     * Get All Patient Records
+     * @deprecated Move to PatientService when optimizing Patients module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -509,6 +468,7 @@ class User extends Authenticatable
 
     /**
      * Get All Active Records
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -535,6 +495,7 @@ class User extends Authenticatable
 
     /**
      * Get All Active Records for employee
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -562,7 +523,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Get All Active Records for practionars
+     * Get All Active Records for practitioners
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -590,7 +552,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Get All Active Records
+     * Get All System Users Active Records
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -602,6 +565,7 @@ class User extends Authenticatable
 
     /**
      * Get active and sorted data only.
+     * @deprecated Move to appropriate service when optimizing related module
      */
     public static function getActiveOnly($locationId = false, $account_id = false, $user_id = false, $pluck_columns = true)
     {
