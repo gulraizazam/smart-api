@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\Admin\BundlesController;
-use App\Http\Controllers\Admin\DoctorsController;
+use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\InvoicesController;
@@ -259,16 +259,22 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
     Route::resource('resources', ResourcesController::class)->except('index');
 
-    // Doctors Route Start
-    Route::post('doctors/datatable', [DoctorsController::class, 'datatable'])->name('doctors.datatable');
-    Route::get('doctors/password/{id}', [DoctorsController::class, 'changePassword'])->name('doctors.change_password');
-    Route::patch('doctors/password', [DoctorsController::class, 'savePassword'])->name('doctors.save_password');
-    Route::post('doctors/status', [DoctorsController::class, 'status'])->name('doctors.status');
-    Route::resource('doctors', DoctorsController::class)->except(['index', 'show']);
-    Route::get('doctors/locations/{id}', [DoctorsController::class, 'displaylocation'])->name('doctors.location_manage');
-    Route::get('doctors/get-service', [DoctorsController::class, 'getservices'])->name('doctors.get_service');
-    Route::post('doctors/save_service', [DoctorsController::class, 'saveservices'])->name('doctors.save_service');
-    Route::post('doctors/delete_service', [DoctorsController::class, 'deleteservices'])->name('doctors.delete_service');
+    // Doctors API Routes (Optimized)
+    Route::prefix('doctors')->name('doctors.')->middleware('permission:doctors_manage')->group(function () {
+        Route::post('datatable', [DoctorController::class, 'datatable'])->name('datatable');
+        Route::get('create', [DoctorController::class, 'create'])->name('create');
+        Route::post('/', [DoctorController::class, 'store'])->name('store');
+        Route::get('{doctor}/edit', [DoctorController::class, 'edit'])->name('edit');
+        Route::put('{doctor}', [DoctorController::class, 'update'])->name('update');
+        Route::delete('{doctor}', [DoctorController::class, 'destroy'])->name('destroy');
+        Route::post('status', [DoctorController::class, 'status'])->name('status');
+        Route::get('password/{id}', [DoctorController::class, 'changePassword'])->name('change_password');
+        Route::patch('password', [DoctorController::class, 'savePassword'])->name('save_password');
+        Route::get('locations/{id}', [DoctorController::class, 'displayLocation'])->name('location_manage');
+        Route::get('get-service', [DoctorController::class, 'getServices'])->name('get_service');
+        Route::post('save_service', [DoctorController::class, 'saveServices'])->name('save_service');
+        Route::post('delete_service', [DoctorController::class, 'deleteServices'])->name('delete_service');
+    });
     // Doctors Route End
 
     //Refunds route start

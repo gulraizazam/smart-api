@@ -15,7 +15,7 @@ use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\Admin\BundlesController;
-use App\Http\Controllers\Admin\DoctorsController;
+use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\InvoicesController;
@@ -288,8 +288,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // Sms Templates
         Route::get('sms_templates', [SMSTemplatesController::class, 'index'])->name('sms_templates.index');
 
-        // Doctors Templates
-        Route::get('doctors', [DoctorsController::class, 'index'])->name('doctors.index');
+        // Doctors - using API controller for index
+        Route::get('doctors', [DoctorController::class, 'index'])->name('doctors.index');
 
         // Refund Route
         Route::resource('refunds', RefundsController::class)->only('index');
