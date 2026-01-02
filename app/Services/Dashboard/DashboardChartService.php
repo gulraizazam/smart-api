@@ -288,14 +288,21 @@ class DashboardChartService
         }
 
         // Get total appointments (arrived + converted) for each doctor
-        $totalAppointmentsByDoctor = Appointments::whereIn('doctor_id', $consultantIds)
-            ->whereIn('location_id', $locations)
+        // Match conversion report logic: when no specific doctor selected, don't filter by doctor_id
+        $totalAppointmentsQuery = Appointments::whereIn('location_id', $locations)
             ->where('appointment_type_id', config('constants.appointment_type_consultancy'))
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->where(function($query) use ($arrivedStatusId, $convertedStatusId) {
                 $query->where('base_appointment_status_id', $arrivedStatusId)
                     ->orWhere('base_appointment_status_id', $convertedStatusId);
-            })
+            });
+
+        // Only filter by doctor_id if a specific doctor is selected
+        if ($docId && $docId != 0 && $docId != "all-docs") {
+            $totalAppointmentsQuery->whereIn('doctor_id', $consultantIds);
+        }
+
+        $totalAppointmentsByDoctor = $totalAppointmentsQuery
             ->selectRaw('doctor_id, COUNT(*) as total')
             ->groupBy('doctor_id')
             ->pluck('total', 'doctor_id')
