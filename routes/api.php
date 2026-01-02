@@ -30,6 +30,7 @@ use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\MachineTypeController;
 use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
@@ -102,6 +103,18 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::get('{permission}/edit', [PermissionController::class, 'edit'])->name('edit');
         Route::put('{permission}', [PermissionController::class, 'update'])->name('update');
         Route::delete('{permission}', [PermissionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Roles API Routes (Optimized)
+    Route::prefix('roles')->name('roles.')->middleware('permission:roles_manage')->group(function () {
+        Route::post('datatable', [RoleController::class, 'datatable'])->name('datatable');
+        Route::get('create', [RoleController::class, 'create'])->name('create');
+        Route::post('/', [RoleController::class, 'store'])->name('store');
+        Route::get('{role}/edit', [RoleController::class, 'edit'])->name('edit');
+        Route::put('{role}', [RoleController::class, 'update'])->name('update');
+        Route::delete('{role}', [RoleController::class, 'destroy'])->name('destroy');
+        Route::get('{role}/duplicate', [RoleController::class, 'duplicate'])->name('duplicate');
+        Route::post('duplicate', [RoleController::class, 'storeDuplicate'])->name('duplicate.store');
     });
 
     // Setting Routes

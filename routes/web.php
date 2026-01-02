@@ -9,7 +9,7 @@ use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
 use Facade\Ignition\Support\Packagist\Package;
 use App\Http\Controllers\Admin\LeadsController;
-use App\Http\Controllers\Admin\RolesController;
+use App\Http\Controllers\Api\RoleController;
 use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
@@ -222,10 +222,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // Permissions - using API controller for all routes
         Route::get('permissions', [PermissionController::class, 'index'])->name('permissions.index')->middleware('permission:permissions_manage');
 
-        Route::post('roles/datatable', [RolesController::class, 'datatable'])->name('roles.datatable');
-        Route::get('roles/{id}/duplicate', [RolesController::class, 'duplicate'])->name('roles.duplicate');
-        Route::post('roles/duplicate', [RolesController::class, 'storeDuplicate'])->name('roles.duplicate.store');
-        Route::resource('roles', RolesController::class)->middleware('permission:roles_manage');
+        // Roles - using API controller for all routes
+        Route::get('roles', [RoleController::class, 'index'])->name('roles.index')->middleware('permission:roles_manage');
         // Route::post('roles_mass_destroy', ['uses' => 'Admin\RolesController@massDestroy', 'as' => 'roles.mass_destroy']);
 
         Route::post('users/datatable', [UsersController::class, 'datatable'])->name('users.datatable');
