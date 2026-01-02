@@ -243,105 +243,10 @@ class User extends Authenticatable
     }
 
     /**
-     * Create Record
-     * @deprecated Move to DoctorService when optimizing Doctors module
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function createRecord($data)
-    {
-
-        $record = self::create($data);
-
-        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
-        return $record;
-    }
-
-    /**
-     * Update Record
-     * @deprecated Move to DoctorService when optimizing Doctors module
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function updateRecord($data, $id)
-    {
-
-        $old_data = (User::find($id)->makeVisible(['password']))->toArray();
-
-        $record = User::findOrFail($id);
-
-        $record->update($data);
-
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $id);
-
-        return $record;
-    }
-
-    /**
-     * Delete Record
-     * @deprecated Move to DoctorService when optimizing Doctors module
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function deleteRecord($id)
-    {
-
-        $user = User::getData($id);
-
-        if ($user == null) {
-            return view('error_full');
-        } else {
-
-            $record = $user->delete();
-
-            AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-            session()->flash('success', 'Record has been deleted successfully.');
-
-            return $record;
-        }
-    }
-
-    /**
-     * Delete Record (for Doctors)
-     * @deprecated Move to DoctorService when optimizing Doctors module
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function deleteRecord1($id)
-    {
-
-        $doctor = User::getData($id);
-
-        if (!$doctor) {
-            return collect(['status' => false, 'message' => 'Resource not found.']);
-        }
-
-        // Check if child records exists or not, If exist then disallow to delete it.
-        if (User::isExists($id, Auth::User()->account_id)) {
-            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
-        }
-
-        $record = $doctor->delete();
-
-        //log request for delete for audit trail
-
-        AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
-    }
-
-    /**
      * Check if user has child records (appointments, locations)
-     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param id, account id
-     * @return (mixed)
+     * @return bool
      */
     public static function isExists($id, $account_id)
     {
@@ -353,33 +258,6 @@ class User extends Authenticatable
         }
 
         return false;
-    }
-
-    /**
-     * Active/Inactive Record
-     * @deprecated Move to DoctorService when optimizing Doctors module
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function activeRecord($id, $status)
-    {
-
-        $user = User::getData($id);
-
-        if ($user == null) {
-            session()->flash('error', 'Resource not found.');
-
-            return false;
-        } else {
-            $record = $user->update(['active' => $status]);
-
-            session()->flash('success', 'Record has been activated successfully.');
-
-            AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-            return $record;
-        }
     }
 
     /**
@@ -395,26 +273,6 @@ class User extends Authenticatable
             ['user_type_id', '=', Config::get('constants.patient_id')],
             ['account_id', '=', Auth::User()->account_id],
         ])->get();
-    }
-
-    /**
-     * Get Bulk Data
-     * @deprecated Move to DoctorService when optimizing Doctors module
-     *
-     * @param (int)|(array) $id
-     *
-     * @return (mixed)
-     */
-    public static function getBulkData($id)
-    {
-        if (!is_array($id)) {
-            $id = [$id];
-        }
-
-        return self::where([
-            ['account_id', '=', Auth::User()->account_id],
-        ])->whereIn('id', $id)
-            ->get();
     }
 
     /**
