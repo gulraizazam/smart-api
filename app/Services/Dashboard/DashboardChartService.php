@@ -135,7 +135,10 @@ class DashboardChartService
         $labels = [];
         $appointmentsInfo = [];
 
-        if ($centreId === 'All' || $centreId === 'all' || $centreId === '' || $centreId == '30' || $centreId == 30 || empty($centreId)) {
+        // Track if All Centres is selected (skip active filter in this case)
+        $isAllCentres = ($centreId === 'All' || $centreId === 'all' || $centreId === '' || $centreId == '30' || $centreId == 30 || empty($centreId));
+        
+        if ($isAllCentres) {
             $locations = DashboardHelper::getUserCentres();
         } else {
             $locations = is_array($centreId) ? $centreId : [$centreId];
@@ -156,10 +159,12 @@ class DashboardChartService
         }
 
         // Fetch all consultants in one query
-        $consultants = User::whereIn('id', $consultantIds)
-            ->where('active', 1)
-            ->orderBy('name')
-            ->get();
+        // When All Centres: skip active filter. When specific centre: show only active
+        $consultantsQuery = User::whereIn('id', $consultantIds);
+        if (!$isAllCentres) {
+            $consultantsQuery->where('active', 1);
+        }
+        $consultants = $consultantsQuery->orderBy('name')->get();
 
         if ($consultants->isEmpty()) {
             return $this->emptyConversionResponse();
@@ -320,11 +325,13 @@ class DashboardChartService
             $allDoctorIds = array_keys($totalAppointmentsByDoctor);
             // Merge with allocated consultants
             $allDoctorIds = array_unique(array_merge($allDoctorIds, $consultantIds));
-            // Fetch all these doctors (only active ones to match conversion report)
-            $allDoctors = User::whereIn('id', $allDoctorIds)
-                ->where('active', 1)
-                ->orderBy('name')
-                ->get();
+            // Fetch all these doctors
+            // When All Centres: skip active filter. When specific centre: show only active
+            $allDoctorsQuery = User::whereIn('id', $allDoctorIds);
+            if (!$isAllCentres) {
+                $allDoctorsQuery->where('active', 1);
+            }
+            $allDoctors = $allDoctorsQuery->orderBy('name')->get();
             
             foreach ($allDoctors as $doctor) {
                 $labels[] = $doctor->name;
