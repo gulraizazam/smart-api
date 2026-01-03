@@ -27,7 +27,7 @@ class ApplicationUserRequest extends FormRequest
             'roles.*' => 'integer|exists:roles,id',
             'commission' => 'required|numeric|min:0|max:100',
             'phone' => 'nullable|string|max:20',
-            'gender' => 'nullable|string|in:male,female,other',
+            'gender' => 'nullable|in:1,2',
             'centers' => 'nullable|array',
             'warehouse' => 'nullable|array',
         ];
@@ -41,7 +41,7 @@ class ApplicationUserRequest extends FormRequest
         // For update, phone and gender are required
         if ($this->isMethod('put') || $this->isMethod('patch')) {
             $rules['phone'] = 'required|string|max:20';
-            $rules['gender'] = 'required|string|in:male,female,other';
+            $rules['gender'] = 'required|in:1,2';
         }
         
         return $rules;
