@@ -50,10 +50,6 @@
             </select>
         </div>
         @endif
-        <div class="col-lg-3 mb-lg-0 mb-6">
-            <label>Email:</label>
-            <input class="form-control filter-field" id="search_email" placeholder="Enter Email">
-        </div>
     </div>
     <div class="row">
         <div class="col-md-10">
