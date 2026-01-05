@@ -130,6 +130,21 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::patch('password', [ApplicationUserController::class, 'savePassword'])->name('save_password');
     });
 
+    // User Types API Routes (Optimized)
+    Route::prefix('user_types')->name('user_types.')->group(function () {
+        Route::post('datatable', [\App\Http\Controllers\Api\UserTypeController::class, 'index'])->name('datatable');
+        Route::get('create', [\App\Http\Controllers\Api\UserTypeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Api\UserTypeController::class, 'store'])->name('store');
+        Route::get('{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'show'])->name('show');
+        Route::get('{id}/edit', [\App\Http\Controllers\Api\UserTypeController::class, 'edit'])->name('edit');
+        Route::put('{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'destroy'])->name('destroy');
+        Route::patch('active/{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'activate'])->name('active');
+        Route::patch('inactive/{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'inactivate'])->name('inactive');
+        Route::get('dropdown/list', [\App\Http\Controllers\Api\UserTypeController::class, 'dropdown'])->name('dropdown');
+        Route::get('doctor/list', [\App\Http\Controllers\Api\UserTypeController::class, 'forDoctor'])->name('for_doctor');
+    });
+
     // Setting Routes
     Route::get('settings/{id}/edit', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('settings/{id}', [SettingsController::class, 'update'])->name('settings.update');
