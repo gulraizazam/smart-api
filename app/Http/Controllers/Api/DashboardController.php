@@ -468,7 +468,7 @@ class DashboardController extends Controller
                 WHERE u.user_type_id = 3 AND u.active = 1
                     AND bal.conversion_date IS NOT NULL
                     AND bal.conversion_date <= ?
-                    AND (bal.cash_in - bal.cash_out) >= 500
+                    AND (bal.cash_in - bal.cash_out) >= 100
                     AND NOT EXISTS (
                         SELECT 1 FROM appointments t 
                         WHERE t.patient_id = u.id 
