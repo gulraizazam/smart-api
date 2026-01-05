@@ -1,112 +1,48 @@
 
 var table_url = route('admin.refundpatient.datatable', {id: patientCardID});
 
-var width = (window.innerWidth > 0) ? window.innerWidth : screen.width;
-if (width > 1280) {
-    var table_columns = [
-        {
-            field: 'name',
-            title: 'Patient',
-            sortable: false,
-            width: 80,
-        }, {
-            field: 'phone',
-            title: 'Phone',
-            sortable: false,
-            width: 70,
-        }, {
-            field: 'package_id',
-            title: 'Plans',
-            sortable: false,
-            width: 60,
-        }, {
-            field: 'location_id',
-            title: 'Centre',
-            sortable: false,
-            width: 'auto',
-        }, {
-            field: 'session_count',
-            title: 'Session count',
-            sortable: false,
-            width: 100,
-        }, {
-            field: 'total',
-            title: 'Total',
-            sortable: false,
-            width: 70,
-        }, {
-            field: 'cash_receive',
-            title: 'Cash receive',
-            sortable: false,
-            width: 'auto',
-        }, {
-            field: 'created_at',
-            title: 'Created at',
-            width: 'auto',
-        }, {
-            field: 'actions',
-            title: 'Actions',
-            sortable: false,
-            width: 80,
-            overflow: 'visible',
-            autoHide: false,
-            template: function (data) {
-                return actions(data);
-            }
-        }];
-} else {
-    var table_columns = [
-        {
-            field: 'name',
-            title: 'Patient',
-            sortable: false,
-            width: 90,
-        }, {
-            field: 'phone',
-            title: 'Phone',
-            sortable: false,
-            width: 80,
-        }, {
-            field: 'package_id',
-            title: 'Plans',
-            sortable: false,
-            width: 60,
-        }, {
-            field: 'location_id',
-            title: 'Centre',
-            sortable: false,
-            width: 'auto',
-        }, {
-            field: 'session_count',
-            title: 'Session count',
-            sortable: false,
-            width: 'auto',
-        }, {
-            field: 'total',
-            title: 'Total',
-            sortable: false,
-            width: 'auto',
-        }, {
-            field: 'cash_receive',
-            title: 'Cash receive',
-            sortable: false,
-            width: 'auto',
-        }, {
-            field: 'created_at',
-            title: 'Created at',
-            width: 'auto',
-        }, {
-            field: 'actions',
-            title: 'Actions',
-            sortable: false,
-            width: 80,
-            overflow: 'visible',
-            autoHide: false,
-            template: function (data) {
-                return actions(data);
-            }
-        }];
-}
+var table_columns = [
+    {
+        field: 'name',
+        title: 'Patient',
+        sortable: false,
+        width: 100,
+    }, {
+        field: 'plan_id',
+        title: 'Plan ID',
+        sortable: false,
+        width: 70,
+    }, {
+        field: 'total',
+        title: 'Plan Total',
+        sortable: false,
+        width: 90,
+    }, {
+        field: 'cash_in',
+        title: 'Cash In',
+        sortable: false,
+        width: 80,
+    }, {
+        field: 'cash_out',
+        title: 'Cash Out',
+        sortable: false,
+        width: 80,
+    }, {
+        field: 'refunded_amount',
+        title: 'Refunded',
+        sortable: false,
+        width: 80,
+    }, {
+        field: 'created_at',
+        title: 'Created At',
+        sortable: false,
+        width: 120,
+    }, {
+        field: 'location',
+        title: 'Location',
+        sortable: false,
+        width: 'auto',
+    }];
 
 
 function actions(data) {

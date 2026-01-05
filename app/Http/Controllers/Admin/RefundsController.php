@@ -110,20 +110,29 @@ class RefundsController extends Controller
                     ])->first();
 
                     
+                    // Cash OUT (outgoing payments excluding refunds)
+                    $cash_out = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_refund', '=', '0'],
+                    ])->sum('cash_amount');
+                    
                     if ($refunded_amount != 0) {
+                        // Get plan total from packages table
+                        $packageInfo = Packages::find($package->package_id);
+                        $planTotal = $packageInfo ? $packageInfo->total_price : 0;
 
                         $records['data'][] = [
                             'id' => $package->package_id ?? 0,
-                            'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
                             'name' => $package->user?->name ?? '-',
-                            'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
-                            'package_id' => $package?->package_id ?? '-',
-                            'location_id' => $package->location->city->name.'-'.$package->location?->name,
-                            'total' => number_format($package->total_price),
-                            'cash_receive' => number_format($cash_receive),
-                            'refunded' =>$refunded_amount,
-                            'case_setteled' => isset($is_case_setteled) && $is_case_setteled->is_setteled == 1 ? 'Yes' : 'No',
-                            'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('F j,Y h:i A') : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
+                            'plan_id' => $package->package_id ?? '-',
+                            'total' => number_format($planTotal),
+                            'cash_in' => number_format($cash_receive),
+                            'cash_out' => number_format($cash_out),
+                            'refunded_amount' => number_format($refunded_amount),
+                            'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('M j, Y h:i A') : Carbon::parse($package->created_at)->format('M j, Y h:i A'),
+                            'location' => ($package->location->city->name ?? '') . '-' . ($package->location?->name ?? ''),
                         ];
                     } else {
                         $iTotalRecords--;

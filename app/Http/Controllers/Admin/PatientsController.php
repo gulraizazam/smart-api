@@ -1355,10 +1355,15 @@ class PatientsController extends Controller
      */
     public function documentstore(Request $request)
     {
-
         if (!Gate::allows('patients_document_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
+        
+        // Check if file exists first before validation
+        if (!$request->hasFile('file')) {
+            return ApiHelper::apiResponse($this->success, 'No file was uploaded. Please select a file.', false);
+        }
+        
         $validator = $this->verifyDocumentFields($request);
         if ($validator->fails()) {
             return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
@@ -1366,14 +1371,27 @@ class PatientsController extends Controller
         $patient = Patients::getData($request->patient_id);
 
         if (!$patient) {
-            return ApiHelper::apiResponse($this->success, 'Resource not found', false);
+            return ApiHelper::apiResponse($this->success, 'Patient not found', false);
         }
 
         $file = $request->file('file');
-        $ext = $file->getClientOriginalExtension();
-        if ($ext == 'jpg' || $ext == 'jpeg' || $ext == 'png' || $ext == 'pdf' || $ext == 'docx' || $ext == 'xlsx') {
-            $fileName = time() . '-' . str_replace(' ', '-', $file->getClientOriginalName());
-            $file->storeAs('public/patient_image', $fileName);
+        if (!$file || !$file->isValid()) {
+            return ApiHelper::apiResponse($this->success, 'File upload failed. Please try again.', false);
+        }
+        
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (in_array($ext, ['jpg', 'jpeg', 'png', 'pdf', 'docx', 'xlsx'])) {
+            $originalName = $file->getClientOriginalName();
+            if (empty($originalName)) {
+                $originalName = 'document.' . $ext;
+            }
+            $fileName = time() . '_' . preg_replace('/[^a-zA-Z0-9._-]/', '_', $originalName);
+            
+            try {
+                $file->storeAs('public/patient_image', $fileName);
+            } catch (\Exception $e) {
+                return ApiHelper::apiResponse($this->success, 'Failed to save file: ' . $e->getMessage(), false);
+            }
 
             $path = 'patient_image/' . $fileName;
             Documents::CreateRecord($request, $path, $patient->id);
@@ -1381,7 +1399,7 @@ class PatientsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
         }
 
-        return ApiHelper::apiResponse($this->success, 'File format not supported.', false);
+        return ApiHelper::apiResponse($this->success, 'File format not supported. Allowed: jpg, jpeg, png, pdf, docx, xlsx', false);
     }
 
     /**
