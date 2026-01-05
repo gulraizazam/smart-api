@@ -22,10 +22,10 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_user_type_form" method="post" action="">
+        <form id="modal_user_type_form" method="post" action="" data-api="true" data-method="PUT">
             <!--begin::Scroll-->
             @csrf
-            @method('put')
+            <input type="hidden" name="_method" value="PUT">
 
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_user_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
@@ -33,14 +33,13 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input id="user_type_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input id="user_type_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2" required>
                         </div>
 
-
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Type </label>
-                            <select id="user_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
-
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Type</label>
+                            <select id="user_type" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" required>
+                                <option value="">Select</option>
                             </select>
                         </div>
                     </div>

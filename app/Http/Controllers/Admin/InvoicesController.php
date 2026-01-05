@@ -261,7 +261,12 @@ class InvoicesController extends Controller
         }
 
         $appintment = Appointments::find($invocies->appointment_id);
-         $appintment->update(['base_appointment_status_id'=>1, 'appointment_status_id'=>1]);
+         $appintment->update([
+            'base_appointment_status_id' => 1,
+            'appointment_status_id' => 1,
+            'arrived_at' => null,
+            'converted_at' => null
+         ]);
         $appointment_type = AppointmentTypes::where('id', '=', $appintment?->appointment_type_id)->first();
         PackageAdvances::where('invoice_id', '=', $id)->where('cash_flow', '=', 'out')->delete();
         if ($appointment_type && $appintment && $invocies) {

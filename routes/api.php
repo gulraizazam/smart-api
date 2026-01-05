@@ -6,12 +6,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LeadsController;
-use App\Http\Controllers\Admin\UsersController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
 use App\Http\Controllers\Admin\BundlesController;
-use App\Http\Controllers\Admin\DoctorsController;
+use App\Http\Controllers\Api\DoctorController;
 use App\Http\Controllers\Admin\RefundsController;
 use App\Http\Controllers\Admin\RegionsController;
 use App\Http\Controllers\Admin\InvoicesController;
@@ -29,7 +28,9 @@ use App\Http\Controllers\Admin\WarehouseController;
 use App\Http\Controllers\Admin\CustomFormsController;
 use App\Http\Controllers\Admin\LeadSourcesController;
 use App\Http\Controllers\Admin\MachineTypeController;
-use App\Http\Controllers\Admin\PermissionsController;
+use App\Http\Controllers\Api\PermissionController;
+use App\Http\Controllers\Api\RoleController;
+use App\Http\Controllers\Api\ApplicationUserController;
 use App\Http\Controllers\Admin\AppointmentsController;
 use App\Http\Controllers\Admin\LeadStatusesController;
 use App\Http\Controllers\Admin\PaymentModesController;
@@ -70,7 +71,79 @@ Route::post('login', [\App\Http\Controllers\Api\AuthController::class, 'login'])
 
 Route::middleware('auth.common')->name('admin.')->group(function () {
 
-    Route::post('permissions/datatable', [PermissionsController::class, 'datatable'])->name('permissions.datatable');
+    // Dashboard API Routes
+    Route::prefix('dashboard')->name('dashboard.')->group(function () {
+        Route::get('config', [\App\Http\Controllers\Api\DashboardController::class, 'getConfig'])->name('config');
+        Route::get('stats', [\App\Http\Controllers\Api\DashboardController::class, 'getStats'])->name('stats');
+        Route::get('activities', [\App\Http\Controllers\Api\DashboardController::class, 'getActivities'])->name('activities');
+        Route::get('collection-by-centre', [\App\Http\Controllers\Api\DashboardController::class, 'collectionByCentre'])->name('collection_by_centre');
+        Route::get('revenue-by-centre', [\App\Http\Controllers\Api\DashboardController::class, 'revenueByCentre'])->name('revenue_by_centre');
+        Route::get('collection-by-service-category', [\App\Http\Controllers\Api\DashboardController::class, 'collectionByServiceCategory'])->name('collection_by_service_category');
+        Route::get('revenue-by-service-category', [\App\Http\Controllers\Api\DashboardController::class, 'revenueByServiceCategory'])->name('revenue_by_service_category');
+        Route::get('revenue-by-service', [\App\Http\Controllers\Api\DashboardController::class, 'revenueByService'])->name('revenue_by_service');
+        Route::get('appointment-by-status', [\App\Http\Controllers\Api\DashboardController::class, 'appointmentByStatus'])->name('appointment_by_status');
+        Route::get('appointment-by-type', [\App\Http\Controllers\Api\DashboardController::class, 'appointmentByType'])->name('appointment_by_type');
+        Route::get('centre-wise-arrival', [\App\Http\Controllers\Api\DashboardController::class, 'centreWiseArrival'])->name('centre_wise_arrival');
+        Route::get('csr-wise-arrival', [\App\Http\Controllers\Api\DashboardController::class, 'csrWiseArrival'])->name('csr_wise_arrival');
+        Route::get('call-wise-arrival', [\App\Http\Controllers\Api\DashboardController::class, 'callWiseArrival'])->name('call_wise_arrival');
+        Route::get('doctor-wise-conversion', [\App\Http\Controllers\Api\DashboardController::class, 'doctorWiseConversion'])->name('doctor_wise_conversion');
+        Route::get('doctor-wise-feedback', [\App\Http\Controllers\Api\DashboardController::class, 'doctorWiseFeedback'])->name('doctor_wise_feedback');
+        Route::get('unattended-payments', [\App\Http\Controllers\Api\DashboardController::class, 'unattendedPayments'])->name('unattended_payments');
+        Route::get('overdue-treatments', [\App\Http\Controllers\Api\DashboardController::class, 'overdueTreatments'])->name('overdue_treatments');
+        Route::get('doctor-upselling-data', [\App\Http\Controllers\Api\DashboardController::class, 'doctorUpsellingData'])->name('doctor_upselling_data');
+    });
+
+    // Permissions API Routes (Optimized)
+    Route::prefix('permissions')->name('permissions.')->middleware('permission:permissions_manage')->group(function () {
+        Route::post('datatable', [PermissionController::class, 'datatable'])->name('datatable');
+        Route::get('parent-groups', [PermissionController::class, 'parentGroups'])->name('parent_groups');
+        Route::get('create', [PermissionController::class, 'create'])->name('create');
+        Route::post('/', [PermissionController::class, 'store'])->name('store');
+        Route::get('{permission}', [PermissionController::class, 'show'])->name('show');
+        Route::get('{permission}/edit', [PermissionController::class, 'edit'])->name('edit');
+        Route::put('{permission}', [PermissionController::class, 'update'])->name('update');
+        Route::delete('{permission}', [PermissionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Roles API Routes (Optimized)
+    Route::prefix('roles')->name('roles.')->middleware('permission:roles_manage')->group(function () {
+        Route::post('datatable', [RoleController::class, 'datatable'])->name('datatable');
+        Route::get('create', [RoleController::class, 'create'])->name('create');
+        Route::post('/', [RoleController::class, 'store'])->name('store');
+        Route::get('{role}/edit', [RoleController::class, 'edit'])->name('edit');
+        Route::put('{role}', [RoleController::class, 'update'])->name('update');
+        Route::delete('{role}', [RoleController::class, 'destroy'])->name('destroy');
+        Route::get('{role}/duplicate', [RoleController::class, 'duplicate'])->name('duplicate');
+        Route::post('duplicate', [RoleController::class, 'storeDuplicate'])->name('duplicate.store');
+    });
+
+    // Application Users API Routes (Optimized)
+    Route::prefix('users')->name('users.')->middleware('permission:users_manage')->group(function () {
+        Route::post('datatable', [ApplicationUserController::class, 'datatable'])->name('datatable');
+        Route::get('create', [ApplicationUserController::class, 'create'])->name('create');
+        Route::post('/', [ApplicationUserController::class, 'store'])->name('store');
+        Route::get('{user}/edit', [ApplicationUserController::class, 'edit'])->name('edit');
+        Route::put('{user}', [ApplicationUserController::class, 'update'])->name('update');
+        Route::delete('{user}', [ApplicationUserController::class, 'destroy'])->name('destroy');
+        Route::post('status', [ApplicationUserController::class, 'status'])->name('status');
+        Route::get('password/{id}', [ApplicationUserController::class, 'changePassword'])->name('change_password');
+        Route::patch('password', [ApplicationUserController::class, 'savePassword'])->name('save_password');
+    });
+
+    // User Types API Routes (Optimized)
+    Route::prefix('user_types')->name('user_types.')->group(function () {
+        Route::post('datatable', [\App\Http\Controllers\Api\UserTypeController::class, 'index'])->name('datatable');
+        Route::get('create', [\App\Http\Controllers\Api\UserTypeController::class, 'create'])->name('create');
+        Route::post('/', [\App\Http\Controllers\Api\UserTypeController::class, 'store'])->name('store');
+        Route::get('{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'show'])->name('show');
+        Route::get('{id}/edit', [\App\Http\Controllers\Api\UserTypeController::class, 'edit'])->name('edit');
+        Route::put('{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'destroy'])->name('destroy');
+        Route::patch('active/{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'activate'])->name('active');
+        Route::patch('inactive/{id}', [\App\Http\Controllers\Api\UserTypeController::class, 'inactivate'])->name('inactive');
+        Route::get('dropdown/list', [\App\Http\Controllers\Api\UserTypeController::class, 'dropdown'])->name('dropdown');
+        Route::get('doctor/list', [\App\Http\Controllers\Api\UserTypeController::class, 'forDoctor'])->name('for_doctor');
+    });
 
     // Setting Routes
     Route::get('settings/{id}/edit', [SettingsController::class, 'edit'])->name('settings.edit');
@@ -201,16 +274,22 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::get('resources/get_machinetype', [ResourcesController::class, 'get_machinetype'])->name('resources.get_machinetype');
     Route::resource('resources', ResourcesController::class)->except('index');
 
-    // Doctors Route Start
-    Route::post('doctors/datatable', [DoctorsController::class, 'datatable'])->name('doctors.datatable');
-    Route::get('doctors/password/{id}', [DoctorsController::class, 'changePassword'])->name('doctors.change_password');
-    Route::patch('doctors/password', [DoctorsController::class, 'savePassword'])->name('doctors.save_password');
-    Route::post('doctors/status', [DoctorsController::class, 'status'])->name('doctors.status');
-    Route::resource('doctors', DoctorsController::class)->except(['index', 'show']);
-    Route::get('doctors/locations/{id}', [DoctorsController::class, 'displaylocation'])->name('doctors.location_manage');
-    Route::get('doctors/get-service', [DoctorsController::class, 'getservices'])->name('doctors.get_service');
-    Route::post('doctors/save_service', [DoctorsController::class, 'saveservices'])->name('doctors.save_service');
-    Route::post('doctors/delete_service', [DoctorsController::class, 'deleteservices'])->name('doctors.delete_service');
+    // Doctors API Routes (Optimized)
+    Route::prefix('doctors')->name('doctors.')->middleware('permission:doctors_manage')->group(function () {
+        Route::post('datatable', [DoctorController::class, 'datatable'])->name('datatable');
+        Route::get('create', [DoctorController::class, 'create'])->name('create');
+        Route::post('/', [DoctorController::class, 'store'])->name('store');
+        Route::get('{doctor}/edit', [DoctorController::class, 'edit'])->name('edit');
+        Route::put('{doctor}', [DoctorController::class, 'update'])->name('update');
+        Route::delete('{doctor}', [DoctorController::class, 'destroy'])->name('destroy');
+        Route::post('status', [DoctorController::class, 'status'])->name('status');
+        Route::get('password/{id}', [DoctorController::class, 'changePassword'])->name('change_password');
+        Route::patch('password', [DoctorController::class, 'savePassword'])->name('save_password');
+        Route::get('locations/{id}', [DoctorController::class, 'displayLocation'])->name('location_manage');
+        Route::get('get-service', [DoctorController::class, 'getServices'])->name('get_service');
+        Route::post('save_service', [DoctorController::class, 'saveServices'])->name('save_service');
+        Route::post('delete_service', [DoctorController::class, 'deleteServices'])->name('delete_service');
+    });
     // Doctors Route End
 
     //Refunds route start
@@ -300,13 +379,13 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     Route::resource('invoices', InvoicesController::class)->except('index');
     //Invoice Management route end
 
-    Route::get('users/getpatientid', [UsersController::class, 'getpatientid'])->name('users.getpatient.id');
-    Route::get('users/getpatientorder', [UsersController::class, 'getpatientidOrder'])->name('users.getpatient.order');
+    Route::get('users/getpatientid', [ApplicationUserController::class, 'getpatientid'])->name('users.getpatient.id');
+    Route::get('users/getpatientorder', [ApplicationUserController::class, 'getpatientidOrder'])->name('users.getpatient.order');
     Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
-    Route::get('users/phone/search', [UsersController::class, 'phoneSearch'])->name('users.phone.search');
-    Route::get('users/get_patient_number', [UsersController::class, 'getpatientnumber'])->name('users.get_patient_number');
-    Route::get('users/get_cities', [UsersController::class, 'getUserCities'])->name('users.get_cities');
-    Route::get('users/get_centers', [UsersController::class, 'getUserCenters'])->name('users.get_centers');
+    Route::get('users/phone/search', [ApplicationUserController::class, 'phoneSearch'])->name('users.phone.search');
+    Route::get('users/get_patient_number', [ApplicationUserController::class, 'getpatientnumber'])->name('users.get_patient_number');
+    Route::get('users/get_cities', [ApplicationUserController::class, 'getUserCities'])->name('users.get_cities');
+    Route::get('users/get_centers', [ApplicationUserController::class, 'getUserCenters'])->name('users.get_centers');
 
     /*packages*/
     Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');
@@ -654,4 +733,10 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
+});
+
+// Meta Conversion API Routes
+Route::prefix('meta')->name('meta.')->group(function () {
+    Route::post('test-connection', [\App\Http\Controllers\Admin\MetaConversionController::class, 'testConnection'])->name('test');
+    Route::post('send-lead-status', [\App\Http\Controllers\Admin\MetaConversionController::class, 'sendLeadStatus'])->name('lead-status');
 });

@@ -11,9 +11,9 @@ class LeadStatuses extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'parent_id', 'account_id', 'is_comment', 'is_default', 'is_arrived', 'is_converted', 'sort_no', 'active', 'created_at', 'updated_at', 'parent_id', 'is_comment', 'is_junk'];
+    protected $fillable = ['name', 'parent_id', 'account_id', 'is_comment', 'is_default', 'is_booked', 'is_arrived', 'is_converted', 'sort_no', 'active', 'created_at', 'updated_at', 'parent_id', 'is_comment', 'is_junk'];
 
-    protected static $_fillable = ['name', 'active', 'parent_id', 'is_comment', 'is_default', 'is_arrived', 'is_converted', 'is_junk'];
+    protected static $_fillable = ['name', 'active', 'parent_id', 'is_comment', 'is_default', 'is_booked', 'is_arrived', 'is_converted', 'is_junk'];
 
     protected $table = 'lead_statuses';
 
@@ -278,6 +278,11 @@ class LeadStatuses extends BaseModal
             self::where(['account_id' => $account_id])->update(['is_converted' => 0]);
         }
 
+        // Default Status is set for Booked, set other statuses now
+        if (isset($data['is_booked']) && $data['is_booked'] == '1') {
+            self::where(['account_id' => $account_id])->update(['is_booked' => 0]);
+        }
+
         $record = self::create($data);
         $record->update(['sort_no' => $record->id]);
 
@@ -381,6 +386,11 @@ class LeadStatuses extends BaseModal
         // Default Status is set for Converted, set other statuses now
         if (isset($data['is_converted']) && $data['is_converted'] == '1') {
             self::where(['account_id' => $account_id])->update(['is_converted' => 0]);
+        }
+
+        // Default Status is set for Booked, set other statuses now
+        if (isset($data['is_booked']) && $data['is_booked'] == '1') {
+            self::where(['account_id' => $account_id])->update(['is_booked' => 0]);
         }
 
         // Set Account ID

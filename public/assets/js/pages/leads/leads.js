@@ -499,9 +499,40 @@ function setViewData(response) {
         });
         $("#comment_lead_id").val(lead.id)
         setComments(lead);
+        setServicesHistory(lead);
     } catch (error) {
         showException(error);
     }
+}
+
+function setServicesHistory(lead) {
+    let services = lead?.lead_service;
+    let history_html = '';
+    
+    if (services && services.length > 0) {
+        let index = 1;
+        services.forEach(function(service) {
+            let serviceName = service?.service?.name ?? 'N/A';
+            let treatmentName = service?.childservice?.name ?? 'N/A';
+            let leadStatusName = service?.lead_status?.name ?? 'N/A';
+            let status = service?.status == 1 ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
+            let createdAt = service?.created_at ? formatDate(service.created_at, 'ddd MMM, DD yyyy') : 'N/A';
+            
+            history_html += '<tr>';
+            history_html += '<td>' + index + '</td>';
+            history_html += '<td>' + serviceName + '</td>';
+            history_html += '<td>' + treatmentName + '</td>';
+            history_html += '<td>' + leadStatusName + '</td>';
+            history_html += '<td>' + status + '</td>';
+            history_html += '<td>' + createdAt + '</td>';
+            history_html += '</tr>';
+            index++;
+        });
+    } else {
+        history_html = '<tr><td colspan="6" class="text-center">No services found</td></tr>';
+    }
+    
+    $("#services_history_table").html(history_html);
 }
 
 function viewConvert(url) {
@@ -593,7 +624,7 @@ function commentData(user_name, created_at, comment) {
         '<span class="mt-comment-author" id="creat_by">';
     comment_html += user_name ?? 'N/A';
     comment_html += '</span> <span class="mt-comment-date" id="datetime">';
-     comment_html += formatDate(created_at, 'ddd MMM, mm yyyy HH:mm A');
+     comment_html += formatDate(created_at, 'ddd MMM, DD YYYY hh:mm A');
     comment_html += '</span> </div>' +
         '<div class="mt-comment-text" id="message">';
     comment_html += comment ?? 'N/A';

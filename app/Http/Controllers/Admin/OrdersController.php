@@ -282,33 +282,45 @@ class OrdersController extends Controller
             if (!isset($request->product_id)) {
                 return ApiHelper::apiResponse($this->error, 'Please select any product', false);
             } else {
+                // Use inventory_id if provided (FIFO), otherwise fall back to product_id
+                $inventory_ids = $request['inventory_id'] ?? [];
                 $products = array_combine($request['product_id'], $request['quantity']);
 
-                foreach ($products as $product_id => $quantity) {
-                    if( $quantity <= 0){
-                        return ApiHelper::apiResponse($this->error,'Quantity must be greater than 0', false);
+                foreach ($request['product_id'] as $index => $product_id) {
+                    $quantity = $request['quantity'][$index];
+                    $inventory_id = $inventory_ids[$index] ?? null;
+                    
+                    if ($quantity <= 0) {
+                        return ApiHelper::apiResponse($this->error, 'Quantity must be greater than 0', false);
                     }
-                    $totalQuantity = \DB::table('inventories')
-                    ->where('product_id', $product_id)
-                    ->where('location_id', $request->location_id)
-                    ->sum('quantity');
+                    
+                    if ($inventory_id) {
+                        // FIFO: Check specific inventory entry
+                        $inventory = Inventory::find($inventory_id);
+                        if (!$inventory || $inventory->quantity < $quantity) {
+                            $product_name = $inventory ? $inventory->product->name : 'Product';
+                            return ApiHelper::apiResponse($this->error, $product_name . ' quantity is out of stock for this inventory batch', false);
+                        }
+                    } else {
+                        // Legacy: Check total inventory
+                        $totalQuantity = \DB::table('inventories')
+                            ->where('product_id', $product_id)
+                            ->where('location_id', $request->location_id)
+                            ->sum('quantity');
 
-                // Sold quantity from orders
-                $soldQuantity = \DB::table('order_details')
-                    ->join('orders', 'orders.id', '=', 'order_details.order_id')
-                    ->where('order_details.product_id', $product_id)
-                    ->where('orders.location_id', $request->location_id)
-                    ->sum('order_details.quantity');
+                        $soldQuantity = \DB::table('order_details')
+                            ->join('orders', 'orders.id', '=', 'order_details.order_id')
+                            ->where('order_details.product_id', $product_id)
+                            ->where('orders.location_id', $request->location_id)
+                            ->sum('order_details.quantity');
 
-                // Available quantity
-                    $availableQuantity = $totalQuantity - $soldQuantity;
+                        $availableQuantity = $totalQuantity - $soldQuantity;
 
-                    $product_name = Inventory::where('product_id',$product_id)->where('location_id',$request->location_id)->first();
-                    //dd($product_name);
-                    $quantity_check = Stock::sumProductQuantity($product_id);
+                        $product_name = Inventory::where('product_id', $product_id)->where('location_id', $request->location_id)->first();
 
-                    if ($availableQuantity < $quantity) {
-                        return ApiHelper::apiResponse($this->error, $product_name->name . ' quantity is out of stock', false);
+                        if ($availableQuantity < $quantity) {
+                            return ApiHelper::apiResponse($this->error, $product_name->name . ' quantity is out of stock', false);
+                        }
                     }
                 }
             }

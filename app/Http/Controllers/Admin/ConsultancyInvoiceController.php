@@ -17,11 +17,14 @@ use App\Models\InvoiceDetails;
 use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Leads;
+use App\Models\LeadStatuses;
+use App\Models\LeadsServices;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\PaymentModes;
 use App\Models\Services;
 use App\Models\User;
+use App\Services\MetaConversionApiService;
 use Auth;
 use Config;
 use Illuminate\Http\Request;
@@ -514,8 +517,62 @@ class ConsultancyInvoiceController extends Controller
         // In case of auto change status we need to update by so that s why we did
         $appointment_data_status['updated_by'] = Auth::User()->id;
         $appointmentinfo->update($appointment_data_status);
+        
+        // Set arrived_at timestamp when consultancy invoice is created
+        Appointments::where('id', '=', $request->appointment_id)->update(['arrived_at' => now()]);
+        
         // End
-        Leads::where('patient_id', $appointmentinfo->patient_id)->update(['lead_status_id' => 4]);
+        // Update lead status to Arrived when consultation invoice is created
+        $arrivedLeadStatus = LeadStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        \Log::info('Consultancy Invoice Created - Updating lead status to Arrived', [
+            'patient_id' => $appointmentinfo->patient_id,
+            'appointment_id' => $appointmentinfo->id,
+            'arrived_status_id' => $arrivedLeadStatus ? $arrivedLeadStatus->id : null,
+        ]);
+        if ($arrivedLeadStatus) {
+            $leadRecord = Leads::where('patient_id', $appointmentinfo->patient_id)->orderBy('id', 'desc')->first();
+            Leads::where('patient_id', $appointmentinfo->patient_id)->update(['lead_status_id' => $arrivedLeadStatus->id]);
+            \Log::info('Lead status updated to Arrived', [
+                'patient_id' => $appointmentinfo->patient_id,
+                'lead_id' => $leadRecord ? $leadRecord->id : null,
+                'new_status_id' => $arrivedLeadStatus->id,
+            ]);
+            
+            // Send Meta CAPI event for arrived status
+            if ($leadRecord) {
+                \Log::info('Sending Meta CAPI arrived event', [
+                    'lead_id' => $leadRecord->id,
+                    'phone' => $leadRecord->phone,
+                    'meta_lead_id' => $leadRecord->meta_lead_id,
+                    'email' => $leadRecord->email,
+                ]);
+                try {
+                    $metaService = new MetaConversionApiService();
+                    $metaService->sendLeadStatus(
+                        $leadRecord->phone,
+                        'arrived',
+                        $leadRecord->meta_lead_id,
+                        $leadRecord->email
+                    );
+                    \Log::info('Meta CAPI arrived event sent successfully', [
+                        'lead_id' => $leadRecord->id,
+                    ]);
+                } catch (\Exception $e) {
+                    \Log::error('Meta CAPI arrived event failed: ' . $e->getMessage(), [
+                        'lead_id' => $leadRecord->id,
+                        'exception' => $e->getTraceAsString(),
+                    ]);
+                }
+            }
+            
+            // Also update lead_services
+            if ($appointmentinfo->lead_id) {
+                LeadsServices::where([
+                    'lead_id' => $appointmentinfo->lead_id,
+                    'service_id' => $appointmentinfo->service_id,
+                ])->update(['lead_status_id' => $arrivedLeadStatus->id]);
+            }
+        }
         /////Save activity////
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();
@@ -527,6 +584,7 @@ class ConsultancyInvoiceController extends Controller
         $activity->invoice_id = $invoice->id;
         $activity->amount = $request->price;
         $activity->location = $location->name;
+         $activity->centre_id = $appointmentinfo->location_id;
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();

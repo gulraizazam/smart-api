@@ -15,7 +15,15 @@ var table_columns = [
         width: 'auto',
         sortable: false,
     },
-    
+    {
+        field: 'sale_price',
+        title: 'Sale Price',
+        width: 'auto',
+        sortable: false,
+        template: function (data) {
+            return data.sale_price ? 'Rs. ' + parseFloat(data.sale_price).toFixed(2) : 'N/A';
+        },
+    },
     {
         field: 'centre.name',
         title: 'Centre',

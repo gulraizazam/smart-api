@@ -1,6 +1,39 @@
 
 var table_url = route('admin.permissions.datatable');
 
+// Load parent permissions dropdown on page load
+$(document).ready(function() {
+    loadParentPermissions();
+});
+
+function loadParentPermissions() {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.permissions.parent_groups'),
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response.status && response.data && response.data.parent_groups) {
+                let options = '<option value="">All Parent Groups</option>';
+                let parentGroups = response.data.parent_groups;
+                
+                Object.entries(parentGroups).forEach(function(value) {
+                    if (value[0] !== '' && value[0] !== '0') {
+                        options += '<option value="' + value[0] + '">' + value[1] + '</option>';
+                    }
+                });
+                
+                $("#search_parent_id").html(options);
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.error('Failed to load parent permissions');
+        }
+    });
+}
+
 var table_columns = [
     {
     field: 'id',
@@ -110,7 +143,7 @@ function createPermission($route) {
 function makeCreatePopup(response) {
 
     let permissions = response.data.permissions;
-    let options = '<option value="">Select</option>';
+    let options = '<option value="">Select Parent Group</option>';
 
     Object.entries(permissions).forEach(function(value, index) {
         options += '<option value="'+value[0]+'">'+value[1]+'</option>';
@@ -149,7 +182,7 @@ function makeEditPopup(response) {
     let permission = response.data.permission;
 
     let permissions = response.data.permissions;
-    let options = '<option value="">Select</option>';
+    let options = '<option value="">Select Parent Group</option>';
 
     $("#modal_edit_permission_form").attr("action", route('admin.permissions.update', {id: permission.id}));
 
@@ -174,6 +207,7 @@ function applyFilters(datatable) {
         let filters =  {
             delete: '',
             search: $("#search_search").val(),
+            parent_id: $("#search_parent_id").val(),
             filter: 'filter',
         }
         datatable.search(filters, 'search');
@@ -187,8 +221,10 @@ function resetAllFilters(datatable) {
         let filters =  {
             delete: '',
             search: '',
+            parent_id: '',
             filter: 'filter_cancel',
         }
+        $("#search_parent_id").val('');
         datatable.search(filters, 'search');
     });
 }

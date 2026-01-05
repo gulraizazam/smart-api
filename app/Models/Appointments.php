@@ -21,7 +21,8 @@ class Appointments extends Model
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
-        'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from','deleted_by'
+        'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from','deleted_by',
+        'arrived_at', 'converted_at', 'meta_purchase_sent'
     ];
 
     protected $table = 'appointments';
@@ -40,6 +41,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
+        'arrived_at', 'converted_at', 'meta_purchase_sent',
     ];
 
     /**
@@ -52,6 +54,7 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
+        'arrived_at', 'converted_at', 'meta_purchase_sent',
     ];
 
     protected $attributes = [
@@ -568,7 +571,11 @@ class Appointments extends Model
             ];
         }
         AppointmentsDailyStats::where('appointment_id',$id)->delete();
-        $appointment->whereId($id)->update(['deleted_by' => Auth::id()]);
+        $appointment->whereId($id)->update([
+            'deleted_by' => Auth::id(),
+            'arrived_at' => null,
+            'converted_at' => null
+        ]);
         $appointment->delete();
         Activity::where('appointment_id',$id)->update(['deleted_by'=>Auth::id(),'action'=>'deleted','deleted_date'=>Carbon::now()->format('Y-m-d'),'updated_at'=>Carbon::now()]);
         //log request for delete for audit trail

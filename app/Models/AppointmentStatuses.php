@@ -11,9 +11,9 @@ class AppointmentStatuses extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'sort_no', 'active', 'created_at', 'updated_at', 'deleted_at', 'is_comment', 'is_arrived', 'parent_id', 'account_id', 'allow_message', 'is_default', 'is_cancelled', 'is_unscheduled'];
+    protected $fillable = ['name', 'sort_no', 'active', 'created_at', 'updated_at', 'deleted_at', 'is_comment', 'is_arrived', 'is_converted', 'parent_id', 'account_id', 'allow_message', 'is_default', 'is_cancelled', 'is_unscheduled'];
 
-    protected static $_fillable = ['name', 'active', 'parent_id', 'is_comment', 'allow_message', 'is_default', 'is_arrived', 'is_cancelled', 'is_unscheduled', 'deleted_at'];
+    protected static $_fillable = ['name', 'active', 'parent_id', 'is_comment', 'allow_message', 'is_default', 'is_arrived', 'is_converted', 'is_cancelled', 'is_unscheduled', 'deleted_at'];
 
     protected $table = 'appointment_statuses';
 
@@ -48,7 +48,15 @@ class AppointmentStatuses extends BaseModal
             return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('id', '!=', $exclude_appointment_status_id)->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
         }
 
-        return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])->where('name','!=','Arrived')->OrderBy('sort_no', 'asc')->get()->pluck('name', 'id');
+        return self::where(['active' => 1, 'parent_id' => 0, 'account_id' => $account_id])
+            ->where('name', '!=', 'Arrived')
+            ->where(function($query) {
+                $query->where('is_converted', '!=', 1)
+                      ->orWhereNull('is_converted');
+            })
+            ->OrderBy('sort_no', 'asc')
+            ->get()
+            ->pluck('name', 'id');
     }
 
     /**
@@ -228,7 +236,7 @@ class AppointmentStatuses extends BaseModal
      */
     public static function getAllRecordsDictionary($account_id)
     {
-        return self::where(['account_id' => $account_id])->get()->getDictionary();
+        return self::where(['account_id' => $account_id])->where('active',1)->get()->getDictionary();
     }
 
     /**
@@ -239,7 +247,7 @@ class AppointmentStatuses extends BaseModal
      */
     public static function getAllParentRecords($account_id)
     {
-        return self::where(['account_id' => $account_id, 'parent_id' => 0])->get();
+        return self::where(['account_id' => $account_id, 'parent_id' => 0, 'active' => 1])->get();
     }
 
     /**
@@ -293,6 +301,11 @@ class AppointmentStatuses extends BaseModal
         // Un-Scheduled Status is set, set other statuses now
         if (isset($data['is_unscheduled']) && $data['is_unscheduled'] == '1') {
             self::where(['account_id' => $account_id])->update(['is_unscheduled' => 0]);
+        }
+
+        // Converted Status is set, set other statuses now
+        if (isset($data['is_converted']) && $data['is_converted'] == '1') {
+            self::where(['account_id' => $account_id])->update(['is_converted' => 0]);
         }
 
         $record = self::create($data);
@@ -393,6 +406,11 @@ class AppointmentStatuses extends BaseModal
         // Un-Scheduled Status is set, set other statuses now
         if (isset($data['is_unscheduled']) && $data['is_unscheduled'] == '1') {
             self::where(['account_id' => $account_id])->update(['is_unscheduled' => 0]);
+        }
+
+        // Converted Status is set, set other statuses now
+        if (isset($data['is_converted']) && $data['is_converted'] == '1') {
+            self::where(['account_id' => $account_id])->update(['is_converted' => 0]);
         }
 
         // Set comment as empty if is_comment is not set

@@ -145,6 +145,7 @@ class AppointmentStatusesController extends Controller
         $appointment_statuse->is_arrived = 0;
         $appointment_statuse->is_cancelled = 0;
         $appointment_statuse->is_unscheduled = 0;
+        $appointment_statuse->is_converted = 0;
 
         $parentAppointmentStatuses = AppointmentStatuses::getParentRecords('Parent Group', Auth::User()->account_id, false, true);
 

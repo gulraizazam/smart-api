@@ -166,7 +166,7 @@ class MembershipsController extends Controller
         }
 
         // Check if membership is inactive and expired
-        $isInactiveAndExpired = ($membership->active == 0 && $membership->end_date < now());
+        $isInactiveAndExpired = ($membership->end_date < now());
 
         // Only check for applied services if membership is active or not expired
         if (!$isInactiveAndExpired) {
