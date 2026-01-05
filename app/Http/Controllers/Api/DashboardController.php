@@ -532,17 +532,16 @@ class DashboardController extends Controller
             // 2. Last treatment scheduled_date >= 31 days ago
             // 3. No future treatment appointments scheduled
             // 4. Balance > 500
-            // Optimized: Filter appointments first, then join with balance calculation only for matching patients
             $sql = "
                 SELECT 
                     u.id as patient_id,
                     u.name,
                     apt.last_arrived,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' AND pa.is_cancel = 0 AND pa.is_tax = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_in,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_out
+                    bal.cash_in,
+                    bal.cash_out
                 FROM users u
                 INNER JOIN (
-                    SELECT patient_id, MAX(scheduled_date) as last_arrived, MAX(scheduled_date) as max_scheduled
+                    SELECT patient_id, MAX(scheduled_date) as last_arrived
                     FROM appointments
                     WHERE appointment_type_id = 2
                         AND base_appointment_status_id = 2 
@@ -550,17 +549,23 @@ class DashboardController extends Controller
                     GROUP BY patient_id
                     HAVING MAX(scheduled_date) <= ?
                 ) apt ON u.id = apt.patient_id
-                LEFT JOIN package_advances pa ON u.id = pa.patient_id
+                INNER JOIN (
+                    SELECT 
+                        patient_id,
+                        COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
+                        COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out
+                    FROM package_advances
+                    GROUP BY patient_id
+                    HAVING (cash_in - cash_out) > 500
+                ) bal ON u.id = bal.patient_id
                 WHERE u.user_type_id = 3 AND u.active = 1
                     AND NOT EXISTS (
                         SELECT 1 FROM appointments f 
-                        WHERE f.patient_id = apt.patient_id 
+                        WHERE f.patient_id = u.id 
                         AND f.appointment_type_id = 2
                         AND f.scheduled_date >= ?
                         AND f.location_id IN ({$centerIdsStr})
                     )
-                GROUP BY u.id, u.name, apt.last_arrived
-                HAVING (cash_in - cash_out) > 500
                 ORDER BY apt.last_arrived DESC
                 LIMIT ? OFFSET ?
             ";
