@@ -468,7 +468,7 @@ class DashboardController extends Controller
                 WHERE u.user_type_id = 3 AND u.active = 1
                     AND bal.conversion_date IS NOT NULL
                     AND bal.conversion_date <= ?
-                    AND (bal.cash_in - bal.cash_out) >= 500
+                    AND (bal.cash_in - bal.cash_out) >= 100
                     AND NOT EXISTS (
                         SELECT 1 FROM appointments t 
                         WHERE t.patient_id = u.id 
@@ -531,7 +531,7 @@ class DashboardController extends Controller
             // 1. Treatment appointments (appointment_type_id = 2) that arrived (status = 2)
             // 2. Last treatment scheduled_date >= 31 days ago
             // 3. No future treatment appointments scheduled
-            // 4. Balance > 500
+            // 4. Balance > 100
             $sql = "
                 SELECT 
                     u.id as patient_id,
@@ -556,7 +556,7 @@ class DashboardController extends Controller
                         COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out
                     FROM package_advances
                     GROUP BY patient_id
-                    HAVING (cash_in - cash_out) > 500
+                    HAVING (cash_in - cash_out) > 100
                 ) bal ON u.id = bal.patient_id
                 WHERE u.user_type_id = 3 AND u.active = 1
                     AND NOT EXISTS (
