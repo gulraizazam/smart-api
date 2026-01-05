@@ -419,6 +419,10 @@ class DashboardController extends Controller
 
     /**
      * Get unattended payments with pagination (lazy loading)
+     * Shows patients where:
+     * - First payment is 7+ days old
+     * - No treatment appointment booked
+     * - Balance >= 500 PKR
      */
     public function unattendedPayments(Request $request)
     {
@@ -429,30 +433,43 @@ class DashboardController extends Controller
             
             $centerIds = DashboardHelper::getUserCentres();
             $centerIdsStr = implode(',', array_map('intval', $centerIds));
-            $threeMonthsAgo = Carbon::now()->subMonths(3)->format('Y-m-d');
+            $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
+            $today = Carbon::now()->format('Y-m-d');
             
+            // Get patients with:
+            // 1. Arrived consultation appointment
+            // 2. First payment >= 7 days ago
+            // 3. Balance >= 500
+            // 4. No treatment appointments booked (appointment_type_id = 2)
             $sql = "
                 SELECT 
                     u.id as patient_id,
                     u.name,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' AND pa.is_cancel = 0 AND pa.is_tax = 0 THEN pa.cash_amount ELSE 0 END), 0) -
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 THEN pa.cash_amount ELSE 0 END), 0) as balance,
+                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' AND pa.is_cancel = 0 AND pa.is_tax = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_in,
+                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_out,
                     MIN(CASE WHEN pa.cash_flow = 'in' AND pa.cash_amount > 0 AND pa.is_tax = 0 THEN pa.created_at END) as conversion_date
                 FROM users u
                 INNER JOIN appointments a ON u.id = a.patient_id
                     AND a.appointment_type_id = 1 
                     AND a.base_appointment_status_id = 2 
                     AND a.location_id IN ({$centerIdsStr})
-                    AND a.scheduled_date >= ?
                 LEFT JOIN package_advances pa ON u.id = pa.patient_id
                 WHERE u.user_type_id = 3 AND u.active = 1
+                    AND NOT EXISTS (
+                        SELECT 1 FROM appointments t 
+                        WHERE t.patient_id = u.id 
+                        AND t.appointment_type_id = 2
+                        AND t.location_id IN ({$centerIdsStr})
+                    )
                 GROUP BY u.id, u.name
-                HAVING balance > 0
+                HAVING (cash_in - cash_out) >= 500
+                    AND conversion_date IS NOT NULL
+                    AND conversion_date <= ?
                 ORDER BY conversion_date DESC
                 LIMIT ? OFFSET ?
             ";
 
-            $patients = \DB::select($sql, [$threeMonthsAgo, $perPage + 1, $offset]);
+            $patients = \DB::select($sql, [$sevenDaysAgo, $perPage + 1, $offset]);
             
             $hasMore = count($patients) > $perPage;
             if ($hasMore) array_pop($patients);
@@ -463,7 +480,7 @@ class DashboardController extends Controller
                     'patient_id' => $p->patient_id,
                     'name' => $p->name,
                     'is_treatment' => 0,
-                    'balance' => (float) $p->balance,
+                    'balance' => (float) ($p->cash_in - $p->cash_out),
                     'created_at' => $p->conversion_date ? Carbon::parse($p->conversion_date)->format('Y-m-d') : null,
                 ];
             }
