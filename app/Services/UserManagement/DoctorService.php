@@ -232,7 +232,9 @@ class DoctorService
         $doctor->gender = null;
         $doctor->phone = null;
         
-        $userstype = UserTypes::getUserType_for_Doctor();
+        $userstype = UserTypes::where('account_id', $accountId)
+            ->where('type', 'consultant')
+            ->pluck('name', 'id');
         $userstype->prepend('Select a User Type', '');
         
         $locations = Locations::with('city')
@@ -276,7 +278,9 @@ class DoctorService
             return null;
         }
         
-        $userstype = UserTypes::getUserType_for_Doctor();
+        $userstype = UserTypes::where('account_id', $accountId)
+            ->where('type', 'consultant')
+            ->pluck('name', 'id');
         $userstype->prepend('Select a User Type', '');
         
         $user_has_locations = $doctor->user_has_locations->pluck('location_id');
