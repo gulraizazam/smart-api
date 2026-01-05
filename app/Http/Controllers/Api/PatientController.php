@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Api;
 use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientRequest;
+use App\Models\Documents;
+use App\Models\Patients;
 use App\Services\PatientManagement\PatientService;
 use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Validator;
 
 class PatientController extends Controller
 {
@@ -321,6 +325,432 @@ class PatientController extends Controller
         try {
             $result = $this->patientService->getPatientVouchers($id, $request);
             return response()->json($result);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Upload document for patient (OPTIMIZED API)
+     */
+    public function uploadDocument(int $id, Request $request): JsonResponse
+    {
+        try {
+            \Log::info('uploadDocument called', ['patient_id' => $id, 'has_file' => $request->hasFile('file')]);
+            
+            if (!Gate::allows('patients_document_create')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You are not authorized to access this resource.'
+                ], 403);
+            }
+
+            // Check if file exists first
+            if (!$request->hasFile('file')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'No file was uploaded. Please select a file.'
+                ], 422);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'file' => 'required|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $file = $request->file('file');
+            
+            // Get extension with fallback
+            $ext = $file->getClientOriginalExtension();
+            if (empty($ext)) {
+                $ext = $file->guessExtension() ?: 'bin';
+            }
+            
+            // Generate unique filename
+            $fileName = time() . '_' . uniqid() . '.' . $ext;
+            
+            // Ensure storage directory exists
+            $storagePath = storage_path('app/public/patient_image');
+            if (!file_exists($storagePath)) {
+                mkdir($storagePath, 0755, true);
+            }
+            
+            // Move file directly instead of using storeAs
+            $file->move($storagePath, $fileName);
+            
+            $path = 'patient_image/' . $fileName;
+
+            $document = Documents::create([
+                'name' => $request->name,
+                'url' => $path,
+                'user_id' => $patient->id,
+            ]);
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Document uploaded successfully',
+                'data' => [
+                    'id' => $document->id,
+                    'name' => $document->name,
+                    'url' => $path,
+                ]
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Update document for patient (OPTIMIZED API)
+     */
+    public function updateDocument(int $id, int $documentId, Request $request): JsonResponse
+    {
+        try {
+            if (!Gate::allows('patients_document_edit')) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You are not authorized to access this resource.'
+                ], 403);
+            }
+
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $document = Documents::where('id', $documentId)
+                ->where('user_id', $patient->id)
+                ->first();
+
+            if (!$document) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Document not found'
+                ], 404);
+            }
+
+            // Update name
+            $document->name = $request->name;
+
+            // Handle file upload if new file provided
+            if ($request->hasFile('file')) {
+                $file = $request->file('file');
+                
+                // Get extension with fallback
+                $ext = $file->getClientOriginalExtension();
+                if (empty($ext)) {
+                    $ext = $file->guessExtension() ?: 'bin';
+                }
+                
+                // Generate unique filename
+                $fileName = time() . '_' . uniqid() . '.' . $ext;
+                
+                // Ensure storage directory exists
+                $storagePath = storage_path('app/public/patient_image');
+                if (!file_exists($storagePath)) {
+                    mkdir($storagePath, 0755, true);
+                }
+                
+                // Delete old file if exists
+                $oldFilePath = storage_path('app/public/' . $document->url);
+                if (file_exists($oldFilePath)) {
+                    @unlink($oldFilePath);
+                }
+                
+                // Move new file
+                $file->move($storagePath, $fileName);
+                
+                $document->url = 'patient_image/' . $fileName;
+            }
+
+            $document->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Document updated successfully',
+                'data' => [
+                    'id' => $document->id,
+                    'name' => $document->name,
+                    'url' => $document->url,
+                ]
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Get patient activity history
+     */
+    public function getActivityHistory(int $id): JsonResponse
+    {
+        try {
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $activities = [];
+            
+            // Activity type priorities (lower number = appears first when same timestamp)
+            $typePriority = [
+                'lead_created' => 1,
+                'consultation_booked' => 2,
+                'treatment_booked' => 3,
+                'consultation_arrived' => 4,
+                'treatment_arrived' => 5,
+                'package_created' => 6,
+                'service_added' => 7,
+                'payment_made' => 8,
+                'refund_made' => 9,
+                'invoice_created' => 10,
+            ];
+
+            // 1. Lead Created - from leads table
+            $leads = \DB::table('leads')
+                ->where('patient_id', $id)
+                ->select('id', 'created_at', 'location_id')
+                ->get();
+
+            foreach ($leads as $lead) {
+                $location = \DB::table('locations')
+                    ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+                    ->where('locations.id', $lead->location_id)
+                    ->select('locations.name as location_name', 'cities.name as city_name')
+                    ->first();
+                
+                $locationStr = $location ? ($location->city_name . '-' . $location->location_name) : '';
+                
+                $activities[] = [
+                    'type' => 'lead_created',
+                    'description' => '<span class="highlight-purple">Lead Created</span> for <span class="highlight">' . $patient->name . '</span>' . ($locationStr ? ' at <span class="location">' . $locationStr . '</span>' : ''),
+                    'created_at' => $lead->created_at,
+                ];
+            }
+
+            // 2. Appointments - consultation booked, treatment booked, arrived
+            $appointments = \DB::table('appointments')
+                ->leftJoin('locations', 'appointments.location_id', '=', 'locations.id')
+                ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+                ->leftJoin('appointment_statuses', 'appointments.appointment_status_id', '=', 'appointment_statuses.id')
+                ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
+                ->where('appointments.patient_id', $id)
+                ->select(
+                    'appointments.id',
+                    'appointments.created_at',
+                    'appointments.appointment_status_id',
+                    'appointments.appointment_type_id',
+                    'services.name as service_name',
+                    'locations.name as location_name',
+                    'cities.name as city_name',
+                    'appointment_statuses.name as status_name'
+                )
+                ->get();
+
+            foreach ($appointments as $appt) {
+                $locationStr = ($appt->city_name ?? '') . '-' . ($appt->location_name ?? '');
+                $serviceName = $appt->service_name ?? 'Service';
+                
+                // appointment_type_id = 1 is Consultation, appointment_type_id = 2 is Treatment
+                if ($appt->appointment_type_id == 1) {
+                    // Consultation booked
+                    $activities[] = [
+                        'type' => 'consultation_booked',
+                        'description' => '<span class="highlight-orange">Consultation Booked</span> for <span class="highlight">' . $serviceName . '</span> at <span class="location">' . $locationStr . '</span>',
+                        'created_at' => $appt->created_at,
+                    ];
+                    
+                    // Consultation arrived (status = arrived/completed)
+                    if (in_array($appt->appointment_status_id, [3, 4, 5])) {
+                        $activities[] = [
+                            'type' => 'consultation_arrived',
+                            'description' => '<span class="highlight-green">Consultation Arrived</span> - ' . ($appt->status_name ?? 'Completed') . ' for <span class="highlight-orange">' . $serviceName . '</span> at <span class="location">' . $locationStr . '</span>',
+                            'created_at' => $appt->created_at,
+                        ];
+                    }
+                } else {
+                    // Treatment booked (appointment_type_id = 2)
+                    $activities[] = [
+                        'type' => 'treatment_booked',
+                        'description' => '<span class="highlight">Treatment Booked</span> for <span class="highlight-orange">' . $serviceName . '</span> at <span class="location">' . $locationStr . '</span>',
+                        'created_at' => $appt->created_at,
+                    ];
+                    
+                    // Treatment arrived (status = arrived/completed)
+                    if (in_array($appt->appointment_status_id, [3, 4, 5])) {
+                        $activities[] = [
+                            'type' => 'treatment_arrived',
+                            'description' => '<span class="highlight-green">Treatment Arrived</span> - ' . ($appt->status_name ?? 'Completed') . ' for <span class="highlight-orange">' . $serviceName . '</span> at <span class="location">' . $locationStr . '</span>',
+                            'created_at' => $appt->created_at,
+                        ];
+                    }
+                }
+            }
+
+            // 3. Packages created
+            $packages = \DB::table('packages')
+                ->leftJoin('locations', 'packages.location_id', '=', 'locations.id')
+                ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+                ->where('packages.patient_id', $id)
+                ->select('packages.id', 'packages.name', 'packages.total_price', 'packages.created_at', 'locations.name as location_name', 'cities.name as city_name')
+                ->get();
+
+            foreach ($packages as $pkg) {
+                $locationStr = ($pkg->city_name ?? '') . '-' . ($pkg->location_name ?? '');
+                
+                $activities[] = [
+                    'type' => 'package_created',
+                    'description' => '<span class="highlight">Package Created</span> - <span class="highlight-purple">Plan Id: ' . $pkg->id . '</span> (' . ($pkg->name ?? 'Package') . ') for Rs. ' . number_format($pkg->total_price) . ' at <span class="location">' . $locationStr . '</span>',
+                    'created_at' => $pkg->created_at,
+                ];
+            }
+
+            // 4. Package Services added
+            $packageServices = \DB::table('package_services')
+                ->leftJoin('packages', 'package_services.package_id', '=', 'packages.id')
+                ->leftJoin('services', 'package_services.service_id', '=', 'services.id')
+                ->leftJoin('locations', 'packages.location_id', '=', 'locations.id')
+                ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+                ->where('packages.patient_id', $id)
+                ->select('package_services.id', 'package_services.package_id', 'package_services.created_at', 'services.name as service_name', 'locations.name as location_name', 'cities.name as city_name')
+                ->get();
+
+            foreach ($packageServices as $ps) {
+                $locationStr = ($ps->city_name ?? '') . '-' . ($ps->location_name ?? '');
+                
+                $activities[] = [
+                    'type' => 'service_added',
+                    'description' => '<span class="highlight-orange">Service Added</span> - <span class="highlight">' . ($ps->service_name ?? 'Service') . '</span> to <span class="highlight-purple">Plan Id: ' . $ps->package_id . '</span> at <span class="location">' . $locationStr . '</span>',
+                    'created_at' => $ps->created_at,
+                ];
+            }
+
+            // 5. Package Advances (payments) - only show if amount > 0
+            $payments = \DB::table('package_advances')
+                ->leftJoin('packages', 'package_advances.package_id', '=', 'packages.id')
+                ->leftJoin('locations', 'packages.location_id', '=', 'locations.id')
+                ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+                ->where('packages.patient_id', $id)
+                ->where('package_advances.cash_flow', 'in')
+                ->where('package_advances.is_cancel', 0)
+                ->where('package_advances.cash_amount', '>', 0)
+                ->select('package_advances.id', 'package_advances.package_id', 'package_advances.cash_amount', 'package_advances.created_at', 'locations.name as location_name', 'cities.name as city_name')
+                ->get();
+
+            foreach ($payments as $payment) {
+                $locationStr = ($payment->city_name ?? '') . '-' . ($payment->location_name ?? '');
+                
+                $activities[] = [
+                    'type' => 'payment_made',
+                    'description' => '<span class="highlight-green">Payment Received</span> Rs. ' . number_format($payment->cash_amount) . ' from <span class="highlight">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $payment->package_id . '</span> at <span class="location">' . $locationStr . '</span>',
+                    'created_at' => $payment->created_at,
+                ];
+            }
+
+            // 6. Refunds (package_advances where is_refund = 1)
+            $refunds = \DB::table('package_advances')
+                ->leftJoin('packages', 'package_advances.package_id', '=', 'packages.id')
+                ->leftJoin('locations', 'packages.location_id', '=', 'locations.id')
+                ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+                ->where('packages.patient_id', $id)
+                ->where('package_advances.is_refund', 1)
+                ->where('package_advances.is_cancel', 0)
+                ->where('package_advances.cash_amount', '>', 0)
+                ->select('package_advances.id', 'package_advances.package_id', 'package_advances.cash_amount', 'package_advances.created_at', 'locations.name as location_name', 'cities.name as city_name')
+                ->get();
+
+            foreach ($refunds as $refund) {
+                $locationStr = ($refund->city_name ?? '') . '-' . ($refund->location_name ?? '');
+                
+                $activities[] = [
+                    'type' => 'refund_made',
+                    'description' => '<span class="highlight-orange">Refund Made</span> Rs. ' . number_format($refund->cash_amount) . ' to <span class="highlight">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $refund->package_id . '</span> at <span class="location">' . $locationStr . '</span>',
+                    'created_at' => $refund->created_at,
+                ];
+            }
+
+            // 7. Invoices
+            $invoices = \DB::table('invoices')
+                ->leftJoin('locations', 'invoices.location_id', '=', 'locations.id')
+                ->leftJoin('cities', 'locations.city_id', '=', 'cities.id')
+                ->leftJoin('appointments', 'invoices.appointment_id', '=', 'appointments.id')
+                ->leftJoin('services', 'appointments.service_id', '=', 'services.id')
+                ->where('invoices.patient_id', $id)
+                ->select('invoices.id', 'invoices.total_price', 'invoices.created_at', 'services.name as service_name', 'locations.name as location_name', 'cities.name as city_name')
+                ->get();
+
+            foreach ($invoices as $invoice) {
+                $locationStr = ($invoice->city_name ?? '') . '-' . ($invoice->location_name ?? '');
+                
+                $activities[] = [
+                    'type' => 'invoice_created',
+                    'description' => '<span class="highlight-green">Invoice Created</span> Rs. ' . number_format($invoice->total_price) . ' for <span class="highlight-orange">' . ($invoice->service_name ?? 'Consultation') . '</span> at <span class="location">' . $locationStr . '</span>',
+                    'created_at' => $invoice->created_at,
+                ];
+            }
+
+            // Sort by created_at descending (newest first), then by priority for same timestamp
+            // Timeline displays bottom-to-top, so higher priority number appears first (at bottom)
+            usort($activities, function($a, $b) use ($typePriority) {
+                $timeA = strtotime($a['created_at']);
+                $timeB = strtotime($b['created_at']);
+                
+                if ($timeA != $timeB) {
+                    return $timeB - $timeA; // Newest first
+                }
+                
+                // Same timestamp - sort by priority (higher priority number first for bottom-to-top display)
+                $priorityA = $typePriority[$a['type']] ?? 99;
+                $priorityB = $typePriority[$b['type']] ?? 99;
+                return $priorityB - $priorityA;
+            });
+
+            return response()->json([
+                'status' => true,
+                'data' => $activities
+            ]);
         } catch (Exception $e) {
             return ApiHelper::apiException($e);
         }

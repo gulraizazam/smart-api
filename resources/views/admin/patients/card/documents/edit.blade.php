@@ -37,6 +37,29 @@
                             <input id="edit_document_name" class="form-control" type="text" name="name" placeholder="Enter File Name">
                         </div>
 
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Current File</label>
+                            <div id="current_file_preview" class="border rounded p-3 bg-light">
+                                <div id="image_preview_container" class="text-center mb-2" style="display: none;">
+                                    <a id="current_file_link_img" href="#" target="_blank">
+                                        <img id="current_file_image" src="" alt="Document Preview" class="img-fluid rounded" style="max-height: 200px; max-width: 100%;">
+                                    </a>
+                                </div>
+                                <a id="current_file_link" href="#" target="_blank" class="d-flex align-items-center text-primary">
+                                    <i id="file_icon" class="la la-file-alt fs-2 me-2 mr-2"></i>
+                                    <span id="current_file_name">No file</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Upload New File <span class="text-muted">(Optional - leave empty to keep current file)</span></label>
+                            <div class="custom-file">
+                                <input type="file" name="file" class="custom-file-input" id="edit_document_file" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
+                                <label class="custom-file-label" for="edit_document_file">Choose file</label>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 

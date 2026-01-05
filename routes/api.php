@@ -517,6 +517,11 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         // Optimized datatables for patient preview tabs
         Route::post('{id}/appointments-datatable', [\App\Http\Controllers\Api\PatientController::class, 'appointmentsDatatable'])->name('appointmentsDatatable');
         Route::post('{id}/vouchers-datatable', [\App\Http\Controllers\Api\PatientController::class, 'vouchersDatatable'])->name('vouchersDatatable');
+        // Optimized document upload
+        Route::post('{id}/upload-document', [\App\Http\Controllers\Api\PatientController::class, 'uploadDocument'])->name('uploadDocument');
+        Route::post('{id}/update-document/{documentId}', [\App\Http\Controllers\Api\PatientController::class, 'updateDocument'])->name('updateDocument');
+        // Activity history
+        Route::get('{id}/activity-history', [\App\Http\Controllers\Api\PatientController::class, 'getActivityHistory'])->name('activityHistory');
     });
     Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
     Route::get('customformfeedbackspatient/addnewform/{id}', [PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');

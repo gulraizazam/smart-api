@@ -85,17 +85,6 @@
         </div-->
     @endcan
 
-    @can("patients_finance_manage")
-        <div class="navi-item mb-2">
-            <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'finance-form');" class="change-tab finance-form-tab navi-link py-4">
-                <span class="navi-icon mr-2">
-                     <i class="la la-money"></i>
-                </span>
-                <span class="navi-text">Finances</span>
-            </a>
-        </div>
-    @endcan
-
     @can("patients_invoice_manage")
         <div class="navi-item mb-2">
             <a href="javascript:void(0);"  onclick="changeProfilePage($(this), 'invoice-form');" class="change-tab invoice-form-tab navi-link py-4">
@@ -216,16 +205,6 @@
                     </a>
                 </li-->
             @endcan
-            @can("patients_finance_manage")
-                <li class="horizontal-nav-bar-li">
-                    <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'finance-form');" class="change-tab finance-form-tab navi-link py-4">
-                       <span class="text-muted mb-2 fa_icon">
-                             <i class="la la-money"></i>
-                        </span>
-                        <p class="navi-text">Finances</p>
-                    </a>
-                </li>
-            @endcan
             @can("patients_invoice_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0);"  onclick="changeProfilePage($(this), 'invoice-form');" class="change-tab invoice-form-tab navi-link py-4">
@@ -242,10 +221,18 @@
                         <span class="text-muted mb-2 fa_icon">
                              <i class="la la-eject"></i>
                         </span>
-                        <p class="navi-text">Plans Refunds</p>
+                        <p class="navi-text">Refunds</p>
                     </a>
                 </li>
             @endcan
+            <li class="horizontal-nav-bar-li">
+                <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'history-form');" class="change-tab history-form-tab navi-link py-4">
+                    <span class="text-muted mb-2 fa_icon">
+                         <i class="la la-history"></i>
+                    </span>
+                    <p class="navi-text">Activity Logs</p>
+                </a>
+            </li>
             <!-- @can("patients_refund_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'no-plan-refund-form');" class="change-tab no-plan-refund-form-tab navi-link py-4">
