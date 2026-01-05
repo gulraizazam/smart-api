@@ -1069,7 +1069,7 @@ class GeneralFunctions
                     MIN(location_id) as location_id
                 FROM package_advances
                 GROUP BY patient_id
-                HAVING (cash_in - cash_out) > 500
+                HAVING (cash_in - cash_out) > 100
             ) bal ON u.id = bal.patient_id
             WHERE u.user_type_id = 3 AND u.active = 1
                 AND bal.conversion_date IS NOT NULL
@@ -1142,7 +1142,7 @@ class GeneralFunctions
                     MIN(location_id) as location_id
                 FROM package_advances
                 GROUP BY patient_id
-                HAVING (cash_in - cash_out) > 500
+                HAVING (cash_in - cash_out) > 100
             ) bal ON u.id = bal.patient_id
             WHERE u.user_type_id = 3 AND u.active = 1
                 AND NOT EXISTS (
