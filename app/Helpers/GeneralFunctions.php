@@ -1050,6 +1050,7 @@ class GeneralFunctions
                 bal.cash_in as cash_receive,
                 bal.cash_out as settle_amount_with_tax,
                 bal.conversion_date as created_at,
+                bal.location_id,
                 0 as is_treatment
             FROM users u
             INNER JOIN (
@@ -1064,7 +1065,8 @@ class GeneralFunctions
                     patient_id,
                     COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
                     COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out,
-                    MIN(CASE WHEN cash_flow = 'in' AND cash_amount > 0 AND is_tax = 0 THEN created_at END) as conversion_date
+                    MIN(CASE WHEN cash_flow = 'in' AND cash_amount > 0 AND is_tax = 0 THEN created_at END) as conversion_date,
+                    MIN(location_id) as location_id
                 FROM package_advances
                 GROUP BY patient_id
                 HAVING (cash_in - cash_out) > 500
@@ -1092,6 +1094,7 @@ class GeneralFunctions
                 'cash_receive' => (float) $p->cash_receive,
                 'settle_amount_with_tax' => (float) $p->settle_amount_with_tax,
                 'created_at' => $p->created_at,
+                'location_id' => $p->location_id,
                 'is_treatment' => 0,
             ];
         }
@@ -1119,6 +1122,7 @@ class GeneralFunctions
                 apt.last_arrived as scheduled_date,
                 bal.cash_in as cash_receive,
                 bal.cash_out as settle_amount_with_tax,
+                bal.location_id,
                 1 as is_treatment
             FROM users u
             INNER JOIN (
@@ -1134,7 +1138,8 @@ class GeneralFunctions
                 SELECT 
                     patient_id,
                     COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
-                    COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out
+                    COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out,
+                    MIN(location_id) as location_id
                 FROM package_advances
                 GROUP BY patient_id
                 HAVING (cash_in - cash_out) > 500
@@ -1161,6 +1166,7 @@ class GeneralFunctions
                 'cash_receive' => (float) $p->cash_receive,
                 'settle_amount_with_tax' => (float) $p->settle_amount_with_tax,
                 'scheduled_date' => $p->scheduled_date,
+                'location_id' => $p->location_id,
                 'is_treatment' => 1,
             ];
         }
