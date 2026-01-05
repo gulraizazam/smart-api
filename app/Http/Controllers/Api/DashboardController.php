@@ -435,13 +435,11 @@ class DashboardController extends Controller
             $centerIdsStr = implode(',', array_map('intval', $centerIds));
             $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
             $today = Carbon::now()->format('Y-m-d');
-            $lastMonthStart = Carbon::now()->subMonth()->startOfMonth()->format('Y-m-d');
-            $lastMonthEnd = Carbon::now()->subMonth()->endOfMonth()->format('Y-m-d');
             
             // Get patients with:
-            // 1. Arrived consultation appointment (scheduled in last month)
+            // 1. Arrived consultation appointment
             // 2. First payment >= 7 days ago
-            // 3. Balance >= 100
+            // 3. Balance >= 500
             // 4. No treatment appointments booked (appointment_type_id = 2)
             $sql = "
                 SELECT 
@@ -457,7 +455,6 @@ class DashboardController extends Controller
                     WHERE appointment_type_id = 1 
                         AND base_appointment_status_id = 2 
                         AND location_id IN ({$centerIdsStr})
-                        AND scheduled_date BETWEEN ? AND ?
                 ) apt ON u.id = apt.patient_id
                 INNER JOIN (
                     SELECT 
@@ -471,7 +468,7 @@ class DashboardController extends Controller
                 WHERE u.user_type_id = 3 AND u.active = 1
                     AND bal.conversion_date IS NOT NULL
                     AND bal.conversion_date <= ?
-                    AND (bal.cash_in - bal.cash_out) >= 100
+                    AND (bal.cash_in - bal.cash_out) >= 500
                     AND NOT EXISTS (
                         SELECT 1 FROM appointments t 
                         WHERE t.patient_id = u.id 
@@ -482,7 +479,7 @@ class DashboardController extends Controller
                 LIMIT ? OFFSET ?
             ";
 
-            $patients = \DB::select($sql, [$lastMonthStart, $lastMonthEnd, $sevenDaysAgo, $perPage + 1, $offset]);
+            $patients = \DB::select($sql, [$sevenDaysAgo, $perPage + 1, $offset]);
             
             $hasMore = count($patients) > $perPage;
             if ($hasMore) array_pop($patients);
