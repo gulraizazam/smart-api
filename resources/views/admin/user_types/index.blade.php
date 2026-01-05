@@ -37,7 +37,7 @@
                         <div class="card-toolbar">
 
                             @if(Gate::allows('user_types_create'))
-                                <a href="javascript:void(0);" onclick="createUserType('{{ route('admin.user_types.create') }}');" class="btn btn-primary">
+                                <a href="javascript:void(0);" onclick="createUserType();" class="btn btn-primary">
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>

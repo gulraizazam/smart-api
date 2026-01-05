@@ -159,7 +159,7 @@ return [
         'views'           => true,  // Views with their data
         'route'           => true,  // Current route information
         'auth'            => false, // Display Laravel authentication status
-        'gate'            => true,  // Display Laravel Gate checks
+        'gate'            => false,  // Display Laravel Gate checks (disabled - causes slowdown)
         'session'         => true,  // Display session data
         'symfony_request' => true,  // Only one can be enabled..
         'mail'            => true,  // Catch mail messages
@@ -170,7 +170,7 @@ return [
         'files'           => false, // Show the included files
         'config'          => false, // Display config settings
         'cache'           => false, // Display cache events
-        'models'          => true,  // Display models
+        'models'          => false,  // Display models (disabled - causes slowdown with many queries)
         'livewire'        => true,  // Display Livewire (when available)
     ],
 
@@ -189,7 +189,7 @@ return [
         ],
         'db' => [
             'with_params'       => true,   // Render SQL with the parameters substituted
-            'backtrace'         => true,   // Use a backtrace to find the origin of the query in your files.
+            'backtrace'         => false,   // Use a backtrace to find the origin of the query in your files.
             'backtrace_exclude_paths' => [],   // Paths to exclude from backtrace. (in addition to defaults)
             'timeline'          => false,  // Add the queries to the timeline
             'duration_background'  => true,   // Show shaded background on each query relative to how long it took to execute.

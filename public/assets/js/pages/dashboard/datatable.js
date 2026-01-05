@@ -232,14 +232,13 @@ function changeDate() {
     var period = $("#recordfilter").val();
     $('.date_action_dropdown').find('select').val(period).trigger('change');
     $.ajax({
-        url: route('admin.home.getstats'),
+        url: '/api/dashboard/stats',
         type: "GET",
         data: { 'type': period },
         cache: false,
         success: function (response) {
             var collection = response.data.todaycollection;
             var sales = response.data.revenue.toFixed();
-            let locationId = "<?php implode(',', " + response.data.location_id + "); ?>";
             let urlconsultant = route('admin.consultancy.index') + "?type=1&from=" + response.data.start_date + "&to=" + response.data.end_date;
             let urltreatment = route('admin.treatment.index') + "?type=2&from=" + response.data.start_date + "&to=" + response.data.end_date;
             $("#allrevenue").text('PKR: ' + sales);

@@ -110,10 +110,18 @@ class FinanceReportController extends Controller
         $start_date = $request->query('start_date'); // e.g. '2025-05-20'
         $end_date = $request->query('end_date'); // e.g. '2025-05-21'
         $locationId = $request->location_id;
+
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
         $query = DB::table('appointments')
             ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
             ->where('appointments.appointment_type_id', 2)
-            ->where('appointments.appointment_status_id', 2)
+            ->whereIn('appointments.appointment_status_id', $statusIds)
 
             ->where('appointments.service_id', $service_id);
             if ($start_date && $end_date) {
@@ -2325,11 +2333,18 @@ public function serviceSoldreport(Request $request)
     $isAllCentres = ($request->location_id[0] == null); // All Centres selected
     $serviceId = $request->service_id;
 
+    // Get arrived and converted appointment status IDs
+    $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+    $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+    $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+    $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+    $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
     // Build query
     $soldServicesQuery = DB::table('appointments')
         ->join('invoices', 'invoices.appointment_id', '=', 'appointments.id')
         ->where('appointments.appointment_type_id', 2)
-        ->where('appointments.appointment_status_id', 2)
+        ->whereIn('appointments.appointment_status_id', $statusIds)
         ->when(!$isAllCentres, function ($query) use ($locationId) {
             return $query->whereIn('appointments.location_id', $locationId);
         })
@@ -3100,7 +3115,19 @@ public static function revenueByGenderAndService($request)
         $Appointments = $resultQuery->select('*', 'appointments.name as patient_name', 'appointments.id as app_id', 'appointments.created_by as app_created_by', 'appointments.updated_by as app_updated_by', 'appointments.created_at as app_created_at')
             ->orderBy('appointments.created_at', 'DESC')
             ->get();
-        $arrived = $resultQuery->where(['base_appointment_status_id' => 2])->count();
+
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
+        $arrived = Appointments::whereIn('appointments.location_id', ACL::getUserCentres())
+            ->whereIn('base_appointment_status_id', $statusIds)
+            ->when($request->date_from, fn($q) => $q->where('scheduled_date', '>=', $request->date_from))
+            ->when($request->date_to, fn($q) => $q->where('scheduled_date', '<=', $request->date_to))
+            ->count();
 
         return view('admin.reports.daily_arrived', get_defined_vars());
     }
@@ -3162,7 +3189,23 @@ public static function revenueByGenderAndService($request)
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->get();
 
-        $arrived = $resultQuery->where(['appointment_status_id' => 2])->count();
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
+
+        // Count arrived with OR condition for arrived/converted status
+        $arrivedQuery = AppointmentsDailyStats::whereIn('centre_id', $locations)
+            ->whereBetween('scheduled_date', [$start_date, $end_date]);
+        if (count($where)) {
+            $arrivedQuery->where($where);
+        }
+        if ($convertedStatusId) {
+            $arrived = $arrivedQuery->whereIn('appointment_status_id', [$arrivedStatusId, $convertedStatusId])->count();
+        } else {
+            $arrived = $arrivedQuery->where('appointment_status_id', $arrivedStatusId)->count();
+        }
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
         $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
 
@@ -3283,11 +3326,19 @@ public static function revenueByGenderAndService($request)
 
         $centerId = $request->input('centre_id');
         $createdBy = $request->input('created_by');
+
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
         $appointments = Appointments::with(['patient','location','user', 'hasInvoices' => function ($query) {
             $query->orderBy('created_at', 'asc'); // Order invoices by creation time
         }])
             ->where('appointment_type_id', 1)
-            ->where('appointment_status_id', 2)
+            ->whereIn('appointment_status_id', $statusIds)
             ->whereHas('hasInvoices', function ($query) use ($timeInterval) {
                 $query->havingRaw('TIMESTAMPDIFF(MINUTE, appointments.created_at, MIN(invoices.created_at)) <= ?', [$timeInterval]);
             })

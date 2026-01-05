@@ -1772,12 +1772,14 @@ class OperationsReportController extends Controller
 
     public function reportLoadConverted(Request $request)
     {
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
+        $statusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
         $where = [];
-        $where[] = [
-            'appointments.appointment_status_id',
-            '=',
-            2,
-        ];
         $where[] = [
             'appointments.appointment_type_id',
             '=',
@@ -1821,6 +1823,7 @@ class OperationsReportController extends Controller
                     $join->where('package_advances.cash_flow', '=', 'in');
                 })
                 ->where($where)
+                ->whereIn('appointments.appointment_status_id', $statusIds)
                 ->whereBetween('appointments.scheduled_date', [$start_date, $end_date])
                 ->groupBy('users.id')
                 ->havingRaw('cash_amount_test < 1')

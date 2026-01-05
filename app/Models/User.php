@@ -242,129 +242,11 @@ class User extends Authenticatable
         return self::where('account_id', '=', Auth::User()->account_id)->whereNull('resource_type_id')->pluck('name', 'id');
     }
 
-    /*
-     * Get the users with  name & id
-     */
-    public static function getUsersleadReport()
-    {
-        return self::where('account_id', '=', Auth::User()->account_id)->whereIn('user_type_id', [Config::get('constants.administrator_id'), Config::get('constants.application_user_id'), Config::get('constants.practitioner_id')])->pluck('name', 'id');
-    }
-
-    public static function getUsersWithTypeReport()
-    {
-        $allUsersObject = self::where('account_id', '=', Auth::User()->account_id)->whereIn('user_type_id', [Config::get('constants.administrator_id'), Config::get('constants.application_user_id'), Config::get('constants.practitioner_id')])->select('name', 'id', 'user_type_id')->get();
-        $allUsersWithTypes = [];
-        $allUsersWithTypes['doctor'][''] = 'Select Practitioner';
-        $allUsersWithTypes['app_user'][''] = 'Select App user';
-        foreach ($allUsersObject as $user) {
-            //-------------------------- Both Admin & Application User ----------------------------------------
-            if ($user->user_type_id == 1 || $user->user_type_id == 2) {
-                $allUsersWithTypes['app_user'][$user->id] = $user->name;
-            }
-            //-------------------------- Doctors / Practitioner User ----------------------------------------
-            if ($user->user_type_id == 5) {
-                $allUsersWithTypes['doctor'][$user->id] = $user->name;
-            }
-        }
-
-        return $allUsersWithTypes;
-    }
-
     /**
-     * Create Record
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function createRecord($data)
-    {
-
-        $record = self::create($data);
-
-        AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
-
-        return $record;
-    }
-
-    /**
-     * update Record
-     *
-     * @param data
-     * @return (mixed)
-     */
-    public static function updateRecord($data, $id)
-    {
-
-        $old_data = (User::find($id)->makeVisible(['password']))->toArray();
-
-        $record = User::findOrFail($id);
-
-        $record->update($data);
-
-        AuditTrails::editEventLogger(self::$_table, 'Edit', $data, self::$_fillable, $old_data, $id);
-
-        return $record;
-    }
-
-    /**
-     * delete Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function deleteRecord($id)
-    {
-
-        $user = User::getData($id);
-
-        if ($user == null) {
-            return view('error_full');
-        } else {
-
-            $record = $user->delete();
-
-            AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-            session()->flash('success', 'Record has been deleted successfully.');
-
-            return $record;
-        }
-    }
-
-    /**
-     * delete Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function deleteRecord1($id)
-    {
-
-        $doctor = User::getData($id);
-
-        if (!$doctor) {
-            return collect(['status' => false, 'message' => 'Resource not found.']);
-        }
-
-        // Check if child records exists or not, If exist then disallow to delete it.
-        if (User::isExists($id, Auth::User()->account_id)) {
-            return collect(['status' => false, 'message' => 'Child records exist, unable to delete resource']);
-        }
-
-        $record = $doctor->delete();
-
-        //log request for delete for audit trail
-
-        AuditTrails::deleteEventLogger(self::$_table, 'delete', self::$_fillable, $id);
-
-        return collect(['status' => true, 'message' => 'Record has been deleted successfully.']);
-    }
-
-    /**
-     * isExit
+     * Check if user has child records (appointments, locations)
      *
      * @param id, account id
-     * @return (mixed)
+     * @return bool
      */
     public static function isExists($id, $account_id)
     {
@@ -379,57 +261,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Inactive Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function inactiveRecord($id)
-    {
-
-        $user = User::getData($id);
-        if ($user == null) {
-            return view('error_full');
-        } else {
-
-            $record = $user->update(['active' => 0]);
-
-            session()->flash('success', 'Record has been inactivated successfully.');
-
-            AuditTrails::InactiveEventLogger(self::$_table, 'inactive', self::$_fillable, $id);
-
-            return $record;
-        }
-    }
-
-    /**
-     * Active Record
-     *
-     * @param id
-     * @return (mixed)
-     */
-    public static function activeRecord($id, $status)
-    {
-
-        $user = User::getData($id);
-
-        if ($user == null) {
-            session()->flash('error', 'Resource not found.');
-
-            return false;
-        } else {
-            $record = $user->update(['active' => $status]);
-
-            session()->flash('success', 'Record has been activated successfully.');
-
-            AuditTrails::activeEventLogger(self::$_table, 'active', self::$_fillable, $id);
-
-            return $record;
-        }
-    }
-
-    /**
      * Get patients
+     * @deprecated Move to PatientService when optimizing Patients module
      *
      * @return (mixed)
      */
@@ -442,32 +275,14 @@ class User extends Authenticatable
         ])->get();
     }
 
-    /*
-    * Get Bulk Data
-    *
-    * @param (int)|(array) $id
-    *
-    * @return (mixed)
-    */
-    public static function getBulkData($id)
-    {
-        if (!is_array($id)) {
-            $id = [$id];
-        }
-
-        return self::where([
-            ['account_id', '=', Auth::User()->account_id],
-        ])->whereIn('id', $id)
-            ->get();
-    }
-
-    /*
+    /**
      * Find user for patient profile and checkout account id
+     * @deprecated Move to PatientService when optimizing Patients module
      *
      * @param id
      *
      * @return patient
-     * */
+     */
     public static function finduser($id)
     {
         return self::where([
@@ -478,6 +293,7 @@ class User extends Authenticatable
 
     /**
      * Get All Records
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -488,7 +304,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Get All Records
+     * Get All Patient Records
+     * @deprecated Move to PatientService when optimizing Patients module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -509,6 +326,7 @@ class User extends Authenticatable
 
     /**
      * Get All Active Records
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -535,6 +353,7 @@ class User extends Authenticatable
 
     /**
      * Get All Active Records for employee
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -562,7 +381,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Get All Active Records for practionars
+     * Get All Active Records for practitioners
+     * @deprecated Move to DoctorService when optimizing Doctors module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -590,7 +410,8 @@ class User extends Authenticatable
     }
 
     /**
-     * Get All Active Records
+     * Get All System Users Active Records
+     * @deprecated Move to appropriate service when optimizing related module
      *
      * @param  (int)  $account_id Current Organization's ID
      * @return (mixed)
@@ -602,6 +423,7 @@ class User extends Authenticatable
 
     /**
      * Get active and sorted data only.
+     * @deprecated Move to appropriate service when optimizing related module
      */
     public static function getActiveOnly($locationId = false, $account_id = false, $user_id = false, $pluck_columns = true)
     {

@@ -743,7 +743,7 @@ class Operations
 
             $locationData[$appointment->location->name]['consultantbooked'] = count($count[$appointment->location->id]);
 
-            if ($appointment->appointment_type->slug == 'consultancy' && $appointment->appointment_status->is_arrived == '1') {
+            if ($appointment->appointment_type->slug == 'consultancy' && ($appointment->appointment_status->is_arrived == '1' || $appointment->appointment_status->is_converted == '1')) {
                 $arrived_count[$appointment->location->id][] = 1;
                 $locationData[$appointment->location->name]['consultantarrived'] = count($arrived_count[$appointment->location->id]);
                 $locationData[$appointment->location->name]['walking'] = isset($walkinAppointment[$appointment->location_id]) ? $walkinAppointment[$appointment->location_id] : 0;
@@ -890,7 +890,7 @@ class Operations
 
             $locationData[$appointment->location->name]['consultantbooked'] = count($count[$appointment->location->id]);
 
-            if ($appointment->appointment_type->slug == 'consultancy' && $appointment->appointment_status->is_arrived == '1') {
+            if ($appointment->appointment_type->slug == 'consultancy' && ($appointment->appointment_status->is_arrived == '1' || $appointment->appointment_status->is_converted == '1')) {
                 $arrived_count[$appointment->location->id][] = 1;
                 $locationData[$appointment->location->name]['consultantarrived'] = count($arrived_count[$appointment->location->id]);
             }

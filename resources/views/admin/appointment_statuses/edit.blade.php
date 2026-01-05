@@ -85,6 +85,15 @@
                             </div>
                         </div>
                     </div>
+                    <div class="row mt-5 not-have-parent">
+                        <div class="fv-row col-md-6">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Default Status for Converted Appointments?</label>
+                            <div class="radio-inline">
+                                <label class="radio"><input name="is_converted" value="1" type="radio"/><span></span>Yes</label>
+                                <label class="radio"><input name="is_converted" value="0" checked type="radio"><span></span>No</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
             <!--end::Scroll-->

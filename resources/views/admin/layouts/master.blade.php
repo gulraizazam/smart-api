@@ -130,6 +130,9 @@
     <script src="{{ asset('assets/plugins/custom/prismjs/prismjs.bundle.js') }}"></script>
     <script src="{{ asset('assets/js/scripts.bundle.js') }}"></script>
     <!--end::Global Theme Bundle-->
+    <!--begin::ApexCharts Latest (overrides bundled v3.25.0)-->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts@3.45.1/dist/apexcharts.min.js"></script>
+    <!--end::ApexCharts Latest-->
     <script src="{{ asset('assets/js/pages/features/custom/spinners.js') }}"></script>
     <script src="{{ asset('assets/js/pages/widgets.js') }}"></script>
     <script>
