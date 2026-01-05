@@ -446,7 +446,7 @@ class DashboardController extends Controller
                     u.id as patient_id,
                     u.name,
                     COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' AND pa.is_cancel = 0 AND pa.is_tax = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_in,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_out,
+                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 AND pa.is_tax = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_out,
                     MIN(CASE WHEN pa.cash_flow = 'in' AND pa.cash_amount > 0 AND pa.is_tax = 0 THEN pa.created_at END) as conversion_date
                 FROM users u
                 INNER JOIN appointments a ON u.id = a.patient_id
@@ -528,7 +528,7 @@ class DashboardController extends Controller
                     u.name,
                     MAX(a.scheduled_date) as last_arrived,
                     COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' AND pa.is_cancel = 0 AND pa.is_tax = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_in,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_out
+                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 AND pa.is_tax = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_out
                 FROM users u
                 INNER JOIN appointments a ON u.id = a.patient_id
                     AND a.appointment_type_id = 2
