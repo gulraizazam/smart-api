@@ -22,7 +22,7 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="user_type_add_form" method="post" action="">
+        <form id="user_type_add_form" method="post" action="/api/user_types" data-api="true">
             <!--begin::Scroll-->
             @csrf
 
@@ -32,14 +32,13 @@
                     <div class="row">
                         <div class="fv-row col-md-6">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Name</label>
-                            <input id="user_type_add_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2">
+                            <input id="user_type_add_name" type="text" name="name" class="form-control form-control-lg form-control-solid mb-2" required>
                         </div>
 
-
                         <div class="fv-row col-md-6">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Type </label>
-                            <select id="user_type_add_field" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type">
-
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Type</label>
+                            <select id="user_type_add_field" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="type" required>
+                                <option value="">Select</option>
                             </select>
                         </div>
                     </div>

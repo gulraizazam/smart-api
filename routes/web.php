@@ -229,10 +229,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // Application Users - using API controller for all routes
         Route::get('users', [ApplicationUserController::class, 'index'])->name('users.index')->middleware('permission:users_manage');
 
-        Route::post('user_types/datatable', [UserTypesController::class, 'datatable'])->name('user_types.datatable');
-        Route::patch('user_types/active/{id}', [UserTypesController::class, 'active'])->name('user_types.active');
-        Route::patch('user_types/inactive/{id}', [UserTypesController::class, 'inactive'])->name('user_types.inactive');
-        Route::resource('user_types', UserTypesController::class)->middleware('permission:user_types_manage');
+        // User Types - using API controller for all routes except index view
+        Route::get('user_types', [UserTypesController::class, 'index'])->name('user_types.index')->middleware('permission:user_types_manage');
         // User Operator Settings
         Route::get('user_operator_settings', [UserOperatorSettingsController::class, 'index'])->name('user_operator_settings.index');
 
