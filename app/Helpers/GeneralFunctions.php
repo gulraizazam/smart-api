@@ -1028,6 +1028,9 @@ class GeneralFunctions
     public static function PatientFollowUpReport($data, $where)
     {
         $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
+        $centerIdsStr = implode(',', array_map('intval', $center_id));
+        $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
+        $today = Carbon::now()->format('Y-m-d');
         
         // Get arrived and converted appointment status IDs
         $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
@@ -1035,236 +1038,133 @@ class GeneralFunctions
         $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
         $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
         $statusCondition = $convertedStatusId 
-            ? "appointment.base_appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
-            : "appointment.base_appointment_status_id = {$arrivedStatusId}";
+            ? "base_appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
+            : "base_appointment_status_id = {$arrivedStatusId}";
 
-        $appointments = Appointments::select('appointments.id', 'appointments.patient_id')
-            ->join(DB::raw('(
-                SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
-                FROM appointments appointment
-                WHERE appointment.appointment_type_id = 1
-                    AND ' . $statusCondition . '
-                    AND appointment.location_id IN (' . implode(',', $center_id) . ')
+        // Optimized single query approach - patients with NO treatment appointments
+        $sqlNoTreatment = "
+            SELECT 
+                u.id as patient_id,
+                u.name,
+                u.phone,
+                bal.cash_in as cash_receive,
+                bal.cash_out as settle_amount_with_tax,
+                bal.conversion_date as created_at,
+                0 as is_treatment
+            FROM users u
+            INNER JOIN (
+                SELECT DISTINCT patient_id
+                FROM appointments
+                WHERE appointment_type_id = 1 
+                    AND {$statusCondition}
+                    AND location_id IN ({$centerIdsStr})
+            ) apt ON u.id = apt.patient_id
+            INNER JOIN (
+                SELECT 
+                    patient_id,
+                    COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
+                    COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out,
+                    MIN(CASE WHEN cash_flow = 'in' AND cash_amount > 0 AND is_tax = 0 THEN created_at END) as conversion_date
+                FROM package_advances
+                GROUP BY patient_id
+                HAVING (cash_in - cash_out) > 500
+            ) bal ON u.id = bal.patient_id
+            WHERE u.user_type_id = 3 AND u.active = 1
+                AND bal.conversion_date IS NOT NULL
+                AND bal.conversion_date <= ?
+                AND NOT EXISTS (
+                    SELECT 1 FROM appointments t 
+                    WHERE t.patient_id = u.id 
+                    AND t.appointment_type_id = 2
+                    AND t.location_id IN ({$centerIdsStr})
+                )
+            ORDER BY bal.conversion_date DESC
+        ";
 
-                GROUP BY appointment.patient_id
-            ) latest_appointments'), function ($join) {
-                $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
-                    ->on('appointments.created_at', '=', 'latest_appointments.created_at');
-            })
-            ->orderByDesc('appointments.id')
-            ->pluck('patient_id');
-
-
-        $cashReceivedAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
-            ->where([
-                'cash_flow' => 'in',
-                'is_cancel' => '0',
-                'is_tax' => '0',
-                'is_adjustment' => '0',
-                'is_refund' => '0',
-            ])
-            ->whereIn('patient_id', $appointments)
-            ->groupBy('patient_id')
-            ->pluck('cash_receive', 'patient_id');
-
-        $settleAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
-            ->where([
-                'cash_flow' => 'out',
-                'is_cancel' => '0',
-                'is_tax' => '0',
-                'is_adjustment' => '0',
-
-            ])
-            ->whereIn('patient_id', $appointments)
-            ->groupBy('patient_id')
-            ->pluck('settle_amount', 'patient_id');
-
-        $settleTaxAmounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
-            ->where([
-                'cash_flow' => 'out',
-                'is_cancel' => '0',
-                'is_tax' => '1',
-                'is_adjustment' => '0',
-
-            ])
-            ->whereIn('patient_id', $appointments)
-            ->groupBy('patient_id')
-            ->pluck('settle_tax_amount', 'patient_id');
-
-        $plans_check = PackageAdvances::select('package_advances.id', 'package_advances.patient_id', 'package_advances.created_at', 'package_advances.location_id')
-            ->whereIn('package_advances.patient_id', $appointments)
-            ->whereIn('package_advances.location_id', $center_id)
-            ->where($where)
-            ->groupBy('package_advances.patient_id')
-            ->orderBy('package_advances.patient_id', 'DESC')
-            ->get();
-        $plans_check = $plans_check->map(function ($item) use ($cashReceivedAmounts, $settleAmounts, $settleTaxAmounts) {
-            $item->cash_receive = $cashReceivedAmounts[$item->patient_id] ?? null;
-            $item->settle_amount = $settleAmounts[$item->patient_id] ?? null;
-            $item->settle_tax_amount = $settleTaxAmounts[$item->patient_id] ?? null;
-            return $item;
-        });
-
-        $not_treatment = [];
-        $is_treatment = [];
+        $patientsNoTreatment = DB::select($sqlNoTreatment, [$sevenDaysAgo]);
+        
         $patient_data = [];
-        $plan_check_no_treatment = collect($plans_check)->where('cash_receive', '>', 0)
-            ->where('created_at', '<', Carbon::now()->subDays(7))
-            ->pluck('patient_id')->toArray();
-        foreach ($plans_check as $data) {
-            $treatments = Appointments::where([
-                'appointment_type_id' => Config::get('constants.appointment_type_service'),
-                'patient_id' => $data['patient_id'],
-            ])
-                ->whereIn('location_id', ACL::getUserCentres())
-                ->get();
-
-            $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
-            $data['patient_id'] = $patient->id;
-            $data['name'] = $patient->name;
-            $data['phone'] = $patient->phone;
-            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
-            if (count($treatments) > 0) {
-                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
-                $check_treatments = collect($treatments)->sortByDesc('id')->first();
-                $future_treatments = collect($treatments)->Where('scheduled_date', '>', Carbon::now()->format('Y-m-d'));
-                if (!$has_treatment_with_status_2 && $check_treatments->scheduled_date <= Carbon::now()->subDays(1)->format('Y-m-d') && $future_treatments->isEmpty() && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
-                    $data['is_treatment'] = 1;
-                    array_push($is_treatment, $data);
-                }
-            } else {
-                if (in_array($data['patient_id'], $plan_check_no_treatment) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
-                    $data['is_treatment'] = 0;
-                    array_push($not_treatment, $data);
-                }
-            }
+        foreach ($patientsNoTreatment as $p) {
+            $patient_data[] = [
+                'patient_id' => $p->patient_id,
+                'name' => $p->name,
+                'phone' => $p->phone,
+                'cash_receive' => (float) $p->cash_receive,
+                'settle_amount_with_tax' => (float) $p->settle_amount_with_tax,
+                'created_at' => $p->created_at,
+                'is_treatment' => 0,
+            ];
         }
-        $patient_data = array_merge($is_treatment, $not_treatment);
-        usort($patient_data, function ($a, $b) {
-            return strtotime($b['created_at']) - strtotime($a['created_at']);
-        });
+
         return $patient_data;
     }
     public static function LoadPatientFollowUpReportMonthly($data, $where)
     {
-
         $center_id = $data['location_id'] ? [$data['location_id']] : ACL::getUserCentres();
+        $centerIdsStr = implode(',', array_map('intval', $center_id));
+        $thirtyOneDaysAgo = Carbon::now()->subDays(31)->format('Y-m-d');
+        $today = Carbon::now()->format('Y-m-d');
+
+        // Optimized single query approach - patients with overdue treatments
+        // Criteria:
+        // 1. Has treatment appointments (appointment_type_id = 2) that arrived (status = 2)
+        // 2. Last treatment >= 31 days ago
+        // 3. No future treatments scheduled
+        // 4. Balance > 500
+        $sql = "
+            SELECT 
+                u.id as patient_id,
+                u.name,
+                u.phone,
+                apt.last_arrived as scheduled_date,
+                bal.cash_in as cash_receive,
+                bal.cash_out as settle_amount_with_tax,
+                1 as is_treatment
+            FROM users u
+            INNER JOIN (
+                SELECT patient_id, MAX(scheduled_date) as last_arrived
+                FROM appointments
+                WHERE appointment_type_id = 2
+                    AND base_appointment_status_id = 2 
+                    AND location_id IN ({$centerIdsStr})
+                GROUP BY patient_id
+                HAVING MAX(scheduled_date) <= ?
+            ) apt ON u.id = apt.patient_id
+            INNER JOIN (
+                SELECT 
+                    patient_id,
+                    COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
+                    COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out
+                FROM package_advances
+                GROUP BY patient_id
+                HAVING (cash_in - cash_out) > 500
+            ) bal ON u.id = bal.patient_id
+            WHERE u.user_type_id = 3 AND u.active = 1
+                AND NOT EXISTS (
+                    SELECT 1 FROM appointments f 
+                    WHERE f.patient_id = u.id 
+                    AND f.appointment_type_id = 2
+                    AND f.scheduled_date >= ?
+                    AND f.location_id IN ({$centerIdsStr})
+                )
+            ORDER BY apt.last_arrived DESC
+        ";
+
+        $patients = DB::select($sql, [$thirtyOneDaysAgo, $today]);
         
-        // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
-        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : null;
-        $statusCondition = $convertedStatusId 
-            ? "appointment.base_appointment_status_id IN ({$arrivedStatusId}, {$convertedStatusId})"
-            : "appointment.base_appointment_status_id = {$arrivedStatusId}";
-
-        $patient_ids = Appointments::select('appointments.id', 'appointments.patient_id')
-            ->join(DB::raw('(
-                SELECT appointment.patient_id, MAX(appointment.created_at) AS created_at
-                FROM appointments appointment
-                WHERE appointment.appointment_type_id = 1
-                    AND ' . $statusCondition . '
-                    AND appointment.location_id IN (' . implode(',', $center_id) . ')
-                GROUP BY appointment.patient_id
-            ) latest_appointments'), function ($join) {
-                $join->on('appointments.patient_id', '=', 'latest_appointments.patient_id')
-                    ->on('appointments.created_at', '=', 'latest_appointments.created_at');
-            })
-            ->orderByDesc('appointments.id')
-            ->pluck('patient_id');
-
-        $cash_received_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS cash_receive'))
-            ->where([
-                'cash_flow' => 'in',
-                'is_cancel' => '0',
-                'is_tax' => '0',
-                'is_adjustment' => '0',
-                'is_refund' => '0',
-            ])
-            ->whereIn('patient_id', $patient_ids)
-            ->whereIn('location_id', $center_id)
-            ->groupBy('patient_id')
-            ->pluck('cash_receive', 'patient_id');
-
-        $settle_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_amount'))
-            ->where([
-                'cash_flow' => 'out',
-                'is_cancel' => '0',
-                'is_tax' => '0',
-                'is_adjustment' => '0',
-            ])
-            ->whereIn('patient_id', $patient_ids)
-            ->whereIn('location_id', $center_id)
-            ->groupBy('patient_id')
-            ->pluck('settle_amount', 'patient_id');
-
-        $settle_tax_amounts = PackageAdvances::select('patient_id', DB::raw('SUM(cash_amount) AS settle_tax_amount'))
-            ->where([
-                'cash_flow' => 'out',
-                'is_cancel' => '0',
-                'is_tax' => '1',
-                'is_adjustment' => '0',
-            ])
-            ->whereIn('patient_id', $patient_ids)
-            ->whereIn('location_id', $center_id)
-            ->groupBy('patient_id')
-            ->pluck('settle_tax_amount', 'patient_id');
-
-        $plans_check = PackageAdvances::select('id', 'patient_id', 'created_at', 'location_id')
-            ->whereIn('patient_id', $patient_ids)
-            ->whereIn('location_id', $center_id)
-            ->where($where)
-            ->groupBy('patient_id')
-            ->orderBy('patient_id', 'DESC')
-            ->get();
-        $plans_check = $plans_check->map(function ($item) use ($cash_received_amounts, $settle_amounts, $settle_tax_amounts) {
-            $item->cash_receive = $cash_received_amounts[$item->patient_id] ?? null;
-            $item->settle_amount = $settle_amounts[$item->patient_id] ?? null;
-            $item->settle_tax_amount = $settle_tax_amounts[$item->patient_id] ?? null;
-            return $item;
-        });
         $patient_data = [];
-        $plan_check_amount = collect($plans_check)->where('cash_receive', '>', 0)
-            ->where('created_at', '<', Carbon::now()->subDays(7))->pluck('patient_id')->toArray();
-
-        foreach ($plans_check as $data) {
-            $treatments = Appointments::where([
-                'appointment_type_id' => Config::get('constants.appointment_type_service'),
-                'patient_id' => $data['patient_id'],
-            ])
-                ->whereIn('location_id', $center_id)
-                ->get();
-
-            $patient = Patients::where(['id' => $data['patient_id'], 'user_type_id' => 3, 'active' => 1])->first();
-            $data['patient_id'] = $patient->id;
-            $data['name'] = $patient->name;
-            $data['phone'] = $patient->phone;
-
-            $data['settle_amount_with_tax'] = $data['settle_amount'] + $data['settle_tax_amount'];
-
-            if (count($treatments) > 0) {
-                $has_treatment_with_status_2 = collect($treatments)->contains('base_appointment_status_id', 2);
-                $check_treatments = collect($treatments)->sortByDesc('id')->first();
-                $future_treatments = Appointments::where([
-                    'appointment_type_id' => Config::get('constants.appointment_type_service'),
-                    'patient_id' => $data['patient_id'],
-                ])
-                    ->whereIn('location_id', $center_id)
-                    ->Where('scheduled_date', '>=', Carbon::now()->format('Y-m-d'))
-                    ->get();
-                if ($has_treatment_with_status_2 && $check_treatments->base_appointment_status_id != 1 && $check_treatments->scheduled_date <= Carbon::now()->subDays(31)->format('Y-m-d') && $future_treatments->isEmpty()) {
-                    if (in_array($data['patient_id'], $plan_check_amount) && ($data['cash_receive'] - $data['settle_amount_with_tax']) > 450) {
-                        $data['is_treatment'] = 1;
-                        $data['scheduled_date'] = $check_treatments->scheduled_date;
-                        array_push($patient_data, $data);
-                    }
-                }
-            }
+        foreach ($patients as $p) {
+            $patient_data[] = [
+                'patient_id' => $p->patient_id,
+                'name' => $p->name,
+                'phone' => $p->phone,
+                'cash_receive' => (float) $p->cash_receive,
+                'settle_amount_with_tax' => (float) $p->settle_amount_with_tax,
+                'scheduled_date' => $p->scheduled_date,
+                'is_treatment' => 1,
+            ];
         }
-        usort($patient_data, function ($a, $b) {
-            return strtotime($b['scheduled_date']) - strtotime($a['scheduled_date']);
-        });
+
         return $patient_data;
     }
 
