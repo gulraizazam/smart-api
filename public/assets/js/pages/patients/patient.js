@@ -195,8 +195,8 @@ function editRow(url, id) {
 }
 function assignMembership(url, id) {
     $("#modal_edit_memberships").modal("show");
-    $("#modal_edit_memberships_form").attr("action", route('admin.patients.assignmembership', { id: id }));
-
+    $("#modal_edit_memberships_form").attr("action", route('admin.patients.assignmembership'));
+    $("#assign_membership_patient_id").val(id);
 }
 function addVoucher(url, id) {
     $('#edit_voucher_id').empty();
@@ -225,12 +225,13 @@ function addVoucher(url, id) {
         }
     });
     $("#modal_edit_vouchers").modal("show");
-    $("#modal_edit_vouchers_form").attr("action", route('admin.patients.assignvoucher', { id: id }));
+    $("#modal_edit_vouchers_form").attr("action", route('admin.patients.assignvoucher'));
 
 }
 function addReferral(id) {
     $("#modal_add_referral").modal("show");
     $("#modal_add_referral_form").attr("action", route('admin.patients.addreferral', { id: id }));
+    $("#referral_patient_id").val(id);
     
     // Clear previous form data
     $("#referral_membership_code").val('');
@@ -395,8 +396,6 @@ function applyFilters(datatable) {
             delete: '',
             patient_id: $("#search_patient_id").val(),
             name: $("#search_name").val(),
-            email: $("#search_email").val(),
-            phone: $("#search_phone").val(),
             gender: $("#search_gender").val(),
             membership: $("#search_membership").val(),
             created_at: $("#date_range").val(),
@@ -416,8 +415,6 @@ function resetAllFilters(datatable) {
             patient_id: '',
             name: '',
             membership: '',
-            email: '',
-            phone: '',
             gender: '',
             created_at: '',
             status: '',
@@ -452,12 +449,15 @@ function setFilters(filter_values, active_filters) {
         $("#search_status").html(status_options);
         $("#search_gender").html(gender_options);
         $("#search_membership").html(membership_options);
+        $("#search_patient_id").val(active_filters.patient_id);
+        $(".patient_id").val(active_filters.patient_id);
+        if (active_filters.patient_id) {
+            $(".croxcli").show();
+        }
         $("#search_membership").val(active_filters.memberships);
         $("#search_name").val(active_filters.name);
         $("#search_status").val(active_filters.status);
         $("#search_gender").val(active_filters.gender);
-        $("#search_phone").val(active_filters.phone);
-        $("#search_email").val(active_filters.email);
         $("#date_range").val(active_filters.created_at);
 
         hideShowAdvanceFilters(active_filters);
@@ -482,9 +482,77 @@ function hideShowAdvanceFilters(active_filters) {
 
 jQuery(document).ready(function () {
     $("#date_range").val("");
+    // Initialize patient search autocomplete
+    initPatientSearchAutocomplete();
 })
 
 function searchPatient() {
     $('#search_patient_id').val($('.patient_id').val());
     $('.patient_id').val() ? $('.croxcli').show() : $('.croxcli').hide();
+}
+
+function initPatientSearchAutocomplete() {
+    let debounceTimer;
+    
+    $(".patient_id").off("keyup").on("keyup", function () {
+        // Update hidden field
+        $('#search_patient_id').val($(this).val());
+        $(this).val() ? $('.croxcli').show() : $('.croxcli').hide();
+        
+        $(".suggestion-list").html('<li>Searching...</li>');
+        $(".suggesstion-box").show();
+        
+        if ($(this).val().length < 2) {
+            $(".suggesstion-box").hide();
+            return false;
+        }
+        
+        var that = $(this);
+        if ($(this).val() != '') {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function () {
+                $.ajax({
+                    type: "GET",
+                    url: route('admin.patients.search'),
+                    dataType: 'json',
+                    data: { search: that.val() },
+                    success: function (response) {
+                        let html = '';
+                        $(".suggestion-list").html(html);
+                        let patients = response.data.patients || response.patients || [];
+                        if (patients.length) {
+                            patients.forEach(function (patient) {
+                                html += '<li onClick="selectPatientFilter(`' + patient.name + '`, `' + patient.id + '`);">' + patient.name + ' - ' + makePatientId(patient.id) + '</li>';
+                            });
+                            $(".suggestion-list").html(html);
+                            $(".suggesstion-box").show();
+                            $(".croxcli").show();
+                        } else {
+                            $(".suggesstion-box").hide();
+                        }
+                    },
+                    error: function() {
+                        $(".suggesstion-box").hide();
+                    }
+                });
+            }, 500);
+        } else {
+            $(".suggesstion-box").hide();
+            $(".croxcli").hide();
+        }
+    });
+}
+
+function selectPatientFilter(name, id) {
+    $(".patient_id").val(name);
+    $("#search_patient_id").val(id);
+    $(".suggesstion-box").hide();
+    $(".croxcli").show();
+}
+
+function addUsers() {
+    $(".patient_id").val('');
+    $("#search_patient_id").val('');
+    $(".croxcli").hide();
+    $(".suggesstion-box").hide();
 }
