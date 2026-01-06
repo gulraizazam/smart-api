@@ -1864,6 +1864,15 @@ class AppointmentsController extends Controller
                         $location = Locations::with('city')->find($find_cons->location_id);
                         $service = Services::find($find_cons->service_id);
                         ActivityLogger::logLeadBooked($leadRecord, $find_cons, $location, $service);
+                        
+                        // Update patient_id on lead_created activities for this lead (by phone)
+                        Activity::where('activity_type', 'lead_created')
+                            ->where(function($query) use ($leadRecord, $appointment_data) {
+                                $query->where('lead_id', $leadRecord->id)
+                                      ->orWhere('patient', $leadRecord->name);
+                            })
+                            ->whereNull('patient_id')
+                            ->update(['patient_id' => $appointment_data['patient_id']]);
                     }
                     
                     // Send Meta CAPI event for booked status
