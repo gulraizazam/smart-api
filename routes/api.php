@@ -598,7 +598,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::post('invoicepatient/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoicepatient.cancel');
 
-    Route::post('refundpatient/datatable/&{id}', [RefundsController::class, 'datatable'])->name('refundpatient.datatable');
+    Route::post('refundpatient/datatable/&{id}', [RefundsController::class, 'patientDatatable'])->name('refundpatient.datatable');
     Route::get('refundpatient/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refundpatient.refund_create');
 
     Route::post('nonplansrefundspatient/datatable/{id}', [PatientRefundController::class, 'nonplansdatatable'])->name('nonplansrefundpatient.datatable');
