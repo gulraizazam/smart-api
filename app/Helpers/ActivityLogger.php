@@ -767,20 +767,25 @@ class ActivityLogger
     /**
      * Log invoice cancelled activity
      */
-    public static function logInvoiceCancelled($invoice, $patient, $location = null, $service = null, $appointmentType = null)
+    public static function logInvoiceCancelled($invoice, $patient, $location = null, $service = null, $appointmentType = null, $appointment = null)
     {
         $patientName = $patient->name ?? 'Unknown';
         $creatorName = Auth::check() ? Auth::user()->name : 'System';
         $serviceName = $service->name ?? '';
         $locationName = '';
         if ($location) {
-            $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+            $locationName = ($location->name ?? '');
         }
         $amount = $invoice->total_price ?? 0;
         $apptType = $appointmentType->name ?? 'Consultation';
-        $dateStr = date('M j, Y');
         
-        $description = '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: $apptType) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') .  '</span>';
+        // Get the treatment's scheduled date
+        $scheduledDate = '';
+        if ($appointment && $appointment->scheduled_date) {
+            $scheduledDate = date('M j, Y', strtotime($appointment->scheduled_date));
+        }
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: $apptType) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ($scheduledDate ? ' scheduled on <span class="highlight-purple">' . $scheduledDate . '</span>' : '');
         
         return Activity::create([
             'account_id' => Auth::user()->account_id ?? $invoice->account_id,
@@ -796,6 +801,7 @@ class ActivityLogger
             'location' => $locationName,
             'centre_id' => $location->id ?? null,
             'amount' => $amount,
+            'schedule_date' => $appointment->scheduled_date ?? null,
             'created_by' => Auth::user()->id ?? null,
             'created_at' => now(),
             'updated_at' => now(),
