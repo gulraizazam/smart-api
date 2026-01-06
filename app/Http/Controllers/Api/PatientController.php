@@ -532,99 +532,10 @@ class PatientController extends Controller
                 ], 404);
             }
 
-            // Activity type priorities for same timestamp sorting
-            // Timeline displays top-to-bottom (newest first)
-            // Lower number = appears first (higher in list)
-            // Lead status changes should appear AFTER their corresponding appointment activities
-            $typePriority = [
-                'lead_created' => 1,
-                'Lead Created' => 1,
-                'booked' => 2,              // Appointment booked (existing records)
-                'Consultancy' => 2,         // Appointment booked (existing records with action=Consultancy)
-                'consultation_booked' => 2,
-                'treatment_booked' => 3,
-                'lead_booked' => 4,         // Lead status change - appears after appointment booked
-                'Lead Booked' => 4,
-                'appointment_rescheduled' => 5, // Appointment rescheduled
-                'rescheduled' => 5,
-                'appointment_updated' => 6, // Appointment field changes
-                'Appointment Updated' => 6,
-                'appointment_status_changed' => 7, // Appointment status change
-                'Status Changed' => 7,
-                'received' => 7,            // Invoice created (existing records)
-                'invoice_created' => 7,
-                'lead_arrived' => 8,        // Lead status change - appears after invoice created
-                'Lead Arrived' => 8,
-                'consultation_arrived' => 9,
-                'treatment_arrived' => 9,
-                'package_created' => 10,
-                'Package Created' => 10,
-                'service_added' => 11,
-                'payment_received' => 12,
-                'Payment Received' => 12,
-                'payment_updated' => 13,
-                'Payment Updated' => 13,
-                'payment_deleted' => 14,
-                'Payment Deleted' => 14,
-                'refund_made' => 15,
-                'Refund Made' => 15,
-                'membership_assigned' => 16,
-                'Membership Assigned' => 16,
-                'membership_cancelled' => 17,
-                'Membership Cancelled' => 17,
-                'appointment_converted' => 18,
-                'Appointment Converted' => 18,
-                'lead_converted' => 19,
-                'Lead Converted' => 19,
-                'consultation_deleted' => 20,
-                'Consultation Deleted' => 20,
-                'treatment_deleted' => 21,
-                'Treatment Deleted' => 21,
-                'patient_updated' => 22,
-                'Patient Updated' => 22,
-            ];
-
-            // Fetch activities from activities table
-            // Note: Some older records may not have account_id set, so we check for NULL or matching account_id
-            $dbActivities = \DB::table('activities')
-                ->where('patient_id', $id)
-                ->where(function($query) {
-                    $query->whereNull('account_id')
-                          ->orWhere('account_id', Auth::user()->account_id);
-                })
-                ->orderBy('created_at', 'desc')
-                ->get();
-
-            $activities = [];
-            
-            foreach ($dbActivities as $activity) {
-                // Use activity_type if set, otherwise fall back to action field for older records
-                $type = $activity->activity_type ?? $activity->action ?? 'unknown';
-                $description = $activity->description ?? $this->buildActivityDescription($activity);
-                
-                $activities[] = [
-                    'type' => $type,
-                    'description' => $description,
-                    'created_at' => $activity->created_at,
-                ];
-            }
-
-            // Sort by created_at descending (newest first), then by priority for same timestamp
-            // Timeline displays top-to-bottom (newest at top)
-            // For same timestamp: lower priority number appears first (higher in list)
-            usort($activities, function($a, $b) use ($typePriority) {
-                $timeA = strtotime($a['created_at']);
-                $timeB = strtotime($b['created_at']);
-                
-                if ($timeA != $timeB) {
-                    return $timeB - $timeA; // Newest first
-                }
-                
-                // Same timestamp - lower priority number appears first (higher in list)
-                $priorityA = $typePriority[$a['type']] ?? 99;
-                $priorityB = $typePriority[$b['type']] ?? 99;
-                return $priorityA - $priorityB;
-            });
+            // Use shared ActivityLogService
+            $activities = \App\Services\ActivityLogService::getActivityLogs([
+                'patient_id' => $id
+            ]);
 
             return response()->json([
                 'status' => true,
