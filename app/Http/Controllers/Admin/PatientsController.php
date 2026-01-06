@@ -380,10 +380,24 @@ class PatientsController extends Controller
     {
 
         $patient = Patients::getData($id);
+        
+        // Get patient membership - use the actual patient id from the patient record
+        $patientId = $patient ? (int)$patient->id : (int)$id;
+        $membership = Membership::with('membershipType')
+            ->where('patient_id', $patientId)
+            ->where('active', 1)
+            ->first();
 
         if ($patient) {
             return ApiHelper::apiResponse($this->success, 'Record found', true, [
                 'patient' => $patient,
+                'membership' => $membership ? [
+                    'code' => $membership->code,
+                    'type' => $membership->membershipType->name ?? 'Unknown',
+                    'start_date' => $membership->start_date,
+                    'end_date' => $membership->end_date,
+                    'is_active' => $membership->end_date >= now()->format('Y-m-d'),
+                ] : null,
                 'permissions' => [
                     'edit' => Gate::allows('patients_edit'),
                     'delete' => Gate::allows('patients_destroy'),

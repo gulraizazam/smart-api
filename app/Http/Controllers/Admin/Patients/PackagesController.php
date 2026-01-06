@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin\Patients;
 
 use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Helpers\Financelog;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
@@ -619,6 +620,13 @@ class PackagesController extends Controller
             /*End*/
 
             $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
+            
+            // Log payment received activity
+            $patient = User::find($request->patient_id);
+            $location = Locations::with('city')->find($package->location_id);
+            if ($packageAdavances && $package && $patient) {
+                ActivityLogger::logPaymentReceived($packageAdavances, $package, $patient, $location);
+            }
 
             return response()->json([
                 'status' => true,

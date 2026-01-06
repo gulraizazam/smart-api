@@ -39,6 +39,23 @@
                 padding-top: 0.3rem !important;
                 padding-bottom: 0.3rem !important;
             }
+            /* Activity log highlight styles */
+            .highlight {
+                color: #3699FF;
+                font-weight: 600;
+            }
+            .highlight-orange {
+                color: #FFA800;
+                font-weight: 600;
+            }
+            .highlight-green {
+                color: #1BC5BD;
+                font-weight: 600;
+            }
+            .highlight-purple {
+                color: #8950FC;
+                font-weight: 600;
+            }
         </style>
     @endpush
     <div class="content d-flex flex-column flex-column-fluid" id="kt_content">

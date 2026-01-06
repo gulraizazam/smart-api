@@ -46,6 +46,40 @@ function setPatientData(response) {
             $("#patient_phone").text("***********");
         }
         $("#patient_gender").text(getGender(patient.gender));
+        
+        // Set membership info on left card
+        if (response?.data?.membership) {
+            let membership = response.data.membership;
+            let membershipLabel = $("#profile_membership");
+            let membershipContainer = $("#profile_membership_container");
+            
+            // Set color based on membership type
+            membershipLabel.removeClass('label-warning label-primary label-secondary');
+            if (membership.type.toLowerCase().includes('gold')) {
+                membershipLabel.addClass('label-warning'); // Gold color
+            } else if (membership.type.toLowerCase().includes('student')) {
+                membershipLabel.addClass('label-primary'); // Blue color
+            } else {
+                membershipLabel.addClass('label-secondary'); // Default gray
+            }
+            
+            // Build membership text with code and status
+            let membershipText = membership.type + ' (' + membership.code + ')';
+            membershipLabel.text(membershipText);
+            
+            // Show active/expired status
+            let statusBadge = membership.is_active 
+                ? '<span class="label label-light-success label-inline font-weight-bold label-sm ml-2">Active</span>'
+                : '<span class="label label-light-danger label-inline font-weight-bold label-sm ml-2">Expired</span>';
+            membershipContainer.html('<span class="label label-inline font-weight-bold label-lg ' + 
+                (membership.type.toLowerCase().includes('gold') ? 'label-warning' : 
+                 membership.type.toLowerCase().includes('student') ? 'label-primary' : 'label-secondary') + 
+                '" id="profile_membership">' + membershipText + '</span>' + statusBadge);
+            membershipContainer.show();
+        } else {
+            $("#profile_membership_container").hide();
+        }
+        
         $(".statuses").addClass("d-none");
         if (patient.active == 1) {
             $("#profile-active").removeClass("d-none");

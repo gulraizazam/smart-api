@@ -30,6 +30,9 @@
                                     <div class="text-muted mb-2" id="profile_patient_id"></div>
                                     <span class="label label-light-success label-inline font-weight-bold label-lg d-none statuses" id="profile-active">Active</span>
                                     <span class="label label-light-danger label-inline font-weight-bold label-lg d-none statuses" id="profile-inactive">In-Active</span>
+                                    <div class="mt-3" id="profile_membership_container" style="display: none;">
+                                        <span class="label label-inline font-weight-bold label-lg" id="profile_membership"></span>
+                                    </div>
                                 </div>
                                 <!--end::User-->
                                 <!--begin::Nav bar-->

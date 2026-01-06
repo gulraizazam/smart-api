@@ -28,6 +28,7 @@ use App\Models\LeadStatuses;
 use App\Models\SMSTemplates;
 use Illuminate\Http\Request;
 use App\Models\LeadsServices;
+use App\Helpers\ActivityLogger;
 use App\Helpers\TelenorSMSAPI;
 use App\HelperModule\ApiHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -628,6 +629,11 @@ class LeadsController extends Controller
                         'lead_status_id' => $openStatus ? $openStatus->id : null,
                         'meta_lead_id' => $meta_lead_id,
                     ]);
+                    
+                    // Log lead created activity
+                    $location = isset($data['location_id']) ? Locations::with('city')->find($data['location_id']) : null;
+                    $service = isset($data['service_id']) ? Services::find($data['service_id']) : null;
+                    ActivityLogger::logLeadCreated($lead, $location, $service);
                 }
             } else {
                 $lead_check = Leads::where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])
@@ -668,6 +674,11 @@ class LeadsController extends Controller
                 LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                     'status' => 0,
                 ]);
+                
+                // Log lead created activity for existing client
+                $location = isset($data['location_id']) ? Locations::with('city')->find($data['location_id']) : null;
+                $service = isset($data['service_id']) ? Services::find($data['service_id']) : null;
+                ActivityLogger::logLeadCreated($lead, $location, $service);
             }
 
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
