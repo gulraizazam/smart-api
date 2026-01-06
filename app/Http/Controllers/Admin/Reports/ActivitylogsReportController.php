@@ -35,175 +35,41 @@ class ActivitylogsReportController extends Controller
     }
     public function fetchActivityReport(Request $request)
     {
-
         $colorClasses=['text-warning', 'text-success','text-primary','text-danger'];
-        $isServicePresent = false;
-        $isUserPresent = false;
-        $isLocationPresent = false;
-        $isActivityTypePresent = false;
-        $startDate = $request->startDate;
-        $endDate = $request->endDate;
+        
+        // Build filters for ActivityLogService
+        $filters = [
+            'start_date' => $request->startDate,
+            'end_date' => $request->endDate,
+        ];
+        
         if ($request->has('service_id') && $request->service_id !== 'all') {
-            $isServicePresent = true;
+            $filters['service_id'] = $request->service_id;
         }
-        if ($request->has('user_id')  && $request->user_id) {
-            $isUserPresent = true;
+        if ($request->has('user_id') && $request->user_id) {
+            $filters['user_id'] = $request->user_id;
+        }
+        if ($request->has('location_id') && $request->location_id) {
+            $filters['location_id'] = $request->location_id;
+        }
+        if ($request->has('activity_type') && $request->activity_type !== 'all') {
+            $filters['activity_type'] = $request->activity_type;
         }
 
-        if ($request->has('location_id')  && $request->location_id) {
-            $isLocationPresent = true;
-        }
-        if ($request->has('activity_type')  && $request->activity_type!== 'all') {
-            $isActivityTypePresent = true;
-        }
+        // Use shared ActivityLogService
+        $activities = \App\Services\ActivityLogService::getActivityLogs($filters);
 
-        $activities = Activity::with(['user', 'serviceR', 'patientR', 'centre'])->where(function ($query) use ($request) {
-            $query->where(function ($query) use ($request) {
-                $query->whereIn('action', ['booked', 'treatment_booked'])
-                      ->whereBetween('created_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-            ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'rescheduled')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-            ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'deleted')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-             ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'received')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-            ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'consumed')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-            ->orWhere(function ($query) use ($request) {
-                $query->whereIn('action', ['Treatment Booked', 'Appointment Updated', 'Appointment Rescheduled', 'Lead Created', 'Lead Booked', 'Consultation Booked', 'Membership Assigned', 'Membership Cancelled', 'Appointment Converted', 'Lead Converted', 'Consultation Deleted', 'Treatment Deleted', 'Patient Updated'])
-                      ->whereBetween('created_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            });
-        })
-
-        ->when($isServicePresent,function($query) use ($request){
-            $query->where('service_id',$request->service_id);
-        })
-        ->when( $isUserPresent,function($query) use ($request){
-            $query->where('user_id',$request->user_id);
-        })
-        ->when( $isLocationPresent,function($query) use ($request){
-            $query->where('centre_id',$request->location_id);
-        })
-        ->when($isActivityTypePresent,function($query) use ($request){
-            $query->where('activity_type',$request->activity_type);
-        })
-       ->get();
-
-        $data=[];
+        // Format for view
+        $data = [];
         $i = 0;
-        foreach($activities as $activity)
-        {
-            $data[$i]['colorClass']= $colorClasses[$i%4];
-            $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->updated_at ?? $activity->created_at));
-            
-            // Use description if available (new format), otherwise build from fields (old format)
-            if ($activity->description) {
-                $data[$i]['message'] = $activity->description;
-            } else {
-                // Fallback for old records without description
-                $data[$i]['message'] = $this->buildActivityMessage($activity, $data[$i]['colorClass']);
-            }
-            
+        foreach ($activities as $activity) {
+            $data[$i]['colorClass'] = $colorClasses[$i % 4];
+            $data[$i]['time'] = $activity['time_short'];
+            $data[$i]['message'] = $activity['description'];
             $i++;
         }
-        $data = collect($data)->sortByDesc('time')->values()->all();
 
         return view('admin.reports.activity_logs.activities', compact('data'));
-    }
-    public function getActivityType($activity)
-    {
-
-        return  $activity== "Consultancy" ? "Consultation" : $activity;
-    }
-    
-    /**
-     * Get created_by name - handles both old records (name stored) and new records (ID stored)
-     */
-    private function getCreatedByName($activity)
-    {
-        // If user relationship exists and has name, use it
-        if ($activity->user && $activity->user->name) {
-            return $activity->user->name;
-        }
-        
-        // If created_by is not numeric (old records stored name directly), return it
-        if (!is_numeric($activity->created_by) && $activity->created_by) {
-            return $activity->created_by;
-        }
-        
-        // If created_by is numeric, try to find the user
-        if (is_numeric($activity->created_by) && $activity->created_by > 0) {
-            $user = \App\Models\User::find($activity->created_by);
-            if ($user) {
-                return $user->name;
-            }
-        }
-        
-        return 'N/A';
-    }
-
-    /**
-     * Build activity message for old records without description field
-     */
-    private function buildActivityMessage($activity, $colorClass)
-    {
-        $action = $activity->action ?? '';
-        $patient = $activity->patientR->name ?? $activity->patient ?? '';
-        $service = $activity->serviceR->name ?? $activity->service ?? '';
-        $location = $activity->centre->name ?? $activity->location ?? '';
-        $amount = $activity->amount ?? '';
-        $planId = $activity->planId ?? $activity->plan_id ?? '';
-        $appointmentType = $activity->appointment_type ?? '';
-        $scheduleDate = $activity->schedule_date ?? '';
-        $createdBy = $this->getCreatedByName($activity);
-        
-        switch ($action) {
-            case 'booked':
-            case 'treatment_booked':
-            case 'Treatment Booked':
-                $activityType = $this->getActivityType($activity->activity_type);
-                return "<strong class='{$colorClass}'>{$createdBy}</strong> booked a <strong class='{$colorClass}'>{$service}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> on {$scheduleDate}";
-                
-            case 'received':
-                $dateStr = $activity->created_at ? date('Y-m-d', strtotime($activity->created_at)) : '';
-                if ($appointmentType == "Plan" || $planId) {
-                    return "<strong class='{$colorClass}'>{$createdBy}</strong> received payment Rs. <strong class='{$colorClass}'>{$amount}</strong> from <strong class='{$colorClass}'>{$patient}</strong> for <strong class='{$colorClass}'>Plan Id: {$planId}</strong> in <strong class='{$colorClass}'>{$location}</strong>" . ($dateStr ? " on {$dateStr}" : '');
-                }
-                return "<strong class='{$colorClass}'>{$createdBy}</strong> received payment" . ($amount ? " Rs. <strong class='{$colorClass}'>{$amount}</strong>" : '') . " from <strong class='{$colorClass}'>{$patient}</strong>" . ($location ? " in <strong class='{$colorClass}'>{$location}</strong>" : '') . ($dateStr ? " on {$dateStr}" : '');
-                
-            case 'consumed':
-                $activityType = $this->getActivityType($activity->activity_type);
-                return "<strong class='{$colorClass}'>{$createdBy}</strong> consumed a <strong class='{$colorClass}'>{$appointmentType}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> on {$scheduleDate}";
-                
-            case 'rescheduled':
-            case 'Appointment Rescheduled':
-            case 'Appointment Updated':
-                $activityType = $this->getActivityType($activity->activity_type);
-                $rescheduledBy = $activity->rescheduleBy->name ?? $createdBy;
-                return "<strong class='{$colorClass}'>{$rescheduledBy}</strong> {$action} a <strong class='{$colorClass}'>{$service}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> on {$scheduleDate}";
-                
-            case 'deleted':
-                $activityType = $this->getActivityType($activity->activity_type);
-                $deletedBy = $activity->deleteBy->name ?? $createdBy;
-                return "<strong class='{$colorClass}'>{$deletedBy}</strong> deleted a <strong class='{$colorClass}'>{$service}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> scheduled on {$scheduleDate}";
-                
-            default:
-                // Generic fallback for any other activity type
-                $activityType = $activity->activity_type ?? $action;
-                if ($patient) {
-                    return "<strong class='{$colorClass}'>{$createdBy}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong>" . ($location ? " in <strong class='{$colorClass}'>{$location}</strong>" : '');
-                }
-                return "<strong class='{$colorClass}'>{$createdBy}</strong> performed {$activityType}";
-        }
     }
     public function InsertLogs()
     {
