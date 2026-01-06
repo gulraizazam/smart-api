@@ -33,6 +33,11 @@ var table_columns = [
         sortable: false,
         width: 80,
     }, {
+        field: 'case_setteled',
+        title: 'Case Settled',
+        sortable: false,
+        width: 80,
+    }, {
         field: 'created_at',
         title: 'Created At',
         sortable: false,
