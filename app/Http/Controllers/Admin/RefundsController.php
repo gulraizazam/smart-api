@@ -265,6 +265,13 @@ class RefundsController extends Controller
                         $packageInfo = Packages::find($package->package_id);
                         $planTotal = $packageInfo ? $packageInfo->total_price : 0;
                         $locationName = ($package->location && $package->location->city ? $package->location->city->name . '-' : '') . ($package->location ? $package->location->name : '');
+                        
+                        // Check if case is settled
+                        $is_case_setteled = PackageAdvances::where([
+                            'package_id' => $package->package_id,
+                            'cash_flow' => 'out',
+                            'is_setteled' => 1
+                        ])->exists();
 
                         $records['data'][] = [
                             'id' => $package->package_id ?? 0,
@@ -274,6 +281,7 @@ class RefundsController extends Controller
                             'cash_in' => number_format($cash_in),
                             'cash_out' => number_format($cash_out),
                             'refunded_amount' => number_format($refunded_amount),
+                            'case_setteled' => $is_case_setteled ? 'Yes' : 'No',
                             'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('F j,Y h:i A') : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
                             'location' => $locationName,
                         ];
