@@ -1196,7 +1196,7 @@ class PackagesController extends Controller
                 $dateStr = date('Y-m-d');
                 
                 // Build description for payment received
-                $description = '<span class="highlight">' . $creatorName . '</span> received payment Rs. <span class="highlight-green">' . number_format($request->cash_amount) . '</span> from <span class="highlight-orange">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $package->id . '</span> in <span class="highlight">' . $locationName . '</span> on <span class="highlight-purple">' . $dateStr . '</span>';
+                $description = '<span class="highlight">' . $creatorName . '</span> received payment Rs. <span class="highlight-green">' . number_format($request->cash_amount) . '</span> from <span class="highlight-orange">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $package->id . '</span> in <span class="highlight">' . $locationName . '</span> ';
                 
                 $activity = new Activity();
                 $activity->action = 'received';
