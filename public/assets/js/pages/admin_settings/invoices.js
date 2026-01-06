@@ -8,6 +8,11 @@ if (width > 1280) {
 
     var table_columns = [
         {
+            field: 'invoice_number',
+            title: 'Invoice #',
+            sortable: false,
+            width: 80,
+        },{
             field: 'patient_id',
             title: 'Patient ID',
             sortable: false,
@@ -27,11 +32,6 @@ if (width > 1280) {
             title: 'Centre',
             sortable: false,
             width: 'auto',
-        },{
-            field: 'city',
-            title: 'City',
-            sortable: false,
-            width: 100,
         },{
             field: 'service',
             title: 'Consultancy/Service',
@@ -66,15 +66,15 @@ if (width > 1280) {
             field: 'created_at',
             title: 'Created at',
             width: 'auto',
-        },{
-            field: 'region',
-            title: 'Region',
-            sortable: false,
-            width: 100,
         }];
 } else {
     var table_columns = [
         {
+            field: 'invoice_number',
+            title: 'Invoice #',
+            sortable: false,
+            width: 70,
+        },{
             field: 'patient_id',
             title: 'Patient ID',
             sortable: false,
@@ -94,11 +94,6 @@ if (width > 1280) {
             title: 'Centre',
             sortable: false,
             width: 90,
-        },{
-            field: 'city',
-            title: 'City',
-            sortable: false,
-            width: 80,
         },{
             field: 'price',
             title: 'Price',
@@ -124,11 +119,6 @@ if (width > 1280) {
             template: function (data) {
                 return actions(data);
             }
-        },{
-            field: 'region',
-            title: 'Region',
-            sortable: false,
-            width: 'auto',
         },{
             field: 'appointment_type_id',
             title: 'Type',

@@ -125,11 +125,10 @@ class InvoicesController extends Controller
                     $invoicestatus = InvoiceStatuses::where('id', '=', $invoice->invoice_status_id)->first();
                     $records['data'][] = [
                         'id' => $invoice->id,
+                        'invoice_number' => sprintf('%05d', $invoice->id),
                         'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($user->id),
                         'name' => $user->name,
                         'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone),
-                        'region' => $location_info->region->name,
-                        'city' => $location_info->city->name,
                         'location' => $location_info->name,
                         'service' => $service->name,
                         'invoice_status' => $invoicestatus->name,
