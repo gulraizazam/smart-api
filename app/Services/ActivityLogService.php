@@ -162,6 +162,9 @@ class ActivityLogService
             case 'patient_updated':
                 return '<span class="highlight">' . $creatorName . '</span> updated <span class="highlight-orange">' . $patient . '</span>\'s profile' . ($dateStr ? ' on ' . $dateStr : '');
             
+            case 'invoice_cancelled':
+                return '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patient . '</span>\'s <span class="highlight-orange">' . ($service ?: $appointmentType ?: 'Consultation') . '</span>' . ($location ? ' in <span class="highlight">' . $location . '</span>' : '') . ($dateStr ? ' on ' . $dateStr : '');
+            
             default:
                 // Fallback for existing records - check action field
                 return self::buildFallbackDescription($activity, $creatorName, $patient, $service, $location, $amount, $planId, $appointmentType, $dateStr);

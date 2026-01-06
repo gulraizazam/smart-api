@@ -288,6 +288,12 @@ class InvoicesController extends Controller
             }
             //$package_advances = PackageAdvances::createRecord_forinvoice($data_package);
 
+            // Log invoice cancelled activity
+            $patient = \App\Models\Patients::find($invocies->patient_id);
+            $location = \App\Models\Locations::with('city')->find($appintment->location_id);
+            $service = \App\Models\Services::find($appintment->service_id);
+            \App\Helpers\ActivityLogger::logInvoiceCancelled($invocies, $patient, $location, $service, $appointment_type);
+
             return ApiHelper::apiResponse($this->success, 'Invoice has been canceled successfully.');
         }
 
