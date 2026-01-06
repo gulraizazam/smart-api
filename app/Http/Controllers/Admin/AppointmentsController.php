@@ -3904,6 +3904,11 @@ class AppointmentsController extends Controller
                             return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
                         }
                     }
+                    // Store old values for activity logging
+                    $oldDate = $appointment->scheduled_date;
+                    $oldTime = $appointment->scheduled_time;
+                    $oldDoctorId = $appointment->doctor_id;
+                    
                     $data['first_scheduled_count'] = $appointment->first_scheduled_count;
                     $data['scheduled_at_count'] = $appointment->scheduled_at_count;
                     if ($appointment->appointment_type_id = Config::get('constants.appointment_type_consultancy')) {
@@ -3946,6 +3951,47 @@ class AppointmentsController extends Controller
                                 'appointment_id' => $appointment->id,
                             ])
                         );
+
+                        // Log activity for date, time, or doctor changes
+                        $newDate = Carbon::parse($request->start)->format('Y-m-d');
+                        $newTime = Carbon::parse($request->start)->format('H:i:s');
+                        $newDoctorId = $request->doctor_id;
+                        
+                        $fieldChanges = [];
+                        
+                        // Check date change
+                        if ($oldDate != $newDate) {
+                            $fieldChanges['Date'] = [
+                                'old' => Carbon::parse($oldDate)->format('M j, Y'),
+                                'new' => Carbon::parse($newDate)->format('M j, Y')
+                            ];
+                        }
+                        
+                        // Check time change
+                        if ($oldTime != $newTime) {
+                            $fieldChanges['Time'] = [
+                                'old' => Carbon::parse($oldTime)->format('h:i A'),
+                                'new' => Carbon::parse($newTime)->format('h:i A')
+                            ];
+                        }
+                        
+                        // Check doctor change
+                        if ($oldDoctorId != $newDoctorId) {
+                            $oldDoctor = Doctors::find($oldDoctorId);
+                            $newDoctor = Doctors::find($newDoctorId);
+                            $fieldChanges['Doctor'] = [
+                                'old' => $oldDoctor->name ?? 'Unknown',
+                                'new' => $newDoctor->name ?? 'Unknown'
+                            ];
+                        }
+                        
+                        // Log if any changes were made
+                        if (!empty($fieldChanges)) {
+                            $patient = Patients::find($record->patient_id);
+                            $location = Locations::with('city')->find($record->location_id);
+                            $service = Services::find($record->service_id);
+                            ActivityLogger::logAppointmentUpdated($record, $patient, $fieldChanges, $location, $service);
+                        }
 
                         return ApiHelper::apiResponse($this->success, 'Appointment Updated Successfully');
                     }

@@ -57,7 +57,7 @@ class ActivitylogsReportController extends Controller
             $isActivityTypePresent = true;
         }
 
-        $activities = Activity::with(['user',  'serviceR'])->where(function ($query) use ($request) {
+        $activities = Activity::with(['user', 'serviceR', 'patientR', 'centre'])->where(function ($query) use ($request) {
             $query->where(function ($query) use ($request) {
                 $query->whereIn('action', ['booked', 'treatment_booked'])
                       ->whereBetween('created_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
@@ -79,7 +79,7 @@ class ActivitylogsReportController extends Controller
                       ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
             })
             ->orWhere(function ($query) use ($request) {
-                $query->whereIn('action', ['Treatment Booked', 'Appointment Updated', 'Appointment Rescheduled'])
+                $query->whereIn('action', ['Treatment Booked', 'Appointment Updated', 'Appointment Rescheduled', 'Lead Created', 'Lead Booked', 'Consultation Booked', 'Membership Assigned', 'Membership Cancelled', 'Appointment Converted', 'Lead Converted', 'Consultation Deleted', 'Treatment Deleted', 'Patient Updated'])
                       ->whereBetween('created_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
             });
         })
@@ -102,79 +102,18 @@ class ActivitylogsReportController extends Controller
         $i = 0;
         foreach($activities as $activity)
         {
-            $action = $activity->action;
-
-            switch ($action) {
-                case 'booked':
-                case 'treatment_booked':
-                case 'Treatment Booked':
-                    {
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        // Use description if available (new format), otherwise use old format
-                        if ($activity->description) {
-                            $data[$i]['message']= $activity->description;
-                        } else {
-                            $activityType = $this->getActivityType($activity->activity_type);
-                            $createdBy = $activity->user->name ?? $this->getCreatedByName($activity);
-                            $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .$createdBy.'</strong>  booked a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.($activity->serviceR->name ?? $activity->service).'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.($activity->patientR->name ?? $activity->patient). '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. ($activity->centre->name ?? $activity->location). '</strong> on '. $activity->schedule_date;
-                        }
-                    }
-                    break;
-                case 'received':
-                    {
-                        if($activity->appointment_type=="Plan"){
-                             $activityType = $this->getActivityType($activity->appointment_type=="Plan");
-                        $receivedBy = $this->getCreatedByName($activity);
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .$receivedBy.'</strong>  '.$action.'  <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->amount.'</strong> from '.' <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patient. '</strong> against Plan ID: <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->planId. ' </strong>in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->location. '</strong> on '. $activity->created_at;
-                        }
-
-                    }
-                    break;
-                case 'consumed':
-                    {
-                        $activityType = $this->getActivityType($activity->activity_type);
-                        $consumedBy = $this->getCreatedByName($activity);
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .  $consumedBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->appointment_type.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patient. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->location. '</strong> on '. $activity->schedule_date;
-                    }
-                    break;
-                case 'rescheduled':
-                case 'Appointment Rescheduled':
-                case 'Appointment Updated':
-                    {
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->updated_at ?? $activity->created_at));
-                        // Use description if available (new format), otherwise use old format
-                        if ($activity->description) {
-                            $data[$i]['message']= $activity->description;
-                        } else {
-                            $activityType = $this->getActivityType($activity->activity_type);
-                            $rescheduledBy = $activity->rescheduleBy ? $activity->rescheduleBy->name : 'NA';
-                            $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .$rescheduledBy .'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.($activity->serviceR->name ?? $activity->service).'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.($activity->patientR->name ?? $activity->patient). '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. ($activity->centre->name ?? $activity->location). '</strong> on '. $activity->schedule_date;
-                        }
-                    }
-                    break;
-                case 'deleted':
-                    {
-                        $activityType = $this->getActivityType($activity->activity_type);
-                        $deletedBy = $activity->deleteBy ?$activity->deleteBy->name : 'NA' ;
-
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->updated_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $deletedBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> scheduled on '. $activity->schedule_date;
-                    }
-                    break;
-                default:
-
-                    break;
-
+            $data[$i]['colorClass']= $colorClasses[$i%4];
+            $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->updated_at ?? $activity->created_at));
+            
+            // Use description if available (new format), otherwise build from fields (old format)
+            if ($activity->description) {
+                $data[$i]['message'] = $activity->description;
+            } else {
+                // Fallback for old records without description
+                $data[$i]['message'] = $this->buildActivityMessage($activity, $data[$i]['colorClass']);
             }
+            
             $i++;
-
         }
         $data = collect($data)->sortByDesc('time')->values()->all();
 
@@ -210,6 +149,61 @@ class ActivitylogsReportController extends Controller
         }
         
         return 'N/A';
+    }
+
+    /**
+     * Build activity message for old records without description field
+     */
+    private function buildActivityMessage($activity, $colorClass)
+    {
+        $action = $activity->action ?? '';
+        $patient = $activity->patientR->name ?? $activity->patient ?? '';
+        $service = $activity->serviceR->name ?? $activity->service ?? '';
+        $location = $activity->centre->name ?? $activity->location ?? '';
+        $amount = $activity->amount ?? '';
+        $planId = $activity->planId ?? $activity->plan_id ?? '';
+        $appointmentType = $activity->appointment_type ?? '';
+        $scheduleDate = $activity->schedule_date ?? '';
+        $createdBy = $this->getCreatedByName($activity);
+        
+        switch ($action) {
+            case 'booked':
+            case 'treatment_booked':
+            case 'Treatment Booked':
+                $activityType = $this->getActivityType($activity->activity_type);
+                return "<strong class='{$colorClass}'>{$createdBy}</strong> booked a <strong class='{$colorClass}'>{$service}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> on {$scheduleDate}";
+                
+            case 'received':
+                $dateStr = $activity->created_at ? date('Y-m-d', strtotime($activity->created_at)) : '';
+                if ($appointmentType == "Plan" || $planId) {
+                    return "<strong class='{$colorClass}'>{$createdBy}</strong> received payment Rs. <strong class='{$colorClass}'>{$amount}</strong> from <strong class='{$colorClass}'>{$patient}</strong> for <strong class='{$colorClass}'>Plan Id: {$planId}</strong> in <strong class='{$colorClass}'>{$location}</strong>" . ($dateStr ? " on {$dateStr}" : '');
+                }
+                return "<strong class='{$colorClass}'>{$createdBy}</strong> received payment" . ($amount ? " Rs. <strong class='{$colorClass}'>{$amount}</strong>" : '') . " from <strong class='{$colorClass}'>{$patient}</strong>" . ($location ? " in <strong class='{$colorClass}'>{$location}</strong>" : '') . ($dateStr ? " on {$dateStr}" : '');
+                
+            case 'consumed':
+                $activityType = $this->getActivityType($activity->activity_type);
+                return "<strong class='{$colorClass}'>{$createdBy}</strong> consumed a <strong class='{$colorClass}'>{$appointmentType}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> on {$scheduleDate}";
+                
+            case 'rescheduled':
+            case 'Appointment Rescheduled':
+            case 'Appointment Updated':
+                $activityType = $this->getActivityType($activity->activity_type);
+                $rescheduledBy = $activity->rescheduleBy->name ?? $createdBy;
+                return "<strong class='{$colorClass}'>{$rescheduledBy}</strong> {$action} a <strong class='{$colorClass}'>{$service}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> on {$scheduleDate}";
+                
+            case 'deleted':
+                $activityType = $this->getActivityType($activity->activity_type);
+                $deletedBy = $activity->deleteBy->name ?? $createdBy;
+                return "<strong class='{$colorClass}'>{$deletedBy}</strong> deleted a <strong class='{$colorClass}'>{$service}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong> in <strong class='{$colorClass}'>{$location}</strong> scheduled on {$scheduleDate}";
+                
+            default:
+                // Generic fallback for any other activity type
+                $activityType = $activity->activity_type ?? $action;
+                if ($patient) {
+                    return "<strong class='{$colorClass}'>{$createdBy}</strong> {$activityType} for <strong class='{$colorClass}'>{$patient}</strong>" . ($location ? " in <strong class='{$colorClass}'>{$location}</strong>" : '');
+                }
+                return "<strong class='{$colorClass}'>{$createdBy}</strong> performed {$activityType}";
+        }
     }
     public function InsertLogs()
     {
