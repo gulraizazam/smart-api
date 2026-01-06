@@ -780,7 +780,7 @@ class ActivityLogger
         $apptType = $appointmentType->name ?? 'Consultation';
         $dateStr = date('M j, Y');
         
-        $description = '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: $apptType) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ' on <span class="highlight-purple">' . $dateStr . '</span>';
+        $description = '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: $apptType) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') .  '</span>';
         
         return Activity::create([
             'account_id' => Auth::user()->account_id ?? $invoice->account_id,
