@@ -3542,6 +3542,13 @@ class PackagesController extends Controller
 
         )->latest()->first();
 
+        // Check if case was previously settled (for activity logging)
+        $wasPreviouslySettled = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_setteled', '=', 1],
+        ])->exists();
+
         if ($request['case_setteled'] == '1') {
 
             $package_cash_receive = PackageAdvances::where([
@@ -3669,7 +3676,8 @@ class PackagesController extends Controller
         
         if ($caseSetteled) {
             $description .= ' - <span class="highlight-green">Case Settled</span>';
-        } else {
+        } elseif ($wasPreviouslySettled && !$caseSetteled) {
+            // Only show "Case Unsettled" if it was previously settled and now being unsettled
             $description .= ' - <span class="highlight-orange">Case Unsettled</span>';
         }
         
