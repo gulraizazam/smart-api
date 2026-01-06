@@ -18,6 +18,19 @@ class Documents extends BaseModal
 
     protected static $_table = 'documents';
 
+    protected $appends = ['full_url'];
+
+    /**
+     * Get the full URL for the document
+     */
+    public function getFullUrlAttribute()
+    {
+        if ($this->url) {
+            return \Storage::url($this->url);
+        }
+        return null;
+    }
+
     /*
      * Create record of dcoument
      *

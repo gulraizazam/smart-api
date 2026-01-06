@@ -40,7 +40,8 @@ function actions(data) {
         let file = data.url;
 
         let edit_url = route('admin.patients.updatedocuments', {id: id});
-        let view_url = asset_url + "storage/" + file;
+        // Use full_url from backend if available, otherwise construct manually
+        let view_url = data.full_url ? data.full_url : (asset_url + "storage/" + file);
         let delete_url = route('admin.patients.documentsdestroy', {id: id});
 
         if (permissions.edit || permissions.delete || permissions.manage) {
@@ -108,7 +109,8 @@ function editRow(url, name, fileUrl, documentId) {
     
     // Show current file preview
     if (fileUrl) {
-        let fullUrl = asset_url + "storage/" + fileUrl;
+        // fileUrl might be full URL or relative path
+        let fullUrl = fileUrl.startsWith('http') ? fileUrl : (asset_url + "storage/" + fileUrl);
         let fileName = fileUrl.split('/').pop();
         let ext = fileName.split('.').pop().toLowerCase();
         
