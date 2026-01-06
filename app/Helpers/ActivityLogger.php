@@ -863,15 +863,15 @@ class ActivityLogger
 
     /**
      * Log voucher consumed activity
-     * Format: Rs. AMOUNT consumed from VOUCHERNAME voucher against PATIENTNAME
+     * Format: Rs. AMOUNT consumed from VOUCHERNAME voucher against PATIENTNAME - Balance Left: Rs. BALANCE
      */
-    public static function logVoucherConsumed($amount, $patient, $voucher)
+    public static function logVoucherConsumed($amount, $patient, $voucher, $balanceLeft = 0)
     {
         $creatorName = Auth::user()->name ?? 'System';
         $patientName = $patient->name ?? 'Unknown';
         $voucherName = $voucher->name ?? 'Voucher';
         
-        $description = '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> consumed from <span class="highlight-orange">' . $voucherName . '</span> voucher against <span class="highlight-orange">' . $patientName . '</span>';
+        $description = '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> consumed from <span class="highlight-orange">' . $voucherName . '</span> voucher against <span class="highlight-orange">' . $patientName . '</span> - Balance Left: <span class="highlight-purple">Rs. ' . number_format($balanceLeft) . '</span>';
         
         return Activity::create([
             'account_id' => Auth::user()->account_id ?? null,

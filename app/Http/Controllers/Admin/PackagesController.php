@@ -788,10 +788,10 @@ class PackagesController extends Controller
                     'main_service_id'=>$request->bundle_id
                 ]);
                 
-                // Log voucher consumption activity with actual consumed amount
+                // Log voucher consumption activity with actual consumed amount and balance left
                 if ($discount->discount_type == 'voucher' && $actualConsumedAmount > 0) {
                     $patient = User::find($request->user_id);
-                    ActivityLogger::logVoucherConsumed($actualConsumedAmount, $patient, $discount);
+                    ActivityLogger::logVoucherConsumed($actualConsumedAmount, $patient, $discount, $amountLeft);
                 }
             }
 
