@@ -292,7 +292,7 @@ class InvoicesController extends Controller
             $patient = \App\Models\Patients::find($invocies->patient_id);
             $location = \App\Models\Locations::with('city')->find($appintment->location_id);
             $service = \App\Models\Services::find($appintment->service_id);
-            \App\Helpers\ActivityLogger::logInvoiceCancelled($invocies, $patient, $location, $service, $appointment_type);
+            \App\Helpers\ActivityLogger::logInvoiceCancelled($invocies, $patient, $location, $service, $appointment_type, $appintment);
 
             return ApiHelper::apiResponse($this->success, 'Invoice has been canceled successfully.');
         }
