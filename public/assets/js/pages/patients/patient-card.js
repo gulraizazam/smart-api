@@ -47,6 +47,18 @@ function setPatientData(response) {
         }
         $("#patient_gender").text(getGender(patient.gender));
         
+        // Set membership info on profile personal info section
+        if (response?.data?.membership) {
+            let membership = response.data.membership;
+            $("#patient_membership").text(membership.type || 'N/A');
+            $("#patient_membership_expiry").text(membership.end_date ? formatDate(membership.end_date, 'MMM D, YYYY') : '-');
+            $("#membership_type_row").show();
+            $("#membership_expiry_row").show();
+        } else {
+            $("#membership_type_row").hide();
+            $("#membership_expiry_row").hide();
+        }
+        
         // Set membership info on left card
         if (response?.data?.membership) {
             let membership = response.data.membership;
