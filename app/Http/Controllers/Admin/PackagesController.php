@@ -3519,9 +3519,9 @@ class PackagesController extends Controller
             'patient_name' => $patient->name,
             'patient_id' => $patient->id,
             'plan' => $package_information->name,
-            'created_date' => Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d'),
-            'refund_note' => $latest_package_refunded_amount->refund_note,
-            'payment_method_id' => $latest_package_refunded_amount->payment_mode_id
+            'created_date' => $latest_package_refunded_amount && $latest_package_refunded_amount->created_at ? Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d') : date('Y-m-d'),
+            'refund_note' => $latest_package_refunded_amount->refund_note ?? '',
+            'payment_method_id' => $latest_package_refunded_amount->payment_mode_id ?? 1
         ]);
     }
     public function updateRefund(Request $request)
@@ -3651,7 +3651,46 @@ class PackagesController extends Controller
             
            
         }
-        $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id']]);
+        $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id'], 'refund_note' => $request['refund_note']]);
+        
+        // Log refund update activity
+        $packageInfo = Packages::find($request->package_id);
+        $patient = User::find($packageInfo->patient_id);
+        $location = Locations::find($packageInfo->location_id);
+        
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $locationName = $location->name ?? '';
+        $refundAmount = $request->refund_amount;
+        $refundDate = $request->created_at ? date('M j, Y', strtotime($request->created_at)) : date('M j, Y');
+        $caseSetteled = $request->case_setteled == "1";
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> updated refund <span class="highlight-green">Rs. ' . number_format($refundAmount) . '</span> for <span class="highlight-orange">' . $patientName . '</span> in <span class="highlight-purple">Plan #' . sprintf('%05d', $request->package_id) . '</span>' . ($locationName ? ' at <span class="highlight">' . $locationName . '</span>' : '') . ' on <span class="highlight-purple">' . $refundDate . '</span>';
+        
+        if ($caseSetteled) {
+            $description .= ' - <span class="highlight-green">Case Settled</span>';
+        } else {
+            $description .= ' - <span class="highlight-orange">Case Unsettled</span>';
+        }
+        
+        $activity = new Activity();
+        $activity->timestamps = false;
+        $activity->action = 'refund_updated';
+        $activity->activity_type = 'refund_updated';
+        $activity->description = $description;
+        $activity->patient = $patientName;
+        $activity->patient_id = $patient->id ?? null;
+        $activity->appointment_type = 'Plan';
+        $activity->created_by = Auth::user()->id;
+        $activity->planId = $request->package_id;
+        $activity->amount = $refundAmount;
+        $activity->location = $locationName;
+        $activity->centre_id = $packageInfo->location_id;
+        $activity->account_id = Auth::user()->account_id;
+        $activity->created_at = \App\Helpers\Filters::getCurrentTimeStamp();
+        $activity->updated_at = \App\Helpers\Filters::getCurrentTimeStamp();
+        $activity->save();
+        
         return ApiHelper::apiResponse($this->success, 'Record updated', true, []);
     }
     protected function verifyFields(Request $request)
