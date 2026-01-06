@@ -783,6 +783,12 @@ class PackagesController extends Controller
                     'service_id' =>$generateRandomId,
                     'main_service_id'=>$request->bundle_id
                 ]);
+                
+                // Log voucher consumption activity
+                if ($discount->discount_type == 'voucher') {
+                    $patient = User::find($request->user_id);
+                    ActivityLogger::logVoucherConsumed($amountForVoucher, $patient, $discount);
+                }
             }
 
         }
@@ -3839,11 +3845,18 @@ class PackagesController extends Controller
             $voucherAmounts[$key]['amount'] = ($voucherAmounts[$key]['amount'] ?? 0) + $voucher->amount;
         }
 
-        // Update user vouchers
+        // Update user vouchers and log activity
         foreach ($voucherAmounts as $data) {
             UserVouchers::where('user_id', $data['user_id'])
                     ->where('voucher_id', $data['voucher_id'])
                     ->increment('amount', $data['amount']);
+            
+            // Log voucher refund activity
+            $patient = User::find($data['user_id']);
+            $voucher = Discounts::find($data['voucher_id']);
+            if ($patient && $voucher) {
+                ActivityLogger::logVoucherRefunded($data['amount'], $patient, $voucher);
+            }
         }
 
         // Delete package vouchers

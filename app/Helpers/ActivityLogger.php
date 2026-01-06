@@ -836,6 +836,58 @@ class ActivityLogger
     }
 
     /**
+     * Log voucher refunded/reset activity
+     * Format: Rs. AMOUNT refunded to VOUCHERNAME voucher for PATIENTNAME
+     */
+    public static function logVoucherRefunded($amount, $patient, $voucher)
+    {
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $voucherName = $voucher->name ?? 'Voucher';
+        
+        $description = '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> refunded to <span class="highlight-orange">' . $voucherName . '</span> voucher for <span class="highlight-orange">' . $patientName . '</span>';
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => 'Voucher Refunded',
+            'activity_type' => 'voucher_refunded',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'amount' => $amount,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Log voucher consumed activity
+     * Format: Rs. AMOUNT consumed from VOUCHERNAME voucher against PATIENTNAME
+     */
+    public static function logVoucherConsumed($amount, $patient, $voucher)
+    {
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $voucherName = $voucher->name ?? 'Voucher';
+        
+        $description = '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> consumed from <span class="highlight-orange">' . $voucherName . '</span> voucher against <span class="highlight-orange">' . $patientName . '</span>';
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => 'Voucher Consumed',
+            'activity_type' => 'voucher_consumed',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'amount' => $amount,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
      * Log voucher updated activity
      * Format: USERNAME updated VOUCHERNAME voucher amount from Rs. OLDAMOUNT to Rs. NEWAMOUNT for PATIENTNAME
      */
