@@ -829,7 +829,7 @@ class ActivityLogger
             $scheduledDate = date('M j, Y', strtotime($appointment->scheduled_date));
         }
         
-        $description = '<span class="highlight">' . $creatorName . '</span> added feedback for <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> against <span class="highlight-orange">' . $patientName . '</span>' . ($scheduledDate ? ' scheduled on <span class="highlight-purple">' . $scheduledDate . '</span>' : '');
+        $description = '<span class="highlight">' . $creatorName . '</span> added feedback for <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span>Treatment against <span class="highlight-orange">' . $patientName . '</span>' . ($scheduledDate ? ' scheduled on <span class="highlight-purple">' . $scheduledDate . '</span>' : '');
         
         return Activity::create([
             'account_id' => Auth::user()->account_id ?? null,
