@@ -572,6 +572,16 @@ class PatientController extends Controller
                 'Membership Assigned' => 16,
                 'membership_cancelled' => 17,
                 'Membership Cancelled' => 17,
+                'appointment_converted' => 18,
+                'Appointment Converted' => 18,
+                'lead_converted' => 19,
+                'Lead Converted' => 19,
+                'consultation_deleted' => 20,
+                'Consultation Deleted' => 20,
+                'treatment_deleted' => 21,
+                'Treatment Deleted' => 21,
+                'patient_updated' => 22,
+                'Patient Updated' => 22,
             ];
 
             // Fetch activities from activities table

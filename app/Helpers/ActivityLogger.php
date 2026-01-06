@@ -602,4 +602,165 @@ class ActivityLogger
             'updated_at' => now(),
         ]);
     }
+
+    /**
+     * Log appointment converted activity
+     */
+    public static function logAppointmentConverted($appointment, $patient, $location = null, $service = null, $paymentAmount = null, $planId = null)
+    {
+        $patientName = $patient->name ?? 'Unknown';
+        $serviceName = $service->name ?? '';
+        $locationName = '';
+        if ($location) {
+            $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+        }
+        
+        // Format: Patient's Service Consultation status changed to converted with the payment of Rs X in PlanID
+        $description = '<span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> Consultation status changed to <span class="highlight-green">Converted</span>';
+        
+        if ($paymentAmount) {
+            $description .= ' with the payment of <span class="highlight-green">Rs ' . number_format($paymentAmount) . '</span>';
+        }
+        
+        if ($planId) {
+            $description .= ' in <span class="highlight-purple">Plan #' . sprintf('%05d', $planId) . '</span>';
+        }
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? $appointment->account_id,
+            'action' => 'Appointment Converted',
+            'activity_type' => 'appointment_converted',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'appointment_id' => $appointment->id,
+            'appointment_type' => 'Consultation',
+            'service' => $serviceName,
+            'service_id' => $service->id ?? $appointment->service_id,
+            'location' => $locationName,
+            'centre_id' => $location->id ?? $appointment->location_id,
+            'amount' => $paymentAmount,
+            'plan_id' => $planId,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Log lead converted activity
+     */
+    public static function logLeadConverted($lead, $appointment = null, $location = null, $service = null, $paymentAmount = null)
+    {
+        $patientName = $lead->name ?? ($appointment->patient->name ?? 'Unknown');
+        $serviceName = $service->name ?? '';
+        $locationName = '';
+        if ($location) {
+            $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+        }
+        
+        $description = '<span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> lead status changed to <span class="highlight-green">Converted</span> against <span class="highlight-orange">' . $patientName . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '');
+        
+        if ($paymentAmount) {
+            $description .= ' with payment of <span class="highlight-green">PKR ' . number_format($paymentAmount) . '</span>';
+        }
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? $lead->account_id,
+            'action' => 'Lead Converted',
+            'activity_type' => 'lead_converted',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $lead->patient_id ?? ($appointment->patient_id ?? null),
+            'lead_id' => $lead->id,
+            'lead_status' => 'Converted',
+            'appointment_id' => $appointment->id ?? null,
+            'service' => $serviceName,
+            'service_id' => $service->id ?? null,
+            'location' => $locationName,
+            'centre_id' => $location->id ?? $lead->location_id ?? null,
+            'amount' => $paymentAmount,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Log appointment deleted activity (consultation or treatment)
+     */
+    public static function logAppointmentDeleted($appointment, $patient, $location = null, $service = null)
+    {
+        $patientName = $patient->name ?? 'Unknown';
+        $creatorName = Auth::check() ? Auth::user()->name : 'System';
+        $serviceName = $service->name ?? '';
+        $locationName = '';
+        if ($location) {
+            $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+        }
+        
+        // Determine if consultation or treatment
+        $appointmentType = $appointment->appointment_type_id == 1 ? 'Consultation' : 'Treatment';
+        $activityType = $appointment->appointment_type_id == 1 ? 'consultation_deleted' : 'treatment_deleted';
+        
+        // Format: User deleted Patient's Service Consultation/Treatment in Location
+        $description = '<span class="highlight">' . $creatorName . '</span> deleted <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> ' . $appointmentType;
+        
+        if ($locationName) {
+            $description .= ' in <span class="highlight">' . $locationName . '</span>';
+        }
+        
+        if ($appointment->scheduled_date) {
+            $description .= ' scheduled on <span class="highlight-purple">' . date('M j, Y', strtotime($appointment->scheduled_date)) . '</span>';
+        }
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? $appointment->account_id,
+            'action' => $appointmentType . ' Deleted',
+            'activity_type' => $activityType,
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'appointment_id' => $appointment->id,
+            'appointment_type' => $appointmentType,
+            'service' => $serviceName,
+            'service_id' => $service->id ?? $appointment->service_id,
+            'location' => $locationName,
+            'centre_id' => $location->id ?? $appointment->location_id,
+            'schedule_date' => $appointment->scheduled_date,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Log patient information updated activity
+     */
+    public static function logPatientUpdated($patient, $fieldChanges)
+    {
+        $patientName = $patient->name ?? 'Unknown';
+        $creatorName = Auth::check() ? Auth::user()->name : 'System';
+        
+        // Build changes string
+        $changesArr = [];
+        foreach ($fieldChanges as $field => $change) {
+            $changesArr[] = $field . ': <span class="highlight-purple">' . ($change['old'] ?? 'N/A') . '</span> → <span class="highlight-green">' . ($change['new'] ?? 'N/A') . '</span>';
+        }
+        $changesStr = implode(', ', $changesArr);
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> updated <span class="highlight-orange">' . $patientName . '</span>\'s profile - ' . $changesStr;
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => 'Patient Updated',
+            'activity_type' => 'patient_updated',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
 }

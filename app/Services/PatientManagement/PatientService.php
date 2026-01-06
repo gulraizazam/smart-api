@@ -551,6 +551,18 @@ class PatientService
 
         $data['phone'] = GeneralFunctions::cleanNumber($data['phone']);
 
+        // Get old patient data for comparison
+        $oldPatient = $this->findPatient($id);
+        $oldValues = $oldPatient ? [
+            'name' => $oldPatient->name,
+            'email' => $oldPatient->email,
+            'phone' => $oldPatient->phone,
+            'gender' => $oldPatient->gender,
+            'dob' => $oldPatient->dob,
+            'address' => $oldPatient->address,
+            'cnic' => $oldPatient->cnic,
+        ] : [];
+
         $patient = $this->updatePatientRecord($id, $data);
 
         if ($patient) {
@@ -563,6 +575,34 @@ class PatientService
                     'phone' => $data['phone'],
                     'gender' => $data['gender'] ?? null,
                 ]);
+            }
+
+            // Log patient info changes
+            $fieldChanges = [];
+            if (isset($data['name']) && $oldValues['name'] != $data['name']) {
+                $fieldChanges['Name'] = ['old' => $oldValues['name'], 'new' => $data['name']];
+            }
+            if (isset($data['email']) && $oldValues['email'] != ($data['email'] ?? '')) {
+                $fieldChanges['Email'] = ['old' => $oldValues['email'] ?? 'N/A', 'new' => $data['email'] ?? 'N/A'];
+            }
+            if (isset($data['phone']) && $oldValues['phone'] != $data['phone']) {
+                $fieldChanges['Phone'] = ['old' => $oldValues['phone'], 'new' => $data['phone']];
+            }
+            if (isset($data['gender']) && $oldValues['gender'] != ($data['gender'] ?? '')) {
+                $fieldChanges['Gender'] = ['old' => $oldValues['gender'] ?? 'N/A', 'new' => $data['gender'] ?? 'N/A'];
+            }
+            if (isset($data['dob']) && $oldValues['dob'] != ($data['dob'] ?? '')) {
+                $fieldChanges['Date of Birth'] = ['old' => $oldValues['dob'] ?? 'N/A', 'new' => $data['dob'] ?? 'N/A'];
+            }
+            if (isset($data['address']) && $oldValues['address'] != ($data['address'] ?? '')) {
+                $fieldChanges['Address'] = ['old' => $oldValues['address'] ?? 'N/A', 'new' => $data['address'] ?? 'N/A'];
+            }
+            if (isset($data['cnic']) && $oldValues['cnic'] != ($data['cnic'] ?? '')) {
+                $fieldChanges['CNIC'] = ['old' => $oldValues['cnic'] ?? 'N/A', 'new' => $data['cnic'] ?? 'N/A'];
+            }
+            
+            if (!empty($fieldChanges)) {
+                \App\Helpers\ActivityLogger::logPatientUpdated($patient, $fieldChanges);
             }
 
             return [

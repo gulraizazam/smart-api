@@ -1190,9 +1190,18 @@ class PackagesController extends Controller
                 /////Save activity////
                 $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
+                $locationWithCity = Locations::with('city')->find($request->location_id);
+                $locationName = $locationWithCity ? (($locationWithCity->city->name ?? '') . '-' . $locationWithCity->name) : ($location->name ?? '');
+                $creatorName = Auth::user()->name ?? 'System';
+                $dateStr = date('Y-m-d');
+                
+                // Build description for payment received
+                $description = '<span class="highlight">' . $creatorName . '</span> received payment Rs. <span class="highlight-green">' . number_format($request->cash_amount) . '</span> from <span class="highlight-orange">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $package->id . '</span> in <span class="highlight">' . $locationName . '</span> on <span class="highlight-purple">' . $dateStr . '</span>';
+                
                 $activity = new Activity();
                 $activity->action = 'received';
                 $activity->activity_type = 'payment_received';
+                $activity->description = $description;
                 $activity->patient = $patient->name;
                 $activity->patient_id = $patient->id;
                 $activity->appointment_type = 'Plan';
@@ -1200,7 +1209,7 @@ class PackagesController extends Controller
                 $activity->account_id = Auth::user()->account_id;
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
-                $activity->location = $location->name;
+                $activity->location = $locationName;
                 $activity->centre_id = $request->location_id;
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
@@ -1370,6 +1379,30 @@ class PackagesController extends Controller
             'appointment_status_id' => $convertedStatus->id,
             'converted_at' => now()
         ]);
+        
+        // Log activity for conversion
+        $patient = \App\Models\Patients::find($package->patient_id);
+        $location = Locations::with('city')->find($latestArrivedConsultation->location_id);
+        $service = Services::find($latestArrivedConsultation->service_id);
+        
+        // Log appointment converted activity
+        \App\Helpers\ActivityLogger::logAppointmentConverted($latestArrivedConsultation, $patient, $location, $service, $payment_amount, $package_id);
+        
+        // Also update lead status to converted and log it
+        if ($latestArrivedConsultation->lead_id) {
+            $lead = Leads::find($latestArrivedConsultation->lead_id);
+            if ($lead) {
+                $convertedLeadStatus = \App\Models\LeadStatuses::where([
+                    'account_id' => $latestArrivedConsultation->account_id,
+                    'is_converted' => 1
+                ])->first();
+                
+                if ($convertedLeadStatus) {
+                    $lead->update(['lead_status_id' => $convertedLeadStatus->id]);
+                    \App\Helpers\ActivityLogger::logLeadConverted($lead, $latestArrivedConsultation, $location, $service, $payment_amount);
+                }
+            }
+        }
         
         // Send Meta CAPI event
         self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
