@@ -763,4 +763,42 @@ class ActivityLogger
             'updated_at' => now(),
         ]);
     }
+
+    /**
+     * Log invoice cancelled activity
+     */
+    public static function logInvoiceCancelled($invoice, $patient, $location = null, $service = null, $appointmentType = null)
+    {
+        $patientName = $patient->name ?? 'Unknown';
+        $creatorName = Auth::check() ? Auth::user()->name : 'System';
+        $serviceName = $service->name ?? '';
+        $locationName = '';
+        if ($location) {
+            $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+        }
+        $amount = $invoice->total_price ?? 0;
+        $apptType = $appointmentType->name ?? 'Consultation';
+        $dateStr = date('M j, Y');
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> cancelled invoice <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>\'s <span class="highlight-orange">' . ($serviceName ?: $apptType) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ' on <span class="highlight-purple">' . $dateStr . '</span>';
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? $invoice->account_id,
+            'action' => 'Invoice Cancelled',
+            'activity_type' => 'invoice_cancelled',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'appointment_id' => $invoice->appointment_id,
+            'appointment_type' => $apptType,
+            'service' => $serviceName,
+            'service_id' => $service->id ?? null,
+            'location' => $locationName,
+            'centre_id' => $location->id ?? null,
+            'amount' => $amount,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
 }
