@@ -762,10 +762,14 @@ class PackagesController extends Controller
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
 
             if($userVoucher){
+                $originalVoucherAmount = $userVoucher->amount;
                 $amountLeft = $userVoucher->amount -  $bundle->price;
                 if($amountLeft < 0){
                    $amountLeft = 0;
                 }
+                
+                // Calculate actual consumed amount
+                $actualConsumedAmount = $originalVoucherAmount - $amountLeft;
 
                 $userVoucher->amount = $amountLeft;
                 $userVoucher->update();
@@ -784,10 +788,10 @@ class PackagesController extends Controller
                     'main_service_id'=>$request->bundle_id
                 ]);
                 
-                // Log voucher consumption activity
-                if ($discount->discount_type == 'voucher') {
+                // Log voucher consumption activity with actual consumed amount
+                if ($discount->discount_type == 'voucher' && $actualConsumedAmount > 0) {
                     $patient = User::find($request->user_id);
-                    ActivityLogger::logVoucherConsumed($amountForVoucher, $patient, $discount);
+                    ActivityLogger::logVoucherConsumed($actualConsumedAmount, $patient, $discount);
                 }
             }
 
