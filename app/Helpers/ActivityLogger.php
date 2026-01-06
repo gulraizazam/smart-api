@@ -807,4 +807,47 @@ class ActivityLogger
             'updated_at' => now(),
         ]);
     }
+
+    /**
+     * Log feedback added activity
+     * Format: USERNAME added feedback for SERVICENAME against PATIENTNAME scheduled on SCHEDULED DATE
+     */
+    public static function logFeedbackAdded($feedback, $appointment, $patient, $service, $location = null)
+    {
+        $locationName = '';
+        if ($location) {
+            $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+        }
+        
+        $serviceName = $service->name ?? '';
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        
+        // Get scheduled date
+        $scheduledDate = '';
+        if ($appointment && $appointment->scheduled_date) {
+            $scheduledDate = date('M j, Y', strtotime($appointment->scheduled_date));
+        }
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> added feedback for <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> against <span class="highlight-orange">' . $patientName . '</span>' . ($scheduledDate ? ' scheduled on <span class="highlight-purple">' . $scheduledDate . '</span>' : '');
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => 'Feedback Added',
+            'activity_type' => 'feedback_added',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'appointment_id' => $appointment->id ?? null,
+            'appointment_type' => 'Treatment',
+            'service' => $serviceName,
+            'service_id' => $service->id ?? null,
+            'location' => $locationName,
+            'centre_id' => $location->id ?? null,
+            'schedule_date' => $appointment->scheduled_date ?? null,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
 }
