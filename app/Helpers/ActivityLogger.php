@@ -809,6 +809,59 @@ class ActivityLogger
     }
 
     /**
+     * Log voucher assigned activity
+     * Format: USERNAME assigned VOUCHERNAME voucher of Rs. AMOUNT to PATIENTNAME
+     */
+    public static function logVoucherAssigned($userVoucher, $patient, $voucher)
+    {
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $voucherName = $voucher->name ?? 'Voucher';
+        $amount = $userVoucher->amount ?? 0;
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> assigned <span class="highlight-orange">' . $voucherName . '</span> voucher of <span class="highlight-green">Rs. ' . number_format($amount) . '</span> to <span class="highlight-orange">' . $patientName . '</span>';
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => 'Voucher Assigned',
+            'activity_type' => 'voucher_assigned',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'amount' => $amount,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
+     * Log voucher updated activity
+     * Format: USERNAME updated VOUCHERNAME voucher amount from Rs. OLDAMOUNT to Rs. NEWAMOUNT for PATIENTNAME
+     */
+    public static function logVoucherUpdated($userVoucher, $patient, $voucher, $oldAmount, $newAmount)
+    {
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $voucherName = $voucher->name ?? 'Voucher';
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> updated <span class="highlight-orange">' . $voucherName . '</span> voucher amount from <span class="highlight-green">Rs. ' . number_format($oldAmount) . '</span> to <span class="highlight-green">Rs. ' . number_format($newAmount) . '</span> for <span class="highlight-orange">' . $patientName . '</span>';
+        
+        return Activity::create([
+            'account_id' => Auth::user()->account_id ?? null,
+            'action' => 'Voucher Updated',
+            'activity_type' => 'voucher_updated',
+            'description' => $description,
+            'patient' => $patientName,
+            'patient_id' => $patient->id ?? null,
+            'amount' => $newAmount,
+            'created_by' => Auth::user()->id ?? null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /**
      * Log feedback added activity
      * Format: USERNAME added feedback for SERVICENAME against PATIENTNAME scheduled on SCHEDULED DATE
      */

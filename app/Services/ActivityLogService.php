@@ -168,6 +168,12 @@ class ActivityLogService
             case 'feedback_added':
                 return '<span class="highlight">' . $creatorName . '</span> added feedback for <span class="highlight-orange">' . ($service ?: 'Service') . '</span> against <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' scheduled on <span class="highlight-purple">' . $dateStr . '</span>' : '');
             
+            case 'voucher_assigned':
+                return '<span class="highlight">' . $creatorName . '</span> assigned voucher of <span class="highlight-green">Rs. ' . number_format($amount) . '</span> to <span class="highlight-orange">' . $patient . '</span>';
+            
+            case 'voucher_updated':
+                return '<span class="highlight">' . $creatorName . '</span> updated voucher amount to <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patient . '</span>';
+            
             default:
                 // Fallback for existing records - check action field
                 return self::buildFallbackDescription($activity, $creatorName, $patient, $service, $location, $amount, $planId, $appointmentType, $dateStr);
