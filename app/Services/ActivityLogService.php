@@ -174,6 +174,12 @@ class ActivityLogService
             case 'voucher_updated':
                 return '<span class="highlight">' . $creatorName . '</span> updated voucher amount to <span class="highlight-green">Rs. ' . number_format($amount) . '</span> for <span class="highlight-orange">' . $patient . '</span>';
             
+            case 'voucher_consumed':
+                return '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> consumed from voucher against <span class="highlight-orange">' . $patient . '</span>';
+            
+            case 'voucher_refunded':
+                return '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> refunded to voucher for <span class="highlight-orange">' . $patient . '</span>';
+            
             default:
                 // Fallback for existing records - check action field
                 return self::buildFallbackDescription($activity, $creatorName, $patient, $service, $location, $amount, $planId, $appointmentType, $dateStr);
