@@ -691,8 +691,21 @@ class PatientService
             return null;
         }
 
+        // Get patient membership
+        $membership = Membership::with('membershipType')
+            ->where('patient_id', (int)$patient->id)
+            ->where('active', 1)
+            ->first();
+
         return [
             'patient' => $patient,
+            'membership' => $membership ? [
+                'code' => $membership->code,
+                'type' => $membership->membershipType->name ?? 'Unknown',
+                'start_date' => $membership->start_date,
+                'end_date' => $membership->end_date,
+                'is_active' => $membership->end_date >= now()->format('Y-m-d'),
+            ] : null,
             'permissions' => $this->getPermissions(),
         ];
     }
@@ -732,6 +745,12 @@ class PatientService
             'end_date' => Carbon::now()->addDays($membership->membershipType->period)->format('Y-m-d'),
             'assigned_at' => Carbon::now()->format('Y-m-d'),
         ]);
+
+        // Log activity
+        $patient = Patients::find($patientId);
+        if ($patient) {
+            \App\Helpers\ActivityLogger::logMembershipAssigned($patient, $membership, $membership->membershipType);
+        }
 
         return [
             'status' => true,

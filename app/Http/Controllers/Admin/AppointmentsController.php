@@ -48,6 +48,7 @@ use Illuminate\Validation\Rule;
 use App\Models\AppointmentTypes;
 use App\Models\AuditTrailTables;
 use App\Models\UserHasLocations;
+use App\Helpers\ActivityLogger;
 use App\Helpers\GeneralFunctions;
 use App\Models\AuditTrailActions;
 use App\Exports\ExportAppointment;
@@ -1802,6 +1803,11 @@ class AppointmentsController extends Controller
                         'referred_by' => $appointment_data['referred_by'] ?? null,
                     ]);
                 }
+                
+                // Update lead's patient_id if it's null
+                if ($lead && !$lead->patient_id && $patient) {
+                    Leads::where('id', $lead->id)->update(['patient_id' => $patient->id]);
+                }
 
                 LeadsServices::updateOrCreate([
                     'lead_id' => $lead->id,
@@ -1852,8 +1858,15 @@ class AppointmentsController extends Controller
                         'new_status_id' => $bookedStatusId,
                     ]);
                     
-                    // Send Meta CAPI event for booked status
+                    // Log lead booked activity
                     $leadRecord = Leads::where(['phone' => $appointment_data['phone']])->orderBy('id', 'desc')->first();
+                    if ($leadRecord) {
+                        $location = Locations::with('city')->find($find_cons->location_id);
+                        $service = Services::find($find_cons->service_id);
+                        ActivityLogger::logLeadBooked($leadRecord, $find_cons, $location, $service);
+                    }
+                    
+                    // Send Meta CAPI event for booked status
                     if ($leadRecord) {
                         \Log::info('Sending Meta CAPI booked event', [
                             'lead_id' => $leadRecord->id,
@@ -2731,15 +2744,30 @@ class AppointmentsController extends Controller
             $appointment_data = $request->all();
             $appointment_data['region_id'] = $city_info->region_id;
             $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
+            
+            // Store old values for activity logging
+            $oldDate = $appointment->scheduled_date;
+            $oldTime = $appointment->scheduled_time;
+            $oldDoctorId = $appointment->doctor_id;
+            $oldServiceId = $appointment->service_id;
+            $oldLocationId = $appointment->location_id;
+            $oldCityId = $appointment->city_id;
+            $oldMachineId = $appointment->resource_id;
+            $oldConsultancyType = $appointment->consultancy_type;
+            $oldPatientName = $patient->name;
+            $oldPatientPhone = $patient->phone;
+            $oldPatientGender = $patient->gender;
+            $isRescheduled = false;
+            
             if ($appointment->scheduled_date != $request->scheduled_date) {
 
                 $appointment_data['converted_by'] = Auth::user()->id;
                 Activity::where('appointment_id',$id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
-
+                $isRescheduled = true;
             }
             if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
                 $appointment_data['converted_by'] = Auth::user()->id;
-
+                $isRescheduled = true;
             }
             if ((string) $appointment->city_id !== $request->city_id || (string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id || (string) $patient->gender !== $request->gender) {
                 $appointment_data['updated_by'] = Auth::user()->id;
@@ -2844,6 +2872,9 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Patient not found', false);
             }
             $patientData = $appointment_data;
+            // Remove fields that don't exist in users table
+            unset($patientData['updated_by']);
+            unset($patientData['converted_by']);
             $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
             GeneralFunctions::saveAppointmentLogs('updated', $screen, $appointment);
             $patient = Patients::updateRecord($appointment->patient_id, $patientData);
@@ -2854,7 +2885,115 @@ class AppointmentsController extends Controller
                     'appointment_id' => $appointment->id,
                 ])
             );
-
+            
+            // Log rescheduled activity
+            if ($isRescheduled) {
+                $location = Locations::with('city')->find($appointment->location_id);
+                $service = Services::find($appointment->service_id);
+                ActivityLogger::logAppointmentRescheduled(
+                    $appointment,
+                    $patient,
+                    $oldDate,
+                    $oldTime,
+                    Carbon::parse($request->scheduled_date)->format('Y-m-d'),
+                    Carbon::parse($request->scheduled_time)->format('H:i:s'),
+                    $location,
+                    $service
+                );
+            }
+            
+            // Log other field changes (not rescheduling)
+            $fieldChanges = [];
+            
+            // Check doctor change
+            if ($oldDoctorId != $request->doctor_id) {
+                $oldDoctor = User::find($oldDoctorId);
+                $newDoctor = User::find($request->doctor_id);
+                $fieldChanges['Doctor'] = [
+                    'old' => $oldDoctor->name ?? 'Unknown',
+                    'new' => $newDoctor->name ?? 'Unknown'
+                ];
+            }
+            
+            // Check service/treatment change (only if service_id is provided in request)
+            if ($request->has('service_id') && $request->service_id && $oldServiceId != $request->service_id) {
+                $oldService = Services::find($oldServiceId);
+                $newService = Services::find($request->service_id);
+                $fieldChanges['Treatment'] = [
+                    'old' => $oldService->name ?? 'Unknown',
+                    'new' => $newService->name ?? 'Unknown'
+                ];
+            }
+            
+            // Check location change
+            if ($oldLocationId != $request->location_id) {
+                $oldLocation = Locations::find($oldLocationId);
+                $newLocation = Locations::find($request->location_id);
+                $fieldChanges['Location'] = [
+                    'old' => $oldLocation->name ?? 'Unknown',
+                    'new' => $newLocation->name ?? 'Unknown'
+                ];
+            }
+            
+            // Check city change
+            if ($oldCityId != $request->city_id) {
+                $oldCity = Cities::find($oldCityId);
+                $newCity = Cities::find($request->city_id);
+                $fieldChanges['City'] = [
+                    'old' => $oldCity->name ?? 'Unknown',
+                    'new' => $newCity->name ?? 'Unknown'
+                ];
+            }
+            
+            // Check machine change (for treatments)
+            if ($request->has('machine_id') && $oldMachineId != $request->machine_id) {
+                $oldMachine = Resources::find($oldMachineId);
+                $newMachine = Resources::find($request->machine_id);
+                $fieldChanges['Machine'] = [
+                    'old' => $oldMachine->name ?? 'Unknown',
+                    'new' => $newMachine->name ?? 'Unknown'
+                ];
+            }
+            
+            // Check patient name change
+            if ($oldPatientName != $request->name) {
+                $fieldChanges['Patient Name'] = [
+                    'old' => $oldPatientName,
+                    'new' => $request->name
+                ];
+            }
+            
+            // Check patient phone change
+            $newPhone = GeneralFunctions::cleanNumber($request->phone);
+            if ($oldPatientPhone != $newPhone) {
+                $fieldChanges['Phone'] = [
+                    'old' => $oldPatientPhone,
+                    'new' => $newPhone
+                ];
+            }
+            
+            // Check gender change
+            if ($oldPatientGender != $request->gender) {
+                $fieldChanges['Gender'] = [
+                    'old' => $oldPatientGender ?? 'Unknown',
+                    'new' => $request->gender ?? 'Unknown'
+                ];
+            }
+            
+            // Check consultancy type change (for consultations)
+            if ($request->has('consultancy_type') && $oldConsultancyType != $request->consultancy_type) {
+                $fieldChanges['Consultancy Type'] = [
+                    'old' => $oldConsultancyType ?? 'Unknown',
+                    'new' => $request->consultancy_type ?? 'Unknown'
+                ];
+            }
+            
+            // Log field changes if any (excluding reschedule which is logged separately)
+            if (!empty($fieldChanges)) {
+                $location = Locations::with('city')->find($appointment->location_id);
+                $service = Services::find($appointment->service_id);
+                ActivityLogger::logAppointmentUpdated($appointment, $patient, $fieldChanges, $location, $service);
+            }
 
             return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.');
         } else {
@@ -3030,6 +3169,10 @@ class AppointmentsController extends Controller
         if (! $appointment) {
             return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
         }
+        
+        // Store old status for activity logging
+        $oldStatusId = $appointment->base_appointment_status_id;
+        $oldStatus = AppointmentStatuses::find($oldStatusId);
         $appointment_type = AppointmentTypes::where('slug', '=', 'consultancy')->first();
         $appointment_type_2 = AppointmentTypes::where('slug', '=', 'treatment')->first();
         $counterglobal = Settings::where('slug', '=', 'sys-appointmentrescheduledcounter')->first();
@@ -3166,6 +3309,15 @@ class AppointmentsController extends Controller
                 'appointment_id' => $appointment->id,
             ])
         );
+        
+        // Log appointment status change activity
+        $newStatus = AppointmentStatuses::find($data['base_appointment_status_id']);
+        if ($oldStatus && $newStatus && $oldStatusId != $data['base_appointment_status_id']) {
+            $patient = Patients::find($appointment->patient_id);
+            $location = Locations::with('city')->find($appointment->location_id);
+            $service = Services::find($appointment->service_id);
+            ActivityLogger::logAppointmentStatusChange($appointment, $patient, $oldStatus, $newStatus, $location, $service);
+        }
 
         return ApiHelper::apiResponse($this->success, 'Status has been change successfully!', true, ['appontment_type_id' => $request->appointment_type_id]);
     }
@@ -4420,10 +4572,12 @@ class AppointmentsController extends Controller
                 $activity = new Activity();
                 $activity->timestamps = false;
                 $activity->action = 'received';
+                $activity->activity_type = 'payment_received';
                 $activity->patient = $patient->name;
+                $activity->patient_id = $patient->id;
                 $activity->appointment_type = 'Plan';
-                $activity->created_by = Auth::user()->name;
-                $activity->invoice_id = $invoice->id;
+                $activity->created_by = Auth::user()->id;
+                $activity->account_id = Auth::user()->account_id;
                 $activity->invoice_id = $invoice->id;
                 $activity->planId = $package_advances->package_id;
                 $activity->amount = $request->cash;
@@ -4460,17 +4614,32 @@ class AppointmentsController extends Controller
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();
         $servicename = Services::whereId($appointmentinfo->service_id)->first();
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $serviceName = $servicename->name ?? 'Service';
+        $locationName = $location->name ?? '';
+        $amount = number_format($invoice_detail->net_amount);
+        $scheduleDate = $appointmentinfo->scheduled_date ? date('M j, Y', strtotime($appointmentinfo->scheduled_date)) : '';
+        
+        // Format description with highlights
+        $description = '<span class="highlight">' . $creatorName . '</span> consumed <span class="highlight-green">Rs. ' . $amount . '</span> from <span class="highlight-orange">' . $patientName . '</span> for <span class="highlight-orange">' . $serviceName . '</span> Treatment' . ($locationName ? ' at <span class="highlight">' . $locationName . '</span>' : '') . ($scheduleDate ? ' on <span class="highlight-purple">' . $scheduleDate . '</span>' : '');
+        
         $activity = new Activity();
         $activity->action = 'consumed';
+        $activity->description = $description;
         $activity->patient = $patient->name;
+        $activity->patient_id = $patient->id;
         $activity->appointment_type = $servicename->name.' Treatment';
         $activity->activity_type = 'Treatment';
         $activity->schedule_date = $appointmentinfo->scheduled_date;
-        $activity->created_by = Auth::user()->name;
+        $activity->created_by = Auth::user()->id;
+        $activity->account_id = Auth::user()->account_id;
         $activity->invoice_id = $invoice->id;
         $activity->amount = $invoice_detail->net_amount;
         $activity->location = $location->name;
         $activity->centre_id = $appointmentinfo->location_id;
+        $activity->service_id = $appointmentinfo->service_id;
+        $activity->service = $servicename->name;
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();
@@ -4865,7 +5034,15 @@ class AppointmentsController extends Controller
         // Send Promotion SMS - Removed to prevent duplicate SMS (cron job handles this)
         // $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
         GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
-        //GeneralFunctions::saveActivityLogs('booked', 'Treatment', $appointment_data);
+        
+        // Log treatment booked activity
+        $patient = Patients::find($appointment->patient_id);
+        $location = Locations::with('city')->find($appointment->location_id);
+        $service = Services::find($appointment->service_id);
+        if ($patient) {
+            ActivityLogger::logTreatmentBooked($appointment, $patient, $location, $service);
+        }
+        
         $this->dispatch(
             new IndexSingleAppointmentJob([
                 'account_id' => Auth::User()->account_id,
@@ -6030,11 +6207,18 @@ class AppointmentsController extends Controller
         $data = [];
         $appointment = Appointments::find($request->appointment_id);
         if ($appointment) {
+            // Store old date/time for activity logging
+            $oldDate = $appointment->scheduled_date;
+            $oldTime = $appointment->scheduled_time;
+            $isRescheduled = false;
+            
             if ($appointment->scheduled_date != $request->scheduled_date) {
                 $data['converted_by'] = Auth::user()->id;
+                $isRescheduled = true;
             }
             if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
                 $data['converted_by'] = Auth::user()->id;
+                $isRescheduled = true;
             }
             if ($appointment->appointment_status_id == config('constants.appointment_status_arrived')
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
@@ -6058,6 +6242,23 @@ class AppointmentsController extends Controller
                     $this->SendRescheduleSms($request->appointment_id, $patient->phone, $log_type, $appointment->account_id);
                 }
                 Activity::where('appointment_id',$request->appointment_id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
+                
+                // Log rescheduled activity
+                if ($isRescheduled) {
+                    $location = Locations::with('city')->find($appointment->location_id);
+                    $service = Services::find($appointment->service_id);
+                    ActivityLogger::logAppointmentRescheduled(
+                        $appointment,
+                        $patient,
+                        $oldDate,
+                        $oldTime,
+                        Carbon::parse($request->scheduled_date)->format('Y-m-d'),
+                        Carbon::parse($request->scheduled_time)->format('H:i:s'),
+                        $location,
+                        $service
+                    );
+                }
+                
                 return ApiHelper::apiResponse($this->success, 'Record updated successfully!');
             }
 

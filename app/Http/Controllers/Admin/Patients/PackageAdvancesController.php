@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin\Patients;
 
 use App\Helpers\Filters;
+use App\Helpers\ActivityLogger;
 use App\Http\Controllers\Controller;
 use App\Models\PackageAdvances;
 use App\Models\Packages;
 use App\Models\PaymentModes;
 use App\Models\User;
+use App\Models\Patients;
+use App\Models\Locations;
 use Auth;
 use Carbon\Carbon;
 use Config;
@@ -174,6 +177,14 @@ class PackageAdvancesController extends Controller
             $data['package_id'] = $request->package_id;
 
             $package_advances = PackageAdvances::createRecord_onlyadvances($data);
+            
+            // Log payment received activity
+            $package = Packages::find($request->package_id);
+            $patient = Patients::find($request->patient_id);
+            $location = $package ? Locations::with('city')->find($package->location_id) : null;
+            if ($package_advances && $package && $patient) {
+                ActivityLogger::logPaymentReceived($package_advances, $package, $patient, $location);
+            }
 
             return response()->json([
                 'status' => true,

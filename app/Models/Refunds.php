@@ -134,12 +134,15 @@ class Refunds extends Model
         $activity->timestamps = false;
         $activity->action = 'refunded';
         $activity->patient = $patient->name;
+        $activity->patient_id = $patient->id;
         $activity->appointment_type = 'Plan';
-        $activity->created_by = Auth::user()->name;
+        $activity->created_by = Auth::user()->id;
         $activity->planId =  $request->package_id;
         $activity->amount = $request->refund_amount;
         $activity->location = $location->name;
         $activity->centre_id = $request->location_id;
+        $activity->account_id = Auth::user()->account_id;
+        $activity->activity_type = 'refund_made';
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();

@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Exports\ExportMembership;
 use App\HelperModule\ApiHelper;
+use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Http\Controllers\Controller;
+use App\Models\Patients;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Models\Membership;
 use App\Models\MembershipType;
@@ -201,6 +203,10 @@ class MembershipsController extends Controller
 
         $membershipCode = $membership->code;
         $isReferral = $membership->is_referral;
+        
+        // Get patient and membership type for activity logging before deletion
+        $patient = Patients::find($request->id);
+        $membershipType = $membership->membershipType;
 
         // Cancel the membership
         Membership::where('patient_id', $request->id)->delete();
@@ -213,6 +219,11 @@ class MembershipsController extends Controller
             $cancelledReferrals = Membership::where('parent_membership_code', $membershipCode)
                 ->where('is_referral', 1)
                 ->delete();
+        }
+
+        // Log activity
+        if ($patient) {
+            ActivityLogger::logMembershipCancelled($patient, $membership, $membershipType);
         }
 
         $message = 'Membership cancelled successfully';

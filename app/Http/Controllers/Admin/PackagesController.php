@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Validator;
 use Carbon\Carbon;
 use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
 use App\Models\User;
 use App\Models\Bundles;
 use App\Models\SMSLogs;
@@ -1191,9 +1192,12 @@ class PackagesController extends Controller
                 $location = Locations::whereId($request->location_id)->first();
                 $activity = new Activity();
                 $activity->action = 'received';
+                $activity->activity_type = 'payment_received';
                 $activity->patient = $patient->name;
+                $activity->patient_id = $patient->id;
                 $activity->appointment_type = 'Plan';
-                $activity->created_by = Auth::user()->name;
+                $activity->created_by = Auth::user()->id;
+                $activity->account_id = Auth::user()->account_id;
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
                 $activity->location = $location->name;
@@ -2297,15 +2301,26 @@ class PackagesController extends Controller
                 /*End*/
 
                 $patient = User::whereId($request->patient_id)->first();
-                $location = Locations::whereId($request->location_id)->first();
+                $location = Locations::with('city')->whereId($request->location_id)->first();
+                $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+                $creatorName = Auth::user()->name ?? 'System';
+                $patientName = $patient->name ?? 'Unknown';
+                
+                // Format description with highlights (no date - timestamp shows when it happened)
+                $description = '<span class="highlight">' . $creatorName . '</span> received payment <span class="highlight-green">Rs. ' . number_format($request->cash_amount) . '</span> from <span class="highlight-orange">' . $patientName . '</span> for <span class="highlight-orange">Plan Id: ' . $package->id . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '');
+                
                 $activity = new Activity();
                 $activity->action = 'received';
+                $activity->activity_type = 'payment_received';
+                $activity->description = $description;
                 $activity->patient = $patient->name;
+                $activity->patient_id = $patient->id;
                 $activity->appointment_type = 'Plan';
-                $activity->created_by = Auth::user()->name;
+                $activity->created_by = Auth::user()->id;
+                $activity->account_id = Auth::user()->account_id;
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
-                $activity->location = $location->name;
+                $activity->location = $locationName;
                 $activity->centre_id = $request->location_id;
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
@@ -2553,8 +2568,29 @@ class PackagesController extends Controller
         $get_package_unused_amount_with_edit = $request->cash_amount;
         $get_package_unuse_amount = $get_package_unused_amount_except_edit + $get_package_unused_amount_with_edit;
         $amount_status = true;
+        // Get old values before update
+        $packageAdvanceBefore = PackageAdvances::find($request->package_advances_id);
+        $oldAmount = $packageAdvanceBefore ? $packageAdvanceBefore->cash_amount : 0;
+        $oldDate = $packageAdvanceBefore ? $packageAdvanceBefore->created_at : null;
+        
         $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
         if ($record) {
+            // Log payment updated activity
+            $package = Packages::find($request->package_id);
+            $patient = $package ? User::find($package->patient_id) : null;
+            $location = $package ? Locations::with('city')->find($package->location_id) : null;
+            $newAmount = $request->cash_amount;
+            $newDate = $request->created_at;
+            
+            // Check what changed
+            $amountChanged = $oldAmount != $newAmount;
+            $oldDateFormatted = $oldDate ? Carbon::parse($oldDate)->format('Y-m-d') : null;
+            $dateChanged = $oldDateFormatted && $newDate && $oldDateFormatted != $newDate;
+            
+            if ($package && $patient && ($amountChanged || $dateChanged)) {
+                ActivityLogger::logPaymentUpdated($oldAmount, $newAmount, $oldDateFormatted, $newDate, $amountChanged, $dateChanged, $package, $patient, $location);
+            }
+            
             return ApiHelper::apiResponse($this->success, 'Data Updated successfully.', true, [
                 'amount_status' => $amount_status,
             ]);
@@ -2581,6 +2617,14 @@ class PackagesController extends Controller
 
             $record = PackageAdvances::deletefinaceRecord($request);
             $cash_receveive_remain = number_format(filter_var($request->cash_receveive_remain, FILTER_SANITIZE_NUMBER_INT) + $packageadvanceinfo->cash_amount);
+
+            // Log payment deleted activity
+            $package = Packages::find($packageadvanceinfo->package_id);
+            $patient = $package ? User::find($package->patient_id) : null;
+            $location = $package ? Locations::with('city')->find($package->location_id) : null;
+            if ($package && $patient) {
+                ActivityLogger::logPaymentDeleted($packageadvanceinfo->cash_amount, $package, $patient, $location);
+            }
 
             return ApiHelper::apiResponse($this->success, 'Record deleted successfully.', true, [
                 'id' => $request->package_advance_id,
