@@ -646,6 +646,52 @@ class PackageAdvances extends BaseModal
                 ->get();
         }
     }
+    /**
+     * Get refunded records for a specific patient with all required data
+     */
+    public static function getPatientRefundedRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id, $patient_id, $apply_filter, $filename)
+    {
+        $where = self::filters($request, $account_id, $patient_id, $apply_filter, $filename);
+
+        [$orderBy, $order] = getSortBy($request, 'id', 'DESC');
+        
+        $query = PackageAdvances::with(['user', 'location.city', 'package'])
+            ->when(count($where), fn ($query) => $query->where($where))
+            ->where(['is_refund' => 1])
+            ->whereIn('location_id', ACL::getUserCentres());
+        
+        if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+            $query->where('active', 1);
+        }
+        
+        return $query->limit($iDisplayLength)
+            ->offset($iDisplayStart)
+            ->groupBy('package_id')
+            ->orderby('created_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get total count of refunded records for a specific patient
+     */
+    public static function getTotalPatientRefundedRecords(Request $request, $account_id, $patient_id, $apply_filter, $filename)
+    {
+        $where = self::filters($request, $account_id, $patient_id, $apply_filter, $filename);
+
+        $query = Packages::where('is_refund', 1)
+            ->whereIn('location_id', ACL::getUserCentres());
+        
+        if (count($where)) {
+            $query->where($where);
+        }
+        
+        if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_plans')) {
+            $query->where('active', 1);
+        }
+        
+        return $query->count();
+    }
+
     public static function getTotalRefundedRecords(Request $request, $account_id, $id, $apply_filter, $filename)
     {
         $where = self::filters($request, $account_id, $id, $apply_filter, $filename);
