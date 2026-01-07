@@ -60,7 +60,7 @@
                                         <div class="form-group col-md-3 sn-select @if($errors->has('centre_id')) has-error @endif"
                                              id="locations">
                                             {!! Form::label('location_id', 'Centre:', ['class' => 'control-label']) !!}
-                                            <select class="form-control select2" id="centre_id" name="centre_id" onchange="getEmployees(this.value);">
+                                            <select class="form-control select2" id="centre_id" name="centre_id" onchange="getEmployeesForSales(this.value);">
                                                 <option value="">Select Centre</option>
                                                 @foreach($locations as $location)
                                                 <option value="{{$location->id}}">{{$location->name}}</option>
