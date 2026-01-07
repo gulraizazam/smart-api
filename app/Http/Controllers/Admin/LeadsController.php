@@ -1573,6 +1573,11 @@ class LeadsController extends Controller
                         ], $lead_data);
 
                         $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
+
+                        // Log lead activity for updated record
+                        $location = $location_id ? Locations::with('city')->find($location_id) : null;
+                        $service = $service_id ? Services::find($service_id) : null;
+                        ActivityLogger::logLeadCreated($lead, $location, $service);
                     } else {
                         if (in_array($phone, $new_patient_phones)) {
                             $lead_data['lead_status_id'] = $lead_status_id;
@@ -1582,6 +1587,11 @@ class LeadsController extends Controller
                             ], $lead_data);
 
                             $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
+
+                            // Log lead activity for new record
+                            $location = $location_id ? Locations::with('city')->find($location_id) : null;
+                            $service = $service_id ? Services::find($service_id) : null;
+                            ActivityLogger::logLeadCreated($lead, $location, $service);
                         }
                         if ($request->update_records != '1' && in_array($phone, $found_patients)) {
                             $update_lead = [
@@ -1601,6 +1611,11 @@ class LeadsController extends Controller
                             ], $update_lead);
 
                             $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
+
+                            // Log lead activity for duplicate record update
+                            $location = $location_id ? Locations::with('city')->find($location_id) : null;
+                            $service = $service_id ? Services::find($service_id) : null;
+                            ActivityLogger::logLeadCreated($lead, $location, $service);
                         }
                     }
                 } else {
