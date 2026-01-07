@@ -607,7 +607,7 @@ class Appointments extends Model
     {
         if (
             PackageAdvances::where(['appointment_id' => $id, 'account_id' => $account_id])->count() ||
-            Invoices::where(['appointment_id' => $id, 'account_id' => $account_id,'deleted_at'=>null,'invoice_status_id','!=',4])->count() ||
+            Invoices::where(['appointment_id' => $id, 'account_id' => $account_id, 'deleted_at' => null])->where('invoice_status_id', '!=', 4)->count() ||
             Measurement::where(['appointment_id' => $id])->count() ||
             Appointmentimage::where(['appointment_id' => $id])->count()
         ) {
