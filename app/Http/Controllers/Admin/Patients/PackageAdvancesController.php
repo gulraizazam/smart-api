@@ -292,7 +292,7 @@ class PackageAdvancesController extends Controller
                     }
                     $records['data'][] = [
                         'patient' => $packagesadvances->user->name,
-                        'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone),
+                        'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($packagesadvances->user->phone) : '***********',
                         'transtype' => $transtype,
                         'cash_in' => $cash_in,
                         'cash_out' => $cash_out,

@@ -376,6 +376,7 @@ class RefundsController extends Controller
                 $appointmentinformation = Appointments::where('id', '=', $nonplansrefund['appointment_id'])->first();
                 $records['data'][] = [
                     'name' => $appointmentinformation->name,
+                    'phone' => Gate::allows('contact') ? $appointmentinformation->patient->phone : '***********',
                     'doctor' => $appointmentinformation->doctor->name,
                     'region' => $appointmentinformation->region->name,
                     'city' => $appointmentinformation->city->name,

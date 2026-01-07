@@ -370,7 +370,7 @@ class LeadsController extends Controller
                         'gender' => $lead->gender == 1 ? 'Male' : 'Female',
                         'active' => $lead->active,
                         'cityId' => $lead?->city?->id ?? 0,
-                        'phone' => GeneralFunctions::prepareNumber4Call($lead->phone),
+                        'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($lead->phone) : '***********',
                         'city_id' => $lead->city->name ?? '', //view('admin.leads.city', compact('lead'))->render(),
                         'region_id' => (array_key_exists($lead->region_id, $Regions)) ? $Regions[$lead->region_id]->name : 'N/A',
                         'lead_status_id' => $lead_status_data->name ?? '',
@@ -1999,7 +1999,7 @@ class LeadsController extends Controller
                 $records['data'][$index] = [
                     'PatientId' => GeneralFunctions::patientSearchStringAdd($lead->PatientId),
                     'name' => $lead->name,
-                    'phone' => '<a href="javascript:void(0)" class="clipboard" data-toggle="tooltip" title="Click to Copy" data-clipboard-text="' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '">' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '</a>',
+                    'phone' => Gate::allows('contact') ? '<a href="javascript:void(0)" class="clipboard" data-toggle="tooltip" title="Click to Copy" data-clipboard-text="' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '">' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '</a>' : '***********',
                     'city_id' => view('admin.leads.city', compact('lead'))->render(),
                     'region_id' => (array_key_exists($lead->region_id, $Regions)) ? $Regions[$lead->region_id]->name : 'N/A',
                     'lead_status_id' => view('admin.leads.lead_status', compact('lead', 'lead_status_data'))->render(),

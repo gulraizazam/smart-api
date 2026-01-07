@@ -619,7 +619,7 @@ class PatientsController extends Controller
                 $records['data'][$index] = [
                     'PatientId' => $lead->PatientId,
                     'name' => $lead->name,
-                    'phone' => GeneralFunctions::prepareNumber4Call($lead->patient->phone),
+                    'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($lead->patient->phone) : '***********',
                     'city_id' => ($lead->city_id) ? $lead->city->name : '',
                     'lead_status_id' => ($lead->lead_status_id) ? $lead->lead_status->name : '',
                     'service_id' => ($lead->service_id) ? $lead->service->name : '',
@@ -1110,7 +1110,7 @@ class PatientsController extends Controller
                 $records['data'][$index] = [
                     'Patient_ID' => $appointment->patient_id,
                     'name' => ($appointment->patient_name) ? $appointment->patient_name : $appointment->name,
-                    'phone' => GeneralFunctions::prepareNumber4Call($appointment->phone),
+                    'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($appointment->phone) : '***********',
                     'scheduled_date' => ($appointment->scheduled_date) ? Carbon::parse($appointment->scheduled_date, null)->format('M j, Y') . ' at ' . Carbon::parse($appointment->scheduled_time, null)->format('h:i A') : '-',
                     'doctor_id' => $appointment->doctor->name,
                     'city_id' => $appointment->city_id ? $appointment->city->name : 'N/A',
