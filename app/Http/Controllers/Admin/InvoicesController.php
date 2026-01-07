@@ -128,7 +128,7 @@ class InvoicesController extends Controller
                         'invoice_number' => sprintf('%05d', $invoice->id),
                         'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($user->id),
                         'name' => $user->name,
-                        'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone),
+                        'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone) : '***********',
                         'location' => $location_info->name,
                         'service' => $service->name,
                         'invoice_status' => $invoicestatus->name,

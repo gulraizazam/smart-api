@@ -116,7 +116,7 @@ class RefundsController extends Controller
                             'id' => $package->package_id ?? 0,
                             'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
                             'name' => $package->user?->name ?? '-',
-                            'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
+                            'phone' => $package->user ? (Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '***********') : '-',
                             'package_id' => $package?->package_id ?? '-',
                             'location_id' => $package->location->city->name.'-'.$package->location?->name,
                             'total' => number_format($package->total_price),

@@ -139,7 +139,7 @@ class FeedbackController extends Controller
                         'paient_id' => $feedback->patient_id,
                         'paient_name' => $feedback->patient_name,
 
-                        'phone' => GeneralFunctions::prepareNumber4Call($feedback->patient->phone ?? ''),
+                        'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($feedback->patient->phone ?? '') : '***********',
 
                         'service_id' => $feedback->service_id ?? '',
                         'service'=> $feedback->service->name ?? '',
