@@ -14,7 +14,11 @@ var table_columns = [
     }, {
         field: 'name',
         title: 'Patient',
-        width: 80
+        width: 80,
+        template: function (data) {
+            var view_url = route('admin.patients.preview', { id: data.patient_id });
+            return '<a href="' + view_url + '" style="color: #626574; font-weight: bold;">' + data.name + '</a>';
+        }
     }, {
         field: 'phone',
         title: 'Phone',
