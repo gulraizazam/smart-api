@@ -25,6 +25,10 @@ var table_columns = [
         title: 'Name',
         width: 'auto',
         sortable: false,
+        template: function (data) {
+            var view_url = route('admin.patients.preview', { id: data.id });
+            return '<a href="' + view_url + '" class="text-primary font-weight-bold">' + data.name + '</a>';
+        }
     }, {
         field: 'membership',
         title: 'Membership',
