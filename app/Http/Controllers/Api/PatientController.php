@@ -6,6 +6,7 @@ use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientRequest;
 use App\Models\Documents;
+use App\Models\PatientNote;
 use App\Models\Patients;
 use App\Services\PatientManagement\PatientService;
 use Exception;
@@ -92,6 +93,28 @@ class PatientController extends Controller
             }
 
             return ApiHelper::apiResponse($this->success, 'Record found', true, $result);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Get patient tab counts
+     */
+    public function getTabCounts(int $id): JsonResponse
+    {
+        try {
+            $counts = [
+                'appointments' => \DB::table('appointments')->where('patient_id', $id)->count(),
+                'vouchers' => \DB::table('user_vouchers')->where('user_id', $id)->count(),
+                'documents' => \DB::table('documents')->where('user_id', $id)->count(),
+                'plans' => \DB::table('packages')->where('patient_id', $id)->count(),
+                'invoices' => \DB::table('invoices')->where('patient_id', $id)->count(),
+                'refunds' => \DB::table('package_advances')->where('patient_id', $id)->where('is_refund', 1)->count(),
+                'activity_logs' => \DB::table('activities')->where('patient_id', $id)->count(),
+            ];
+
+            return ApiHelper::apiResponse($this->success, 'Tab counts retrieved', true, $counts);
         } catch (Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -354,7 +377,7 @@ class PatientController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
+                'document_type' => 'required|string|in:consent_form,consultation_form,others',
                 'file' => 'required|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240',
             ]);
 
@@ -399,7 +422,8 @@ class PatientController extends Controller
             $path = 'patient_image/' . $fileName;
 
             $document = Documents::create([
-                'name' => $request->name,
+                'name' => $file->getClientOriginalName(),
+                'document_type' => $request->document_type,
                 'url' => $path,
                 'user_id' => $patient->id,
             ]);
@@ -432,7 +456,7 @@ class PatientController extends Controller
             }
 
             $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
+                'document_type' => 'required|string|in:consent_form,consultation_form,others',
                 'file' => 'nullable|file|mimes:jpg,jpeg,png,pdf,docx,xlsx|max:10240',
             ]);
 
@@ -465,8 +489,8 @@ class PatientController extends Controller
                 ], 404);
             }
 
-            // Update name
-            $document->name = $request->name;
+            // Update document_type
+            $document->document_type = $request->document_type;
 
             // Handle file upload if new file provided
             if ($request->hasFile('file')) {
@@ -858,6 +882,314 @@ class PatientController extends Controller
             return response()->json([
                 'status' => true,
                 'data' => $activities
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Get voucher usage history for a specific user voucher
+     */
+    public function getVoucherHistory($patientId, $userVoucherId): JsonResponse
+    {
+        try {
+            if (!Gate::allows('vouchers_manage')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
+            }
+
+            $userVoucher = \App\Models\UserVouchers::with(['user', 'voucher'])->findOrFail($userVoucherId);
+
+            // Verify the voucher belongs to this patient
+            if ($userVoucher->user_id != $patientId) {
+                return ApiHelper::apiResponse($this->error, 'Voucher does not belong to this patient.', false);
+            }
+
+            $voucher = $userVoucher->voucher;
+
+            // Get all package_vouchers entries for this user and voucher
+            // Note: In package_vouchers, voucher_id refers to discounts.id (the voucher definition)
+            // We need to match using the voucher_id from user_vouchers
+            $rawHistory = \App\Models\PackageVouchers::where('user_id', $patientId)
+                ->where('voucher_id', $userVoucher->voucher_id)
+                ->orderBy('created_at', 'desc')
+                ->get();
+            
+            $usageHistory = $rawHistory->map(function ($item) {
+                    // Get package ID - try package_id first, then look up from package_random_id
+                    $packageId = $item->package_id;
+                    $packageRandomId = $item->package_random_id;
+                    
+                    if (!$packageId && $packageRandomId) {
+                        $package = \App\Models\Packages::where('random_id', $packageRandomId)->first();
+                        $packageId = $package ? $package->id : null;
+                    }
+                    
+                    // Get service name by matching main_service_id to bundle_id in bundles table
+                    $serviceName = 'N/A';
+                    
+                    if (!empty($item->main_service_id)) {
+                        $bundle = \DB::table('bundles')
+                            ->where('id', $item->main_service_id)
+                            ->select('name')
+                            ->first();
+                        if ($bundle) {
+                            $serviceName = $bundle->name;
+                        }
+                    }
+
+                    return [
+                        'package_id' => $packageId,
+                        'service_name' => $serviceName,
+                        'amount_deducted' => $item->amount ?? 0,
+                        'applied_date' => $item->created_at ? $item->created_at->format('M d, Y h:i A') : '-',
+                    ];
+                });
+
+            // Calculate totals
+            $totalAmount = $userVoucher->total_amount ?? 0;
+            $currentBalance = $userVoucher->amount ?? 0;
+            $consumedAmount = $totalAmount - $currentBalance;
+
+            return ApiHelper::apiResponse($this->success, 'Voucher history retrieved successfully.', true, [
+                'voucher_name' => $voucher ? $voucher->name : 'N/A',
+                'total_amount' => $totalAmount,
+                'consumed_amount' => $consumedAmount,
+                'balance' => $currentBalance,
+                'history' => $usageHistory,
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Get patient notes
+     */
+    public function getNotes(int $id): JsonResponse
+    {
+        try {
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $notes = PatientNote::where('patient_id', $id)
+                ->with('creator:id,name')
+                ->orderBy('is_pinned', 'desc')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            return response()->json([
+                'status' => true,
+                'data' => $notes
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Add a note to patient
+     */
+    public function addNote(int $id, Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'note' => 'required|string|max:2000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $note = PatientNote::create([
+                'patient_id' => $id,
+                'created_by' => Auth::id(),
+                'note' => $request->note,
+                'is_pinned' => false,
+            ]);
+
+            $note->load('creator:id,name');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Note added successfully',
+                'data' => $note
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Delete a patient note
+     */
+    public function deleteNote(int $id, int $noteId): JsonResponse
+    {
+        try {
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $note = PatientNote::where('id', $noteId)
+                ->where('patient_id', $id)
+                ->first();
+
+            if (!$note) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Note not found'
+                ], 404);
+            }
+
+            // Check permission: only super admin or note creator can delete
+            $user = Auth::user();
+            $isSuperAdmin = $user->hasRole('Super Admin') || Gate::allows('users_manage');
+            if (!$isSuperAdmin && $note->created_by != $user->id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You can only delete notes you created'
+                ], 403);
+            }
+
+            $note->delete();
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Note deleted successfully'
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Update a patient note
+     */
+    public function updateNote(int $id, int $noteId, Request $request): JsonResponse
+    {
+        try {
+            $validator = Validator::make($request->all(), [
+                'note' => 'required|string|max:2000',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => false,
+                    'message' => $validator->errors()->first()
+                ], 422);
+            }
+
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $note = PatientNote::where('id', $noteId)
+                ->where('patient_id', $id)
+                ->first();
+
+            if (!$note) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Note not found'
+                ], 404);
+            }
+
+            // Check permission: only super admin or note creator can edit
+            $user = Auth::user();
+            $isSuperAdmin = $user->hasRole('Super Admin') || Gate::allows('users_manage');
+            if (!$isSuperAdmin && $note->created_by != $user->id) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'You can only edit notes you created'
+                ], 403);
+            }
+
+            $note->note = $request->note;
+            $note->save();
+
+            $note->load('creator:id,name');
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Note updated successfully',
+                'data' => $note
+            ]);
+        } catch (Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Toggle pin status of a note
+     */
+    public function togglePinNote(int $id, int $noteId): JsonResponse
+    {
+        try {
+            $patient = Patients::where('id', $id)
+                ->where('account_id', Auth::user()->account_id)
+                ->first();
+
+            if (!$patient) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Patient not found'
+                ], 404);
+            }
+
+            $note = PatientNote::where('id', $noteId)
+                ->where('patient_id', $id)
+                ->first();
+
+            if (!$note) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Note not found'
+                ], 404);
+            }
+
+            $note->is_pinned = !$note->is_pinned;
+            $note->save();
+
+            return response()->json([
+                'status' => true,
+                'message' => $note->is_pinned ? 'Note pinned' : 'Note unpinned',
+                'data' => $note
             ]);
         } catch (Exception $e) {
             return ApiHelper::apiException($e);

@@ -10,9 +10,9 @@ class Documents extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'url', 'active', 'user_id', 'created_at', 'updated_at', 'deleted_at'];
+    protected $fillable = ['name', 'document_type', 'url', 'active', 'user_id', 'created_at', 'updated_at', 'deleted_at'];
 
-    protected static $_fillable = ['name', 'url', 'active', 'user_id'];
+    protected static $_fillable = ['name', 'document_type', 'url', 'active', 'user_id'];
 
     protected $table = 'documents';
 
@@ -26,8 +26,8 @@ class Documents extends BaseModal
     public function getFullUrlAttribute()
     {
         if ($this->url) {
-            // Use url() with storage/app/public path for correct URL
-            return url('storage/app/public/' . $this->url);
+            // Use asset() with storage path for correct URL
+            return asset('storage/' . $this->url);
         }
         return null;
     }
@@ -43,6 +43,7 @@ class Documents extends BaseModal
     {
 
         $data['name'] = $request->name ?? '';
+        $data['document_type'] = $request->document_type ?? null;
         $data['url'] = $path;
         $data['user_id'] = $id;
 
