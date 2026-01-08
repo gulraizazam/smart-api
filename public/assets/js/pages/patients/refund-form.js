@@ -3,11 +3,6 @@ var table_url = route('admin.refundpatient.datatable', {id: patientCardID});
 
 var table_columns = [
     {
-        field: 'name',
-        title: 'Patient',
-        sortable: false,
-        width: 100,
-    }, {
         field: 'plan_id',
         title: 'Plan ID',
         sortable: false,
