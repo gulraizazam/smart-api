@@ -11,12 +11,16 @@
             <!--begin::Container-->
             <div class="container">
                 @include('admin.patients.card.nav')
+                
+                {{-- Edit Patient Button - Positioned at top right, aligned with nav --}}
+               
+                
                 <!--begin::Profile Change Password-->
                 <div class="d-flex flex-row">
                     <!--begin::Aside-->
                     <div class="flex-row-auto offcanvas-mobile w-250px w-xxl-350px" id="kt_profile_aside">
                         <!--begin::Profile Card-->
-                        <div class="card card-custom card-stretch">
+                        <div class="card card-custom" style="height: fit-content;">
                             <!--begin::Body-->
                             <div class="card-body pt-4">
                                 <!--begin::User-->
@@ -67,11 +71,7 @@
                                         Add New
                                     </button>
                                 </div>
-                                <div class="card-toolbar submit-btn toolbar-plan-form d-none">
-                                    <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createPlan('{{request('id')}}');" data-toggle="modal" data-target="#modal_add_plan_form">
-                                        Add New
-                                    </button>
-                                </div>
+                                {{-- Add New button removed from Plans tab --}}
                                 <div class="card-toolbar submit-btn toolbar-finance-form d-none">
                                     <button type="button" class="btn btn-sm btn-primary mr-2 change-tab" onclick="createFinance('{{request('id')}}');" data-toggle="modal" data-target="#modal_add_finance_form">
                                         Add New
@@ -111,6 +111,7 @@
 
                                 <div id="personal_info" class="content-section">
                                     @include('admin.patients.card.profile.personal-info')
+                                    @include('admin.patients.card.profile.notes')
                                 </div>
 
                                 <div id="change_profile_picture" class="content-section d-none">
@@ -181,6 +182,14 @@
         <script src="{{asset('assets/js/pages/patients/patient-card.js')}}"></script>
         <script src="{{asset('assets/js/pages/patients/history-form.js')}}"></script>
         <script src="{{asset('assets/js/profile.js')}}"></script>
+        <script src="{{asset('assets/js/pages/crud/forms/validation/patients/patient-card-edit.js')}}"></script>
     @endpush
+
+    {{-- Edit Patient Modal --}}
+    <div class="modal fade" id="modal_edit_patients" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered form-popup" id="edit_patients">
+            @include('admin.patients.edit')
+        </div>
+    </div>
 
 @endsection

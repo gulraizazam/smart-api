@@ -1200,13 +1200,38 @@ class PatientService
             ->limit($iDisplayLength)
             ->get();
 
-        $data = $vouchers->map(function ($voucher) {
+        $data = $vouchers->map(function ($voucher) use ($patientId) {
+            // Calculate consumed and balance amounts
+            $totalAmount = $voucher->total_amount ?? 0;
+            $currentBalance = $voucher->amount;
+            
+            // If amount is null or 0 but total_amount exists, check if voucher has been used
+            if ($currentBalance === null || ($currentBalance == 0 && $totalAmount > 0)) {
+                // Check if any package_vouchers exist for this user/voucher combination
+                $hasUsage = DB::table('package_vouchers')
+                    ->where('user_id', $patientId)
+                    ->where('voucher_id', $voucher->voucher_id)
+                    ->exists();
+                
+                // If no usage exists, balance = total_amount (voucher not used yet)
+                if (!$hasUsage) {
+                    $currentBalance = $totalAmount;
+                } else {
+                    $currentBalance = $currentBalance ?? 0;
+                }
+            }
+            
+            $consumedAmount = $totalAmount - $currentBalance;
+            
             return [
                 'id' => $voucher->id,
+                'user_voucher_id' => $voucher->id,
                 'name' => $voucher->voucher_name ?? '',
                 'service' => '',
+                'total_amount' => number_format($totalAmount, 2),
+                'consumed_amount' => number_format($consumedAmount, 2),
+                'balance' => number_format($currentBalance, 2),
                 'amount' => $voucher->amount ?? 0,
-                'total_amount' => $voucher->total_amount ?? 0,
                 'startDate' => $voucher->start_date ?? '',
                 'endDate' => $voucher->end_date ?? '',
                 'created_at' => $voucher->created_at ? Carbon::parse($voucher->created_at)->format('D M, d Y h:i A') : '',

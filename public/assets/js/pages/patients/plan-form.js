@@ -3,22 +3,13 @@ var table_url = route('admin.plans.datatable', { id: patientCardID });
 
 var table_columns = [
     {
-        field: 'name',
-        title: 'Patient',
-        width: 90,
-    }, {
         field: 'package_id',
-        title: 'Name',
+        title: 'Plan ID',
         width: 70,
     }, {
         field: 'location_id',
         title: 'Centres',
         width: 'auto',
-        sortable: false,
-    }, {
-        field: 'session_count',
-        title: 'Session count',
-        width: 80,
         sortable: false,
     }, {
         field: 'total',
@@ -27,7 +18,12 @@ var table_columns = [
         sortable: false,
     }, {
         field: 'cash_receive',
-        title: 'Cash receive',
+        title: 'Cash In',
+        width: 80,
+        sortable: false,
+    }, {
+        field: 'settle_amount',
+        title: 'Settled',
         width: 80,
         sortable: false,
     }, {
@@ -44,21 +40,14 @@ var table_columns = [
         }
     }, {
         field: 'status',
-        title: 'status',
+        title: 'Status',
         width: 'auto',
         template: function (data) {
-            let status_url = route('admin.plans.status');
-            return statuses(data, status_url);
-        }
-    }, {
-        field: 'actions',
-        title: 'Actions',
-        sortable: false,
-        width: 100,
-        overflow: 'visible',
-        autoHide: false,
-        template: function (data) {
-            return actions(data);
+            if (data.active == 1) {
+                return '<span class="badge badge-success">Active</span>';
+            } else {
+                return '<span class="badge badge-danger">Inactive</span>';
+            }
         }
     }];
 

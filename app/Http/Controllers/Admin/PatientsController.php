@@ -1181,11 +1181,40 @@ class PatientsController extends Controller
                 $serviceNames = $voucher->voucherHasLocations
                 ->pluck('service.name') // assuming service has 'name' field
                 ->filter() // remove nulls
-                ->implode(', ');   
+                ->implode(', ');
+                
+                // Calculate consumed and balance amounts
+                // total_amount is the original voucher amount
+                // amount is the remaining balance (if null/0 and total_amount exists, balance = total_amount)
+                $totalAmount = $userVoucher->total_amount ?? 0;
+                
+                // If amount is null or 0 but total_amount exists, it means voucher hasn't been used yet
+                // So balance should equal total_amount
+                $currentBalance = $userVoucher->amount;
+                if ($currentBalance === null || ($currentBalance == 0 && $totalAmount > 0)) {
+                    // Check if any package_vouchers exist for this user/voucher combination
+                    $hasUsage = \App\Models\PackageVouchers::where('user_id', $userVoucher->user_id)
+                        ->where('voucher_id', $userVoucher->voucher_id)
+                        ->exists();
+                    
+                    // If no usage exists, balance = total_amount (voucher not used yet)
+                    if (!$hasUsage) {
+                        $currentBalance = $totalAmount;
+                    } else {
+                        $currentBalance = $currentBalance ?? 0;
+                    }
+                }
+                
+                $consumedAmount = $totalAmount - $currentBalance;
+                
                 return [
                     'id' => $voucher->id,
+                    'user_voucher_id' => $userVoucher->id,
                     'name' => $voucher->name,
                     'service' => $serviceNames,
+                    'total_amount' => number_format($totalAmount, 2),
+                    'consumed_amount' => number_format($consumedAmount, 2),
+                    'balance' => number_format($currentBalance, 2),
                     'amount' => $userVoucher->amount,
                     'startDate' => $voucher->start,
                     'endDate' => $voucher->end,
