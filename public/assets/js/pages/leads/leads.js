@@ -943,6 +943,7 @@ function setFilters(filter_values, active_filters) {
             $("#search_status_id").html(status_options);
         }
         $("#search_city_id").html(city_options);
+        $("#search_location_id").html(location_options);
         $("#search_region_id").html(region_options);
         $("#search_service_id").html(service_options);
         $("#search_created_by").html(user_options);
@@ -1145,10 +1146,12 @@ $(function () {
         });
     $("#Add_comment").click(function(){
         $.ajax({
-            type: 'get',
-            url:route('admin.leads.storecomment'),
+            type: 'POST',
+            url: route('admin.leads.storecomment'),
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             data: {
-                '_token': $('input[name=_token]').val(),
                 'comment': $('input[name=comment]').val(),
                 'lead_id': $('#comment_lead_id').val(),
             },
@@ -1161,7 +1164,7 @@ $(function () {
 })
 
 
-let loadLocations = function (cityId) {
+let loadLocations = function (cityId, targetSelector = '#convert_location_id', resetDoctorsFlag = true) {
     if(cityId != '') {
         $.ajax({
             headers: {
@@ -1177,27 +1180,60 @@ let loadLocations = function (cityId) {
                 if(response.status) {
 
                     let dropdowns =  response.data.dropdown;
-                    let dropdown_options =  '<option value="">Select a Location</option>';
+                    let defaultText = targetSelector === '#search_location_id' ? 'All' : 'Select a Location';
+                    let dropdown_options =  '<option value="">' + defaultText + '</option>';
 
                     Object.entries(dropdowns).forEach(function (dropdown) {
                         dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                     });
 
-                    $('#convert_location_id').html(dropdown_options);
+                    $(targetSelector).html(dropdown_options);
                     $('.select2').select2({ width: '100%' });
-                    resetDoctors();
+                    if (resetDoctorsFlag) {
+                        resetDoctors();
+                    }
                 } else {
-                    resetDropdowns();
+                    if (resetDoctorsFlag) {
+                        resetDropdowns();
+                    } else {
+                        $(targetSelector).html('<option value="">All</option>');
+                    }
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                resetDropdowns();
+                if (resetDoctorsFlag) {
+                    resetDropdowns();
+                } else {
+                    $(targetSelector).html('<option value="">All</option>');
+                }
             }
         });
     } else {
-        resetDropdowns();
+        if (resetDoctorsFlag) {
+            resetDropdowns();
+        } else {
+            $(targetSelector).html('<option value="">All</option>');
+        }
     }
 }
+
+// Search City change handler - load centres dynamically
+$(document).on('change', '#search_city_id', function() {
+    let cityId = $(this).val();
+    loadLocations(cityId, '#search_location_id', false);
+});
+
+// Edit City change handler - load centres dynamically
+$(document).on('change', '#edit_city_id', function() {
+    let cityId = $(this).val();
+    loadLocations(cityId, '#edit_location_id', false);
+});
+
+// Add City change handler - load centres dynamically
+$(document).on('change', '#add_city_id', function() {
+    let cityId = $(this).val();
+    loadLocations(cityId, '#add_location_id', false);
+});
 
 let resetLocations = function () {
     var locationDropdown = '<select id="location_id" class="form-control select2 required" name="location_id"><option value="" selected="selected">Select a Location</option></select>';
@@ -1388,17 +1424,17 @@ function LoadLoc()
         success: function(response) {
             if(response.status) {
                 let dropdowns =  response.data.dropdown;
-                let dropdown_options =  '<option value="">Select a Location</option>';
+                let dropdown_options =  '<option value="">All</option>';
                 Object.entries(dropdowns).forEach(function (dropdown) {
                     dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                 });
                 $('#search_location_id').html(dropdown_options);
             } else {
-                resetDropdowns();
+                $('#search_location_id').html('<option value="">All</option>');
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            resetDropdowns();
+            $('#search_location_id').html('<option value="">All</option>');
         }
     });
 }
