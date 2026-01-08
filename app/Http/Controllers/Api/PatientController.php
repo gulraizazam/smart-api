@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\HelperModule\ApiHelper;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\PatientRequest;
+use App\Models\Activity;
 use App\Models\Documents;
 use App\Models\PatientNote;
 use App\Models\Patients;
@@ -1031,6 +1032,19 @@ class PatientController extends Controller
             ]);
 
             $note->load('creator:id,name');
+
+            // Log activity
+            Activity::create([
+                'account_id' => Auth::user()->account_id,
+                'patient_id' => $id,
+                'patient' => $patient->name,
+                'activity_type' => 'note_added',
+                'action' => 'added',
+                'description' => '<span class="highlight">' . Auth::user()->name . '</span> added a note for <span class="highlight-orange">' . $patient->name . '</span>',
+                'created_by' => Auth::id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
             return response()->json([
                 'status' => true,
