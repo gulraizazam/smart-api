@@ -349,7 +349,8 @@ class HomeController extends Controller
         // Get paginated activities
         $activities = Activity::with([
             'plan' => fn ($q) => $q->select('id', 'name'),
-            'centre' => fn ($q) => $q->select('id', 'name')
+            'centre' => fn ($q) => $q->select('id', 'name'),
+            'user' => fn ($q) => $q->select('id', 'name')
         ])
             ->whereIn('centre_id', $centres)
             ->whereIn('action', ['received', 'consumed', 'refunded'])
@@ -359,6 +360,25 @@ class HomeController extends Controller
             ->skip(($page - 1) * $perPage)
             ->take($perPage)
             ->get();
+        
+        // Get all unique created_by IDs and fetch users in one query
+        $createdByIds = $activities->pluck('created_by')->filter(function ($id) {
+            return is_numeric($id) && $id > 0;
+        })->unique()->values()->toArray();
+        
+        $users = User::whereIn('id', $createdByIds)->pluck('name', 'id');
+        
+        // Add created_by_name to each activity
+        $activities->each(function ($activity) use ($users) {
+            $createdBy = $activity->created_by;
+            if (is_numeric($createdBy) && isset($users[$createdBy])) {
+                $activity->created_by_name = $users[$createdBy];
+            } elseif (!is_numeric($createdBy) && $createdBy) {
+                $activity->created_by_name = $createdBy;
+            } else {
+                $activity->created_by_name = 'N/A';
+            }
+        });
 
         $data['recent_activities'] = [
             'finance_log' => $activities,
@@ -389,7 +409,8 @@ class HomeController extends Controller
         // Use centre_id (integer) instead of location name (string) for better performance
         $activities = Activity::with([
             'plan' => fn ($q) => $q->select('id', 'name'),
-            'centre' => fn ($q) => $q->select('id', 'name')
+            'centre' => fn ($q) => $q->select('id', 'name'),
+            'user' => fn ($q) => $q->select('id', 'name')
         ])
             ->whereIn('centre_id', $centres)
             ->whereIn('action', ['received', 'consumed', 'refunded'])
@@ -397,6 +418,25 @@ class HomeController extends Controller
             ->where('created_at', '<', $todayEnd)
             ->latest()
             ->get();
+        
+        // Get all unique created_by IDs and fetch users in one query
+        $createdByIds = $activities->pluck('created_by')->filter(function ($id) {
+            return is_numeric($id) && $id > 0;
+        })->unique()->values()->toArray();
+        
+        $users = User::whereIn('id', $createdByIds)->pluck('name', 'id');
+        
+        // Add created_by_name to each activity
+        $activities->each(function ($activity) use ($users) {
+            $createdBy = $activity->created_by;
+            if (is_numeric($createdBy) && isset($users[$createdBy])) {
+                $activity->created_by_name = $users[$createdBy];
+            } elseif (!is_numeric($createdBy) && $createdBy) {
+                $activity->created_by_name = $createdBy;
+            } else {
+                $activity->created_by_name = 'N/A';
+            }
+        });
 
         return $data['recent_activities'] = [
             'finance_log' => $activities,

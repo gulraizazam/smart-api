@@ -30,6 +30,9 @@
                                     <div class="text-muted mb-2" id="profile_patient_id"></div>
                                     <span class="label label-light-success label-inline font-weight-bold label-lg d-none statuses" id="profile-active">Active</span>
                                     <span class="label label-light-danger label-inline font-weight-bold label-lg d-none statuses" id="profile-inactive">In-Active</span>
+                                    <div class="mt-3" id="profile_membership_container" style="display: none;">
+                                        <span class="label label-inline font-weight-bold label-lg" id="profile_membership"></span>
+                                    </div>
                                 </div>
                                 <!--end::User-->
                                 <!--begin::Nav bar-->
@@ -140,10 +143,6 @@
                                     @include('admin.patients.card.plans.index', ['customId' => 'plan-search'])
                                 </div>
 
-                                <div id="finance-form" class="content-section d-none">
-                                    @include('admin.patients.card.packagesadvances.index', ['customId' => 'finance-search'])
-                                </div>
-
                                 <div id="invoice-form" class="content-section d-none">
                                     @include('admin.patients.card.invoices.index', ['customId' => 'invoice-search'])
                                 </div>
@@ -154,6 +153,10 @@
 
                                 <div id="no-plan-refund-form" class="content-section d-none">
                                     @include('admin.patients.card.nonplansrefunds.index', ['customId' => 'no-plan-refund-search'])
+                                </div>
+
+                                <div id="history-form" class="content-section d-none">
+                                    @include('admin.patients.card.history.index')
                                 </div>
 
 
@@ -176,6 +179,7 @@
             let patientCardID = "{{request('id')}}";
         </script>
         <script src="{{asset('assets/js/pages/patients/patient-card.js')}}"></script>
+        <script src="{{asset('assets/js/pages/patients/history-form.js')}}"></script>
         <script src="{{asset('assets/js/profile.js')}}"></script>
     @endpush
 

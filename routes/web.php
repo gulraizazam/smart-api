@@ -413,25 +413,17 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('memberships/export/pdf', [MembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
         Route::get('leads/export/excel', [LeadsController::class, 'exportDocs'])->name('leads.export.excel');
         Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('membership.export.excel');
+        // Patients - using API controller for CRUD operations, keeping view routes
+        Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients_manage');
         Route::get('patients/{id}/preview', [PatientsController::class, 'preview'])->name('patients.preview');
-
-        Route::get('plans/log/{id}/{patient_id}/{type}', [PatientPackageController::class, 'planlog'])->name('plans.log');
-
         Route::get('patients/{id}/leads', [PatientsController::class, 'leads'])->name('patients.leads');
-
         Route::post('patients/{id}/leads-datatable', [PatientsController::class, 'leadsDatatable'])->name('patients.leadsDatatable');
-
         Route::get('patients/{id}/appointments', [PatientsController::class, 'appointments'])->name('patients.appointments');
-
         Route::get('patients/{id}/image', [PatientsController::class, 'imageindex'])->name('patients.imageurl');
-
         Route::get('patients/{id}/document', [PatientsController::class, 'documentindex'])->name('patients.document');
-
         Route::get('patients/edit/{id}', [PatientsController::class, 'documentedit'])->name('patients.documentedit');
 
-        Route::resource('patients', PatientsController::class)->middleware('permission:patients_manage');
-
-        Route::post('patients/{id}/addreferral', [PatientsController::class, 'addReferral'])->name('patients.addreferral');
+        Route::get('plans/log/{id}/{patient_id}/{type}', [PatientPackageController::class, 'planlog'])->name('plans.log');
 
         /*Route start for patient medical history Forms*/
         Route::get('medicalhistoryform/editcustomform/{id}', [MedicalHistoryController::class, 'edit'])->name('medicalhistoryform.edit');

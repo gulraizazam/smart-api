@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Helpers\Filters;
+use App\Helpers\ActivityLogger;
 use App\Models\UserVouchers;
 use App\Models\User;
 use App\Models\Discounts;
@@ -275,12 +276,17 @@ class UserVouchersController extends Controller
             // }
 
             // Create the user voucher
-            UserVouchers::create([
+            $userVoucher = UserVouchers::create([
                 'user_id' => $request->patient_id,
                 'voucher_id' => $request->voucher_id,
                 'amount' => $request->amount,
                 'total_amount' => $request->amount
             ]);
+
+            // Log voucher assignment activity
+            $patient = User::find($request->patient_id);
+            $voucher = Discounts::find($request->voucher_id);
+            ActivityLogger::logVoucherAssigned($userVoucher, $patient, $voucher);
 
             return ApiHelper::apiResponse($this->success, 'Voucher assigned successfully.', true);
         } catch (\Exception $e) {
@@ -341,6 +347,7 @@ class UserVouchersController extends Controller
             ]);
 
             $userVoucher = UserVouchers::findOrFail($id);
+            $oldAmount = $userVoucher->total_amount;
 
             // Check if voucher is used in package_vouchers
             $isUsedInPackages = PackageVouchers::where('voucher_id', $userVoucher->voucher_id)
@@ -356,6 +363,11 @@ class UserVouchersController extends Controller
                 'total_amount' => $request->total_amount,
                 'amount' => $request->total_amount,
             ]);
+
+            // Log voucher update activity
+            $patient = User::find($userVoucher->user_id);
+            $voucher = Discounts::find($userVoucher->voucher_id);
+            ActivityLogger::logVoucherUpdated($userVoucher, $patient, $voucher, $oldAmount, $request->total_amount);
 
             return ApiHelper::apiResponse($this->success, 'Voucher updated successfully.', true, $userVoucher);
         } catch (\Exception $e) {

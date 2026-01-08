@@ -116,7 +116,7 @@ class RefundsController extends Controller
                             'id' => $package->package_id ?? 0,
                             'patient_id' => $package->user ? GeneralFunctions::patientSearchStringAdd($package->user->id) : '-',
                             'name' => $package->user?->name ?? '-',
-                            'phone' => $package->user ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '-',
+                            'phone' => $package->user ? (Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '***********') : '-',
                             'package_id' => $package?->package_id ?? '-',
                             'location_id' => $package->location->city->name.'-'.$package->location?->name,
                             'total' => number_format($package->total_price),
@@ -200,6 +200,115 @@ class RefundsController extends Controller
         ];
 
         return $records;
+    }
+
+    /**
+     * Patient-specific refunds datatable with all required fields
+     */
+    public function patientDatatable(Request $request, $id)
+    {
+        try {
+            $filename = 'patientrefunds';
+            $filters = getFilters($request->all());
+            $apply_filter = checkFilters($filters, $filename);
+
+            $records = [];
+            $records['data'] = [];
+
+            // Get Total Records for patient
+            $iTotalRecords = PackageAdvances::getTotalPatientRefundedRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
+
+            [$orderBy, $order] = getSortBy($request);
+            [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
+
+            // Get patient refunds with eager loading
+            $packages = PackageAdvances::getPatientRefundedRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
+
+            $records = $this->getFiltersData($records, $filename);
+
+            if ($packages) {
+                foreach ($packages as $package) {
+                    // Cash In
+                    $cash_in = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'in'],
+                        ['is_cancel', '=', '0'],
+                        ['is_setteled', '=', '0']
+                    ])->sum('cash_amount');
+
+                    // Cash Out (excluding refunds)
+                    $cash_out = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_refund', '=', '0'],
+                    ])->sum('cash_amount');
+
+                    // Refunded amount
+                    $refunded_amount = PackageAdvances::where([
+                        'package_id' => $package->package_id,
+                        'cash_flow' => 'out',
+                        'is_cancel' => '0',
+                        'is_refund' => '1',
+                    ])->sum('cash_amount');
+
+                    // Latest refund date
+                    $refunded_latest_date = PackageAdvances::where([
+                        'package_id' => $package->package_id,
+                        'cash_flow' => 'out',
+                        'is_cancel' => '0',
+                        'is_refund' => '1',
+                    ])->latest()->first();
+
+                    if ($refunded_amount != 0) {
+                        // Get plan total directly from packages table
+                        $packageInfo = Packages::find($package->package_id);
+                        $planTotal = $packageInfo ? $packageInfo->total_price : 0;
+                        $locationName = ($package->location && $package->location->city ? $package->location->city->name . '-' : '') . ($package->location ? $package->location->name : '');
+                        
+                        // Check if case is settled
+                        $is_case_setteled = PackageAdvances::where([
+                            'package_id' => $package->package_id,
+                            'cash_flow' => 'out',
+                            'is_setteled' => 1
+                        ])->exists();
+
+                        $records['data'][] = [
+                            'id' => $package->package_id ?? 0,
+                            'name' => $package->user?->name ?? '-',
+                            'plan_id' => $package->package_id ?? '-',
+                            'total' => number_format($planTotal),
+                            'cash_in' => number_format($cash_in),
+                            'cash_out' => number_format($cash_out),
+                            'refunded_amount' => number_format($refunded_amount),
+                            'case_setteled' => $is_case_setteled ? 'Yes' : 'No',
+                            'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('F j,Y h:i A') : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
+                            'location' => $locationName,
+                        ];
+                    } else {
+                        $iTotalRecords--;
+                    }
+                }
+
+                $records['meta'] = [
+                    'field' => $orderBy,
+                    'page' => $page,
+                    'pages' => $pages,
+                    'perpage' => $iDisplayLength,
+                    'total' => $iTotalRecords,
+                    'sort' => $order,
+                ];
+            }
+
+            $records['permissions'] = [
+                'refund' => Gate::allows('patients_refund_refund'),
+            ];
+
+            return ApiHelper::apiDataTable($records);
+
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
     }
 
     /**

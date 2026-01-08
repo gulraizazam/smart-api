@@ -97,24 +97,34 @@ class RefundsController extends Controller
 
         if ($packages) {
             foreach ($packages as $package) {
-                $session_count = count(PackageBundles::where('package_id', '=', $package->id)->get());
-                /*We discuss in future what happen next*/
-                $cash_receive = PackageAdvances::where([
+                // Cash IN (payments received)
+                $cash_in = PackageAdvances::where([
                     ['package_id', '=', $package->id],
                     ['cash_flow', '=', 'in'],
                     ['is_cancel', '=', '0'],
                 ])->sum('cash_amount');
-                if ($cash_receive != 0) {
+                
+                // Cash OUT (refunds given via package_advances)
+                $cash_out = PackageAdvances::where([
+                    ['package_id', '=', $package->id],
+                    ['cash_flow', '=', 'out'],
+                    ['is_cancel', '=', '0'],
+                ])->sum('cash_amount');
+                
+                // Refunded amount from refunds table
+                $refunded_amount = Refunds::where('package_id', $package->id)->sum('amount');
+                
+                if ($cash_in != 0) {
                     $records['data'][] = [
-                        'name' => $package->user->name,
-                        'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($package->user->phone),
-                        'package_id' => $package->name,
-                        'location_id' => $package->location->city->name.'-'.$package->location->name,
-                        'session_count' => $session_count,
+                        'id' => $package->id,
+                        'name' => $package->user->name ?? '',
+                        'plan_id' => $package->id,
                         'total' => number_format($package->total_price),
-                        'cash_receive' => number_format($cash_receive),
-                        'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
-                        'actions' => view('admin.patients.card.refunds.actions', compact('package'))->render(),
+                        'cash_in' => number_format($cash_in),
+                        'cash_out' => number_format($cash_out),
+                        'refunded_amount' => number_format($refunded_amount),
+                        'created_at' => Carbon::parse($package->created_at)->format('M j, Y h:i A'),
+                        'location' => ($package->location->city->name ?? '') . '-' . ($package->location->name ?? ''),
                     ];
                 } else {
                     $iTotalRecords--;
@@ -366,6 +376,7 @@ class RefundsController extends Controller
                 $appointmentinformation = Appointments::where('id', '=', $nonplansrefund['appointment_id'])->first();
                 $records['data'][] = [
                     'name' => $appointmentinformation->name,
+                    'phone' => Gate::allows('contact') ? $appointmentinformation->patient->phone : '***********',
                     'doctor' => $appointmentinformation->doctor->name,
                     'region' => $appointmentinformation->region->name,
                     'city' => $appointmentinformation->city->name,

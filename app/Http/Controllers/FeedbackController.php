@@ -6,6 +6,7 @@ use App\HelperModule\ApiHelper;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
+use App\Helpers\ActivityLogger;
 use App\Models\Appointments;
 use App\Models\Feedback;
 use App\Models\Locations;
@@ -138,7 +139,7 @@ class FeedbackController extends Controller
                         'paient_id' => $feedback->patient_id,
                         'paient_name' => $feedback->patient_name,
 
-                        'phone' => GeneralFunctions::prepareNumber4Call($feedback->patient->phone ?? ''),
+                        'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($feedback->patient->phone ?? '') : '***********',
 
                         'service_id' => $feedback->service_id ?? '',
                         'service'=> $feedback->service->name ?? '',
@@ -283,6 +284,13 @@ class FeedbackController extends Controller
         $feedback->rating = $request->rating;
         $feedback->comment = $request->comment;
         $feedback->save();
+        
+        // Log feedback activity
+        $appointment = Appointments::find($request->treatment);
+        $location = Locations::find($treatment->location_id);
+        $service = Services::find($treatment->service_id);
+        ActivityLogger::logFeedbackAdded($feedback, $appointment, $patintPhone, $service, $location);
+        
         return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
 
 

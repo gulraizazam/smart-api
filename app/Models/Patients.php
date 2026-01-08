@@ -9,6 +9,9 @@ use DateTime;
 use App\Helpers\Filters;
 use Illuminate\Http\Request;
 use App\Helpers\GeneralFunctions;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Gate;
 
@@ -16,36 +19,155 @@ class Patients extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['name', 'email', 'password', 'remember_token', 'phone', 'main_account', 'gender', 'cnic', 'dob', 'address', 'referred_by', 'active', 'user_type_id', 'resource_type_id', 'account_id'];
-
-    protected static $_fillable = ['name', 'email', 'phone', 'main_account', 'gender', 'cnic', 'dob', 'address', 'referred_by', 'user_type_id'];
-
-    protected static $USER_TYPE = 3;
-
     protected $table = 'users';
 
     protected static $_table = 'users';
 
+    protected static $USER_TYPE = 3;
+
+    protected $fillable = [
+        'name',
+        'email',
+        'password',
+        'remember_token',
+        'phone',
+        'main_account',
+        'gender',
+        'cnic',
+        'dob',
+        'address',
+        'referred_by',
+        'active',
+        'user_type_id',
+        'resource_type_id',
+        'account_id',
+        'created_by',
+        'updated_by',
+        'image_src',
+    ];
+
+    protected static $_fillable = ['name', 'email', 'phone', 'main_account', 'gender', 'cnic', 'dob', 'address', 'referred_by', 'user_type_id'];
+
+    protected $casts = [
+        'active' => 'boolean',
+        'dob' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
+    | Relationships
+    |--------------------------------------------------------------------------
+    */
+
     /**
      * Get the Leads for Patient.
      */
-    public function leads()
+    public function leads(): HasMany
     {
-        return $this->hasMany('App\Models\Leads', 'lead_source_id');
+        return $this->hasMany(Leads::class, 'patient_id');
     }
 
-    /*Relation for audit trail*/
-    public function audit_field_before()
+    /**
+     * Get the membership for Patient.
+     */
+    public function membership(): HasOne
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_before');
+        return $this->hasOne(Membership::class, 'patient_id');
     }
 
-    public function audit_field_after()
+    /**
+     * Get the user who created this patient.
+     */
+    public function user()
     {
-        return $this->hasMany('App\Models\AuditTrailChanges', 'field_after');
+        return $this->belongsTo(User::class, 'created_by');
     }
 
-    /*end*/
+    /**
+     * Audit trail relations
+     */
+    public function audit_field_before(): HasMany
+    {
+        return $this->hasMany(AuditTrailChanges::class, 'field_before');
+    }
+
+    public function audit_field_after(): HasMany
+    {
+        return $this->hasMany(AuditTrailChanges::class, 'field_after');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Query Scopes
+    |--------------------------------------------------------------------------
+    */
+
+    /**
+     * Scope: Filter by account
+     */
+    public function scopeForAccount(Builder $query, int $accountId): Builder
+    {
+        return $query->where('account_id', $accountId);
+    }
+
+    /**
+     * Scope: Filter active patients only
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->where('active', 1);
+    }
+
+    /**
+     * Scope: Filter patients only (user_type_id = 3)
+     */
+    public function scopePatientsOnly(Builder $query): Builder
+    {
+        return $query->where('user_type_id', self::$USER_TYPE);
+    }
+
+    /**
+     * Scope: Search by name
+     */
+    public function scopeSearchByName(Builder $query, ?string $name): Builder
+    {
+        if ($name) {
+            return $query->where('name', 'like', "%{$name}%");
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Search by phone
+     */
+    public function scopeSearchByPhone(Builder $query, ?string $phone): Builder
+    {
+        if ($phone) {
+            $cleanPhone = GeneralFunctions::cleanNumber($phone);
+            return $query->where('phone', 'like', "%{$cleanPhone}%");
+        }
+        return $query;
+    }
+
+    /**
+     * Scope: Search by email
+     */
+    public function scopeSearchByEmail(Builder $query, ?string $email): Builder
+    {
+        if ($email) {
+            return $query->where('email', 'like', "%{$email}%");
+        }
+        return $query;
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Static Methods (kept for backward compatibility)
+    |--------------------------------------------------------------------------
+    */
+
     public static function getAll($account_id)
     {
         return self::where(['user_type_id' => self::$USER_TYPE, 'active' => 1, 'account_id' => $account_id])->get();
@@ -206,20 +328,6 @@ class Patients extends BaseModal
             ])->select('name', 'id', 'phone')->get();
         }
     }
-
-    /**
-     * Get the User that owns the Patient.
-     */
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'created_by');
-    }
-
-    public function membership()
-    {
-        return $this->hasOne(Membership::class, 'patient_id');
-    }
-
 
     /**
      * Get the User that owns the Patient.
@@ -523,6 +631,59 @@ class Patients extends BaseModal
         }
 
         return false;
+    }
+
+    /**
+     * Get detailed child records that exist for a patient
+     * @param  int  $id
+     * @param  int  $account_id
+     * @return array
+     */
+    public static function getChildRecordsDetails($id, $account_id): array
+    {
+        $childRecords = [];
+
+        $leadsCount = Leads::where(['patient_id' => $id, 'account_id' => $account_id])->count();
+        if ($leadsCount > 0) {
+            $childRecords[] = "Leads ({$leadsCount})";
+        }
+
+        $appointmentsCount = Appointments::where(['patient_id' => $id, 'account_id' => $account_id])->count();
+        if ($appointmentsCount > 0) {
+            $childRecords[] = "Appointments ({$appointmentsCount})";
+        }
+
+        $customFormsCount = CustomFormFeedbacks::where(['reference_id' => $id, 'account_id' => $account_id])->count();
+        if ($customFormsCount > 0) {
+            $childRecords[] = "Custom Forms ({$customFormsCount})";
+        }
+
+        $documentsCount = Documents::where(['user_id' => $id])->count();
+        if ($documentsCount > 0) {
+            $childRecords[] = "Documents ({$documentsCount})";
+        }
+
+        $packagesCount = Packages::where(['patient_id' => $id, 'account_id' => $account_id])->count();
+        if ($packagesCount > 0) {
+            $childRecords[] = "Packages ({$packagesCount})";
+        }
+
+        $measurementsCount = Measurement::where(['patient_id' => $id])->count();
+        if ($measurementsCount > 0) {
+            $childRecords[] = "Measurements ({$measurementsCount})";
+        }
+
+        $medicalCount = Medical::where(['patient_id' => $id])->count();
+        if ($medicalCount > 0) {
+            $childRecords[] = "Medical Records ({$medicalCount})";
+        }
+
+        $invoicesCount = Invoices::where(['patient_id' => $id, 'account_id' => $account_id])->count();
+        if ($invoicesCount > 0) {
+            $childRecords[] = "Invoices ({$invoicesCount})";
+        }
+
+        return $childRecords;
     }
 
     public static function filters_patients($request, $account_id, $apply_filter, $filename)

@@ -35,137 +35,41 @@ class ActivitylogsReportController extends Controller
     }
     public function fetchActivityReport(Request $request)
     {
-
         $colorClasses=['text-warning', 'text-success','text-primary','text-danger'];
-        $isServicePresent = false;
-        $isUserPresent = false;
-        $isLocationPresent = false;
-        $isActivityTypePresent = false;
-        $startDate = $request->startDate;
-        $endDate = $request->endDate;
+        
+        // Build filters for ActivityLogService
+        $filters = [
+            'start_date' => $request->startDate,
+            'end_date' => $request->endDate,
+        ];
+        
         if ($request->has('service_id') && $request->service_id !== 'all') {
-            $isServicePresent = true;
+            $filters['service_id'] = $request->service_id;
         }
-        if ($request->has('user_id')  && $request->user_id) {
-            $isUserPresent = true;
+        if ($request->has('user_id') && $request->user_id) {
+            $filters['user_id'] = $request->user_id;
+        }
+        if ($request->has('location_id') && $request->location_id) {
+            $filters['location_id'] = $request->location_id;
+        }
+        if ($request->has('activity_type') && $request->activity_type !== 'all') {
+            $filters['activity_type'] = $request->activity_type;
         }
 
-        if ($request->has('location_id')  && $request->location_id) {
-            $isLocationPresent = true;
-        }
-        if ($request->has('activity_type')  && $request->activity_type!== 'all') {
-            $isActivityTypePresent = true;
-        }
+        // Use shared ActivityLogService
+        $activities = \App\Services\ActivityLogService::getActivityLogs($filters);
 
-        $activities = Activity::with(['user',  'serviceR'])->where(function ($query) use ($request) {
-            $query->where(function ($query) use ($request) {
-                $query->where('action', 'booked')
-                      ->whereBetween('created_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-            ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'rescheduled')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-            ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'deleted')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-             ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'received')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            })
-            ->orWhere(function ($query) use ($request) {
-                $query->where('action', 'consumed')
-                      ->whereBetween('updated_at', [$request->startDate . ' 00:00:00', $request->endDate . ' 23:59:00']);
-            });
-        })
-
-        ->when($isServicePresent,function($query) use ($request){
-            $query->where('service_id',$request->service_id);
-        })
-        ->when( $isUserPresent,function($query) use ($request){
-            $query->where('user_id',$request->user_id);
-        })
-        ->when( $isLocationPresent,function($query) use ($request){
-            $query->where('centre_id',$request->location_id);
-        })
-        ->when($isActivityTypePresent,function($query) use ($request){
-            $query->where('activity_type',$request->activity_type);
-        })
-       ->get();
-
-        $data=[];
+        // Format for view
+        $data = [];
         $i = 0;
-        foreach($activities as $activity)
-        {
-            $action = $activity->action;
-
-            switch ($action) {
-                case 'booked':
-                    {
-                        $activityType = $this->getActivityType($activity->activity_type);
-                        $createdBy = $activity->user->name;
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .$createdBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
-                    }
-                    break;
-                case 'received':
-                    {
-                        if($activity->appointment_type=="Plan"){
-                             $activityType = $this->getActivityType($activity->appointment_type=="Plan");
-                        $receivedBy = $activity->created_by ;
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .$receivedBy.'</strong>  '.$action.'  <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->amount.'</strong> from '.' <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patient. '</strong> against Plan ID: <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->planId. ' </strong>in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->location. '</strong> on '. $activity->created_at;
-                        }
-
-                    }
-                    break;
-                case 'consumed':
-                    {
-                        $activityType = $this->getActivityType($activity->activity_type);
-                        $consumedBy = $activity->created_by;
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->created_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .  $consumedBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->appointment_type.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patient. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->location. '</strong> on '. $activity->schedule_date;
-                    }
-                    break;
-                case 'rescheduled':
-                    {
-                        $activityType = $this->getActivityType($activity->activity_type);
-                        $rescheduledBy =$activity->rescheduleBy ?$activity->rescheduleBy->name : 'NA' ;
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->updated_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' .$rescheduledBy .'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> on '. $activity->schedule_date;
-                    }
-                    break;
-                case 'deleted':
-                    {
-                        $activityType = $this->getActivityType($activity->activity_type);
-                        $deletedBy = $activity->deleteBy ?$activity->deleteBy->name : 'NA' ;
-
-                        $data[$i]['colorClass']= $colorClasses[$i%4];
-                        $data[$i]['time']=date('m-d-Y H:i',strtotime($activity->updated_at));
-                        $data[$i]['message']= '<strong class='. "'" .  $data[$i]['colorClass']."'" . '>' . $deletedBy.'</strong>  '.$action.' a <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->serviceR->name.'</strong> '.$activityType.' for <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'.$activity->patientR->name. '</strong> in <strong class='. "'" .  $data[$i]['colorClass']."'" . '>'. $activity->centre->name. '</strong> scheduled on '. $activity->schedule_date;
-                    }
-                    break;
-                default:
-
-                    break;
-
-            }
+        foreach ($activities as $activity) {
+            $data[$i]['colorClass'] = $colorClasses[$i % 4];
+            $data[$i]['time'] = $activity['time_short'];
+            $data[$i]['message'] = $activity['description'];
             $i++;
-
         }
-        $data = collect($data)->sortByDesc('time')->values()->all();
 
         return view('admin.reports.activity_logs.activities', compact('data'));
-    }
-    public function getActivityType($activity)
-    {
-
-        return  $activity== "Consultancy" ? "Consultation" : $activity;
     }
     public function InsertLogs()
     {
