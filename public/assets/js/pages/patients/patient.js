@@ -23,7 +23,7 @@ var table_columns = [
     }, {
         field: 'name',
         title: 'Name',
-        width: 'auto',
+        width: 90,
         sortable: false,
         template: function (data) {
             var view_url = route('admin.patients.preview', { id: data.id });
