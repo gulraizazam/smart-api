@@ -19,36 +19,27 @@ var table_columns = [
         title: 'Doctor',
         width: 100,
     },{
-        field: 'city_id',
-        title: 'City',
-        width: 80,
-    },{
         field: 'location_id',
         title: 'Centre',
         width: 'auto',
     },{
         field: 'service_id',
         title: 'Service',
-        width: 'auto',
-    },{
-        field: 'appointment_status_id',
-        title: 'Status',
-        width: 'auto',
+        width: 90,
     },{
         field: 'appointment_type_id',
         title: 'Type',
-        width: 'auto',
+        width: 90,
+        template: function(data) {
+            if (data.appointment_type_id == 1 || data.appointment_type_id == 'Consultation') {
+                return '<span class="label label-lg label-light-success label-inline">Consultation</span>';
+            } else {
+                return '<span class="label label-lg label-light-danger label-inline">Treatment</span>';
+            }
+        }
     },{
-        field: 'consultancy_type',
-        title: 'Consultancy Type',
-        width: 'auto',
-    },{
-        field: 'created_at',
-        title: 'Created At',
-        width: 'auto',
-    },{
-        field: 'created_by',
-        title: 'Created By',
+        field: 'appointment_status_id',
+        title: 'Status',
         width: 'auto',
     }];
 

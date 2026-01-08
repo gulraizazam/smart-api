@@ -130,7 +130,7 @@ class InvoicesController extends Controller
                 $invoicestatus = InvoiceStatuses::where('id', '=', $invoice->invoice_status_id)->first();
                 $records['data'][] = [
                     'name' => $user->name,
-                    'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone),
+                    'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone) : '***********',
                     'region' => $location_info->region->name,
                     'city' => $location_info->city->name,
                     'location' => $location_info->name,

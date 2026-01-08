@@ -498,15 +498,31 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::resource('appointments', AppointmentsController::class);
     Route::post('appointments/load/lead', [AppointmentsController::class, 'loadLeadData'])->name('appointments.load_lead');
 
-    // Patients routes start
-    Route::post('patients/{id}/appointments-datatable', [PatientsController::class, 'appointmentsDatatable'])->name('patients.appointmentsDatatable');
-    Route::post('patients/{id}/vouchers-datatable', [PatientsController::class, 'voucherDatatable'])->name('patients.vouchersDatatable');
-
-    Route::post('patients/datatable', [PatientsController::class, 'datatable'])->name('patients.datatable');
-
-    Route::post('patients/status', [PatientsController::class, 'status'])->name('patients.status');
-    Route::get('patients/getPatient/{id}', [PatientsController::class, 'getPatient'])->name('patients.getPatient');
-    Route::post('patients/image', [PatientsController::class, 'imagestore'])->name('patients.storeimage');
+    // Patients API Routes (Optimized)
+    Route::prefix('patients')->name('patients.')->group(function () {
+        Route::post('datatable', [\App\Http\Controllers\Api\PatientController::class, 'index'])->name('datatable');
+        Route::get('create', [\App\Http\Controllers\Api\PatientController::class, 'create'])->name('create');
+        Route::get('search', [\App\Http\Controllers\Api\PatientController::class, 'search'])->name('search');
+        Route::post('/', [\App\Http\Controllers\Api\PatientController::class, 'store'])->name('store');
+        Route::post('status', [\App\Http\Controllers\Api\PatientController::class, 'status'])->name('status');
+        Route::post('image', [\App\Http\Controllers\Api\PatientController::class, 'storeImage'])->name('storeimage');
+        Route::post('assignmembership', [\App\Http\Controllers\Api\PatientController::class, 'assignMembership'])->name('assignmembership');
+        Route::post('assignvoucher', [\App\Http\Controllers\Api\PatientController::class, 'assignVoucher'])->name('assignvoucher');
+        Route::get('getPatient/{id}', [\App\Http\Controllers\Api\PatientController::class, 'getPatient'])->name('getPatient');
+        Route::get('{id}', [\App\Http\Controllers\Api\PatientController::class, 'show'])->name('show');
+        Route::get('{id}/edit', [\App\Http\Controllers\Api\PatientController::class, 'edit'])->name('edit');
+        Route::put('{id}', [\App\Http\Controllers\Api\PatientController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\PatientController::class, 'destroy'])->name('destroy');
+        Route::post('{id}/addreferral', [\App\Http\Controllers\Api\PatientController::class, 'addReferral'])->name('addreferral');
+        // Optimized datatables for patient preview tabs
+        Route::post('{id}/appointments-datatable', [\App\Http\Controllers\Api\PatientController::class, 'appointmentsDatatable'])->name('appointmentsDatatable');
+        Route::post('{id}/vouchers-datatable', [\App\Http\Controllers\Api\PatientController::class, 'vouchersDatatable'])->name('vouchersDatatable');
+        // Optimized document upload
+        Route::post('{id}/upload-document', [\App\Http\Controllers\Api\PatientController::class, 'uploadDocument'])->name('uploadDocument');
+        Route::post('{id}/update-document/{documentId}', [\App\Http\Controllers\Api\PatientController::class, 'updateDocument'])->name('updateDocument');
+        // Activity history
+        Route::get('{id}/activity-history', [\App\Http\Controllers\Api\PatientController::class, 'getActivityHistory'])->name('activityHistory');
+    });
     Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
     Route::get('customformfeedbackspatient/addnewform/{id}', [PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');
 
@@ -582,7 +598,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::post('invoicepatient/cancel/{id}', [InvoicesController::class, 'cancel'])->name('invoicepatient.cancel');
 
-    Route::post('refundpatient/datatable/&{id}', [RefundsController::class, 'datatable'])->name('refundpatient.datatable');
+    Route::post('refundpatient/datatable/&{id}', [RefundsController::class, 'patientDatatable'])->name('refundpatient.datatable');
     Route::get('refundpatient/refund_create/{id}', [RefundsController::class, 'refund_create'])->name('refundpatient.refund_create');
 
     Route::post('nonplansrefundspatient/datatable/{id}', [PatientRefundController::class, 'nonplansdatatable'])->name('nonplansrefundpatient.datatable');
@@ -665,6 +681,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('invoices/pdf/{id}/{download?}', [OrdersController::class, 'invoicePdf'])->name('orders.invoice_pdf');
     Route::post('get-employees', [OrdersController::class, 'getEmployees'])->name('get-employees');
     Route::post('get-doctors', [OrdersController::class, 'getDoctors'])->name('get-doctors');
+     Route::post('get-doctors-for-sales', [OrdersController::class, 'getDoctorsForSales'])->name('get-doctors-for-sales');
     Route::post('get-centre-doctors', [OrdersController::class, 'getCentreDoctors'])->name('get-centre-doctors');
     Route::post('orders', [OrdersController::class, 'store'])->name('orders.store');
     Route::get('orders/{id}/edit', [OrdersController::class, 'edit'])->name('orders.edit');
@@ -725,8 +742,6 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::post('membershiptypes/status', [MembershipTypesController::class, 'status'])->name('membershiptypes.status');
     Route::resource('memberships', MembershipsController::class)->except('index');
     Route::post('memberships/datatable', [MembershipsController::class, 'datatable'])->name('memberships.datatable');
-    Route::post('patient/assignmembership', [PatientsController::class, 'assignMembership'])->name('patients.assignmembership');
-    Route::post('patient/assignvoucher', [PatientsController::class, 'assignVoucher'])->name('patients.assignvoucher');
     Route::post('memberships/status', [MembershipsController::class, 'status'])->name('memberships.status');
     Route::post('memberships/cancel', [MembershipsController::class, 'cancelMembership'])->name('memberships.cancel');
 });

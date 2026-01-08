@@ -25,6 +25,7 @@ use App\Models\PaymentModes;
 use App\Models\Services;
 use App\Models\User;
 use App\Services\MetaConversionApiService;
+use App\Helpers\ActivityLogger;
 use Auth;
 use Config;
 use Illuminate\Http\Request;
@@ -572,19 +573,30 @@ class ConsultancyInvoiceController extends Controller
                     'service_id' => $appointmentinfo->service_id,
                 ])->update(['lead_status_id' => $arrivedLeadStatus->id]);
             }
+            
+            // Log lead arrived activity
+            if ($leadRecord) {
+                $location = Locations::with('city')->find($appointmentinfo->location_id);
+                $service = Services::find($appointmentinfo->service_id);
+                ActivityLogger::logLeadArrived($leadRecord, $appointmentinfo, $invoice, $location, $service);
+            }
         }
         /////Save activity////
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();
         $activity = new Activity();
         $activity->action = 'received';
+        $activity->activity_type = 'invoice_created';
         $activity->patient = $patient->name;
+        $activity->patient_id = $appointmentinfo->patient_id;
+        $activity->appointment_id = $appointmentinfo->id;
         $activity->appointment_type = $appointmentinfo->service->name.' Consultation';
-        $activity->created_by = Auth::user()->name;
+        $activity->created_by = Auth::user()->id;
         $activity->invoice_id = $invoice->id;
         $activity->amount = $request->price;
         $activity->location = $location->name;
-         $activity->centre_id = $appointmentinfo->location_id;
+        $activity->centre_id = $appointmentinfo->location_id;
+        $activity->account_id = Auth::user()->account_id;
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();

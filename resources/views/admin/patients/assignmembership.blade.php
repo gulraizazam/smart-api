@@ -23,6 +23,7 @@
     <div class="modal-body scroll-y ">
         <!--begin::Form-->
         <form id="modal_edit_memberships_form" method="post" action="">
+            <input type="hidden" name="patient_id" id="assign_membership_patient_id" value="">
             <div class="d-flex flex-column scroll-y me-n7 pe-7" id="kt_modal_patients_type_scroll" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-max-height="auto" data-kt-scroll-dependencies="#kt_modal_add_user_header" data-kt-scroll-wrappers="#kt_modal_add_user_scroll" data-kt-scroll-offset="300px">
 
                 <div class="form-group">

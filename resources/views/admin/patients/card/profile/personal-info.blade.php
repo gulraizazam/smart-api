@@ -23,4 +23,14 @@
         <span id="patient_gender"></span>
     </div>
 
+    <div class="col-md-6 mb-5" id="membership_type_row" style="display: none;">
+        <strong class="mr-10" style="white-space: nowrap;">Membership Type:</strong>
+        <span id="patient_membership" class="text-primary font-weight-bold" style="margin-left:10px;"></span>
+    </div>
+
+    <div class="col-md-6 mb-5" id="membership_expiry_row" style="display: none;">
+        <strong class="mr-10" style="white-space: nowrap;">Membership Expiry:</strong>
+        <span id="patient_membership_expiry" style="margin-left:15px;"></span>
+    </div>
+
 </div>

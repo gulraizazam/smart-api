@@ -145,7 +145,7 @@ class RefundsController extends Controller
                         'paient_id' => $feedback->patient_id,
                         'paient_name' => $feedback->patient_name,
                         
-                        'phone' => GeneralFunctions::prepareNumber4Call($feedback->phone),
+                        'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($feedback->phone) : '***********',
                         
                         'service_id' => $feedback->service_id ?? '',
                         

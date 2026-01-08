@@ -143,17 +143,22 @@ class InventoryReportsController extends Controller
                 //     ->whereIn('location_id', $locationId)
                 //     ->pluck('user_id');
 
-                    $doctors = DoctorHasLocations::where('is_allocated',1)->where('location_id',$locationId)->pluck('user_id')->toArray();
+                    
 
                     // Fetch active doctors as an associative array
-                    $users = User::whereIn('id', $doctors)
-                        ->where('active', 1)
-                        ->pluck( 'id') // Preserve user IDs
-                        ->toArray();
+                   
 
                     // Ensure 'from_id' is an array
                     $locationIds = is_array($locationId) ? $locationId : [$locationId];
-
+                    if(is_array($locationId)){
+                        $doctors = DoctorHasLocations::whereIn('location_id',$locationId)->pluck('user_id')->toArray();
+                    }else{
+                        $doctors = DoctorHasLocations::where('location_id',$locationId)->pluck('user_id')->toArray();
+                    }
+                     $users = User::whereIn('id', $doctors)
+                        ->where('active', 1)
+                        ->pluck( 'id') // Preserve user IDs
+                        ->toArray();
                     // Fetch FDM users by getting the user_ids associated with the center (location_id)
                     $findFDM = UserHasLocations::whereIn('location_id', $locationIds)->pluck('user_id')->toArray();
 

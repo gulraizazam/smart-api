@@ -28,6 +28,7 @@ use App\Models\LeadStatuses;
 use App\Models\SMSTemplates;
 use Illuminate\Http\Request;
 use App\Models\LeadsServices;
+use App\Helpers\ActivityLogger;
 use App\Helpers\TelenorSMSAPI;
 use App\HelperModule\ApiHelper;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -369,7 +370,7 @@ class LeadsController extends Controller
                         'gender' => $lead->gender == 1 ? 'Male' : 'Female',
                         'active' => $lead->active,
                         'cityId' => $lead?->city?->id ?? 0,
-                        'phone' => GeneralFunctions::prepareNumber4Call($lead->phone),
+                        'phone' => Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($lead->phone) : '***********',
                         'city_id' => $lead->city->name ?? '', //view('admin.leads.city', compact('lead'))->render(),
                         'region_id' => (array_key_exists($lead->region_id, $Regions)) ? $Regions[$lead->region_id]->name : 'N/A',
                         'lead_status_id' => $lead_status_data->name ?? '',
@@ -628,6 +629,11 @@ class LeadsController extends Controller
                         'lead_status_id' => $openStatus ? $openStatus->id : null,
                         'meta_lead_id' => $meta_lead_id,
                     ]);
+                    
+                    // Log lead created activity
+                    $location = isset($data['location_id']) ? Locations::with('city')->find($data['location_id']) : null;
+                    $service = isset($data['service_id']) ? Services::find($data['service_id']) : null;
+                    ActivityLogger::logLeadCreated($lead, $location, $service);
                 }
             } else {
                 $lead_check = Leads::where(['phone' => $data['phone'], 'account_id' => Auth::User()->account_id])
@@ -668,6 +674,11 @@ class LeadsController extends Controller
                 LeadsServices::where('id', '!=', $lead_services->id)->where(['lead_id' => $lead->id])->update([
                     'status' => 0,
                 ]);
+                
+                // Log lead created activity for existing client
+                $location = isset($data['location_id']) ? Locations::with('city')->find($data['location_id']) : null;
+                $service = isset($data['service_id']) ? Services::find($data['service_id']) : null;
+                ActivityLogger::logLeadCreated($lead, $location, $service);
             }
 
             return ApiHelper::apiResponse($this->success, 'Record has been created successfully.');
@@ -1562,6 +1573,11 @@ class LeadsController extends Controller
                         ], $lead_data);
 
                         $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
+
+                        // Log lead activity for updated record
+                        $location = $location_id ? Locations::with('city')->find($location_id) : null;
+                        $service = $service_id ? Services::find($service_id) : null;
+                        ActivityLogger::logLeadCreated($lead, $location, $service);
                     } else {
                         if (in_array($phone, $new_patient_phones)) {
                             $lead_data['lead_status_id'] = $lead_status_id;
@@ -1571,6 +1587,11 @@ class LeadsController extends Controller
                             ], $lead_data);
 
                             $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
+
+                            // Log lead activity for new record
+                            $location = $location_id ? Locations::with('city')->find($location_id) : null;
+                            $service = $service_id ? Services::find($service_id) : null;
+                            ActivityLogger::logLeadCreated($lead, $location, $service);
                         }
                         if ($request->update_records != '1' && in_array($phone, $found_patients)) {
                             $update_lead = [
@@ -1590,6 +1611,11 @@ class LeadsController extends Controller
                             ], $update_lead);
 
                             $this->leadService($lead->id, $service_id, $child_service_id, $meta_lead_id);
+
+                            // Log lead activity for duplicate record update
+                            $location = $location_id ? Locations::with('city')->find($location_id) : null;
+                            $service = $service_id ? Services::find($service_id) : null;
+                            ActivityLogger::logLeadCreated($lead, $location, $service);
                         }
                     }
                 } else {
@@ -1988,7 +2014,7 @@ class LeadsController extends Controller
                 $records['data'][$index] = [
                     'PatientId' => GeneralFunctions::patientSearchStringAdd($lead->PatientId),
                     'name' => $lead->name,
-                    'phone' => '<a href="javascript:void(0)" class="clipboard" data-toggle="tooltip" title="Click to Copy" data-clipboard-text="' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '">' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '</a>',
+                    'phone' => Gate::allows('contact') ? '<a href="javascript:void(0)" class="clipboard" data-toggle="tooltip" title="Click to Copy" data-clipboard-text="' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '">' . GeneralFunctions::prepareNumber4Call($lead->patient->phone) . '</a>' : '***********',
                     'city_id' => view('admin.leads.city', compact('lead'))->render(),
                     'region_id' => (array_key_exists($lead->region_id, $Regions)) ? $Regions[$lead->region_id]->name : 'N/A',
                     'lead_status_id' => view('admin.leads.lead_status', compact('lead', 'lead_status_data'))->render(),

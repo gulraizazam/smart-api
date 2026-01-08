@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Validator;
 use Carbon\Carbon;
 use App\Helpers\ACL;
+use App\Helpers\ActivityLogger;
 use App\Models\User;
 use App\Models\Bundles;
 use App\Models\SMSLogs;
@@ -761,10 +762,14 @@ class PackagesController extends Controller
             $userVoucher = UserVouchers::where('voucher_id', $discount->id)->where('user_id', $request->user_id)->first();
 
             if($userVoucher){
+                $originalVoucherAmount = $userVoucher->amount;
                 $amountLeft = $userVoucher->amount -  $bundle->price;
                 if($amountLeft < 0){
                    $amountLeft = 0;
                 }
+                
+                // Calculate actual consumed amount
+                $actualConsumedAmount = $originalVoucherAmount - $amountLeft;
 
                 $userVoucher->amount = $amountLeft;
                 $userVoucher->update();
@@ -782,6 +787,12 @@ class PackagesController extends Controller
                     'service_id' =>$generateRandomId,
                     'main_service_id'=>$request->bundle_id
                 ]);
+                
+                // Log voucher consumption activity with actual consumed amount and balance left
+                if ($discount->discount_type == 'voucher' && $actualConsumedAmount > 0) {
+                    $patient = User::find($request->user_id);
+                    ActivityLogger::logVoucherConsumed($actualConsumedAmount, $patient, $discount, $amountLeft);
+                }
             }
 
         }
@@ -1189,14 +1200,26 @@ class PackagesController extends Controller
                 /////Save activity////
                 $patient = User::whereId($request->patient_id)->first();
                 $location = Locations::whereId($request->location_id)->first();
+                $locationWithCity = Locations::with('city')->find($request->location_id);
+                $locationName = $locationWithCity ? (($locationWithCity->city->name ?? '') . '-' . $locationWithCity->name) : ($location->name ?? '');
+                $creatorName = Auth::user()->name ?? 'System';
+                $dateStr = date('Y-m-d');
+                
+                // Build description for payment received
+                $description = '<span class="highlight">' . $creatorName . '</span> received payment Rs. <span class="highlight-green">' . number_format($request->cash_amount) . '</span> from <span class="highlight-orange">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $package->id . '</span> in <span class="highlight">' . $locationName . '</span> ';
+                
                 $activity = new Activity();
                 $activity->action = 'received';
+                $activity->activity_type = 'payment_received';
+                $activity->description = $description;
                 $activity->patient = $patient->name;
+                $activity->patient_id = $patient->id;
                 $activity->appointment_type = 'Plan';
-                $activity->created_by = Auth::user()->name;
+                $activity->created_by = Auth::user()->id;
+                $activity->account_id = Auth::user()->account_id;
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
-                $activity->location = $location->name;
+                $activity->location = $locationName;
                 $activity->centre_id = $request->location_id;
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
@@ -1366,6 +1389,30 @@ class PackagesController extends Controller
             'appointment_status_id' => $convertedStatus->id,
             'converted_at' => now()
         ]);
+        
+        // Log activity for conversion
+        $patient = \App\Models\Patients::find($package->patient_id);
+        $location = Locations::with('city')->find($latestArrivedConsultation->location_id);
+        $service = Services::find($latestArrivedConsultation->service_id);
+        
+        // Log appointment converted activity
+        \App\Helpers\ActivityLogger::logAppointmentConverted($latestArrivedConsultation, $patient, $location, $service, $payment_amount, $package_id);
+        
+        // Also update lead status to converted and log it
+        if ($latestArrivedConsultation->lead_id) {
+            $lead = Leads::find($latestArrivedConsultation->lead_id);
+            if ($lead) {
+                $convertedLeadStatus = \App\Models\LeadStatuses::where([
+                    'account_id' => $latestArrivedConsultation->account_id,
+                    'is_converted' => 1
+                ])->first();
+                
+                if ($convertedLeadStatus) {
+                    $lead->update(['lead_status_id' => $convertedLeadStatus->id]);
+                    \App\Helpers\ActivityLogger::logLeadConverted($lead, $latestArrivedConsultation, $location, $service, $payment_amount);
+                }
+            }
+        }
         
         // Send Meta CAPI event
         self::sendMetaConvertedEvent($latestArrivedConsultation, $package_id, $payment_amount);
@@ -2297,15 +2344,26 @@ class PackagesController extends Controller
                 /*End*/
 
                 $patient = User::whereId($request->patient_id)->first();
-                $location = Locations::whereId($request->location_id)->first();
+                $location = Locations::with('city')->whereId($request->location_id)->first();
+                $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+                $creatorName = Auth::user()->name ?? 'System';
+                $patientName = $patient->name ?? 'Unknown';
+                
+                // Format description with highlights (no date - timestamp shows when it happened)
+                $description = '<span class="highlight">' . $creatorName . '</span> received payment <span class="highlight-green">Rs. ' . number_format($request->cash_amount) . '</span> from <span class="highlight-orange">' . $patientName . '</span> for <span class="highlight-orange">Plan Id: ' . $package->id . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '');
+                
                 $activity = new Activity();
                 $activity->action = 'received';
+                $activity->activity_type = 'payment_received';
+                $activity->description = $description;
                 $activity->patient = $patient->name;
+                $activity->patient_id = $patient->id;
                 $activity->appointment_type = 'Plan';
-                $activity->created_by = Auth::user()->name;
+                $activity->created_by = Auth::user()->id;
+                $activity->account_id = Auth::user()->account_id;
                 $activity->planId = $package->id;
                 $activity->amount = $request->cash_amount;
-                $activity->location = $location->name;
+                $activity->location = $locationName;
                 $activity->centre_id = $request->location_id;
                 $activity->created_at = Filters::getCurrentTimeStamp();
                 $activity->updated_at = Filters::getCurrentTimeStamp();
@@ -2553,8 +2611,29 @@ class PackagesController extends Controller
         $get_package_unused_amount_with_edit = $request->cash_amount;
         $get_package_unuse_amount = $get_package_unused_amount_except_edit + $get_package_unused_amount_with_edit;
         $amount_status = true;
+        // Get old values before update
+        $packageAdvanceBefore = PackageAdvances::find($request->package_advances_id);
+        $oldAmount = $packageAdvanceBefore ? $packageAdvanceBefore->cash_amount : 0;
+        $oldDate = $packageAdvanceBefore ? $packageAdvanceBefore->created_at : null;
+        
         $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
         if ($record) {
+            // Log payment updated activity
+            $package = Packages::find($request->package_id);
+            $patient = $package ? User::find($package->patient_id) : null;
+            $location = $package ? Locations::with('city')->find($package->location_id) : null;
+            $newAmount = $request->cash_amount;
+            $newDate = $request->created_at;
+            
+            // Check what changed
+            $amountChanged = $oldAmount != $newAmount;
+            $oldDateFormatted = $oldDate ? Carbon::parse($oldDate)->format('Y-m-d') : null;
+            $dateChanged = $oldDateFormatted && $newDate && $oldDateFormatted != $newDate;
+            
+            if ($package && $patient && ($amountChanged || $dateChanged)) {
+                ActivityLogger::logPaymentUpdated($oldAmount, $newAmount, $oldDateFormatted, $newDate, $amountChanged, $dateChanged, $package, $patient, $location);
+            }
+            
             return ApiHelper::apiResponse($this->success, 'Data Updated successfully.', true, [
                 'amount_status' => $amount_status,
             ]);
@@ -2581,6 +2660,14 @@ class PackagesController extends Controller
 
             $record = PackageAdvances::deletefinaceRecord($request);
             $cash_receveive_remain = number_format(filter_var($request->cash_receveive_remain, FILTER_SANITIZE_NUMBER_INT) + $packageadvanceinfo->cash_amount);
+
+            // Log payment deleted activity
+            $package = Packages::find($packageadvanceinfo->package_id);
+            $patient = $package ? User::find($package->patient_id) : null;
+            $location = $package ? Locations::with('city')->find($package->location_id) : null;
+            if ($package && $patient) {
+                ActivityLogger::logPaymentDeleted($packageadvanceinfo->cash_amount, $package, $patient, $location);
+            }
 
             return ApiHelper::apiResponse($this->success, 'Record deleted successfully.', true, [
                 'id' => $request->package_advance_id,
@@ -3442,9 +3529,9 @@ class PackagesController extends Controller
             'patient_name' => $patient->name,
             'patient_id' => $patient->id,
             'plan' => $package_information->name,
-            'created_date' => Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d'),
-            'refund_note' => $latest_package_refunded_amount->refund_note,
-            'payment_method_id' => $latest_package_refunded_amount->payment_mode_id
+            'created_date' => $latest_package_refunded_amount && $latest_package_refunded_amount->created_at ? Carbon::parse($latest_package_refunded_amount->created_at)->format('Y-m-d') : date('Y-m-d'),
+            'refund_note' => $latest_package_refunded_amount->refund_note ?? '',
+            'payment_method_id' => $latest_package_refunded_amount->payment_mode_id ?? 1
         ]);
     }
     public function updateRefund(Request $request)
@@ -3464,6 +3551,13 @@ class PackagesController extends Controller
             ]
 
         )->latest()->first();
+
+        // Check if case was previously settled (for activity logging)
+        $wasPreviouslySettled = PackageAdvances::where([
+            ['package_id', '=', $request->package_id],
+            ['cash_flow', '=', 'out'],
+            ['is_setteled', '=', 1],
+        ])->exists();
 
         if ($request['case_setteled'] == '1') {
 
@@ -3574,7 +3668,47 @@ class PackagesController extends Controller
             
            
         }
-        $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id']]);
+        $latest_refund->where('id', $request['record_id'])->update(['created_at' => $request['created_at'] . ' ' . Carbon::now()->toTimeString(), 'cash_amount' => $request['refund_amount'], 'payment_mode_id' => $request['payment_mode_id'], 'refund_note' => $request['refund_note']]);
+        
+        // Log refund update activity
+        $packageInfo = Packages::find($request->package_id);
+        $patient = User::find($packageInfo->patient_id);
+        $location = Locations::find($packageInfo->location_id);
+        
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $locationName = $location->name ?? '';
+        $refundAmount = $request->refund_amount;
+        $refundDate = $request->created_at ? date('M j, Y', strtotime($request->created_at)) : date('M j, Y');
+        $caseSetteled = $request->case_setteled == "1";
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> updated refund <span class="highlight-green">Rs. ' . number_format($refundAmount) . '</span> for <span class="highlight-orange">' . $patientName . '</span> in <span class="highlight-purple">Plan #' . sprintf('%05d', $request->package_id) . '</span>' . ($locationName ? ' at <span class="highlight">' . $locationName . '</span>' : '') . ' on <span class="highlight-purple">' . $refundDate . '</span>';
+        
+        if ($caseSetteled) {
+            $description .= ' - <span class="highlight-green">Case Settled</span>';
+        } elseif ($wasPreviouslySettled && !$caseSetteled) {
+            // Only show "Case Unsettled" if it was previously settled and now being unsettled
+            $description .= ' - <span class="highlight-orange">Case Unsettled</span>';
+        }
+        
+        $activity = new Activity();
+        $activity->timestamps = false;
+        $activity->action = 'refund_updated';
+        $activity->activity_type = 'refund_updated';
+        $activity->description = $description;
+        $activity->patient = $patientName;
+        $activity->patient_id = $patient->id ?? null;
+        $activity->appointment_type = 'Plan';
+        $activity->created_by = Auth::user()->id;
+        $activity->planId = $request->package_id;
+        $activity->amount = $refundAmount;
+        $activity->location = $locationName;
+        $activity->centre_id = $packageInfo->location_id;
+        $activity->account_id = Auth::user()->account_id;
+        $activity->created_at = \App\Helpers\Filters::getCurrentTimeStamp();
+        $activity->updated_at = \App\Helpers\Filters::getCurrentTimeStamp();
+        $activity->save();
+        
         return ApiHelper::apiResponse($this->success, 'Record updated', true, []);
     }
     protected function verifyFields(Request $request)
@@ -3715,11 +3849,18 @@ class PackagesController extends Controller
             $voucherAmounts[$key]['amount'] = ($voucherAmounts[$key]['amount'] ?? 0) + $voucher->amount;
         }
 
-        // Update user vouchers
+        // Update user vouchers and log activity
         foreach ($voucherAmounts as $data) {
             UserVouchers::where('user_id', $data['user_id'])
                     ->where('voucher_id', $data['voucher_id'])
                     ->increment('amount', $data['amount']);
+            
+            // Log voucher refund activity
+            $patient = User::find($data['user_id']);
+            $voucher = Discounts::find($data['voucher_id']);
+            if ($patient && $voucher) {
+                ActivityLogger::logVoucherRefunded($data['amount'], $patient, $voucher);
+            }
         }
 
         // Delete package vouchers

@@ -99,6 +99,9 @@ class Refunds extends Model
             } elseif ($date_format_orignal_created <= $date_format_orignal_in) {
                 $custom_created_at = $date_format_orignal_in->addMinutes(2)->toDateTimeString();
             }
+        } else {
+            // Back date entry - use the provided date with current time
+            $custom_created_at = $request->created_at.' '.Carbon::now()->format('H:i:s');
         }
 
         $packageinformation = Packages::find($request->package_id);
@@ -130,16 +133,35 @@ class Refunds extends Model
         $record = self::create($data);
         $patient = User::whereId($packageinformation->patient_id)->first();
         $location = Locations::whereId($packageinformation->location_id)->first();
+        
+        // Build activity description with refund details
+        $creatorName = Auth::user()->name ?? 'System';
+        $patientName = $patient->name ?? 'Unknown';
+        $locationName = $location->name ?? '';
+        $refundAmount = $request->refund_amount;
+        $refundDate = $request->created_at ? date('M j, Y', strtotime($request->created_at)) : date('M j, Y');
+        $caseSetteled = $request->case_setteled == "1";
+        
+        $description = '<span class="highlight">' . $creatorName . '</span> refunded <span class="highlight-green">Rs. ' . number_format($refundAmount) . '</span> to <span class="highlight-orange">' . $patientName . '</span> for <span class="highlight-purple">Plan #' . sprintf('%05d', $request->package_id) . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ' on <span class="highlight-purple">' . $refundDate . '</span>';
+        
+        if ($caseSetteled) {
+            $description .= ' - <span class="highlight-green">Case Settled</span>';
+        }
+        
         $activity = new Activity();
         $activity->timestamps = false;
         $activity->action = 'refunded';
-        $activity->patient = $patient->name;
+        $activity->activity_type = 'refund_made';
+        $activity->description = $description;
+        $activity->patient = $patientName;
+        $activity->patient_id = $patient->id;
         $activity->appointment_type = 'Plan';
-        $activity->created_by = Auth::user()->name;
-        $activity->planId =  $request->package_id;
-        $activity->amount = $request->refund_amount;
-        $activity->location = $location->name;
+        $activity->created_by = Auth::user()->id;
+        $activity->planId = $request->package_id;
+        $activity->amount = $refundAmount;
+        $activity->location = $locationName;
         $activity->centre_id = $request->location_id;
+        $activity->account_id = Auth::user()->account_id;
         $activity->created_at = Filters::getCurrentTimeStamp();
         $activity->updated_at = Filters::getCurrentTimeStamp();
         $activity->save();
@@ -239,6 +261,9 @@ class Refunds extends Model
             } elseif ($date_format_orignal_created <= $date_format_orignal_in) {
                 $custom_created_at = $date_format_orignal_in->addMinutes(2)->toDateTimeString();
             }
+        } else {
+            // Back date entry - use the provided date with current time
+            $custom_created_at = $request->created_at.' '.Carbon::now()->format('H:i:s');
         }
 
         $package_advance_information = PackageAdvances::find($request->package_advance_id);

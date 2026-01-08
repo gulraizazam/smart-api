@@ -160,7 +160,7 @@
         let html = '';
         activities.forEach(function(log) {
             const time = new Date(log.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-            const createdBy = log.created_by || 'N/A';
+            const createdBy = log.created_by_name || log.created_by || 'N/A';
             const amount = Math.round(log.amount);
             const patient = log.patient || '';
             const centreName = log.centre ? log.centre.name : (log.location || '');

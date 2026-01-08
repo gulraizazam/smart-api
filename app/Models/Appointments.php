@@ -570,6 +570,13 @@ class Appointments extends Model
                 'message' => "Consultation or Treatment can't be deleted when invoice generated.",
             ];
         }
+        
+        // Log deletion activity before deleting
+        $patient = Patients::find($appointment->patient_id);
+        $location = Locations::with('city')->find($appointment->location_id);
+        $service = Services::find($appointment->service_id);
+        \App\Helpers\ActivityLogger::logAppointmentDeleted($appointment, $patient, $location, $service);
+        
         AppointmentsDailyStats::where('appointment_id',$id)->delete();
         $appointment->whereId($id)->update([
             'deleted_by' => Auth::id(),
@@ -600,7 +607,7 @@ class Appointments extends Model
     {
         if (
             PackageAdvances::where(['appointment_id' => $id, 'account_id' => $account_id])->count() ||
-            Invoices::where(['appointment_id' => $id, 'account_id' => $account_id])->count() ||
+            Invoices::where(['appointment_id' => $id, 'account_id' => $account_id, 'deleted_at' => null])->where('invoice_status_id', '!=', 4)->count() ||
             Measurement::where(['appointment_id' => $id])->count() ||
             Appointmentimage::where(['appointment_id' => $id])->count()
         ) {

@@ -8,7 +8,7 @@
                 <i class="fa fa-genderless text-danger icon-xl"></i>
             </div>
             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                <span style="color: #056FBF;">{{ $log['created_by'] ?? 'N/A' }}</span>
+                <span style="color: #056FBF;">{{ $log->created_by_name ?? $log['created_by'] ?? 'N/A' }}</span>
                 {{ $log['action'] }}
                 @if ($log['action'] == 'refunded')
                     <strong>Rs. {{ round($log['amount']) }}</strong> to
@@ -29,7 +29,7 @@
                 <i class="fa fa-genderless text-danger icon-xl"></i>
             </div>
             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                <span style="color: #056FBF;">{{ $log['created_by'] ?? 'N/A' }}</span>
+                <span style="color: #056FBF;">{{ $log->created_by_name ?? $log['created_by'] ?? 'N/A' }}</span>
                 {{ $log['action'] }}
                 <strong>Rs. {{ round($log['amount']) }}</strong> from
                 <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for
@@ -46,7 +46,7 @@
                 <i class="fa fa-genderless text-danger icon-xl"></i>
             </div>
             <div class="timeline-content font-weight-bolder font-size-lg text-dark-75 pl-3">
-                <span style="color: #056FBF;">{{ $log['created_by'] ?? 'N/A' }}</span>
+                <span style="color: #056FBF;">{{ $log->created_by_name ?? $log['created_by'] ?? 'N/A' }}</span>
                 {{ $log['action'] }}
                 <strong>Rs. {{ round($log['amount']) }}</strong> from
                 <span style="color: #056FBF;"> {{ $log['patient'] }}</span> for

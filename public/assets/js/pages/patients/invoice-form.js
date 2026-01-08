@@ -3,6 +3,11 @@ var table_url = route('admin.invoicepatient.datatable', {id: patientCardID});
 
 var table_columns = [
     {
+        field: 'invoice_number',
+        title: 'Invoice #',
+        sortable: false,
+        width: 80,
+    },{
         field: 'name',
         title: 'Patient Name',
         sortable: false,
@@ -12,16 +17,6 @@ var table_columns = [
         title: 'Phone',
         sortable: false,
         width: 90,
-    },{
-        field: 'region',
-        title: 'Region',
-        sortable: false,
-        width: 'auto',
-    },{
-        field: 'city',
-        title: 'City',
-        sortable: false,
-        width: 70,
     },{
         field: 'location',
         title: 'Centre',

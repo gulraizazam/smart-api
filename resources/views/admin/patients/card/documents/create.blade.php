@@ -22,7 +22,7 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
         <!--begin::Form-->
-        <form id="modal_add_documents_form" method="post" action="{{route('admin.patients.storedocument')}}" enctype="multipart/form-data">
+        <form id="modal_add_documents_form" method="post" enctype="multipart/form-data">
             <!--begin::Scroll-->
 
             <input type="hidden" name="patient_id" id="patientId">
@@ -41,8 +41,8 @@
 
                             <label class="required fw-bold fs-6 mb-2 pl-0"> File <span class="text text-danger">*</span></label>
                             <div class="custom-file">
-                                <input type="file" name="file" class="custom-file-input" id="customFile">
-                                <label class="custom-file-label" for="customFile">Choose file</label>
+                                <input type="file" name="file" class="custom-file-input" id="document_file" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
+                                <label class="custom-file-label" for="document_file">Choose file</label>
                             </div>
 
                         </div>
@@ -56,7 +56,7 @@
             <hr>
             <div class="text-center">
                 <button type="reset" class="btn btn-light me-3 popup-close" data-kt-users-modal-action="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary spinner-button">
+                <button type="submit" class="btn btn-primary spinner-button" id="submit_document_btn">
                     <span class="indicator-label">Submit</span>
                 </button>
             </div>

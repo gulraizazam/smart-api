@@ -40,7 +40,8 @@ function actions(data) {
         let file = data.url;
 
         let edit_url = route('admin.patients.updatedocuments', {id: id});
-        let view_url = asset_url + "storage/" + file;
+        // Use full_url from backend if available, otherwise construct manually
+        let view_url = data.full_url ? data.full_url : (base_route + "/storage/app/public/" + file);
         let delete_url = route('admin.patients.documentsdestroy', {id: id});
 
         if (permissions.edit || permissions.delete || permissions.manage) {
@@ -55,7 +56,7 @@ function actions(data) {
                     </li>';
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow(`'+edit_url+'`, `'+name+'`)" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="editRow(`'+edit_url+'`, `'+name+'`, `'+file+'`, '+id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
                     </a>\
@@ -89,13 +90,56 @@ function actions(data) {
     return '';
 }
 
-function editRow(url, name) {
+var currentEditDocumentId = null;
+
+function editRow(url, name, fileUrl, documentId) {
 
     $("#modal_edit_document_form").modal("show");
     $("#modal_edit_documents_form").attr("action", url);
+    
+    // Store document ID for API call
+    currentEditDocumentId = documentId;
 
     $("#edit_patient_id").val(patientCardID);
     $("#edit_document_name").val(name);
+    
+    // Reset file input
+    $("#edit_document_file").val('');
+    $("#edit_document_file").next('.custom-file-label').text('Choose file');
+    
+    // Show current file preview
+    if (fileUrl) {
+        // fileUrl might be full URL or relative path
+        let fullUrl = fileUrl.startsWith('http') ? fileUrl : (base_route + "/storage/app/public/" + fileUrl);
+        let fileName = fileUrl.split('/').pop();
+        let ext = fileName.split('.').pop().toLowerCase();
+        
+        $("#current_file_link").attr("href", fullUrl);
+        $("#current_file_name").text(fileName);
+        
+        // Check if it's an image file
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)) {
+            $("#current_file_image").attr("src", fullUrl);
+            $("#current_file_link_img").attr("href", fullUrl);
+            $("#image_preview_container").show();
+            $("#file_icon").removeClass("la-file-alt").addClass("la-image");
+        } else {
+            $("#image_preview_container").hide();
+            $("#file_icon").removeClass("la-image").addClass("la-file-alt");
+            // Set icon based on file type
+            if (ext === 'pdf') {
+                $("#file_icon").removeClass("la-file-alt").addClass("la-file-pdf");
+            } else if (['doc', 'docx'].includes(ext)) {
+                $("#file_icon").removeClass("la-file-alt").addClass("la-file-word");
+            } else if (['xls', 'xlsx'].includes(ext)) {
+                $("#file_icon").removeClass("la-file-alt").addClass("la-file-excel");
+            }
+        }
+    } else {
+        $("#current_file_link").attr("href", "#");
+        $("#current_file_name").text("No file");
+        $("#image_preview_container").hide();
+    }
 
 }
 
@@ -146,8 +190,113 @@ function setFilters(filter_values, active_filters) {
     }
 }
 
-function addDocumentForm(patientCardID) {
-    $("#patientId").val(patientCardID);
+function addDocumentForm(patientId) {
+    $("#patientId").val(patientId);
+    // Reset form
+    $("#modal_add_documents_form")[0].reset();
+    $(".custom-file-label").text("Choose file");
+}
+
+// Optimized API-based document update
+function updatePatientDocument(patientId, documentId) {
+    let form = document.getElementById('modal_edit_documents_form');
+    let formData = new FormData(form);
+    
+    let name = document.getElementById('edit_document_name').value;
+    if (!name || name.trim() === '') {
+        toastr.error('Please enter a document name');
+        return;
+    }
+
+    showSpinner();
+    
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: '/api/patients/' + patientId + '/update-document/' + documentId,
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        cache: false,
+        success: function(response) {
+            hideSpinner();
+            if (response.status) {
+                toastr.success(response.message);
+                closePopup('modal_edit_documents_form');
+                $("#modal_edit_document_form").modal("hide");
+                reloadTable('.document-form');
+                // Reset form
+                form.reset();
+                $("#edit_document_file").next('.custom-file-label').text('Choose file');
+            } else {
+                toastr.error(response.message);
+            }
+        },
+        error: function(xhr) {
+            hideSpinner();
+            let message = 'An error occurred';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+            toastr.error(message);
+        }
+    });
+}
+
+// Optimized API-based document upload
+function uploadPatientDocument(patientId) {
+    let form = document.getElementById('modal_add_documents_form');
+    let formData = new FormData(form);
+    
+    let fileInput = document.getElementById('document_file');
+    if (!fileInput.files.length) {
+        toastr.error('Please select a file');
+        return;
+    }
+    
+    let name = document.getElementById('add_document_name').value;
+    if (!name || name.trim() === '') {
+        toastr.error('Please enter a document name');
+        return;
+    }
+
+    showSpinner();
+    
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: '/api/patients/' + patientId + '/upload-document',
+        type: 'POST',
+        data: formData,
+        contentType: false,
+        processData: false,
+        cache: false,
+        success: function(response) {
+            hideSpinner();
+            if (response.status) {
+                toastr.success(response.message);
+                closePopup('modal_add_documents_form');
+                $("#modal_add_document_form").modal("hide");
+                reloadTable('.document-form');
+                // Reset form
+                form.reset();
+                $(".custom-file-label").text("Choose file");
+            } else {
+                toastr.error(response.message);
+            }
+        },
+        error: function(xhr) {
+            hideSpinner();
+            let message = 'An error occurred';
+            if (xhr.responseJSON && xhr.responseJSON.message) {
+                message = xhr.responseJSON.message;
+            }
+            toastr.error(message);
+        }
+    });
 }
 
 /*For validation*/
@@ -190,16 +339,9 @@ var DocumentValidation = function () {
             select2Validation();
         });
         validate.on('core.form.valid', function(event) {
-            submitFileForm($(form).attr('action'), $(form).attr('method'), modal_id, function (response) {
-                if (response.status) {
-                    toastr.success(response.message);
-                    closePopup(modal_id);
-                    reloadTable('.document-form');
-
-                } else {
-                    toastr.error(response.message);
-                }
-            });
+            // Use optimized API upload
+            let patientId = $("#patientId").val();
+            uploadPatientDocument(patientId);
         });
     }
 
@@ -242,16 +384,9 @@ var EditDocumentValidation = function () {
             select2Validation();
         });
         validate.on('core.form.valid', function(event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
-
-                if (response.status) {
-                    toastr.success(response.message);
-                    closePopup(modal_id);
-                    reloadTable('.document-form');
-                } else {
-                    toastr.error(response.message);
-                }
-            }, form);
+            // Use optimized API update
+            let patientId = $("#edit_patient_id").val();
+            updatePatientDocument(patientId, currentEditDocumentId);
         });
     }
 

@@ -125,11 +125,10 @@ class InvoicesController extends Controller
                     $invoicestatus = InvoiceStatuses::where('id', '=', $invoice->invoice_status_id)->first();
                     $records['data'][] = [
                         'id' => $invoice->id,
+                        'invoice_number' => sprintf('%05d', $invoice->id),
                         'patient_id' => \App\Helpers\GeneralFunctions::patientSearchStringAdd($user->id),
                         'name' => $user->name,
-                        'phone' => \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone),
-                        'region' => $location_info->region->name,
-                        'city' => $location_info->city->name,
+                        'phone' => Gate::allows('contact') ? \App\Helpers\GeneralFunctions::prepareNumber4Call($user->phone) : '***********',
                         'location' => $location_info->name,
                         'service' => $service->name,
                         'invoice_status' => $invoicestatus->name,
@@ -287,6 +286,12 @@ class InvoicesController extends Controller
                 $data_package['package_id'] = $invoice_detail->package_id;
             }
             //$package_advances = PackageAdvances::createRecord_forinvoice($data_package);
+
+            // Log invoice cancelled activity
+            $patient = \App\Models\Patients::find($invocies->patient_id);
+            $location = \App\Models\Locations::with('city')->find($appintment->location_id);
+            $service = \App\Models\Services::find($appintment->service_id);
+            \App\Helpers\ActivityLogger::logInvoiceCancelled($invocies, $patient, $location, $service, $appointment_type, $appintment);
 
             return ApiHelper::apiResponse($this->success, 'Invoice has been canceled successfully.');
         }

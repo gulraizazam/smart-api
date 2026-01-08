@@ -14,6 +14,12 @@ class Activity extends Model
     protected $guarded = [];
 
     public $timestamps = false;
+    
+    protected $casts = [
+        'created_by' => 'integer',
+        'patient_id' => 'integer',
+        'centre_id' => 'integer',
+    ];
 
     public function plan()
     {
