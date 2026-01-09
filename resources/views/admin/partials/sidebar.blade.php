@@ -1056,7 +1056,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('dashboard_appointments_report')
+                    @can('appointment_reports_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
