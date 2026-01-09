@@ -522,21 +522,21 @@ function actions(data) {
         }
         if(data.appointment_type==2) {
             if (permissions.image_manage) {
-                actions += '<li class="navi-item">\
-                        <a href="'+image_url+'" target="_blank" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-image"></i></span>\
-                            <span class="navi-text">Images</span>\
-                        </a>\
-                    </li>';
+                // actions += '<li class="navi-item">\
+                //         <a href="'+image_url+'" target="_blank" class="navi-link">\
+                //             <span class="navi-icon"><i class="la la-image"></i></span>\
+                //             <span class="navi-text">Images</span>\
+                //         </a>\
+                //     </li>';
             }
 
             if (permissions.measurement_manage) {
-                actions += '<li class="navi-item">\
-                        <a href="'+measurements_url+'" target="_blank" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-ruler-horizontal"></i></span>\
-                            <span class="navi-text">Measurements</span>\
-                        </a>\
-                    </li>';
+                // actions += '<li class="navi-item">\
+                //         <a href="'+measurements_url+'" target="_blank" class="navi-link">\
+                //             <span class="navi-icon"><i class="la la-ruler-horizontal"></i></span>\
+                //             <span class="navi-text">Measurements</span>\
+                //         </a>\
+                //     </li>';
             }
         }
 
