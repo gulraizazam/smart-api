@@ -583,6 +583,7 @@ return [
         'staff_listing' => 'Staff Listing',
         'staff_revenue_report' => 'Staff Revenue Reports',
         'operations_report' => 'Operation Reports',
+        'consultant_revenue_report' => 'Consultant Revenue Reports',
         'centers_report' => 'Centre Reports',
         'dashboard_report' => 'Dashboard Reports',
         'hr_report' => 'HR Reports',
