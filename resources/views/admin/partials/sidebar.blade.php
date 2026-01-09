@@ -710,7 +710,7 @@
                     </div>
                     @endcan
 
-                    @can('logs_manage')
+                    <!-- @can('logs_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -726,7 +726,7 @@
 
                         </ul>
                     </div>
-                    @endcan
+                    @endcan -->
 
                     @can('sms_templates_manage')
                     <div class="menu-submenu">
