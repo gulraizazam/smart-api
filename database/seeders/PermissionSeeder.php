@@ -39,7 +39,6 @@ class PermissionSeeder extends Seeder
             ['name' => 'dashboard_my_revenue_by_service', 'title' => 'My Performance by Service', 'main_group' => 0, 'parent_id' => 5],
             ['name' => 'dashboard_states', 'title' => 'States', 'main_group' => 0, 'parent_id' => 5],
             ['name' => 'dashboard_recent_activities', 'title' => 'Recent Activities', 'main_group' => 0, 'parent_id' => 5],
-            ['name' => 'dashboard_upcomings', 'title' => 'Upcomings', 'main_group' => 0, 'parent_id' => 5],
             // array('name' => 'dashboard_my_appointment_by_type', 'title' => 'My Appointments Performance by Type', 'main_group' => 0, 'parent_id' => 5),
             ['name' => 'roles_manage', 'title' => 'Roles', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'roles_create', 'title' => 'Create', 'main_group' => 0, 'parent_id' => 14],
