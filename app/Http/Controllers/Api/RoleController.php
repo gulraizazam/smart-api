@@ -121,9 +121,6 @@ class RoleController extends Controller
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
-                'permissions_mapping' => $mapping['permissions_mapping'],
-                'dashboard_permissions_mapping' => $mapping['dashboard_permissions_mapping'],
-                'reports_permissions_mapping' => $mapping['reports_permissions_mapping'],
                 'allowed_permissions' => $allowedPermissions,
             ], 'admin.roles.create');
         } catch (\Exception $e) {
@@ -171,9 +168,6 @@ class RoleController extends Controller
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
-                'permissions_mapping' => $mapping['permissions_mapping'],
-                'dashboard_permissions_mapping' => $mapping['dashboard_permissions_mapping'],
-                'reports_permissions_mapping' => $mapping['reports_permissions_mapping'],
             ], 'admin.roles.edit');
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
@@ -220,9 +214,6 @@ class RoleController extends Controller
                 'permissions' => $mapping['permissions'],
                 'dashboard_permissions' => $mapping['dashboard_permissions'],
                 'reports_permissions' => $mapping['reports_permissions'],
-                'permissions_mapping' => $mapping['permissions_mapping'],
-                'dashboard_permissions_mapping' => $mapping['dashboard_permissions_mapping'],
-                'reports_permissions_mapping' => $mapping['reports_permissions_mapping'],
             ]);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);

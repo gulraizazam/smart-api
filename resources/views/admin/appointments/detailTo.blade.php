@@ -71,29 +71,10 @@
                                         class="fa fa-stethoscope" title="Measurement "></i></a>
                         @endif
                     @endif
-                    @if($appointment->appointment_type_id==1)
-                        @if(Gate::allows('appointments_medical_form_manage'))
-                            <a class="btn btn-xs btn-info"
-                               href="{{ route('admin.appointmentsmedical.medicals',[$appointment->id]) }}"
-                               target="_blank"><i
-                                        class="fa fa-medkit" title="Medical History Form"></i></a>
-                        @endif
-                    @endif
-                    @if(Gate::allows('appointments_plans_create'))
-                        <a class="btn btn-xs btn-info"
-                           href="{{ route('admin.appointmentplans.create',[$appointment->id]) }}"
-                           data-target="#ajax_packages" data-toggle="modal"><i class="fa fa-clipboard"
-                                                                               title="Create Plan"></i></a>
-                    @endif
                     @if(Gate::allows('appointments_patient_card'))
                         <a class="btn btn-xs btn-info" target="_blank"
                            href="{{ route('admin.patients.preview',[$appointment->patient_id]) }}"><i class="icon-users"
                                                                                                       title="Patient Card"></i></a>
-                    @endif
-                    @if (Gate::allows('appointments_log'))
-                        <a class="btn btn-xs btn-info" target="_blank"
-                           href="{{ route('admin.appointments.viewlog', [$appointment->id, 'web']) }}"><i class="fa fa-history" title="{{ trans('global.app_log') }}"></i>
-                        </a>
                     @endif
                 </td>
             </tr>
