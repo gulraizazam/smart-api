@@ -146,6 +146,7 @@ class RefundsController extends Controller
                 'active' => Gate::allows('refunds_active'),
                 'inactive' => Gate::allows('refunds_inactive'),
                 'refund' => Gate::allows('refunds_refund'),
+                'edit' => Gate::allows('refunds_edit'),
             ];
 
             $patient_id = request('patient_id');
