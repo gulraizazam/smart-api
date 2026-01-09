@@ -437,7 +437,7 @@ class RoleService
             'my_revenue_by_service' => 'My Revenue by Service',
             'states' => 'Stats',
             'recent_activities' => 'Recent Activities',
-            'upcomings' => 'Upcomings',
+           
             'my_appointment_by_type' => 'My Appointments by Type',
             'appointment_by_type' => 'Treatment by Status',
             'appointment_by_status' => 'Consultancy by Status',
