@@ -142,6 +142,7 @@ class RefundsController extends Controller
             }
 
             $records['permissions'] = [
+                'create'=>Gate::allows('refunds_create'),
                 'delete' => Gate::allows('refunds_destroy'),
                 'active' => Gate::allows('refunds_active'),
                 'inactive' => Gate::allows('refunds_inactive'),
@@ -319,7 +320,7 @@ class RefundsController extends Controller
      */
     public function refund_create($id)
     {
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -469,7 +470,7 @@ class RefundsController extends Controller
     {
        
        
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $package_advance_last_in = PackageAdvances::where([
@@ -652,7 +653,7 @@ class RefundsController extends Controller
      */
     public function nonplans_refund_create($packageadvance_id)
     {
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return abort(401);
         }
         $package_advance_information = PackageAdvances::find($packageadvance_id);
@@ -715,7 +716,7 @@ class RefundsController extends Controller
      */
     public function nonplans_refund_store(Request $request)
     {
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
