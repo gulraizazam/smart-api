@@ -520,50 +520,6 @@ function actions(data) {
                     </li>';
             }
         }
-        if(data.appointment_type==1) {
-            if (permissions.consultancy) {
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
-                        <span class="navi-text">View On Calendar</span>\
-                    </a>\
-                </li>';
-            }
-        }
-        if(data.appointment_type==2) {
-            if (permissions.treatment) {
-                actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                        <span class="navi-text">View On Calendar</span>\
-                    </a>\
-                </li>';
-            }
-        }
-        if(data.cancelled_appointment_status == null && (data.cancelled_appointment_status?.id != data.appointment_status_id))
-        {
-            if(data.appointment_type==1) {
-                if (permissions.consultancy) {
-                    actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="goToConsultancy(\'consultancy\', '+data.cityId+', '+data.locationId+', '+data.doctorId+')" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-stethoscope"></i></span>\
-                            <span class="navi-text">Consultancy</span>\
-                        </a>\
-                    </li>';
-                }
-            }
-            if(data.appointment_type==2) {
-                if (permissions.treatment) {
-                    actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="goToConsultancy(\'treatment\', '+data.cityId+', '+data.locationId+', '+data.doctorId+', '+data.resource_id+')" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                            <span class="navi-text">Treatment</span>\
-                        </a>\
-                    </li>';
-                }
-            }
-        }
-
         if(data.appointment_type==2) {
             if (permissions.image_manage) {
                 actions += '<li class="navi-item">\
@@ -584,40 +540,11 @@ function actions(data) {
             }
         }
 
-        if(data.appointment_type==1) {
-            if (permissions.medical_form_manage) {
-                actions += '<li class="navi-item">\
-                        <a href="'+medicals_url+'" target="_blank" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-medkit"></i></span>\
-                            <span class="navi-text">Medical</span>\
-                        </a>\
-                    </li>';
-            }
-        }
-
-        if (permissions.plans_create) {
-            actions += '<li class="navi-item">\
-                        <a href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_url+'`, `'+id+'`);" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-paper-plane"></i></span>\
-                            <span class="navi-text">Create Plan</span>\
-                        </a>\
-                    </li>';
-        }
-
         if (permissions.patient_card) {
             actions += '<li class="navi-item">\
                         <a target="_blank" href="'+patient_url+'" class="navi-link">\
                             <span class="navi-icon"><i class="la la-user"></i></span>\
                             <span class="navi-text">Patient Card</span>\
-                        </a>\
-                    </li>';
-        }
-
-        if (permissions.log) {
-            actions += '<li class="navi-item">\
-                        <a href="'+viewlog_url+'" target="_blank" class="navi-link">\
-                            <span class="navi-icon"><i class="la la-history"></i></span>\
-                            <span class="navi-text">Log</span>\
                         </a>\
                     </li>';
         }
