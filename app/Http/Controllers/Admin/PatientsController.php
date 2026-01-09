@@ -130,6 +130,8 @@ class PatientsController extends Controller
             'manage' => Gate::allows('patients_manage'),
             'contact' => Gate::allows('contact'),
             'add_referrals' => Gate::allows('patients_add_referrals'),
+            'assign_membership' => Gate::allows('patients_assign_membership'),
+            'cancel_membership' => Gate::allows('patients_cancel_membership'),
         ];
 
         return response()->json($records);
