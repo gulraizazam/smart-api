@@ -109,6 +109,7 @@ class MigratePackageAdvancesToPlanInvoices extends Command
                     'active' => 1,
                    
                     'package_id' => $advance->package_id,
+                    'package_advance_id' => $advance->id,
                     'invoice_type' => 'exempt', // Default type
                    
                     'created_at' => $advance->created_at,

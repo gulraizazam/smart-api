@@ -17,6 +17,16 @@ var table_columns = [{
     sortable: false,
     width: 110,
 }, {
+    field: 'patient_id',
+    title: 'Patient ID',
+    sortable: false,
+    width: 80,
+}, {
+    field: 'location',
+    title: 'Location',
+    sortable: false,
+    width: 120,
+}, {
     field: 'start_date',
     title: 'Start Date',
     sortable: false,

@@ -31,7 +31,7 @@
                                     <!--end::Svg Icon-->
                                 </span>
                             </span>
-                           
+                            <h3 class="card-label">Memberships List</h3>
 
                         </div>
 

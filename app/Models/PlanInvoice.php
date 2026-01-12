@@ -23,6 +23,7 @@ class PlanInvoice extends Model
         'payment_mode_id',
         'active',
         'package_id',
+        'package_advance_id',
         'invoice_type',
         
     ];
@@ -65,6 +66,14 @@ class PlanInvoice extends Model
     public function paymentMode()
     {
         return $this->belongsTo(PaymentMode::class, 'payment_mode_id');
+    }
+
+    /**
+     * Get the package advance that this invoice is linked to.
+     */
+    public function packageAdvance()
+    {
+        return $this->belongsTo(PackageAdvances::class, 'package_advance_id');
     }
 
     /**

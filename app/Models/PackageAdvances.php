@@ -106,6 +106,9 @@ class PackageAdvances extends BaseModal
             $record->save();
             AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record, $parent_id);
 
+            // Create corresponding plan_invoice record
+            self::createPlanInvoice($record);
+
             // Update lead status to Converted when payment is received
             self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
 
@@ -125,6 +128,11 @@ class PackageAdvances extends BaseModal
         $record = self::create($data);
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
+
+        // Create corresponding plan_invoice record if cash_flow is 'in'
+        if (isset($data['cash_flow']) && $data['cash_flow'] === 'in') {
+            self::createPlanInvoice($record);
+        }
 
         // Update lead status to Converted when payment is received (cash_flow = 'in')
         if (isset($data['cash_flow']) && $data['cash_flow'] === 'in' && isset($data['package_id'])) {
@@ -276,6 +284,11 @@ class PackageAdvances extends BaseModal
 
         AuditTrails::addEventLogger(self::$_table, 'create', $data, self::$_fillable, $record);
 
+        // Create corresponding plan_invoice record if cash_flow is 'in'
+        if (isset($data['cash_flow']) && $data['cash_flow'] === 'in') {
+            self::createPlanInvoice($record);
+        }
+
         // If payment is received (cash_flow = 'in'), update lead status to Converted
         if (isset($data['cash_flow']) && $data['cash_flow'] === 'in' && isset($data['package_id'])) {
             self::updateLeadStatusToConverted($data['package_id'], $data['account_id'] ?? Auth::user()->account_id);
@@ -325,6 +338,48 @@ class PackageAdvances extends BaseModal
 
         } catch (\Exception $e) {
             \Log::error('Failed to update lead status to converted: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create corresponding plan_invoice record when package_advance is created with cash_flow = 'in'
+     */
+    protected static function createPlanInvoice($packageAdvance)
+    {
+        try {
+            // Only create plan_invoice for incoming payments (cash_flow = 'in')
+            if ($packageAdvance->cash_flow !== 'in' || !$packageAdvance->package_id) {
+                return;
+            }
+
+            // Generate invoice number
+            $invoiceNumber = \App\Models\PlanInvoice::generateInvoiceNumber(
+                $packageAdvance->patient_id,
+                $packageAdvance->package_id
+            );
+
+            // Create plan_invoice record
+            \App\Models\PlanInvoice::create([
+                'invoice_number' => $invoiceNumber,
+                'total_price' => $packageAdvance->cash_amount,
+                'account_id' => $packageAdvance->account_id,
+                'patient_id' => $packageAdvance->patient_id,
+                'created_by' => $packageAdvance->created_by,
+                'location_id' => $packageAdvance->location_id,
+                'payment_mode_id' => $packageAdvance->payment_mode_id,
+                'active' => 1,
+                'package_id' => $packageAdvance->package_id,
+                'package_advance_id' => $packageAdvance->id,
+                'invoice_type' => 'exempt',
+                'created_at' => $packageAdvance->created_at,
+                'updated_at' => now(),
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Failed to create plan_invoice for package_advance: ' . $e->getMessage(), [
+                'package_advance_id' => $packageAdvance->id ?? null,
+                'error' => $e->getMessage()
+            ]);
         }
     }
 
