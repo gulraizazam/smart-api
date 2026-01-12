@@ -30,8 +30,8 @@ class MigratePackageAdvancesToPlanInvoices extends Command
      */
     public function handle()
     {
-        $fromDate = $this->option('from') ?? '2026-01-01';
-        $toDate = $this->option('to') ?? '2026-01-31';
+        $fromDate = $this->option('from') ?? '2025-12-01';
+        $toDate = $this->option('to') ?? '2025-12-31';
         $isDryRun = $this->option('dry-run');
 
         $this->info("===========================================");
@@ -45,7 +45,7 @@ class MigratePackageAdvancesToPlanInvoices extends Command
         $advances = DB::table('package_advances')
             ->where('cash_flow', 'in')
             ->where('cash_amount', '>', 0)
-            ->where('location_id',54)
+            ->where('location_id',56)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [
                 Carbon::parse($fromDate)->startOfDay(),
