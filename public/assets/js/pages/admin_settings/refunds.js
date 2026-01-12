@@ -11,7 +11,7 @@ var table_columns = [
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'package_id',
         title: 'Plans',
