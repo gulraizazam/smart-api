@@ -84,7 +84,7 @@ class InvoiceGenerationService
                 'max_exempt_per_patient' => $this->maxExemptPerPatient,
             ],
             'totals' => $totals,
-            'pool' => $pool,
+            'pool' => array_merge($pool, ['actual_taxable_invoiced' => $summary['total_taxable_invoiced']]),
             'feasibility' => $feasibility,
             'patient_distribution' => $distribution,
             'exempt_invoices' => $exemptInvoices,
