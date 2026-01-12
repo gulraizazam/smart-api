@@ -28,6 +28,11 @@ var table_columns = [
         sortable: false,
         width: 80,
     },{
+        field: 'settle_amount',
+        title: 'Settled Amount',
+        sortable: false,
+        width: 80,
+    },{
         field: 'refunded',
         title: 'Refund Amount',
         sortable: false,

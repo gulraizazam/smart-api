@@ -109,11 +109,37 @@ class RefundsController extends Controller
                         'is_setteled' =>1
                     ])->first();
 
+                    // Calculate settled amount same as packages datatable
+                    $settle_amount = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_tax', '=', '0'],
+                        ['is_adjustment', '=', '0'],
+                        ['is_refund', '=', '0'],
+                        ['is_setteled', '=', '0'],
+                    ])->sum('cash_amount');
+                    $settle_tax_amount = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_tax', '=', '1'],
+                        ['is_adjustment', '=', '0'],
+                        ['is_refund', '=', '0'],
+                        ['is_setteled', '=', '0'],
+                    ])->sum('cash_amount');
+                    $refund_settle_amount = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_refund', '=', '0'],
+                        ['is_setteled', '=', 1],
+                    ])->sum('cash_amount');
+                    $settle_amount_with_tax = $settle_amount + $settle_tax_amount + $refund_settle_amount;
                     
                     if ($refunded_amount != 0) {
-                        // Get plan total from packages table
-                        $packageInfo = Packages::find($package->package_id);
-                        $planTotal = $packageInfo ? $packageInfo->total_price : 0;
+                        // Calculate total same way as packages datatable
+                        $packageservices_price = PackageBundles::where('package_id', '=', $package->package_id)->sum('tax_including_price');
 
                         $records['data'][] = [
                             'id' => $package->package_id ?? 0,
@@ -122,8 +148,9 @@ class RefundsController extends Controller
                             'phone' => $package->user ? (Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '***********') : '-',
                             'package_id' => $package?->package_id ?? '-',
                             'location_id' => $package->location->city->name.'-'.$package->location?->name,
-                            'total' => number_format($planTotal),
+                            'total' => number_format($packageservices_price),
                             'cash_receive' => number_format($cash_receive),
+                            'settle_amount' => number_format($settle_amount_with_tax),
                             'refunded' =>$refunded_amount,
                             'case_setteled' => isset($is_case_setteled) && $is_case_setteled->is_setteled == 1 ? 'Yes' : 'No',
                             'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('F j,Y h:i A') : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
