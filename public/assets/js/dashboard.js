@@ -29,7 +29,8 @@
                     
                     // Update Revenue
                     if (data.revenue !== null) {
-                        $('#allrevenue').html('PKR: ' + numberFormat(data.revenue));
+                        const roundedRevenue = Math.round(data.revenue);
+                        $('#allrevenue').html('PKR: ' + numberFormat(roundedRevenue, 0));
                     } else {
                         $('#allrevenue').html('Your are not authorized');
                     }
@@ -67,12 +68,13 @@
         });
     }
     
-    function numberFormat(num) {
+    function numberFormat(num, decimals = 2) {
         if (num === null || num === undefined) return '0';
-        // Handle decimal numbers properly - only format the integer part
-        var parts = parseFloat(num).toFixed(2).split('.');
+        // Handle decimal numbers properly - format with specified decimal places
+        var parts = parseFloat(num).toFixed(decimals).split('.');
         parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        return parts.join('.');
+        // If decimals is 0, return only the integer part
+        return decimals === 0 ? parts[0] : parts.join('.');
     }
 
     // Activities pagination state
