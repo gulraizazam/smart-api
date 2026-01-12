@@ -111,6 +111,9 @@ class RefundsController extends Controller
 
                     
                     if ($refunded_amount != 0) {
+                        // Get plan total from packages table
+                        $packageInfo = Packages::find($package->package_id);
+                        $planTotal = $packageInfo ? $packageInfo->total_price : 0;
 
                         $records['data'][] = [
                             'id' => $package->package_id ?? 0,
@@ -119,7 +122,7 @@ class RefundsController extends Controller
                             'phone' => $package->user ? (Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '***********') : '-',
                             'package_id' => $package?->package_id ?? '-',
                             'location_id' => $package->location->city->name.'-'.$package->location?->name,
-                            'total' => number_format($package->total_price),
+                            'total' => number_format($planTotal),
                             'cash_receive' => number_format($cash_receive),
                             'refunded' =>$refunded_amount,
                             'case_setteled' => isset($is_case_setteled) && $is_case_setteled->is_setteled == 1 ? 'Yes' : 'No',
