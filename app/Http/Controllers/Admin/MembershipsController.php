@@ -68,7 +68,7 @@ class MembershipsController extends Controller
             ];
             if ($memberships->count()) {
                 foreach ($memberships as $membership) {
-                    $patient = User::with('location.city')->whereId($membership->patient_id)->first();
+                    $patient = User::whereId($membership->patient_id)->first();
                     $records['data'][] = [
                         'id' => $membership->id,
                         'code' => $membership->code,
@@ -78,7 +78,6 @@ class MembershipsController extends Controller
                         'membership_type_id' => $membership->membershipType->name ?? 'N/A',
                         'patient' => $patient ? $patient->name : 'N/A',
                         'patient_id' => $patient ? $patient->id : 'N/A',
-                        'location' => $patient && $patient->location ? ($patient->location->name . ($patient->location->city ? ', ' . $patient->location->city->name : '')) : 'N/A',
                         'created_at' => Carbon::parse($membership->created_at)->format('F j,Y h:i A'),
                     ];
                 }
