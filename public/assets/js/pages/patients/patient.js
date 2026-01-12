@@ -112,7 +112,7 @@ function actions(data) {
                     <li class="navi-header font-weight-bolder text-uppercase font-size-xs text-primary pb-2">\
                         Choose an action: \
                         </li>';
-        if (permissions.assign_membership) {
+        if (permissions.edit) {
             actions += '<li class="navi-item">\
                         <a href="javascript:void(0);" onclick="assignMembership(`'+ assign_membership_url + '`, `' + id + '`);" class="navi-link">\
                             <span class="navi-icon"><i class="la la-pencil"></i></span>\
@@ -120,7 +120,7 @@ function actions(data) {
                         </a>\
                     </li>';
         }
-        if (permissions.cancel_membership) {
+        if (permissions.edit) {
             actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="cancelMembership(`' + cancel_url + '`);" class="navi-link">\
                     <span class="navi-icon"><i class="la la-cross"></i></span>\
