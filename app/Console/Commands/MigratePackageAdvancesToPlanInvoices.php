@@ -45,7 +45,7 @@ class MigratePackageAdvancesToPlanInvoices extends Command
         $advances = DB::table('package_advances')
             ->where('cash_flow', 'in')
             ->where('cash_amount', '>', 0)
-            ->where('location_id',53)
+            ->where('location_id',54)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [
                 Carbon::parse($fromDate)->startOfDay(),
