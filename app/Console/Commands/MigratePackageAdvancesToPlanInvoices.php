@@ -84,12 +84,20 @@ class MigratePackageAdvancesToPlanInvoices extends Command
                 $key = "{$advance->patient_id}-{$advance->package_id}";
                 
                 if (!isset($invoiceCounters[$key])) {
-                    // Check existing invoices for this patient-package combination
-                    $existingCount = DB::table('plan_invoices')
+                    // Get the maximum sequence number from existing invoices for this patient-package combination
+                    $lastInvoice = DB::table('plan_invoices')
                         ->where('patient_id', $advance->patient_id)
                         ->where('package_id', $advance->package_id)
-                        ->count();
-                    $invoiceCounters[$key] = $existingCount;
+                        ->orderByRaw('CAST(SUBSTRING_INDEX(invoice_number, "-", -1) AS UNSIGNED) DESC')
+                        ->value('invoice_number');
+                    
+                    if ($lastInvoice) {
+                        // Extract the sequence number from the last invoice (e.g., "174043-33876-03" -> 3)
+                        $lastSequence = (int) substr($lastInvoice, strrpos($lastInvoice, '-') + 1);
+                        $invoiceCounters[$key] = $lastSequence;
+                    } else {
+                        $invoiceCounters[$key] = 0;
+                    }
                 }
                 
                 $invoiceCounters[$key]++;
