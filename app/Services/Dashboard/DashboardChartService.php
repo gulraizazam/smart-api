@@ -442,8 +442,9 @@ class DashboardChartService
             ->groupBy('doctor_id');
 
         // Only apply date filter if period is not 'all' (lifetime)
+        // For this chart, last7days, week, and thismonth exclude current date
         if ($period !== 'all' && $period !== 'All') {
-            [$startDate, $endDate] = DashboardHelper::getDateRange($period);
+            [$startDate, $endDate] = $this->getFeedbackDateRange($period);
             $feedbackQuery->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59']);
         }
 
@@ -490,9 +491,9 @@ class DashboardChartService
             ->where('appointments.appointment_type_id', $treatmentTypeId)
             ->where('appointments.appointment_status_id', $treatmentStatusId);
         
-        // Apply date filter based on period
+        // Apply date filter based on period (using custom date range that excludes current date for specific filters)
         if ($period !== 'all' && $period !== 'All') {
-            [$startDate, $endDate] = DashboardHelper::getDateRange($period);
+            [$startDate, $endDate] = $this->getFeedbackDateRange($period);
             $treatmentsQuery->whereBetween('scheduled_date', [$startDate, $endDate]);
             $feedbacksCountQuery->whereBetween('appointments.scheduled_date', [$startDate, $endDate]);
         }
@@ -513,6 +514,40 @@ class DashboardChartService
                 'percentage' => $feedbackPercentage,
             ],
         ];
+    }
+
+    /**
+     * Get custom date range for feedback chart that excludes current date
+     * for last7days, week, and thismonth filters
+     *
+     * @param string $period
+     * @return array [start_date, end_date] in Y-m-d format
+     */
+    private function getFeedbackDateRange($period)
+    {
+        switch ($period) {
+            case 'last7days':
+                // 7 days excluding today: yesterday minus 6 days to yesterday
+                $start_date = Carbon::now()->subDays(7)->format('Y-m-d');
+                $end_date = Carbon::now()->subDay()->format('Y-m-d');
+                break;
+            case 'week':
+                // This week excluding today
+                $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
+                $end_date = Carbon::now()->subDay()->format('Y-m-d');
+                break;
+            case 'month':
+            case 'thismonth':
+                // This month excluding today
+                $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
+                $end_date = Carbon::now()->subDay()->format('Y-m-d');
+                break;
+            default:
+                // For other periods (today, yesterday, lastmonth, etc.), use standard date range
+                return DashboardHelper::getDateRange($period);
+        }
+
+        return [$start_date, $end_date];
     }
 
     /**

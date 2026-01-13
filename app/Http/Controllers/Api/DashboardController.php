@@ -452,42 +452,54 @@ class DashboardController extends Controller
             $centerIds = DashboardHelper::getUserCentres();
             $centerIdsStr = implode(',', array_map('intval', $centerIds));
             $sevenDaysAgo = Carbon::now()->subDays(7)->format('Y-m-d H:i:s');
+            $threeMonthsAgo = Carbon::now()->subMonths(3)->format('Y-m-d');
             $today = Carbon::now()->format('Y-m-d');
             
             // Get patients with:
-            // 1. Arrived consultation appointment
+            // 1. Arrived consultation appointment (within last 3 months)
             // 2. First payment >= 7 days ago
-            // 3. Balance >= 500
+            // 3. Balance >= 100
             // 4. No treatment appointments booked (appointment_type_id = 2)
             $sql = "
                 SELECT 
                     u.id as patient_id,
                     u.name,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' AND pa.is_cancel = 0 AND pa.is_tax = 0 AND pa.is_adjustment = 0 AND pa.is_refund = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_in,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 THEN pa.cash_amount ELSE 0 END), 0) as cash_out,
-                    MIN(CASE WHEN pa.cash_flow = 'in' AND pa.cash_amount > 0 AND pa.is_tax = 0 THEN pa.created_at END) as conversion_date
+                    bal.cash_in,
+                    bal.cash_out,
+                    bal.conversion_date
                 FROM users u
-                INNER JOIN appointments a ON u.id = a.patient_id
-                    AND a.appointment_type_id = 1 
-                    AND a.base_appointment_status_id = 2 
-                    AND a.location_id IN ({$centerIdsStr})
-                LEFT JOIN package_advances pa ON u.id = pa.patient_id
+                INNER JOIN (
+                    SELECT DISTINCT patient_id
+                    FROM appointments
+                    WHERE appointment_type_id = 1 
+                        AND base_appointment_status_id = 2 
+                        AND location_id IN ({$centerIdsStr})
+                        AND scheduled_date >= ?
+                ) apt ON u.id = apt.patient_id
+                INNER JOIN (
+                    SELECT 
+                        patient_id,
+                        COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
+                        COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out,
+                        MIN(CASE WHEN cash_flow = 'in' AND cash_amount > 0 AND is_tax = 0 THEN created_at END) as conversion_date
+                    FROM package_advances
+                    GROUP BY patient_id
+                ) bal ON u.id = bal.patient_id
                 WHERE u.user_type_id = 3 AND u.active = 1
+                    AND bal.conversion_date IS NOT NULL
+                    AND bal.conversion_date <= ?
+                    AND (bal.cash_in - bal.cash_out) >= 100
                     AND NOT EXISTS (
                         SELECT 1 FROM appointments t 
                         WHERE t.patient_id = u.id 
                         AND t.appointment_type_id = 2
                         AND t.location_id IN ({$centerIdsStr})
                     )
-                GROUP BY u.id, u.name
-                HAVING (cash_in - cash_out) >= 500
-                    AND conversion_date IS NOT NULL
-                    AND conversion_date <= ?
-                ORDER BY conversion_date DESC
+                ORDER BY bal.conversion_date DESC
                 LIMIT ? OFFSET ?
             ";
 
-            $patients = \DB::select($sql, [$sevenDaysAgo, $perPage + 1, $offset]);
+            $patients = \DB::select($sql, [$threeMonthsAgo, $sevenDaysAgo, $perPage + 1, $offset]);
             
             $hasMore = count($patients) > $perPage;
             if ($hasMore) array_pop($patients);
@@ -516,6 +528,12 @@ class DashboardController extends Controller
 
     /**
      * Get overdue treatments with pagination (lazy loading)
+     * Shows patients where:
+     * - Has treatment appointments (appointment_type_id = 2)
+     * - At least one treatment arrived (base_appointment_status_id = 2)
+     * - Last treatment >= 31 days ago
+     * - No future treatments scheduled
+     * - Balance > 500 PKR
      */
     public function overdueTreatments(Request $request)
     {
@@ -526,31 +544,53 @@ class DashboardController extends Controller
             
             $centerIds = DashboardHelper::getUserCentres();
             $centerIdsStr = implode(',', array_map('intval', $centerIds));
-            $threeMonthsAgo = Carbon::now()->subMonths(3)->format('Y-m-d');
-            $oneMonthAgo = Carbon::now()->subMonth()->format('Y-m-d');
+            $thirtyOneDaysAgo = Carbon::now()->subDays(31)->format('Y-m-d');
+            $today = Carbon::now()->format('Y-m-d');
 
+            // Get patients with:
+            // 1. Treatment appointments (appointment_type_id = 2) that arrived (status = 2)
+            // 2. Last treatment scheduled_date >= 31 days ago
+            // 3. No future treatment appointments scheduled
+            // 4. Balance > 100
             $sql = "
                 SELECT 
                     u.id as patient_id,
                     u.name,
-                    MAX(a.scheduled_date) as last_arrived,
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'in' AND pa.is_cancel = 0 AND pa.is_tax = 0 THEN pa.cash_amount ELSE 0 END), 0) -
-                    COALESCE(SUM(CASE WHEN pa.cash_flow = 'out' AND pa.is_cancel = 0 THEN pa.cash_amount ELSE 0 END), 0) as balance
+                    apt.last_arrived,
+                    bal.cash_in,
+                    bal.cash_out
                 FROM users u
-                INNER JOIN appointments a ON u.id = a.patient_id
-                    AND a.base_appointment_status_id = 2 
-                    AND a.location_id IN ({$centerIdsStr})
-                    AND a.scheduled_date >= ?
-                    AND a.scheduled_date < ?
-                LEFT JOIN package_advances pa ON u.id = pa.patient_id
+                INNER JOIN (
+                    SELECT patient_id, MAX(scheduled_date) as last_arrived
+                    FROM appointments
+                    WHERE appointment_type_id = 2
+                        AND base_appointment_status_id = 2 
+                        AND location_id IN ({$centerIdsStr})
+                    GROUP BY patient_id
+                    HAVING MAX(scheduled_date) <= ?
+                ) apt ON u.id = apt.patient_id
+                INNER JOIN (
+                    SELECT 
+                        patient_id,
+                        COALESCE(SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_tax = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_in,
+                        COALESCE(SUM(CASE WHEN cash_flow = 'out' AND is_cancel = 0 AND is_adjustment = 0 AND is_refund = 0 THEN cash_amount ELSE 0 END), 0) as cash_out
+                    FROM package_advances
+                    GROUP BY patient_id
+                    HAVING (cash_in - cash_out) > 100
+                ) bal ON u.id = bal.patient_id
                 WHERE u.user_type_id = 3 AND u.active = 1
-                GROUP BY u.id, u.name
-                HAVING balance > 0
-                ORDER BY last_arrived DESC
+                    AND NOT EXISTS (
+                        SELECT 1 FROM appointments f 
+                        WHERE f.patient_id = u.id 
+                        AND f.appointment_type_id = 2
+                        AND f.scheduled_date >= ?
+                        AND f.location_id IN ({$centerIdsStr})
+                    )
+                ORDER BY apt.last_arrived DESC
                 LIMIT ? OFFSET ?
             ";
 
-            $patients = \DB::select($sql, [$threeMonthsAgo, $oneMonthAgo, $perPage + 1, $offset]);
+            $patients = \DB::select($sql, [$thirtyOneDaysAgo, $today, $perPage + 1, $offset]);
             
             $hasMore = count($patients) > $perPage;
             if ($hasMore) array_pop($patients);
@@ -560,7 +600,7 @@ class DashboardController extends Controller
                 $patientData[] = [
                     'patient_id' => $p->patient_id,
                     'name' => $p->name,
-                    'balance' => (float) $p->balance,
+                    'balance' => (float) ($p->cash_in - $p->cash_out),
                     'scheduled_date' => $p->last_arrived,
                 ];
             }

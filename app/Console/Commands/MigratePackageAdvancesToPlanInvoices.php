@@ -14,8 +14,8 @@ class MigratePackageAdvancesToPlanInvoices extends Command
      * @var string
      */
     protected $signature = 'invoices:migrate-advances 
-                            {--from= : Start date (Y-m-d format, e.g., 2025-11-01)}
-                            {--to= : End date (Y-m-d format, e.g., 2025-11-30)}
+                            {--from= : Start date (Y-m-d format, e.g., 2025-12-01)}
+                            {--to= : End date (Y-m-d format, e.g., 2025-12-10)}
                             {--dry-run : Run without actually inserting records}';
 
     /**
