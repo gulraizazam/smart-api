@@ -16,11 +16,25 @@ var table_columns = [{
     title: 'Patient',
     sortable: false,
     width: 110,
+    template: function (data) {
+        if (data.patient && data.patient !== 'N/A') {
+            return data.patient;
+        } else {
+            return '<span class="label label-lg label-light-warning label-inline">Not Assigned</span>';
+        }
+    }
 }, {
     field: 'patient_id',
     title: 'Patient ID',
     sortable: false,
     width: 80,
+    template: function (data) {
+        if (data.patient_id && data.patient_id !== 'N/A') {
+            return data.patient_id;
+        } else {
+            return '<span class="text-warning">-</span>';
+        }
+    }
 }, {
     field: 'start_date',
     title: 'Start Date',
