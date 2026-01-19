@@ -24,7 +24,7 @@ class PermissionRequest extends FormRequest
         $rules = [
             'name' => 'required|string|max:255',
             'title' => 'nullable|string|max:255',
-            'parent_id' => 'nullable|integer|exists:permissions,id',
+            'parent_id' => 'nullable|integer',
             'status' => 'nullable|boolean',
         ];
 

@@ -11,7 +11,7 @@ var table_columns = [
         field: 'name',
         title: 'Name',
         sortable: false,
-        width: 'auto',
+        width: 70,
     },{
         field: 'package_id',
         title: 'Plans',
@@ -25,6 +25,11 @@ var table_columns = [
     },{
         field: 'cash_receive',
         title: 'Cash receive',
+        sortable: false,
+        width: 80,
+    },{
+        field: 'settle_amount',
+        title: 'Settled Amount',
         sortable: false,
         width: 80,
     },{
@@ -76,12 +81,14 @@ function actions(data) {
                     Choose an action: \
                     </li>';
 
+                if (permissions.edit) {
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="edit(`' + edit_url + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">edit</span>\
                     </a>\
                 </li>';
+            }
                 actions += '<li class="navi-item">\
                     <a href="javascript:void(0);" onclick="history(`' + history + '`);" class="navi-link">\
                         <span class="navi-icon"><i class="la la-eye"></i></span>\

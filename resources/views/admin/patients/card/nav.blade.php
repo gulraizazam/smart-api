@@ -122,7 +122,16 @@
 <!--end::Nav-->
 
 {{--Menu--}}
-<div class="card mb-8 menu_section" style="width: 100%">
+<style>
+    .sticky-nav {
+        position: sticky;
+        top: 65px;
+        z-index: 100;
+        background: #fff;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+</style>
+<div class="card mb-8 menu_section sticky-nav" style="width: 100%">
     <div class="card-body menu-card">
         <ul class="horizontal-nav-bar list-unstyled mb-0">
             <li class="horizontal-nav-bar-li">
@@ -133,26 +142,22 @@
                     <p class="navi-text ">Profile</p>
                 </a>
             </li>
-            @can('patients_appointment_manage')
-                <li class="horizontal-nav-bar-li">
+            <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'appointment-form');" class="change-tab appointment-form-tab navi-link py-4">
                          <span class="text-muted mb-2 fa_icon">
                              <i class="la la-clock"></i>
                         </span>
-                        <p class="navi-text">Appointments</p>
+                        <p class="navi-text">Appointments <span id="tab-count-appointments"></span></p>
                     </a>
                 </li>
-            @endcan
-            @can('patients_appointment_manage')
-                <li class="horizontal-nav-bar-li">
+            <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'voucher-form');" class="change-tab voucher-form-tab navi-link py-4">
                          <span class="text-muted mb-2 fa_icon">
-                             <i class="la la-clock"></i>
+                             <i class="la la-gift"></i>
                         </span>
-                        <p class="navi-text">Vouchers</p>
+                        <p class="navi-text">Vouchers <span id="tab-count-vouchers"></span></p>
                     </a>
                 </li>
-            @endcan
             <!-- @can("patients_customform_manage")
                 <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'custom-form');" class="change-tab custom-form-tab navi-link py-4">
@@ -185,52 +190,44 @@
                     </a>
                 </li>
             @endcan -->
-            @can("patients_document_manage")
-                <li class="horizontal-nav-bar-li">
+            <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0);" onclick="changeProfilePage($(this), 'document-form');" class="change-tab document-form-tab navi-link py-4">
                         <span class="text-muted mb-2 fa_icon">
                             <i class="la la-file-archive-o"></i>
                         </span>
-                        <p class="navi-text">Documents</p>
+                        <p class="navi-text">Documents <span id="tab-count-documents"></span></p>
                     </a>
                 </li>
-            @endcan
-            @can("patients_plan_manage")
-                <!--li class="horizontal-nav-bar-li">
+            <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'plan-form');" class="change-tab plan-form-tab navi-link py-4">
                         <span class="text-muted mb-2 fa_icon">
                              <i class="la la-paper-plane-o"></i>
                         </span>
-                        <p class="navi-text">Plans</p>
+                        <p class="navi-text">Plans <span id="tab-count-plans"></span></p>
                     </a>
-                </li-->
-            @endcan
-            @can("patients_invoice_manage")
-                <li class="horizontal-nav-bar-li">
+                </li>
+            <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0);"  onclick="changeProfilePage($(this), 'invoice-form');" class="change-tab invoice-form-tab navi-link py-4">
                          <span class="text-muted mb-2 fa_icon">
                              <i class="la la-file-invoice"></i>
                         </span>
-                        <p class="navi-text">Invoices</p>
+                        <p class="navi-text">Invoices <span id="tab-count-invoices"></span></p>
                     </a>
                 </li>
-            @endcan
-            @can("patients_refund_manage")
-                <li class="horizontal-nav-bar-li">
+            <li class="horizontal-nav-bar-li">
                     <a href="javascript:void(0)"  onclick="changeProfilePage($(this), 'refund-form');" class="change-tab refund-form-tab navi-link py-4">
                         <span class="text-muted mb-2 fa_icon">
                              <i class="la la-eject"></i>
                         </span>
-                        <p class="navi-text">Refunds</p>
+                        <p class="navi-text">Refunds <span id="tab-count-refunds"></span></p>
                     </a>
                 </li>
-            @endcan
             <li class="horizontal-nav-bar-li">
                 <a href="javascript:void(0)" onclick="changeProfilePage($(this), 'history-form');" class="change-tab history-form-tab navi-link py-4">
                     <span class="text-muted mb-2 fa_icon">
                          <i class="la la-history"></i>
                     </span>
-                    <p class="navi-text">Activity Logs</p>
+                    <p class="navi-text">Activity Logs <span id="tab-count-activity"></span></p>
                 </a>
             </li>
             <!-- @can("patients_refund_manage")

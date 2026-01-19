@@ -1,11 +1,38 @@
 jQuery(document).ready(function () {
     getPatient();
+    getTabCounts();
     var result = get_query();
     if (typeof result.tab !== 'undefined') {
         $("." + result.tab+ '-tab').click();
     }
     activeFirstTab(result.tab);
 });
+
+function getTabCounts() {
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.patients.tabCounts', {id: patientCardID}),
+        type: "GET",
+        cache: false,
+        success: function (response) {
+            if (response.status && response.data) {
+                var counts = response.data;
+                $('#tab-count-appointments').text('(' + (counts.appointments || 0) + ')');
+                $('#tab-count-vouchers').text('(' + (counts.vouchers || 0) + ')');
+                $('#tab-count-documents').text('(' + (counts.documents || 0) + ')');
+                $('#tab-count-plans').text('(' + (counts.plans || 0) + ')');
+                $('#tab-count-invoices').text('(' + (counts.invoices || 0) + ')');
+                $('#tab-count-refunds').text('(' + (counts.refunds || 0) + ')');
+                $('#tab-count-activity').text('(' + (counts.activity_logs || 0) + ')');
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            console.log('Error fetching tab counts:', thrownError);
+        }
+    });
+}
 
 function activeFirstTab(tab) {
 
@@ -39,6 +66,11 @@ function setPatientData(response) {
         $("#profile_patient_id").text(makePatientId(patient.id));
         $("#patient_id").text(makePatientId(patient.id));
         $("#patient_name").text(patient.name);
+        
+        // Load patient notes after patient data is loaded
+        if (typeof loadPatientNotes === 'function') {
+            loadPatientNotes();
+        }
         $("#patient_email").text(patient.email);
         if (permission.contact) {
             $("#patient_phone").text(patient.phone);
@@ -123,6 +155,13 @@ function changeProfilePage($this, page_id) {
     $("#" + page_id).removeClass("d-none");
     $(".profile-buttons").addClass("d-none");
     $(".toolbar-" + page_id).removeClass("d-none");
+    
+    // Show/hide Edit Patient button based on active tab (only visible on profile tabs)
+    if (page_id === 'personal_info' || page_id === 'change_profile_picture') {
+        $(".profile-edit-btn").removeClass('d-none');
+    } else {
+        $(".profile-edit-btn").addClass('d-none');
+    }
     if (page_id != 'personal_info' && page_id != 'change_profile_picture') {
         $("#kt_profile_aside").addClass("d-none");
         $(".main-patient-section").attr("style", "margin-left: 0px !important");

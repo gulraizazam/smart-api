@@ -3219,8 +3219,8 @@ class AppointmentsController extends Controller
             $data['reason'] = null;
         }
         // Converted By
-        $data['converted_by'] = Auth::User()->id;
-        /*$data['updated_by'] = Auth::User()->id;*/
+        // $data['converted_by'] = Auth::User()->id;
+        $data['updated_by'] = Auth::User()->id;
         $data['updated_at'] = Filters::getCurrentTimeStamp();
         if ($appointment_type->id == $appointment->appointment_type_id) {
             if ($data['base_appointment_status_id'] == Config::get('constants.appointment_status_not_show')) {

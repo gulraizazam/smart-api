@@ -431,13 +431,13 @@
             </li>
             @endif
             {{--Refunds end--}}
-            @if(Gate::allows('logs_manage'))
+            <!-- @if(Gate::allows('logs_manage'))
             <li class="nav-item start {{ $request->segment(2) == 'logs' ? 'active active-sub' : '' }}">
                 <a href="{{ route('admin.logs.index') }}">
                     <span class="title">@lang('global.logs.title')</span>
                 </a>
             </li>
-            @endif
+            @endif -->
         </ul>
         </li>
         @endif

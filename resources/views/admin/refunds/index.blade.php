@@ -34,7 +34,10 @@
                             <h3 class="card-label">Refunds</h3>
                             
                         </div>
+                        
+                        @if(Gate::allows('refunds_create'))
                         <a href="" class="btn btn-primary " style="height: 37px;" data-toggle="modal" data-target="#modal_edit_refunds"><i class="la la-plus"></i>  Add Refund</a>
+                        @endif
                     </div>
 
                     <div class="card-body">

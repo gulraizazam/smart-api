@@ -553,6 +553,16 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         Route::post('{id}/update-document/{documentId}', [\App\Http\Controllers\Api\PatientController::class, 'updateDocument'])->name('updateDocument');
         // Activity history
         Route::get('{id}/activity-history', [\App\Http\Controllers\Api\PatientController::class, 'getActivityHistory'])->name('activityHistory');
+        // Voucher history
+        Route::get('{id}/voucher-history/{userVoucherId}', [\App\Http\Controllers\Api\PatientController::class, 'getVoucherHistory'])->name('voucherHistory');
+        // Tab counts
+        Route::get('{id}/tab-counts', [\App\Http\Controllers\Api\PatientController::class, 'getTabCounts'])->name('tabCounts');
+        // Patient notes
+        Route::get('{id}/notes', [\App\Http\Controllers\Api\PatientController::class, 'getNotes'])->name('notes');
+        Route::post('{id}/notes', [\App\Http\Controllers\Api\PatientController::class, 'addNote'])->name('addNote');
+        Route::put('{id}/notes/{noteId}', [\App\Http\Controllers\Api\PatientController::class, 'updateNote'])->name('updateNote');
+        Route::delete('{id}/notes/{noteId}', [\App\Http\Controllers\Api\PatientController::class, 'deleteNote'])->name('deleteNote');
+        Route::post('{id}/notes/{noteId}/toggle-pin', [\App\Http\Controllers\Api\PatientController::class, 'togglePinNote'])->name('togglePinNote');
     });
     Route::post('customformfeedbackspatient/datatable/&{id}', [PatientCustomFormController::class, 'datatable'])->name('customformfeedbackspatient.datatable');
     Route::get('customformfeedbackspatient/addnewform/{id}', [PatientCustomFormController::class, 'AddNewForm'])->name('customformfeedbackspatient.addnew');

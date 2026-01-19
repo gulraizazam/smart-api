@@ -3,14 +3,22 @@ var table_url = route('admin.patients.documentdatatable', {id: patientCardID});
 
 var table_columns = [
     {
-        field: 'name',
-        title: 'Name',
-        width: 'auto',
-    },{
-        field: 'patient.name',
-        title: 'Patient Name',
-        width: 'auto',
+        field: 'thumbnail',
+        title: 'Preview',
+        width: 80,
         sortable: false,
+        textAlign: 'center',
+        template: function(data) {
+            return getFileThumbnail(data.url, data.full_url);
+        }
+    },{
+        field: 'document_type',
+        title: 'Document Type',
+        width: 150,
+        sortable: false,
+        template: function(data) {
+            return formatDocumentType(data.document_type);
+        }
     },{
         field: 'created_at',
         title: 'Created At',
@@ -30,18 +38,85 @@ var table_columns = [
         }
     }];
 
+// Format document type for display
+function formatDocumentType(type) {
+    if (!type) return '<span class="text-muted">-</span>';
+    
+    let typeMap = {
+        'consent_form': { label: 'Consent Form', class: 'badge-primary' },
+        'consultation_form': { label: 'Consultation Form', class: 'badge-info' },
+        'others': { label: 'Others', class: 'badge-secondary' }
+    };
+    
+    let typeInfo = typeMap[type] || { label: type, class: 'badge-secondary' };
+    return '<span class="badge ' + typeInfo.class + '">' + typeInfo.label + '</span>';
+}
+
+// Get file thumbnail based on file extension - shows image preview for images, icons for others
+function getFileThumbnail(fileUrl, fullUrl) {
+    if (!fileUrl) return '<i class="la la-file text-muted" style="font-size: 24px;"></i>';
+    
+    let ext = fileUrl.split('.').pop().toLowerCase();
+    let downloadUrl = fullUrl || (base_route + "/storage/" + fileUrl);
+    let html = '';
+    
+    // Image files - show actual thumbnail
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)) {
+        html = '<a href="' + downloadUrl + '" target="_blank" title="View Image">' +
+            '<img src="' + downloadUrl + '" alt="Preview" style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #eee;">' +
+            '</a>';
+    }
+    // PDF files
+    else if (ext === 'pdf') {
+        html = '<a href="' + downloadUrl + '" target="_blank" class="file-icon-link" title="View PDF">' +
+            '<i class="la la-file-pdf text-danger" style="font-size: 32px;"></i>' +
+            '</a>';
+    }
+    // Word documents
+    else if (['doc', 'docx'].includes(ext)) {
+        html = '<a href="' + downloadUrl + '" download class="file-icon-link" title="Download Word Document">' +
+            '<i class="la la-file-word text-primary" style="font-size: 32px;"></i>' +
+            '</a>';
+    }
+    // Excel files
+    else if (['xls', 'xlsx'].includes(ext)) {
+        html = '<a href="' + downloadUrl + '" download class="file-icon-link" title="Download Excel">' +
+            '<i class="la la-file-excel text-success" style="font-size: 32px;"></i>' +
+            '</a>';
+    }
+    // SVG files
+    else if (ext === 'svg') {
+        html = '<a href="' + downloadUrl + '" target="_blank" title="View SVG">' +
+            '<img src="' + downloadUrl + '" alt="Preview" style="width: 50px; height: 50px; object-fit: contain; border-radius: 4px; border: 1px solid #eee;">' +
+            '</a>';
+    }
+    // Other files
+    else {
+        html = '<a href="' + downloadUrl + '" download class="file-icon-link" title="Download File">' +
+            '<i class="la la-file-alt text-muted" style="font-size: 32px;"></i>' +
+            '</a>';
+    }
+    
+    return html;
+}
+
+// Get file type icon based on file extension (kept for backward compatibility)
+function getFileTypeIcon(fileUrl, fullUrl) {
+    return getFileThumbnail(fileUrl, fullUrl);
+}
+
 
 function actions(data) {
 
     if (typeof data.id !== 'undefined') {
 
         let id = data.id;
-        let name = data.name;
+        let documentType = data.document_type || '';
         let file = data.url;
 
         let edit_url = route('admin.patients.updatedocuments', {id: id});
         // Use full_url from backend if available, otherwise construct manually
-        let view_url = data.full_url ? data.full_url : (base_route + "/storage/app/public/" + file);
+        let view_url = data.full_url ? data.full_url : (base_route + "/storage/" + file);
         let delete_url = route('admin.patients.documentsdestroy', {id: id});
 
         if (permissions.edit || permissions.delete || permissions.manage) {
@@ -56,7 +131,7 @@ function actions(data) {
                     </li>';
             if (permissions.edit) {
                 actions += '<li class="navi-item">\
-                    <a href="javascript:void(0);" onclick="editRow(`'+edit_url+'`, `'+name+'`, `'+file+'`, '+id+')" class="navi-link">\
+                    <a href="javascript:void(0);" onclick="editRow(`'+edit_url+'`, `'+documentType+'`, `'+file+'`, '+id+')" class="navi-link">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                         <span class="navi-text">Edit</span>\
                     </a>\
@@ -92,7 +167,7 @@ function actions(data) {
 
 var currentEditDocumentId = null;
 
-function editRow(url, name, fileUrl, documentId) {
+function editRow(url, documentType, fileUrl, documentId) {
 
     $("#modal_edit_document_form").modal("show");
     $("#modal_edit_documents_form").attr("action", url);
@@ -101,7 +176,7 @@ function editRow(url, name, fileUrl, documentId) {
     currentEditDocumentId = documentId;
 
     $("#edit_patient_id").val(patientCardID);
-    $("#edit_document_name").val(name);
+    $("#edit_document_type").val(documentType);
     
     // Reset file input
     $("#edit_document_file").val('');
@@ -110,7 +185,7 @@ function editRow(url, name, fileUrl, documentId) {
     // Show current file preview
     if (fileUrl) {
         // fileUrl might be full URL or relative path
-        let fullUrl = fileUrl.startsWith('http') ? fileUrl : (base_route + "/storage/app/public/" + fileUrl);
+        let fullUrl = fileUrl.startsWith('http') ? fileUrl : (base_route + "/storage/" + fileUrl);
         let fileName = fileUrl.split('/').pop();
         let ext = fileName.split('.').pop().toLowerCase();
         
@@ -194,17 +269,139 @@ function addDocumentForm(patientId) {
     $("#patientId").val(patientId);
     // Reset form
     $("#modal_add_documents_form")[0].reset();
-    $(".custom-file-label").text("Choose file");
+    clearFileInput();
 }
+
+// Clear file input and reset dropzone
+function clearFileInput() {
+    $("#document_file").val('');
+    $(".dropzone-content").removeClass('d-none');
+    $(".dropzone-preview").addClass('d-none');
+}
+
+// Update dropzone preview when file is selected
+function updateDropzonePreview(file) {
+    if (file) {
+        let ext = file.name.split('.').pop().toLowerCase();
+        let iconClass = 'la-file';
+        let iconColor = '#6c757d';
+        
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)) {
+            iconClass = 'la-file-image';
+            iconColor = '#17a2b8';
+        } else if (ext === 'pdf') {
+            iconClass = 'la-file-pdf';
+            iconColor = '#dc3545';
+        } else if (['doc', 'docx'].includes(ext)) {
+            iconClass = 'la-file-word';
+            iconColor = '#007bff';
+        } else if (['xls', 'xlsx'].includes(ext)) {
+            iconClass = 'la-file-excel';
+            iconColor = '#28a745';
+        }
+        
+        $("#preview_icon").removeClass().addClass('la ' + iconClass).css('color', iconColor);
+        $("#preview_filename").text(file.name);
+        $(".dropzone-content").addClass('d-none');
+        $(".dropzone-preview").removeClass('d-none');
+    }
+}
+
+// Clear edit file input and reset dropzone
+function clearEditFileInput() {
+    $("#edit_document_file").val('');
+    $(".edit-dropzone-content").removeClass('d-none');
+    $(".edit-dropzone-preview").addClass('d-none');
+}
+
+// Update edit dropzone preview when file is selected
+function updateEditDropzonePreview(file) {
+    if (file) {
+        let ext = file.name.split('.').pop().toLowerCase();
+        let iconClass = 'la-file';
+        let iconColor = '#6c757d';
+        
+        if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].includes(ext)) {
+            iconClass = 'la-file-image';
+            iconColor = '#17a2b8';
+        } else if (ext === 'pdf') {
+            iconClass = 'la-file-pdf';
+            iconColor = '#dc3545';
+        } else if (['doc', 'docx'].includes(ext)) {
+            iconClass = 'la-file-word';
+            iconColor = '#007bff';
+        } else if (['xls', 'xlsx'].includes(ext)) {
+            iconClass = 'la-file-excel';
+            iconColor = '#28a745';
+        }
+        
+        $("#edit_preview_icon").removeClass().addClass('la ' + iconClass).css('color', iconColor);
+        $("#edit_preview_filename").text(file.name);
+        $(".edit-dropzone-content").addClass('d-none');
+        $(".edit-dropzone-preview").removeClass('d-none');
+    }
+}
+
+// Initialize drag and drop
+$(document).ready(function() {
+    // Create dropzone - prevent default drag behaviors on all dropzones
+    $(document).on('dragenter dragover dragleave drop', '.dropzone-area', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    });
+    
+    // Highlight dropzone on drag
+    $(document).on('dragenter dragover', '.dropzone-area', function() {
+        $(this).addClass('dragover');
+    });
+    
+    $(document).on('dragleave drop', '.dropzone-area', function() {
+        $(this).removeClass('dragover');
+    });
+    
+    // Handle dropped files for create form
+    $(document).on('drop', '.dropzone-area:not(.edit-dropzone)', function(e) {
+        var files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            var fileInput = document.getElementById('document_file');
+            fileInput.files = files;
+            updateDropzonePreview(files[0]);
+        }
+    });
+    
+    // Handle dropped files for edit form
+    $(document).on('drop', '.edit-dropzone', function(e) {
+        var files = e.originalEvent.dataTransfer.files;
+        if (files.length > 0) {
+            var fileInput = document.getElementById('edit_document_file');
+            fileInput.files = files;
+            updateEditDropzonePreview(files[0]);
+        }
+    });
+    
+    // Handle file input change for create form
+    $(document).on('change', '#document_file', function() {
+        if (this.files.length > 0) {
+            updateDropzonePreview(this.files[0]);
+        }
+    });
+    
+    // Handle file input change for edit form
+    $(document).on('change', '#edit_document_file', function() {
+        if (this.files.length > 0) {
+            updateEditDropzonePreview(this.files[0]);
+        }
+    });
+});
 
 // Optimized API-based document update
 function updatePatientDocument(patientId, documentId) {
     let form = document.getElementById('modal_edit_documents_form');
     let formData = new FormData(form);
     
-    let name = document.getElementById('edit_document_name').value;
-    if (!name || name.trim() === '') {
-        toastr.error('Please enter a document name');
+    let documentType = document.getElementById('edit_document_type').value;
+    if (!documentType || documentType.trim() === '') {
+        toastr.error('Please select a document type');
         return;
     }
 
@@ -256,9 +453,9 @@ function uploadPatientDocument(patientId) {
         return;
     }
     
-    let name = document.getElementById('add_document_name').value;
-    if (!name || name.trim() === '') {
-        toastr.error('Please enter a document name');
+    let documentType = document.getElementById('add_document_type').value;
+    if (!documentType || documentType.trim() === '') {
+        toastr.error('Please select a document type');
         return;
     }
 
@@ -310,10 +507,10 @@ var DocumentValidation = function () {
             form,
             {
                 fields: {
-                    name: {
+                    document_type: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'Please select a document type'
                             }
                         }
                     },
@@ -362,10 +559,10 @@ var EditDocumentValidation = function () {
             form,
             {
                 fields: {
-                    name: {
+                    document_type: {
                         validators: {
                             notEmpty: {
-                                message: 'The name field is required'
+                                message: 'Please select a document type'
                             }
                         }
                     },

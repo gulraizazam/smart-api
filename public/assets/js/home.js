@@ -449,15 +449,13 @@ function initCentreWiseArrival(period, centreID, time = '') {
                 var arrived = (response.data?.arrived?.[i] || 0) - walkin;
                 var total = (response.data?.total?.[i] || 0) - walkin;
                 walkin_t += walkin;
-                arrived_t += response.data?.arrived?.[i] || 0;
-                total_t += response.data?.total?.[i] || 0;
+                arrived_t += arrived;
+                total_t += total;
                 var centre_name = barLenght[i].replace(/\bCUTERA \b/gi, '');
                 if (total != 0 && !isNaN(total)) {
                     TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>" + centre_name + "</td><td>" + arrived + "/" + total + "</td><td>" + walkin + "</td><td>" + ((arrived / total) * 100).toFixed(2) + "%</td></tr>";
                 }
             }
-            arrived_t -= walkin_t;
-            total_t -= walkin_t;
             var percentage = ((arrived_t / total_t) * 100).toFixed(2);
             TABLE_HTML += "<tr><td style='color: #2b7bc1;font-weight: bold;'>Total</td><td>" + (isNaN(arrived_t) ? 0 : arrived_t) + "/" + (isNaN(total_t) ? 0 : total_t) + "</td><td>" + (isNaN(walkin_t) ? 0 : walkin_t) + "</td><td>" + (isNaN(percentage) ? 0 : percentage) + "%</td></tr>";
             jQuery('#table-body').append(TABLE_HTML);

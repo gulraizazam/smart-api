@@ -14,8 +14,8 @@ class MigratePackageAdvancesToPlanInvoices extends Command
      * @var string
      */
     protected $signature = 'invoices:migrate-advances 
-                            {--from= : Start date (Y-m-d format, e.g., 2025-11-01)}
-                            {--to= : End date (Y-m-d format, e.g., 2025-11-30)}
+                            {--from= : Start date (Y-m-d format, e.g., 2025-12-01)}
+                            {--to= : End date (Y-m-d format, e.g., 2025-12-10)}
                             {--dry-run : Run without actually inserting records}';
 
     /**
@@ -30,8 +30,8 @@ class MigratePackageAdvancesToPlanInvoices extends Command
      */
     public function handle()
     {
-        $fromDate = $this->option('from') ?? '2025-11-01';
-        $toDate = $this->option('to') ?? '2025-11-30';
+        $fromDate = $this->option('from') ?? '2026-01-01';
+        $toDate = $this->option('to') ?? '2026-01-12';
         $isDryRun = $this->option('dry-run');
 
         $this->info("===========================================");
@@ -45,7 +45,7 @@ class MigratePackageAdvancesToPlanInvoices extends Command
         $advances = DB::table('package_advances')
             ->where('cash_flow', 'in')
             ->where('cash_amount', '>', 0)
-            ->where('location_id',48)
+            ->where('location_id',55)
             ->whereNull('deleted_at')
             ->whereBetween('created_at', [
                 Carbon::parse($fromDate)->startOfDay(),
@@ -84,12 +84,20 @@ class MigratePackageAdvancesToPlanInvoices extends Command
                 $key = "{$advance->patient_id}-{$advance->package_id}";
                 
                 if (!isset($invoiceCounters[$key])) {
-                    // Check existing invoices for this patient-package combination
-                    $existingCount = DB::table('plan_invoices')
+                    // Get the maximum sequence number from existing invoices for this patient-package combination
+                    $lastInvoice = DB::table('plan_invoices')
                         ->where('patient_id', $advance->patient_id)
                         ->where('package_id', $advance->package_id)
-                        ->count();
-                    $invoiceCounters[$key] = $existingCount;
+                        ->orderByRaw('CAST(SUBSTRING_INDEX(invoice_number, "-", -1) AS UNSIGNED) DESC')
+                        ->value('invoice_number');
+                    
+                    if ($lastInvoice) {
+                        // Extract the sequence number from the last invoice (e.g., "174043-33876-03" -> 3)
+                        $lastSequence = (int) substr($lastInvoice, strrpos($lastInvoice, '-') + 1);
+                        $invoiceCounters[$key] = $lastSequence;
+                    } else {
+                        $invoiceCounters[$key] = 0;
+                    }
                 }
                 
                 $invoiceCounters[$key]++;
@@ -109,6 +117,7 @@ class MigratePackageAdvancesToPlanInvoices extends Command
                     'active' => 1,
                    
                     'package_id' => $advance->package_id,
+                    'package_advance_id' => $advance->id,
                     'invoice_type' => 'exempt', // Default type
                    
                     'created_at' => $advance->created_at,

@@ -424,7 +424,6 @@ class DashboardController extends Controller
                 'csrUsers' => $csrUsers,
                 'permissions' => [
                     'dashboard_recent_activities' => Gate::allows('dashboard_recent_activities'),
-                    'dashboard_upcomings' => Gate::allows('dashboard_upcomings'),
                     'dashboard_unattended_report' => Gate::allows('dashboard_unattended_report'),
                     'dashboard_overdue_treatments' => Gate::allows('dashboard_overdue_treatments'),
                     'dashboard_staff_wise_arrival' => Gate::allows('dashboard_staff_wise_arrival'),
