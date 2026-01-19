@@ -911,7 +911,7 @@ class LeadsController extends Controller
             }
 
             // Get the Open status
-            $openStatus = \App\Helpers\LeadHelper::getDefaultLeadStatus(Auth::user()->account_id);
+            $openStatus = \App\Helpers\LeadHelper::getDefaultStatus(Auth::user()->account_id);
             
             if (!$openStatus) {
                 return ApiHelper::apiResponse($this->error, 'Open status not found.');
