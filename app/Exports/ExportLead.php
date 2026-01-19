@@ -54,6 +54,17 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
             $query->whereHas('lead_service', fn($q) => $q->where('service_id', $serviceId)->where('status', 1));
         }
 
+        \Log::info('ExportLead filters:', [
+            'userCities' => $userCities,
+            'accountId' => $accountId,
+            'lead_status_id' => $this->request->lead_status_id,
+            'city_id' => $this->request->city_id,
+            'created_at' => $this->request->created_at,
+        ]);
+        
+        // Log the SQL query
+        \Log::info('ExportLead SQL: ' . $query->toSql(), $query->getBindings());
+        
         $leads = $query->orderBy('id', 'DESC')->get();
         
         \Log::info('ExportLead: Found ' . $leads->count() . ' leads');
@@ -129,8 +140,10 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
         ];
 
         foreach ($exactFilters as $requestKey => $column) {
-            if ($this->request->$requestKey) {
-                $query->where($column, $this->request->$requestKey);
+            $value = $this->request->$requestKey;
+            // Skip empty, null, or "undefined" string values
+            if ($value && $value !== 'undefined' && $value !== 'null') {
+                $query->where($column, $value);
             }
         }
 
