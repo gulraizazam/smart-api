@@ -225,20 +225,4 @@ class LeadHelper
         return \Carbon\Carbon::parse($date)->format($format);
     }
 
-    /**
-     * Get permissions array for datatable
-     */
-    public static function getDatatablePermissions(): array
-    {
-        return [
-            'edit' => \Illuminate\Support\Facades\Gate::allows('leads_edit'),
-            'delete' => \Illuminate\Support\Facades\Gate::allows('leads_destroy'),
-            'active' => \Illuminate\Support\Facades\Gate::allows('leads_active'),
-            'inactive' => \Illuminate\Support\Facades\Gate::allows('leads_inactive'),
-            'create' => \Illuminate\Support\Facades\Gate::allows('leads_create'),
-            'convert' => \Illuminate\Support\Facades\Gate::allows('leads_convert'),
-            'contact' => \Illuminate\Support\Facades\Gate::allows('contact'),
-            'update_status' => \Illuminate\Support\Facades\Gate::allows('leads_lead_status'),
-        ];
-    }
 }
