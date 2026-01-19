@@ -20,7 +20,7 @@ var table_columns = [{
         if (data.patient && data.patient !== 'N/A') {
             return data.patient;
         } else {
-            return '<span class="label label-lg label-light-warning label-inline">Not Assigned</span>';
+            return '-';
         }
     }
 }, {
@@ -32,7 +32,7 @@ var table_columns = [{
         if (data.patient_id && data.patient_id !== 'N/A') {
             return data.patient_id;
         } else {
-            return '<span class="text-warning">-</span>';
+            return '-';
         }
     }
 }, {
@@ -62,13 +62,16 @@ var table_columns = [{
     }
 },{
     field: 'status',
-    title: 'status',
-    width: 60,
+    title: 'Status',
+    width: 80,
     template: function (data) {
-     
-        if(data.active ==1){
+        // Show "Not Assigned" if patient is not assigned
+        if (!data.patient || data.patient === 'N/A') {
+            return '<span class="label label-lg label-light-warning label-inline">Not Assigned</span>';
+        }
+        if (data.active == 1) {
             return '<span class="text text-success">Active</span>';
-        }else{
+        } else {
             return '<span class="text text-danger">Expired</span>';
         }
     }
