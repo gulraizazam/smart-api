@@ -892,6 +892,49 @@ class LeadsController extends Controller
     }
 
     /**
+     * Remove lead from junk (set status to Open)
+     */
+    public function removeFromJunk(int $id): JsonResponse
+    {
+        if (!Gate::allows('leads_convert')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
+
+        try {
+            $lead = Leads::where([
+                'id' => $id,
+                'account_id' => Auth::user()->account_id,
+            ])->first();
+
+            if (!$lead) {
+                return ApiHelper::apiResponse($this->error, 'Lead not found.');
+            }
+
+            // Get the Open status
+            $openStatus = \App\Helpers\LeadHelper::getDefaultLeadStatus(Auth::user()->account_id);
+            
+            if (!$openStatus) {
+                return ApiHelper::apiResponse($this->error, 'Open status not found.');
+            }
+
+            // Update lead status to Open
+            $lead->update([
+                'lead_status_id' => $openStatus->id,
+                'updated_by' => Auth::id(),
+            ]);
+
+            // Also update active lead service status
+            \App\Models\LeadsServices::where('lead_id', $lead->id)
+                ->where('status', 1)
+                ->update(['lead_status_id' => $openStatus->id]);
+
+            return ApiHelper::apiResponse($this->success, 'Lead has been removed from junk.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
      * Build export query
      */
     protected function buildExportQuery(Request $request)

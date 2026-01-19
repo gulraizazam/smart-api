@@ -253,7 +253,7 @@ function actions(data) {
         if (permissions.create || permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">';
             if (permissions.convert && lead_type === 'junk') {
-                actions += '<a title="Convert Lead" href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="btn btn-icon btn-success btn-sm">\
+                actions += '<a title="Remove From Junk" href="javascript:void(0);" onclick="removeFromJunk(`' + id + '`);" class="btn btn-icon btn-success btn-sm">\
                         <span class="navi-icon"><i class="la la-recycle"></i></span>\
                     </a>';
             }
@@ -550,6 +550,40 @@ function viewConvert(url) {
         },
         error: function(xhr, ajaxOptions, thrownError) {
             errorMessage(xhr);
+        }
+    });
+}
+
+function removeFromJunk(leadId) {
+    Swal.fire({
+        title: 'Remove from Junk?',
+        text: "This will set the lead status to Open.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, remove it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.leads.remove_from_junk', { id: leadId }),
+                type: "POST",
+                cache: false,
+                success: function(response) {
+                    if (response.status) {
+                        Swal.fire('Removed!', 'Lead has been removed from junk.', 'success');
+                        datatable.reload();
+                    } else {
+                        Swal.fire('Error!', response.message || 'Failed to remove lead from junk.', 'error');
+                    }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
         }
     });
 }
