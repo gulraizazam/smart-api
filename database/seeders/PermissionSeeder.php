@@ -94,7 +94,7 @@ class PermissionSeeder extends Seeder
             ['name' => 'appointment_statuses_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 59],
             ['name' => 'appointments_manage', 'title' => 'Appointments', 'main_group' => 1, 'parent_id' => 0],
             ['name' => 'appointments_consultancy', 'title' => 'Manage Consultancy', 'main_group' => 0, 'parent_id' => 65],
-            ['name' => 'appointments_services', 'title' => 'Manage Services', 'main_group' => 0, 'parent_id' => 65],
+            ['name' => 'treatments_services', 'title' => 'Manage Services', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'appointments_edit', 'title' => 'Edit', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'appointments_export', 'title' => 'Export', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'appointments_appointment_status', 'title' => 'Update Appointment Status', 'main_group' => 0, 'parent_id' => 65],
