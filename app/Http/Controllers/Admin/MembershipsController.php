@@ -345,23 +345,32 @@ class MembershipsController extends Controller
     public static function getTotalRecords(Request $request, $account_id = false, $apply_filter = false)
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
+        $userCentres = \App\Helpers\ACL::getUserCentres();
+
+        $query = DB::table('memberships');
 
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
-                return count(DB::table('memberships')
-                    ->where($where)
-                    ->get());
-            } else {
-                return count(DB::table('memberships')
-
-                    ->where($where)
-                    ->where('memberships.active', 1)
-
-                    ->get());
-            }
-        } else {
-            return Membership::count();
+            $query->where($where);
         }
+
+        if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_centres')) {
+            $query->where('memberships.active', 1);
+        }
+
+        // Filter by user's centre access - only show memberships for patients who have appointments at user's centres
+        if (!empty($userCentres)) {
+            $query->where(function ($q) use ($userCentres) {
+                $q->whereNull('memberships.patient_id')
+                  ->orWhereExists(function ($subQuery) use ($userCentres) {
+                      $subQuery->select(DB::raw(1))
+                          ->from('appointments')
+                          ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                          ->whereIn('appointments.location_id', $userCentres);
+                  });
+            });
+        }
+
+        return $query->count();
     }
     public static function membershiptype_filters($request, $account_id, $apply_filter)
     {
@@ -558,36 +567,38 @@ class MembershipsController extends Controller
     public static function getRecords(Request $request, $iDisplayStart, $iDisplayLength, $account_id = false, $apply_filter = false)
     {
         $where = self::membershiptype_filters($request, $account_id, $apply_filter);
+        $userCentres = \App\Helpers\ACL::getUserCentres();
 
         $orderBy = 'created_at';
         $order = 'desc';
+
+        $query = Membership::with('membershiptype');
+
         if (count($where)) {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_machine_types')) {
-                return Membership::with('membershiptype')->where($where)->limit($iDisplayLength)
-                    ->offset($iDisplayStart)
-                    ->orderby($orderBy, $order)
-                    ->get();
-            } else {
-                return Membership::with('membershiptype')->where($where)->where('membership_types.active', 1)
-                    ->limit($iDisplayLength)
-                    ->offset($iDisplayStart)
-                    ->orderby($orderBy, $order)
-                    ->get();
-            }
-        } else {
-            if (\Illuminate\Support\Facades\Gate::allows('view_inactive_machine_types')) {
-                return Membership::with('membershiptype')->limit($iDisplayLength)
-                    ->offset($iDisplayStart)
-                    ->orderby($orderBy, $order)
-                    ->get();
-            } else {
-                return Membership::with('membershiptype')->where('memberships.active', 1)
-                    ->limit($iDisplayLength)
-                    ->offset($iDisplayStart)
-                    ->orderby($orderBy, $order)
-                    ->get();
-            }
+            $query->where($where);
         }
+
+        if (!\Illuminate\Support\Facades\Gate::allows('view_inactive_machine_types')) {
+            $query->where('memberships.active', 1);
+        }
+
+        // Filter by user's centre access - only show memberships for patients who have appointments at user's centres
+        if (!empty($userCentres)) {
+            $query->where(function ($q) use ($userCentres) {
+                $q->whereNull('memberships.patient_id')
+                  ->orWhereExists(function ($subQuery) use ($userCentres) {
+                      $subQuery->select(DB::raw(1))
+                          ->from('appointments')
+                          ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                          ->whereIn('appointments.location_id', $userCentres);
+                  });
+            });
+        }
+
+        return $query->limit($iDisplayLength)
+            ->offset($iDisplayStart)
+            ->orderby($orderBy, $order)
+            ->get();
     }
     public static function activeRecord($id, $status)
     {
