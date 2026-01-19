@@ -511,6 +511,9 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         // PATCH routes
         Route::patch('{id}/send-sms', [LeadsController::class, 'sendSms'])->name('send_sms');
         
+        // POST routes with {id}
+        Route::post('{id}/remove-from-junk', [LeadsController::class, 'removeFromJunk'])->name('remove_from_junk');
+        
         // Wildcard {id} routes - MUST be last
         Route::get('{id}', [LeadsController::class, 'detail'])->name('show');
         Route::get('{id}/edit', [LeadsController::class, 'edit'])->name('edit');
