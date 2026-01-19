@@ -38,14 +38,22 @@
             <select class="form-control filter-field select2" id="search_status_id"></select>
         </div>
         @endif
-
-    </div>
-
-    <div class="row mb-8 advance-filters" style="display: none;">
+        @if(request('type') == 'junk')
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="search_service_id"></select>
         </div>
+        @endif
+
+    </div>
+
+    <div class="row mb-8 advance-filters" style="display: none;">
+        @if(request('type') != 'junk')
+        <div class="col-lg-2 mb-lg-0 mb-6">
+            <label>Service:</label>
+            <select class="form-control filter-field select2" id="search_service_id"></select>
+        </div>
+        @endif
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Gender:</label>
             <select class="form-control filter-field select2" id="search_gender_id">
