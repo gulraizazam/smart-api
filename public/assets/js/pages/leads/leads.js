@@ -586,15 +586,15 @@ function setConvert(response) {
         $("#convert_consultancy_type_id").html(consultancy_options);
         $("#convert_lead_id").val(lead.id);
         $("#convert_patient_id").val(lead.patient_id);
-        $("#convert_patient_phone").val(lead.patient.phone);
-        $("#convert_patient_name").val(lead.patient.name);
-        $("#convert_patient_cnic").val(lead.patient.cnic);
-        $("#convert_patient_email").val(lead.patient.email);
-        $("#convert_patient_dob").val(lead.patient.dob);
-        $("#convert_patient_address").val(lead.patient.address);
+        $("#convert_patient_phone").val(lead.patient?.phone || lead.phone || '');
+        $("#convert_patient_name").val(lead.patient?.name || lead.name || '');
+        $("#convert_patient_cnic").val(lead.patient?.cnic || '');
+        $("#convert_patient_email").val(lead.patient?.email || lead.email || '');
+        $("#convert_patient_dob").val(lead.patient?.dob || '');
+        $("#convert_patient_address").val(lead.patient?.address || '');
         $("#convert_lead_source_id").val(lead.lead_source_id);
-        $("#convert_referred_by").val(user_info.referred_by);
-        $("#convert_service_id").val(user_info.service_id);
+        $("#convert_referred_by").val(user_info?.referred_by || '');
+        $("#convert_service_id").val(user_info?.service_id || '');
     } catch (error) {
         showException(error);
     }

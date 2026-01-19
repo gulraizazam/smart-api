@@ -525,7 +525,11 @@ class LeadsController extends Controller
         }
 
         try {
-            $lead = $this->leadService->getLeadForEdit($id);
+            // Load lead with patient relationship for conversion form
+            $lead = Leads::with(['lead_service', 'patient'])->where([
+                'id' => $id,
+                'account_id' => Auth::user()->account_id,
+            ])->first();
             
             if (!$lead) {
                 return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
