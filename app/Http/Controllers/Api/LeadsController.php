@@ -565,7 +565,7 @@ class LeadsController extends Controller
     }
 
     /**
-     * Export leads to PDF
+     * Export leads to PDF (OPTIMIZED)
      */
     public function exportPdf(Request $request)
     {
@@ -573,7 +573,17 @@ class LeadsController extends Controller
         set_time_limit(0);
 
         try {
-            $leads = $this->buildExportQuery($request)->get()->unique('phone');
+            $leads = $this->buildExportQuery($request)
+                ->with([
+                    'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
+                    'city:id,name',
+                    'towns:id,name',
+                    'region:id,name',
+                    'lead_status:id,name',
+                    'user:id,name',
+                ])
+                ->get();
+                
             $customPaper = [0, 0, 720, 1440];
             $pdf = PDF::loadView('admin.leads.lead-pdf', compact('leads'))->setPaper($customPaper, 'portrait');
 
