@@ -9,15 +9,11 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\FromQuery;
-use Maatwebsite\Excel\Concerns\Exportable;
+use Maatwebsite\Excel\Concerns\FromCollection;
 
-class ExportLead implements FromQuery, WithHeadings, WithMapping, WithEvents
+class ExportLead implements FromCollection, WithHeadings, WithEvents
 {
-    use Exportable;
-
     private $request;
     private $canViewContact;
 
@@ -28,10 +24,9 @@ class ExportLead implements FromQuery, WithHeadings, WithMapping, WithEvents
     }
 
     /**
-     * OPTIMIZED: Use FromQuery instead of FromCollection for memory efficiency
-     * Query is executed in chunks automatically by Laravel Excel
+     * OPTIMIZED: Added eager loading to prevent N+1 queries
      */
-    public function query()
+    public function collection()
     {
         $query = Leads::query()
             ->with([
@@ -52,10 +47,49 @@ class ExportLead implements FromQuery, WithHeadings, WithMapping, WithEvents
             $query->whereHas('lead_service', fn($q) => $q->where('service_id', $serviceId)->where('status', 1));
         }
 
-        return $query->select([
-            'id', 'name', 'phone', 'gender', 'city_id', 'location_id', 
-            'region_id', 'lead_status_id', 'created_by', 'created_at'
-        ])->orderBy('id', 'DESC');
+        $leads = $query->orderBy('id', 'DESC')->get();
+
+        // Transform leads to rows (one row per service)
+        $rows = collect();
+        foreach ($leads as $lead) {
+            $phone = $this->canViewContact ? ($lead->phone ?? 'N/A') : '***********';
+            
+            if ($lead->lead_service && $lead->lead_service->count() > 0) {
+                foreach ($lead->lead_service as $service) {
+                    $rows->push([
+                        'id' => $lead->id,
+                        'name' => $lead->name ?? 'N/A',
+                        'phone' => $phone,
+                        'gender' => $lead->gender == 1 ? 'Male' : 'Female',
+                        'city' => $lead->city->name ?? 'N/A',
+                        'centre' => $lead->towns->name ?? 'N/A',
+                        'region' => $lead->region->name ?? 'N/A',
+                        'lead_status' => $lead->lead_status->name ?? 'N/A',
+                        'service' => $service->service->name ?? 'N/A',
+                        'treatment' => $service->childservice->name ?? 'Empty',
+                        'created_at' => Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                        'created_by' => $lead->user->name ?? 'N/A',
+                    ]);
+                }
+            } else {
+                $rows->push([
+                    'id' => $lead->id,
+                    'name' => $lead->name ?? 'N/A',
+                    'phone' => $phone,
+                    'gender' => $lead->gender == 1 ? 'Male' : 'Female',
+                    'city' => $lead->city->name ?? 'N/A',
+                    'centre' => $lead->towns->name ?? 'N/A',
+                    'region' => $lead->region->name ?? 'N/A',
+                    'lead_status' => $lead->lead_status->name ?? 'N/A',
+                    'service' => 'N/A',
+                    'treatment' => 'N/A',
+                    'created_at' => Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                    'created_by' => $lead->user->name ?? 'N/A',
+                ]);
+            }
+        }
+
+        return $rows;
     }
 
     /**
@@ -113,51 +147,8 @@ class ExportLead implements FromQuery, WithHeadings, WithMapping, WithEvents
         ];
     }
 
-    public function map($lead): array
-    {
-        $phone = $this->canViewContact ? ($lead->phone ?? 'N/A') : '***********';
-        
-        // If lead has services, create a row for each service
-        if ($lead->lead_service && $lead->lead_service->count() > 0) {
-            $lead_data = [];
-            foreach ($lead->lead_service as $service) {
-                $lead_data[] = [
-                    $lead->id,
-                    $lead->name ?? 'N/A',
-                    $phone,
-                    $lead->gender == 1 ? 'Male' : 'Female',
-                    $lead->city->name ?? 'N/A',
-                    $lead->towns->name ?? 'N/A',
-                    $lead->region->name ?? 'N/A',
-                    $lead->lead_status->name ?? 'N/A',
-                    $service->service->name ?? 'N/A',
-                    $service->childservice->name ?? 'Empty',
-                    Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                    $lead->user->name ?? 'N/A',
-                ];
-            }
-            return $lead_data;
-        }
-
-        // Lead without services - single row
-        return [[
-            $lead->id,
-            $lead->name ?? 'N/A',
-            $phone,
-            $lead->gender == 1 ? 'Male' : 'Female',
-            $lead->city->name ?? 'N/A',
-            $lead->towns->name ?? 'N/A',
-            $lead->region->name ?? 'N/A',
-            $lead->lead_status->name ?? 'N/A',
-            'N/A',
-            'N/A',
-            Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-            $lead->user->name ?? 'N/A',
-        ]];
-    }
-
     /**
-     * Write code on Method
+     * Style the sheet
      */
     public function registerEvents(): array
     {
