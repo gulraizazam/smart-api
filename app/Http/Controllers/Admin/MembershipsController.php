@@ -358,16 +358,34 @@ class MembershipsController extends Controller
         }
 
         // Filter by user's centre access - only show memberships for patients who have appointments at user's centres
+        // Non-Super-Admin users can only see assigned memberships
+        $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+        
         if (!empty($userCentres)) {
-            $query->where(function ($q) use ($userCentres) {
-                $q->whereNull('memberships.patient_id')
-                  ->orWhereExists(function ($subQuery) use ($userCentres) {
-                      $subQuery->select(DB::raw(1))
-                          ->from('appointments')
-                          ->whereColumn('appointments.patient_id', 'memberships.patient_id')
-                          ->whereIn('appointments.location_id', $userCentres);
-                  });
-            });
+            if ($isSuperAdmin) {
+                // Super-Admin can see unassigned memberships too
+                $query->where(function ($q) use ($userCentres) {
+                    $q->whereNull('memberships.patient_id')
+                      ->orWhereExists(function ($subQuery) use ($userCentres) {
+                          $subQuery->select(DB::raw(1))
+                              ->from('appointments')
+                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                              ->whereIn('appointments.location_id', $userCentres);
+                      });
+                });
+            } else {
+                // Non-Super-Admin can only see assigned memberships with appointments at their centres
+                $query->whereNotNull('memberships.patient_id')
+                      ->whereExists(function ($subQuery) use ($userCentres) {
+                          $subQuery->select(DB::raw(1))
+                              ->from('appointments')
+                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                              ->whereIn('appointments.location_id', $userCentres);
+                      });
+            }
+        } elseif (!$isSuperAdmin) {
+            // Non-Super-Admin without centre restrictions still can't see unassigned memberships
+            $query->whereNotNull('memberships.patient_id');
         }
 
         return $query->count();
@@ -583,16 +601,34 @@ class MembershipsController extends Controller
         }
 
         // Filter by user's centre access - only show memberships for patients who have appointments at user's centres
+        // Non-Super-Admin users can only see assigned memberships
+        $isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+        
         if (!empty($userCentres)) {
-            $query->where(function ($q) use ($userCentres) {
-                $q->whereNull('memberships.patient_id')
-                  ->orWhereExists(function ($subQuery) use ($userCentres) {
-                      $subQuery->select(DB::raw(1))
-                          ->from('appointments')
-                          ->whereColumn('appointments.patient_id', 'memberships.patient_id')
-                          ->whereIn('appointments.location_id', $userCentres);
-                  });
-            });
+            if ($isSuperAdmin) {
+                // Super-Admin can see unassigned memberships too
+                $query->where(function ($q) use ($userCentres) {
+                    $q->whereNull('memberships.patient_id')
+                      ->orWhereExists(function ($subQuery) use ($userCentres) {
+                          $subQuery->select(DB::raw(1))
+                              ->from('appointments')
+                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                              ->whereIn('appointments.location_id', $userCentres);
+                      });
+                });
+            } else {
+                // Non-Super-Admin can only see assigned memberships with appointments at their centres
+                $query->whereNotNull('memberships.patient_id')
+                      ->whereExists(function ($subQuery) use ($userCentres) {
+                          $subQuery->select(DB::raw(1))
+                              ->from('appointments')
+                              ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                              ->whereIn('appointments.location_id', $userCentres);
+                      });
+            }
+        } elseif (!$isSuperAdmin) {
+            // Non-Super-Admin without centre restrictions still can't see unassigned memberships
+            $query->whereNotNull('memberships.patient_id');
         }
 
         return $query->limit($iDisplayLength)
