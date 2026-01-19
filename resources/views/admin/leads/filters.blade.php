@@ -14,10 +14,6 @@
     </div>
     <div class="row mb-6">
         <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>ID:</label>
-            <input type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
-        </div>
-        <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Full Name:</label>
             <input class="form-control filter-field" id="search_full_name" placeholder="Enter Name">
         </div>
@@ -46,14 +42,6 @@
     </div>
 
     <div class="row mb-8 advance-filters" style="display: none;">
-
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Region:</label>
-            <select class="form-control filter-field select2" id="search_region_id"></select>
-        </div>
-
-
-
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="search_service_id"></select>
