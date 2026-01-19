@@ -971,8 +971,10 @@ class LeadsController extends Controller
         ];
 
         foreach ($simpleFilters as $requestKey => $column) {
-            if ($request->$requestKey) {
-                $where[] = [$column, '=', $request->$requestKey];
+            $value = $request->$requestKey;
+            // Skip empty, null, or "undefined" string values
+            if ($value && $value !== 'undefined' && $value !== 'null') {
+                $where[] = [$column, '=', $value];
             }
         }
 
@@ -980,7 +982,12 @@ class LeadsController extends Controller
             $where[] = ['name', 'like', '%' . $request->name . '%'];
         }
 
-        $query = Leads::whereIn('city_id', \App\Helpers\ACL::getUserCities());
+        $userCities = \App\Helpers\ACL::getUserCities();
+        $query = Leads::where('account_id', Auth::user()->account_id)
+            ->where(function($q) use ($userCities) {
+                $q->whereIn('city_id', $userCities)
+                  ->orWhereNull('city_id');
+            });
         
         if (!empty($where)) {
             $query->where($where);
