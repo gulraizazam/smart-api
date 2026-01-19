@@ -230,6 +230,228 @@ The Leads module has been fully refactored to a **100% API-based implementation*
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
+## Session Updates - January 19, 2026
+
+### 1. Leads Convert API Fix
+
+**Issue**: `TypeError: Cannot read properties of undefined (reading 'phone')` when calling `leads/convert` API
+
+**Before** (`Api/LeadsController.php`):
+```php
+$lead = $this->leadService->getLeadForEdit($id);
+// getLeadForEdit only loads 'lead_service' relationship
+// Frontend JS expected lead.patient.phone but patient wasn't loaded
+```
+
+**After**:
+```php
+$lead = Leads::with(['lead_service', 'patient'])->where([
+    'id' => $id,
+    'account_id' => Auth::user()->account_id,
+])->first();
+```
+
+**Frontend Fix** (`leads.js`):
+```javascript
+// Before: Would crash if patient is null
+$("#convert_patient_phone").val(lead.patient.phone);
+
+// After: Safe access with fallback
+$("#convert_patient_phone").val(lead.patient?.phone || lead.phone || '');
+```
+
+---
+
+### 2. Junk Leads - Remove From Junk Button
+
+**Issue**: User wanted green recycle button on junk leads to simply remove lead from junk (set status to Open) instead of opening convert modal
+
+**Before**:
+- Button called `viewConvert()` to open convert modal
+- Tooltip: "Convert Lead"
+
+**After**:
+- Button calls `removeFromJunk()` with confirmation dialog
+- Tooltip: "Remove From Junk"
+- Sets lead status to Open via new API endpoint
+
+**New API Endpoint**: `POST /api/leads/{id}/remove-from-junk`
+
+**New Method** (`Api/LeadsController.php`):
+```php
+public function removeFromJunk(int $id): JsonResponse
+{
+    $openStatus = \App\Helpers\LeadHelper::getDefaultStatus(Auth::user()->account_id);
+    $lead->update(['lead_status_id' => $openStatus->id]);
+    // Also updates active lead service status
+}
+```
+
+---
+
+### 3. Removed Filters from Leads Datatable
+
+**Removed from** `filters.blade.php`:
+- **ID filter** - removed from main filters row
+- **Region filter** - removed from advance filters section
+
+---
+
+### 4. Service Filter for Junk Leads
+
+**Change**: Moved Service filter from advance filters to main row for junk leads only
+
+**Before**: Service filter was in advance filters for both leads and junk leads
+
+**After** (`filters.blade.php`):
+```php
+@if(request('type') == 'junk')
+<div class="col-lg-2 mb-lg-0 mb-6">
+    <label>Service:</label>
+    <select class="form-control filter-field select2" id="search_service_id"></select>
+</div>
+@endif
+```
+
+---
+
+### 5. LeadService Code Cleanup
+
+**Removed duplicate/unused methods** (~400 lines):
+
+| Method | Reason |
+|--------|--------|
+| `buildBaseQuery()` | Deprecated, marked for removal |
+| `buildResultQuery()` | Deprecated, marked for removal |
+| `searchLeads()` | Just called `searchLeadsById()` |
+| `searchByPhone()` | Just called `searchLeadsByPhone()` |
+| `getOptimizedDatatableData()` | Not used anywhere |
+| `transformLeadsForDatatable()` | Duplicate of controller method |
+| `importLeadsOptimized()` | Duplicate of `importLeads()` |
+| `preprocessImportPhones()` | Helper for unused method |
+| `prepareImportRow()` | Helper for unused method |
+
+**LeadHelper cleanup**:
+- Removed `getDatatablePermissions()` - duplicate of controller's `getPermissions()`
+
+---
+
+### 6. Patients Module - Centre-Based Filtering
+
+**Issue**: Users with access to only one centre could see all patients instead of only patients at their centre
+
+**Before** (`PatientService.php`):
+```php
+// No centre filtering - showed all patients for account
+$query->where('user_type_id', Config::get('constants.patient_id'))
+      ->where('account_id', $accountId);
+```
+
+**After**:
+```php
+// Filter by user's centre access via appointments table
+$userCentres = ACL::getUserCentres();
+if (!empty($userCentres)) {
+    $query->whereExists(function ($subQuery) use ($userCentres) {
+        $subQuery->select(DB::raw(1))
+            ->from('appointments')
+            ->whereColumn('appointments.patient_id', 'users.id')
+            ->whereIn('appointments.location_id', $userCentres);
+    });
+}
+```
+
+---
+
+### 7. Memberships Module - Centre-Based Filtering
+
+**Issue**: Same as patients - users could see all memberships regardless of centre access
+
+**Before** (`MembershipsController.php`):
+```php
+// No centre filtering
+return DB::table('memberships')->where($where)->count();
+```
+
+**After**:
+```php
+$userCentres = \App\Helpers\ACL::getUserCentres();
+$isSuperAdmin = Auth::user()->hasRole('Super-Admin');
+
+if (!empty($userCentres)) {
+    if ($isSuperAdmin) {
+        // Super-Admin can see unassigned memberships too
+        $query->where(function ($q) use ($userCentres) {
+            $q->whereNull('memberships.patient_id')
+              ->orWhereExists(function ($subQuery) use ($userCentres) {
+                  $subQuery->select(DB::raw(1))
+                      ->from('appointments')
+                      ->whereColumn('appointments.patient_id', 'memberships.patient_id')
+                      ->whereIn('appointments.location_id', $userCentres);
+              });
+        });
+    } else {
+        // Non-Super-Admin can only see assigned memberships
+        $query->whereNotNull('memberships.patient_id')
+              ->whereExists(...);
+    }
+}
+```
+
+**Visibility Rules**:
+
+| Role | Unassigned Memberships | Assigned Memberships |
+|------|------------------------|----------------------|
+| Super-Admin | ✅ Visible | ✅ Visible (filtered by centre) |
+| Other Roles | ❌ Hidden | ✅ Visible (filtered by centre) |
+
+---
+
+### 8. Memberships Datatable - Not Assigned Display
+
+**Issue**: Show "Not Assigned" badge in Status column (not Patient column) for unassigned memberships
+
+**Before** (`memberships.js`):
+```javascript
+// Patient column showed "Not Assigned" badge
+// Status column only showed Active/Expired
+```
+
+**After**:
+```javascript
+// Patient column - shows dash for unassigned
+template: function (data) {
+    if (data.patient && data.patient !== 'N/A') {
+        return data.patient;
+    } else {
+        return '-';
+    }
+}
+
+// Status column - shows "Not Assigned" for unassigned memberships
+template: function (data) {
+    if (!data.patient || data.patient === 'N/A') {
+        return '<span class="label label-lg label-light-warning label-inline">Not Assigned</span>';
+    }
+    if (data.active == 1) {
+        return '<span class="text text-success">Active</span>';
+    } else {
+        return '<span class="text text-danger">Expired</span>';
+    }
+}
+```
+
+**Display Result**:
+
+| Patient | Patient ID | Status |
+|---------|------------|--------|
+| John Doe | 123 | Active |
+| - | - | **Not Assigned** (yellow badge) |
+
+---
+
 ## Last Updated
-- **Date**: January 2026
-- **Status**: Fully API-based implementation complete
+- **Date**: January 19, 2026
+- **Status**: Fully API-based implementation complete with centre-based access control

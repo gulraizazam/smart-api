@@ -11,80 +11,88 @@ use Maatwebsite\Excel\Events\AfterSheet;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\Exportable;
 
-class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvents
+class ExportLead implements FromQuery, WithHeadings, WithMapping, WithEvents
 {
+    use Exportable;
+
     private $request;
+    private $canViewContact;
 
     public function __construct($request)
     {
         $this->request = $request;
+        $this->canViewContact = Gate::allows('contact');
     }
 
-    public function collection()
+    /**
+     * OPTIMIZED: Use FromQuery instead of FromCollection for memory efficiency
+     * Query is executed in chunks automatically by Laravel Excel
+     */
+    public function query()
     {
-      
-        $where = [];
-        if ($this->request->created_at && $this->request->created_at != '') {
-            $date_range = explode(' - ', $this->request->created_at);
-            $start_date_time = date('Y-m-d H:i:s', strtotime($date_range[0]));
-            $end_date_string = new DateTime($date_range[1]);
-            $end_date_string->setTime(23, 59, 0);
-            $end_date_time = $end_date_string->format('Y-m-d H:i:s');
-        } else {
-            $start_date_time = null;
-            $end_date_time = null;
-        }
-        if ($this->request->id != null || $this->request->id != '') {
-            $where[] = [['id' => $this->request->id]];
-        }
-        if ($this->request->lead_status_id != null || $this->request->lead_status_id != '') {
-            $where[] = [['lead_status_id' => $this->request->lead_status_id]];
-        }
-        if ($this->request->city_id != null || $this->request->city_id != '') {
-            $where[] = [['city_id' => $this->request->city_id]];
-        }
-        if ($this->request->location_id != null || $this->request->location_id != '') {
-            $where[] = [['location_id' => $this->request->location_id]];
-        }
-        if ($this->request->region_id != null || $this->request->region_id != '') {
-            $where[] = [['region_id' => $this->request->region_id]];
-        }
-        if ($this->request->created_by != null || $this->request->created_by != '') {
-            $where[] = [['created_by' => $this->request->created_by]];
-        }
-        if ($this->request->phone != null || $this->request->phone != '') {
-            $where[] = [['phone' => $this->request->phone]];
-        }
-        if ($this->request->gender_id != null || $this->request->gender_id != '') {
-            $where[] = [['gender' => $this->request->gender_id]];
-        }
-        if ($this->request->name != null || $this->request->name != '') {
-            $where[] = ['name', 'like', '%'.$this->request->name.'%'];
-        }
-        if ($this->request->created_at && $this->request->created_at != '') {
-            $where[] = ['created_at', '>=', $start_date_time];
-            $where[] = ['created_at', '<=', $end_date_time];
-        }
-        $result_query = Leads::whereIn('city_id', ACL::getUserCities());
-        if (count($where)) {
-            $result_query->where($where);
-        }
-        if ($this->request->service_id != null || $this->request->service_id != '') {
-            $service_id = $this->request->service_id;
-            $result_query->with(['lead_service' => function ($q) use ($service_id) {
-                $q->where(['service_id' => $service_id, 'status' => 1]);
-            }]);
-        } else {
-            $result_query->with(['lead_service' => function ($q) {
-                $q->where(['status' => 1]);
-            }]);
-        }
-        $result = $result_query->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at')
-            ->orderBy('id', 'DESC')->latest()->get()->unique('phone');
+        $query = Leads::query()
+            ->with([
+                'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
+                'city:id,name',
+                'towns:id,name',
+                'region:id,name',
+                'lead_status:id,name',
+                'user:id,name',
+            ])
+            ->whereIn('city_id', ACL::getUserCities());
 
-        return $result;
+        $this->applyFilters($query);
+
+        // Service filter
+        if ($this->request->service_id) {
+            $serviceId = $this->request->service_id;
+            $query->whereHas('lead_service', fn($q) => $q->where('service_id', $serviceId)->where('status', 1));
+        }
+
+        return $query->select([
+            'id', 'name', 'phone', 'gender', 'city_id', 'location_id', 
+            'region_id', 'lead_status_id', 'created_by', 'created_at'
+        ])->orderBy('id', 'DESC');
+    }
+
+    /**
+     * Apply filters to query
+     */
+    private function applyFilters($query): void
+    {
+        // Date range filter
+        if ($this->request->created_at) {
+            $dateRange = explode(' - ', $this->request->created_at);
+            $startDate = date('Y-m-d 00:00:00', strtotime($dateRange[0]));
+            $endDate = (new DateTime($dateRange[1]))->setTime(23, 59, 59)->format('Y-m-d H:i:s');
+            $query->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        // Simple exact match filters
+        $exactFilters = [
+            'id' => 'id',
+            'lead_status_id' => 'lead_status_id',
+            'city_id' => 'city_id',
+            'location_id' => 'location_id',
+            'region_id' => 'region_id',
+            'created_by' => 'created_by',
+            'phone' => 'phone',
+            'gender_id' => 'gender',
+        ];
+
+        foreach ($exactFilters as $requestKey => $column) {
+            if ($this->request->$requestKey) {
+                $query->where($column, $this->request->$requestKey);
+            }
+        }
+
+        // Name filter (LIKE)
+        if ($this->request->name) {
+            $query->where('name', 'like', '%' . $this->request->name . '%');
+        }
     }
 
     public function headings(): array
@@ -107,31 +115,45 @@ class ExportLead implements FromCollection, WithHeadings, WithMapping, WithEvent
 
     public function map($lead): array
     {
-       
-        if (! Gate::allows('contact')) {
-            $phone = '***********';
-        } else {
-            $phone = $lead->phone ?? 'N/A';
-        }
-        $lead_data = [];
-        foreach ($lead->lead_service as $service) {
-            $lead_data[] = [
-                $lead->id,
-                $lead->name ?? 'N/A',
-                $phone,
-                $lead->gender == 1 ? 'Male' : 'Female',
-                $lead->city->name ?? 'N/A',
-                $lead->towns->name ?? 'N/A',
-                $lead->region->name ?? 'N/A',
-                $lead->lead_status->name ?? 'N/A',
-                $service->service->name ?? 'N/A',
-                $service->childservice->name ?? 'Empty',
-                Carbon::parse($lead->lead_created_at)->format('F j,Y h:i A') ?? 'N/A',
-                $lead->user->name,
-            ];
+        $phone = $this->canViewContact ? ($lead->phone ?? 'N/A') : '***********';
+        
+        // If lead has services, create a row for each service
+        if ($lead->lead_service && $lead->lead_service->count() > 0) {
+            $lead_data = [];
+            foreach ($lead->lead_service as $service) {
+                $lead_data[] = [
+                    $lead->id,
+                    $lead->name ?? 'N/A',
+                    $phone,
+                    $lead->gender == 1 ? 'Male' : 'Female',
+                    $lead->city->name ?? 'N/A',
+                    $lead->towns->name ?? 'N/A',
+                    $lead->region->name ?? 'N/A',
+                    $lead->lead_status->name ?? 'N/A',
+                    $service->service->name ?? 'N/A',
+                    $service->childservice->name ?? 'Empty',
+                    Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                    $lead->user->name ?? 'N/A',
+                ];
+            }
+            return $lead_data;
         }
 
-        return $lead_data;
+        // Lead without services - single row
+        return [[
+            $lead->id,
+            $lead->name ?? 'N/A',
+            $phone,
+            $lead->gender == 1 ? 'Male' : 'Female',
+            $lead->city->name ?? 'N/A',
+            $lead->towns->name ?? 'N/A',
+            $lead->region->name ?? 'N/A',
+            $lead->lead_status->name ?? 'N/A',
+            'N/A',
+            'N/A',
+            Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+            $lead->user->name ?? 'N/A',
+        ]];
     }
 
     /**
