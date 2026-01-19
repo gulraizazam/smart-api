@@ -988,12 +988,25 @@ function setFilters(filter_values, active_filters) {
         // Handle location dropdown based on city selection
         if (active_filters.city_id) {
             // City is selected - load city-specific locations
-            loadLocations(active_filters.city_id, '#search_location_id', false);
-            // Set value after a small delay to allow dropdown to populate
-            if (active_filters.location_id) {
-                setTimeout(function() {
-                    $("#search_location_id").val(active_filters.location_id);
-                }, 300);
+            // Store the location_id to restore after AJAX completes
+            let savedLocationId = active_filters.location_id;
+            
+            // Check if locations are already loaded for this city
+            let currentCityId = $("#search_city_id").val();
+            if (currentCityId == active_filters.city_id && $("#search_location_id option").length > 1) {
+                // Locations already loaded, just set the value
+                if (savedLocationId) {
+                    $("#search_location_id").val(savedLocationId);
+                }
+            } else {
+                // Need to load locations via AJAX
+                loadLocations(active_filters.city_id, '#search_location_id', false);
+                // Set value after AJAX completes
+                if (savedLocationId) {
+                    setTimeout(function() {
+                        $("#search_location_id").val(savedLocationId);
+                    }, 500);
+                }
             }
         } else {
             // No city selected - show all locations
