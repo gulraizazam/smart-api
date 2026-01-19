@@ -1432,6 +1432,7 @@ $("#csv-leads").on("click",function(){
 });
 
 function cleanId(id){
+    if (!id) return '';
     if (id.indexOf('c-') > -1)
     {
       return id.replace('c-','');
