@@ -28,6 +28,9 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
      */
     public function collection()
     {
+        $userCities = ACL::getUserCities();
+        $accountId = \Illuminate\Support\Facades\Auth::user()->account_id;
+        
         $query = Leads::query()
             ->with([
                 'lead_service' => fn($q) => $q->where('status', 1)->with(['service:id,name', 'childservice:id,name']),
@@ -37,7 +40,11 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
                 'lead_status:id,name',
                 'user:id,name',
             ])
-            ->whereIn('city_id', ACL::getUserCities());
+            ->where('account_id', $accountId)
+            ->where(function($q) use ($userCities) {
+                $q->whereIn('city_id', $userCities)
+                  ->orWhereNull('city_id');
+            });
 
         $this->applyFilters($query);
 
@@ -48,48 +55,52 @@ class ExportLead implements FromCollection, WithHeadings, WithEvents
         }
 
         $leads = $query->orderBy('id', 'DESC')->get();
+        
+        \Log::info('ExportLead: Found ' . $leads->count() . ' leads');
 
         // Transform leads to rows (one row per service)
-        $rows = collect();
+        $rows = [];
         foreach ($leads as $lead) {
             $phone = $this->canViewContact ? ($lead->phone ?? 'N/A') : '***********';
             
             if ($lead->lead_service && $lead->lead_service->count() > 0) {
                 foreach ($lead->lead_service as $service) {
-                    $rows->push([
-                        'id' => $lead->id,
-                        'name' => $lead->name ?? 'N/A',
-                        'phone' => $phone,
-                        'gender' => $lead->gender == 1 ? 'Male' : 'Female',
-                        'city' => $lead->city->name ?? 'N/A',
-                        'centre' => $lead->towns->name ?? 'N/A',
-                        'region' => $lead->region->name ?? 'N/A',
-                        'lead_status' => $lead->lead_status->name ?? 'N/A',
-                        'service' => $service->service->name ?? 'N/A',
-                        'treatment' => $service->childservice->name ?? 'Empty',
-                        'created_at' => Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                        'created_by' => $lead->user->name ?? 'N/A',
-                    ]);
+                    $rows[] = [
+                        $lead->id,
+                        $lead->name ?? 'N/A',
+                        $phone,
+                        $lead->gender == 1 ? 'Male' : 'Female',
+                        $lead->city->name ?? 'N/A',
+                        $lead->towns->name ?? 'N/A',
+                        $lead->region->name ?? 'N/A',
+                        $lead->lead_status->name ?? 'N/A',
+                        $service->service->name ?? 'N/A',
+                        $service->childservice->name ?? 'Empty',
+                        Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                        $lead->user->name ?? 'N/A',
+                    ];
                 }
             } else {
-                $rows->push([
-                    'id' => $lead->id,
-                    'name' => $lead->name ?? 'N/A',
-                    'phone' => $phone,
-                    'gender' => $lead->gender == 1 ? 'Male' : 'Female',
-                    'city' => $lead->city->name ?? 'N/A',
-                    'centre' => $lead->towns->name ?? 'N/A',
-                    'region' => $lead->region->name ?? 'N/A',
-                    'lead_status' => $lead->lead_status->name ?? 'N/A',
-                    'service' => 'N/A',
-                    'treatment' => 'N/A',
-                    'created_at' => Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
-                    'created_by' => $lead->user->name ?? 'N/A',
-                ]);
+                $rows[] = [
+                    $lead->id,
+                    $lead->name ?? 'N/A',
+                    $phone,
+                    $lead->gender == 1 ? 'Male' : 'Female',
+                    $lead->city->name ?? 'N/A',
+                    $lead->towns->name ?? 'N/A',
+                    $lead->region->name ?? 'N/A',
+                    $lead->lead_status->name ?? 'N/A',
+                    'N/A',
+                    'N/A',
+                    Carbon::parse($lead->created_at)->format('F j,Y h:i A'),
+                    $lead->user->name ?? 'N/A',
+                ];
             }
         }
 
-        return $rows;
+        \Log::info('ExportLead: Returning ' . count($rows) . ' rows');
+        
+        return collect($rows);
     }
 
     /**
