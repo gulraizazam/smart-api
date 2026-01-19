@@ -383,7 +383,7 @@
                 </li>
                 @endif
 
-                @if (Gate::allows('memberships_manage'))
+                @if (Gate::allows('memberships_manage') || Gate::allows('membershiptypes_manage'))
                 <li class="menu-item menu-item-submenu {{ openMenu(['admin.membershiptypes.index', 'admin.memberships.index']) }} " aria-haspopup="true" data-menu-toggle="hover">
 
                     <a href="javascript:void(0);" class="menu-link menu-toggle">
@@ -398,7 +398,7 @@
 
                         <ul class="menu-subnav">
 
-                            @can('memberships_manage')
+                            @can('membershiptypes_manage')
                             <li class="menu-item {{ activeMenu('admin.membershiptypes.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.membershiptypes.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
@@ -710,7 +710,7 @@
                     </div>
                     @endcan
 
-                    @can('logs_manage')
+                    <!-- @can('logs_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">
@@ -726,7 +726,7 @@
 
                         </ul>
                     </div>
-                    @endcan
+                    @endcan -->
 
                     @can('sms_templates_manage')
                     <div class="menu-submenu">
@@ -1056,7 +1056,7 @@
                         </ul>
                     </div>
                     @endcan
-                    @can('dashboard_appointments_report')
+                    @can('appointment_reports_manage')
                     <div class="menu-submenu">
                         <i class="menu-arrow"></i>
                         <ul class="menu-subnav">

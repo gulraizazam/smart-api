@@ -109,8 +109,37 @@ class RefundsController extends Controller
                         'is_setteled' =>1
                     ])->first();
 
+                    // Calculate settled amount same as packages datatable
+                    $settle_amount = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_tax', '=', '0'],
+                        ['is_adjustment', '=', '0'],
+                        ['is_refund', '=', '0'],
+                        ['is_setteled', '=', '0'],
+                    ])->sum('cash_amount');
+                    $settle_tax_amount = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_tax', '=', '1'],
+                        ['is_adjustment', '=', '0'],
+                        ['is_refund', '=', '0'],
+                        ['is_setteled', '=', '0'],
+                    ])->sum('cash_amount');
+                    $refund_settle_amount = PackageAdvances::where([
+                        ['package_id', '=', $package->package_id],
+                        ['cash_flow', '=', 'out'],
+                        ['is_cancel', '=', '0'],
+                        ['is_refund', '=', '0'],
+                        ['is_setteled', '=', 1],
+                    ])->sum('cash_amount');
+                    $settle_amount_with_tax = $settle_amount + $settle_tax_amount + $refund_settle_amount;
                     
                     if ($refunded_amount != 0) {
+                        // Calculate total same way as packages datatable
+                        $packageservices_price = PackageBundles::where('package_id', '=', $package->package_id)->sum('tax_including_price');
 
                         $records['data'][] = [
                             'id' => $package->package_id ?? 0,
@@ -119,8 +148,9 @@ class RefundsController extends Controller
                             'phone' => $package->user ? (Gate::allows('contact') ? GeneralFunctions::prepareNumber4Call($package->user->phone) : '***********') : '-',
                             'package_id' => $package?->package_id ?? '-',
                             'location_id' => $package->location->city->name.'-'.$package->location?->name,
-                            'total' => number_format($package->total_price),
+                            'total' => number_format($packageservices_price),
                             'cash_receive' => number_format($cash_receive),
+                            'settle_amount' => number_format($settle_amount_with_tax),
                             'refunded' =>$refunded_amount,
                             'case_setteled' => isset($is_case_setteled) && $is_case_setteled->is_setteled == 1 ? 'Yes' : 'No',
                             'created_at' => $refunded_latest_date ? Carbon::parse($refunded_latest_date->created_at)->format('F j,Y h:i A') : Carbon::parse($package->created_at)->format('F j,Y h:i A'),
@@ -142,10 +172,12 @@ class RefundsController extends Controller
             }
 
             $records['permissions'] = [
+                'create'=>Gate::allows('refunds_create'),
                 'delete' => Gate::allows('refunds_destroy'),
                 'active' => Gate::allows('refunds_active'),
                 'inactive' => Gate::allows('refunds_inactive'),
                 'refund' => Gate::allows('refunds_refund'),
+                'edit' => Gate::allows('refunds_edit'),
             ];
 
             $patient_id = request('patient_id');
@@ -318,7 +350,7 @@ class RefundsController extends Controller
      */
     public function refund_create($id)
     {
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
@@ -468,7 +500,7 @@ class RefundsController extends Controller
     {
        
        
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
         $package_advance_last_in = PackageAdvances::where([
@@ -651,7 +683,7 @@ class RefundsController extends Controller
      */
     public function nonplans_refund_create($packageadvance_id)
     {
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return abort(401);
         }
         $package_advance_information = PackageAdvances::find($packageadvance_id);
@@ -714,7 +746,7 @@ class RefundsController extends Controller
      */
     public function nonplans_refund_store(Request $request)
     {
-        if (! Gate::allows('refunds_refund')) {
+        if (! Gate::allows('refunds_create')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 

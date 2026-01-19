@@ -33,8 +33,13 @@
                     <div class="row">
 
                         <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
-                            <input id="edit_document_name" class="form-control" type="text" name="name" placeholder="Enter File Name">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Document Type <span class="text text-danger">*</span></label>
+                            <select name="document_type" id="edit_document_type" class="form-control" required>
+                                <option value="">Select Type</option>
+                                <option value="consent_form">Consent Form</option>
+                                <option value="consultation_form">Consultation Form</option>
+                                <option value="others">Others</option>
+                            </select>
                         </div>
 
                         <div class="fv-row col-md-12 mt-5">
@@ -54,9 +59,22 @@
 
                         <div class="fv-row col-md-12 mt-5">
                             <label class="fw-bold fs-6 mb-2 pl-0">Upload New File <span class="text-muted">(Optional - leave empty to keep current file)</span></label>
-                            <div class="custom-file">
-                                <input type="file" name="file" class="custom-file-input" id="edit_document_file" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
-                                <label class="custom-file-label" for="edit_document_file">Choose file</label>
+                            <div class="dropzone-container" id="edit_document_dropzone">
+                                <div class="dropzone-area edit-dropzone" onclick="document.getElementById('edit_document_file').click();">
+                                    <input type="file" name="file" class="d-none" id="edit_document_file" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
+                                    <div class="edit-dropzone-content">
+                                        <i class="la la-cloud-upload-alt" style="font-size: 48px; color: #3699FF;"></i>
+                                        <p class="mb-1 mt-2">Drag & drop file here or <span class="text-primary" style="cursor: pointer;">browse</span></p>
+                                        <p class="text-muted small mb-0">Supported: JPG, PNG, PDF, DOCX, XLSX (Max 10MB)</p>
+                                    </div>
+                                    <div class="edit-dropzone-preview d-none">
+                                        <i class="la la-file" id="edit_preview_icon" style="font-size: 32px;"></i>
+                                        <span id="edit_preview_filename" class="ml-2"></span>
+                                        <button type="button" class="btn btn-sm btn-icon btn-light-danger ml-2" onclick="event.stopPropagation(); clearEditFileInput();">
+                                            <i class="la la-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 

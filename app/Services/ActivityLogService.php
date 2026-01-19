@@ -180,6 +180,15 @@ class ActivityLogService
             case 'voucher_refunded':
                 return '<span class="highlight-green">Rs. ' . number_format($amount) . '</span> refunded to voucher for <span class="highlight-orange">' . $patient . '</span>';
             
+            case 'note_added':
+                return '<span class="highlight">' . $creatorName . '</span> added a note for <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
+            
+            case 'note_updated':
+                return '<span class="highlight">' . $creatorName . '</span> updated a note for <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
+            
+            case 'note_deleted':
+                return '<span class="highlight">' . $creatorName . '</span> deleted a note for <span class="highlight-orange">' . $patient . '</span>' . ($dateStr ? ' on ' . $dateStr : '');
+            
             default:
                 // Fallback for existing records - check action field
                 return self::buildFallbackDescription($activity, $creatorName, $patient, $service, $location, $amount, $planId, $appointmentType, $dateStr);

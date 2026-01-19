@@ -177,6 +177,14 @@ class User extends Authenticatable
         return $this->hasMany('App\Models\UserHasLocations', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);
     }
 
+    /**
+     * Get the location for the user.
+     */
+    public function location()
+    {
+        return $this->belongsTo('App\Models\Locations', 'location_id')->withTrashed();
+    }
+
     public function user_has_warehouse()
     {
         return $this->hasMany('App\Models\UserHasWarehouse', 'user_id')->withoutGlobalScope(SoftDeletingScope::class);

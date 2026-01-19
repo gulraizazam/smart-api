@@ -733,30 +733,9 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
         }
     }
 
-    if (appointment.appointment_type_id == 1) {
-
-        if(permissions.medical_form_manage) {
-            buttons += '<li><a class="text text-primary" href="'+medical_url+'" target="_blank">\
-            <i class="la la-medkit" title="Medical History Form"></i> Medical Form\
-            </a></li>';
-        }
-    }
-
-    if (permissions.plans_create) {
-        buttons += '<li><a class="text text-primary" href="javascript:void(0);" onclick="createAppointmentPlan(`'+plan_create_url+'`);">\
-            <i class="la la-paper-plane" title="Create Plan"></i> Create Plan\
-            </a></li>';
-    }
-
     if(permissions.patient_card) {
         buttons += '<li><a class="text text-primary" target="_blank" href="'+patient_url+'">\
         <i class="la la-user" title="Patient Card"></i>Patient Card\
-        </a></li>';
-    }
-
-    if (permissions.log) {
-        buttons += '<li><a class="text text-primary" target="_blank" href="'+log_url+'">\
-        <i class="la la-history" title="Log"></i> Log\
         </a></li>';
     }
 

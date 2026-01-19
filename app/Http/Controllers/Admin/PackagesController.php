@@ -2618,6 +2618,18 @@ class PackagesController extends Controller
         
         $record = PackageAdvances::updateRecordFinanceedit($request, Auth::User()->account_id, $amount_status);
         if ($record) {
+            // Sync plan_invoices table
+            $planInvoice = PlanInvoice::where('package_advance_id', $request->package_advances_id)->first();
+            if ($planInvoice) {
+                // Update existing plan_invoice
+                $planInvoice->update([
+                    'total_price' => $request->cash_amount,
+                    'payment_mode_id' => $request->payment_mode_id,
+                    'created_at' => $request->created_at.' '.Carbon::now()->toTimeString(),
+                    'updated_at' => now(),
+                ]);
+            }
+            
             // Log payment updated activity
             $package = Packages::find($request->package_id);
             $patient = $package ? User::find($package->patient_id) : null;
@@ -2660,6 +2672,12 @@ class PackagesController extends Controller
 
             $record = PackageAdvances::deletefinaceRecord($request);
             $cash_receveive_remain = number_format(filter_var($request->cash_receveive_remain, FILTER_SANITIZE_NUMBER_INT) + $packageadvanceinfo->cash_amount);
+
+            // Sync plan_invoices table - soft delete the corresponding plan_invoice
+            $planInvoice = PlanInvoice::where('package_advance_id', $request->package_advance_id)->first();
+            if ($planInvoice) {
+                $planInvoice->delete();
+            }
 
             // Log payment deleted activity
             $package = Packages::find($packageadvanceinfo->package_id);

@@ -32,23 +32,60 @@
                 <div class="form-group">
                     <div class="row">
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Name <span class="text text-danger">*</span></label>
-                            <input id="add_document_name" class="form-control" type="text" name="name" placeholder="Enter File Name">
+                        <div class="fv-row col-md-12 mt-5">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Document Type <span class="text text-danger">*</span></label>
+                            <select name="document_type" id="add_document_type" class="form-control" required>
+                                <option value="">Select Type</option>
+                                <option value="consent_form">Consent Form</option>
+                                <option value="consultation_form">Consultation Form</option>
+                                <option value="others">Others</option>
+                            </select>
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-
+                        <div class="fv-row col-md-12 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0"> File <span class="text text-danger">*</span></label>
-                            <div class="custom-file">
-                                <input type="file" name="file" class="custom-file-input" id="document_file" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
-                                <label class="custom-file-label" for="document_file">Choose file</label>
+                            <div class="dropzone-container" id="document_dropzone">
+                                <div class="dropzone-area" onclick="document.getElementById('document_file').click();">
+                                    <input type="file" name="file" class="d-none" id="document_file" accept=".jpg,.jpeg,.png,.pdf,.docx,.xlsx">
+                                    <div class="dropzone-content">
+                                        <i class="la la-cloud-upload-alt" style="font-size: 48px; color: #3699FF;"></i>
+                                        <p class="mb-1 mt-2">Drag & drop file here or <span class="text-primary" style="cursor: pointer;">browse</span></p>
+                                        <p class="text-muted small mb-0">Supported: JPG, PNG, PDF, DOCX, XLSX (Max 10MB)</p>
+                                    </div>
+                                    <div class="dropzone-preview d-none">
+                                        <i class="la la-file" id="preview_icon" style="font-size: 32px;"></i>
+                                        <span id="preview_filename" class="ml-2"></span>
+                                        <button type="button" class="btn btn-sm btn-icon btn-light-danger ml-2" onclick="event.stopPropagation(); clearFileInput();">
+                                            <i class="la la-times"></i>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-
                         </div>
 
                     </div>
                 </div>
+
+                <style>
+                    .dropzone-area {
+                        border: 2px dashed #E4E6EF;
+                        border-radius: 8px;
+                        padding: 30px;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        background: #F9FAFB;
+                    }
+                    .dropzone-area:hover, .dropzone-area.dragover {
+                        border-color: #3699FF;
+                        background: #F1FAFF;
+                    }
+                    .dropzone-preview {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                </style>
 
             </div>
             <!--end::Scroll-->

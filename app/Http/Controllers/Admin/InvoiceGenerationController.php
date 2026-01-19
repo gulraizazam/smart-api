@@ -340,7 +340,9 @@ class InvoiceGenerationController extends Controller
             $sheet->setCellValue('A' . $row, $invoice['invoice_number']);
             $sheet->setCellValue('B' . $row, $invoice['patient_id']);
             $sheet->setCellValue('C' . $row, $invoice['plan_id']);
-            $sheet->setCellValue('D' . $row, $invoice['invoice_date']);
+            // Format date as 1-DEC-25
+            $formattedDate = \Carbon\Carbon::parse($invoice['invoice_date'])->format('j-M-y');
+            $sheet->setCellValue('D' . $row, strtoupper($formattedDate));
             $sheet->setCellValue('E' . $row, $invoice['amount']);
             $sheet->getStyle('E' . $row)->getNumberFormat()->setFormatCode('#,##0.00');
             $row++;

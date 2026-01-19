@@ -1,8 +1,4 @@
 <div class="card-body page-plan-form">
-    <!--begin::Search Form-->
-@include('admin.patients.card.plans.filters')
-<!--end::Search Form-->
-
     <!--begin: Datatable-->
     <div class="datatable datatable-bordered datatable-head-custom plan-form"></div>
     <!--end: Datatable-->

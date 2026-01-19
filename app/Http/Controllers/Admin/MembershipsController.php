@@ -77,6 +77,7 @@ class MembershipsController extends Controller
                         'end_date' => $membership->end_date,
                         'membership_type_id' => $membership->membershipType->name ?? 'N/A',
                         'patient' => $patient ? $patient->name : 'N/A',
+                        'patient_id' => $patient ? $patient->id : 'N/A',
                         'created_at' => Carbon::parse($membership->created_at)->format('F j,Y h:i A'),
                     ];
                 }
@@ -401,7 +402,7 @@ class MembershipsController extends Controller
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'memberships', 'membership_type_id');
             } else {
-                if (Filters::get(Auth::user()->id, 'membershipss', 'membership_type_id')) {
+                if (Filters::get(Auth::user()->id, 'memberships', 'membership_type_id')) {
                     if (Filters::get(Auth::user()->id, 'memberships', 'membership_type_id') != null) {
                         $where[] = [
                             'memberships.membership_type_id',
@@ -423,7 +424,7 @@ class MembershipsController extends Controller
             if ($apply_filter) {
                 Filters::forget(Auth::user()->id, 'memberships', 'created_by');
             } else {
-                if (Filters::get(Auth::user()->id, 'membershipss', 'created_by')) {
+                if (Filters::get(Auth::user()->id, 'memberships', 'created_by')) {
                     if (Filters::get(Auth::user()->id, 'memberships', 'created_by') != null) {
                         $where[] = [
                             'memberships.created_by',
