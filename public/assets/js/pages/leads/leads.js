@@ -985,6 +985,19 @@ function setFilters(filter_values, active_filters) {
         $("#search_full_name").val(active_filters.name);
         $("#search_phone").val(active_filters.phone);
         $("#search_city_id").val(active_filters.city_id);
+        
+        // Restore location filter - if city is selected, load city-specific locations first
+        if (active_filters.city_id && active_filters.location_id) {
+            // Load locations for the selected city, then set the value
+            loadLocations(active_filters.city_id, '#search_location_id', false);
+            // Set value after a small delay to allow dropdown to populate
+            setTimeout(function() {
+                $("#search_location_id").val(active_filters.location_id);
+            }, 300);
+        } else {
+            $("#search_location_id").val(active_filters.location_id);
+        }
+        
         $("#search_region_id").val(active_filters.region_id);
         $("#search_status_id").val(active_filters.lead_status_id);
         $("#search_service_id").val(active_filters.service_id);
