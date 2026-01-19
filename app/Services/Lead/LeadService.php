@@ -466,15 +466,18 @@ class LeadService
     }
 
     /**
-     * Import leads from file
+     * Import leads from file (OPTIMIZED - Batch Processing)
+     * Uses bulk inserts/updates to minimize database queries
      */
     public function importLeads(array $rows, array $options): array
     {
         $accountId = Auth::user()->account_id;
         $userId = Auth::id();
+        $now = Carbon::now();
 
-        // Pre-load all lookup data for performance
+        // Pre-load all lookup data
         $lookupData = $this->loadImportLookupData($accountId);
+        $defaultStatusId = $this->getDefaultLeadStatus($accountId)?->id;
 
         $stats = [
             'created' => 0,
@@ -483,28 +486,241 @@ class LeadService
             'invalid_services' => [],
         ];
 
-        // Get existing phones
-        $phones = $this->extractValidPhones($rows);
-        $existingPhones = $this->getExistingLeadPhones($phones, $accountId);
-        $newPhones = array_diff($phones, $existingPhones);
-
+        // Step 1: Extract and validate all phones upfront
+        $validRows = [];
+        $phoneToRowMap = [];
+        
         foreach ($rows as $row) {
-            $result = $this->processImportRow($row, $lookupData, $options, $existingPhones, $newPhones, $userId, $accountId);
+            $phone = GeneralFunctions::cleanNumber($row['phone'] ?? '');
             
-            if ($result['status'] === 'created') {
-                $stats['created']++;
-            } elseif ($result['status'] === 'updated') {
-                $stats['updated']++;
-            } elseif ($result['status'] === 'invalid_phone') {
-                $stats['invalid_phones'][] = $result['phone'];
-            } elseif ($result['status'] === 'invalid_service') {
-                if (!in_array($result['service'], $stats['invalid_services'])) {
-                    $stats['invalid_services'][] = $result['service'];
+            if (strlen($phone) < 10 || strlen($phone) > 12) {
+                $stats['invalid_phones'][] = $row['phone'] ?? '';
+                continue;
+            }
+
+            // Validate service
+            $serviceKey = strtolower(trim($row['service'] ?? ''));
+            $serviceData = $lookupData['services'][$serviceKey] ?? null;
+            
+            if (!$serviceData && !empty($serviceKey)) {
+                if (!in_array($row['service'], $stats['invalid_services'])) {
+                    $stats['invalid_services'][] = $row['service'];
                 }
+                continue;
+            }
+
+            if (!$serviceData) {
+                continue; // Skip rows without service
+            }
+
+            $row['_phone_clean'] = $phone;
+            $row['_service_id'] = $serviceData['id'];
+            $row['_child_service_id'] = null;
+            
+            if (!empty($row['treatment'])) {
+                $treatmentKey = strtolower(trim($row['treatment']));
+                $row['_child_service_id'] = $lookupData['child_services'][$serviceData['id']][$treatmentKey] ?? null;
+            }
+
+            $validRows[] = $row;
+            $phoneToRowMap[$phone] = $row;
+        }
+
+        if (empty($validRows)) {
+            return $stats;
+        }
+
+        // Step 2: Get all existing leads in ONE query
+        $allPhones = array_keys($phoneToRowMap);
+        $existingLeads = Leads::whereIn('phone', $allPhones)
+            ->where('account_id', $accountId)
+            ->get()
+            ->keyBy('phone');
+
+        // Step 3: Separate into creates and updates
+        $leadsToCreate = [];
+        $leadsToUpdate = [];
+        $phoneToLeadId = [];
+
+        foreach ($validRows as $row) {
+            $phone = $row['_phone_clean'];
+            $cityKey = strtolower(trim($row['city'] ?? ''));
+            $leadStatusKey = strtolower(trim($row['lead_status'] ?? ''));
+            $leadStatusId = $lookupData['lead_statuses'][$leadStatusKey] ?? $defaultStatusId;
+
+            $leadData = [
+                'name' => $row['full_name'] ?? '',
+                'email' => $row['email'] ?? null,
+                'phone' => $phone,
+                'gender' => $this->parseGender($row['gender'] ?? ''),
+                'city_id' => $lookupData['cities'][$cityKey] ?? null,
+                'region_id' => $lookupData['regions'][$cityKey] ?? null,
+                'lead_source_id' => $lookupData['lead_sources'][strtolower(trim($row['lead_source'] ?? ''))] ?? Config::get('constants.lead_source_social_media'),
+                'location_id' => $lookupData['locations'][strtolower(trim($row['centre'] ?? ''))] ?? null,
+                'meta_lead_id' => !empty($row['meta_lead_id']) ? trim($row['meta_lead_id']) : null,
+                'account_id' => $accountId,
+                'updated_by' => $userId,
+                'converted_by' => $userId,
+                'updated_at' => $now,
+                'active' => 1,
+            ];
+
+            if (isset($existingLeads[$phone])) {
+                // Update existing
+                $existingLead = $existingLeads[$phone];
+                $phoneToLeadId[$phone] = $existingLead->id;
+                
+                if ($options['update_records']) {
+                    if (!$options['skip_lead_statuses']) {
+                        $leadData['lead_status_id'] = $leadStatusId;
+                    }
+                    $leadsToUpdate[$existingLead->id] = $leadData;
+                    $stats['updated']++;
+                } else {
+                    // Only update minimal fields
+                    $leadsToUpdate[$existingLead->id] = [
+                        'updated_by' => $userId,
+                        'converted_by' => $userId,
+                        'updated_at' => $now,
+                        'location_id' => $leadData['location_id'],
+                        'meta_lead_id' => $leadData['meta_lead_id'],
+                    ];
+                    if (!$options['skip_lead_statuses']) {
+                        $leadsToUpdate[$existingLead->id]['lead_status_id'] = $leadStatusId;
+                    }
+                    $stats['updated']++;
+                }
+            } else {
+                // Create new
+                $leadData['lead_status_id'] = $leadStatusId;
+                $leadData['created_by'] = $userId;
+                $leadData['created_at'] = $now;
+                $leadsToCreate[$phone] = $leadData;
+                $stats['created']++;
             }
         }
 
-        return $stats;
+        // Pre-load services and locations for activity logging
+        $servicesLookup = Services::whereIn('id', array_unique(array_column($validRows, '_service_id')))
+            ->pluck('name', 'id')
+            ->toArray();
+        $locationsLookup = Locations::with('city')
+            ->whereIn('id', array_filter(array_unique(array_map(fn($r) => $lookupData['locations'][strtolower(trim($r['centre'] ?? ''))] ?? null, $validRows))))
+            ->get()
+            ->keyBy('id');
+
+        // Step 4: Execute in transaction with batch operations
+        return DB::transaction(function () use ($leadsToCreate, $leadsToUpdate, $validRows, $phoneToLeadId, $defaultStatusId, $now, $stats, $accountId, $userId, $servicesLookup, $locationsLookup, $lookupData) {
+            
+            // Batch insert new leads
+            if (!empty($leadsToCreate)) {
+                // Insert in chunks of 500
+                foreach (array_chunk($leadsToCreate, 500, true) as $chunk) {
+                    Leads::insert(array_values($chunk));
+                }
+                
+                // Get IDs of newly created leads
+                $newPhones = array_keys($leadsToCreate);
+                $newLeads = Leads::whereIn('phone', $newPhones)->pluck('id', 'phone');
+                foreach ($newLeads as $phone => $id) {
+                    $phoneToLeadId[$phone] = $id;
+                }
+            }
+
+            // Batch update existing leads
+            if (!empty($leadsToUpdate)) {
+                foreach ($leadsToUpdate as $leadId => $data) {
+                    Leads::where('id', $leadId)->update($data);
+                }
+            }
+
+            // Step 5: Batch create lead services
+            $leadServicesToCreate = [];
+            $leadIdsToDeactivate = [];
+
+            foreach ($validRows as $row) {
+                $phone = $row['_phone_clean'];
+                $leadId = $phoneToLeadId[$phone] ?? null;
+                
+                if (!$leadId) continue;
+
+                $leadIdsToDeactivate[] = $leadId;
+                $leadServicesToCreate[] = [
+                    'lead_id' => $leadId,
+                    'service_id' => $row['_service_id'],
+                    'child_service_id' => $row['_child_service_id'],
+                    'meta_lead_id' => !empty($row['meta_lead_id']) ? trim($row['meta_lead_id']) : null,
+                    'status' => 1,
+                    'lead_status_id' => $defaultStatusId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            // Deactivate old services in ONE query
+            if (!empty($leadIdsToDeactivate)) {
+                LeadsServices::whereIn('lead_id', $leadIdsToDeactivate)
+                    ->update(['status' => 0]);
+            }
+
+            // Insert new services in chunks
+            if (!empty($leadServicesToCreate)) {
+                foreach (array_chunk($leadServicesToCreate, 500) as $chunk) {
+                    LeadsServices::insert($chunk);
+                }
+            }
+
+            // Step 6: Batch create activity logs
+            $activitiesToCreate = [];
+            $creatorName = Auth::user()->name ?? 'System';
+
+            foreach ($validRows as $row) {
+                $phone = $row['_phone_clean'];
+                $leadId = $phoneToLeadId[$phone] ?? null;
+                
+                if (!$leadId) continue;
+
+                $serviceName = $servicesLookup[$row['_service_id']] ?? '';
+                $patientName = $row['full_name'] ?? 'Unknown';
+                $locationId = $lookupData['locations'][strtolower(trim($row['centre'] ?? ''))] ?? null;
+                $locationName = '';
+                
+                if ($locationId && isset($locationsLookup[$locationId])) {
+                    $loc = $locationsLookup[$locationId];
+                    $locationName = ($loc->city->name ?? '') . '-' . ($loc->name ?? '');
+                }
+
+                $description = '<span class="highlight">' . $creatorName . '</span> created a <span class="highlight-orange">' . ($serviceName ?: 'Service') . '</span> lead for <span class="highlight-orange">' . $patientName . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '');
+
+                $activitiesToCreate[] = [
+                    'account_id' => $accountId,
+                    'action' => 'Lead Created',
+                    'activity_type' => 'lead_created',
+                    'description' => $description,
+                    'patient' => $patientName,
+                    'patient_id' => null,
+                    'lead_id' => $leadId,
+                    'lead_status' => 'Open',
+                    'lead_status_id' => $defaultStatusId,
+                    'service' => $serviceName,
+                    'service_id' => $row['_service_id'],
+                    'location' => $locationName,
+                    'centre_id' => $locationId,
+                    'created_by' => $userId,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            // Insert activities in chunks
+            if (!empty($activitiesToCreate)) {
+                foreach (array_chunk($activitiesToCreate, 500) as $chunk) {
+                    \App\Models\Activity::insert($chunk);
+                }
+            }
+
+            return $stats;
+        });
     }
 
     /**
@@ -564,180 +780,12 @@ class LeadService
     }
 
     /**
-     * Process single import row
-     */
-    protected function processImportRow(array $row, array $lookup, array $options, array $existingPhones, array $newPhones, int $userId, int $accountId): array
-    {
-        $phone = GeneralFunctions::cleanNumber($row['phone'] ?? '');
-
-        // Validate phone
-        if (strlen($phone) < 10 || strlen($phone) > 12) {
-            return ['status' => 'invalid_phone', 'phone' => $row['phone'] ?? ''];
-        }
-
-        // Lookup service
-        $serviceKey = strtolower(trim($row['service'] ?? ''));
-        $serviceData = $lookup['services'][$serviceKey] ?? null;
-
-        if (!$serviceData && !empty($serviceKey)) {
-            return ['status' => 'invalid_service', 'service' => $row['service']];
-        }
-
-        $serviceId = $serviceData['id'] ?? null;
-        $childServiceId = null;
-
-        if ($serviceId && !empty($row['treatment'])) {
-            $treatmentKey = strtolower(trim($row['treatment']));
-            $childServiceId = $lookup['child_services'][$serviceId][$treatmentKey] ?? null;
-        }
-
-        // Build lead data
-        $cityKey = strtolower(trim($row['city'] ?? ''));
-        $leadData = [
-            'name' => $row['full_name'] ?? '',
-            'email' => $row['email'] ?? null,
-            'phone' => $phone,
-            'gender' => $this->parseGender($row['gender'] ?? ''),
-            'city_id' => $lookup['cities'][$cityKey] ?? null,
-            'region_id' => $lookup['regions'][$cityKey] ?? null,
-            'lead_source_id' => $lookup['lead_sources'][strtolower(trim($row['lead_source'] ?? ''))] ?? Config::get('constants.lead_source_social_media'),
-            'location_id' => $lookup['locations'][strtolower(trim($row['centre'] ?? ''))] ?? null,
-            'meta_lead_id' => !empty($row['meta_lead_id']) ? trim($row['meta_lead_id']) : null,
-            'created_by' => $userId,
-            'updated_by' => $userId,
-            'converted_by' => $userId,
-            'account_id' => $accountId,
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ];
-
-        $isNew = in_array($phone, $newPhones);
-        $isExisting = in_array($phone, $existingPhones);
-
-        if (!$serviceId) {
-            return ['status' => 'skipped'];
-        }
-
-        // Determine lead status
-        $leadStatusKey = strtolower(trim($row['lead_status'] ?? ''));
-        $leadStatusId = $lookup['lead_statuses'][$leadStatusKey] ?? Config::get('constants.lead_status_open');
-
-        if ($options['update_records'] && $isExisting) {
-            if (!$options['skip_lead_statuses']) {
-                $leadData['lead_status_id'] = $leadStatusId;
-            }
-            $lead = Leads::updateOrCreate(['phone' => $phone], $leadData);
-            $this->createLeadServiceForImport($lead->id, $serviceId, $childServiceId, $leadData['meta_lead_id'], $accountId);
-            $this->logLeadActivity($lead, $leadData);
-            return ['status' => 'updated'];
-        }
-
-        if ($isNew) {
-            $leadData['lead_status_id'] = $leadStatusId;
-            $lead = Leads::updateOrCreate(['phone' => $phone], $leadData);
-            $this->createLeadServiceForImport($lead->id, $serviceId, $childServiceId, $leadData['meta_lead_id'], $accountId);
-            $this->logLeadActivity($lead, $leadData);
-            return ['status' => 'created'];
-        }
-
-        if (!$options['update_records'] && $isExisting) {
-            $updateData = [
-                'created_by' => $userId,
-                'updated_by' => $userId,
-                'converted_by' => $userId,
-                'updated_at' => Carbon::now(),
-                'location_id' => $leadData['location_id'],
-                'meta_lead_id' => $leadData['meta_lead_id'],
-            ];
-            if (!$options['skip_lead_statuses']) {
-                $updateData['lead_status_id'] = $leadStatusId;
-            }
-            $lead = Leads::updateOrCreate(['phone' => $phone], $updateData);
-            $this->createLeadServiceForImport($lead->id, $serviceId, $childServiceId, $leadData['meta_lead_id'], $accountId);
-            $this->logLeadActivity($lead, $leadData);
-            return ['status' => 'updated'];
-        }
-
-        return ['status' => 'skipped'];
-    }
-
-    /**
-     * Create lead service for import
-     */
-    protected function createLeadServiceForImport(int $leadId, ?int $serviceId, ?int $childServiceId, ?string $metaLeadId, int $accountId): void
-    {
-        $openStatus = $this->getDefaultLeadStatus($accountId);
-
-        $leadService = LeadsServices::create([
-            'lead_id' => $leadId,
-            'service_id' => $serviceId,
-            'child_service_id' => $childServiceId,
-            'meta_lead_id' => $metaLeadId,
-            'status' => 1,
-            'lead_status_id' => $openStatus?->id,
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
-
-        LeadsServices::where('lead_id', $leadId)
-            ->where('id', '!=', $leadService->id)
-            ->update(['status' => 0]);
-    }
-
-    /**
      * Parse gender from string
      */
     protected function parseGender(string $gender): int
     {
         $gender = strtolower(trim($gender));
         return $gender === 'female' ? 2 : 1;
-    }
-
-    /**
-     * Extract valid phones from rows
-     */
-    protected function extractValidPhones(array $rows): array
-    {
-        $phones = [];
-        foreach ($rows as $row) {
-            $phone = $row['phone'] ?? '';
-            if (strlen($phone) >= 10 && strlen($phone) <= 13) {
-                $phones[] = GeneralFunctions::cleanNumber($phone);
-            }
-        }
-        return $phones;
-    }
-
-    /**
-     * Get existing lead phones
-     */
-    protected function getExistingLeadPhones(array $phones, int $accountId): array
-    {
-        if (empty($phones)) {
-            return [];
-        }
-
-        return Leads::whereIn('phone', $phones)
-            ->where('account_id', $accountId)
-            ->orderBy('id', 'desc')
-            ->pluck('phone')
-            ->unique()
-            ->toArray();
-    }
-
-    /**
-     * Log lead activity
-     */
-    protected function logLeadActivity(Leads $lead, array $data): void
-    {
-        $location = !empty($data['location_id']) 
-            ? Locations::with('city')->find($data['location_id']) 
-            : null;
-        $service = !empty($data['service_id']) 
-            ? Services::find($data['service_id']) 
-            : null;
-
-        ActivityLogger::logLeadCreated($lead, $location, $service);
     }
 
     /**
@@ -1852,5 +1900,40 @@ class LeadService
         }
 
         return ['action' => 'skip'];
+    }
+
+    /**
+     * Send SMS to lead
+     */
+    public function sendSMS(int $leadId, string $phone): array
+    {
+        // Currently disabled - returns success
+        // To enable, uncomment the implementation below
+        return ['status' => true];
+
+        /*
+        // SMS implementation when enabled:
+        $SMSTemplate = \App\Models\SMSTemplates::findOrFail(2);
+        $preparedText = $this->prepareSMSContent($leadId, $SMSTemplate->content);
+        $Settings = Settings::getAllRecordsDictionary(Auth::user()->account_id);
+        
+        $SMSObj = [
+            'username' => $Settings[1]->data,
+            'password' => $Settings[2]->data,
+            'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($phone)),
+            'text' => $preparedText,
+            'mask' => $Settings[3]->data,
+            'test_mode' => $Settings[4]->data,
+        ];
+        
+        $response = \App\Helpers\TelenorSMSAPI::SendSMS($SMSObj);
+        
+        \App\Models\SMSLogs::create(array_merge($SMSObj, $response, [
+            'lead_id' => $leadId,
+            'created_by' => Auth::id(),
+        ]));
+        
+        return $response;
+        */
     }
 }

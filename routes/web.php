@@ -366,11 +366,10 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // Custom User Form Routes
         Route::resource('custom_forms', CustomFormsController::class);
 
-        // Leads - View routes only (API handled in api.php)
+        // Leads - View routes only (all API operations handled in api.php)
         Route::get('leads', [LeadsController::class, 'index'])->name('leads.index');
         Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
         Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
-        Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
         
         // Memberships
         Route::post('memberships/upload', [MembershipsController::class, 'uploadMemberships'])->name('memberships.upload');
