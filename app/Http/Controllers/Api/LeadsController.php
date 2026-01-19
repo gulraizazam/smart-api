@@ -865,6 +865,29 @@ class LeadsController extends Controller
     }
 
     /**
+     * Send SMS to lead
+     */
+    public function sendSms(int $id): JsonResponse
+    {
+        if (!Gate::allows('leads_manage')) {
+            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+        }
+
+        try {
+            $lead = Leads::findOrFail($id);
+            $response = $this->leadService->sendSMS($lead->id, $lead->phone);
+
+            if ($response['status']) {
+                return ApiHelper::apiResponse($this->success, 'SMS has been sent successfully.');
+            }
+
+            return ApiHelper::apiResponse($this->error, 'SMS sending failed.');
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
      * Build export query
      */
     protected function buildExportQuery(Request $request)

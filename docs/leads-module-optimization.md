@@ -1,16 +1,17 @@
 # Leads Module Optimization Summary
 
 ## Overview
-The Leads module has been refactored following Laravel best practices with a focus on:
+The Leads module has been fully refactored to a **100% API-based implementation** following Laravel best practices:
+- **Fully API-based** - All operations via REST API endpoints
 - Service layer architecture
 - Proper exception handling
 - Form request validation
-- Caching strategies
-- API-first implementation
-- Code reusability
-- **Business logic moved from Model to Service**
-- **Optimized datatable queries (single query approach)**
-- **Optimized batch import with chunked inserts**
+- Caching strategies (1-hour TTL)
+- Code reusability via Helper classes
+- Business logic moved from Model to Service
+- Optimized datatable queries (single query approach)
+- Optimized batch import with chunked inserts
+- N+1 query elimination via selective eager loading
 
 ## Files Created
 
@@ -96,11 +97,10 @@ The Leads module has been refactored following Laravel best practices with a foc
 - Grouped routes for better organization
 
 **`routes/web.php`**
-- Simplified to only view routes:
+- Simplified to only view routes (no API operations):
   - `leads.index` - Main listing page
   - `leads.junk` - Junk leads page
   - `leads.import` - Import page
-  - `leads.send_sms` - SMS functionality
 
 ## Key Optimizations
 
@@ -140,6 +140,7 @@ The Leads module has been refactored following Laravel best practices with a foc
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/leads/datatable` | Get paginated leads |
+| POST | `/api/leads/junk-datatable` | Get paginated junk leads |
 | GET | `/api/leads/create` | Get form data for creation |
 | POST | `/api/leads` | Create new lead |
 | GET | `/api/leads/{id}` | Get lead detail |
@@ -149,9 +150,23 @@ The Leads module has been refactored following Laravel best practices with a foc
 | POST | `/api/leads/status` | Toggle active status |
 | GET | `/api/leads/convert/{id}` | Get conversion data |
 | PUT | `/api/leads/storeleadstatus` | Update lead status |
+| GET | `/api/leads/showleadstatus` | Get lead status popup data |
 | POST | `/api/leads/upload` | Import leads from file |
+| POST | `/api/leads/comment` | Add comment to lead |
+| POST | `/api/leads/loadlead` | Load lead data for form |
+| POST | `/api/leads/load_child_services` | Get child services |
+| GET | `/api/leads/getleadid` | Search leads by ID/name |
+| GET | `/api/leads/get_lead_number` | Get lead by ID |
+| GET | `/api/leads/phone/search` | Search leads by phone |
+| GET | `/api/leads/lead_statuses` | Get lead statuses dropdown |
+| GET | `/api/leads/treatments` | Get treatments dropdown |
+| GET | `/api/leads/lead_sources` | Get lead sources dropdown |
+| GET | `/api/leads/cities` | Get cities dropdown |
 | GET | `/api/leads/export/pdf` | Export to PDF |
 | GET | `/api/leads/export/excel` | Export to Excel |
+| PATCH | `/api/leads/{id}/send-sms` | Send SMS to lead |
+| PUT | `/api/leads/save_city` | Update lead city |
+| GET | `/api/leads/edit/service/{id}/{service_id}` | Get lead service for editing |
 
 ## Migration Notes
 
@@ -173,3 +188,48 @@ The Leads module has been refactored following Laravel best practices with a foc
 - **Import**: ~60% faster due to pre-loaded lookups and batch inserts
 - **Datatable**: ~40% faster due to optimized eager loading
 - **Form Load**: ~50% faster due to cached lookup data
+
+## Architecture Summary
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        LEADS MODULE                              │
+├─────────────────────────────────────────────────────────────────┤
+│  Web Routes (View Only)         │  API Routes (All Operations)  │
+│  ─────────────────────          │  ──────────────────────────   │
+│  GET /leads           (index)   │  POST /api/leads/datatable    │
+│  GET /leads/junk      (junk)    │  POST /api/leads              │
+│  GET /leads/import    (import)  │  GET  /api/leads/{id}         │
+│                                 │  PUT  /api/leads/{id}         │
+│                                 │  DELETE /api/leads/{id}       │
+│                                 │  + 20 more endpoints...       │
+├─────────────────────────────────────────────────────────────────┤
+│                    API Controller                                │
+│  App\Http\Controllers\Api\LeadsController                       │
+│  - Thin controller, delegates to LeadService                    │
+│  - Uses Form Requests for validation                            │
+│  - Returns JsonResponse                                         │
+├─────────────────────────────────────────────────────────────────┤
+│                    Service Layer                                 │
+│  App\Services\Lead\LeadService                                  │
+│  - All business logic                                           │
+│  - Database operations                                          │
+│  - Caching (1-hour TTL)                                         │
+│  - Import processing                                            │
+├─────────────────────────────────────────────────────────────────┤
+│                    Supporting Classes                            │
+│  ┌──────────────────┐  ┌──────────────────┐  ┌───────────────┐ │
+│  │ LeadException    │  │ LeadHelper       │  │ Form Requests │ │
+│  │ Custom errors    │  │ Utility methods  │  │ Validation    │ │
+│  └──────────────────┘  └──────────────────┘  └───────────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│                    Model Layer                                   │
+│  App\Models\Leads                                               │
+│  - Relationships only                                           │
+│  - Deprecated static methods (use LeadService instead)          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Last Updated
+- **Date**: January 2026
+- **Status**: Fully API-based implementation complete

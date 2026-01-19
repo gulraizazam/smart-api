@@ -5,22 +5,13 @@ namespace App\Http\Controllers\Admin;
 use Auth;
 use App\Helpers\ACL;
 use App\Models\User;
-use App\Models\Leads;
 use App\Models\Towns;
 use App\Models\Cities;
-use App\Models\SMSLogs;
 use App\Models\Services;
-use App\Models\Settings;
 use App\Models\LeadSources;
 use App\Models\LeadStatuses;
-use App\Models\SMSTemplates;
-use Illuminate\Http\Request;
-use App\Helpers\TelenorSMSAPI;
-use App\HelperModule\ApiHelper;
-use App\Helpers\GeneralFunctions;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Gate;
-use App\Services\Lead\LeadService;
 
 /**
  * Admin LeadsController - View Routes Only
@@ -30,12 +21,6 @@ use App\Services\Lead\LeadService;
  */
 class LeadsController extends Controller
 {
-    protected LeadService $leadService;
-
-    public function __construct(LeadService $leadService)
-    {
-        $this->leadService = $leadService;
-    }
 
     /**
      * Display leads listing page.
@@ -72,27 +57,6 @@ class LeadsController extends Controller
         }
 
         return view('admin.leads.import');
-    }
-
-    /**
-     * Send SMS to lead.
-     */
-    public function send_sms($id)
-    {
-        if (!Gate::allows('leads_manage')) {
-            return abort(401);
-        }
-
-        $lead = Leads::findOrFail($id);
-        $response = $this->sendSMS($lead->id, $lead->phone);
-
-        if ($response['status']) {
-            flash('SMS has been sent successfully.')->success()->important();
-        } else {
-            flash('SMS sending failed.')->error()->important();
-        }
-
-        return redirect()->back();
     }
 
     /**
@@ -163,30 +127,5 @@ class LeadsController extends Controller
     {
         // Legacy method - kept for backward compatibility
         return redirect()->route('admin.leads.index');
-    }
-
-    /**
-     * Send SMS helper method.
-     */
-    private function sendSMS($leadId, $phone)
-    {
-        // Currently disabled - returns success
-        return ['status' => true];
-
-        // Uncomment below to enable SMS sending:
-        // $SMSTemplate = SMSTemplates::findOrFail(2);
-        // $preparedText = $this->leadService->prepareSMSContent($leadId, $SMSTemplate->content);
-        // $Settings = Settings::getAllRecordsDictionary(Auth::User()->account_id);
-        // $SMSObj = [
-        //     'username' => $Settings[1]->data,
-        //     'password' => $Settings[2]->data,
-        //     'to' => GeneralFunctions::prepareNumber(GeneralFunctions::cleanNumber($phone)),
-        //     'text' => $preparedText,
-        //     'mask' => $Settings[3]->data,
-        //     'test_mode' => $Settings[4]->data,
-        // ];
-        // $response = TelenorSMSAPI::SendSMS($SMSObj);
-        // SMSLogs::create(array_merge($SMSObj, $response, ['lead_id' => $leadId, 'created_by' => Auth::user()->id]));
-        // return $response;
     }
 }

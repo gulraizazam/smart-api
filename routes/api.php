@@ -508,6 +508,9 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         Route::put('storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('storeleadstatus');
         Route::put('save_city', [LeadsController::class, 'saveCity'])->name('save_city');
         
+        // PATCH routes
+        Route::patch('{id}/send-sms', [LeadsController::class, 'sendSms'])->name('send_sms');
+        
         // Wildcard {id} routes - MUST be last
         Route::get('{id}', [LeadsController::class, 'detail'])->name('show');
         Route::get('{id}/edit', [LeadsController::class, 'edit'])->name('edit');
