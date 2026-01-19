@@ -144,11 +144,12 @@ class RoleService
             }
         }
         
-        $groupPermissions = $baseQuery->get();
+        $groupPermissions = $baseQuery->orderBy('sort_order', 'asc')->get();
         $parentIds = $groupPermissions->pluck('id')->toArray();
-        
+
         // Get all sub-permissions in one query, grouped by parent_id for efficient lookup
         $subPermissions = Permission::whereIn('parent_id', $parentIds)
+            ->orderBy('sort_order', 'asc')
             ->get()
             ->groupBy('parent_id');
 

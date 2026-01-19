@@ -448,7 +448,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         /*Route::resource('appointments', AppointmentsController::class)->only('index');*/
         Route::resource('consultancy', AppointmentsController::class)->only('index')->middleware('permission:appointments_manage');
-        Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:appointments_services');
+        Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:treatments_services');
 
         /*service routes*/
 
