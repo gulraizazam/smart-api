@@ -1011,13 +1011,18 @@ function setFilters(filter_values, active_filters) {
 }
 
 function hideShowAdvanceFilters(active_filters) {
-    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
-        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
-        || (typeof active_filters.lead_status_id !== 'undefined' && active_filters.lead_status_id != '')
-        || (typeof active_filters.region_id !== 'undefined' && active_filters.region_id != '')
-        || (typeof active_filters.service_id !== 'undefined' && active_filters.service_id != '')
+    // Only check filters that are actually in the advance filters section
+    // (service_id for non-junk, gender_id, created_at, created_by)
+    let hasAdvanceFilter = (typeof active_filters.created_at !== 'undefined' && active_filters.created_at != '')
         || (typeof active_filters.created_by !== 'undefined' && active_filters.created_by != '')
-    ) {
+        || (typeof active_filters.gender_id !== 'undefined' && active_filters.gender_id != '');
+    
+    // Service is in advance filters only for non-junk leads
+    if (lead_type != 'junk') {
+        hasAdvanceFilter = hasAdvanceFilter || (typeof active_filters.service_id !== 'undefined' && active_filters.service_id != '');
+    }
+    
+    if (hasAdvanceFilter) {
         $(".advance-filters").show();
         $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
     }
