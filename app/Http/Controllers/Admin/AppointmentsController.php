@@ -115,7 +115,7 @@ class AppointmentsController extends Controller
 
     public function treatment()
     {
-        if (! Gate::allows('treatments_services')) {
+        if (! Gate::allows('treatments_manage')) {
             return abort(404);
         }
 
