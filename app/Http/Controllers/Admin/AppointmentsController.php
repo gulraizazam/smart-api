@@ -1264,7 +1264,7 @@ class AppointmentsController extends Controller
 
         $treatmentslug = AppointmentTypes::where('slug', '=', 'treatment')->first();
 
-        if (Gate::allows('treatments_services')) {
+        if (Gate::allows('treatments_manage')) {
             $count_query = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
                     ->where('users.user_type_id', '=', config('constants.patient_id'));
@@ -1313,7 +1313,7 @@ class AppointmentsController extends Controller
         $records = [];
         $records['data'] = [];
          $invoice_status = InvoiceStatuses::where('slug', '=', 'paid')->first();
-        if (Gate::allows('treatments_services')) {
+        if (Gate::allows('treatments_manage')) {
             $resultQuery = Appointments::join('users', function ($join) {
                 $join->on('users.id', '=', 'appointments.patient_id')
                     ->where('users.user_type_id', '=', config('constants.patient_id'));
