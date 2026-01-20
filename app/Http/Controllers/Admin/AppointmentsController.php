@@ -115,6 +115,7 @@ class AppointmentsController extends Controller
 
     public function treatment()
     {
+        
         if (! Gate::allows('treatments_manage')) {
             return abort(404);
         }
@@ -1134,6 +1135,7 @@ class AppointmentsController extends Controller
     }
     private function getDefaultTreatmentListing(Request $request)
     {
+       
         $where = [];
         /*
          * Reset form filter is applied
@@ -1463,6 +1465,7 @@ class AppointmentsController extends Controller
             'create' => Gate::allows('treatments_create'),
             'log' => Gate::allows('treatments_log'),
             'status' => Gate::allows('treatments_appointment_status'),
+            'schedule_edit' => Gate::allows('treatments_edit'),
             'invoice' => Gate::allows('treatments_invoice'),
             'invoice_display' => Gate::allows('treatments_invoice_display'),
             'image_manage' => Gate::allows('treatments_image_manage'),
