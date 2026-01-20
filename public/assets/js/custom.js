@@ -1147,6 +1147,26 @@ function submitForm(action, method, data, callback, form = '') {
                     'message': 'You are not authorized to access this resource',
                 });
                 hideSpinnerRestForm();
+            } else if (xhr.status == '422') {
+                // Laravel validation errors
+                let errors = xhr.responseJSON.errors;
+                let errorMessage = '';
+                if (errors) {
+                    // Collect all validation error messages
+                    Object.keys(errors).forEach(function(key) {
+                        if (Array.isArray(errors[key])) {
+                            errors[key].forEach(function(msg) {
+                                errorMessage += msg + '<br>';
+                            });
+                        }
+                    });
+                }
+                callback({
+                    'status': 0,
+                    'message': errorMessage || xhr.responseJSON.message || 'Validation failed',
+                    'errors': errors
+                });
+                hideSpinnerRestForm();
             } else if (xhr.status == '500') {
                 callback({
                     'status': 0,
@@ -1213,6 +1233,32 @@ function submitFileForm(action, method, form_id, callback, no_reset = false) {
                 callback({
                     'status': 0,
                     'message': 'You are not authorized to access this resource',
+                });
+                hideSpinnerRestForm();
+            } else if (xhr.status == '422') {
+                // Laravel validation errors
+                let errors = xhr.responseJSON.errors;
+                let errorMessage = '';
+                if (errors) {
+                    // Collect all validation error messages
+                    Object.keys(errors).forEach(function(key) {
+                        if (Array.isArray(errors[key])) {
+                            errors[key].forEach(function(msg) {
+                                errorMessage += msg + '<br>';
+                            });
+                        }
+                    });
+                }
+                callback({
+                    'status': 0,
+                    'message': errorMessage || xhr.responseJSON.message || 'Validation failed',
+                    'errors': errors
+                });
+                hideSpinnerRestForm();
+            } else if (xhr.status == '500') {
+                callback({
+                    'status': 0,
+                    'message': xhr.responseJSON.message,
                 });
                 hideSpinnerRestForm();
             } else {
