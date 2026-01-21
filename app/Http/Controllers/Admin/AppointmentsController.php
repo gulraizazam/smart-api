@@ -2002,7 +2002,7 @@ class AppointmentsController extends Controller
         } else {
             $employees = [];
         }
-        $services = Services::pluck('name', 'id');
+        $services = Services::where('parent_id', '=', '0')->pluck('name', 'id');
         // $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
         // if (count($serviceIds)) {
         //     $services = Services::whereIn('id', $serviceIds)->get()->pluck('name', 'id');
