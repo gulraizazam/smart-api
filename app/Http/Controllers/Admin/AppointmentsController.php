@@ -2364,8 +2364,21 @@ class AppointmentsController extends Controller
         $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]); // 2 = Arrived, 16 = Converted
         $canEditDoctorAfterArrived = Gate::allows('update_consultation_doctor');
         
+        // Debug logging
+        \Log::info('Update Consultation Validation Debug', [
+            'appointment_id' => $id,
+            'appointment_status_id' => $appointment->appointment_status_id,
+            'is_arrived_or_converted' => $isArrivedOrConverted,
+            'has_permission' => $canEditDoctorAfterArrived,
+            'user_id' => Auth::id(),
+            'doctor_id' => $request->doctor_id,
+            'location_id' => $request->location_id,
+        ]);
+        
         // Skip doctor-service validation if arrived/converted with permission
         $skipDoctorServiceValidation = $isArrivedOrConverted && $canEditDoctorAfterArrived;
+        
+        \Log::info('Skip validation?', ['skip' => $skipDoctorServiceValidation]);
         
         if (!$skipDoctorServiceValidation) {
             // Determine the service being updated
