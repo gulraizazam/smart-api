@@ -37,6 +37,17 @@ class PackageAdvances extends BaseModal
 
     protected static $_table = 'package_advances';
 
+    /**
+     * Override create method to ensure id is never set manually
+     */
+    public static function create(array $attributes = [])
+    {
+        // Explicitly unset id to prevent id=0 issue
+        unset($attributes['id']);
+        
+        return static::query()->create($attributes);
+    }
+
     /*
      * get the payment modes
      * */
