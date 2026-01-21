@@ -665,7 +665,8 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::put('appointments/send/logged_sms', [AppointmentsController::class, 'sendLogSMS'])->name('appointments.resend_sms');
 
-    Route::resource('consultancy', AppointmentsController::class)->except('index');
+    // Legacy consultancy resource route - DEPRECATED, use /api/consultancy/* routes instead
+    // Route::resource('consultancy', AppointmentsController::class)->except('index');
 
     Route::post('appointments/load-doctor-rota', [AppointmentsController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');
 
@@ -760,6 +761,8 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
         Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('index');
         Route::post('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'store'])->name('store');
         Route::put('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'destroy'])->name('destroy');
+        Route::post('{id}/schedule', [\App\Http\Controllers\Api\ConsultancyController::class, 'schedule'])->name('schedule');
         Route::get('scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'scheduled'])->name('scheduled');
         Route::get('non-scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'nonScheduled'])->name('non_scheduled');
         Route::get('statistics/data', [\App\Http\Controllers\Api\ConsultancyController::class, 'statistics'])->name('statistics');

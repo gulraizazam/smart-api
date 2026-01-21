@@ -765,7 +765,10 @@ function setEditData(response) {
 
         let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
-            service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            // Skip "All Services" option in edit consultation modal
+            if (service[1] !== 'All Services') {
+                service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
         });
 
         let doctor_option = '<option value="">Select a Doctor</option>';
@@ -840,7 +843,10 @@ function setTreatmentEditData(response) {
 
         let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
-            service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            // Skip "All Services" option in edit treatment modal
+            if (service[1] !== 'All Services') {
+                service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
         });
 
         let city_option = '<option value="">Select a City</option>';
@@ -993,24 +999,22 @@ function setSmsLogs(response) {
 
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function () {
-        if ($("#appoint_search_phone").val() !== "" && ($("#appoint_search_phone").val().length < 10 || $("#appoint_search_phone").val().length > 13)) {
+        // Check phone validation only if phone field exists (it was removed from filters)
+        if ($("#appoint_search_phone").length && $("#appoint_search_phone").val() !== "" && ($("#appoint_search_phone").val().length < 10 || $("#appoint_search_phone").val().length > 13)) {
             toastr.error("Please enter valid phone number");
             return;
         }
         let filters = {
             delete: '',
             patient_id: $("#appointment_patient_id").val(),
-            phone: $("#appoint_search_phone").val(),
+            phone: $("#appoint_search_phone").val() || '',
             date_from: $("#appoint_search_start").val(),
             date_to: $("#appoint_appoint_end").val(),
             appointment_type_id: $("#appoint_search_type").val(),
-            service_id: $("#appoint_search_service").val(),
-            region_id: $("#appoint_search_region").val(),
-            city_id: $("#appoint_search_city").val(),
+            service_id: $("#appoint_search_service").val() || '',
             location_id: $("#appoint_search_centre").val(),
             doctor_id: $("#appoint_search_doctor").val(),
             appointment_status_id: $("#appoint_search_status").val(),
-            consultancy_type: $("#appoint_search_consultancy_type").val(),
             created_from: $("#appoint_search_created_from").val(),
             created_to: $("#appoint_search_created_to").val(),
             created_by: $("#appoint_search_created_by").val(),
@@ -1126,11 +1130,10 @@ function setFilters(filter_values, active_filters) {
             region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
         });
 
-        let service_options = '';
+        let service_options = '<option value="">All</option>';
         Object.values(services).forEach(function (value, index) {
-            if (value.name == 'All Services') {
-                service_options += '<option value="' + value.id + '" selected>' + value.name + '</option>';
-            } else {
+            // Skip "All Services" record from database
+            if (value.name !== 'All Services') {
                 service_options += '<option value="' + value.id + '">' + value.name + '</option>';
             }
         });
@@ -1186,19 +1189,11 @@ function setFilters(filter_values, active_filters) {
             $("#appoint_search_city").html(city_options);
         }
 
-        let region = $("#appoint_search_region").val();
-        if (region == null || region == '') {
-            $("#appoint_search_region").html(region_options);
-        }
-
         let service = $("#appoint_search_service").val();
         if (service == null) {
             $("#appoint_search_service").html(service_options);
-            $('#appoint_search_service').val(13).trigger('change')
-        }
-        let consultancy_type = $("#appoint_search_consultancy_type").val();
-        if (consultancy_type == null || consultancy_type == '') {
-            $("#appoint_search_consultancy_type").html(consultancy_type_options);
+            // Set to empty string to show "All" option by default
+            $("#appoint_search_service").val('').trigger('change');
         }
 
         $("#appoint_search_created_by").val(active_filters.created_by);
@@ -1208,10 +1203,7 @@ function setFilters(filter_values, active_filters) {
         $("#appoint_search_status").val(active_filters.appointment_status_id);
         $("#appoint_search_doctor").val(active_filters.doctor_id);
         $("#appoint_search_centre").val(active_filters.location_id);
-        $("#appoint_search_city").val(active_filters.city_id);
-        $("#appoint_search_region").val(active_filters.region_id);
         $("#appoint_search_service").val(active_filters.service_id);
-        $("#appoint_search_consultancy_type").val(active_filters.consultancy_type);
         /*For Consultancy filter*/
         let city_value = $("#consultancy_city_filter").val();
 
@@ -1230,9 +1222,15 @@ function setFilters(filter_values, active_filters) {
 
 function resetCustomFilters() {
 
+    // Reset patient search Select2 field
+    $('#appointment_patient_id').val(null).trigger('change');
     $('.appointment_patient_id').val(null).trigger('change');
+    
+    // Reset all other filter fields
     $(".filter-field").val('');
-    // $('.select2').val(null).trigger('change');
+    
+    // Reset Select2 dropdowns
+    $('.select2').val('').trigger('change');
 
     setQueryStringParameter('type');
     setQueryStringParameter('from');

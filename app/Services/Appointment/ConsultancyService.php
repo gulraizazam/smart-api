@@ -118,4 +118,34 @@ class ConsultancyService extends AppointmentService
         $filters['appointment_type_id'] = $this->consultancyTypeId;
         return $this->getAppointmentStatistics($filters);
     }
+
+    public function deleteConsultancy($id)
+    {
+        $appointment = Appointments::where([
+            'id' => $id,
+            'account_id' => $this->getAccountId(),
+            'appointment_type_id' => $this->consultancyTypeId
+        ])->first();
+
+        if (!$appointment) {
+            throw AppointmentException::notFound();
+        }
+
+        return $this->deleteAppointment($id);
+    }
+
+    public function scheduleConsultancy($id, array $data)
+    {
+        $appointment = Appointments::where([
+            'id' => $id,
+            'account_id' => $this->getAccountId(),
+            'appointment_type_id' => $this->consultancyTypeId
+        ])->first();
+
+        if (!$appointment) {
+            throw AppointmentException::notFound();
+        }
+
+        return $this->scheduleAppointment($id, $data);
+    }
 }

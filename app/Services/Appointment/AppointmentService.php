@@ -28,8 +28,29 @@ class AppointmentService
 
     public function __construct()
     {
-        $this->account_id = Auth::user()->account_id ?? null;
-        $this->user_id = Auth::id();
+        // Properties will be set lazily when needed via getAccountId() and getUserId()
+    }
+
+    protected function getAccountId()
+    {
+        if (!$this->account_id) {
+            if (!Auth::check()) {
+                throw new \Exception('User must be authenticated to use AppointmentService');
+            }
+            $this->account_id = Auth::user()->account_id;
+        }
+        return $this->account_id;
+    }
+
+    protected function getUserId()
+    {
+        if (!$this->user_id) {
+            if (!Auth::check()) {
+                throw new \Exception('User must be authenticated to use AppointmentService');
+            }
+            $this->user_id = Auth::id();
+        }
+        return $this->user_id;
     }
 
     public function getAppointmentsList($filters, $appointmentTypeId = null)
@@ -45,13 +66,13 @@ class AppointmentService
             'user',
             'user_converted_by',
             'user_updated_by'
-        ])->where('account_id', $this->account_id);
+        ])->where('account_id', $this->getAccountId());
 
         if ($appointmentTypeId) {
             $query->where('appointment_type_id', $appointmentTypeId);
         }
 
-        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->account_id);
+        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
             $query->where('base_appointment_status_id', '!=', $cancelledStatus->id);
         }
@@ -144,7 +165,7 @@ class AppointmentService
                     'email' => $data['email'] ?? null,
                     'gender' => $data['gender'] ?? 0,
                     'referred_by' => $data['referred_by'] ?? null,
-                    'account_id' => $this->account_id,
+                    'account_id' => $this->getAccountId(),
                     'user_type_id' => 3, // Patient user type
                     'password' => \Hash::make('12345678'),
                     'active' => 1,
@@ -223,7 +244,7 @@ class AppointmentService
                 $data['patient_id'] = $patient->id;
             }
 
-            $appointmentData = AppointmentHelper::prepareAppointmentData($data, $this->account_id, $this->user_id, false);
+            $appointmentData = AppointmentHelper::prepareAppointmentData($data, $this->getAccountId(), $this->getUserId(), false);
 
             if (isset($data['lead_id'])) {
                 $lead = Leads::find($data['lead_id']);
@@ -270,7 +291,7 @@ class AppointmentService
                 $appointment
             );
 
-            AppointmentHelper::clearAppointmentCache($this->account_id);
+            AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
             
@@ -330,17 +351,17 @@ class AppointmentService
         try {
             $appointment = Appointments::where([
                 'id' => $id,
-                'account_id' => $this->account_id
+                'account_id' => $this->getAccountId()
             ])->first();
 
             if (!$appointment) {
                 throw AppointmentException::notFound();
             }
 
-            $appointmentData = AppointmentHelper::prepareAppointmentData($data, $this->account_id, $this->user_id, true);
+            $appointmentData = AppointmentHelper::prepareAppointmentData($data, $this->getAccountId(), $this->getUserId(), true);
 
             if (isset($data['reschedule']) && $data['reschedule'] == 1) {
-                $appointmentData['converted_by'] = $this->user_id;
+                $appointmentData['converted_by'] = $this->getUserId();
             }
 
             // Schedule conflict check disabled to allow multiple bookings on the same slot
@@ -371,7 +392,7 @@ class AppointmentService
                 $id
             );
 
-            AppointmentHelper::clearAppointmentCache($this->account_id);
+            AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
             return $appointment->fresh([
@@ -394,14 +415,14 @@ class AppointmentService
         try {
             $appointment = Appointments::where([
                 'id' => $id,
-                'account_id' => $this->account_id
+                'account_id' => $this->getAccountId()
             ])->first();
 
             if (!$appointment) {
                 throw AppointmentException::notFound();
             }
 
-            if (AppointmentHelper::isChildExists($id, $this->account_id)) {
+            if (AppointmentHelper::isChildExists($id, $this->getAccountId())) {
                 throw AppointmentException::cannotDelete();
             }
 
@@ -414,7 +435,7 @@ class AppointmentService
             AppointmentsDailyStats::where('appointment_id', $id)->delete();
 
             $appointment->update([
-                'deleted_by' => $this->user_id,
+                'deleted_by' => $this->getUserId(),
                 'arrived_at' => null,
                 'converted_at' => null
             ]);
@@ -422,7 +443,7 @@ class AppointmentService
             $appointment->delete();
 
             Activity::where('appointment_id', $id)->update([
-                'deleted_by' => $this->user_id,
+                'deleted_by' => $this->getUserId(),
                 'action' => 'deleted',
                 'deleted_date' => Carbon::now()->format('Y-m-d'),
                 'updated_at' => Carbon::now()
@@ -436,7 +457,7 @@ class AppointmentService
                 '0'
             );
 
-            AppointmentHelper::clearAppointmentCache($this->account_id);
+            AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
             return true;
@@ -452,7 +473,7 @@ class AppointmentService
         try {
             $appointment = Appointments::where([
                 'id' => $id,
-                'account_id' => $this->account_id
+                'account_id' => $this->getAccountId()
             ])->first();
 
             if (!$appointment) {
@@ -467,7 +488,7 @@ class AppointmentService
             $updateData = [
                 'appointment_status_id' => $data['appointment_status_id'],
                 'base_appointment_status_id' => $status->base_appointment_status_id ?? $data['appointment_status_id'],
-                'updated_by' => $this->user_id,
+                'updated_by' => $this->getUserId(),
                 'updated_at' => Carbon::now()
             ];
 
@@ -481,7 +502,7 @@ class AppointmentService
 
             if ($status->is_converted ?? false) {
                 $updateData['converted_at'] = Carbon::now();
-                $updateData['converted_by'] = $this->user_id;
+                $updateData['converted_by'] = $this->getUserId();
             }
 
             $oldData = $appointment->toArray();
@@ -496,7 +517,7 @@ class AppointmentService
                 $id
             );
 
-            AppointmentHelper::clearAppointmentCache($this->account_id);
+            AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
             return $appointment->fresh(['appointment_status', 'appointment_status_base']);
@@ -519,7 +540,7 @@ class AppointmentService
         ])->whereNotNull('scheduled_date')
           ->whereNotNull('scheduled_time');
 
-        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->account_id);
+        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
             $query->where(function($q) use ($cancelledStatus) {
                 $q->where('appointment_status_id', '!=', $cancelledStatus->id)
@@ -541,11 +562,11 @@ class AppointmentService
             'location',
             'doctor',
             'patient'
-        ])->where('account_id', $this->account_id)
+        ])->where('account_id', $this->getAccountId())
           ->whereNull('scheduled_date')
           ->whereNull('scheduled_time');
 
-        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->account_id);
+        $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
         if ($cancelledStatus) {
             $query->where(function($q) use ($cancelledStatus) {
                 $q->where('appointment_status_id', '!=', $cancelledStatus->id)
@@ -562,13 +583,23 @@ class AppointmentService
     {
         DB::beginTransaction();
         try {
-            $appointment = Appointments::where([
-                'id' => $id,
-                'account_id' => $this->account_id
-            ])->first();
+            $accountId = $this->getAccountId();
+            
+            // Find appointment by ID, allowing for NULL account_id or matching account_id
+            $appointment = Appointments::where('id', $id)
+                ->where(function($query) use ($accountId) {
+                    $query->where('account_id', $accountId)
+                          ->orWhereNull('account_id');
+                })
+                ->first();
 
             if (!$appointment) {
                 throw AppointmentException::notFound();
+            }
+            
+            // If appointment has NULL account_id, set it to current user's account
+            if (is_null($appointment->account_id)) {
+                $appointment->account_id = $accountId;
             }
 
             $scheduleData = AppointmentHelper::formatScheduleData(
@@ -592,7 +623,7 @@ class AppointmentService
             // }
 
             $updateData = array_merge($scheduleData, [
-                'updated_by' => $this->user_id,
+                'updated_by' => $this->getUserId(),
                 'updated_at' => Carbon::now()
             ]);
 
@@ -605,12 +636,12 @@ class AppointmentService
             }
 
             if (isset($data['reschedule']) && $data['reschedule']) {
-                $updateData['converted_by'] = $this->user_id;
+                $updateData['converted_by'] = $this->getUserId();
             }
 
             $appointment->update($updateData);
 
-            AppointmentHelper::clearAppointmentCache($this->account_id);
+            AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
             return $appointment->fresh(['doctor', 'resource', 'location']);
@@ -642,7 +673,7 @@ class AppointmentService
             'hasInvoices'
         ])->where([
             'id' => $id,
-            'account_id' => $this->account_id
+            'account_id' => $this->getAccountId()
         ])->first();
 
         if (!$appointment) {
@@ -727,10 +758,10 @@ class AppointmentService
 
     public function getAppointmentStatistics($filters = [])
     {
-        $cacheKey = "appointment_stats_{$this->account_id}_" . md5(json_encode($filters));
+        $cacheKey = "appointment_stats_{$this->getAccountId()}_" . md5(json_encode($filters));
 
         return Cache::remember($cacheKey, 300, function () use ($filters) {
-            $query = Appointments::where('account_id', $this->account_id);
+            $query = Appointments::where('account_id', $this->getAccountId());
             $query = $this->applyFilters($query, $filters);
 
             return [
