@@ -1299,11 +1299,13 @@ class AppointmentsController extends Controller
      *
      * @return Validator $validator;
      */
-    protected function verifyUpdateFields(Request $request)
+    protected function verifyUpdateFields(Request $request, $id = null)
     {
         // Get appointment to check status
         $appointment = null;
-        if ($request->has('id') || $request->route('id')) {
+        if ($id) {
+            $appointment = Appointments::find($id);
+        } elseif ($request->has('id') || $request->route('id')) {
             $appointmentId = $request->input('id') ?? $request->route('id');
             $appointment = Appointments::find($appointmentId);
         }
@@ -1314,8 +1316,20 @@ class AppointmentsController extends Controller
                                 Gate::allows('update_consultation_doctor') || 
                                 Gate::allows('update_consultation_schedule');
         
+        // Debug logging
+        \Log::info('verifyUpdateFields Debug', [
+            'appointment_id' => $appointment ? $appointment->id : null,
+            'appointment_status_id' => $appointment ? $appointment->appointment_status_id : null,
+            'is_arrived_or_converted' => $isArrivedOrConverted,
+            'has_any_edit_permission' => $hasAnyEditPermission,
+            'request_has_scheduled_date' => $request->has('scheduled_date'),
+            'scheduled_date_value' => $request->input('scheduled_date'),
+            'request_all' => $request->all(),
+        ]);
+        
         // For arrived/converted with permissions, make fields conditionally required
         if ($isArrivedOrConverted && $hasAnyEditPermission) {
+            \Log::info('Using NULLABLE validation rules');
             return $validator = Validator::make($request->all(), [
                 'treatment_id' => 'nullable',
                 'scheduled_date' => 'nullable',
@@ -1325,6 +1339,7 @@ class AppointmentsController extends Controller
         }
         
         // For other cases, all fields are required
+        \Log::info('Using REQUIRED validation rules');
         return $validator = Validator::make($request->all(), [
             'treatment_id' => 'required',
             'scheduled_date' => 'required',
@@ -2373,10 +2388,34 @@ class AppointmentsController extends Controller
      */
     public function update(Request $request, $id)
     {
-
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
+
+        try {
+            $updateService = new \App\Services\Appointment\ConsultancyUpdateService();
+            $appointment = $updateService->updateConsultation($id, $request->all());
+            
+            return ApiHelper::apiResponse($this->success, 'Record has been updated successfully.', true, [
+                'appointment' => $appointment
+            ]);
+        } catch (\App\Exceptions\AppointmentException $e) {
+            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+        } catch (\Exception $e) {
+            \Log::error('Consultation update error', [
+                'appointment_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return ApiHelper::apiResponse($this->success, 'An error occurred while updating the consultation.', false);
+        }
+    }
+
+    /**
+     * OLD UPDATE METHOD - BACKUP (can be removed after testing)
+     */
+    public function updateOld(Request $request, $id)
+    {
 
         // Get appointment to check status
         $appointment = Appointments::find($id);
@@ -2528,16 +2567,25 @@ class AppointmentsController extends Controller
         // Proceed with update
         if (true) {
           
-            $validator = $this->verifyUpdateFields($request);
+            $validator = $this->verifyUpdateFields($request, $id);
             if ($validator->fails()) {
                 return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
             }
             $appointment = Appointments::find($id);
             $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
-            if (! Gate::allows('edit_after_arrived') && strtotime($request->scheduled_date) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
+            // Only check back-date if scheduled_date is provided in request
+            if ($request->has('scheduled_date') && $request->scheduled_date && ! Gate::allows('edit_after_arrived') && strtotime($request->scheduled_date) < strtotime(date('Y-m-d')) && $back_date_config->data == 0) {
                 return ApiHelper::apiResponse($this->success, 'Scheduled date is older than today. Please select today or future date', false);
             }
-            if (! Gate::allows('edit_after_arrived')) {
+            // Check if this is arrived/converted with edit permissions
+            $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]);
+            $hasAnyEditPermission = Gate::allows('update_consultation_service') || 
+                                    Gate::allows('update_consultation_doctor') || 
+                                    Gate::allows('update_consultation_schedule');
+            
+            // Skip invoice check for arrived/converted with permissions (they can edit specific fields)
+            // For other cases, check invoice only if user doesn't have edit_after_arrived permission
+            if (!($isArrivedOrConverted && $hasAnyEditPermission) && ! Gate::allows('edit_after_arrived')) {
                 if ($appointment) {
                     $check_invoice = Invoices::where('appointment_id', $appointment->id)->first();
                     if ($check_invoice) {
@@ -2587,17 +2635,24 @@ class AppointmentsController extends Controller
             $oldPatientGender = $patient->gender;
             $isRescheduled = false;
             
-            if ($appointment->scheduled_date != $request->scheduled_date) {
-
+            // Only check for rescheduling if scheduled_date is provided in request
+            if ($request->has('scheduled_date') && $request->scheduled_date && $appointment->scheduled_date != $request->scheduled_date) {
                 $appointment_data['converted_by'] = Auth::user()->id;
                 Activity::where('appointment_id',$id)->update(['action'=>'rescheduled','rescheduled_by'=>Auth::id(),'schedule_date'=>$request->scheduled_date,'updated_at'=>Carbon::now()]);
                 $isRescheduled = true;
             }
-            if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
+            
+            // Only check for time change if scheduled_time is provided in request
+            if ($request->has('scheduled_time') && $request->scheduled_time && $appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
                 $appointment_data['converted_by'] = Auth::user()->id;
                 $isRescheduled = true;
             }
-            if ((string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id) {
+            
+            // Only check for location/doctor change if they are provided in request
+            $locationChanged = $request->has('location_id') && (string) $appointment->location_id !== $request->location_id;
+            $doctorChanged = $request->has('doctor_id') && $request->doctor_id && (string) $appointment->doctor_id !== $request->doctor_id;
+            
+            if ($locationChanged || $doctorChanged) {
                 $appointment_data['updated_by'] = Auth::user()->id;
             }
             if ($request->has('consultancy_type')) {
@@ -2610,10 +2665,31 @@ class AppointmentsController extends Controller
                     $appointment_data['updated_by'] = Auth::user()->id;
                 }
             }
+            
             $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
-            $appointment_data['scheduled_date'] = Carbon::parse($appointment_data['scheduled_date'])->format('Y-m-d');
-            $appointment_data['scheduled_time'] = Carbon::parse($appointment_data['scheduled_time'])->format('H:i:s');
+            
+            // Use scheduled_date from request if provided, otherwise keep existing
+            if ($request->has('scheduled_date') && $request->scheduled_date) {
+                $appointment_data['scheduled_date'] = Carbon::parse($request->scheduled_date)->format('Y-m-d');
+            } else {
+                $appointment_data['scheduled_date'] = $appointment->scheduled_date;
+            }
+            
+            // Use scheduled_time from request if provided, otherwise keep existing
+            if ($request->has('scheduled_time') && $request->scheduled_time) {
+                $appointment_data['scheduled_time'] = Carbon::parse($request->scheduled_time)->format('H:i:s');
+            } else {
+                $appointment_data['scheduled_time'] = $appointment->scheduled_time;
+            }
+            
             $appointment_data['location_id'] = $request->location_id ?? $appointment->location_id;
+            
+            // Use doctor_id from request if provided, otherwise keep existing
+            if ($request->has('doctor_id') && $request->doctor_id) {
+                $appointment_data['doctor_id'] = $request->doctor_id;
+            } else {
+                $appointment_data['doctor_id'] = $appointment->doctor_id;
+            }
             
             // Update service_id if provided in request
             // treatment_id field contains the selected service from the dropdown
