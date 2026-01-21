@@ -296,6 +296,33 @@ class AppointmentService
                 $lead = Leads::find($data['lead_id']);
                 
                 if ($lead) {
+                    // Check if consultation service is different from lead service
+                    if (isset($appointment->service_id) && $lead->service_id != $appointment->service_id) {
+                        // Update lead's service_id
+                        $lead->update([
+                            'service_id' => $appointment->service_id,
+                            'updated_by' => $this->getUserId(),
+                            'updated_at' => Carbon::now()
+                        ]);
+                        
+                        // Create new lead_services record for the new service
+                        $existingLeadService = \App\Models\LeadsServices::where([
+                            'lead_id' => $lead->id,
+                            'service_id' => $appointment->service_id
+                        ])->first();
+                        
+                        if (!$existingLeadService) {
+                            \App\Models\LeadsServices::create([
+                                'lead_id' => $lead->id,
+                                'service_id' => $appointment->service_id,
+                                'account_id' => $this->getAccountId(),
+                                'status' => 1,
+                                'created_at' => Carbon::now(),
+                                'updated_at' => Carbon::now()
+                            ]);
+                        }
+                    }
+                    
                     // Get 'Booked' lead status
                     $bookedStatus = \App\Models\LeadStatuses::where('account_id', $this->getAccountId())
                         ->where('name', 'Booked')
