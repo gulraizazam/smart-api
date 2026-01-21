@@ -30,13 +30,8 @@ jQuery(document).ready(function() {
         loadLead(patient);
     });
 
-    patientSearch('appointment_patient_id');
-
-    $(document).on("click", ".croxcli", function () {
-        $(this).parent('div').find('.search_field').val('').change()
-       // $('.search_field').val('').change();
-        $('.appointment_patient_id').val(null).trigger('change');
-    });
+    // Patient search now uses Select2 with optimized API (same as referred by field)
+    // Initialized in referred-by-patient-search.js
 
 });
 

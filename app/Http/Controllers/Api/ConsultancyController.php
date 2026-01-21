@@ -155,4 +155,47 @@ class ConsultancyController extends Controller
             return ApiHelper::apiException($e);
         }
     }
+
+    public function destroy($id)
+    {
+        try {
+            if (!Gate::allows('appointments_manage')) {
+                throw AppointmentException::unauthorized();
+            }
+
+            $this->consultancyService->deleteConsultancy($id);
+
+            return ApiHelper::apiResponse(200, 'Consultancy deleted successfully.', true);
+        } catch (AppointmentException $e) {
+            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Error deleting consultancy: ' . $e->getMessage());
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    public function schedule(Request $request, $id)
+    {
+        try {
+            if (!Gate::allows('appointments_manage')) {
+                throw AppointmentException::unauthorized();
+            }
+
+            $data = [
+                'start' => $request->start,
+                'doctor_id' => $request->doctor_id,
+                'location_id' => $request->location_id,
+                'reschedule' => true,
+            ];
+
+            $consultancy = $this->consultancyService->scheduleConsultancy($id, $data);
+
+            return ApiHelper::apiResponse(200, 'Consultancy scheduled successfully.', $consultancy);
+        } catch (AppointmentException $e) {
+            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+        } catch (\Exception $e) {
+            Log::error('Error scheduling consultancy: ' . $e->getMessage());
+            return ApiHelper::apiException($e);
+        }
+    }
 }
