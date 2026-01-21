@@ -1433,14 +1433,27 @@ var AppointScheduleValidation = function () {
         });
         validate.on('core.form.valid', function (event) {
             // Temporarily enable disabled fields so they're included in serialization
-            var disabledFields = $(form).find(':input:disabled');
+            var disabledFields = $(form).find(':input:disabled').not('select');
+            var disabledSelects = $(form).find('select:disabled');
+            
             disabledFields.prop('disabled', false);
+            disabledSelects.prop('disabled', false);
             
             // Serialize form data
             var formData = $(form).serialize();
             
+            // Manually append disabled Select2 values if they weren't included
+            disabledSelects.each(function() {
+                var fieldName = $(this).attr('name');
+                var fieldValue = $(this).val();
+                if (fieldValue && formData.indexOf(fieldName + '=') === -1) {
+                    formData += '&' + fieldName + '=' + encodeURIComponent(fieldValue);
+                }
+            });
+            
             // Restore disabled state
             disabledFields.prop('disabled', true);
+            disabledSelects.prop('disabled', true);
             
             submitForm($(form).attr('action'), $(form).attr('method'), formData, function (response) {
 
