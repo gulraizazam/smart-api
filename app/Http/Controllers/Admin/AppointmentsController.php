@@ -2131,6 +2131,9 @@ class AppointmentsController extends Controller
             'genders' => config('constants.gender_array'),
             'permissions' => [
                 'contact' => Gate::allows('contact'),
+                'update_consultation_service' => Gate::allows('update_consultation_service'),
+                'update_consultation_doctor' => Gate::allows('update_consultation_doctor'),
+                'update_consultation_schedule' => Gate::allows('update_consultation_schedule'),
             ],
         ]);
     }
