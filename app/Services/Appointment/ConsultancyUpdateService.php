@@ -76,7 +76,8 @@ class ConsultancyUpdateService
         // Log activity with detailed changes
         $this->logActivity($appointment->fresh(), $requestData, $oldValues);
 
-        return $appointment->fresh();
+        // Return appointment with relationships loaded
+        return $appointment->fresh(['doctor', 'service', 'location', 'patient', 'lead']);
     }
 
     /**
