@@ -2354,34 +2354,54 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        // Determine the service being updated
-        $parent = Services::whereid($request->treatment_service_id ?? $request->service_id ?? $request->treatment_id)->first();
-        if ($parent && $parent->parent_id == 0) {
-            // Service is already a parent service
-            $service_id = $parent->id;
-        } elseif ($parent) {
-            // Service is a child, get the parent service ID
-            $service_id = $parent->parent_id;
-        } else {
-            return ApiHelper::apiResponse($this->success, 'Service not found.', false);
+        // Get appointment to check status
+        $appointment = Appointments::find($id);
+        if (!$appointment) {
+            return ApiHelper::apiResponse($this->success, 'Appointment not found.', false);
         }
 
-        // Check if doctor has service_id 13 (all services) with is_allocated = 1 for this location
-        $has_all_services = DoctorHasLocations::where('is_allocated', 1)
-            ->where('user_id', $request->doctor_id)
-            ->where('location_id', $request->location_id)
-            ->where('service_id', 13)
-            ->exists();
+        // Check if appointment is arrived/converted and user has permission to edit doctor
+        $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]); // 2 = Arrived, 16 = Converted
+        $canEditDoctorAfterArrived = Gate::allows('update_consultation_doctor');
+        
+        // Skip doctor-service validation if arrived/converted with permission
+        $skipDoctorServiceValidation = $isArrivedOrConverted && $canEditDoctorAfterArrived;
+        
+        if (!$skipDoctorServiceValidation) {
+            // Determine the service being updated
+            $parent = Services::whereid($request->treatment_service_id ?? $request->service_id ?? $request->treatment_id)->first();
+            if ($parent && $parent->parent_id == 0) {
+                // Service is already a parent service
+                $service_id = $parent->id;
+            } elseif ($parent) {
+                // Service is a child, get the parent service ID
+                $service_id = $parent->parent_id;
+            } else {
+                return ApiHelper::apiResponse($this->success, 'Service not found.', false);
+            }
 
-        // Check if doctor has the specific service with is_allocated = 1 for this location
-        $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
-            ->where('user_id', $request->doctor_id)
-            ->where('location_id', $request->location_id)
-            ->where('service_id', $service_id)
-            ->exists();
+            // Check if doctor has service_id 13 (all services) with is_allocated = 1 for this location
+            $has_all_services = DoctorHasLocations::where('is_allocated', 1)
+                ->where('user_id', $request->doctor_id)
+                ->where('location_id', $request->location_id)
+                ->where('service_id', 13)
+                ->exists();
 
-        // If doctor has either "all services" OR the specific service, proceed
-        if ($has_all_services || $has_specific_service) {
+            // Check if doctor has the specific service with is_allocated = 1 for this location
+            $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
+                ->where('user_id', $request->doctor_id)
+                ->where('location_id', $request->location_id)
+                ->where('service_id', $service_id)
+                ->exists();
+
+            // If doctor doesn't have either "all services" OR the specific service, reject
+            if (!$has_all_services && !$has_specific_service) {
+                return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
+            }
+        }
+        
+        // Proceed with update
+        if (true) {
           
             $validator = $this->verifyUpdateFields($request);
             if ($validator->fails()) {
