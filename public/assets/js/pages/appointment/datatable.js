@@ -1429,7 +1429,17 @@ var AppointScheduleValidation = function () {
             select2Validation();
         });
         validate.on('core.form.valid', function (event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+            // Temporarily enable disabled fields so they're included in serialization
+            var disabledFields = $(form).find(':input:disabled');
+            disabledFields.prop('disabled', false);
+            
+            // Serialize form data
+            var formData = $(form).serialize();
+            
+            // Restore disabled state
+            disabledFields.prop('disabled', true);
+            
+            submitForm($(form).attr('action'), $(form).attr('method'), formData, function (response) {
 
                 if (response.status) {
                     toastr.success(response.message);
