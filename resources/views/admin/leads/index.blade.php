@@ -157,6 +157,7 @@
         <script src="{{asset('assets/js/jquery.copy-to-clipboard.js')}}"></script>
 
         <script src="{{asset('assets/js/pages/crud/forms/validation/leads/leads.js')}}"></script>
+        <script src="{{asset('assets/js/pages/leads/lead-search.js')}}"></script>
         <script src="{{asset('assets/js/search-phone.js')}}"></script>
     @endpush
 
