@@ -77,15 +77,6 @@
 <div class="clearfix"></div>
 <div class="row">
     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">
-        {!! Form::label('lead_source_id', 'Lead Source*', ['class' => 'control-label']) !!}
-        {!! Form::select('lead_source_id',$lead_sources, old('lead_source_id'), ['id' => 'lead_source_id', 'class' => 'form-control', 'placeholder' => '', 'required' => '']) !!}
-        @if($errors->has('lead_source_id'))
-            <p class="help-block">
-                {{ $errors->first('lead_source_id') }}
-            </p>
-        @endif
-    </div>
-    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">
         {!! Form::label('lead_status_id', 'Lead Status*', ['class' => 'control-label']) !!}
         {!! Form::select('lead_status_id',$lead_statuses, old('lead_status_id'), ['id' => 'lead_status_id', 'class' => 'form-control', 'placeholder' => '', 'required' => '']) !!}
         @if($errors->has('lead_status_id'))

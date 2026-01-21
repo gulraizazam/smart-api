@@ -109,7 +109,6 @@
                                                         {!! Form::number('phone', (old('phone')) ? old('phone') : $lead['phone'], ['id' => 'phone', 'size' => 11, 'class' => 'form-control', 'placeholder' => 'Patient Phone*']) !!}
                                                         {!! Form::text('name', (old('name')) ? old('name') : $lead['name'], ['id' => 'name', 'class' => 'form-control', 'placeholder' => 'Patient Name*']) !!}
                                                         {!! Form::email('email', null, ['id' => 'email', 'style' => 'display:none;', 'placeholder' => 'Patient Email', 'class' => 'form-control']) !!}
-                                                        {!! Form::select('lead_source_id',$lead_sources, null, ['id' => 'lead_source_id', 'style' => 'display:none;', 'class' => 'form-control']) !!}
                                                         <br/>
                                                         <a href="javascript:;" id="event_add" class="btn green"> Add Appointment </a>
                                                     </form>
@@ -186,12 +185,10 @@
                     },
                     success: function(response){
                         $('#email').show();
-                        $('#lead_source_id').show().attr('class','required form-control');
                         $('#phone').val(response.phone);
                         $('#email').val(response.email);
                         $('#name').val(response.name);
                         $('#service_id').val(response.service_id);
-                        $('#lead_source_id').val(response.lead_source_id);
                         $('#lead_id').val(response.lead_id);
                         $('#patient_id').val(response.patient_id);
                     }

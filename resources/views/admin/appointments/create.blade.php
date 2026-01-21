@@ -91,7 +91,6 @@
                                 {!! Form::number('phone', (old('phone')) ? old('phone') : $lead['phone'], ['id' => 'phone', 'size' => 11, 'class' => 'required custom-input', 'placeholder' => 'Patient Phone*']) !!}
                                 {!! Form::text('full_name', (old('full_name')) ? old('full_name') : $lead['full_name'], ['id' => 'full_name', 'class' => 'required custom-input', 'placeholder' => 'Patient Name*']) !!}
                                 {!! Form::email('email', null, ['id' => 'email', 'style' => 'display:none;', 'placeholder' => 'Patient Email', 'class' => 'custom-input']) !!}
-                                {!! Form::select('lead_source_id',$lead_sources, null, ['id' => 'lead_source_id', 'style' => 'display:none;', 'class' => 'custom-input']) !!}
                             </div>
                             <div class="col-md-12">
                                 {!! Form::text('scheduled_date', \Carbon\Carbon::parse(\Carbon\Carbon::now())->format('Y-m-d'), ['readonly' => 'true', 'id' => 'scheduled_date', 'class' => 'required', 'placeholder' => 'Scheduled Date*']) !!}
@@ -149,12 +148,10 @@
                     },
                     success: function(response){
                         $('#email').show();
-                        $('#lead_source_id').show().attr('class','required');
                         $('#phone').val(response.phone);
                         $('#email').val(response.email);
                         $('#full_name').val(response.full_name);
                         $('#treatment_id').val(response.treatment_id);
-                        $('#lead_source_id').val(response.lead_source_id);
                         $('#lead_id').val(response.lead_id);
                         $('#patient_id').val(response.patient_id);
                     }

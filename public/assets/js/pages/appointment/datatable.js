@@ -235,10 +235,9 @@ function editSchedule(id, doc_id, loc_id) {
         data: { id: id },
         cache: false,
         success: function (response) {
-            if (response.status) {
-                let appointment = response.data.appointment;
-                $("#schedule_date").val(appointment?.scheduled_date);
-                $("#schedule_time").val(appointment?.scheduled_time);
+            if (response) {
+                $("#schedule_date").val(response.scheduled_date);
+                $("#schedule_time").val(response.scheduled_time);
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -747,38 +746,27 @@ function editRow(url, id, $class = 'detail-actions') {
 }
 
 function setEditData(response) {
-
     try {
-
+        console.log('setEditData called', response);
         let appointment = response.data.appointment;
         let back_date_config = response.data.back_date_config;
-        let cities = response.data.cities;
         let consultancy_types = response.data.consultancy_type;
         let doctors = response.data.doctors;
-        let locations = response.data.locations;
         let resourceHadRotaDay = response.data.resourceHadRotaDay;
         let services = response.data.services;
         let setting = response.data.setting;
         let genders = response.data.genders;
+        let permissions = response.data.permissions;
+        console.log('All data extracted successfully');
 
-        let type_option = '';
-        Object.entries(consultancy_types).forEach(function (consultancy_type) {
-            type_option += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
+        let type_option = '<option value="">Select a Consultancy Type</option>';
+        Object.entries(consultancy_types).forEach(function (type) {
+            type_option += '<option value="' + type[0] + '">' + type[1] + '</option>';
         });
 
         let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
             service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
-        });
-
-        let city_option = '<option value="">Select a City</option>';
-        Object.entries(cities).forEach(function (city) {
-            city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
-        });
-
-        let location_option = '<option value="">Select a Location</option>';
-        Object.entries(locations).forEach(function (location) {
-            location_option += '<option value="' + location[0] + '">' + location[1] + '</option>';
         });
 
         let doctor_option = '<option value="">Select a Doctor</option>';
@@ -791,27 +779,26 @@ function setEditData(response) {
             gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
 
+        // Set modal heading with patient name in blue color
+        let patientName = appointment?.patient?.name || "Patient";
+        $("#edit_consultation_heading").html("Edit <span class='text-primary'>" + patientName + "'s</span> Consultation");
+
         $("#edit_consultancy_type").html(type_option).val(appointment.consultancy_type);
         $("#edit_treatment").html(service_option).val(appointment.service_id);
         $("#consultancy_service_id").html(service_option).val(appointment.service_id);
-        $("#edit_city").html(city_option).val(appointment.city_id);
-        $("#edit_location").html(location_option).val(appointment.location_id);
         $("#edit_doctor").html(doctor_option).val(appointment?.doctor_id);
-        $("#edit_gender_id").html(gender_option).val(appointment?.patient?.gender);
+
+        // Disable service dropdown if status is Arrived (2) or Converted (16)
+        if (appointment.appointment_status_id == 2 || appointment.appointment_status_id == 16) {
+            $("#edit_treatment").prop('disabled', true).addClass('bg-light');
+        } else {
+            $("#edit_treatment").prop('disabled', false).removeClass('bg-light');
+        }
 
         $("#edit_scheduled_date").val(appointment.scheduled_date);
         $("#scheduled_date_old").val(appointment.scheduled_date);
         $("#edit_scheduled_time").val(appointment.scheduled_time);
         $("#scheduled_time_old").val(appointment.scheduled_time);
-        $("#edit_patient_name").val(appointment?.patient?.name);
-
-        $("#edit_old_patient_phone").val(appointment?.patient?.phone);
-
-        if (permissions.contact) {
-            $("#edit_patient_phone").val(appointment?.patient?.phone);
-        } else {
-            $("#edit_patient_phone").val("***********").attr("readonly", true);
-        }
 
         $("#back-date").val(back_date_config.data);
         $("#old_phone").val(appointment?.lead?.patient?.phone);
@@ -821,13 +808,18 @@ function setEditData(response) {
         $("#start_time").val(resourceHadRotaDay?.start_time);
         $("#end_time").val(resourceHadRotaDay?.end_time);
         $("#consultancy_appointment_type").val(appointment?.appointment_type_id);
+        $("#edit_location_id").val(appointment?.location_id);
 
-
+        // Reinitialize select2 for the dropdowns
+        $("#edit_treatment").select2();
+        $("#edit_doctor").select2();
+        
+        console.log('setEditData completed successfully');
 
     } catch (error) {
+        console.error('Error in setEditData:', error);
         showException(error);
     }
-
 }
 
 function setTreatmentEditData(response) {

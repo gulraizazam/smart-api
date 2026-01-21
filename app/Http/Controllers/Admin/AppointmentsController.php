@@ -1648,12 +1648,9 @@ class AppointmentsController extends Controller
     protected function verifyUpdateFields(Request $request)
     {
         return $validator = Validator::make($request->all(), [
-            'name' => 'required',
-            'phone' => 'required',
+            'treatment_id' => 'required',
             'scheduled_date' => 'required',
             'scheduled_time' => 'required',
-            'city_id' => 'required',
-            'location_id' => 'required',
             'doctor_id' => 'required',
         ]);
     }
@@ -1665,10 +1662,28 @@ class AppointmentsController extends Controller
      */
     public function store(Request $request)
     {
-
         if (! Gate::allows('appointments_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
+        
+        try {
+            $consultancyService = app(\App\Services\Appointment\ConsultancyService::class);
+            $data = $request->all();
+            
+            unset($data['resource_id']);
+            unset($data['resource_has_rota_day_id']);
+            unset($data['resource_has_rota_day_id_for_machine']);
+            
+            $appointment = $consultancyService->createConsultancy($data);
+            
+            return ApiHelper::apiResponse($this->success, 'Consultation created successfully.', true, $appointment);
+        } catch (\App\Exceptions\AppointmentException $e) {
+            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+        } catch (\Exception $e) {
+            \Log::error('Error creating consultation: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to create consultation.', false);
+        }
+        
         $validator = $this->verifyFields($request);
 
         if ($validator->fails()) {
@@ -1689,15 +1704,11 @@ class AppointmentsController extends Controller
             unset($appointment_data['old_phone']);
             $appointment_data['phone'] = GeneralFunctions::cleanNumber($phone);
             $appointment_data['created_by'] = Auth::user()->id;
-            if ($request->appointment_type == Config::get('constants.appointment_type_consultancy_string') || $request->appointment_type_id == Config::get('constants.appointment_type_consultancy')) {
-                $response = Resources::getDoctorRotaHasDay($request->start, $request->doctor_id);
-                if (isset($response['resource_id']) && $response['resource_id']) {
-                    $appointment_data['resource_id'] = $response['resource_id'];
-                }
-                if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                    $appointment_data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
-                }
-            }
+            
+            unset($appointment_data['resource_id']);
+            unset($appointment_data['resource_has_rota_day_id']);
+            unset($appointment_data['resource_has_rota_day_id_for_machine']);
+            
             // Set default appointment status i.e. 'pending'
             $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
             if ($appointment_status) {
@@ -2397,30 +2408,15 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Resource not found.', false);
         }
         $resourceHadRotaDay = ResourceHasRotaDays::find($appointment->resource_has_rota_day_id);
-        $cities = Cities::getActiveFeaturedOnly(ACL::getUserCities(), Auth::User()->account_id)->get();
-        if ($cities) {
-            $cities = $cities->pluck('full_name', 'id');
-        }
-        $appointment->scheduled_time = Carbon::parse($appointment->scheduled_time)->format('h:i A');
+        
+        // Get all parent services (base services where parent_id = 0)
+        $services = Services::where('parent_id', 0)->where('active', 1)->orderBy('name')->get()->pluck('name', 'id');
+        
         if ($appointment->service_id) {
-            $services = Services::where(['id' => $appointment->service_id])->get()->pluck('name', 'id');
             $serviceid = Services::where(['id' => $appointment->service_id])->first();
-        } else {
-            $services = Services::get()->pluck('name', 'id');
         }
-        $locations = Locations::getActiveRecordsByCity($appointment->city_id, ACL::getUserCentres(), Auth::User()->account_id);
-        /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
-        foreach ($locations as $location) {
-            $location_serivce = AppointmentEditWidget::loadlocationservice_edit($location->id, Auth::User()->account_id, $reverse_process);
-            if (isset($serviceid) && in_array($serviceid->id, $location_serivce)) {
-                $locationsids[] = $location->id;
-            }
-        }
-        $locations = Locations::whereIn('id', $locationsids)->get();
-        /*End*/
-        if ($locations) {
-            $locations = $locations->pluck('name', 'id');
-        }
+        
+        // Get doctors for the appointment's location
         $doctors = $doctors_no_final = Doctors::getActiveOnly($appointment->location_id, Auth::User()->account_id);
         /*For machine type we perform that work we can remove it if any problem happen but for linkage that is best*/
         foreach ($doctors as $key => $doctor) {
@@ -2457,17 +2453,23 @@ class AppointmentsController extends Controller
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
         $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
 
+        // Format dates for display
+        $appointmentData = $appointment->toArray();
+        $appointmentData['scheduled_date'] = Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
+        $appointmentData['scheduled_time'] = Carbon::parse($appointment->scheduled_time)->format('h:i A');
+        
         return ApiHelper::apiResponse($this->success, 'Record Found', true, [
-            'appointment' => $appointment,
-            'cities' => $cities,
+            'appointment' => $appointmentData,
             'services' => $services,
-            'locations' => $locations,
             'doctors' => $doctors,
             'resourceHadRotaDay' => $resourceHadRotaDay,
             'back_date_config' => $back_date_config,
             'setting' => $setting,
             'consultancy_type' => config('constants.consultancy_type_array'),
             'genders' => config('constants.gender_array'),
+            'permissions' => [
+                'contact' => Gate::allows('contact'),
+            ],
         ]);
     }
 
@@ -2688,11 +2690,15 @@ class AppointmentsController extends Controller
         }
 
         // Determine the service being updated
-        $parent = Services::whereid($request->treatment_service_id ?? $request->service_id)->first();
+        $parent = Services::whereid($request->treatment_service_id ?? $request->service_id ?? $request->treatment_id)->first();
         if ($parent && $parent->parent_id == 0) {
+            // Service is already a parent service
             $service_id = $parent->id;
-        } else {
+        } elseif ($parent) {
+            // Service is a child, get the parent service ID
             $service_id = $parent->parent_id;
+        } else {
+            return ApiHelper::apiResponse($this->success, 'Service not found.', false);
         }
 
         // Check if doctor has service_id 13 (all services) with is_allocated = 1 for this location
@@ -2745,14 +2751,17 @@ class AppointmentsController extends Controller
                 return ApiHelper::apiResponse($this->success, 'Patient not found', false);
             }
             $value_of_sending_message = $appointment->send_message;
-            $city_info = Cities::find($request->city_id);
-            if ($request->input('phone') == '***********') {
-                $request->merge(['phone' => $request->input('old_phone')]);
-            }
-            $request->request->remove('old_phone');
+            
+            // Get city and region from appointment's location since city field is not in edit form
+            $location = Locations::find($appointment->location_id);
+            
             $appointment_data = $request->all();
-            $appointment_data['region_id'] = $city_info->region_id;
-            $appointment_data['phone'] = GeneralFunctions::cleanNumber($appointment_data['phone']);
+            
+            // Set city_id and region_id from location
+            if ($location) {
+                $appointment_data['city_id'] = $location->city_id;
+                $appointment_data['region_id'] = $location->region_id;
+            }
             
             // Store old values for activity logging
             $oldDate = $appointment->scheduled_date;
@@ -2778,7 +2787,7 @@ class AppointmentsController extends Controller
                 $appointment_data['converted_by'] = Auth::user()->id;
                 $isRescheduled = true;
             }
-            if ((string) $appointment->city_id !== $request->city_id || (string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id || (string) $patient->gender !== $request->gender) {
+            if ((string) $appointment->location_id !== $request->location_id || (string) $appointment->doctor_id !== $request->doctor_id) {
                 $appointment_data['updated_by'] = Auth::user()->id;
             }
             if ($request->has('consultancy_type')) {
@@ -2961,31 +2970,6 @@ class AppointmentsController extends Controller
                 $fieldChanges['Machine'] = [
                     'old' => $oldMachine->name ?? 'Unknown',
                     'new' => $newMachine->name ?? 'Unknown'
-                ];
-            }
-            
-            // Check patient name change
-            if ($oldPatientName != $request->name) {
-                $fieldChanges['Patient Name'] = [
-                    'old' => $oldPatientName,
-                    'new' => $request->name
-                ];
-            }
-            
-            // Check patient phone change
-            $newPhone = GeneralFunctions::cleanNumber($request->phone);
-            if ($oldPatientPhone != $newPhone) {
-                $fieldChanges['Phone'] = [
-                    'old' => $oldPatientPhone,
-                    'new' => $newPhone
-                ];
-            }
-            
-            // Check gender change
-            if ($oldPatientGender != $request->gender) {
-                $fieldChanges['Gender'] = [
-                    'old' => $oldPatientGender ?? 'Unknown',
-                    'new' => $request->gender ?? 'Unknown'
                 ];
             }
             
@@ -3791,8 +3775,8 @@ class AppointmentsController extends Controller
      public function getScheduledAppointments(Request $request)
      {
          if ($request->location_id) {
-             $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
-             $start = $request->start;
+            $appointments = Appointments::getScheduledAppointments($request, Config::get('constants.appointment_type_consultancy'), Auth::User()->account_id);
+            $start = $request->start;
              $end = $request->end;
              if ($request->doctor_id) {
                  $doctor_rotas = Resources::getDoctorWithRotas($request->location_id, $request->doctor_id, $request->start, $request->end);
@@ -3911,15 +3895,10 @@ class AppointmentsController extends Controller
                     
                     $data['first_scheduled_count'] = $appointment->first_scheduled_count;
                     $data['scheduled_at_count'] = $appointment->scheduled_at_count;
-                    if ($appointment->appointment_type_id = Config::get('constants.appointment_type_consultancy')) {
-                        $response = Resources::getDoctorRotaHasDay($request->start, $appointment->doctor_id);
-                        if (isset($response['resource_id']) && $response['resource_id']) {
-                            $data['resource_id'] = $response['resource_id'];
-                        }
-                        if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                            $data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
-                        }
-                    }
+                    
+                    unset($data['resource_id']);
+                    unset($data['resource_has_rota_day_id']);
+                    unset($data['resource_has_rota_day_id_for_machine']);
                     $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
                     $invoice = Invoices::where([
                         ['appointment_id', '=', $appointment->id],
@@ -6249,11 +6228,18 @@ class AppointmentsController extends Controller
 
         $appointment = Appointments::select('id', 'scheduled_date', 'scheduled_time')->find($request->id);
 
-        $appointment->scheduled_time = Carbon::parse($appointment->scheduled_time)->format('h:i A');
+        if ($appointment) {
+            // Convert to array and format dates
+            $appointmentData = [
+                'id' => $appointment->id,
+                'scheduled_date' => Carbon::parse($appointment->scheduled_date)->format('Y-m-d'),
+                'scheduled_time' => Carbon::parse($appointment->scheduled_time)->format('h:i A'),
+            ];
+            
+            return response()->json($appointmentData);
+        }
 
-        return ApiHelper::apiResponse($this->success, 'Record found', true, [
-            'appointment' => $appointment,
-        ]);
+        return response()->json(null);
     }
 
     public function updateSchedule(Request $request)

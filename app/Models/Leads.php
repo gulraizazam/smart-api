@@ -17,7 +17,7 @@ class Leads extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by', 'meta_lead_id'];
+    protected $fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by', 'meta_lead_id'];
 
     protected static $_fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'town_id'];
 
@@ -140,35 +140,65 @@ class Leads extends BaseModal
      * */
     public static function getLeadidAjax($name, $account_id)
     {
-       
-        $leads = collect();
-        if (is_numeric($name)) {
-            $leads = self::where([
-                'active' => '1',
-                'account_id' => $account_id,
-                'id' => $name,
-            ])->select('name', 'id', 'phone')->get();
+        // Inline string cleaning for better performance (avoid function call overhead)
+        $cleaned = str_replace([' ', '-', '+', 'C-', 'c-'], '', $name);
+        
+        // Optimize: For phone search (most common case ~90%), check first
+        if (is_numeric($cleaned)) {
+            // Clean phone number inline (remove leading 0 and country code 92)
+            $phone = ltrim($cleaned, '0');
+            if (substr($phone, 0, 2) === '92') {
+                $phone = substr($phone, 2);
+            }
+            
+            // Database stores phones in multiple formats (with/without leading 0)
+            // Search for both: original cleaned input AND cleaned phone
+            $phoneVariations = array_unique([$cleaned, $phone, '0' . $phone]);
+            
+            // Try exact match first (fastest - uses composite index)
+            // Search all leads regardless of status (including booked)
+            $exact_match = self::select('name', 'id', 'phone')
+                ->where('account_id', $account_id)
+                ->whereIn('phone', $phoneVariations)
+                ->limit(10)
+                ->get();
+            
+            if (!$exact_match->isEmpty()) {
+                return $exact_match;
+            }
+            
+            // Prefix search with GROUP BY at DB level (uses index efficiently)
+            // Search all possible phone variations
+            return self::select('name', 'id', 'phone')
+                ->where('account_id', $account_id)
+                ->where(function($query) use ($phoneVariations) {
+                    foreach ($phoneVariations as $variation) {
+                        $query->orWhere('phone', 'LIKE', $variation . '%');
+                    }
+                })
+                ->groupBy('phone', 'name', 'id')
+                ->orderBy('id', 'desc')
+                ->limit(10)
+                ->get();
         }
-        if ($leads->count() > 0) {
-            return $leads;
+        
+        // ID search (less common ~5%)
+        if (is_numeric($name) && strlen($name) <= 10) {
+            return self::select('name', 'id', 'phone')
+                ->where('account_id', $account_id)
+                ->where('id', $name)
+                ->limit(10)
+                ->get();
         }
 
-        $name = GeneralFunctions::patientSearch($name);
-        $phone_numeric = GeneralFunctions::clearnString($name);
-
-        $condition = [];
-        if (is_numeric($phone_numeric)) {
-            $phone = GeneralFunctions::cleanNumber($name);
-            $condition[] = ['phone', 'LIKE', "%{$phone}%"];
-        } else {
-            $condition[] = ['name', 'LIKE', "%{$name}%"];
-        }
-
-        $lead_result = Leads::where(['active' => '1', 'account_id' => $account_id])
-            ->where($condition)
-            ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
-
-        return $lead_result;
+        // Name search (least common ~5%) - use prefix for index optimization
+        return self::select('name', 'id', 'phone')
+            ->where('account_id', $account_id)
+            ->where('name', 'LIKE', $name . '%')
+            ->groupBy('phone', 'name', 'id')
+            ->orderBy('id', 'desc')
+            ->limit(10)
+            ->get();
     }
 
     /**

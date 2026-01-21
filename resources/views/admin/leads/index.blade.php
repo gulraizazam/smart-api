@@ -384,6 +384,73 @@
                     }
                 });
             }
+
+            // Lead Search for Filter
+            let leadSearchDebounceTimer;
+            $('.lead_search_filter').on('keyup', function() {
+                let searchValue = $(this).val();
+                
+                // Clear previous timer and hide suggestions
+                clearTimeout(leadSearchDebounceTimer);
+                $('.suggesstion-box-leads').hide();
+                
+                if (searchValue.length < 1) {
+                    return false;
+                }
+                
+                // Show searching indicator
+                setTimeout(function() {
+                    if ($('.lead_search_filter').val() === searchValue) {
+                        $('.suggestion-list-leads').html('<li style="padding: 10px;">Searching...</li>');
+                        $('.suggesstion-box-leads').show();
+                    }
+                }, 200);
+                
+                leadSearchDebounceTimer = setTimeout(function() {
+                    if ($('.lead_search_filter').val() === searchValue) {
+                        $.ajax({
+                            type: 'GET',
+                            url: route('admin.leads.getlead.id'),
+                            dataType: 'json',
+                            data: { search: searchValue },
+                            success: function(response) {
+                                if ($('.lead_search_filter').val() !== searchValue) {
+                                    return;
+                                }
+                                
+                                let html = '';
+                                let leads = response.data.leads;
+                                
+                                if (leads.length) {
+                                    leads.forEach(function(lead) {
+                                        html += '<li onclick="selectLeadFilter(\'' + lead.id + '\', \'' + lead.name + '\', \'' + lead.phone + '\');" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;">' + lead.name + ' - ' + lead.phone + '</li>';
+                                    });
+                                    $('.suggestion-list-leads').html(html);
+                                    $('.suggesstion-box-leads').show();
+                                } else {
+                                    $('.suggesstion-box-leads').hide();
+                                }
+                            }
+                        });
+                    }
+                }, 400);
+            });
+
+            // Select lead from suggestions
+            function selectLeadFilter(id, name, phone) {
+                $('#search_id').val(id);
+                $('#search_full_name').val(name);
+                $('#search_phone').val(phone);
+                $('.lead_search_filter').val(name + ' - ' + phone);
+                $('.suggesstion-box-leads').hide();
+            }
+
+            // Clear search on click outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.lead_search_filter, .suggesstion-box-leads').length) {
+                    $('.suggesstion-box-leads').hide();
+                }
+            });
         </script>
     @endpush
 

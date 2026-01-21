@@ -896,22 +896,32 @@ function getLeadDetail($this) {
                 lead = resposne.data.lead;
                 $('#create_old_consultancy_phone').val(lead?.phone);
 
+                // Set phone in the lead_search_id field (which is now the phone field)
                 if (permissions.contact) {
-                    $('#create_consultancy_phone').val(lead?.phone);
+                    $('.lead_search_id').val(lead?.phone);
                 } else {
-                    $('#create_consultancy_phone').val("***********");
+                    $('.lead_search_id').val("***********");
                 }
                 $('#create_patient_name').val(lead?.name);
-                $('#create_consultancy_gender').val(lead?.gender).css("pointer-events","none");
+                $('#create_patient_name').attr('readonly', true);
+                
+                $('#create_consultancy_gender').val(lead?.gender);
+                $('#create_consultancy_gender').attr('disabled', true);
+                $('#create_consultancy_gender').css("pointer-events","none");
 
                 $('#create_consultancy_lead').val(lead?.lead_source_id).change();
                 $('#create_consultancy_referred_by').val(lead?.referred_by);
                 if (isExist(lead?.referred_by)) {
                     $('#create_consultancy_referred_by').val(lead?.referred_by).change();
                 }
+                
+                // Hide new patient message since patient exists
+                $('.new_patient_message').hide();
+                $('#new_patient').val('0');
+                
                 if (lead?.phone != '') {
-                    $("#create_consultancy_phone").removeClass("is-invalid")
-                    $("#create_consultancy_phone").parent("div").find(".fv-help-block").remove();
+                    $(".lead_search_id").removeClass("is-invalid")
+                    $(".lead_search_id").parent("div").find(".fv-help-block").remove();
                 }
                 if (lead?.gender != '') {
                     $("#create_consultancy_gender").removeClass("is-invalid")
@@ -958,31 +968,7 @@ function loadLead(lead) {
     }
 }
 
-function newPatient() {
-    if ($("#new_patient").is(":checked")) {
-        $('#new_patient').val('1');
-        $('#mess_new_pati').show();
-        $('#create_patient_name').attr("readonly",false);
-        $('#create_consultancy_phone').attr("readonly",false);
-        $('#create_consultancy_gender').attr("readonly",false);
-        $('#create_consultancy_gender').css("pointer-events" ,"all");
-        $(".lead_search_id").val("");
-        $(".lead_search_id").attr("readonly",true);
-        $('#create_patient_name').val("");
-        $('#create_consultancy_gender').val("");
-        $('#create_consultancy_phone').val("");
-    } else {
-        $('#new_patient').val('0');
-        $('#mess_new_pati').hide();
-        $('#create_patient_name').attr("readonly",false);
-        $('#create_consultancy_phone').attr("readonly",true);
-        $(".lead_search_id").attr("readonly",false);
-        $('#create_consultancy_gender').attr("readonly",true);
-        $('#create_patient_name').val("");
-        $('#create_consultancy_gender').val("");
-        $('#create_consultancy_phone').val("");
-    }
-}
+// newPatient function removed - now handled automatically by lead search
 
 function commentData(user_name, created_at, comment) {
 
