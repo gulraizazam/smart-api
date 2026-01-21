@@ -253,7 +253,7 @@ function actions(data) {
         if (permissions.create || permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">';
             if (permissions.convert && lead_type === 'junk') {
-                actions += '<a title="Convert Lead" href="javascript:void(0);" onclick="viewConvert(`' + convert_url + '`);" class="btn btn-icon btn-success btn-sm">\
+                actions += '<a title="Remove From Junk" href="javascript:void(0);" onclick="removeFromJunk(`' + id + '`);" class="btn btn-icon btn-success btn-sm">\
                         <span class="navi-icon"><i class="la la-recycle"></i></span>\
                     </a>';
             }
@@ -554,6 +554,40 @@ function viewConvert(url) {
     });
 }
 
+function removeFromJunk(leadId) {
+    Swal.fire({
+        title: 'Remove from Junk?',
+        text: "This will set the lead status to Open.",
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, remove it!'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            $.ajax({
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                url: route('admin.leads.remove_from_junk', { id: leadId }),
+                type: "POST",
+                cache: false,
+                success: function(response) {
+                    if (response.status) {
+                        Swal.fire('Removed!', 'Lead has been removed from junk.', 'success');
+                        datatable.reload();
+                    } else {
+                        Swal.fire('Error!', response.message || 'Failed to remove lead from junk.', 'error');
+                    }
+                },
+                error: function(xhr, ajaxOptions, thrownError) {
+                    errorMessage(xhr);
+                }
+            });
+        }
+    });
+}
+
 function setConvert(response) {
     try {
         resetDoctors();
@@ -586,15 +620,15 @@ function setConvert(response) {
         $("#convert_consultancy_type_id").html(consultancy_options);
         $("#convert_lead_id").val(lead.id);
         $("#convert_patient_id").val(lead.patient_id);
-        $("#convert_patient_phone").val(lead.patient.phone);
-        $("#convert_patient_name").val(lead.patient.name);
-        $("#convert_patient_cnic").val(lead.patient.cnic);
-        $("#convert_patient_email").val(lead.patient.email);
-        $("#convert_patient_dob").val(lead.patient.dob);
-        $("#convert_patient_address").val(lead.patient.address);
+        $("#convert_patient_phone").val(lead.patient?.phone || lead.phone || '');
+        $("#convert_patient_name").val(lead.patient?.name || lead.name || '');
+        $("#convert_patient_cnic").val(lead.patient?.cnic || '');
+        $("#convert_patient_email").val(lead.patient?.email || lead.email || '');
+        $("#convert_patient_dob").val(lead.patient?.dob || '');
+        $("#convert_patient_address").val(lead.patient?.address || '');
         $("#convert_lead_source_id").val(lead.lead_source_id);
-        $("#convert_referred_by").val(user_info.referred_by);
-        $("#convert_service_id").val(user_info.service_id);
+        $("#convert_referred_by").val(user_info?.referred_by || '');
+        $("#convert_service_id").val(user_info?.service_id || '');
     } catch (error) {
         showException(error);
     }
@@ -950,6 +984,38 @@ function setFilters(filter_values, active_filters) {
         $("#search_full_name").val(active_filters.name);
         $("#search_phone").val(active_filters.phone);
         $("#search_city_id").val(active_filters.city_id);
+        
+        // Handle location dropdown based on city selection
+        if (active_filters.city_id) {
+            // City is selected - load city-specific locations
+            // Store the location_id to restore after AJAX completes
+            let savedLocationId = active_filters.location_id;
+            
+            // Check if locations are already loaded for this city
+            let currentCityId = $("#search_city_id").val();
+            if (currentCityId == active_filters.city_id && $("#search_location_id option").length > 1) {
+                // Locations already loaded, just set the value
+                if (savedLocationId) {
+                    $("#search_location_id").val(savedLocationId);
+                }
+            } else {
+                // Need to load locations via AJAX
+                loadLocations(active_filters.city_id, '#search_location_id', false);
+                // Set value after AJAX completes
+                if (savedLocationId) {
+                    setTimeout(function() {
+                        $("#search_location_id").val(savedLocationId);
+                    }, 500);
+                }
+            }
+        } else {
+            // No city selected - show all locations
+            $("#search_location_id").html(location_options);
+            if (active_filters.location_id) {
+                $("#search_location_id").val(active_filters.location_id);
+            }
+        }
+        
         $("#search_region_id").val(active_filters.region_id);
         $("#search_status_id").val(active_filters.lead_status_id);
         $("#search_service_id").val(active_filters.service_id);
@@ -963,13 +1029,18 @@ function setFilters(filter_values, active_filters) {
 }
 
 function hideShowAdvanceFilters(active_filters) {
-    if ((typeof active_filters.created_from !== 'undefined' && active_filters.created_from != '')
-        || (typeof active_filters.created_to !== 'undefined' && active_filters.created_to != '')
-        || (typeof active_filters.lead_status_id !== 'undefined' && active_filters.lead_status_id != '')
-        || (typeof active_filters.region_id !== 'undefined' && active_filters.region_id != '')
-        || (typeof active_filters.service_id !== 'undefined' && active_filters.service_id != '')
+    // Only check filters that are actually in the advance filters section
+    // (service_id for non-junk, gender_id, created_at, created_by)
+    let hasAdvanceFilter = (typeof active_filters.created_at !== 'undefined' && active_filters.created_at != '')
         || (typeof active_filters.created_by !== 'undefined' && active_filters.created_by != '')
-    ) {
+        || (typeof active_filters.gender_id !== 'undefined' && active_filters.gender_id != '');
+    
+    // Service is in advance filters only for non-junk leads
+    if (lead_type != 'junk') {
+        hasAdvanceFilter = hasAdvanceFilter || (typeof active_filters.service_id !== 'undefined' && active_filters.service_id != '');
+    }
+    
+    if (hasAdvanceFilter) {
         $(".advance-filters").show();
         $(".advance-arrow").removeClass("fa fa-caret-right").addClass("fa fa-caret-down");
     }
@@ -1145,10 +1216,12 @@ $(function () {
         });
     $("#Add_comment").click(function(){
         $.ajax({
-            type: 'get',
-            url:route('admin.leads.storecomment'),
+            type: 'POST',
+            url: route('admin.leads.storecomment'),
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            },
             data: {
-                '_token': $('input[name=_token]').val(),
                 'comment': $('input[name=comment]').val(),
                 'lead_id': $('#comment_lead_id').val(),
             },
@@ -1161,7 +1234,7 @@ $(function () {
 })
 
 
-let loadLocations = function (cityId) {
+let loadLocations = function (cityId, targetSelector = '#convert_location_id', resetDoctorsFlag = true) {
     if(cityId != '') {
         $.ajax({
             headers: {
@@ -1177,27 +1250,60 @@ let loadLocations = function (cityId) {
                 if(response.status) {
 
                     let dropdowns =  response.data.dropdown;
-                    let dropdown_options =  '<option value="">Select a Location</option>';
+                    let defaultText = targetSelector === '#search_location_id' ? 'All' : 'Select a Location';
+                    let dropdown_options =  '<option value="">' + defaultText + '</option>';
 
                     Object.entries(dropdowns).forEach(function (dropdown) {
                         dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                     });
 
-                    $('#convert_location_id').html(dropdown_options);
+                    $(targetSelector).html(dropdown_options);
                     $('.select2').select2({ width: '100%' });
-                    resetDoctors();
+                    if (resetDoctorsFlag) {
+                        resetDoctors();
+                    }
                 } else {
-                    resetDropdowns();
+                    if (resetDoctorsFlag) {
+                        resetDropdowns();
+                    } else {
+                        $(targetSelector).html('<option value="">All</option>');
+                    }
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {
-                resetDropdowns();
+                if (resetDoctorsFlag) {
+                    resetDropdowns();
+                } else {
+                    $(targetSelector).html('<option value="">All</option>');
+                }
             }
         });
     } else {
-        resetDropdowns();
+        if (resetDoctorsFlag) {
+            resetDropdowns();
+        } else {
+            $(targetSelector).html('<option value="">All</option>');
+        }
     }
 }
+
+// Search City change handler - load centres dynamically
+$(document).on('change', '#search_city_id', function() {
+    let cityId = $(this).val();
+    loadLocations(cityId, '#search_location_id', false);
+});
+
+// Edit City change handler - load centres dynamically
+$(document).on('change', '#edit_city_id', function() {
+    let cityId = $(this).val();
+    loadLocations(cityId, '#edit_location_id', false);
+});
+
+// Add City change handler - load centres dynamically
+$(document).on('change', '#add_city_id', function() {
+    let cityId = $(this).val();
+    loadLocations(cityId, '#add_location_id', false);
+});
 
 let resetLocations = function () {
     var locationDropdown = '<select id="location_id" class="form-control select2 required" name="location_id"><option value="" selected="selected">Select a Location</option></select>';
@@ -1362,6 +1468,7 @@ $("#csv-leads").on("click",function(){
 });
 
 function cleanId(id){
+    if (!id) return '';
     if (id.indexOf('c-') > -1)
     {
       return id.replace('c-','');
@@ -1388,17 +1495,17 @@ function LoadLoc()
         success: function(response) {
             if(response.status) {
                 let dropdowns =  response.data.dropdown;
-                let dropdown_options =  '<option value="">Select a Location</option>';
+                let dropdown_options =  '<option value="">All</option>';
                 Object.entries(dropdowns).forEach(function (dropdown) {
                     dropdown_options += '<option value="'+dropdown[0]+'">'+dropdown[1]+'</option>';
                 });
                 $('#search_location_id').html(dropdown_options);
             } else {
-                resetDropdowns();
+                $('#search_location_id').html('<option value="">All</option>');
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
-            resetDropdowns();
+            $('#search_location_id').html('<option value="">All</option>');
         }
     });
 }

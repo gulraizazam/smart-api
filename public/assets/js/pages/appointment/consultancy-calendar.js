@@ -1273,6 +1273,13 @@ function setCreateConsultancy(response, start) {
         $("#consultancy_dob").val();
         $("#consultancy_address").val();
         $("#consultancy_town_id").val();
+        
+        // Set scheduled time value for timepicker
+        if (start) {
+            let scheduledDateTime = moment(start);
+            let formattedTime = scheduledDateTime.format('h:mm A');
+            $("#create_scheduled_time").val(formattedTime);
+        }
 
         let type_options = '';
         if (consultancy_types) {

@@ -400,6 +400,14 @@ $(document).ready(function () {
         dropdown: true,
         scrollbar: true
     });
+    
+    // Set timepicker to current field value when clicked
+    $('.scheduled_time').on('click', function() {
+        var currentTime = $(this).val();
+        if (currentTime) {
+            $(this).timepicker('setTime', currentTime);
+        }
+    });
 
 });
 

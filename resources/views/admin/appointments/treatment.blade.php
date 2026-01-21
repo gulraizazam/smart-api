@@ -268,7 +268,7 @@
 
                         <div class="card-toolbar">
                             <!--begin::Dropdown-->
-                            @if(Gate::allows('appointments_destroy'))
+                            @if(Gate::allows('treatments_destroy'))
                                 <div class="delete-records d-none">
                                     <span>Selected Rows: <span class="checkbox-count"></span></span>
                                     <a id="delete-table-rows" href="javascript:void(0);" class="btn btn-danger font-weight-bolder">
@@ -276,7 +276,7 @@
                                     </a>
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
-                            @if(Gate::allows('appointments_export_today'))
+                            @if(Gate::allows('treatments_export_today'))
                                 <div class="export-appointments">
                                     <a id="today_consultancies" onclick="loadTodayAppointments('{{date('Y-m-d')}}', 'treatment');" href="javascript:void(0);" class="btn btn-info font-weight-bolder">
                                         Today Treatments
@@ -284,7 +284,7 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('appointments_export'))
+                            @if(Gate::allows('treatments_export'))
                                     <form method="POST" action="download-filter-data" id="filtersform">
                                         @csrf
                                         <input type="hidden" id="filter_patient_id" name="filter_patient_id">

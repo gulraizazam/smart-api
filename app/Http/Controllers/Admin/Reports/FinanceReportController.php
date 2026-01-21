@@ -3101,7 +3101,7 @@ public static function revenueByGenderAndService($request)
                 ->whereIn('appointments.city_id', ACL::getUserCities())
                 ->whereIn('appointments.location_id', ACL::getUserCentres());
         }
-        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services')) {
+        if (Gate::allows('appointments_consultancy') && Gate::allows('treatments_services')) {
             $resultQuery = Appointments::join('users', function ($query) {
                 $query->on('users.id', 'appointments.patient_id')
                     ->where(['users.user_type_id' => config('constants.patient_id')]);
@@ -3167,7 +3167,7 @@ public static function revenueByGenderAndService($request)
         $records['data'] = [];
 
         $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
-        if (Gate::allows('appointments_consultancy') && Gate::allows('appointments_services') || Gate::allows('appointments_consultancy')) {
+        if (Gate::allows('appointments_consultancy') && Gate::allows('treatments_services') || Gate::allows('appointments_consultancy')) {
             $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
         }
         if (count($where)) {

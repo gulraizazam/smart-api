@@ -52,6 +52,16 @@ class StoreAppointmentRequest extends FormRequest
             }
         }
         
+        // Convert scheduled_time from h:mm A format to H:i:s format
+        if ($this->has('scheduled_time') && $this->scheduled_time) {
+            try {
+                $time = \Carbon\Carbon::createFromFormat('g:i A', $this->scheduled_time);
+                $this->merge(['scheduled_time' => $time->format('H:i:s')]);
+            } catch (\Exception $e) {
+                // If conversion fails, leave as is and let validation handle it
+            }
+        }
+        
         if ($isConsultation) {
             $this->request->remove('resource_id');
             $this->request->remove('resource_has_rota_day_id');

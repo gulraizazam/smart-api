@@ -366,52 +366,14 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // Custom User Form Routes
         Route::resource('custom_forms', CustomFormsController::class);
 
-        // Leads
-        Route::get('leadstatus_popup_checks', [LeadsController::class, 'LeadStatusespopcheck'])->name('leads.leadstatus_popup_checks');
-
-        Route::get('leadstatuschild_popup_checks', [LeadsController::class, 'LeadStatusChildpopcheck'])->name('leads.leadstatuschild_popup_checks');
-
-        Route::post('leads/loadlead', [LeadsController::class, 'loadLeadData'])->name('leads.load_lead');
-
+        // Leads - View routes only (all API operations handled in api.php)
+        Route::get('leads', [LeadsController::class, 'index'])->name('leads.index');
         Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
-
-        Route::post('leads/load_child_services', [LeadsController::class, 'LoadChildServices'])->name('leads.load_child_services');
-        Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
-
-        Route::post('leads/status', [LeadsController::class, 'status'])->name('leads.status');
-
-        Route::get('LeadCommentStore', [LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
-
-        Route::get('LeadCommentStore', [LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
-        Route::get('LeadEditDetail', [LeadsController::class, 'LeadEditDetailAjax'])->name('leads.LeadEditDetail');
-
-        //Lead Import
         Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
-        Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
+        
+        // Memberships
         Route::post('memberships/upload', [MembershipsController::class, 'uploadMemberships'])->name('memberships.upload');
-        Route::resource('leads', LeadsController::class)->only('index');
-
-        Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
-        // Load and Save Lead Statuses
-        Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
-
-        Route::put('leads_save_status', [LeadsController::class, 'saveLeadStatus'])->name('leads.save_status');
-        // Load and Save Treatments
-        Route::get('leads_treatments', [LeadsController::class, 'loadTreatments'])->name('leads.treatments');
-
-        Route::put('leads_save_treatment', [LeadsController::class, 'saveTreatment'])->name('leads.save_treatment');
-        // Load and Save Lead Sources
-
-        Route::get('leads_lead_sources', [LeadsController::class, 'loadLeadSources'])->name('leads.lead_sources');
-
-        Route::put('leads_save_source', [LeadsController::class, 'saveLeadSource'])->name('leads.save_source');
-        // Load and Save Cities
-        Route::get('leads_cities', [LeadsController::class, 'loadCities'])->name('leads.cities');
-
-        Route::put('leads_save_city', [LeadsController::class, 'saveCity'])->name('leads.save_city');
-        Route::get('leads/export/pdf', [LeadsController::class, 'exportPdf'])->name('leads.export.pdf');
         Route::get('memberships/export/pdf', [MembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
-        Route::get('leads/export/excel', [LeadsController::class, 'exportDocs'])->name('leads.export.excel');
         Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('membership.export.excel');
         // Patients - using API controller for CRUD operations, keeping view routes
         Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients_manage');
@@ -486,7 +448,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         /*Route::resource('appointments', AppointmentsController::class)->only('index');*/
         Route::resource('consultancy', AppointmentsController::class)->only('index')->middleware('permission:appointments_manage');
-        Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:appointments_services');
+        Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:treatments_manage');
 
         /*service routes*/
 
