@@ -2002,12 +2002,13 @@ class AppointmentsController extends Controller
         } else {
             $employees = [];
         }
-        $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
-        if (count($serviceIds)) {
-            $services = Services::whereIn('id', $serviceIds)->get()->pluck('name', 'id');
-        } else {
-            $services[''] = '';
-        }
+        $services = Services::pluck('name', 'id');
+        // $serviceIds = LocationsWidget::loadAppointmentServiceByLocationDoctor($request->location_id, $request->doctor_id, Auth::User()->account_id);
+        // if (count($serviceIds)) {
+        //     $services = Services::whereIn('id', $serviceIds)->get()->pluck('name', 'id');
+        // } else {
+        //     $services[''] = '';
+        // }
         $lead_sources = LeadSources::getActiveSorted();
         $setting = Settings::where('slug', '=', 'sys-virtual-consultancy')->first();
         if ($appointment_checkes['status']) {
