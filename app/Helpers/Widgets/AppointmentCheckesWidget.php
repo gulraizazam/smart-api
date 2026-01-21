@@ -27,6 +27,12 @@ class AppointmentCheckesWidget
 
         $today = Carbon::now()->toDateString();
         $resource_id = Resources::where(['external_id' => $request->doctor_id])->first();
+        
+        // If resource not found (doctor_id is null or invalid), return empty rota
+        if (!$resource_id) {
+            return ['status' => true, 'continue_rota' => []];
+        }
+        
         $resource_rota = ResourceHasRota::where([
             'resource_id' => $resource_id->id,
             'location_id' => $request->location_id,
