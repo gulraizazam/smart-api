@@ -468,6 +468,14 @@ class ResourceHasRotaDays extends Model
         ];
     }
 
+    /**
+     * Relationship: ResourceHasRotaDays belongs to ResourceHasRota
+     */
+    public function resource_rota()
+    {
+        return $this->belongsTo(\App\Models\ResourceHasRota::class, 'resource_has_rota_id');
+    }
+
     /*
      * Get Resource Singe Day Rota with Date and ID
      *
