@@ -1301,6 +1301,30 @@ class AppointmentsController extends Controller
      */
     protected function verifyUpdateFields(Request $request)
     {
+        // Get appointment to check status
+        $appointment = null;
+        if ($request->has('id') || $request->route('id')) {
+            $appointmentId = $request->input('id') ?? $request->route('id');
+            $appointment = Appointments::find($appointmentId);
+        }
+        
+        // Check if this is an arrived/converted consultation with permissions
+        $isArrivedOrConverted = $appointment && in_array($appointment->appointment_status_id, [2, 16]);
+        $hasAnyEditPermission = Gate::allows('update_consultation_service') || 
+                                Gate::allows('update_consultation_doctor') || 
+                                Gate::allows('update_consultation_schedule');
+        
+        // For arrived/converted with permissions, make fields conditionally required
+        if ($isArrivedOrConverted && $hasAnyEditPermission) {
+            return $validator = Validator::make($request->all(), [
+                'treatment_id' => 'nullable',
+                'scheduled_date' => 'nullable',
+                'scheduled_time' => 'nullable',
+                'doctor_id' => 'nullable',
+            ]);
+        }
+        
+        // For other cases, all fields are required
         return $validator = Validator::make($request->all(), [
             'treatment_id' => 'required',
             'scheduled_date' => 'required',
