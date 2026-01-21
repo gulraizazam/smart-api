@@ -79,9 +79,9 @@ class ConsultancyDatatableService
     private function handleSorting(Request $request): array
     {
         if ($request->has('sort')) {
-            [$orderBy, $order] = getSortBy($request, 'appointments.scheduled_date', 'DESC', 'appointments');
+            [$orderBy, $order] = getSortBy($request, 'appointments.created_at', 'DESC', 'appointments');
         } else {
-            $orderBy = 'appointments.scheduled_date';
+            $orderBy = 'appointments.created_at';
             $order = 'desc';
         }
         
