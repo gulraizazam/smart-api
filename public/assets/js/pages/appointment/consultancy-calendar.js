@@ -1138,7 +1138,12 @@ var CustomResourceCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error('Unable to reschedule appointment. Please try again.');
+                    // Try to get error message from response
+                    var errorMessage = 'Unable to reschedule appointment. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    toastr.error(errorMessage);
                     // Move appointment back to original slot
                     appointmentEl.removeClass('dragging');
                 }

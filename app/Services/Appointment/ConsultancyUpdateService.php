@@ -63,7 +63,7 @@ class ConsultancyUpdateService
             'is_arrived_or_converted' => $isArrivedOrConverted,
             'permissions' => $permissions,
             'old_service_id' => $appointment->service_id,
-            'new_service_id' => $requestData['treatment_service_id'] ?? $requestData['service_id'] ?? $requestData['treatment_id'] ?? null,
+            'new_service_id' => $requestData['treatment_id'] ?? $requestData['service_id'] ?? $requestData['treatment_service_id'] ?? null,
             'old_doctor_id' => $appointment->doctor_id,
             'new_doctor_id' => $requestData['doctor_id'] ?? null,
             'location_id' => $requestData['location_id'] ?? $appointment->location_id,
@@ -97,8 +97,8 @@ class ConsultancyUpdateService
      */
     protected function validateArrivedConsultationUpdate($appointment, $requestData, $permissions)
     {
-        // Check if service is changing
-        $newServiceId = $requestData['treatment_service_id'] ?? $requestData['service_id'] ?? $requestData['treatment_id'] ?? null;
+        // Check if service is changing (prioritize treatment_id for consultation form)
+        $newServiceId = $requestData['treatment_id'] ?? $requestData['service_id'] ?? $requestData['treatment_service_id'] ?? null;
         if ($newServiceId && $appointment->service_id != $newServiceId) {
             if (!$permissions['service']) {
                 throw AppointmentException::unauthorized('You do not have permission to change the service.');
@@ -209,7 +209,7 @@ class ConsultancyUpdateService
     }
 
     /**
-     * Validate doctor has service allocated
+     * Validate doctor has service allocated at location
      */
     protected function validateDoctorHasService($doctorId, $serviceId, $locationId)
     {
@@ -227,14 +227,12 @@ class ConsultancyUpdateService
             'location_id' => $locationId,
         ]);
 
-        // Check for "all services" (ID 13) or specific service
-        $hasService = DoctorHasLocations::where('is_allocated', 1)
+        // Check if service exists in doctor_has_locations for this doctor at this location
+        $hasService = \DB::table('doctor_has_locations')
             ->where('user_id', $doctorId)
             ->where('location_id', $locationId)
-            ->where(function($query) use ($parentServiceId) {
-                $query->where('service_id', 13)
-                      ->orWhere('service_id', $parentServiceId);
-            })
+            ->where('service_id', $serviceId)
+            ->where('is_allocated', 1)
             ->exists();
 
         \Log::info('validateDoctorHasService: Result', [
@@ -243,7 +241,7 @@ class ConsultancyUpdateService
         ]);
 
         if (!$hasService) {
-            throw AppointmentException::invalidData('Doctor does not have the required service allocated for this location.');
+            throw AppointmentException::invalidData('This doctor does not have the selected service allocated at this location.');
         }
     }
 

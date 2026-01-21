@@ -181,7 +181,7 @@ class AppointmentsController extends Controller
 
             return ApiHelper::apiResponse(200, 'Appointment scheduled successfully.', true, $appointment);
         } catch (AppointmentException $e) {
-            return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
+            return ApiHelper::apiResponse($e->getCode(), $e->getMessage(), false);
         } catch (\Exception $e) {
             Log::error('Error scheduling appointment: ' . $e->getMessage());
             return ApiHelper::apiException($e);

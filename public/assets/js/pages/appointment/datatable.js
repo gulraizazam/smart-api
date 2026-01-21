@@ -865,11 +865,20 @@ function setEditData(response) {
         $("#consultancy_appointment_type").val(appointment?.appointment_type_id);
         $("#edit_location_id").val(appointment?.location_id);
 
-        // Reinitialize select2 for the dropdowns
+        // Destroy existing Select2 instances first to ensure clean state
+        if ($("#edit_treatment").hasClass("select2-hidden-accessible")) {
+            $("#edit_treatment").select2('destroy');
+        }
+        if ($("#edit_doctor").hasClass("select2-hidden-accessible")) {
+            $("#edit_doctor").select2('destroy');
+        }
+        
+        // Reinitialize select2 for the dropdowns AFTER all values are set and permissions applied
         $("#edit_treatment").select2();
         $("#edit_doctor").select2();
         
         console.log('setEditData completed successfully');
+        console.log('Service field initial value:', $("#edit_treatment").val());
 
     } catch (error) {
         console.error('Error in setEditData:', error);
@@ -1432,6 +1441,10 @@ var AppointScheduleValidation = function () {
             select2Validation();
         });
         validate.on('core.form.valid', function (event) {
+            console.log('Form validation passed, preparing to submit');
+            console.log('Service field value before serialization:', $("#edit_treatment").val());
+            console.log('Service field name:', $("#edit_treatment").attr('name'));
+            
             // Temporarily enable disabled fields so they're included in serialization
             var disabledFields = $(form).find(':input:disabled').not('select');
             var disabledSelects = $(form).find('select:disabled');
@@ -1441,12 +1454,41 @@ var AppointScheduleValidation = function () {
             
             // Serialize form data
             var formData = $(form).serialize();
+            console.log('Serialized form data:', formData);
             
             // Manually append disabled Select2 values if they weren't included
             disabledSelects.each(function() {
                 var fieldName = $(this).attr('name');
                 var fieldValue = $(this).val();
                 if (fieldValue && formData.indexOf(fieldName + '=') === -1) {
+                    formData += '&' + fieldName + '=' + encodeURIComponent(fieldValue);
+                }
+            });
+            
+            // Force capture service field value from Select2
+            var serviceField = $("#edit_treatment");
+            if (serviceField.length && !serviceField.prop('disabled')) {
+                var serviceName = serviceField.attr('name');
+                var serviceValue = serviceField.val();
+                console.log('Forcing service field capture:', serviceName, '=', serviceValue);
+                if (serviceValue && serviceName) {
+                    // Remove old value
+                    var regex = new RegExp('&?' + serviceName + '=[^&]*', 'g');
+                    formData = formData.replace(regex, '');
+                    // Append current value
+                    formData += '&' + serviceName + '=' + encodeURIComponent(serviceValue);
+                }
+            }
+            
+            // Also ensure other enabled Select2 fields have their current value
+            $(form).find('select:not(:disabled)').each(function() {
+                var fieldName = $(this).attr('name');
+                var fieldValue = $(this).val();
+                if (fieldValue && fieldName && fieldName !== 'treatment_id') { // Skip treatment_id since we handled it above
+                    // Remove old value from formData if exists
+                    var regex = new RegExp('&?' + fieldName + '=[^&]*', 'g');
+                    formData = formData.replace(regex, '');
+                    // Append current value
                     formData += '&' + fieldName + '=' + encodeURIComponent(fieldValue);
                 }
             });
