@@ -13,6 +13,7 @@ use App\Models\Invoices;
 use App\Models\InvoiceStatuses;
 use App\Models\Leads;
 use App\Models\LeadStatuses;
+use App\Services\Lead\LeadService;
 use App\Models\Locations;
 use App\Models\PackageAdvances;
 use App\Models\PackageBundles;
@@ -251,7 +252,7 @@ class PlanAppointmentCalculation
             if (! empty($leadObj) && isset($leadObj['service_id'])) {
                 $leadObj['base_service_id'] = $leadObj['service_id'];
             }
-            $lead = Leads::createRecord($leadObj, $patient, $status = 'Appointment');
+            $lead = app(LeadService::class)->createLeadRecord($leadObj, 'Appointment');
         }
 
         // Set Lead ID for Appointment

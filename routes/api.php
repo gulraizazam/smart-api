@@ -5,7 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
-use App\Http\Controllers\Admin\LeadsController;
+use App\Http\Controllers\Admin\LeadsController as AdminLeadsController;
+use App\Http\Controllers\Api\LeadsController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
@@ -473,21 +474,57 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('custom_forms_medical', [CustomFormsController::class, 'create_medical'])->name('custom_forms.create_medical');
     Route::get('custom_forms_measurement', [CustomFormsController::class, 'create_measurement'])->name('custom_forms.create_measurement');
 
-    Route::post('leads/junk_datatable', [LeadsController::class, 'junkDatatable'])->name('leads.junk_datatable');
+    // Leads API Routes (Optimized)
+    // IMPORTANT: Specific routes MUST come before wildcard {id} routes
+    Route::prefix('leads')->name('leads.')->group(function () {
+        // POST routes
+        Route::post('datatable', [LeadsController::class, 'datatable'])->name('datatable');
+        Route::post('junk-datatable', [LeadsController::class, 'datatable'])->name('junk_datatable');
+        Route::post('/', [LeadsController::class, 'store'])->name('store');
+        Route::post('status', [LeadsController::class, 'status'])->name('status');
+        Route::post('load_child_services', [LeadsController::class, 'loadChildServices'])->name('load_child_services');
+        Route::post('upload', [LeadsController::class, 'uploadLeads'])->name('upload');
+        Route::post('comment', [LeadsController::class, 'storeComment'])->name('storecomment');
+        Route::post('loadlead', [LeadsController::class, 'loadLeadData'])->name('load_lead');
+        
+        // GET routes - specific paths (must be before {id} wildcard)
+        Route::get('create', [LeadsController::class, 'create'])->name('create');
+        Route::get('showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('showleadstatus');
+        Route::get('getleadid', [LeadsController::class, 'getLeadId'])->name('getlead.id');
+        Route::get('get_lead_number', [LeadsController::class, 'getLeadNumber'])->name('get_lead_number');
+        Route::get('phone/search', [LeadsController::class, 'phoneSearch'])->name('phone.search');
+        Route::get('lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('lead_statuses');
+        Route::get('treatments', [LeadsController::class, 'loadTreatments'])->name('treatments');
+        Route::get('lead_sources', [LeadsController::class, 'loadLeadSources'])->name('lead_sources');
+        Route::get('cities', [LeadsController::class, 'loadCities'])->name('cities');
+        Route::get('leadstatus_popup_checks', [LeadsController::class, 'leadStatusesPopCheck'])->name('leadstatus_popup_checks');
+        Route::get('leadstatuschild_popup_checks', [LeadsController::class, 'leadStatusChildPopCheck'])->name('leadstatuschild_popup_checks');
+        Route::get('export/pdf', [LeadsController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('export/excel', [LeadsController::class, 'exportDocs'])->name('export.excel');
+        Route::get('detail/{id}', [LeadsController::class, 'detail'])->name('detail');
+        Route::get('convert/{id}', [LeadsController::class, 'convert'])->name('convert');
+        Route::get('edit/service/{id}/{service_id}', [LeadsController::class, 'editService'])->name('edit.service');
+        
+        // PUT routes
+        Route::put('storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('storeleadstatus');
+        Route::put('save_city', [LeadsController::class, 'saveCity'])->name('save_city');
+        
+        // PATCH routes
+        Route::patch('{id}/send-sms', [LeadsController::class, 'sendSms'])->name('send_sms');
+        
+        // POST routes with {id}
+        Route::post('{id}/remove-from-junk', [LeadsController::class, 'removeFromJunk'])->name('remove_from_junk');
+        
+        // Wildcard {id} routes - MUST be last
+        Route::get('{id}', [LeadsController::class, 'detail'])->name('show');
+        Route::get('{id}/edit', [LeadsController::class, 'edit'])->name('edit');
+        Route::put('{id}', [LeadsController::class, 'update'])->name('update');
+        Route::delete('{id}', [LeadsController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('leads/edit/service/{id}/{service_id}', [LeadsController::class, 'editService'])->name('leads.edit.service');
-    Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
-    Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
-    Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
-    Route::get('leads/getleadid', [LeadsController::class, 'getleadid'])->name('leads.getlead.id');
-    Route::get('leads/get_lead_number', [LeadsController::class, 'getleadnumber'])->name('leads.get_lead_number');
-    Route::get('leads/phone/search', [LeadsController::class, 'phoneSearch'])->name('leads.phone.search');
-    Route::resource('leads', LeadsController::class)->except('index');
-    Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
     Route::post('feedbacks/datatable', [FeedbackController::class, 'datatable'])->name('feedbacks.datatable');
-    // Convert Lead
-    Route::get('leads/convert/{id}', [LeadsController::class, 'convert'])->name('leads.convert');
-    Route::get('lead_Create_popup', [LeadsController::class, 'make_pop'])->name('leads.create_popup');
+    // Legacy route for popup (keeping for backward compatibility)
+    Route::get('lead_Create_popup', [AdminLeadsController::class, 'make_pop'])->name('leads.create_popup');
 
     /*Appointment routes*/
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');

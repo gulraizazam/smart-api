@@ -675,7 +675,54 @@ class AppointmentService
             }
         }
 
+        // Validate rota for consultancy appointments
+        if (isset($data['appointment_type_id']) && $data['appointment_type_id'] == 1) {
+            $this->validateRotaAvailability($data);
+        }
+
         return true;
+    }
+
+    protected function validateRotaAvailability(array $data)
+    {
+        \Log::info('validateRotaAvailability called', [
+            'has_scheduled_date' => isset($data['scheduled_date']),
+            'has_scheduled_time' => isset($data['scheduled_time']),
+            'scheduled_date' => $data['scheduled_date'] ?? null,
+            'scheduled_time' => $data['scheduled_time'] ?? null,
+            'start' => $data['start'] ?? null,
+        ]);
+        
+        $object = new \stdClass();
+        
+        // If we have scheduled_time but no scheduled_date, extract date from start
+        if (!isset($data['scheduled_date']) && isset($data['start'])) {
+            $data['scheduled_date'] = \Carbon\Carbon::parse($data['start'])->format('Y-m-d');
+            \Log::info('Extracted scheduled_date from start', ['scheduled_date' => $data['scheduled_date']]);
+        }
+        
+        // Build start datetime from scheduled_date and scheduled_time
+        if (isset($data['scheduled_date']) && isset($data['scheduled_time'])) {
+            $object->start = $data['scheduled_date'].'T'.\Carbon\Carbon::parse($data['scheduled_time'])->format('H:i:s');
+            \Log::info('Using scheduled_date and scheduled_time', ['object_start' => $object->start]);
+        } elseif (isset($data['start'])) {
+            $object->start = $data['start'];
+            \Log::info('Using start parameter', ['object_start' => $object->start]);
+        } else {
+            \Log::info('No time to validate, returning');
+            return; // No time to validate
+        }
+        
+        $object->city_id = $data['city_id'] ?? '';
+        $object->doctor_id = $data['doctor_id'] ?? null;
+        $object->location_id = $data['location_id'] ?? null;
+        $object->appointment_type = 'consulting';
+        
+        $rota = \App\Helpers\Widgets\AppointmentCheckesWidget::AppointmentConsultancyCheckes($object);
+        
+        if (!$rota['status']) {
+            throw AppointmentException::invalidData($rota['message'] ?? 'Doctor rota is not available for the selected time.');
+        }
     }
 
     public function getAppointmentStatistics($filters = [])

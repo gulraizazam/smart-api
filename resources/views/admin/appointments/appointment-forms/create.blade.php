@@ -72,6 +72,11 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Scheduled Time <span class="text text-danger">*</span></label>
+                            <input type="text" id="create_scheduled_time" name="scheduled_time" class="form-control scheduled_time default-timepicker">
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
                             <label class="fw-bold fs-6 mb-2 pl-0">Referred By (Patient Search)</label>
                             <select id="create_consultancy_referred_by" class="form-control form-control-solid mb-3 mb-lg-0 select2-patient-search" name="referred_by">
                             </select>

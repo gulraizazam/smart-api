@@ -15,7 +15,7 @@
                 </li>
             @endcan
 
-            @can("appointments_services")
+            @can("treatments_services")
                 <li class="horizontal-nav-bar-li" style="width: 50%;">
                     <a href="javascript:void(0)" onclick="toggleSection($(this), 'treatment');" class="change-tab treatment-tab navi-link py-4">
 

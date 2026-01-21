@@ -46,45 +46,27 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('leads_import'))
-                                <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_leads" class="btn btn-primary pull-right margin-r-5">
-                                    <i class="fa fa-upload"></i>
-                                    <span class="hidden-xs"> Import </span>
-                                </a>
-                            @endif
-                            &nbsp;&nbsp;
-                            @if(Gate::allows('leads_export'))
-                                <div class="btn-group">
-                                    <a class="btn  btn-primary" href="javascript:void(0);" data-toggle="dropdown">
+                            @if(request('type') != 'junk')
+                                @if(Gate::allows('leads_import'))
+                                    <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_leads" class="btn btn-primary pull-right margin-r-5">
+                                        <i class="fa fa-upload"></i>
+                                        <span class="hidden-xs"> Import </span>
+                                    </a>
+                                @endif
+                                &nbsp;&nbsp;
+                                @if(Gate::allows('leads_export'))
+                                    <a href="#" id="export-leads" data-href="{{route('admin.leads.export.excel')}}" class="btn btn-primary">
                                         <i class="fa fa-download"></i>
                                         <span class="hidden-xs"> Export </span>
-                                        <i class="fa fa-angle-down"></i>
                                     </a>
-                                    <ul class="dropdown-menu pull-right export_leads" id="datatable_ajax_tools">
-                                        <li>
-                                            <a href="#" title="Max pdf export limit is 100 records" id="export-pdf-leads" data-href="{{route('admin.leads.export.pdf')}}" data-action="0" class="tool-action"><i class="la la-file-pdf"></i>
-                                                PDF
-                                                <!-- <span class="export-pdf-limit">(1 to {{config('constants.export-lead-pdf-limit')}})</span></a> -->
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" title="Max export limit is 1000 records" id="export-leads" data-href="{{route('admin.leads.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i>
-                                                Excel
-                                                <!-- <span class="export-excel-limit">(1 to {{config('constants.export-lead-excel-limit')}})</span> -->
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" data-href="{{route('admin.leads.export.excel')}}" id="csv-leads" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            @endif
-                            &nbsp;&nbsp;
-                            @if(Gate::allows('leads_create'))
-                                <a href="javascript:void(0);" id="create_lead" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
-                                    <i class="la la-plus"></i>
-                                    Add New
-                                </a>
+                                @endif
+                                &nbsp;&nbsp;
+                                @if(Gate::allows('leads_create'))
+                                    <a href="javascript:void(0);" id="create_lead" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
+                                        <i class="la la-plus"></i>
+                                        Add New
+                                    </a>
+                                @endif
                             @endif
 
                         <!--end::Button-->

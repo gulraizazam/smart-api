@@ -250,7 +250,7 @@
                             </li>
                             @endcan
 
-                            @can('appointments_services')
+                            @can('treatments_manage')
                             <li class="menu-item manage-treatment {{ activeMenu('admin.treatment.index') }}" aria-haspopup="true">
                                 <a href="{{ route('admin.treatment.index') }}" class="menu-link">
                                     <i class="menu-bullet menu-bullet-dot">
