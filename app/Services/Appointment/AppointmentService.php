@@ -291,6 +291,34 @@ class AppointmentService
                 $appointment
             );
 
+            // Handle lead status update and activity logging if lead_id is present
+            if (isset($data['lead_id'])) {
+                $lead = Leads::find($data['lead_id']);
+                
+                if ($lead) {
+                    // Get 'Booked' lead status
+                    $bookedStatus = \App\Models\LeadStatuses::where('account_id', $this->getAccountId())
+                        ->where('name', 'Booked')
+                        ->first();
+                    
+                    if ($bookedStatus && $lead->lead_status_id != $bookedStatus->id) {
+                        // Update lead status to Booked
+                        $lead->update([
+                            'lead_status_id' => $bookedStatus->id,
+                            'updated_by' => $this->getUserId(),
+                            'updated_at' => Carbon::now()
+                        ]);
+                    }
+                    
+                    // Get related data for activity logging
+                    $location = \App\Models\Locations::with('city')->find($appointment->location_id);
+                    $service = \App\Models\Services::find($appointment->service_id);
+                    
+                    // Log lead booked activity
+                    ActivityLogger::logLeadBooked($lead, $appointment, $location, $service);
+                }
+            }
+
             AppointmentHelper::clearAppointmentCache($this->getAccountId());
 
             DB::commit();
@@ -303,41 +331,7 @@ class AppointmentService
                 'doctor',
                 'patient'
             ]);
-            
-            // Add start_time and end_time for calendar
-            if ($appointment->scheduled_date && $appointment->scheduled_time) {
-                // Format date properly (handle both string and Carbon object)
-                $dateStr = $appointment->scheduled_date instanceof Carbon 
-                    ? $appointment->scheduled_date->format('Y-m-d')
-                    : (is_string($appointment->scheduled_date) ? $appointment->scheduled_date : Carbon::parse($appointment->scheduled_date)->format('Y-m-d'));
-                
-                // Get time string (handle if it's already a datetime)
-                $timeStr = is_string($appointment->scheduled_time) ? $appointment->scheduled_time : $appointment->scheduled_time;
-                if (strpos($timeStr, ' ') !== false) {
-                    // Extract just the time part if it contains a space
-                    $parts = explode(' ', $timeStr);
-                    $timeStr = end($parts);
-                }
-                
-                // Combine date and time
-                $appointment->start_time = $dateStr . ' ' . $timeStr;
-                
-                // Calculate end time based on service duration
-                if (isset($appointmentData['service_id'])) {
-                    $service = \App\Models\Services::find($appointmentData['service_id']);
-                    $duration = ($service && $service->duration) ? $service->duration : 30;
-                } else {
-                    $duration = 30;
-                }
-                
-                $appointment->end_time = Carbon::parse($appointment->start_time)
-                    ->addMinutes($duration)
-                    ->format('Y-m-d H:i:s');
-            } else {
-                $appointment->start_time = null;
-                $appointment->end_time = null;
-            }
-            
+
             return $appointment;
         } catch (\Exception $e) {
             DB::rollBack();
