@@ -2360,54 +2360,151 @@ class AppointmentsController extends Controller
             return ApiHelper::apiResponse($this->success, 'Appointment not found.', false);
         }
 
-        // Check if appointment is arrived/converted and user has permission to edit doctor
+        // Check if appointment is arrived/converted and what permissions user has
         $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]); // 2 = Arrived, 16 = Converted
         $canEditDoctorAfterArrived = Gate::allows('update_consultation_doctor');
+        $canEditServiceAfterArrived = Gate::allows('update_consultation_service');
+        $canEditScheduleAfterArrived = Gate::allows('update_consultation_schedule');
+        
+        // Determine what fields are being changed
+        $newServiceId = $request->treatment_service_id ?? $request->service_id ?? $request->treatment_id;
+        $newDoctorId = $request->doctor_id;
+        $newScheduledDate = $request->scheduled_date;
+        $newScheduledTime = $request->scheduled_time;
+        
+        $isServiceChanging = $newServiceId && ($appointment->service_id != $newServiceId);
+        $isDoctorChanging = $newDoctorId && ($appointment->doctor_id != $newDoctorId);
+        $isScheduleChanging = ($appointment->scheduled_date != $newScheduledDate) || 
+                              ($appointment->scheduled_time != Carbon::parse($newScheduledTime)->format('H:i:s'));
         
         // Debug logging
         \Log::info('Update Consultation Validation Debug', [
             'appointment_id' => $id,
             'appointment_status_id' => $appointment->appointment_status_id,
             'is_arrived_or_converted' => $isArrivedOrConverted,
-            'has_permission' => $canEditDoctorAfterArrived,
-            'user_id' => Auth::id(),
-            'doctor_id' => $request->doctor_id,
-            'location_id' => $request->location_id,
+            'permissions' => [
+                'doctor' => $canEditDoctorAfterArrived,
+                'service' => $canEditServiceAfterArrived,
+                'schedule' => $canEditScheduleAfterArrived,
+            ],
+            'changes' => [
+                'service' => $isServiceChanging,
+                'doctor' => $isDoctorChanging,
+                'schedule' => $isScheduleChanging,
+            ],
+            'old_values' => [
+                'service_id' => $appointment->service_id,
+                'doctor_id' => $appointment->doctor_id,
+                'scheduled_date' => $appointment->scheduled_date,
+                'scheduled_time' => $appointment->scheduled_time,
+            ],
+            'new_values' => [
+                'service_id' => $newServiceId,
+                'doctor_id' => $newDoctorId,
+                'scheduled_date' => $newScheduledDate,
+                'scheduled_time' => $newScheduledTime,
+            ],
         ]);
         
-        // Skip doctor-service validation if arrived/converted with permission
-        $skipDoctorServiceValidation = $isArrivedOrConverted && $canEditDoctorAfterArrived;
-        
-        \Log::info('Skip validation?', ['skip' => $skipDoctorServiceValidation]);
-        
-        if (!$skipDoctorServiceValidation) {
-            // Determine the service being updated
+        // For arrived/converted consultations, apply granular validation based on permissions
+        if ($isArrivedOrConverted) {
+            // 1. If service is changing and user has service permission
+            if ($isServiceChanging && $canEditServiceAfterArrived) {
+                // Validate that current doctor has the NEW service allocated
+                $parent = Services::find($newServiceId);
+                if ($parent) {
+                    $parent_service_id = $parent->parent_id == 0 ? $parent->id : $parent->parent_id;
+                    
+                    $has_all_services = DoctorHasLocations::where('is_allocated', 1)
+                        ->where('user_id', $appointment->doctor_id) // Current doctor
+                        ->where('location_id', $request->location_id)
+                        ->where('service_id', 13)
+                        ->exists();
+                    
+                    $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
+                        ->where('user_id', $appointment->doctor_id) // Current doctor
+                        ->where('location_id', $request->location_id)
+                        ->where('service_id', $parent_service_id)
+                        ->exists();
+                    
+                    if (!$has_all_services && !$has_specific_service) {
+                        return ApiHelper::apiResponse($this->success, 'Current doctor does not have the new service allocated for this location.', false);
+                    }
+                }
+            }
+            
+            // 2. If doctor is changing and user has doctor permission
+            if ($isDoctorChanging && $canEditDoctorAfterArrived) {
+                // Validate that NEW doctor has the current service allocated
+                $service = Services::find($appointment->service_id);
+                if ($service) {
+                    $parent_service_id = $service->parent_id == 0 ? $service->id : $service->parent_id;
+                    
+                    $has_all_services = DoctorHasLocations::where('is_allocated', 1)
+                        ->where('user_id', $newDoctorId) // New doctor
+                        ->where('location_id', $request->location_id)
+                        ->where('service_id', 13)
+                        ->exists();
+                    
+                    $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
+                        ->where('user_id', $newDoctorId) // New doctor
+                        ->where('location_id', $request->location_id)
+                        ->where('service_id', $parent_service_id)
+                        ->exists();
+                    
+                    if (!$has_all_services && !$has_specific_service) {
+                        return ApiHelper::apiResponse($this->success, 'New doctor does not have the required service allocated for this location.', false);
+                    }
+                }
+            }
+            
+            // 3. If both service AND doctor are changing
+            if ($isServiceChanging && $isDoctorChanging && $canEditServiceAfterArrived && $canEditDoctorAfterArrived) {
+                // Validate that NEW doctor has the NEW service allocated
+                $parent = Services::find($newServiceId);
+                if ($parent) {
+                    $parent_service_id = $parent->parent_id == 0 ? $parent->id : $parent->parent_id;
+                    
+                    $has_all_services = DoctorHasLocations::where('is_allocated', 1)
+                        ->where('user_id', $newDoctorId) // New doctor
+                        ->where('location_id', $request->location_id)
+                        ->where('service_id', 13)
+                        ->exists();
+                    
+                    $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
+                        ->where('user_id', $newDoctorId) // New doctor
+                        ->where('location_id', $request->location_id)
+                        ->where('service_id', $parent_service_id)
+                        ->exists();
+                    
+                    if (!$has_all_services && !$has_specific_service) {
+                        return ApiHelper::apiResponse($this->success, 'New doctor does not have the new service allocated for this location.', false);
+                    }
+                }
+            }
+        } else {
+            // For non-arrived/non-converted consultations, apply normal validation
             $parent = Services::whereid($request->treatment_service_id ?? $request->service_id ?? $request->treatment_id)->first();
             if ($parent && $parent->parent_id == 0) {
-                // Service is already a parent service
                 $service_id = $parent->id;
             } elseif ($parent) {
-                // Service is a child, get the parent service ID
                 $service_id = $parent->parent_id;
             } else {
                 return ApiHelper::apiResponse($this->success, 'Service not found.', false);
             }
 
-            // Check if doctor has service_id 13 (all services) with is_allocated = 1 for this location
             $has_all_services = DoctorHasLocations::where('is_allocated', 1)
                 ->where('user_id', $request->doctor_id)
                 ->where('location_id', $request->location_id)
                 ->where('service_id', 13)
                 ->exists();
 
-            // Check if doctor has the specific service with is_allocated = 1 for this location
             $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
                 ->where('user_id', $request->doctor_id)
                 ->where('location_id', $request->location_id)
                 ->where('service_id', $service_id)
                 ->exists();
 
-            // If doctor doesn't have either "all services" OR the specific service, reject
             if (!$has_all_services && !$has_specific_service) {
                 return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
             }
@@ -3572,12 +3669,13 @@ class AppointmentsController extends Controller
                     $appointment = Appointments::findOrFail($request->id);
 
                     // Validate that the doctor has the service allocated with is_allocated = 1
-                    // Skip validation if appointment is arrived/converted and user has permission to edit doctor
+                    // Skip validation if appointment is arrived/converted and user has permission to edit
                     $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]); // 2 = Arrived, 16 = Converted
                     $canEditDoctorAfterArrived = Gate::allows('update_consultation_doctor');
+                    $canEditServiceAfterArrived = Gate::allows('update_consultation_service');
                     
-                    // Only validate doctor-service allocation if NOT (arrived/converted with permission)
-                    if (!($isArrivedOrConverted && $canEditDoctorAfterArrived)) {
+                    // Only validate doctor-service allocation if NOT (arrived/converted with either permission)
+                    if (!($isArrivedOrConverted && ($canEditDoctorAfterArrived || $canEditServiceAfterArrived))) {
                         // Get the service's parent (base service)
                         $service = Services::find($appointment->service_id);
                         if ($service) {
