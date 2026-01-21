@@ -446,41 +446,39 @@ function actions(data) {
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                     </a>';
 
+        // HIDDEN: WhatsApp icon removed from datatable as per user request
         // Show WhatsApp icon only if appointment_status is NOT 2 and scheduled_date is today
-        let today = new Date();
-        let todayString = today.getFullYear() + '-' +
-                         String(today.getMonth() + 1).padStart(2, '0') + '-' +
-                         String(today.getDate()).padStart(2, '0');
+        // let today = new Date();
+        // let todayString = today.getFullYear() + '-' +
+        //                  String(today.getMonth() + 1).padStart(2, '0') + '-' +
+        //                  String(today.getDate()).padStart(2, '0');
 
-        // Parse scheduled_date to check if it's today
-        let isToday = false;
-        if (data.scheduled_date && data.scheduled_date !== '-') {
-            // Parse "Dec 15, 2025 at 12:45 PM" format
-            let scheduledDatePart = data.scheduled_date.split(' at ')[0]; // Get "Dec 15, 2025"
-            let scheduledDate = new Date(scheduledDatePart);
-            let scheduledDateString = scheduledDate.getFullYear() + '-' +
-                                     String(scheduledDate.getMonth() + 1).padStart(2, '0') + '-' +
-                                     String(scheduledDate.getDate()).padStart(2, '0');
-            isToday = scheduledDateString === todayString;
-        }
+        // // Parse scheduled_date to check if it's today
+        // let isToday = false;
+        // if (data.scheduled_date && data.scheduled_date !== '-') {
+        //     // Parse "Dec 15, 2025 at 12:45 PM" format
+        //     let scheduledDatePart = data.scheduled_date.split(' at ')[0]; // Get "Dec 15, 2025"
+        //     let scheduledDate = new Date(scheduledDatePart);
+        //     let scheduledDateString = scheduledDate.getFullYear() + '-' +
+        //                              String(scheduledDate.getMonth() + 1).padStart(2, '0') + '-' +
+        //                              String(scheduledDate.getDate()).padStart(2, '0');
+        //     isToday = scheduledDateString === todayString;
+        // }
 
-        // Debug logging for WhatsApp icon rendering
-   
+        // // Check user role permission for WhatsApp button (only FDM and Super-Admin)
+        // let canSendWhatsApp = window.canSendWhatsApp || false;
 
-        // Check user role permission for WhatsApp button (only FDM and Super-Admin)
-        let canSendWhatsApp = window.canSendWhatsApp || false;
+        // if (data.appointment_status != 2 && data.appointment_status != 16&& isToday && canSendWhatsApp) {
+        //     // Copy WhatsApp Message Button
+             actions += '<a href="javascript:void(0);" onclick="copyWhatsAppMessage(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-primary btn-sm ml-2" title="Copy Message">\
+                             <span class="navi-icon"><i class="la la-copy" style="color: white;"></i></span>\
+                         </a>';
 
-        if (data.appointment_status != 2 && data.appointment_status != 16&& isToday && canSendWhatsApp) {
-            // Copy WhatsApp Message Button
-            actions += '<a href="javascript:void(0);" onclick="copyWhatsAppMessage(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-primary btn-sm ml-2" title="Copy Message">\
-                            <span class="navi-icon"><i class="la la-copy" style="color: white;"></i></span>\
-                        </a>';
-
-            // Send WhatsApp Button
-            actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
-                            <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
-                        </a>';
-        } 
+        //     // Send WhatsApp Button
+        //     actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
+        //                     <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
+        //                 </a>';
+        // } 
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                         <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -554,15 +552,16 @@ function actions(data) {
                         </a>\
                     </li>';
 
+        // HIDDEN: WhatsApp option removed from mobile menu as per user request
         // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today and user has permission
-       if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
-            actions += '<li class="navi-item  d-lg-none">\
-                            <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
-                                <span class="navi-icon"><i class="lab la-whatsapp"></i></span>\
-                                <span class="navi-text">Send WhatsApp</span>\
-                            </a>\
-                        </li>';
-        }
+       // if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
+       //      actions += '<li class="navi-item  d-lg-none">\
+       //                      <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
+       //                          <span class="navi-icon"><i class="lab la-whatsapp"></i></span>\
+       //                          <span class="navi-text">Send WhatsApp</span>\
+       //                      </a>\
+       //                  </li>';
+       //  }
 
 
         if (permissions.invoice) {
