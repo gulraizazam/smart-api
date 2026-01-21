@@ -744,6 +744,7 @@ class AppointmentsController extends Controller
             'plans_create' => Gate::allows('treatments_plans_create'),
             'patient_card' => Gate::allows('treatments_patient_card'),
             'contact' => Gate::allows('contact'),
+            'add_feedback' => Gate::allows('feedbacks_create'),
         ];
 
         return response()->json($records);
