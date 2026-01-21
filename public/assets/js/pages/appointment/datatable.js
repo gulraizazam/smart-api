@@ -793,37 +793,38 @@ function setEditData(response) {
         // Check if status is Arrived (2) or Converted (16)
         let isArrivedOrConverted = (appointment.appointment_status_id == 2 || appointment.appointment_status_id == 16);
         
-        // Apply permission-based field restrictions for arrived/converted consultations
+        // For arrived/converted status: use permissions to control field editing
+        // For other statuses: always enable fields regardless of permissions
         if (isArrivedOrConverted) {
-            // Service field - check if user has permission to edit consultation service
-            if (!permissions.update_consultation_service) {
-                $("#edit_treatment").prop('disabled', true).addClass('bg-light');
-            } else {
+            // Service field - permission-based for arrived/converted
+            if (permissions.update_consultation_service) {
                 $("#edit_treatment").prop('disabled', false).removeClass('bg-light');
+            } else {
+                $("#edit_treatment").prop('disabled', true).addClass('bg-light');
             }
             
-            // Doctor field - check if user has permission to edit consultation doctor
-            if (!permissions.update_consultation_doctor) {
-                $("#edit_doctor").prop('disabled', true).addClass('bg-light');
-            } else {
+            // Doctor field - permission-based for arrived/converted
+            if (permissions.update_consultation_doctor) {
                 $("#edit_doctor").prop('disabled', false).removeClass('bg-light');
+            } else {
+                $("#edit_doctor").prop('disabled', true).addClass('bg-light');
             }
             
-            // Scheduled date field - check if user has permission to edit consultation schedule
-            if (!permissions.update_consultation_schedule) {
-                $("#edit_scheduled_date").prop('disabled', true).addClass('bg-light');
-            } else {
+            // Scheduled date field - permission-based for arrived/converted
+            if (permissions.update_consultation_schedule) {
                 $("#edit_scheduled_date").prop('disabled', false).removeClass('bg-light');
+            } else {
+                $("#edit_scheduled_date").prop('disabled', true).addClass('bg-light');
             }
             
-            // Scheduled time field - check if user has permission to edit consultation schedule
-            if (!permissions.update_consultation_schedule) {
-                $("#edit_scheduled_time").prop('disabled', true).addClass('bg-light');
-            } else {
+            // Scheduled time field - permission-based for arrived/converted
+            if (permissions.update_consultation_schedule) {
                 $("#edit_scheduled_time").prop('disabled', false).removeClass('bg-light');
+            } else {
+                $("#edit_scheduled_time").prop('disabled', true).addClass('bg-light');
             }
         } else {
-            // Not arrived/converted - enable all fields
+            // Not arrived/converted - always enable all fields regardless of permissions
             $("#edit_treatment").prop('disabled', false).removeClass('bg-light');
             $("#edit_doctor").prop('disabled', false).removeClass('bg-light');
             $("#edit_scheduled_date").prop('disabled', false).removeClass('bg-light');
