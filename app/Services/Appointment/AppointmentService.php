@@ -312,10 +312,16 @@ class AppointmentService
                         ])->first();
                         
                         if (!$existingLeadService) {
+                            // Get 'Booked' status to set in lead_services
+                            $bookedStatus = \App\Models\LeadStatuses::where('account_id', $this->getAccountId())
+                                ->where('name', 'Booked')
+                                ->first();
+                            
                             \App\Models\LeadsServices::create([
                                 'lead_id' => $lead->id,
                                 'service_id' => $appointment->service_id,
                                 'account_id' => $this->getAccountId(),
+                                'lead_status_id' => $bookedStatus ? $bookedStatus->id : null,
                                 'status' => 1,
                                 'created_at' => Carbon::now(),
                                 'updated_at' => Carbon::now()
@@ -328,13 +334,26 @@ class AppointmentService
                         ->where('name', 'Booked')
                         ->first();
                     
-                    if ($bookedStatus && $lead->lead_status_id != $bookedStatus->id) {
-                        // Update lead status to Booked
-                        $lead->update([
-                            'lead_status_id' => $bookedStatus->id,
-                            'updated_by' => $this->getUserId(),
-                            'updated_at' => Carbon::now()
-                        ]);
+                    if ($bookedStatus) {
+                        if ($lead->lead_status_id != $bookedStatus->id) {
+                            // Update lead status to Booked
+                            $lead->update([
+                                'lead_status_id' => $bookedStatus->id,
+                                'updated_by' => $this->getUserId(),
+                                'updated_at' => Carbon::now()
+                            ]);
+                        }
+                        
+                        // Update lead_status_id in lead_services for this service
+                        if (isset($appointment->service_id)) {
+                            \App\Models\LeadsServices::where([
+                                'lead_id' => $lead->id,
+                                'service_id' => $appointment->service_id
+                            ])->update([
+                                'lead_status_id' => $bookedStatus->id,
+                                'updated_at' => Carbon::now()
+                            ]);
+                        }
                     }
                     
                     // Get related data for activity logging
