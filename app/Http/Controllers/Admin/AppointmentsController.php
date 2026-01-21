@@ -2369,13 +2369,9 @@ class AppointmentsController extends Controller
         // Determine what fields are being changed
         $newServiceId = $request->treatment_service_id ?? $request->service_id ?? $request->treatment_id;
         $newDoctorId = $request->doctor_id;
-        $newScheduledDate = $request->scheduled_date;
-        $newScheduledTime = $request->scheduled_time;
         
         $isServiceChanging = $newServiceId && ($appointment->service_id != $newServiceId);
         $isDoctorChanging = $newDoctorId && ($appointment->doctor_id != $newDoctorId);
-        $isScheduleChanging = ($appointment->scheduled_date != $newScheduledDate) || 
-                              ($appointment->scheduled_time != Carbon::parse($newScheduledTime)->format('H:i:s'));
         
         // Debug logging
         \Log::info('Update Consultation Validation Debug', [
@@ -2390,19 +2386,14 @@ class AppointmentsController extends Controller
             'changes' => [
                 'service' => $isServiceChanging,
                 'doctor' => $isDoctorChanging,
-                'schedule' => $isScheduleChanging,
             ],
             'old_values' => [
                 'service_id' => $appointment->service_id,
                 'doctor_id' => $appointment->doctor_id,
-                'scheduled_date' => $appointment->scheduled_date,
-                'scheduled_time' => $appointment->scheduled_time,
             ],
             'new_values' => [
                 'service_id' => $newServiceId,
                 'doctor_id' => $newDoctorId,
-                'scheduled_date' => $newScheduledDate,
-                'scheduled_time' => $newScheduledTime,
             ],
         ]);
         
