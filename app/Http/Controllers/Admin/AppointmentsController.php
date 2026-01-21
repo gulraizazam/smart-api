@@ -2148,6 +2148,15 @@ class AppointmentsController extends Controller
                 }
             }
         }
+        
+        // Always include the currently assigned doctor, even if they don't have the service allocated
+        // This ensures the doctor shows up when editing existing appointments
+        if ($appointment->doctor_id && !isset($doctors[$appointment->doctor_id])) {
+            $currentDoctor = Doctors::find($appointment->doctor_id);
+            if ($currentDoctor && $currentDoctor->active == 1) {
+                $doctors[$appointment->doctor_id] = $currentDoctor->name;
+            }
+        }
 
         /*End*/
 
