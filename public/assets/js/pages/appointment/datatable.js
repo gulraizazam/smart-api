@@ -790,11 +790,44 @@ function setEditData(response) {
         $("#consultancy_service_id").html(service_option).val(appointment.service_id);
         $("#edit_doctor").html(doctor_option).val(appointment?.doctor_id);
 
-        // Disable service dropdown if status is Arrived (2) or Converted (16)
-        if (appointment.appointment_status_id == 2 || appointment.appointment_status_id == 16) {
-            $("#edit_treatment").prop('disabled', true).addClass('bg-light');
+        // Check if status is Arrived (2) or Converted (16)
+        let isArrivedOrConverted = (appointment.appointment_status_id == 2 || appointment.appointment_status_id == 16);
+        
+        // Apply permission-based field restrictions for arrived/converted consultations
+        if (isArrivedOrConverted) {
+            // Service field - check if user has permission to edit consultation service
+            if (!permissions.update_consultation_service) {
+                $("#edit_treatment").prop('disabled', true).addClass('bg-light');
+            } else {
+                $("#edit_treatment").prop('disabled', false).removeClass('bg-light');
+            }
+            
+            // Doctor field - check if user has permission to edit consultation doctor
+            if (!permissions.update_consultation_doctor) {
+                $("#edit_doctor").prop('disabled', true).addClass('bg-light');
+            } else {
+                $("#edit_doctor").prop('disabled', false).removeClass('bg-light');
+            }
+            
+            // Scheduled date field - check if user has permission to edit consultation schedule
+            if (!permissions.update_consultation_schedule) {
+                $("#edit_scheduled_date").prop('disabled', true).addClass('bg-light');
+            } else {
+                $("#edit_scheduled_date").prop('disabled', false).removeClass('bg-light');
+            }
+            
+            // Scheduled time field - check if user has permission to edit consultation schedule
+            if (!permissions.update_consultation_schedule) {
+                $("#edit_scheduled_time").prop('disabled', true).addClass('bg-light');
+            } else {
+                $("#edit_scheduled_time").prop('disabled', false).removeClass('bg-light');
+            }
         } else {
+            // Not arrived/converted - enable all fields
             $("#edit_treatment").prop('disabled', false).removeClass('bg-light');
+            $("#edit_doctor").prop('disabled', false).removeClass('bg-light');
+            $("#edit_scheduled_date").prop('disabled', false).removeClass('bg-light');
+            $("#edit_scheduled_time").prop('disabled', false).removeClass('bg-light');
         }
 
         $("#edit_scheduled_date").val(appointment.scheduled_date);
