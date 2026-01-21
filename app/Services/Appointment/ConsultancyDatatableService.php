@@ -385,6 +385,9 @@ class ConsultancyDatatableService
             'plans_create' => Gate::allows('appointments_plans_create'),
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
+            'update_consultation_service' => Gate::allows('update_consultation_service'),
+            'update_consultation_doctor' => Gate::allows('update_consultation_doctor'),
+            'update_consultation_schedule' => Gate::allows('update_consultation_schedule'),
         ];
     }
 }
