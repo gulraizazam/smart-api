@@ -312,11 +312,19 @@ class AppointmentService
                         ])->first();
                         
                         if (!$existingLeadService) {
+                            // Set all previous lead_services records to inactive before creating new one
+                            \App\Models\LeadsServices::where('lead_id', $lead->id)
+                                ->update([
+                                    'status' => 0,
+                                    'updated_at' => Carbon::now()
+                                ]);
+                            
                             // Get 'Booked' status to set in lead_services
                             $bookedStatus = \App\Models\LeadStatuses::where('account_id', $this->getAccountId())
                                 ->where('name', 'Booked')
                                 ->first();
                             
+                            // Create new active lead_services record
                             \App\Models\LeadsServices::create([
                                 'lead_id' => $lead->id,
                                 'service_id' => $appointment->service_id,
