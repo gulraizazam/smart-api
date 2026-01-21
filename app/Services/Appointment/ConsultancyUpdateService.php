@@ -104,14 +104,27 @@ class ConsultancyUpdateService
             
             // Validate new doctor has current service
             $this->validateDoctorHasService($newDoctorId, $appointment->service_id, $requestData['location_id']);
+            
+            // Validate new doctor has rota availability
+            $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
+            $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
+            $this->validateDoctorRota($newDoctorId, $scheduledDate, $scheduledTime, $requestData['location_id']);
         }
 
         // Check if schedule is changing
         $scheduleChanging = (isset($requestData['scheduled_date']) && $requestData['scheduled_date'] != $appointment->scheduled_date) ||
                            (isset($requestData['scheduled_time']) && $requestData['scheduled_time'] != $appointment->scheduled_time);
         
-        if ($scheduleChanging && !$permissions['schedule']) {
-            throw AppointmentException::unauthorized('You do not have permission to change the schedule.');
+        if ($scheduleChanging) {
+            if (!$permissions['schedule']) {
+                throw AppointmentException::unauthorized('You do not have permission to change the schedule.');
+            }
+            
+            // Validate doctor has rota for new schedule
+            $doctorId = $requestData['doctor_id'] ?? $appointment->doctor_id;
+            $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
+            $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
+            $this->validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $requestData['location_id']);
         }
     }
 
@@ -134,6 +147,49 @@ class ConsultancyUpdateService
         $locationId = $requestData['location_id'] ?? $appointment->location_id;
         
         $this->validateDoctorHasService($doctorId, $serviceId, $locationId);
+        
+        // Validate doctor has rota availability
+        $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
+        $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
+        $this->validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId);
+    }
+
+    /**
+     * Validate doctor has rota availability
+     */
+    protected function validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId)
+    {
+        // Get resource (doctor) record
+        $resource = Resources::where([
+            'external_id' => $doctorId,
+            'resource_type_id' => Config::get('constants.resource_doctor_type_id'),
+            'account_id' => Auth::user()->account_id,
+        ])->first();
+
+        if (!$resource) {
+            throw AppointmentException::invalidData('Doctor resource not found.');
+        }
+
+        // Check if doctor has rota for the scheduled date
+        $rotaDay = ResourceHasRotaDays::getSingleDayRotaWithResourceID(
+            $resource->id,
+            $scheduledDate,
+            Auth::user()->account_id,
+            $locationId
+        );
+
+        if (empty($rotaDay)) {
+            throw AppointmentException::invalidData('Doctor does not have rota availability for the selected date and location.');
+        }
+
+        // Validate scheduled time is within rota hours
+        $scheduledTimeCarbon = Carbon::parse($scheduledTime);
+        $rotaStartTime = Carbon::parse($rotaDay['start_time']);
+        $rotaEndTime = Carbon::parse($rotaDay['end_time']);
+
+        if ($scheduledTimeCarbon->lt($rotaStartTime) || $scheduledTimeCarbon->gt($rotaEndTime)) {
+            throw AppointmentException::invalidData('Scheduled time is outside doctor\'s rota hours.');
+        }
     }
 
     /**
