@@ -251,8 +251,42 @@ class AppointmentService
                 if (!$lead) {
                     throw AppointmentException::leadNotFound();
                 }
-                $appointmentData['patient_id'] = $appointmentData['patient_id'] ?? $lead->patient_id;
-                $appointmentData['name'] = $appointmentData['name'] ?? $lead->name;
+                
+                // Set patient_id from lead if not already set
+                if (!isset($appointmentData['patient_id']) || !$appointmentData['patient_id']) {
+                    $appointmentData['patient_id'] = $lead->patient_id;
+                }
+                
+                // Set name from lead if not already set
+                if (!isset($appointmentData['name']) || !$appointmentData['name']) {
+                    $appointmentData['name'] = $lead->name;
+                }
+                
+                // If lead doesn't have patient_id, we need to create a patient
+                if (!$lead->patient_id) {
+                    $patientData = [
+                        'name' => $lead->name ?? $data['name'] ?? null,
+                        'phone' => $lead->phone ?? $data['phone'] ?? null,
+                        'email' => $lead->email ?? $data['email'] ?? null,
+                        'gender' => $lead->gender ?? $data['gender'] ?? 0,
+                        'referred_by' => $lead->referred_by ?? $data['referred_by'] ?? null,
+                        'account_id' => $this->getAccountId(),
+                        'user_type_id' => 3, // Patient user type
+                        'password' => \Hash::make('12345678'),
+                        'active' => 1,
+                    ];
+                    
+                    $patient = User::create($patientData);
+                    if (!$patient) {
+                        throw AppointmentException::invalidData('Failed to create patient for lead.');
+                    }
+                    
+                    // Update lead with patient_id
+                    $lead->update(['patient_id' => $patient->id]);
+                    
+                    // Set patient_id in appointment data
+                    $appointmentData['patient_id'] = $patient->id;
+                }
             }
 
             if (isset($data['patient_id'])) {
