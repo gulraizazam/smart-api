@@ -475,9 +475,9 @@ function actions(data) {
                         </a>';
 
             // Send WhatsApp Button
-            actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
-                            <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
-                        </a>';
+            // actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
+            //                 <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
+            //             </a>';
         } 
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
