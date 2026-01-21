@@ -241,6 +241,32 @@ class LeadService
     }
 
     /**
+     * Log lead activity
+     */
+    protected function logLeadActivity(Leads $lead, array $data): void
+    {
+        $location = null;
+        $service = null;
+
+        // Get location if available
+        if (isset($data['location_id'])) {
+            $location = Locations::with('city')->find($data['location_id']);
+        } elseif ($lead->location_id) {
+            $location = Locations::with('city')->find($lead->location_id);
+        }
+
+        // Get service if available
+        if (isset($data['service_id'])) {
+            $service = Services::find($data['service_id']);
+        } elseif ($lead->service_id) {
+            $service = Services::find($lead->service_id);
+        }
+
+        // Log the lead creation activity
+        ActivityLogger::logLeadCreated($lead, $location, $service);
+    }
+
+    /**
      * Update lead
      */
     public function updateLead($id, array $data): Leads
