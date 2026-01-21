@@ -57,7 +57,7 @@ let doctorListener = function (doctorId) {
             url: route('admin.appointments.load_doctor_rota'),
             type: 'POST',
             data: {
-                location_id: $('#edit_location').val(),
+                location_id: $('#edit_location_id').val(),
                 doctor_id: doctorId,
                 scheduled_date: scheduled_date,
                 appointment_id: $('#appointment_id').val(),
@@ -73,22 +73,16 @@ let doctorListener = function (doctorId) {
                         (response.resource_has_rota_day.start_time != '' && response.resource_has_rota_day.start_time != null) &&
                         (response.resource_has_rota_day.end_time != '' && response.resource_has_rota_day.end_time != null)
                     ) {
-                        resetScheduledTime();
-                        if(response.resource_has_rota_day.start_off){
-                            $('#edit_scheduled_time').val(response.selected);
-                            loadScheduledTime(response.resource_has_rota_day.start_time, response.resource_has_rota_day.end_time,response.resource_has_rota_day.start_off,response.resource_has_rota_day.end_off);
-                        } else {
-                            $('#edit_scheduled_time').val(response.selected);
-                            loadScheduledTime(response.resource_has_rota_day.start_time, response.resource_has_rota_day.end_time,false,false);
-                        }
-
-
+                        // Set the scheduled time value
+                        $('#edit_scheduled_time').val(response.selected);
+                        $('#resourceRotaDayID').val(response.resource_has_rota_day.id);
+                        $('#start_time').val(response.resource_has_rota_day.start_time);
+                        $('#end_time').val(response.resource_has_rota_day.end_time);
                     } else {
-                        $('#rotaError').show();
-                       // resetScheduledTime();
+                        toastr.error('Doctor does not have rota for selected date');
                     }
                 } else {
-                    //resetScheduledTime();
+                    toastr.error('Unable to load doctor rota');
                 }
             },
             error: function (xhr, ajaxOptions, thrownError) {

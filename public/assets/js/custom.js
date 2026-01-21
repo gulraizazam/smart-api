@@ -1049,17 +1049,14 @@ function resetFilters() {
     $(".select2").select2({
         placeholder: 'Select'
     });
-    if ($(".select-all-checkboxes").is(":checked")) {
-
-        $(".select-all-checkboxes").click();
-    }
-
-    if ($(".table-checkboxes").is(":checked")) {
-        $(".select-all-checkboxes").prop("checked", false)
-        $(".delete-records").addClass("d-none");
-    }
-
-    $('.croxcli').hide()
+    $(".select2").val('').trigger('change');
+    $('.datatable-input').val('');
+    // Reset lead search filter
+    $('.lead_search_filter').val('');
+    $('.suggesstion-box-leads').hide();
+    $('.croxcli').hide();
+    KTApp.init(KTAppOptions);
+    datatable.search('', 'datatable_reload');
 }
 
 function advanceFilters() {
@@ -1724,51 +1721,99 @@ function selectUserRefund(name, user_id, search_id, flag = 1) {
 function leadSearch(search_id = 'lead_search_id', flag = 1) {
     let debounceTimer;
     $("." + search_id).on("keyup", function () {
-        $(".suggestion-list").html('<li>Searching...</li>');
-        $(".suggesstion-box").show();
-        if ($(this).val().length < 2) {
-            $(".suggesstion-box").hide();
+        let searchValue = $(this).val();
+        
+        // Clear previous timer and hide suggestions immediately when user continues typing
+        clearTimeout(debounceTimer);
+        $(".suggesstion-box").hide();
+        
+        // Only search when 10 or more digits are entered
+        if (searchValue.length < 10) {
             return false;
         }
-        that = $(this).val();
-        if ($(this).val() != '') {
+        
+        // Show searching indicator after a brief moment
+        setTimeout(function() {
+            if ($("." + search_id).val() === searchValue) {
+                $(".suggestion-list").html('<li>Searching...</li>');
+                $(".suggesstion-box").show();
+            }
+        }, 200);
+        
+        that = searchValue;
+        if (searchValue != '') {
             let form_type = $(this).parents("form").find('.form_type').val();
-            clearTimeout(debounceTimer);
+            
             debounceTimer = setTimeout(function () {
-                $.ajax({
-                    type: "GET",
-                    url: route('admin.leads.getlead.id'),
-                    dataType: 'json',
-                    delay: 250,
-                    data: { search: that },
-                    success: function (response) {
-                        let html = '';
-                        let leads = response.data.leads;
-                        let haveObjleads = Object.keys(leads).length;
-                        if (leads.length) {
-
-                            leads.forEach(function (lead) {
-                                html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
-                            });
-                            $(".suggestion-list").html(html);
-                            $(".suggesstion-box").show();
-                        } else if (haveObjleads) {
-                            for (const [key, lead] of Object.entries(leads)) {
-                                html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.id + '</li>'
+                // Only search if the value hasn't changed
+                if ($("." + search_id).val() === that) {
+                    $.ajax({
+                        type: "GET",
+                        url: route('admin.leads.getlead.id'),
+                        dataType: 'json',
+                        delay: 150,
+                        data: { search: that },
+                        success: function (response) {
+                            // Double check the search value hasn't changed during the request
+                            if ($("." + search_id).val() !== that) {
+                                return;
                             }
-                            $(".suggestion-list").html(html);
-                            $(".suggesstion-box").show();
-                        } else {
-                            $(".suggesstion-box").hide();
+                            
+                            let html = '';
+                            let leads = response.data.leads;
+                            let haveObjleads = Object.keys(leads).length;
+                            if (leads.length) {
+                                leads.forEach(function (lead) {
+                                    html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.phone + '</li>'
+                                });
+                                $(".suggestion-list").html(html);
+                                $(".suggesstion-box").show();
+                                // Patient found - hide new patient message
+                                handlePatientFound();
+                            } else if (haveObjleads) {
+                                for (const [key, lead] of Object.entries(leads)) {
+                                    html += '<li onClick="selectLead(`' + lead.name + '`, `' + lead.id + '`, `' + search_id + '`, `' + flag + '`);">' + lead.name + ' - ' + lead.phone + '</li>'
+                                }
+                                $(".suggestion-list").html(html);
+                                $(".suggesstion-box").show();
+                                // Patient found - hide new patient message
+                                handlePatientFound();
+                            } else {
+                                // No patient found - enable new patient creation
+                                $(".suggesstion-box").hide();
+                                handlePatientNotFound(that);
+                            }
                         }
-                    }
-                });
-            }, 500)
+                    });
+                }
+            }, 400)
         } else {
             $(".suggesstion-box").hide();
         }
     });
     return false;
+}
+
+function handlePatientFound() {
+    $('#new_patient').val('0');
+    $('#create_patient_name').attr('readonly', true);
+    $('#create_consultancy_gender').attr('disabled', true);
+    $('#create_consultancy_gender').css("pointer-events", "none");
+}
+
+function handlePatientNotFound(phoneNumber) {
+    // No message needed - just unlock fields for new patient entry
+    $('#new_patient').val('1');
+    
+    // Keep phone number in the field (it's the lead_search_id field which has name="phone")
+    // No need to populate another field since lead_search_id IS the phone field now
+    
+    // Enable name and gender fields for input
+    $('#create_patient_name').attr('readonly', false);
+    $('#create_patient_name').val('');
+    $('#create_consultancy_gender').attr('disabled', false);
+    $('#create_consultancy_gender').css("pointer-events", "all");
+    $('#create_consultancy_gender').val('');
 }
 
 

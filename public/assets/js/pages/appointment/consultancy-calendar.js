@@ -1243,6 +1243,7 @@ function setCreateConsultancy(response, start) {
         $("#modal_create_consultancy_form")[0].reset();
         $('.patient_search_id').val(null).trigger('change');
         $('.lead_search_id').val(null).trigger('change');
+        $('#create_consultancy_referred_by').val(null).trigger('change');
         $('.new_patient_text').hide();
 
         let city_id = response.data.city_id;
@@ -1313,7 +1314,7 @@ function setCreateConsultancy(response, start) {
         $("#create_consultancy_types").html(type_options);
         $("#create_consultancy_service").html(service_options);
         $("#create_consultancy_lead").html(source_options);
-        $("#create_consultancy_referred_by").html(employee_options);
+        // Referred by is now a patient search Select2 field, not populated with employees
         $("#create_consultancy_gender").html(gender_options);
 
         if(setting?.data == '1') {
@@ -1326,6 +1327,9 @@ function setCreateConsultancy(response, start) {
 
         setTimeout( function () {
             $(".select2-selection").removeClass("select2-is-invalid");
+            $("#create_consultancy_gender").removeClass("is-valid");
+            // Set focus on phone number field
+            $('.lead_search_id').focus();
         }, 200);
 
     } catch (e) {

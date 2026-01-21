@@ -579,7 +579,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('appointments/load_child_services', [AppointmentsController::class, 'LoadChildServices'])->name('appointments.load_child_services');
         Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
-        Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
+        // Migrated to API route - using API controller with Service layer
+        // Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
         Route::get('appointments/export/{limit}/{offset}', [AppointmentsController::class, 'export'])->name('appointments.export');
         Route::get('download-today-consultancies', [AppointmentsController::class, 'todayexport']);
         Route::get('download-today-treatments', [AppointmentsController::class, 'todaytreatments']);

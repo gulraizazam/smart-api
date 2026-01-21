@@ -380,6 +380,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     //Invoice Management route end
 
     Route::get('users/getpatientid', [ApplicationUserController::class, 'getpatientid'])->name('users.getpatient.id');
+    Route::get('users/getpatient-optimized', [ApplicationUserController::class, 'getpatientOptimized'])->name('users.getpatient.optimized');
     Route::get('users/getpatientorder', [ApplicationUserController::class, 'getpatientidOrder'])->name('users.getpatient.order');
     Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
     Route::get('users/phone/search', [ApplicationUserController::class, 'phoneSearch'])->name('users.phone.search');
@@ -703,39 +704,62 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     //Route::delete('orders/refund/{id}', [OrdersController::class, 'orderRefundDestroy'])->name('orders.refund.destroy');
     Route::delete('orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
 
-    /*Order routes*/
-    Route::get('appointments/load/scheduled-appointments', [AppointmentsController::class, 'getScheduledAppointments'])->name('appointments.load_scheduled_appointments');
+    // Appointments API Routes (Optimized)
+    Route::prefix('appointments')->name('appointments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\AppointmentsController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Api\AppointmentsController::class, 'store'])->name('store');
+        Route::get('{id}', [\App\Http\Controllers\Api\AppointmentsController::class, 'show'])->name('show');
+        Route::put('{id}', [\App\Http\Controllers\Api\AppointmentsController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\AppointmentsController::class, 'destroy'])->name('destroy');
+        Route::put('{id}/status', [\App\Http\Controllers\Api\AppointmentsController::class, 'updateStatus'])->name('update_status');
+        Route::post('schedule', [\App\Http\Controllers\Api\AppointmentsController::class, 'schedule'])->name('schedule');
+        Route::get('scheduled/list', [\App\Http\Controllers\Api\AppointmentsController::class, 'scheduled'])->name('scheduled');
+        Route::get('non-scheduled/list', [\App\Http\Controllers\Api\AppointmentsController::class, 'nonScheduled'])->name('non_scheduled');
+        Route::get('statistics/data', [\App\Http\Controllers\Api\AppointmentsController::class, 'statistics'])->name('statistics');
+    });
 
+    // Consultancy API Routes (Optimized)
+    Route::prefix('consultancy')->name('consultancy.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'store'])->name('store');
+        Route::put('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'update'])->name('update');
+        Route::get('scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'scheduled'])->name('scheduled');
+        Route::get('non-scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'nonScheduled'])->name('non_scheduled');
+        Route::get('statistics/data', [\App\Http\Controllers\Api\ConsultancyController::class, 'statistics'])->name('statistics');
+    });
+
+    // Treatment API Routes (Optimized)
+    Route::prefix('treatment')->name('treatment.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\TreatmentController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Api\TreatmentController::class, 'store'])->name('store');
+        Route::put('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'update'])->name('update');
+        Route::get('scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'scheduled'])->name('scheduled');
+        Route::get('non-scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'nonScheduled'])->name('non_scheduled');
+        Route::get('statistics/data', [\App\Http\Controllers\Api\TreatmentController::class, 'statistics'])->name('statistics');
+        Route::get('resources/available', [\App\Http\Controllers\Api\TreatmentController::class, 'availableResources'])->name('available_resources');
+        Route::get('services/by-location', [\App\Http\Controllers\Api\TreatmentController::class, 'servicesByLocation'])->name('services_by_location');
+    });
+
+    // Appointment Routes - Using API Controller with Service Layer
+    Route::get('appointments/load/scheduled-appointments', [\App\Http\Controllers\Api\AppointmentsController::class, 'scheduled'])->name('appointments.load_scheduled_appointments');
+    Route::post('appointments/check-and-save-appointment', [\App\Http\Controllers\Api\AppointmentsController::class, 'schedule'])->name('appointments.check_and_save_appointment');
+    
+    // Legacy routes still using Admin controller (to be migrated)
     Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
-
     Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
-
-    Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
-
     Route::get('appointments/center_machines/{location_id}', [AppointmentsController::class, 'center_machines'])->name('appointments.center_machines');
     Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
-
     Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
     Route::post('appointments/load-all-child-services', [AppointmentsController::class, 'loadAllChildServices'])->name('appointments.load_all_child_services');
     Route::post('appointments/store-service', [AppointmentsController::class, 'storeService'])->name('appointments.store_service');
-
     Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
-
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
-
-    // Drag and drop treatment reschedule (without resourceId requirement)
     Route::post('appointments/drag-drop-reschedule-treatment', [AppointmentsController::class, 'dragDropTreatmentReschedule'])->name('appointments.drag_drop_reschedule_treatment');
-
-    // Edit Service
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
     Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');
-
     Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
-
     Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
-
     Route::get('appointments/invoice-consultancy/{id}/{type?}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
-
     Route::any('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
 
     Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');

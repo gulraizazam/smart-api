@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Create</h2>
+        <h2 class="fw-bolder">Create New Consultation</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -49,55 +49,32 @@
                         </div>
 
                         <div class="fv-row col-md-12 mt-5" id="lead_id">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Search </label>
-                            <input class="form-control lead_search_id"  placeholder="Patients Search">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone Number <span class="text text-danger">*</span></label>
+                            <input class="form-control lead_search_id" name="phone" placeholder="Enter Phone Number" type="tel" pattern="[0-9]*" inputmode="numeric" oninput="this.value = this.value.replace(/[^0-9]/g, '')" autofocus>
 
                             <input type="hidden" onchange="getLeadDetail($(this))"  name="lead_id" class="filter-field search_field" id="create_lead_search">
+                            <input type="hidden" id="create_old_consultancy_phone" class="form-control" name="old_phone">
+                            <input type="hidden" id="new_patient" name="new_patient" value="0">
                             <span onclick="addLeads()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
                             <div class="suggesstion-box" style="display: none;">
                                 <ul class="suggestion-list"></ul>
                             </div>
                         </div>
-                        <div class="fv-row col-md-12 new_patient_text mt-10" style="display: none;">
-                            <h3 style="color: red; text-align: center;">You are going to create new patient</h3>
-                        </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
-                            <input readonly id="create_consultancy_phone" class="form-control" name="phone" oninput="phoneField(this);">
-                            <input type="hidden" id="create_old_consultancy_phone" class="form-control" name="old_phone">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">User Name <span class="text text-danger">*</span> </label>
-                            <input id="create_patient_name" class="form-control" name="name">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Full Name <span class="text text-danger">*</span> </label>
+                            <input readonly id="create_patient_name" class="form-control" name="name">
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
-                            <select id="create_consultancy_gender" class="form-control" name="gender"></select>
+                            <select disabled id="create_consultancy_gender" class="form-control" name="gender"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source </label>
-                            <select id="create_consultancy_lead" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="lead_source">
+                            <label class="fw-bold fs-6 mb-2 pl-0">Referred By (Patient Search)</label>
+                            <select id="create_consultancy_referred_by" class="form-control form-control-solid mb-3 mb-lg-0 select2-patient-search" name="referred_by">
                             </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Referred By</label>
-                            <select id="create_consultancy_referred_by" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="referred_by">
-                            </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <span class="switch switch-icon mt-10">
-                                <label>
-                                    <input onclick="newPatient($(this))" id="new_patient" type="checkbox" value="1" name="new_patient">
-                                    <span></span>
-                                </label>
-                                <span>&nbsp; I would like to</span><strong>&nbsp; Create New Patient</strong>
-                            </span>
                         </div>
                     </div>
                 </div>

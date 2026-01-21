@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Helpers\GeneralFunctions;
 use App\Helpers\NodesTree;
+use App\Helpers\AppointmentHelper;
 use Auth;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
@@ -11,6 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Cache;
 
 class Appointments extends Model
 {
@@ -22,12 +24,12 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from','deleted_by',
-        'arrived_at', 'converted_at', 'meta_purchase_sent'
+        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by'
     ];
 
     protected $table = 'appointments';
 
-    protected static $_table = 'appointments';
+    public static $_table = 'appointments';
 
     /**
      * used in event
@@ -36,12 +38,12 @@ class Appointments extends Model
      */
     public $__table = 'appointments';
 
-    protected static $_fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
+    public static $_fillable = ['scheduled_date', 'scheduled_time', 'scheduled_at_count', 'first_scheduled_date', 'first_scheduled_time', 'first_scheduled_count', 'active', 'name', 'account_id', 'appointment_type_id', 'base_appointment_status_id',
         'created_by', 'updated_by', 'converted_by', 'msg_count', 'lead_id', 'patient_id', 'send_message', 'appointment_status_allow_message',
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
-        'arrived_at', 'converted_at', 'meta_purchase_sent',
+        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by',
     ];
 
     /**
@@ -54,12 +56,105 @@ class Appointments extends Model
         'appointment_status_id', 'service_id', 'cancellation_reason_id', 'reason',
         'resource_id', 'resource_has_rota_day_id', 'resource_has_rota_day_id_for_machine',
         'doctor_id', 'region_id', 'city_id', 'location_id', 'created_at', 'updated_at', 'appointment_id', 'counter', 'consultancy_type', 'coming_from',
-        'arrived_at', 'converted_at', 'meta_purchase_sent',
+        'arrived_at', 'converted_at', 'meta_purchase_sent', 'referred_by',
     ];
 
     protected $attributes = [
         'consultancy_type' => 'in_person',
     ];
+
+    protected $casts = [
+        'scheduled_date' => 'date',
+        'first_scheduled_date' => 'date',
+        'arrived_at' => 'datetime',
+        'converted_at' => 'datetime',
+        'send_message' => 'boolean',
+        'appointment_status_allow_message' => 'boolean',
+        'active' => 'boolean',
+        'meta_purchase_sent' => 'boolean',
+    ];
+
+    public function scopeWithRelations($query)
+    {
+        return $query->with([
+            'appointment_type',
+            'appointment_status',
+            'service',
+            'location.city',
+            'doctor',
+            'patient',
+            'lead'
+        ]);
+    }
+
+    public function scopeScheduled($query)
+    {
+        return $query->whereNotNull('scheduled_date')
+                     ->whereNotNull('scheduled_time');
+    }
+
+    public function scopeNonScheduled($query)
+    {
+        return $query->whereNull('scheduled_date')
+                     ->whereNull('scheduled_time');
+    }
+
+    public function scopeByAccount($query, $account_id)
+    {
+        return $query->where('account_id', $account_id);
+    }
+
+    public function scopeByType($query, $appointment_type_id)
+    {
+        return $query->where('appointment_type_id', $appointment_type_id);
+    }
+
+    public function scopeByStatus($query, $appointment_status_id)
+    {
+        return $query->where('appointment_status_id', $appointment_status_id);
+    }
+
+    public function scopeByLocation($query, $location_id)
+    {
+        return $query->where('location_id', $location_id);
+    }
+
+    public function scopeByDoctor($query, $doctor_id)
+    {
+        return $query->where('doctor_id', $doctor_id);
+    }
+
+    public function scopeByPatient($query, $patient_id)
+    {
+        return $query->where('patient_id', $patient_id);
+    }
+
+    public function scopeExcludeCancelled($query, $account_id)
+    {
+        $cancelledStatus = AppointmentHelper::getCancelledStatus($account_id);
+        if ($cancelledStatus) {
+            return $query->where(function($q) use ($cancelledStatus) {
+                $q->where('appointment_status_id', '!=', $cancelledStatus->id)
+                  ->orWhereNull('appointment_status_id');
+            });
+        }
+        return $query;
+    }
+
+    public function scopeToday($query)
+    {
+        return $query->whereDate('scheduled_date', Carbon::today());
+    }
+
+    public function scopeUpcoming($query)
+    {
+        return $query->where('scheduled_date', '>=', Carbon::today());
+    }
+
+    public function scopeDateRange($query, $start_date, $end_date)
+    {
+        return $query->whereBetween('scheduled_date', [$start_date, $end_date]);
+    }
 
     public static function updateServiceRecord($id, $appointment_data, $account_id)
     {
@@ -283,52 +378,7 @@ class Appointments extends Model
      */
     public static function prepareSMSContent($appointment_id, $smsContent)
     {
-        if (! $appointment_id) {
-            return $smsContent;
-        } else {
-            $appointment = self::find($appointment_id);
-            $patient = Patients::find($appointment->patient_id);
-
-            // Load Globar Setting for Head Office
-            $Setting = Settings::getBySlug('sys-headoffice', $appointment->account_id);
-            $smsContent = str_replace('##head_office_phone##', $Setting->data, $smsContent);
-
-            if ($appointment) {
-                // Replace Patient Information
-                $smsContent = str_replace('##patient_name##', ($appointment->name) ? $appointment->name : $patient->name, $smsContent);
-                $smsContent = str_replace('##patient_phone##', $patient->phone, $smsContent);
-
-                // Replace Schedule Information
-                $smsContent = str_replace('##appointment_date##', Carbon::parse($appointment->scheduled_date)->format('l, F d,Y'), $smsContent);
-                $smsContent = str_replace('##appointment_time##', Carbon::parse($appointment->scheduled_time)->format('h:i A'), $smsContent);
-
-                // Replace Service Information
-                $service = Services::find($appointment->service_id);
-                if ($service) {
-                    $smsContent = str_replace('##appointment_service##', $service->name, $smsContent);
-                }
-
-                // Load and Replace Centre Information
-                $Location = Locations::find($appointment->location_id);
-                if ($Location) {
-                    $smsContent = str_replace('##fdo_name##', $Location->fdo_name, $smsContent);
-                    $smsContent = str_replace('##fdo_phone##', GeneralFunctions::prepareNumber4CallSMS($Location->fdo_phone), $smsContent);
-                    $smsContent = str_replace('##centre_name##', $Location->name, $smsContent);
-                    $smsContent = str_replace('##centre_address##', $Location->address, $smsContent);
-                    $smsContent = str_replace('##centre_google_map##', $Location->google_map, $smsContent);
-                }
-
-                // Load and Replace Doctor Information
-                $Doctor = Doctors::find($appointment->doctor_id);
-                if ($Doctor) {
-                    $smsContent = str_replace('##doctor_name##', $Doctor->name, $smsContent);
-                    $smsContent = str_replace('##doctor_profile_link##', $Doctor->profile_url, $smsContent);
-                }
-
-            }
-
-            return $smsContent;
-        }
+        return AppointmentHelper::prepareSMSContent($appointment_id, $smsContent);
     }
 
     /**
@@ -342,37 +392,28 @@ class Appointments extends Model
      */
     public static function getNonScheduledAppointments(Request $request, $appointment_type_id, $account_id)
     {
-        $where = [];
-        $where[] = ['account_id', '=', $account_id];
-
-        /*
-         * Get default cancelled appointment status
-         */
-        $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
-        if ($cancelled_appointment_status) {
-            $where[] = ['base_appointment_status_id', '!=', $cancelled_appointment_status->id];
-        }
+        $query = self::byAccount($account_id)
+            ->nonScheduled()
+            ->excludeCancelled($account_id)
+            ->withRelations();
 
         if ($appointment_type_id) {
-            $where[] = ['appointment_type_id', '=', $appointment_type_id];
+            $query->byType($appointment_type_id);
         }
 
         if ($request->get('city_id')) {
-            $where[] = ['city_id', '=', $request->get('city_id')];
+            $query->where('city_id', $request->get('city_id'));
         }
 
         if ($request->get('location_id')) {
-            $where[] = ['location_id', '=', $request->get('location_id')];
+            $query->byLocation($request->get('location_id'));
         }
 
         if ($request->get('doctor_id')) {
-            $where[] = ['doctor_id', '=', $request->get('doctor_id')];
+            $query->byDoctor($request->get('doctor_id'));
         }
 
-        return self::where($where)
-            ->whereNull('scheduled_date')
-            ->whereNull('scheduled_time')
-            ->get();
+        return $query->get();
     }
 
     /**
@@ -390,44 +431,35 @@ class Appointments extends Model
      */
     public static function getScheduledAppointments(Request $request, $appointment_type_id, $account_id, $skip_doctor = false)
     {
-
-        DB::enableQueryLog();
-        $where = [];
-        $where[] = ['account_id', '=', $account_id];
-        $cancelled_appointment_status = AppointmentStatuses::getCancelledStatusOnly($account_id);
-
-        if ($cancelled_appointment_status) {
-            $where[] = ['base_appointment_status_id', '!=', $cancelled_appointment_status->id];
-        }
-
+        $query = self::scheduled()
+            ->excludeCancelled($account_id)
+            ->withRelations();
+ 
         if ($appointment_type_id) {
-            $where[] = ['appointment_type_id', '=', $appointment_type_id];
+            $query->byType($appointment_type_id);
         }
 
-        return self::where($where)
-            ->when($request->start, function ($query) use ($request) {
-                return $query->where('scheduled_date', '>=', Carbon::parse($request->get('start'))->format('Y-m-d'));
-            })
-            ->when($request->end, function ($query) use ($request) {
-                return $query->where('scheduled_date', '<=', Carbon::parse($request->get('end'))->format('Y-m-d'));
-            })
-            ->when($request->location_id, function ($query) use ($request) {
-                return $query->where('location_id', '=', $request->get('location_id'));
-            })
-            ->when($request->machine_id || $request->doctor_id, function ($query) use ($request) {
-                return $query->where(function ($q) use ($request) {
-                    $q->where('resource_id', '=', $request->machine_id)
-                        ->orWhere('doctor_id', '=', $request->doctor_id);
-                });
-            })
-            ->whereNotNull('scheduled_date')
-            ->whereNotNull('scheduled_time')
-            ->get();
+        if ($request->start) {
+            $query->where('scheduled_date', '>=', Carbon::parse($request->start)->format('Y-m-d'));
+        }
 
-        return self::where($where)
-            ->whereNotNull('scheduled_date')
-            ->whereNotNull('scheduled_time')
-            ->get();
+        if ($request->end) {
+            $query->where('scheduled_date', '<=', Carbon::parse($request->end)->format('Y-m-d'));
+        }
+
+        if ($request->location_id) {
+            $query->byLocation($request->location_id);
+        }
+
+        if ($request->doctor_id && !$skip_doctor) {
+            $query->where('doctor_id', $request->doctor_id);
+        }
+        
+        if ($request->machine_id) {
+            $query->where('resource_id', $request->machine_id);
+        }
+
+        return $query->get();
     }
 
     /**
@@ -438,41 +470,32 @@ class Appointments extends Model
      */
     public static function updateRecord($id, $appointment_data, $account_id)
     {
-        // Set Account ID
         $appointment_data['account_id'] = $account_id;
-        $appointment_data['updated_at'] = Carbon::parse(Carbon::now())->toDateTimeString();
-        if ($appointment_data['reschedule'] == 1) {
-            $appointment_data['converted_by'] = Auth::User()->id;
+        $appointment_data['updated_at'] = Carbon::now();
+        
+        if (isset($appointment_data['reschedule']) && $appointment_data['reschedule'] == 1) {
+            $appointment_data['converted_by'] = Auth::id();
         } else {
-            $appointment_data['updated_by'] = Auth::User()->id;
+            $appointment_data['updated_by'] = Auth::id();
         }
 
         if (isset($appointment_data['start'])) {
-            $appointment_data['scheduled_date'] = Carbon::parse($appointment_data['start'])->format('Y-m-d');
-            $appointment_data['scheduled_time'] = Carbon::parse($appointment_data['start'])->format('H:i:s');
-            if ($appointment_data['first_scheduled_count'] == 0) {
-                $appointment_data['first_scheduled_date'] = Carbon::parse($appointment_data['start'])->format('Y-m-d');
-                $appointment_data['first_scheduled_time'] = Carbon::parse($appointment_data['start'])->format('H:i:s');
-                $appointment_data['first_scheduled_count'] = 1;
-            } else {
-                $appointment_data['scheduled_at_count'] = $appointment_data['scheduled_at_count'] + 1;
-            }
-        } else {
-            $appointment_data['scheduled_date'] = null;
-            $appointment_data['scheduled_time'] = null;
-            $appointment_data['first_scheduled_at'] = null;
+            $scheduleData = AppointmentHelper::formatScheduleData(
+                $appointment_data['start'],
+                $appointment_data['first_scheduled_count'] ?? 0,
+                $appointment_data['scheduled_at_count'] ?? 0
+            );
+            $appointment_data = array_merge($appointment_data, $scheduleData);
         }
 
-        $record = self::where([
-            'id' => $id,
-            'account_id' => $account_id,
-        ])->first();
+        $record = self::byAccount($account_id)->find($id);
 
-        if (! $record) {
+        if (!$record) {
             return null;
         }
 
         $record->update($appointment_data);
+        AppointmentHelper::clearAppointmentCache($account_id);
 
         return $record;
     }
@@ -485,40 +508,7 @@ class Appointments extends Model
      */
     public static function getNodeServices($serviceId, $account_id, $drop_down = false, $remove_spaces = false)
     {
-        /*
-         * That function use Appointment Report (Appointment by status) and Treatment Management
-         */
-
-        $parentGroups = new NodesTree();
-        $parentGroups->current_id = -1;
-        $parentGroups->build(($serviceId) ? $serviceId : 0, $account_id, true, true);
-        $parentGroups->toList($parentGroups, -1);
-        $services = $parentGroups->nodeList;
-
-        $nodeList = [];
-
-        if (count($services)) {
-            foreach ($services as $key => $service) {
-                if ($key < 0) {
-                    continue;
-                }
-
-                if ($drop_down) {
-                    if ($remove_spaces) {
-                        $nodeList[$key] = str_replace('&nbsp;', '', trim($service['name']));
-                    } else {
-                        $nodeList[$key] = trim($service['name']);
-                    }
-                } else {
-                    if ($remove_spaces) {
-                        $service['name'] = str_replace('&nbsp;', '', trim($service['name']));
-                    }
-                    $nodeList[$key] = $service;
-                }
-            }
-        }
-
-        return $nodeList;
+        return AppointmentHelper::getNodeServices($serviceId, $account_id, $drop_down, $remove_spaces);
     }
 
     public static function boot()
@@ -595,7 +585,12 @@ class Appointments extends Model
     }
     public function feedback()
     {
-        return $this->hasOne(Feedback::class,'appointment_id'); // or hasMany if multiple feedbacks can exist
+        return $this->hasOne(Feedback::class, 'appointment_id');
+    }
+
+    public function resource()
+    {
+        return $this->belongsTo(Resources::class, 'resource_id')->withTrashed();
     }
     /**
      * Check if child records exist
@@ -605,16 +600,7 @@ class Appointments extends Model
      */
     protected static function isChildExists($id, $account_id)
     {
-        if (
-            PackageAdvances::where(['appointment_id' => $id, 'account_id' => $account_id])->count() ||
-            Invoices::where(['appointment_id' => $id, 'account_id' => $account_id, 'deleted_at' => null])->where('invoice_status_id', '!=', 4)->count() ||
-            Measurement::where(['appointment_id' => $id])->count() ||
-            Appointmentimage::where(['appointment_id' => $id])->count()
-        ) {
-            return true;
-        }
-
-        return false;
+        return AppointmentHelper::isChildExists($id, $account_id);
     }
 
     /**
