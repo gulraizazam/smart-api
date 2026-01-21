@@ -93,7 +93,8 @@ class ConsultancyUpdateService
             }
             
             // Validate current doctor has new service
-            $this->validateDoctorHasService($appointment->doctor_id, $newServiceId, $requestData['location_id']);
+            $locationId = $requestData['location_id'] ?? $appointment->location_id;
+            $this->validateDoctorHasService($appointment->doctor_id, $newServiceId, $locationId);
         }
 
         // Check if doctor is changing
@@ -104,12 +105,13 @@ class ConsultancyUpdateService
             }
             
             // Validate new doctor has current service
-            $this->validateDoctorHasService($newDoctorId, $appointment->service_id, $requestData['location_id']);
+            $locationId = $requestData['location_id'] ?? $appointment->location_id;
+            $this->validateDoctorHasService($newDoctorId, $appointment->service_id, $locationId);
             
             // Validate new doctor has rota availability
             $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
             $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
-            $this->validateDoctorRota($newDoctorId, $scheduledDate, $scheduledTime, $requestData['location_id']);
+            $this->validateDoctorRota($newDoctorId, $scheduledDate, $scheduledTime, $locationId);
         }
 
         // Check if schedule is changing
@@ -125,7 +127,8 @@ class ConsultancyUpdateService
             $doctorId = $requestData['doctor_id'] ?? $appointment->doctor_id;
             $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
             $scheduledTime = $requestData['scheduled_time'] ?? $appointment->scheduled_time;
-            $this->validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $requestData['location_id']);
+            $locationId = $requestData['location_id'] ?? $appointment->location_id;
+            $this->validateDoctorRota($doctorId, $scheduledDate, $scheduledTime, $locationId);
         }
     }
 
