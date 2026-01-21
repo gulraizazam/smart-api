@@ -1121,6 +1121,15 @@ class LeadService
     }
 
     /**
+     * Search leads by ID or name (alias for searchLeadsById)
+     * Used by API endpoints for lead search functionality
+     */
+    public function searchLeads(string $search, int $accountId): Collection
+    {
+        return $this->searchLeadsById($search, $accountId);
+    }
+
+    /**
      * Prepare SMS content for delivery
      * Moved from Leads::prepareSMSContent
      */
