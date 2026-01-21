@@ -57,6 +57,18 @@ class ConsultancyUpdateService
             'schedule' => Gate::allows('update_consultation_schedule'),
         ];
 
+        \Log::info('ConsultancyUpdateService: Validation Start', [
+            'appointment_id' => $appointmentId,
+            'appointment_status_id' => $appointment->appointment_status_id,
+            'is_arrived_or_converted' => $isArrivedOrConverted,
+            'permissions' => $permissions,
+            'old_service_id' => $appointment->service_id,
+            'new_service_id' => $requestData['treatment_service_id'] ?? $requestData['service_id'] ?? $requestData['treatment_id'] ?? null,
+            'old_doctor_id' => $appointment->doctor_id,
+            'new_doctor_id' => $requestData['doctor_id'] ?? null,
+            'location_id' => $requestData['location_id'] ?? $appointment->location_id,
+        ]);
+
         // Validate permissions for arrived/converted
         if ($isArrivedOrConverted) {
             $this->validateArrivedConsultationUpdate($appointment, $requestData, $permissions);
@@ -208,6 +220,13 @@ class ConsultancyUpdateService
 
         $parentServiceId = $service->parent_id == 0 ? $service->id : $service->parent_id;
 
+        \Log::info('validateDoctorHasService: Checking allocation', [
+            'doctor_id' => $doctorId,
+            'service_id' => $serviceId,
+            'parent_service_id' => $parentServiceId,
+            'location_id' => $locationId,
+        ]);
+
         // Check for "all services" (ID 13) or specific service
         $hasService = DoctorHasLocations::where('is_allocated', 1)
             ->where('user_id', $doctorId)
@@ -217,6 +236,11 @@ class ConsultancyUpdateService
                       ->orWhere('service_id', $parentServiceId);
             })
             ->exists();
+
+        \Log::info('validateDoctorHasService: Result', [
+            'has_service' => $hasService,
+            'will_throw_error' => !$hasService,
+        ]);
 
         if (!$hasService) {
             throw AppointmentException::invalidData('Doctor does not have the required service allocated for this location.');
