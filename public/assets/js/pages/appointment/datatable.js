@@ -1415,6 +1415,9 @@ var AppointScheduleValidation = function () {
                         }
                     }
                 },
+                
+                // Exclude disabled fields from validation
+                excluded: ':disabled',
 
                 plugins: {
                     trigger: new FormValidation.plugins.Trigger(),
