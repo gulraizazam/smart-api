@@ -3539,28 +3539,35 @@ class AppointmentsController extends Controller
                     $appointment = Appointments::findOrFail($request->id);
 
                     // Validate that the doctor has the service allocated with is_allocated = 1
-                    // Get the service's parent (base service)
-                    $service = Services::find($appointment->service_id);
-                    if ($service) {
-                        $parent_service_id = $service->parent_id == 0 ? $service->id : $service->parent_id;
+                    // Skip validation if appointment is arrived/converted and user has permission to edit doctor
+                    $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]); // 2 = Arrived, 16 = Converted
+                    $canEditDoctorAfterArrived = Gate::allows('update_consultation_doctor');
+                    
+                    // Only validate doctor-service allocation if NOT (arrived/converted with permission)
+                    if (!($isArrivedOrConverted && $canEditDoctorAfterArrived)) {
+                        // Get the service's parent (base service)
+                        $service = Services::find($appointment->service_id);
+                        if ($service) {
+                            $parent_service_id = $service->parent_id == 0 ? $service->id : $service->parent_id;
 
-                        // Check if doctor has service_id 13 (all services) with is_allocated = 1
-                        $has_all_services = DoctorHasLocations::where('is_allocated', 1)
-                            ->where('user_id', $request->doctor_id)
-                            ->where('location_id', $request->location_id)
-                            ->where('service_id', 13)
-                            ->exists();
+                            // Check if doctor has service_id 13 (all services) with is_allocated = 1
+                            $has_all_services = DoctorHasLocations::where('is_allocated', 1)
+                                ->where('user_id', $request->doctor_id)
+                                ->where('location_id', $request->location_id)
+                                ->where('service_id', 13)
+                                ->exists();
 
-                        // Check if doctor has the specific service with is_allocated = 1
-                        $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
-                            ->where('user_id', $request->doctor_id)
-                            ->where('location_id', $request->location_id)
-                            ->where('service_id', $parent_service_id)
-                            ->exists();
+                            // Check if doctor has the specific service with is_allocated = 1
+                            $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
+                                ->where('user_id', $request->doctor_id)
+                                ->where('location_id', $request->location_id)
+                                ->where('service_id', $parent_service_id)
+                                ->exists();
 
-                        // If doctor doesn't have "all services" OR the specific service, reject the update
-                        if (!$has_all_services && !$has_specific_service) {
-                            return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
+                            // If doctor doesn't have "all services" OR the specific service, reject the update
+                            if (!$has_all_services && !$has_specific_service) {
+                                return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
+                            }
                         }
                     }
                     // Store old values for activity logging
