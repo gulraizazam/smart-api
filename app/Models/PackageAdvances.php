@@ -44,21 +44,8 @@ class PackageAdvances extends BaseModal
      */
     public static function create(array $attributes = [])
     {
-        // Log the incoming attributes for debugging
-        \Log::info('PackageAdvances::create called with attributes:', $attributes);
-        
-        // Explicitly unset id to prevent id=0 issue
-        if (isset($attributes['id'])) {
-            \Log::warning('PackageAdvances: Removing id from attributes', ['id' => $attributes['id']]);
-            unset($attributes['id']);
-        }
-        
-        // Also remove any empty or zero id values
-        if (array_key_exists('id', $attributes) && ($attributes['id'] === 0 || $attributes['id'] === '0' || $attributes['id'] === null)) {
-            unset($attributes['id']);
-        }
-        
-        \Log::info('PackageAdvances::create after id removal:', $attributes);
+        // Explicitly unset id to prevent any manual id assignment
+        unset($attributes['id']);
         
         return static::query()->create($attributes);
     }
