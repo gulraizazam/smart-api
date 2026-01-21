@@ -690,6 +690,21 @@ class AppointmentService
                 $appointment->scheduled_at_count
             );
 
+            // Validate doctor has service allocated at location
+            $doctorId = $data['doctor_id'] ?? $appointment->doctor_id;
+            $locationId = $data['location_id'] ?? $appointment->location_id;
+            
+            $hasService = \DB::table('doctor_has_locations')
+                ->where('user_id', $doctorId)
+                ->where('location_id', $locationId)
+                ->where('service_id', $appointment->service_id)
+                ->where('is_allocated', 1)
+                ->exists();
+
+            if (!$hasService) {
+                throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+            }
+
             // Schedule conflict check disabled to allow multiple bookings on the same slot
             // $hasConflict = AppointmentHelper::validateScheduleConflict(
             //     $data['location_id'] ?? $appointment->location_id,

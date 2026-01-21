@@ -3768,38 +3768,30 @@ class AppointmentsController extends Controller
                     $data['reschedule'] = 1;
                     $appointment = Appointments::findOrFail($request->id);
 
-                    // Validate that the doctor has the service allocated with is_allocated = 1
-                    // Skip validation if appointment is arrived/converted and user has permission to edit
-                    $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]); // 2 = Arrived, 16 = Converted
-                    $canEditDoctorAfterArrived = Gate::allows('update_consultation_doctor');
-                    $canEditServiceAfterArrived = Gate::allows('update_consultation_service');
+                    // Validate that the doctor has the service allocated at this location
+                    \Log::info('checkAndSaveAppointments: Validating service allocation', [
+                        'appointment_id' => $appointment->id,
+                        'doctor_id' => $request->doctor_id,
+                        'location_id' => $appointment->location_id,
+                        'service_id' => $appointment->service_id,
+                    ]);
                     
-                    // Only validate doctor-service allocation if NOT (arrived/converted with either permission)
-                    if (!($isArrivedOrConverted && ($canEditDoctorAfterArrived || $canEditServiceAfterArrived))) {
-                        // Get the service's parent (base service)
-                        $service = Services::find($appointment->service_id);
-                        if ($service) {
-                            $parent_service_id = $service->parent_id == 0 ? $service->id : $service->parent_id;
+                    // Check if doctor has the appointment's service allocated
+                    $hasService = \DB::table('doctor_has_locations')
+                        ->where('user_id', $request->doctor_id)
+                        ->where('location_id', $appointment->location_id)
+                        ->where('service_id', $appointment->service_id)
+                        ->where('is_allocated', 1)
+                        ->exists();
 
-                            // Check if doctor has service_id 13 (all services) with is_allocated = 1
-                            $has_all_services = DoctorHasLocations::where('is_allocated', 1)
-                                ->where('user_id', $request->doctor_id)
-                                ->where('location_id', $request->location_id)
-                                ->where('service_id', 13)
-                                ->exists();
+                    \Log::info('checkAndSaveAppointments: Validation result', [
+                        'has_service' => $hasService,
+                        'will_block' => !$hasService,
+                    ]);
 
-                            // Check if doctor has the specific service with is_allocated = 1
-                            $has_specific_service = DoctorHasLocations::where('is_allocated', 1)
-                                ->where('user_id', $request->doctor_id)
-                                ->where('location_id', $request->location_id)
-                                ->where('service_id', $parent_service_id)
-                                ->exists();
-
-                            // If doctor doesn't have "all services" OR the specific service, reject the update
-                            if (!$has_all_services && !$has_specific_service) {
-                                return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
-                            }
-                        }
+                    if (!$hasService) {
+                        \Log::warning('checkAndSaveAppointments: Blocking update - doctor does not have service');
+                        return ApiHelper::apiResponse($this->success, 'This doctor does not have the required service allocated for this location.', false);
                     }
                     // Store old values for activity logging
                     $oldDate = $appointment->scheduled_date;
