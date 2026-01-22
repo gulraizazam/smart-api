@@ -584,9 +584,17 @@ class ConsultancyInvoiceController extends Controller
         /////Save activity////
         $patient = User::whereId($appointmentinfo->patient_id)->first();
         $location = Locations::whereId($appointmentinfo->location_id)->first();
+        $creatorName = Auth::user()->name;
+        $serviceName = $appointmentinfo->service->name ?? 'Service';
+        $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
+        
+        // Build description for activity log
+        $description = '<span class="highlight">' . $creatorName . '</span> created invoice <span class="highlight-green">Rs. ' . number_format($request->price) . '</span> for <span class="highlight-orange">' . $serviceName . ' Consultation</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '') . ' on ' . date('M j, Y');
+        
         $activity = new Activity();
         $activity->action = 'received';
         $activity->activity_type = 'invoice_created';
+        $activity->description = $description;
         $activity->patient = $patient->name;
         $activity->patient_id = $appointmentinfo->patient_id;
         $activity->appointment_id = $appointmentinfo->id;
