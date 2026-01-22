@@ -1287,8 +1287,8 @@ function setCreateConsultancy(response, start) {
             
             // Update modal heading with day and date
             let dayName = scheduledDateTime.format('dddd');
-            let dateFormatted = scheduledDateTime.format('D MMMM');
-            $("#create_consultation_heading").text('New Consultation - ' + dayName + ' - ' + dateFormatted);
+            let dateFormatted = scheduledDateTime.format('MMM D');
+            $("#create_consultation_heading").text('New consultation - ' + dayName + ', ' + dateFormatted);
         }
 
         let type_options = '';
