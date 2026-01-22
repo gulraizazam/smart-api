@@ -54,7 +54,7 @@ class DashboardHelper
             case 'month':
             case 'thismonth':
                 $start_date = Carbon::now()->startOfMonth()->format('Y-m-d');
-                $end_date = Carbon::now()->endOfMonth()->format('Y-m-d');
+                $end_date = Carbon::now()->format('Y-m-d');
                 break;
             case 'lastmonth':
                 $start_date = Carbon::now()->startOfMonth()->subMonth()->format('Y-m-d');
