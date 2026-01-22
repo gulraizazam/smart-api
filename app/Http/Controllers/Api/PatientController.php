@@ -112,7 +112,7 @@ class PatientController extends Controller
                 'plans' => \DB::table('packages')->where('patient_id', $id)->count(),
                 'invoices' => \DB::table('invoices')->where('patient_id', $id)->count(),
                 'refunds' => \DB::table('package_advances')->where('patient_id', $id)->where('is_refund', 1)->count(),
-                'activity_logs' => \DB::table('activities')->where('patient_id', $id)->whereNotNull('description')->count(),
+                'activity_logs' => \DB::table('activities')->where('patient_id', $id)->count(),
             ];
 
             return ApiHelper::apiResponse($this->success, 'Tab counts retrieved', true, $counts);
