@@ -221,7 +221,7 @@ class AppointmentFilterService
         $query = \App\Models\Appointments::leftJoin('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id');
         })
-        ->whereIn('appointments.city_id', ACL::getUserCities())
+        //->whereIn('appointments.city_id', ACL::getUserCities())
         ->whereIn('appointments.location_id', ACL::getUserCentres())
         ->where('appointments.appointment_type_id', $consultancyType->id); // Always filter for consultancy only
 
