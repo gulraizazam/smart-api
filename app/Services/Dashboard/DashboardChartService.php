@@ -483,7 +483,8 @@ class DashboardChartService
         // Get total treatments scheduled in the date range
         $treatmentsQuery = Appointments::whereIn('location_id', $locationIds)
             ->where('appointment_type_id', $treatmentTypeId)
-            ->where('appointment_status_id', $treatmentStatusId);
+            ->where('appointment_status_id', $treatmentStatusId)->count();
+            dd($treatmentsQuery);
         
         // Get feedbacks count for treatments in the date range
         $feedbacksCountQuery = Feedback::join('appointments', 'feedback.appointment_id', '=', 'appointments.id')
