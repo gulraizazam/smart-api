@@ -36,7 +36,11 @@ class ConsultancyDatatableService
      */
     public function getDatatableData(Request $request): array
     {
+        \Log::info('Request All Data', ['request_all' => $request->all()]);
+        
         $filters = getFilters($request->all());
+        
+        \Log::info('Filters After getFilters', ['filters' => $filters]);
         
         // Handle sorting
         [$orderBy, $order] = $this->handleSorting($request);
