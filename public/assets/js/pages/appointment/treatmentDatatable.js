@@ -933,8 +933,13 @@ function setTreatmentEditData(response) {
         // Enable submit button by default (will be disabled if doctor change detected)
         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
 
-        $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
-        $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
+        // Format scheduled_date to YYYY-MM-DD if it's in ISO format
+        let scheduledDate = appointment.scheduled_date;
+        if (scheduledDate && scheduledDate.includes('T')) {
+            scheduledDate = scheduledDate.split('T')[0];
+        }
+        $("#edit_treatment_scheduled_date").val(scheduledDate);
+        $("#edit_treatment_scheduled_date_old").val(scheduledDate);
         const [hourString, minute] = appointment.scheduled_time.split(":");
         const hour = +hourString % 24;
         var test = (hour % 12 || 12) + ":" + minute + (hour < 12 ? " AM" : " PM");
