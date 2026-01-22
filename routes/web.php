@@ -183,12 +183,12 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::get('updatestatusleads', [LeadsController::class, 'leadstatusupdate']);
         Route::prefix('invoices')->name('invoices.')->group(function () {
-        // Calculate amounts and get JSON response
-        Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
-        
-        // Export exempt invoices to Excel
-        Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
-    //});
+            // Calculate amounts and get JSON response
+            Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
+            
+            // Export exempt invoices to Excel
+            Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
+        });
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -607,7 +607,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('reports/load_membership_report', [MembershipReportsController::class, 'loadMembershipReport'])->name('reports.load_membership_report');
         Route::get('memberships/export', [MembershipReportsController::class, 'Export'])->name('memberships.export.excel');
         Route::get('/admin/doctor/consultant/breakdown/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('doctor.consultant.breakdown');
-Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('consultant.seller.detail');
+        Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('consultant.seller.detail');
         Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
         Route::get('reports/activity_logs', [ActivitylogsReportController::class, 'index'])->name('reports.activity_logs');
         Route::post('reports/activity_logs', [ActivitylogsReportController::class, 'fetchActivityReport'])->name('reports.load_activity_report');
@@ -657,5 +657,5 @@ Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [Upselli
         Route::get('wrong-conversions', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'index'])->name('wrong-conversions.index');
         Route::post('wrong-conversions/reset/{id}', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'reset'])->name('wrong-conversions.reset');
         Route::post('wrong-conversions/reset-all', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'resetAll'])->name('wrong-conversions.reset-all');
-    });
+    //});
 });
