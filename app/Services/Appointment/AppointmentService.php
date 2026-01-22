@@ -343,6 +343,9 @@ class AppointmentService
                 throw AppointmentException::creationFailed();
             }
 
+            // Always set send_message to 1 for new appointments to trigger SMS via cron job
+            $appointment->update(['send_message' => 1]);
+
             AuditTrails::addEventLogger(
                 Appointments::$_table,
                 'create',
