@@ -217,8 +217,8 @@ class AppointmentFilterService
         $canViewConsultancy = Gate::allows('appointments_consultancy');
         $canViewTreatments = Gate::allows('treatments_services');
 
-        // Build base query
-        $query = \App\Models\Appointments::join('users', function ($join) {
+        // Build base query with LEFT JOIN to include consultations without patient records
+        $query = \App\Models\Appointments::leftJoin('users', function ($join) {
             $join->on('users.id', '=', 'appointments.patient_id');
         })
         ->whereIn('appointments.city_id', ACL::getUserCities())
