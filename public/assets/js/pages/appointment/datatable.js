@@ -943,8 +943,20 @@ function setTreatmentEditData(response) {
         $("#edit_treatment_doctor_id").html(doctor_option).val(appointment?.doctor_id);
         $("#edit_treatment_patient_gender").html(gender_option).val(appointment?.patient?.gender);
 
-        $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
-        $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
+        // Set scheduled date - API now returns it in Y-m-d format
+        let scheduledDate = appointment.scheduled_date;
+        $("#edit_treatment_scheduled_date_old").val(scheduledDate);
+        
+        // Destroy existing datepicker and reinitialize with the correct date
+        var $dateField = $("#edit_treatment_scheduled_date");
+        $dateField.datepicker('destroy');
+        $dateField.val(scheduledDate);
+        $dateField.datepicker({
+            todayHighlight: true,
+            orientation: 'bottom',
+            format: 'yyyy-mm-dd',
+            autoclose: true
+        });
 
         $("#edit_treatment_scheduled_time").val(appointment.scheduled_time);
         $("#scheduled_treatment_time_old").val(appointment.scheduled_time);

@@ -1781,8 +1781,17 @@ class AppointmentsController extends Controller
         )->get()->pluck('name', 'id');
         $back_date_config = Settings::whereSlug('sys-back-date-appointment')->select('data')->first();
 
+        // Format scheduled_date as string to prevent timezone issues
+        $appointmentData = $appointment->toArray();
+        if (isset($appointmentData['scheduled_date'])) {
+            $appointmentData['scheduled_date'] = \Carbon\Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
+        }
+        if (isset($appointmentData['first_scheduled_date'])) {
+            $appointmentData['first_scheduled_date'] = \Carbon\Carbon::parse($appointment->first_scheduled_date)->format('Y-m-d');
+        }
+
         return ApiHelper::apiResponse($this->success, 'Data found.', true, [
-            'appointment' => $appointment,
+            'appointment' => $appointmentData,
             'cities' => $cities,
             'services' => $services,
             'locations' => $locations,

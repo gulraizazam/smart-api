@@ -933,13 +933,20 @@ function setTreatmentEditData(response) {
         // Enable submit button by default (will be disabled if doctor change detected)
         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
 
-        // Format scheduled_date to YYYY-MM-DD if it's in ISO format
+        // Set scheduled date - API now returns it in Y-m-d format
         let scheduledDate = appointment.scheduled_date;
-        if (scheduledDate && scheduledDate.includes('T')) {
-            scheduledDate = scheduledDate.split('T')[0];
-        }
-        $("#edit_treatment_scheduled_date").val(scheduledDate);
         $("#edit_treatment_scheduled_date_old").val(scheduledDate);
+        
+        // Destroy existing datepicker and reinitialize with the correct date
+        var $dateField = $("#edit_treatment_scheduled_date");
+        $dateField.datepicker('destroy');
+        $dateField.val(scheduledDate);
+        $dateField.datepicker({
+            todayHighlight: true,
+            orientation: 'bottom',
+            format: 'yyyy-mm-dd',
+            autoclose: true
+        });
         const [hourString, minute] = appointment.scheduled_time.split(":");
         const hour = +hourString % 24;
         var test = (hour % 12 || 12) + ":" + minute + (hour < 12 ? " AM" : " PM");
