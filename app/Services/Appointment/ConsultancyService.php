@@ -64,6 +64,12 @@ class ConsultancyService extends AppointmentService
             
             if ($defaultStatus) {
                 $data['appointment_status_id'] = $defaultStatus->id;
+                $data['base_appointment_status_id'] = $defaultStatus->id;
+            }
+        } else {
+            // If appointment_status_id is provided, also set base_appointment_status_id
+            if (!isset($data['base_appointment_status_id'])) {
+                $data['base_appointment_status_id'] = $data['appointment_status_id'];
             }
         }
 

@@ -347,6 +347,20 @@ class ConsultancyUpdateService
             $data['updated_by'] = Auth::id();
         }
 
+        // Ensure base_appointment_status_id is set if appointment_status_id is provided
+        if (isset($requestData['appointment_status_id'])) {
+            $data['appointment_status_id'] = $requestData['appointment_status_id'];
+            // Set base_appointment_status_id to match appointment_status_id if not explicitly provided
+            if (!isset($requestData['base_appointment_status_id'])) {
+                $data['base_appointment_status_id'] = $requestData['appointment_status_id'];
+            } else {
+                $data['base_appointment_status_id'] = $requestData['base_appointment_status_id'];
+            }
+        } elseif (!$appointment->base_appointment_status_id && $appointment->appointment_status_id) {
+            // If base_appointment_status_id is NULL but appointment_status_id exists, set it
+            $data['base_appointment_status_id'] = $appointment->appointment_status_id;
+        }
+
         return $data;
     }
 
