@@ -16,6 +16,16 @@ class UpdateAppointmentRequest extends FormRequest
     {
         $data = $this->all();
         
+        // Convert scheduled_time from 12-hour format to 24-hour format if needed
+        if (isset($data['scheduled_time']) && $data['scheduled_time']) {
+            try {
+                $time = \Carbon\Carbon::parse($data['scheduled_time']);
+                $data['scheduled_time'] = $time->format('H:i:s');
+            } catch (\Exception $e) {
+                // If parsing fails, leave as is and let validation handle it
+            }
+        }
+        
         if (isset($data['appointment_type']) && 
             (strtolower($data['appointment_type']) === 'consulting' || 
              strtolower($data['appointment_type']) === 'consultancy')) {

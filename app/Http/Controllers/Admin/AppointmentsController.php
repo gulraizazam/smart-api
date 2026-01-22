@@ -2077,8 +2077,8 @@ class AppointmentsController extends Controller
             }
             
             // Only check for time change if scheduled_time is provided in request
+            // Don't update converted_by if only time changed (not date)
             if ($request->has('scheduled_time') && $request->scheduled_time && $appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
-                $appointment_data['converted_by'] = Auth::user()->id;
                 $isRescheduled = true;
             }
             
@@ -5572,34 +5572,51 @@ class AppointmentsController extends Controller
 
         $data = [];
         $appointment = Appointments::find($request->appointment_id);
+       
         if ($appointment) {
             // Store old date/time for activity logging
             $oldDate = $appointment->scheduled_date;
             $oldTime = $appointment->scheduled_time;
             $isRescheduled = false;
             
-            if ($appointment->scheduled_date != $request->scheduled_date) {
+            // Compare dates in same format (Y-m-d)
+            $oldDateFormatted = Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
+            $newDateFormatted = Carbon::parse($request->scheduled_date)->format('Y-m-d');
+            
+            if ($oldDateFormatted != $newDateFormatted) {
                 $data['converted_by'] = Auth::user()->id;
                 $isRescheduled = true;
             }
-            if ($appointment->scheduled_time != Carbon::parse($request->scheduled_time)->format('H:i:s')) {
-                $data['converted_by'] = Auth::user()->id;
+            
+            // Check if time changed
+            $oldTimeFormatted = Carbon::parse($appointment->scheduled_time)->format('H:i:s');
+            $newTimeFormatted = Carbon::parse($request->scheduled_time)->format('H:i:s');
+            
+            if ($oldTimeFormatted != $newTimeFormatted) {
                 $isRescheduled = true;
             }
+           
             if ($appointment->appointment_status_id == config('constants.appointment_status_arrived')
                 || $appointment->appointment_status_id == config('constants.appointment_status_cancelled')) {
                 return ApiHelper::apiResponse($this->success, 'Appointment has Invoice or has been canceled!', false);
             }
             $rota = $this->checkRota($appointment, $request);
             if ($rota['status']) {
-                $appointment->update([
+                $updateData = [
                     'scheduled_date' => Carbon::parse($request->scheduled_date)->format('Y-m-d'),
                     'scheduled_time' => Carbon::parse($request->scheduled_time)->format('H:i:s'),
-                    'converted_by' => ($data == null) ? $appointment->converted_by : $data['converted_by'],
+                    'converted_by' => isset($data['converted_by']) ? $data['converted_by'] : $appointment->converted_by,
                     'appointment_status_id' => config('constants.appointment_status_pending'),
                     'base_appointment_status_id' => config('constants.appointment_status_pending'),
                     'updated_at' => Filters::getCurrentTimeStamp(),
-                ]);
+                ];
+                
+                // Set send_message to 1 if consultation is rescheduled and status is pending
+                if ($isRescheduled && $appointment->base_appointment_status_id == config('constants.appointment_status_pending', 1)) {
+                    $updateData['send_message'] = 1;
+                }
+                
+                $appointment->update($updateData);
                 $screen = $appointment->appointment_type_id == 1 ? 'Consultancy' : 'Treatment';
                 GeneralFunctions::saveAppointmentLogs('rescheduled', $screen, $appointment);
                 $log_type = 'sms';

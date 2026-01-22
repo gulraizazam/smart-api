@@ -36,11 +36,7 @@ class ConsultancyDatatableService
      */
     public function getDatatableData(Request $request): array
     {
-        \Log::info('Request All Data', ['request_all' => $request->all()]);
-        
         $filters = getFilters($request->all());
-        
-        \Log::info('Filters After getFilters', ['filters' => $filters]);
         
         // Handle sorting
         [$orderBy, $order] = $this->handleSorting($request);
@@ -52,27 +48,8 @@ class ConsultancyDatatableService
         $countQuery = clone $baseQuery;
         $this->applyFilters($countQuery, $filters);
         
-        // Debug: Simple direct count for comparison
-        if (isset($filters['created_from']) && isset($filters['created_to'])) {
-            $simpleCount = \App\Models\Appointments::where('appointment_type_id', 1)
-                ->whereBetween('created_at', [$filters['created_from'] . ' 00:00:00', $filters['created_to'] . ' 23:59:59'])
-                ->whereNull('deleted_at')
-                ->count();
-            \Log::info('Consultancy Count Debug', [
-                'simple_count' => $simpleCount,
-                'filtered_count_before' => $countQuery->toSql(),
-                'created_from' => $filters['created_from'],
-                'created_to' => $filters['created_to'],
-            ]);
-        }
-        
         // Get total count - use distinct count on appointments.id to handle JOIN correctly
         $totalRecords = $countQuery->distinct()->count('appointments.id');
-        
-        \Log::info('Consultancy Count Result', [
-            'total_records' => $totalRecords,
-        ]);
-        
         [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
         
         // Build result query
