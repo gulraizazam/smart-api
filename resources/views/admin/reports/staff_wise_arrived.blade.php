@@ -30,7 +30,7 @@
                         <thead>
                             <tr class="">
                                 <td class="bg-light">Total Scheduled Appointments (without walk-in)</td>
-                                <td class="bg-light" style="text-align:right;">{{(count($Appointments)-$walkin_customers) ?? 0}}</td>
+                                <td class="bg-light" style="text-align:right;">{{(($totalScheduled ?? count($Appointments))-$walkin_customers) ?? 0}}</td>
                             </tr>
                             <tr class="">
                                 <td class="border-top bg-light"> Arrived (without walk-in)</td>
@@ -60,9 +60,10 @@
                                 <td class="border-top bg-light">Arrival Ratio Without Walk-In</td>
                                 <td class="border-top bg-light" style="text-align:right;">
                                     <?php
-                                    if (isset($arrived) && isset($Appointments) && isset($walkin_customers) && count($Appointments) > 0) {
+                                    $total = $totalScheduled ?? count($Appointments);
+                                    if (isset($arrived) && $total > 0 && isset($walkin_customers)) {
                                         if (($arrived - $walkin_customers) > 0) {
-                                            echo number_format(((($arrived) - $walkin_customers) / (count($Appointments) - $walkin_customers)) * 100, 2) . '%';
+                                            echo number_format(((($arrived) - $walkin_customers) / ($total - $walkin_customers)) * 100, 2) . '%';
                                         } else {
                                             echo '00.00 %';
                                         }
