@@ -338,9 +338,34 @@ class ConsultancyUpdateService
             }
         }
 
-        // Track who updated
-        if (isset($requestData['scheduled_date']) || isset($requestData['scheduled_time'])) {
+        // Track who updated - compare dates and times in same format
+        $dateChanged = false;
+        $timeChanged = false;
+        
+        if (isset($requestData['scheduled_date'])) {
+            $oldDateFormatted = \Carbon\Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
+            $newDateFormatted = \Carbon\Carbon::parse($data['scheduled_date'])->format('Y-m-d');
+            $dateChanged = ($oldDateFormatted != $newDateFormatted);
+        }
+        
+        if (isset($requestData['scheduled_time'])) {
+            $oldTimeFormatted = \Carbon\Carbon::parse($appointment->scheduled_time)->format('H:i:s');
+            $newTimeFormatted = \Carbon\Carbon::parse($data['scheduled_time'])->format('H:i:s');
+            $timeChanged = ($oldTimeFormatted != $newTimeFormatted);
+        }
+        
+        // Only update converted_by if scheduled_date changed (not just time)
+        if ($dateChanged) {
             $data['converted_by'] = Auth::id();
+        }
+        
+        // If consultation is rescheduled (date or time changed) and status is pending, set send_message to 1 for SMS
+        if ($dateChanged || $timeChanged) {
+            $pendingStatusId = config('constants.appointment_status_pending', 1);
+            
+            if ($appointment->base_appointment_status_id == $pendingStatusId) {
+                $data['send_message'] = 1;
+            }
         }
         
         if (isset($requestData['location_id']) || isset($requestData['doctor_id'])) {

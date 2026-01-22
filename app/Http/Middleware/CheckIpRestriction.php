@@ -21,18 +21,18 @@ class CheckIpRestriction
             $user = Auth::user();
             
             $allowedIps = [
-                '103.8.112.42', '103.8.112.43', '103.8.112.107', 
-                '203.215.176.205', '203.215.176.206', '203.215.181.201', 
-                '203.215.181.206', '202.69.38.28','39.45.105.9','203.215.181.198','103.8.112.43','139.135.36.214','154.80.40.210','202.166.167.242'
+                '203.215.176.205',
+                '203.215.176.206',
+                '203.215.181.201',
+                '203.215.181.206',
+                '119.30.71.34',
+                '119.30.71.36',
+                '103.8.112.42',
+                '103.8.112.107',
+                '103.8.112.43',
             ];
             
-            // Check if the user has a restricted role
             
-            $allowedIps = [
-                '103.8.112.42', '103.8.112.43', '103.8.112.107', 
-                '203.215.176.205', '203.215.176.206', '203.215.181.201', 
-                '203.215.181.206', '202.69.38.28','39.45.105.9','203.215.181.198','103.8.112.43','139.135.36.214','154.80.40.210','202.166.167.242'
-            ];
             
             // Check if the user has a restricted role
             if (method_exists($user, 'hasRole')) {
@@ -43,7 +43,7 @@ class CheckIpRestriction
             }
             
             // If the role is 'CSR' or 'CSR Supervisor', apply IP restriction
-            if (($userRole === 'CSR' || $userRole === 'CSR Supervisor')) {
+            if (($userRole === 'CSR' || $userRole === 'CSR Supervisor' || $userRole === 'Quality Assurance')) {
                 $userIp = $request->ip();
                 
                 if (!in_array($userIp, $allowedIps)) {

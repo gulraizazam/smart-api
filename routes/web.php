@@ -177,7 +177,7 @@ Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController
 Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 /*After authentication*/
 Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
-    //Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
+    Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
@@ -657,5 +657,5 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('wrong-conversions', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'index'])->name('wrong-conversions.index');
         Route::post('wrong-conversions/reset/{id}', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'reset'])->name('wrong-conversions.reset');
         Route::post('wrong-conversions/reset-all', [\App\Http\Controllers\Admin\WrongConversionsController::class, 'resetAll'])->name('wrong-conversions.reset-all');
-    //});
+    });
 });
