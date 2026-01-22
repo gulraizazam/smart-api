@@ -48,8 +48,8 @@ class ConsultancyDatatableService
         $countQuery = clone $baseQuery;
         $this->applyFilters($countQuery, $filters);
         
-        // Get total count
-        $totalRecords = $countQuery->count();
+        // Get total count - use distinct count on appointments.id to handle JOIN correctly
+        $totalRecords = $countQuery->distinct()->count('appointments.id');
         [$displayLength, $displayStart, $pages, $page] = getPaginationElement($request, $totalRecords);
         
         // Build result query
