@@ -1089,12 +1089,10 @@ class AppointmentsController extends Controller
             /* Now We need to update name of all appointments that already in appointment table against patient
              */
             Appointments::where(['patient_id' => $appointment_data['patient_id']])->update(['name' => $patient->name]);
-            // Based on allow message by status and scheduled date, allow send sms
-            if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
-                $appointment->update([
-                    'send_message' => 1,
-                ]);
-            }
+            // Always set send_message to 1 for new consultations
+            $appointment->update([
+                'send_message' => 1,
+            ]);
             /*
              * Set Appointment Status if appointment scheduled date & time are not defined
              * case 1: If Scheduled Date is not set then status is 'un-scheduled'
