@@ -69,7 +69,6 @@ use App\Helpers\Widgets\LocationsWidget;
 use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-use App\Helpers\Elastic\AppointmentsElastic;
 use App\Helpers\Widgets\AppointmentEditWidget;
 use App\Helpers\Widgets\AppointmentCheckesWidget;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
@@ -136,34 +135,12 @@ class AppointmentsController extends Controller
      */
     public function datatable(Request $request)
     {
-        $listing_setting = Settings::where([
-            'account_id' => Auth::User()->account_id,
-            'slug' => 'sys-list-mode',
-        ])->first();
-        switch ($listing_setting->data) {
-            case 'elastic':
-                return $this->getElasticListing($request);
-                break;
-            default:
-                return $this->getDefaultListing($request);
-                break;
-        }
+        return $this->getDefaultListing($request);
     }
 
     public function treatmentDatatable(Request $request)
     {
-        $listing_setting = Settings::where([
-            'account_id' => Auth::User()->account_id,
-            'slug' => 'sys-list-mode',
-        ])->first();
-        switch ($listing_setting->data) {
-            case 'elastic':
-                return $this->getElasticListing($request);
-                break;
-            default:
-                return $this->getDefaultTreatmentListing($request);
-                break;
-        }
+        return $this->getDefaultTreatmentListing($request);
     }
 
     public function todayexport()

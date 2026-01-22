@@ -177,7 +177,7 @@ Route::post('password/reset', [App\Http\Controllers\Auth\ResetPasswordController
 Route::post('logout', [App\Http\Controllers\Auth\LoginController::class, 'logout'])->name('logout');
 /*After authentication*/
 Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admin', 'as' => 'admin.'], function () {
-    Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
+    //Route::middleware(['auth', 'check.ip.restriction'])->group(function () {
 
         Route::get('error-logs', [LogViewerController::class, 'index']);
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
@@ -188,7 +188,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         
         // Export exempt invoices to Excel
         Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
-    });
+    //});
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
