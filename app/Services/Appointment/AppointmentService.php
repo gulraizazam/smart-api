@@ -227,7 +227,7 @@ class AppointmentService
                 if (!$lead) {
                     throw AppointmentException::invalidData('Failed to create lead for new patient.');
                 }
-                \Log::info('Lead created successfully:', ['lead_id' => $lead->id, 'patient_id' => $lead->patient_id, 'account_id' => $lead->account_id, 'created_by' => $lead->created_by, 'lead_status_id' => $lead->lead_status_id]);
+                
                 
                 // Create lead service entry if service_id is provided
                 if (isset($data['service_id'])) {
@@ -298,15 +298,27 @@ class AppointmentService
 
             // Validate doctor has service allocated at location
             if (isset($appointmentData['doctor_id']) && isset($appointmentData['service_id']) && isset($appointmentData['location_id'])) {
-                $hasService = \DB::table('doctor_has_locations')
-                    ->where('user_id', $appointmentData['doctor_id'])
-                    ->where('location_id', $appointmentData['location_id'])
-                    ->where('service_id', $appointmentData['service_id'])
-                    ->where('is_allocated', 1)
+                // Check if doctor has "all services" assigned at this location
+                $hasAllServices = \DB::table('doctor_has_locations')
+                    ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
+                    ->where('doctor_has_locations.user_id', $appointmentData['doctor_id'])
+                    ->where('doctor_has_locations.location_id', $appointmentData['location_id'])
+                    ->where('services.slug', 'all')
+                    ->where('doctor_has_locations.is_allocated', 1)
                     ->exists();
 
-                if (!$hasService) {
-                    throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                if (!$hasAllServices) {
+                    // If not all services, check for specific service
+                    $hasService = \DB::table('doctor_has_locations')
+                        ->where('user_id', $appointmentData['doctor_id'])
+                        ->where('location_id', $appointmentData['location_id'])
+                        ->where('service_id', $appointmentData['service_id'])
+                        ->where('is_allocated', 1)
+                        ->exists();
+
+                    if (!$hasService) {
+                        throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                    }
                 }
             }
 
@@ -709,15 +721,27 @@ class AppointmentService
             $doctorId = $data['doctor_id'] ?? $appointment->doctor_id;
             $locationId = $data['location_id'] ?? $appointment->location_id;
             
-            $hasService = \DB::table('doctor_has_locations')
-                ->where('user_id', $doctorId)
-                ->where('location_id', $locationId)
-                ->where('service_id', $appointment->service_id)
-                ->where('is_allocated', 1)
+            // Check if doctor has "all services" assigned at this location
+            $hasAllServices = \DB::table('doctor_has_locations')
+                ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
+                ->where('doctor_has_locations.user_id', $doctorId)
+                ->where('doctor_has_locations.location_id', $locationId)
+                ->where('services.slug', 'all')
+                ->where('doctor_has_locations.is_allocated', 1)
                 ->exists();
 
-            if (!$hasService) {
-                throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+            if (!$hasAllServices) {
+                // If not all services, check for specific service
+                $hasService = \DB::table('doctor_has_locations')
+                    ->where('user_id', $doctorId)
+                    ->where('location_id', $locationId)
+                    ->where('service_id', $appointment->service_id)
+                    ->where('is_allocated', 1)
+                    ->exists();
+
+                if (!$hasService) {
+                    throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                }
             }
 
             // Schedule conflict check disabled to allow multiple bookings on the same slot
