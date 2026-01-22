@@ -308,7 +308,7 @@ class ConsultancyDatatableService
         // Get filter dropdown values
         $regions = \App\Models\Regions::getActiveSorted(ACL::getUserRegions());
         $cities = \App\Models\Cities::getActiveSortedFeatured(ACL::getUserCities());
-        $doctors = \App\Models\Doctors::getActiveOnly(ACL::getUserCentres());
+        $doctors = \App\Models\Doctors::getActiveOnly(ACL::getUserCentres(), $this->accountId);
         $locations = \App\Models\Locations::getActiveSorted(ACL::getUserCentres());
         $services = GeneralFunctions::ServicesTreeList();
         
@@ -329,7 +329,7 @@ class ConsultancyDatatableService
             $appointmentTypes = [];
         }
         
-        $users = User::getAllRecords($this->accountId)->pluck('name', 'id');
+        $users = User::getAllRecords($this->accountId)->where('active', 1)->pluck('name', 'id');
         
         $records['filter_values'] = [
             'cities' => $cities,
