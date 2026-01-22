@@ -227,6 +227,23 @@ class ConsultancyUpdateService
             'location_id' => $locationId,
         ]);
 
+        // Check if doctor has "all services" assigned at this location
+        $hasAllServices = \DB::table('doctor_has_locations')
+            ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
+            ->where('doctor_has_locations.user_id', $doctorId)
+            ->where('doctor_has_locations.location_id', $locationId)
+            ->where('services.slug', 'all')
+            ->where('doctor_has_locations.is_allocated', 1)
+            ->exists();
+
+        if ($hasAllServices) {
+            \Log::info('validateDoctorHasService: Doctor has all services assigned', [
+                'doctor_id' => $doctorId,
+                'location_id' => $locationId,
+            ]);
+            return; // Skip validation if doctor has all services
+        }
+
         // Check if service exists in doctor_has_locations for this doctor at this location
         $hasService = \DB::table('doctor_has_locations')
             ->where('user_id', $doctorId)
