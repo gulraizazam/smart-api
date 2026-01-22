@@ -252,13 +252,36 @@ class ConsultancyUpdateService
             ->where('is_allocated', 1)
             ->exists();
 
-        \Log::info('validateDoctorHasService: Result', [
-            'has_service' => $hasService,
-            'will_throw_error' => !$hasService,
-        ]);
-
         if (!$hasService) {
-            throw AppointmentException::invalidData('This doctor does not have the selected service allocated at this location.');
+            // Check if the service is a child and its parent is assigned to the doctor
+            if ($service->parent_id) {
+                $hasParentService = \DB::table('doctor_has_locations')
+                    ->where('user_id', $doctorId)
+                    ->where('location_id', $locationId)
+                    ->where('service_id', $service->parent_id)
+                    ->where('is_allocated', 1)
+                    ->exists();
+                
+                \Log::info('validateDoctorHasService: Checking parent service', [
+                    'parent_service_id' => $service->parent_id,
+                    'has_parent_service' => $hasParentService,
+                ]);
+                
+                if (!$hasParentService) {
+                    throw AppointmentException::invalidData('This doctor does not have the selected service or its parent service allocated at this location.');
+                }
+            } else {
+                \Log::info('validateDoctorHasService: Result', [
+                    'has_service' => $hasService,
+                    'will_throw_error' => true,
+                ]);
+                throw AppointmentException::invalidData('This doctor does not have the selected service allocated at this location.');
+            }
+        } else {
+            \Log::info('validateDoctorHasService: Result', [
+                'has_service' => $hasService,
+                'will_throw_error' => false,
+            ]);
         }
     }
 

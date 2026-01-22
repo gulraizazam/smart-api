@@ -317,7 +317,24 @@ class AppointmentService
                         ->exists();
 
                     if (!$hasService) {
-                        throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                        // Check if the service is a child and its parent is assigned to the doctor
+                        $service = \App\Models\Services::find($appointmentData['service_id']);
+                        
+                        if ($service && $service->parent_id) {
+                            // Service has a parent, check if parent is assigned to doctor
+                            $hasParentService = \DB::table('doctor_has_locations')
+                                ->where('user_id', $appointmentData['doctor_id'])
+                                ->where('location_id', $appointmentData['location_id'])
+                                ->where('service_id', $service->parent_id)
+                                ->where('is_allocated', 1)
+                                ->exists();
+                            
+                            if (!$hasParentService) {
+                                throw AppointmentException::invalidData('This doctor does not have the required service or its parent service allocated for this location.');
+                            }
+                        } else {
+                            throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                        }
                     }
                 }
             }
