@@ -1,4 +1,4 @@
-var table_url = route('admin.treatment.datatable');
+var table_url = route('admin.treatments.datatable');
 
 var table_columns = [
 

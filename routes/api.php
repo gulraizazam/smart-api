@@ -93,6 +93,12 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
         Route::get('doctor-upselling-data', [\App\Http\Controllers\Api\DashboardController::class, 'doctorUpsellingData'])->name('doctor_upselling_data');
     });
 
+    // Treatments API Routes (Optimized)
+    Route::prefix('treatments')->name('treatments.')->middleware('permission:appointments_services')->group(function () {
+        Route::post('datatable', [\App\Http\Controllers\Api\TreatmentsController::class, 'datatable'])->name('datatable');
+        Route::post('clear-cache', [\App\Http\Controllers\Api\TreatmentsController::class, 'clearCache'])->name('clear_cache');
+    });
+
     // Permissions API Routes (Optimized)
     Route::prefix('permissions')->name('permissions.')->middleware('permission:permissions_manage')->group(function () {
         Route::post('datatable', [PermissionController::class, 'datatable'])->name('datatable');
@@ -616,7 +622,7 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     /*Appointment routes*/
     Route::post('consultancy/datatable', [AppointmentsController::class, 'datatable'])->name('consultancy.datatable');
-    Route::post('treatment/datatable', [AppointmentsController::class, 'treatmentDatatable'])->name('treatment.datatable');
+    // MIGRATED TO: Route::post('treatments/datatable') - admin.treatments.datatable
     Route::get('appointments/show/status', [AppointmentsController::class, 'showAppointmentStatuses'])->name('appointments.showappointmentstatus');
     Route::post('appointments/load-child-appointment-statuses', [AppointmentsController::class, 'loadAppointmentStatuses'])->name('appointments.load_child_appointment_statuses');
     Route::put('appointments/store/appointmentstatus', [AppointmentsController::class, 'storeAppointmentStatuses'])->name('appointments.storeappointmentstatus');
