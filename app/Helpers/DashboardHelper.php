@@ -48,8 +48,8 @@ class DashboardHelper
                 $end_date = Carbon::now()->format('Y-m-d');
                 break;
             case 'week':
-                $start_date = Carbon::now()->startOfWeek()->format('Y-m-d');
-                $end_date = Carbon::now()->endOfWeek()->format('Y-m-d');
+                $start_date = Carbon::now()->startOfWeek(Carbon::SUNDAY)->format('Y-m-d');
+                $end_date = Carbon::now()->format('Y-m-d');
                 break;
             case 'month':
             case 'thismonth':
