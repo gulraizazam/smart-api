@@ -634,6 +634,7 @@ class AppointmentService
             'patient',
             'resource'
         ])->whereNotNull('scheduled_date')
+        ->where('appointment_type_id',1)
           ->whereNotNull('scheduled_time');
 
         $cancelledStatus = AppointmentHelper::getCancelledStatus($this->getAccountId());
