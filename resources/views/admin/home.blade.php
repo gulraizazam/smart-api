@@ -21,7 +21,7 @@
                                         <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                         <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                             Week</option>
-                                        <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
+                                        <option value="thismonth" {{ (request('type')=='thismonth' || !request('type')) ? 'selected' : '' }}>This
                                             Month</option>
                                     </select>
                                 </div>
@@ -586,7 +586,7 @@
                                                 <option value="last7days" {{ request('type')=='last7days' ? 'selected' : '' }}>Last 7 Days</option>
                                                 <option value="week" {{ request('type')=='week' ? 'selected' : '' }}>This
                                                     Week</option>
-                                                <option value="thismonth" {{ request('type')=='thismonth' ? 'selected' : '' }}>This
+                                                <option value="thismonth" {{ (request('type')=='thismonth' || !request('type')) ? 'selected' : '' }}>This
                                                     Month</option>
                                                 {{-- <option value="lastmonth" {{ request('type')=='lastmonth' ? 'selected' : '' }}>Last Month</option> --}}
                                             </select>
@@ -783,7 +783,7 @@
 <script>
 // Dashboard configuration for lazy loading and routes
 window.dashboardConfig = {
-    requestType: '{{ $requestType ?? 'today' }}',
+    requestType: '{{ $requestType ?? 'thismonth' }}',
     locationIds: {!! json_encode($location_id) !!},
     startDate: '{{ $today ?? '' }}',
     endDate: '{{ $today ?? '' }}',
