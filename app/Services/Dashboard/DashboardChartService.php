@@ -86,33 +86,92 @@ class DashboardChartService
         
         $arrivedStatusIds = !empty($statusIds) ? $statusIds : [2, 16];
 
-        // Build query using appointments_daily_stats table
-        $query = \App\Models\AppointmentsDailyStats::select('centre_id')
-            ->selectRaw('COUNT(*) as total')
-            ->selectRaw('SUM(CASE WHEN appointment_status_id IN (' . implode(',', array_map('intval', $arrivedStatusIds)) . ') THEN 1 ELSE 0 END) as arrived')
+        // Fetch all records for set-based counting logic
+        $allRecords = \App\Models\AppointmentsDailyStats::select('id', 'centre_id', 'appointment_id', 'appointment_status_id', 'user_id')
             ->whereBetween('scheduled_date', [$startDate, $endDate])
             ->whereIn('centre_id', $validCenterIds)
-            ->groupBy('centre_id');
+            ->orderBy('centre_id')
+            ->orderBy('appointment_id')
+            ->orderBy('id')
+            ->get();
 
-        // Add walkin calculation only if FDM users exist
-        if (!empty($fdmUsers)) {
-            $fdmUserIds = implode(',', array_map('intval', $fdmUsers));
-            $arrivedIds = implode(',', array_map('intval', $arrivedStatusIds));
-            $query->selectRaw("SUM(CASE WHEN appointment_status_id IN ({$arrivedIds}) AND user_id IN ({$fdmUserIds}) THEN 1 ELSE 0 END) as walkin");
-        } else {
-            $query->selectRaw('0 as walkin');
+        // Group records by centre_id and appointment_id
+        $groupedByCentre = [];
+        foreach ($allRecords as $record) {
+            $cId = $record->centre_id;
+            $appointmentId = $record->appointment_id;
+            
+            if (!isset($groupedByCentre[$cId])) {
+                $groupedByCentre[$cId] = [];
+            }
+            if (!isset($groupedByCentre[$cId][$appointmentId])) {
+                $groupedByCentre[$cId][$appointmentId] = [];
+            }
+            
+            $groupedByCentre[$cId][$appointmentId][] = $record;
         }
 
-        $stats = $query->get()->keyBy('centre_id')->toArray();
+        // Calculate set-based counts for each centre
+        // Logic: Make sets of 2 records per appointment_id
+        // - Each set counts as 1 in total
+        // - If a set has at least one arrived/converted status, count 1 as arrived
+        $stats = [];
+        foreach ($groupedByCentre as $cId => $appointments) {
+            $centreTotal = 0;
+            $centreArrived = 0;
+            $centreWalkin = 0;
+
+            foreach ($appointments as $appointmentId => $records) {
+                $recordCount = count($records);
+                $setCount = ceil($recordCount / 2);
+
+                for ($i = 0; $i < $setCount; $i++) {
+                    $setStart = $i * 2;
+                    $setRecords = array_slice($records, $setStart, 2);
+
+                    // Check if this set has at least one arrived/converted status
+                    $hasArrived = false;
+                    $isWalkin = false;
+
+                    foreach ($setRecords as $record) {
+                        if (in_array($record->appointment_status_id, $arrivedStatusIds)) {
+                            $hasArrived = true;
+                            // Check if this is a walk-in (created by FDM user)
+                            if (!empty($fdmUsers) && in_array($record->user_id, $fdmUsers)) {
+                                $isWalkin = true;
+                            }
+                            break;
+                        }
+                    }
+
+                    // Count every set in total
+                    $centreTotal++;
+                    
+                    if ($hasArrived) {
+                        // Arrived set: count 1 arrived
+                        $centreArrived++;
+                        if ($isWalkin) {
+                            $centreWalkin++;
+                        }
+                    }
+                }
+            }
+
+            $stats[$cId] = [
+                'total' => $centreTotal,
+                'arrived' => $centreArrived,
+                'walkin' => $centreWalkin,
+            ];
+        }
 
         // Build result arrays
-        foreach ($validCenterIds as $centreId) {
-            $centreName = $locations[$centreId] ?? null;
+        foreach ($validCenterIds as $cId) {
+            $centreName = $locations[$cId] ?? null;
             if ($centreName) {
                 $labels[] = $centreName;
-                $totalApts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['total'] : 0;
-                $arrivedApts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['arrived'] : 0;
-                $walkinApts[] = isset($stats[$centreId]) ? (int) $stats[$centreId]['walkin'] : 0;
+                $totalApts[] = isset($stats[$cId]) ? (int) $stats[$cId]['total'] : 0;
+                $arrivedApts[] = isset($stats[$cId]) ? (int) $stats[$cId]['arrived'] : 0;
+                $walkinApts[] = isset($stats[$cId]) ? (int) $stats[$cId]['walkin'] : 0;
             }
         }
 
