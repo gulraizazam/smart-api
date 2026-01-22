@@ -3166,20 +3166,91 @@ public static function revenueByGenderAndService($request)
         $records = [];
         $records['data'] = [];
 
-        $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id');
+        $fdm_users = RoleHasUsers::where(['role_id' => 4])->pluck('user_id')->toArray();
+        
+        // Get arrived and converted appointment status IDs
+        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
+        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
+        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
+        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
+        $arrivedStatusIds = $convertedStatusId ? [$arrivedStatusId, $convertedStatusId] : [$arrivedStatusId];
+
+        // Fetch all records for set-based counting logic
+        $allRecordsQuery = AppointmentsDailyStats::select('id', 'appointment_id', 'appointment_status_id', 'user_id')
+            ->whereIn('centre_id', $locations)
+            ->whereBetween('scheduled_date', [$start_date, $end_date])
+            ->orderBy('appointment_id')
+            ->orderBy('id');
+        
+        if (count($where)) {
+            $allRecordsQuery->where($where);
+        }
+        
+        $allRecords = $allRecordsQuery->get();
+
+        // Group records by appointment_id
+        $groupedByAppointment = [];
+        foreach ($allRecords as $record) {
+            $appointmentId = $record->appointment_id;
+            if (!isset($groupedByAppointment[$appointmentId])) {
+                $groupedByAppointment[$appointmentId] = [];
+            }
+            $groupedByAppointment[$appointmentId][] = $record;
+        }
+
+        // Calculate set-based counts
+        // Logic: Make sets of 2 records per appointment_id
+        // - Each set counts as 1 in total
+        // - If a set has at least one arrived/converted status, count 1 as arrived
+        $totalSets = 0;
+        $arrivedSets = 0;
+        $walkinSets = 0;
+
+        foreach ($groupedByAppointment as $appointmentId => $records) {
+            $recordCount = count($records);
+            $setCount = ceil($recordCount / 2);
+
+            for ($i = 0; $i < $setCount; $i++) {
+                $setStart = $i * 2;
+                $setRecords = array_slice($records, $setStart, 2);
+
+                // Check if this set has at least one arrived/converted status
+                $hasArrived = false;
+                $isWalkin = false;
+
+                foreach ($setRecords as $record) {
+                    if (in_array($record->appointment_status_id, $arrivedStatusIds)) {
+                        $hasArrived = true;
+                        // Check if this is a walk-in (created by FDM user)
+                        if (!empty($fdm_users) && in_array($record->user_id, $fdm_users)) {
+                            $isWalkin = true;
+                        }
+                        break;
+                    }
+                }
+
+                // Count every set in total
+                $totalSets++;
+
+                if ($hasArrived) {
+                    // Arrived set: count 1 arrived
+                    $arrivedSets++;
+                    if ($isWalkin) {
+                        $walkinSets++;
+                    }
+                }
+            }
+        }
+
+        $arrived = $arrivedSets;
+        $walkin_customers = $request->created_by == null ? $walkinSets : 0;
+        $totalScheduled = $totalSets;
+
         if (Gate::allows('appointments_consultancy') && Gate::allows('treatments_services') || Gate::allows('appointments_consultancy')) {
             $resultQuery = AppointmentsDailyStats::whereIn('centre_id', $locations);
         }
         if (count($where)) {
             $resultQuery->where($where);
-        }
-        if ($request->created_by == null) {
-            $walkin_customers = AppointmentsDailyStats::whereIn('user_id', $fdm_users)
-                ->whereIn('centre_id', $locations)
-                ->whereBetween('scheduled_date', [$start_date, $end_date])
-                ->count();
-        } else {
-            $walkin_customers = 0;
         }
 
         $Appointments = $resultQuery->with(['user', 'appointment' => function ($q) {
@@ -3189,23 +3260,6 @@ public static function revenueByGenderAndService($request)
             ->whereBetween('scheduled_date', [$start_date, $end_date])
             ->get();
 
-        // Get arrived and converted appointment status IDs
-        $arrivedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_arrived' => 1])->first();
-        $convertedStatus = \App\Models\AppointmentStatuses::where(['account_id' => Auth::User()->account_id, 'is_converted' => 1])->first();
-        $arrivedStatusId = $arrivedStatus ? $arrivedStatus->id : 2;
-        $convertedStatusId = $convertedStatus ? $convertedStatus->id : 16;
-
-        // Count arrived with OR condition for arrived/converted status
-        $arrivedQuery = AppointmentsDailyStats::whereIn('centre_id', $locations)
-            ->whereBetween('scheduled_date', [$start_date, $end_date]);
-        if (count($where)) {
-            $arrivedQuery->where($where);
-        }
-        if ($convertedStatusId) {
-            $arrived = $arrivedQuery->whereIn('appointment_status_id', [$arrivedStatusId, $convertedStatusId])->count();
-        } else {
-            $arrived = $arrivedQuery->where('appointment_status_id', $arrivedStatusId)->count();
-        }
         $user = User::where(['id' => $request->created_by])->first()->name ?? '';
         $centre = Locations::where(['id' => $request->location_id])->first()->name ?? 'All centres';
 
