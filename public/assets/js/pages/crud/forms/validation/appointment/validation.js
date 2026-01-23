@@ -65,24 +65,10 @@ var EditAppointmentValidation = function () {
             form,
             {
                 fields: {
-                    consultancy_type: {
+                    treatment_id: {
                         validators: {
                             notEmpty: {
-                                message: 'The consultancy type field is required'
-                            }
-                        }
-                    },
-                    city_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The city field is required'
-                            }
-                        }
-                    },
-                    location_id: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The location field is required'
+                                message: 'The service field is required'
                             }
                         }
                     },
@@ -106,38 +92,7 @@ var EditAppointmentValidation = function () {
                                 message: 'The scheduled time field is required'
                             }
                         }
-                    },
-                    phone: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The phone field is required'
-                            },
-                            stringLength: {
-                                min: 10,
-                                max: 12,
-                                message: 'The phone number must be between 10 and 12 characters'
-                            },
-                            regexp: {
-                                regexp: /^\d+$/,
-                                message: 'The phone number must contain only digits (0-9)'
-                            }
-                        }
-                    },
-                    name: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The name field is required'
-                            }
-                        }
-                    },
-                    gender: {
-                        validators: {
-                            notEmpty: {
-                                message: 'The gender field is required'
-                            }
-                        }
-                    },
-
+                    }
                 },
 
                 plugins: {

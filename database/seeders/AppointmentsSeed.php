@@ -33,7 +33,7 @@ class AppointmentsSeed extends Seeder
             ],
             [
                 'title' => 'Manage Services',
-                'name' => 'appointments_services',
+                'name' => 'treatments_services',
                 'guard_name' => 'web',
                 'main_group' => 0,
                 'created_at' => \Carbon\Carbon::now(),
@@ -249,7 +249,7 @@ class AppointmentsSeed extends Seeder
         // Assign Permission to 'administrator' role
         $role->givePermissionTo('appointments_manage');
         $role->givePermissionTo('appointments_consultancy');
-        $role->givePermissionTo('appointments_services');
+        $role->givePermissionTo('treatments_services');
         $role->givePermissionTo('appointments_edit');
         $role->givePermissionTo('appointments_destroy');
         $role->givePermissionTo('appointments_patient_card');

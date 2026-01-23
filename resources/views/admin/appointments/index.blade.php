@@ -702,6 +702,7 @@
         </script>
         <script src="{{ asset('assets/js/pages/appointment/invoice.js?v=1') }}"></script>
         <script src="{{ asset('assets/js/pages/appointment/consultancy-calendar.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
 
         <script src="{{ asset('assets/plugins/custom/fullcalendar/fullcalendar.bundle.js') }}"></script>
         <script src="{{ asset('assets/js/pages/appointment/consultancy-data.js') }}"></script>

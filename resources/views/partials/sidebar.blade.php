@@ -113,7 +113,7 @@
             </li>
             @endif
 
-            @if(Gate::allows('appointments_manage') || Gate::allows('appointments_consultancy') || Gate::allows('appointments_services'))
+            @if(Gate::allows('appointments_manage') || Gate::allows('appointments_consultancy') || Gate::allows('treatments_services'))
             <li class="nav-item start @if($request->segment(2) == 'appointments' || $request->segment(2) == 'appointmentsmeasurement' || $request->segment(2) == 'appointmentsimage') active open @endif">
                 <a href="javascript:;" class="nav-link nav-toggle">
                     <i class="icon-clock"></i>
@@ -128,7 +128,7 @@
                         </a>
                     </li>
                     @endif
-                    @if(Gate::allows('appointments_services'))
+                    @if(Gate::allows('treatments_services'))
                     <li class="nav-item start {{ ($request->segment(2) == 'appointments' && $request->segment(3) == 'manage-services') ? 'active' : '' }}">
                         <a href="{{ route('admin.appointments.manage_services') }}">
                             <span class="title">Manage Treatment</span>

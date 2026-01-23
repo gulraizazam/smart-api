@@ -1138,7 +1138,12 @@ var CustomResourceCalendar = function() {
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error('Unable to reschedule appointment. Please try again.');
+                    // Try to get error message from response
+                    var errorMessage = 'Unable to reschedule appointment. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    }
+                    toastr.error(errorMessage);
                     // Move appointment back to original slot
                     appointmentEl.removeClass('dragging');
                 }
@@ -1243,6 +1248,7 @@ function setCreateConsultancy(response, start) {
         $("#modal_create_consultancy_form")[0].reset();
         $('.patient_search_id').val(null).trigger('change');
         $('.lead_search_id').val(null).trigger('change');
+        $('#create_consultancy_referred_by').val(null).trigger('change');
         $('.new_patient_text').hide();
 
         let city_id = response.data.city_id;
@@ -1272,6 +1278,18 @@ function setCreateConsultancy(response, start) {
         $("#consultancy_dob").val();
         $("#consultancy_address").val();
         $("#consultancy_town_id").val();
+        
+        // Set scheduled time value for timepicker
+        if (start) {
+            let scheduledDateTime = moment(start);
+            let formattedTime = scheduledDateTime.format('h:mm A');
+            $("#create_scheduled_time").val(formattedTime);
+            
+            // Update modal heading with day and date
+            let dayName = scheduledDateTime.format('dddd');
+            let dateFormatted = scheduledDateTime.format('MMM D');
+            $("#create_consultation_heading").text('New consultation - ' + dayName + ', ' + dateFormatted);
+        }
 
         let type_options = '';
         if (consultancy_types) {
@@ -1313,7 +1331,7 @@ function setCreateConsultancy(response, start) {
         $("#create_consultancy_types").html(type_options);
         $("#create_consultancy_service").html(service_options);
         $("#create_consultancy_lead").html(source_options);
-        $("#create_consultancy_referred_by").html(employee_options);
+        // Referred by is now a patient search Select2 field, not populated with employees
         $("#create_consultancy_gender").html(gender_options);
 
         if(setting?.data == '1') {
@@ -1326,6 +1344,9 @@ function setCreateConsultancy(response, start) {
 
         setTimeout( function () {
             $(".select2-selection").removeClass("select2-is-invalid");
+            $("#create_consultancy_gender").removeClass("is-valid");
+            // Set focus on phone number field
+            $('.lead_search_id').focus();
         }, 200);
 
     } catch (e) {

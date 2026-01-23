@@ -15,6 +15,7 @@ class Permission extends \Spatie\Permission\Models\Permission
         'parent_id',
         'status',
         'guard_name',
+        'sort_order',
     ];
 
     protected $casts = [

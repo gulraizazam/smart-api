@@ -95,9 +95,40 @@ var AddUserValidation = function () {
                     closePopup(modal_id);
                     reInitTable();
                 } else {
-                    $("#validate-msg").html('<div class="fv-help-block pass-msg">'+response.message+'</div>');
-                    $("#add_user_password").addClass("is-invalid");
-                    toastr.error(response.message);
+                    // Display validation errors
+                    if (response.errors) {
+                        // Clear previous errors
+                        $('.is-invalid').removeClass('is-invalid');
+                        $('.fv-help-block').remove();
+                        
+                        // Display each field error
+                        Object.keys(response.errors).forEach(function(field) {
+                            let fieldName = field.replace('[]', '');
+                            let $field = $('#add_user_' + fieldName);
+                            
+                            if ($field.length) {
+                                $field.addClass('is-invalid');
+                                
+                                // Add error message after the field
+                                let errorHtml = '<div class="fv-help-block">';
+                                response.errors[field].forEach(function(msg) {
+                                    errorHtml += msg + '<br>';
+                                });
+                                errorHtml += '</div>';
+                                
+                                if (fieldName === 'password') {
+                                    $("#validate-msg").html('<div class="fv-help-block pass-msg">' + response.errors[field].join('<br>') + '</div>');
+                                } else {
+                                    $field.after(errorHtml);
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Show error message in toastr
+                    if (response.message) {
+                        toastr.error(response.message);
+                    }
                 }
             }, form);
         });
@@ -207,7 +238,36 @@ var EditUserValidation = function () {
                     closePopup(modal_id);
                     reInitTable('user');
                 } else {
-                    toastr.error(response.message);
+                    // Display validation errors
+                    if (response.errors) {
+                        // Clear previous errors
+                        $('.is-invalid').removeClass('is-invalid');
+                        $('.fv-help-block').remove();
+                        
+                        // Display each field error
+                        Object.keys(response.errors).forEach(function(field) {
+                            let fieldName = field.replace('[]', '');
+                            let $field = $('#edit_user_' + fieldName);
+                            
+                            if ($field.length) {
+                                $field.addClass('is-invalid');
+                                
+                                // Add error message after the field
+                                let errorHtml = '<div class="fv-help-block">';
+                                response.errors[field].forEach(function(msg) {
+                                    errorHtml += msg + '<br>';
+                                });
+                                errorHtml += '</div>';
+                                
+                                $field.after(errorHtml);
+                            }
+                        });
+                    }
+                    
+                    // Show error message in toastr
+                    if (response.message) {
+                        toastr.error(response.message);
+                    }
                 }
             }, form);
         });

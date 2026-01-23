@@ -514,14 +514,14 @@
                 initUserWiseArrival('today', '', 'firsttime');
             }
             if (!window.dashboardConfig.isCSR && typeof initDoctorWiseConversion === 'function') {
-                initDoctorWiseConversion('today', centreId, 'firsttime');
+                initDoctorWiseConversion('thismonth', centreId, 'firsttime');
             }
         } else {
             if (typeof initCentreWiseArrival === 'function') {
                 initCentreWiseArrival('yesterday', '', 'firsttime');
             }
             if (!window.dashboardConfig.isCSR && typeof initDoctorWiseConversion === 'function') {
-                initDoctorWiseConversion('today', centreId, 'firsttime');
+                initDoctorWiseConversion('thismonth', centreId, 'firsttime');
             }
         }
 

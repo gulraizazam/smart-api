@@ -136,19 +136,13 @@ order:4;
                             </p>
                         @endif
                     </div>
-                    <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">
-                        {!! Form::label('lead_source_id', 'Lead Source', ['class' => 'control-label']) !!}
-                        <div class="lead_source_id">
-                            {!! Form::select('lead_source_id',$lead_sources, null, ['id' => 'lead_source_id', 'class' => 'form-control']) !!}
-                        </div>
-                    </div>
                 </div>
                 <div class="row">
 
                     <div class="col-lg-6 col-md-6 col-sm-6 col-xs-12 form-group">
-                        {!! Form::label('referred_by', 'Referred By', ['class' => 'control-label']) !!}
+                        {!! Form::label('referred_by', 'Referred By (Patient Search)', ['class' => 'control-label']) !!}
                         <div class="referred_by">
-                            {!! Form::select('referred_by',$employees, '0', ['id' => 'referred_by', 'class' => 'form-control referred_by', 'placeholder' => '']) !!}
+                            <select name="referred_by" id="referred_by" class="form-control select2-patient-search"></select>
                         </div>
                     </div>
 
@@ -171,6 +165,7 @@ order:4;
 </div>
 <script src="{{ url('js/admin/appointments/consultancy/create.js') }}" type="text/javascript"></script>
 <script src="{{ url('js/admin/users/ajaxbaseselect2.js') }}" type="text/javascript"></script>
+<script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
 <script>
     $('#new_patient').change(function () {
         if ($(this).is(":checked")) {

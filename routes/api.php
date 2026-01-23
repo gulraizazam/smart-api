@@ -5,7 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
-use App\Http\Controllers\Admin\LeadsController;
+use App\Http\Controllers\Admin\LeadsController as AdminLeadsController;
+use App\Http\Controllers\Api\LeadsController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
@@ -386,6 +387,7 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
     //Invoice Management route end
 
     Route::get('users/getpatientid', [ApplicationUserController::class, 'getpatientid'])->name('users.getpatient.id');
+    Route::get('users/getpatient-optimized', [ApplicationUserController::class, 'getpatientOptimized'])->name('users.getpatient.optimized');
     Route::get('users/getpatientorder', [ApplicationUserController::class, 'getpatientidOrder'])->name('users.getpatient.order');
     Route::get('orders/check_membership', [OrdersController::class, 'checkMembership'])->name('orders.check_membership');
     Route::get('users/phone/search', [ApplicationUserController::class, 'phoneSearch'])->name('users.phone.search');
@@ -478,21 +480,57 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('custom_forms_medical', [CustomFormsController::class, 'create_medical'])->name('custom_forms.create_medical');
     Route::get('custom_forms_measurement', [CustomFormsController::class, 'create_measurement'])->name('custom_forms.create_measurement');
 
-    Route::post('leads/junk_datatable', [LeadsController::class, 'junkDatatable'])->name('leads.junk_datatable');
+    // Leads API Routes (Optimized)
+    // IMPORTANT: Specific routes MUST come before wildcard {id} routes
+    Route::prefix('leads')->name('leads.')->group(function () {
+        // POST routes
+        Route::post('datatable', [LeadsController::class, 'datatable'])->name('datatable');
+        Route::post('junk-datatable', [LeadsController::class, 'datatable'])->name('junk_datatable');
+        Route::post('/', [LeadsController::class, 'store'])->name('store');
+        Route::post('status', [LeadsController::class, 'status'])->name('status');
+        Route::post('load_child_services', [LeadsController::class, 'loadChildServices'])->name('load_child_services');
+        Route::post('upload', [LeadsController::class, 'uploadLeads'])->name('upload');
+        Route::post('comment', [LeadsController::class, 'storeComment'])->name('storecomment');
+        Route::post('loadlead', [LeadsController::class, 'loadLeadData'])->name('load_lead');
+        
+        // GET routes - specific paths (must be before {id} wildcard)
+        Route::get('create', [LeadsController::class, 'create'])->name('create');
+        Route::get('showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('showleadstatus');
+        Route::get('getleadid', [LeadsController::class, 'getLeadId'])->name('getlead.id');
+        Route::get('get_lead_number', [LeadsController::class, 'getLeadNumber'])->name('get_lead_number');
+        Route::get('phone/search', [LeadsController::class, 'phoneSearch'])->name('phone.search');
+        Route::get('lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('lead_statuses');
+        Route::get('treatments', [LeadsController::class, 'loadTreatments'])->name('treatments');
+        Route::get('lead_sources', [LeadsController::class, 'loadLeadSources'])->name('lead_sources');
+        Route::get('cities', [LeadsController::class, 'loadCities'])->name('cities');
+        Route::get('leadstatus_popup_checks', [LeadsController::class, 'leadStatusesPopCheck'])->name('leadstatus_popup_checks');
+        Route::get('leadstatuschild_popup_checks', [LeadsController::class, 'leadStatusChildPopCheck'])->name('leadstatuschild_popup_checks');
+        Route::get('export/pdf', [LeadsController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('export/excel', [LeadsController::class, 'exportDocs'])->name('export.excel');
+        Route::get('detail/{id}', [LeadsController::class, 'detail'])->name('detail');
+        Route::get('convert/{id}', [LeadsController::class, 'convert'])->name('convert');
+        Route::get('edit/service/{id}/{service_id}', [LeadsController::class, 'editService'])->name('edit.service');
+        
+        // PUT routes
+        Route::put('storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('storeleadstatus');
+        Route::put('save_city', [LeadsController::class, 'saveCity'])->name('save_city');
+        
+        // PATCH routes
+        Route::patch('{id}/send-sms', [LeadsController::class, 'sendSms'])->name('send_sms');
+        
+        // POST routes with {id}
+        Route::post('{id}/remove-from-junk', [LeadsController::class, 'removeFromJunk'])->name('remove_from_junk');
+        
+        // Wildcard {id} routes - MUST be last
+        Route::get('{id}', [LeadsController::class, 'detail'])->name('show');
+        Route::get('{id}/edit', [LeadsController::class, 'edit'])->name('edit');
+        Route::put('{id}', [LeadsController::class, 'update'])->name('update');
+        Route::delete('{id}', [LeadsController::class, 'destroy'])->name('destroy');
+    });
 
-    Route::get('leads/edit/service/{id}/{service_id}', [LeadsController::class, 'editService'])->name('leads.edit.service');
-    Route::get('leads/showleadstatus', [LeadsController::class, 'showLeadStatuses'])->name('leads.showleadstatus');
-    Route::put('leads/storeleadstatus', [LeadsController::class, 'storeLeadStatuses'])->name('leads.storeleadstatus');
-    Route::get('leads/detail/{id}', [LeadsController::class, 'detail'])->name('leads.detail');
-    Route::get('leads/getleadid', [LeadsController::class, 'getleadid'])->name('leads.getlead.id');
-    Route::get('leads/get_lead_number', [LeadsController::class, 'getleadnumber'])->name('leads.get_lead_number');
-    Route::get('leads/phone/search', [LeadsController::class, 'phoneSearch'])->name('leads.phone.search');
-    Route::resource('leads', LeadsController::class)->except('index');
-    Route::post('leads/datatable', [LeadsController::class, 'datatable'])->name('leads.datatable');
     Route::post('feedbacks/datatable', [FeedbackController::class, 'datatable'])->name('feedbacks.datatable');
-    // Convert Lead
-    Route::get('leads/convert/{id}', [LeadsController::class, 'convert'])->name('leads.convert');
-    Route::get('lead_Create_popup', [LeadsController::class, 'make_pop'])->name('leads.create_popup');
+    // Legacy route for popup (keeping for backward compatibility)
+    Route::get('lead_Create_popup', [AdminLeadsController::class, 'make_pop'])->name('leads.create_popup');
 
     /*Appointment routes*/
     Route::post('appointments/load-locations', [AppointmentsController::class, 'loadLocationsByCity'])->name('appointments.load_locations');
@@ -633,7 +671,8 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::put('appointments/send/logged_sms', [AppointmentsController::class, 'sendLogSMS'])->name('appointments.resend_sms');
 
-    Route::resource('consultancy', AppointmentsController::class)->except('index');
+    // Legacy consultancy resource route - DEPRECATED, use /api/consultancy/* routes instead
+    // Route::resource('consultancy', AppointmentsController::class)->except('index');
 
     Route::post('appointments/load-doctor-rota', [AppointmentsController::class, 'loadRotaByDoctor'])->name('appointments.load_doctor_rota');
 
@@ -709,39 +748,64 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     //Route::delete('orders/refund/{id}', [OrdersController::class, 'orderRefundDestroy'])->name('orders.refund.destroy');
     Route::delete('orders/{id}', [OrdersController::class, 'destroy'])->name('orders.destroy');
 
-    /*Order routes*/
-    Route::get('appointments/load/scheduled-appointments', [AppointmentsController::class, 'getScheduledAppointments'])->name('appointments.load_scheduled_appointments');
+    // Appointments API Routes (Optimized)
+    Route::prefix('appointments')->name('appointments.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\AppointmentsController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Api\AppointmentsController::class, 'store'])->name('store');
+        Route::get('{id}', [\App\Http\Controllers\Api\AppointmentsController::class, 'show'])->name('show');
+        Route::put('{id}', [\App\Http\Controllers\Api\AppointmentsController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\AppointmentsController::class, 'destroy'])->name('destroy');
+        Route::put('{id}/status', [\App\Http\Controllers\Api\AppointmentsController::class, 'updateStatus'])->name('update_status');
+        Route::post('schedule', [\App\Http\Controllers\Api\AppointmentsController::class, 'schedule'])->name('schedule');
+        Route::get('scheduled/list', [\App\Http\Controllers\Api\AppointmentsController::class, 'scheduled'])->name('scheduled');
+        Route::get('non-scheduled/list', [\App\Http\Controllers\Api\AppointmentsController::class, 'nonScheduled'])->name('non_scheduled');
+        Route::get('statistics/data', [\App\Http\Controllers\Api\AppointmentsController::class, 'statistics'])->name('statistics');
+    });
 
+    // Consultancy API Routes (Optimized)
+    Route::prefix('consultancy')->name('consultancy.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Api\ConsultancyController::class, 'store'])->name('store');
+        Route::put('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'update'])->name('update');
+        Route::delete('{id}', [\App\Http\Controllers\Api\ConsultancyController::class, 'destroy'])->name('destroy');
+        Route::post('{id}/schedule', [\App\Http\Controllers\Api\ConsultancyController::class, 'schedule'])->name('schedule');
+        Route::get('scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'scheduled'])->name('scheduled');
+        Route::get('non-scheduled/list', [\App\Http\Controllers\Api\ConsultancyController::class, 'nonScheduled'])->name('non_scheduled');
+        Route::get('statistics/data', [\App\Http\Controllers\Api\ConsultancyController::class, 'statistics'])->name('statistics');
+    });
+
+    // Treatment API Routes (Optimized)
+    Route::prefix('treatment')->name('treatment.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\TreatmentController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\Api\TreatmentController::class, 'store'])->name('store');
+        Route::put('{id}', [\App\Http\Controllers\Api\TreatmentController::class, 'update'])->name('update');
+        Route::get('scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'scheduled'])->name('scheduled');
+        Route::get('non-scheduled/list', [\App\Http\Controllers\Api\TreatmentController::class, 'nonScheduled'])->name('non_scheduled');
+        Route::get('statistics/data', [\App\Http\Controllers\Api\TreatmentController::class, 'statistics'])->name('statistics');
+        Route::get('resources/available', [\App\Http\Controllers\Api\TreatmentController::class, 'availableResources'])->name('available_resources');
+        Route::get('services/by-location', [\App\Http\Controllers\Api\TreatmentController::class, 'servicesByLocation'])->name('services_by_location');
+    });
+
+    // Appointment Routes - Using API Controller with Service Layer
+    Route::get('appointments/load/scheduled-appointments', [\App\Http\Controllers\Api\AppointmentsController::class, 'scheduled'])->name('appointments.load_scheduled_appointments');
+    Route::post('appointments/check-and-save-appointment', [\App\Http\Controllers\Api\AppointmentsController::class, 'schedule'])->name('appointments.check_and_save_appointment');
+    
+    // Legacy routes still using Admin controller (to be migrated)
     Route::get('appointments/detail/{id}', [AppointmentsController::class, 'detail'])->name('appointments.detail');
-
     Route::get('appointments/consulting/create', [AppointmentsController::class, 'createConsultingAppointment'])->name('appointments.consulting.create');
-
-    Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
-
     Route::get('appointments/center_machines/{location_id}', [AppointmentsController::class, 'center_machines'])->name('appointments.center_machines');
     Route::get('appointments/treatment/create', [AppointmentsController::class, 'createTreatmentAppointment'])->name('appointments.treatment.create');
-
     Route::post('appointments/load-node-services', [AppointmentsController::class, 'loadEndServiceByBaseService'])->name('appointments.load_node_service');
     Route::post('appointments/load-all-child-services', [AppointmentsController::class, 'loadAllChildServices'])->name('appointments.load_all_child_services');
     Route::post('appointments/store-service', [AppointmentsController::class, 'storeService'])->name('appointments.store_service');
-
     Route::get('appointments/load/scheduled-serivce-appointments', [AppointmentsController::class, 'getScheduledServiceAppointments'])->name('appointments.load_scheduled_service_appointments');
-
     Route::post('appointments/check-and-save-service-appointment', [AppointmentsController::class, 'serviceSchedule'])->name('appointments.check_service_schedule_and_save_appointment');
-
-    // Drag and drop treatment reschedule (without resourceId requirement)
     Route::post('appointments/drag-drop-reschedule-treatment', [AppointmentsController::class, 'dragDropTreatmentReschedule'])->name('appointments.drag_drop_reschedule_treatment');
-
-    // Edit Service
     Route::get('appointments/{appointment}/edit-service', [AppointmentsController::class, 'editAppointmentService'])->name('appointments.edit_service');
     Route::get('appointments/{appointment}/feedback', [AppointmentsController::class, 'editFeedback'])->name('appointments.feedback.index');
-
     Route::get('appointments/invoice/{id}', [AppointmentsController::class, 'invoice'])->name('appointments.invoicecreate');
-
     Route::get('appointments/displayInvoice/{id}', [AppointmentsController::class, 'displayInvoiceAppointment'])->name('appointments.InvoiceDisplay');
-
     Route::get('appointments/invoice-consultancy/{id}/{type?}', [ConsultancyInvoiceController::class, 'invoiceconsultancy'])->name('appointments.invoice-create-consultancy');
-
     Route::any('appointments/viewlog/{id}/{type}', [AppointmentsController::class, 'viewLog'])->name('appointments.viewlog');
 
     Route::post('appointmentsmedical/datatable/{id}', [AppointmentMedicalController::class, 'datatable'])->name('appointmentsmedical.datatable');

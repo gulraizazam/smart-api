@@ -34,7 +34,11 @@ var table_columns = [
             if (data.appointment_status_id == "Arrived" || data.appointment_status_id == "Cancelled" || data.appointment_status_id == "Converted") {
                 return '<span>'+data.scheduled_date+'</span>';
             } else {
-                return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId +','+data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                if (permissions.schedule_edit) {
+                    return '<a href="javascript:void(0);" onclick="editSchedule(' + data.id + ','+ data.doctorId +','+data.locationId+');"><br> ' + data.scheduled_date + ' <i style="color: #cc8600; font-size: large" class="la la-pencil"></i></a>';
+                } else {
+                    return '<span>'+data.scheduled_date+'</span>';
+                }
             }
         }
     },{
@@ -471,9 +475,9 @@ function actions(data) {
                         </a>';
 
             // Send WhatsApp Button
-            actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
-                            <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
-                        </a>';
+            // actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
+            //                 <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
+            //             </a>';
         } 
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
@@ -929,8 +933,20 @@ function setTreatmentEditData(response) {
         // Enable submit button by default (will be disabled if doctor change detected)
         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
 
-        $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
-        $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
+        // Set scheduled date - API now returns it in Y-m-d format
+        let scheduledDate = appointment.scheduled_date;
+        $("#edit_treatment_scheduled_date_old").val(scheduledDate);
+        
+        // Destroy existing datepicker and reinitialize with the correct date
+        var $dateField = $("#edit_treatment_scheduled_date");
+        $dateField.datepicker('destroy');
+        $dateField.val(scheduledDate);
+        $dateField.datepicker({
+            todayHighlight: true,
+            orientation: 'bottom',
+            format: 'yyyy-mm-dd',
+            autoclose: true
+        });
         const [hourString, minute] = appointment.scheduled_time.split(":");
         const hour = +hourString % 24;
         var test = (hour % 12 || 12) + ":" + minute + (hour < 12 ? " AM" : " PM");
@@ -1066,16 +1082,12 @@ function applyFilters(datatable) {
         let filters =  {
             delete: '',
             patient_id: $("#treatment_patient_id").val(),
-            phone: $("#appoint_search_phone").val(),
             date_from: $("#treatment_search_start").val(),
             date_to: $("#treatment_appoint_end").val(),
-            region_id: $("#treatment_search_region").val(),
-            city_id: $("#treatment_search_city").val(),
             service_id: $("#treatment_search_service").val(),
             location_id: $("#treatment_search_centre").val(),
             doctor_id: $("#treatment_search_doctor").val(),
             appointment_status_id: $("#treatment_search_status").val(),
-            consultancy_type: $("#treatment_search_consultancy_type").val(),
             created_at: $("#date_range").val(),
             created_by: $("#treatment_search_created_by").val(),
             converted_by: $("#treatment_search_rescheduled_by").val(),
@@ -1099,17 +1111,12 @@ function resetFilters(datatable) {
         delete: '',
         patient_id: '',
         name: '',
-        phone: '',
         date_from: '',
         date_to: '',
-        appointment_type_id: '',
         service_id: '',
-        region_id: '',
-        city_id: '',
         location_id: '',
         doctor_id: '',
         appointment_status_id: '',
-        consultancy_type: '',
         created_at: '',
         created_by: '',
         converted_by: '',
@@ -1123,21 +1130,18 @@ function resetFilters(datatable) {
 function resetAllFilters(datatable) {
     $('#reset-filters').on('click', function() {
         $('#treatment_search_service').empty();
+        // Clear select2 patient search
+        $('#treatment_patient_id').val(null).trigger('change');
         let filters =  {
             delete: '',
             patient_id: '',
             name: '',
-            phone: '',
             date_from: '',
             date_to: '',
-            appointment_type_id: '',
             service_id: '',
-            region_id: '',
-            city_id: '',
             location_id: '',
             doctor_id: '',
             appointment_status_id: '',
-            consultancy_type: '',
             created_at: '',
             created_by: '',
             converted_by: '',

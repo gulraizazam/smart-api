@@ -13,18 +13,15 @@
         </div>
     </div>
     <div class="row mb-6">
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>ID:</label>
-            <input type="text" class="form-control filter-field" placeholder="Enter ID" id="search_id" />
-        </div>
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Full Name:</label>
-            <input class="form-control filter-field" id="search_full_name" placeholder="Enter Name">
-        </div>
-
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Phone:</label>
-            <input type="number" oninput="phoneField(this);" class="form-control filter-field" placeholder="e.g: 0300XXXXXXX" id="search_phone" />
+        <div class="col-lg-3 mb-lg-0 mb-6">
+            <label>Search Lead:</label>
+            <input type="text" class="form-control lead_search_filter" placeholder="Search by ID, Name or Phone" id="lead_search_filter" autocomplete="off" />
+            <input type="hidden" id="search_id" class="filter-field" />
+            <input type="hidden" id="search_full_name" class="filter-field" />
+            <input type="hidden" id="search_phone" class="filter-field" />
+            <div class="suggesstion-box-leads" style="display: none; position: absolute; z-index: 1000; background: white; border: 1px solid #ddd; max-height: 300px; overflow-y: auto; width: calc(100% - 30px);">
+                <ul class="suggestion-list-leads" style="list-style: none; padding: 0; margin: 0;"></ul>
+            </div>
         </div>
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>City:</label>
@@ -33,15 +30,12 @@
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Centre:</label>
             <select class="form-control filter-field select2" id="search_location_id">
-                <option value="">Select</option>
-                <option value="2">CUTERA DHA Karachi</option>
-                <option value="3">CUTERA Bahadurabad Karachi</option>
-                <option value="46">CUTERA Johar Town, Lahore</option>
-                <option value="47">CUTERA Gulshan/Johar Karachi</option>
-                <option value="48">CUTERA DHA Lahore</option>
-                <option value="49">CUTERA Gulberg Lahore</option>
-                <option value="50">CUTERA Faisalabad</option>
+                <option value="">All</option>
             </select>
+        </div>
+        <div class="col-lg-2 mb-lg-0 mb-6">
+            <label>Service:</label>
+            <select class="form-control filter-field select2" id="search_service_id"></select>
         </div>
         @if(request('type') == '')
         <div class="col-lg-2 mb-lg-0 mb-6">
@@ -49,22 +43,16 @@
             <select class="form-control filter-field select2" id="search_status_id"></select>
         </div>
         @endif
-
-    </div>
-
-    <div class="row mb-8 advance-filters" style="display: none;">
-
-        <div class="col-lg-2 mb-lg-0 mb-6">
-            <label>Region:</label>
-            <select class="form-control filter-field select2" id="search_region_id"></select>
-        </div>
-
-
-
+        @if(request('type') == 'junk')
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="search_service_id"></select>
         </div>
+        @endif
+
+    </div>
+
+    <div class="row mb-8 advance-filters" style="display: none;">
         <div class="col-lg-2 mb-lg-0 mb-6">
             <label>Gender:</label>
             <select class="form-control filter-field select2" id="search_gender_id">

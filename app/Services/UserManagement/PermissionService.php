@@ -50,7 +50,7 @@ class PermissionService
     private function buildBaseQuery(bool $isSuperAdmin)
     {
         $query = Permission::query()
-            ->select(['id', 'name', 'title', 'main_group', 'parent_id', 'status', 'guard_name', 'created_at'])
+            ->select(['id', 'name', 'title', 'main_group', 'parent_id', 'status', 'guard_name', 'created_at', 'sort_order'])
             ->with(['parent:id,name']);
 
         if (!$isSuperAdmin) {
@@ -112,8 +112,8 @@ class PermissionService
             ];
 
             Permission::parentGroups()
-                ->orderBy('name', 'asc')
-                ->select(['id', 'name', 'title'])
+                ->orderBy('sort_order', 'asc')
+                ->select(['id', 'name', 'title', 'sort_order'])
                 ->get()
                 ->each(function ($permission) use (&$permissions) {
                     $permissions[$permission->id] = $permission->title . ' (' . $permission->name . ')';
