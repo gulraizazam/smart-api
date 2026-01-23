@@ -235,10 +235,9 @@ function editSchedule(id, doc_id, loc_id) {
         data: { id: id },
         cache: false,
         success: function (response) {
-            if (response.status) {
-                let appointment = response.data.appointment;
-                $("#schedule_date").val(appointment?.scheduled_date);
-                $("#schedule_time").val(appointment?.scheduled_time);
+            if (response) {
+                $("#schedule_date").val(response.scheduled_date);
+                $("#schedule_time").val(response.scheduled_time);
             }
         },
         error: function (xhr, ajaxOptions, thrownError) {
@@ -447,41 +446,39 @@ function actions(data) {
                         <span class="navi-icon"><i class="la la-sms"></i></span>\
                     </a>';
 
+        // HIDDEN: WhatsApp icon removed from datatable as per user request
         // Show WhatsApp icon only if appointment_status is NOT 2 and scheduled_date is today
-        let today = new Date();
-        let todayString = today.getFullYear() + '-' +
-                         String(today.getMonth() + 1).padStart(2, '0') + '-' +
-                         String(today.getDate()).padStart(2, '0');
+        // let today = new Date();
+        // let todayString = today.getFullYear() + '-' +
+        //                  String(today.getMonth() + 1).padStart(2, '0') + '-' +
+        //                  String(today.getDate()).padStart(2, '0');
 
-        // Parse scheduled_date to check if it's today
-        let isToday = false;
-        if (data.scheduled_date && data.scheduled_date !== '-') {
-            // Parse "Dec 15, 2025 at 12:45 PM" format
-            let scheduledDatePart = data.scheduled_date.split(' at ')[0]; // Get "Dec 15, 2025"
-            let scheduledDate = new Date(scheduledDatePart);
-            let scheduledDateString = scheduledDate.getFullYear() + '-' +
-                                     String(scheduledDate.getMonth() + 1).padStart(2, '0') + '-' +
-                                     String(scheduledDate.getDate()).padStart(2, '0');
-            isToday = scheduledDateString === todayString;
-        }
+        // // Parse scheduled_date to check if it's today
+        // let isToday = false;
+        // if (data.scheduled_date && data.scheduled_date !== '-') {
+        //     // Parse "Dec 15, 2025 at 12:45 PM" format
+        //     let scheduledDatePart = data.scheduled_date.split(' at ')[0]; // Get "Dec 15, 2025"
+        //     let scheduledDate = new Date(scheduledDatePart);
+        //     let scheduledDateString = scheduledDate.getFullYear() + '-' +
+        //                              String(scheduledDate.getMonth() + 1).padStart(2, '0') + '-' +
+        //                              String(scheduledDate.getDate()).padStart(2, '0');
+        //     isToday = scheduledDateString === todayString;
+        // }
 
-        // Debug logging for WhatsApp icon rendering
-   
+        // // Check user role permission for WhatsApp button (only FDM and Super-Admin)
+        // let canSendWhatsApp = window.canSendWhatsApp || false;
 
-        // Check user role permission for WhatsApp button (only FDM and Super-Admin)
-        let canSendWhatsApp = window.canSendWhatsApp || false;
+        // if (data.appointment_status != 2 && data.appointment_status != 16&& isToday && canSendWhatsApp) {
+        //     // Copy WhatsApp Message Button
+             actions += '<a href="javascript:void(0);" onclick="copyWhatsAppMessage(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-primary btn-sm ml-2" title="Copy Message">\
+                             <span class="navi-icon"><i class="la la-copy" style="color: white;"></i></span>\
+                         </a>';
 
-        if (data.appointment_status != 2 && data.appointment_status != 16&& isToday && canSendWhatsApp) {
-            // Copy WhatsApp Message Button
-            actions += '<a href="javascript:void(0);" onclick="copyWhatsAppMessage(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-primary btn-sm ml-2" title="Copy Message">\
-                            <span class="navi-icon"><i class="la la-copy" style="color: white;"></i></span>\
-                        </a>';
-
-            // Send WhatsApp Button
-            actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
-                            <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
-                        </a>';
-        } 
+        //     // Send WhatsApp Button
+        //     actions += '<a href="javascript:void(0);" onclick="sendWhatsApp(' + id + ');" class="d-lg-inline-flex d-none btn btn-icon btn-sm ml-2" title="Send WhatsApp" style="background-color: #25D366;">\
+        //                     <span class="navi-icon"><i class="lab la-whatsapp" style="color: white;"></i></span>\
+        //                 </a>';
+        // } 
 
         actions += '<a href="javascript:void(0);" class="btn btn-sm btn-clean btn-icon mr-2" data-toggle="dropdown">\
                         <i class="ki ki-bold-more-hor" aria-hidden="true"></i>\
@@ -555,15 +552,16 @@ function actions(data) {
                         </a>\
                     </li>';
 
+        // HIDDEN: WhatsApp option removed from mobile menu as per user request
         // Show WhatsApp option in mobile menu only if appointment_status is NOT 2 and scheduled_date is today and user has permission
-       if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
-            actions += '<li class="navi-item  d-lg-none">\
-                            <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
-                                <span class="navi-icon"><i class="lab la-whatsapp"></i></span>\
-                                <span class="navi-text">Send WhatsApp</span>\
-                            </a>\
-                        </li>';
-        }
+       // if (data.appointment_status != 2 && isToday && canSendWhatsApp) {
+       //      actions += '<li class="navi-item  d-lg-none">\
+       //                      <a href="javascript:void(0);" onclick="sendWhatsApp('+ id + ');" class="navi-link">\
+       //                          <span class="navi-icon"><i class="lab la-whatsapp"></i></span>\
+       //                          <span class="navi-text">Send WhatsApp</span>\
+       //                      </a>\
+       //                  </li>';
+       //  }
 
 
         if (permissions.invoice) {
@@ -747,38 +745,30 @@ function editRow(url, id, $class = 'detail-actions') {
 }
 
 function setEditData(response) {
-
     try {
-
+        console.log('setEditData called', response);
         let appointment = response.data.appointment;
         let back_date_config = response.data.back_date_config;
-        let cities = response.data.cities;
         let consultancy_types = response.data.consultancy_type;
         let doctors = response.data.doctors;
-        let locations = response.data.locations;
         let resourceHadRotaDay = response.data.resourceHadRotaDay;
         let services = response.data.services;
         let setting = response.data.setting;
         let genders = response.data.genders;
+        let permissions = response.data.permissions;
+        console.log('All data extracted successfully');
 
-        let type_option = '';
-        Object.entries(consultancy_types).forEach(function (consultancy_type) {
-            type_option += '<option value="' + consultancy_type[0] + '">' + consultancy_type[1] + '</option>';
+        let type_option = '<option value="">Select a Consultancy Type</option>';
+        Object.entries(consultancy_types).forEach(function (type) {
+            type_option += '<option value="' + type[0] + '">' + type[1] + '</option>';
         });
 
         let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
-            service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
-        });
-
-        let city_option = '<option value="">Select a City</option>';
-        Object.entries(cities).forEach(function (city) {
-            city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
-        });
-
-        let location_option = '<option value="">Select a Location</option>';
-        Object.entries(locations).forEach(function (location) {
-            location_option += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            // Skip "All Services" option in edit consultation modal
+            if (service[1] !== 'All Services') {
+                service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
         });
 
         let doctor_option = '<option value="">Select a Doctor</option>';
@@ -791,27 +781,79 @@ function setEditData(response) {
             gender_option += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
         });
 
+        // Set modal heading with patient name in blue color
+        let patientName = appointment?.patient?.name || "Patient";
+        $("#edit_consultation_heading").html("Edit <span class='text-primary'>" + patientName + "'s</span> Consultation");
+
         $("#edit_consultancy_type").html(type_option).val(appointment.consultancy_type);
         $("#edit_treatment").html(service_option).val(appointment.service_id);
         $("#consultancy_service_id").html(service_option).val(appointment.service_id);
-        $("#edit_city").html(city_option).val(appointment.city_id);
-        $("#edit_location").html(location_option).val(appointment.location_id);
         $("#edit_doctor").html(doctor_option).val(appointment?.doctor_id);
-        $("#edit_gender_id").html(gender_option).val(appointment?.patient?.gender);
+
+        // Check if status is Arrived (2) or Converted (16)
+        let isArrivedOrConverted = (appointment.appointment_status_id == 2 || appointment.appointment_status_id == 16);
+        
+        // Debug logs
+        console.log('=== Edit Consultation Field Permissions Debug ===');
+        console.log('Appointment Status ID:', appointment.appointment_status_id);
+        console.log('Is Arrived or Converted:', isArrivedOrConverted);
+        console.log('Permissions Object:', permissions);
+        console.log('update_consultation_service:', permissions.update_consultation_service);
+        console.log('update_consultation_doctor:', permissions.update_consultation_doctor);
+        console.log('update_consultation_schedule:', permissions.update_consultation_schedule);
+        
+        // For arrived/converted status: use permissions to control field editing
+        // For other statuses: always enable fields regardless of permissions
+        if (isArrivedOrConverted) {
+            console.log('Status is Arrived/Converted - applying permission checks');
+            
+            // Service field - permission-based for arrived/converted
+            if (permissions.update_consultation_service) {
+                console.log('Service field: ENABLED (has permission)');
+                $("#edit_treatment").prop('disabled', false).removeClass('bg-light');
+            } else {
+                console.log('Service field: DISABLED (no permission)');
+                $("#edit_treatment").prop('disabled', true).addClass('bg-light');
+            }
+            
+            // Doctor field - permission-based for arrived/converted
+            if (permissions.update_consultation_doctor) {
+                console.log('Doctor field: ENABLED (has permission)');
+                $("#edit_doctor").prop('disabled', false).removeClass('bg-light');
+            } else {
+                console.log('Doctor field: DISABLED (no permission)');
+                $("#edit_doctor").prop('disabled', true).addClass('bg-light');
+            }
+            
+            // Scheduled date field - permission-based for arrived/converted
+            if (permissions.update_consultation_schedule) {
+                console.log('Schedule fields: ENABLED (has permission)');
+                $("#edit_scheduled_date").prop('disabled', false).removeClass('bg-light');
+            } else {
+                console.log('Schedule fields: DISABLED (no permission)');
+                $("#edit_scheduled_date").prop('disabled', true).addClass('bg-light');
+            }
+            
+            // Scheduled time field - permission-based for arrived/converted
+            if (permissions.update_consultation_schedule) {
+                $("#edit_scheduled_time").prop('disabled', false).removeClass('bg-light');
+            } else {
+                $("#edit_scheduled_time").prop('disabled', true).addClass('bg-light');
+            }
+        } else {
+            console.log('Status is NOT Arrived/Converted - enabling all fields');
+            // Not arrived/converted - always enable all fields regardless of permissions
+            $("#edit_treatment").prop('disabled', false).removeClass('bg-light');
+            $("#edit_doctor").prop('disabled', false).removeClass('bg-light');
+            $("#edit_scheduled_date").prop('disabled', false).removeClass('bg-light');
+            $("#edit_scheduled_time").prop('disabled', false).removeClass('bg-light');
+        }
+        console.log('=== End Debug ===');
 
         $("#edit_scheduled_date").val(appointment.scheduled_date);
         $("#scheduled_date_old").val(appointment.scheduled_date);
         $("#edit_scheduled_time").val(appointment.scheduled_time);
         $("#scheduled_time_old").val(appointment.scheduled_time);
-        $("#edit_patient_name").val(appointment?.patient?.name);
-
-        $("#edit_old_patient_phone").val(appointment?.patient?.phone);
-
-        if (permissions.contact) {
-            $("#edit_patient_phone").val(appointment?.patient?.phone);
-        } else {
-            $("#edit_patient_phone").val("***********").attr("readonly", true);
-        }
 
         $("#back-date").val(back_date_config.data);
         $("#old_phone").val(appointment?.lead?.patient?.phone);
@@ -821,13 +863,27 @@ function setEditData(response) {
         $("#start_time").val(resourceHadRotaDay?.start_time);
         $("#end_time").val(resourceHadRotaDay?.end_time);
         $("#consultancy_appointment_type").val(appointment?.appointment_type_id);
+        $("#edit_location_id").val(appointment?.location_id);
 
-
+        // Destroy existing Select2 instances first to ensure clean state
+        if ($("#edit_treatment").hasClass("select2-hidden-accessible")) {
+            $("#edit_treatment").select2('destroy');
+        }
+        if ($("#edit_doctor").hasClass("select2-hidden-accessible")) {
+            $("#edit_doctor").select2('destroy');
+        }
+        
+        // Reinitialize select2 for the dropdowns AFTER all values are set and permissions applied
+        $("#edit_treatment").select2();
+        $("#edit_doctor").select2();
+        
+        console.log('setEditData completed successfully');
+        console.log('Service field initial value:', $("#edit_treatment").val());
 
     } catch (error) {
+        console.error('Error in setEditData:', error);
         showException(error);
     }
-
 }
 
 function setTreatmentEditData(response) {
@@ -849,7 +905,10 @@ function setTreatmentEditData(response) {
 
         let service_option = '<option value="">Select a Service</option>';
         Object.entries(services).forEach(function (service) {
-            service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            // Skip "All Services" option in edit treatment modal
+            if (service[1] !== 'All Services') {
+                service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            }
         });
 
         let city_option = '<option value="">Select a City</option>';
@@ -884,8 +943,20 @@ function setTreatmentEditData(response) {
         $("#edit_treatment_doctor_id").html(doctor_option).val(appointment?.doctor_id);
         $("#edit_treatment_patient_gender").html(gender_option).val(appointment?.patient?.gender);
 
-        $("#edit_treatment_scheduled_date").val(appointment.scheduled_date);
-        $("#edit_treatment_scheduled_date_old").val(appointment.scheduled_date);
+        // Set scheduled date - API now returns it in Y-m-d format
+        let scheduledDate = appointment.scheduled_date;
+        $("#edit_treatment_scheduled_date_old").val(scheduledDate);
+        
+        // Destroy existing datepicker and reinitialize with the correct date
+        var $dateField = $("#edit_treatment_scheduled_date");
+        $dateField.datepicker('destroy');
+        $dateField.val(scheduledDate);
+        $dateField.datepicker({
+            todayHighlight: true,
+            orientation: 'bottom',
+            format: 'yyyy-mm-dd',
+            autoclose: true
+        });
 
         $("#edit_treatment_scheduled_time").val(appointment.scheduled_time);
         $("#scheduled_treatment_time_old").val(appointment.scheduled_time);
@@ -1002,24 +1073,22 @@ function setSmsLogs(response) {
 
 function applyFilters(datatable) {
     $('#apply-filters').on('click', function () {
-        if ($("#appoint_search_phone").val() !== "" && ($("#appoint_search_phone").val().length < 10 || $("#appoint_search_phone").val().length > 13)) {
+        // Check phone validation only if phone field exists (it was removed from filters)
+        if ($("#appoint_search_phone").length && $("#appoint_search_phone").val() !== "" && ($("#appoint_search_phone").val().length < 10 || $("#appoint_search_phone").val().length > 13)) {
             toastr.error("Please enter valid phone number");
             return;
         }
         let filters = {
             delete: '',
             patient_id: $("#appointment_patient_id").val(),
-            phone: $("#appoint_search_phone").val(),
+            phone: $("#appoint_search_phone").val() || '',
             date_from: $("#appoint_search_start").val(),
             date_to: $("#appoint_appoint_end").val(),
             appointment_type_id: $("#appoint_search_type").val(),
-            service_id: $("#appoint_search_service").val(),
-            region_id: $("#appoint_search_region").val(),
-            city_id: $("#appoint_search_city").val(),
+            service_id: $("#appoint_search_service").val() || '',
             location_id: $("#appoint_search_centre").val(),
             doctor_id: $("#appoint_search_doctor").val(),
             appointment_status_id: $("#appoint_search_status").val(),
-            consultancy_type: $("#appoint_search_consultancy_type").val(),
             created_from: $("#appoint_search_created_from").val(),
             created_to: $("#appoint_search_created_to").val(),
             created_by: $("#appoint_search_created_by").val(),
@@ -1135,11 +1204,10 @@ function setFilters(filter_values, active_filters) {
             region_options += '<option value="' + region[0] + '">' + region[1] + '</option>';
         });
 
-        let service_options = '';
+        let service_options = '<option value="">All</option>';
         Object.values(services).forEach(function (value, index) {
-            if (value.name == 'All Services') {
-                service_options += '<option value="' + value.id + '" selected>' + value.name + '</option>';
-            } else {
+            // Skip "All Services" record from database
+            if (value.name !== 'All Services') {
                 service_options += '<option value="' + value.id + '">' + value.name + '</option>';
             }
         });
@@ -1195,19 +1263,11 @@ function setFilters(filter_values, active_filters) {
             $("#appoint_search_city").html(city_options);
         }
 
-        let region = $("#appoint_search_region").val();
-        if (region == null || region == '') {
-            $("#appoint_search_region").html(region_options);
-        }
-
         let service = $("#appoint_search_service").val();
         if (service == null) {
             $("#appoint_search_service").html(service_options);
-            $('#appoint_search_service').val(13).trigger('change')
-        }
-        let consultancy_type = $("#appoint_search_consultancy_type").val();
-        if (consultancy_type == null || consultancy_type == '') {
-            $("#appoint_search_consultancy_type").html(consultancy_type_options);
+            // Set to empty string to show "All" option by default
+            $("#appoint_search_service").val('').trigger('change');
         }
 
         $("#appoint_search_created_by").val(active_filters.created_by);
@@ -1217,10 +1277,7 @@ function setFilters(filter_values, active_filters) {
         $("#appoint_search_status").val(active_filters.appointment_status_id);
         $("#appoint_search_doctor").val(active_filters.doctor_id);
         $("#appoint_search_centre").val(active_filters.location_id);
-        $("#appoint_search_city").val(active_filters.city_id);
-        $("#appoint_search_region").val(active_filters.region_id);
         $("#appoint_search_service").val(active_filters.service_id);
-        $("#appoint_search_consultancy_type").val(active_filters.consultancy_type);
         /*For Consultancy filter*/
         let city_value = $("#consultancy_city_filter").val();
 
@@ -1239,9 +1296,15 @@ function setFilters(filter_values, active_filters) {
 
 function resetCustomFilters() {
 
+    // Reset patient search Select2 field
+    $('#appointment_patient_id').val(null).trigger('change');
     $('.appointment_patient_id').val(null).trigger('change');
+    
+    // Reset all other filter fields
     $(".filter-field").val('');
-    // $('.select2').val(null).trigger('change');
+    
+    // Reset Select2 dropdowns
+    $('.select2').val('').trigger('change');
 
     setQueryStringParameter('type');
     setQueryStringParameter('from');
@@ -1373,6 +1436,9 @@ var AppointScheduleValidation = function () {
                         }
                     }
                 },
+                
+                // Exclude disabled fields from validation
+                excluded: ':disabled',
 
                 plugins: {
                     trigger: new FormValidation.plugins.Trigger(),
@@ -1387,7 +1453,63 @@ var AppointScheduleValidation = function () {
             select2Validation();
         });
         validate.on('core.form.valid', function (event) {
-            submitForm($(form).attr('action'), $(form).attr('method'), $(form).serialize(), function (response) {
+            console.log('Form validation passed, preparing to submit');
+            console.log('Service field value before serialization:', $("#edit_treatment").val());
+            console.log('Service field name:', $("#edit_treatment").attr('name'));
+            
+            // Temporarily enable disabled fields so they're included in serialization
+            var disabledFields = $(form).find(':input:disabled').not('select');
+            var disabledSelects = $(form).find('select:disabled');
+            
+            disabledFields.prop('disabled', false);
+            disabledSelects.prop('disabled', false);
+            
+            // Serialize form data
+            var formData = $(form).serialize();
+            console.log('Serialized form data:', formData);
+            
+            // Manually append disabled Select2 values if they weren't included
+            disabledSelects.each(function() {
+                var fieldName = $(this).attr('name');
+                var fieldValue = $(this).val();
+                if (fieldValue && formData.indexOf(fieldName + '=') === -1) {
+                    formData += '&' + fieldName + '=' + encodeURIComponent(fieldValue);
+                }
+            });
+            
+            // Force capture service field value from Select2
+            var serviceField = $("#edit_treatment");
+            if (serviceField.length && !serviceField.prop('disabled')) {
+                var serviceName = serviceField.attr('name');
+                var serviceValue = serviceField.val();
+                console.log('Forcing service field capture:', serviceName, '=', serviceValue);
+                if (serviceValue && serviceName) {
+                    // Remove old value
+                    var regex = new RegExp('&?' + serviceName + '=[^&]*', 'g');
+                    formData = formData.replace(regex, '');
+                    // Append current value
+                    formData += '&' + serviceName + '=' + encodeURIComponent(serviceValue);
+                }
+            }
+            
+            // Also ensure other enabled Select2 fields have their current value
+            $(form).find('select:not(:disabled)').each(function() {
+                var fieldName = $(this).attr('name');
+                var fieldValue = $(this).val();
+                if (fieldValue && fieldName && fieldName !== 'treatment_id') { // Skip treatment_id since we handled it above
+                    // Remove old value from formData if exists
+                    var regex = new RegExp('&?' + fieldName + '=[^&]*', 'g');
+                    formData = formData.replace(regex, '');
+                    // Append current value
+                    formData += '&' + fieldName + '=' + encodeURIComponent(fieldValue);
+                }
+            });
+            
+            // Restore disabled state
+            disabledFields.prop('disabled', true);
+            disabledSelects.prop('disabled', true);
+            
+            submitForm($(form).attr('action'), $(form).attr('method'), formData, function (response) {
 
                 if (response.status) {
                     toastr.success(response.message);

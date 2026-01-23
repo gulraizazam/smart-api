@@ -28,6 +28,14 @@ class ACL
      */
     public static function getUserCentres()
     {
+        // OPTIMIZED: Cache result in static variable to avoid repeated queries in same request
+        static $cachedLocations = [];
+        $userId = Auth::id();
+        
+        if (isset($cachedLocations[$userId])) {
+            return $cachedLocations[$userId];
+        }
+        
         if (Auth::user()->id == 1) {
             $locations = Locations::whereActive(1)->where('name', '!=', 'All Centres')->get()->pluck('id');
         } else {
@@ -37,11 +45,11 @@ class ACL
                 $locations = Auth::user()->user_has_locations()->pluck('location_id');
             }
         }
-        if ($locations) {
-            return $locations->toArray();
-        }
-
-        return [];
+        
+        $result = $locations ? $locations->toArray() : [];
+        $cachedLocations[$userId] = $result;
+        
+        return $result;
     }
 
     public static function getUserWarehouse()
@@ -61,6 +69,14 @@ class ACL
      */
     public static function getUserRegions()
     {
+        // OPTIMIZED: Cache result in static variable to avoid repeated queries in same request
+        static $cachedRegions = [];
+        $userId = Auth::id();
+        
+        if (isset($cachedRegions[$userId])) {
+            return $cachedRegions[$userId];
+        }
+        
         if (Auth::user()->id == 1) {
             $regions = Regions::where('account_id', '=', Auth::User()->account_id)->pluck('id');
         } else {
@@ -69,11 +85,10 @@ class ACL
                 ->get()->pluck('id');
         }
 
-        if ($regions) {
-            return $regions->toArray();
-        }
-
-        return [];
+        $result = $regions ? $regions->toArray() : [];
+        $cachedRegions[$userId] = $result;
+        
+        return $result;
     }
 
     /*
@@ -83,11 +98,18 @@ class ACL
      */
     public static function getUserCities()
     {
+        // OPTIMIZED: Cache result in static variable to avoid repeated queries in same request
+        static $cachedCities = [];
+        $userId = Auth::id();
+        
+        if (isset($cachedCities[$userId])) {
+            return $cachedCities[$userId];
+        }
+        
         if (Auth::user()->id == 1) {
             $cities = Cities::where('account_id', '=', Auth::User()->account_id)->pluck('id');
         } else {
             if (Auth::user()->user_type_id == Config::get('constants.practitioner_id')) {
-
                 $cities = Locations::whereIn('id', DoctorHasLocations::where('user_id', '=', Auth::user()->id)->where('is_allocated',1)->groupBy('location_id')->get()->pluck('location_id'))
                     ->where('account_id', '=', Auth::User()->account_id)
                     ->get()->pluck('city_id');
@@ -98,10 +120,9 @@ class ACL
             }
         }
 
-        if ($cities) {
-            return $cities->toArray();
-        }
-
-        return [];
+        $result = $cities ? $cities->toArray() : [];
+        $cachedCities[$userId] = $result;
+        
+        return $result;
     }
 }

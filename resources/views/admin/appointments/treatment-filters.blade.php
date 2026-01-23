@@ -54,6 +54,71 @@
             transition: transform 0.3s ease;
         }
 
+        /* Match field sizes in advance filters */
+        /* Created At should match Scheduled field size - reduced by 25% to 180px */
+        .advance-filters .created-at-field .datefromto {
+            width: 180px !important;
+        }
+        
+        /* Standardize all dropdown field sizes - reduced by 25% from 170px to 128px */
+        .filterouterdiv .form-control,
+        .filterouterdiv .select2,
+        .advance-filters .form-control,
+        .advance-filters .select2,
+        .advance-filters .select2-container,
+        .advance-filters .doctor-field .form-control,
+        .advance-filters .updated-by-field .form-control,
+        .advance-filters .rescheduled-by-field .form-control,
+        .advance-filters .appoint_search_status .form-control {
+            width: 128px !important;
+            min-width: 128px !important;
+            max-width: 128px !important;
+        }
+        
+        /* Date range fields - increased by 20% from 90px to 108px */
+        .filterouterdiv .datefromto .form-control,
+        .advance-filters .created-at-field .datefromto .form-control {
+            width: 108px !important;
+            min-width: 108px !important;
+            max-width: 108px !important;
+        }
+        
+        /* Date range container - increased by 20% from 180px to 216px */
+        .filterouterdiv .datefromto,
+        .advance-filters .created-at-field .datefromto {
+            width: 216px !important;
+        }
+
+        /* Make patient search field wider by using space from removed phone filter */
+        .filterouterdiv.patient-search-wider {
+            flex: 1 1 auto;
+            min-width: 170px;
+            max-width: 300px;
+        }
+        
+        .filterouterdiv.patient-search-wider .form-control,
+        .filterouterdiv.patient-search-wider .select2-container {
+            width: 100% !important;
+            min-width: 170px !important;
+            max-width: 300px !important;
+        }
+        
+        .filterouterdiv.patient-search-wider .select2-container .select2-selection {
+            width: 100% !important;
+        }
+
+        /* Reduce spacing between advance filter fields to 15px margin */
+        .advance-filters > div[class*="col-"] {
+            margin-right: 15px !important;
+            margin-left: 0 !important;
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        
+        .advance-filters {
+                margin-right: 15px;
+        }
+
     </style>
 @endpush
 
@@ -87,20 +152,15 @@
         </div>
 
 
-    <div class="row mb-6 flex-column flex-sm-row">
+    <div class="row mb-0 flex-column flex-sm-row">
 
-        <div class="filterouterdiv  mb-6 position-relative">
+        <div class="filterouterdiv mb-0 position-relative patient-search-wider">
             <label>Patient Search:</label>
-            <input class="form-control filter-field appointment_patient_id"  placeholder="Patients Search">
-            <input type="hidden" class="filter-field search_field" id="treatment_patient_id">
-            <span onclick="addUsers()" class="croxcli" ><i class="fa fa-times" aria-hidden="true"></i></span>
-            <div class="suggesstion-box" style="display: none;">
-                <ul class="suggestion-list w-100"></ul>
-            </div>
-
+            <select class="form-control filter-field select2-patient-search" id="treatment_patient_id" onchange="SetPatient()">
+            </select>
         </div>
 
-        <div class="filterouterdiv mb-6">
+        <div class="filterouterdiv mb-0">
             <label>Scheduled:</label>
             <div class="input-daterange input-group to-from-datepicker datefromto">
                 <input type="text" id="treatment_search_start" autocomplete="off" class="form-control filter-field datatable-input" name="created_start" placeholder="From" onchange="SetFromdate()">
@@ -113,22 +173,18 @@
             </div>
         </div>
 
-        <div class="filterouterdiv  mb-6 service_filter">
+        <div class="filterouterdiv mb-0 appoint_search_status">
             <label>Service:</label>
             <select class="form-control filter-field select2" id="treatment_search_service" onchange="SetService()"></select>
         </div>
 
 
-        <div class="filterouterdiv  mb-6" >
-            <label>Phone:</label>
-            <input  type="number"  id="appoint_search_phone" placeholder="Phone No." class="form-control filter-field" onchange="SetPhone()">
-        </div>
-        <div class="filterouterdiv mb-6 center-filter">
+        <div class="filterouterdiv mb-0 center-filter">
             <label>Centre:</label>
             <select class="form-control filter-field select2" id="treatment_search_centre" onchange="SetCenter()"></select>
         </div>
 
-        <div class="filterouterdiv  mb-6 appoint_search_status" >
+        <div class="filterouterdiv mb-0 appoint_search_status" >
             <label>Status:</label>
             <select class="form-control filter-field select2" id="treatment_search_status" onchange="SetStatus()"></select>
         </div>
@@ -144,38 +200,39 @@
     </div>
 
     <hr class="advance-filters" style="display: none;">
-    <div class="row mb-8 advance-filters" style="display: none;">
-        <div class="col-lg-2 mb-lg-0 mt-6 doctor-filter">
+    <div class="row mb-0 flex-column flex-sm-row advance-filters" style="display: none;">
+
+        <div class="filterouterdiv mb-0 doctor-field">
             <label>Doctor:</label>
             <select class="form-control filter-field select2" id="treatment_search_doctor" onchange="SetDocId()"></select>
         </div>
-        <div class="col-lg-2 mb-lg-0 mt-6" >
-            <label  style="width: 70%">City:</label>
-            <select class="form-control filter-field select2" id="treatment_search_city" onchange="SetCity()"></select>
-        </div>
-
-        <div class="col-lg-2 mb-lg-0 mt-6">
-            <label>Region:</label>
-            <select class="form-control filter-field select2" id="treatment_search_region" onchange="SetRegion()"></select>
-        </div>
-        <div class="col-lg-2 mb-lg-0 mt-6 appoint_search_status" >
+        
+        <div class="filterouterdiv mb-0 appoint_search_status">
             <label>Created By:</label>
             <select class="form-control filter-field select2" id="treatment_search_created_by" onchange="SetCreated()">
             </select>
         </div>
-        <div class="col-lg-3 mb-lg-0 mb-6 mt-6 @if($errors->has('date_range')) has-error @endif">
-            {!! Form::label('date_range', 'Created at:', ['class' => 'control-label']) !!}
-            <div class="input-group">
-                {!! Form::text('date_range', null, ['id' => 'date_range', 'class' => 'form-control', 'autocomplete' => 'off', 'placeholder' => 'Select Date Range']) !!}
+        
+        <div class="filterouterdiv mb-0 created-at-field">
+            <label>Created At:</label>
+            <div class="input-daterange input-group to-from-datepicker datefromto">
+                <input type="text" id="treatment_search_created_from" autocomplete="off" class="form-control filter-field datatable-input" name="created_from" placeholder="From" onchange="SetAdvanceFromdate()">
+                <div class="input-group-append" style="width: 0;">
+                    <span class="input-group-text">
+                        <i class="la la-ellipsis-h"></i>
+                    </span>
+                </div>
+                <input type="text" id="treatment_search_created_to" autocomplete="off" class="form-control filter-field datatable-input" name="created_to" placeholder="To" onchange="SetAdvanceTodate()">
             </div>
         </div>
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
+        
+        <div class="filterouterdiv mb-0 updated-by-field">
             <label>Updated By:</label>
             <select class="form-control filter-field select2" id="treatment_search_updated_by" onchange="SetUpdatedBy()">
             </select>
         </div>
 
-        <div class="col-lg-2 mb-lg-0 mb-6 mt-6">
+        <div class="filterouterdiv mb-0 rescheduled-by-field">
             <label>Rescheduled By:</label>
             <select class="form-control filter-field select2" id="treatment_search_rescheduled_by" onchange="SetRescheduledBy()">
             </select>

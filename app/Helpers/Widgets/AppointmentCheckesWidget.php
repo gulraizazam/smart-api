@@ -27,6 +27,12 @@ class AppointmentCheckesWidget
 
         $today = Carbon::now()->toDateString();
         $resource_id = Resources::where(['external_id' => $request->doctor_id])->first();
+        
+        // If resource not found (doctor_id is null or invalid), return empty rota
+        if (!$resource_id) {
+            return ['status' => true, 'continue_rota' => []];
+        }
+        
         $resource_rota = ResourceHasRota::where([
             'resource_id' => $resource_id->id,
             'location_id' => $request->location_id,
@@ -39,6 +45,14 @@ class AppointmentCheckesWidget
         }
         $started_time = \Carbon\Carbon::parse($request->start)->format('Y-m-d H:i:s');
         $start_for_break_check = \Carbon\Carbon::parse($request->start)->format('H:i');
+        
+        \Log::info('Rota Check Debug', [
+            'request_start' => $request->start,
+            'started_time' => $started_time,
+            'start_for_break_check' => $start_for_break_check,
+            'continue_rota_count' => count($continue_rota),
+        ]);
+        
         if (count($continue_rota) > 0) {
             $resource_has_rota_days = ResourceHasRotaDays::where([
                 'resource_has_rota_id' => $continue_rota[0]->id,
@@ -54,7 +68,27 @@ class AppointmentCheckesWidget
                 ];
             } else {
                 if ($resource_has_rota_days->start_time) {
-                    if ($resource_has_rota_days->start_off) {
+                    // Check if scheduled time is within rota hours
+                    $rota_start = Carbon::parse($resource_has_rota_days->start_time)->format('H:i');
+                    $rota_end = Carbon::parse($resource_has_rota_days->end_time)->format('H:i');
+                    
+                    \Log::info('Rota Time Validation', [
+                        'scheduled_time' => $start_for_break_check,
+                        'rota_start' => $rota_start,
+                        'rota_end' => $rota_end,
+                        'is_before_start' => ($start_for_break_check < $rota_start),
+                        'is_after_end' => ($start_for_break_check >= $rota_end),
+                    ]);
+                    
+                    if ($start_for_break_check < $rota_start || $start_for_break_check >= $rota_end) {
+                        $appointment_status = false;
+                        $message = "Appointment time must be between {$rota_start} and {$rota_end}.";
+                        $status = [
+                            'status' => $appointment_status,
+                            'message' => $message,
+                        ];
+                    } elseif ($resource_has_rota_days->start_off) {
+                        // Check if appointment is during break time
                         $start_break = Carbon::parse($resource_has_rota_days->start_off)->format('H:i');
                         $end_break = Carbon::parse($resource_has_rota_days->end_off)->format('H:i');
                         if (($start_for_break_check >= $start_break) && ($start_for_break_check < $end_break)) {

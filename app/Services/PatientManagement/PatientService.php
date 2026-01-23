@@ -100,6 +100,17 @@ class PatientService
             $query->where('active', 1);
         }
 
+        // Filter by user's centre access - only show patients who have appointments at user's centres
+        $userCentres = ACL::getUserCentres();
+        if (!empty($userCentres)) {
+            $query->whereExists(function ($subQuery) use ($userCentres) {
+                $subQuery->select(DB::raw(1))
+                    ->from('appointments')
+                    ->whereColumn('appointments.patient_id', 'users.id')
+                    ->whereIn('appointments.location_id', $userCentres);
+            });
+        }
+
         // Apply filters efficiently
         $this->applyOptimizedFilters($query, $filters, $applyFilter, $userId);
 

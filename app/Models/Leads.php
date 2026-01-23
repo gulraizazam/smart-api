@@ -2,28 +2,29 @@
 
 namespace App\Models;
 
-use App\Helpers\ACL;
 use App\Helpers\GeneralFunctions;
-use App\Helpers\Widgets\LocationsWidget;
-use App\Models\LeadStatuses;
 use Auth;
-use Carbon\Carbon;
-use Config;
-use DB;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Leads extends BaseModal
 {
     use SoftDeletes;
 
-    protected $fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by', 'meta_lead_id'];
+    protected $fillable = ['patient_id', 'region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'active', 'created_by', 'updated_by', 'converted_by', 'town_id', 'created_at', 'updated_at', 'account_id', 'location_id', 'name', 'email', 'phone', 'gender', 'referred_by', 'meta_lead_id'];
 
     protected static $_fillable = ['region_id', 'city_id', 'lead_status_id', 'lead_source_id', 'msg_count', 'service_id', 'town_id'];
 
     protected $table = 'leads';
 
     protected static $_table = 'leads';
+
+    /**
+     * Get fillable fields for audit trail
+     */
+    public static function getFillableFields(): array
+    {
+        return self::$_fillable;
+    }
 
     /**
      * Get the Treatment that owns the Lead.
@@ -118,57 +119,84 @@ class Leads extends BaseModal
         ])->first();
     }
 
+    /**
+     * Search leads by phone
+     * @deprecated Use LeadService::searchLeadsByPhone() instead
+     */
     public static function getLeadPhoneAjax($phone, $account_id)
     {
-        if (is_numeric($phone)) {
-            return self::where([
-                ['active', '=', '1'],
-                ['account_id', '=', $account_id],
-                ['phone', 'LIKE', "%{$phone}%"],
-            ])->select('name', 'id', 'phone')->get();
-        } else {
-            return self::where([
-                ['active', '=', '1'],
-                ['account_id', '=', $account_id],
-                ['phone', 'LIKE', "%{$phone}%"],
-            ])->select('name', 'id', 'phone')->get();
-        }
+        return self::where([
+            ['active', '=', '1'],
+            ['account_id', '=', $account_id],
+            ['phone', 'LIKE', "%{$phone}%"],
+        ])->select('name', 'id', 'phone')->limit(50)->get();
     }
 
-        /*
-     * Ajax base result of patient according to id or name
-     * */
+    /**
+     * Search leads by ID or name
+     * @deprecated Use LeadService::searchLeadsById() instead
+     */
     public static function getLeadidAjax($name, $account_id)
     {
-       
-        $leads = collect();
-        if (is_numeric($name)) {
-            $leads = self::where([
-                'active' => '1',
-                'account_id' => $account_id,
-                'id' => $name,
-            ])->select('name', 'id', 'phone')->get();
+        // Inline string cleaning for better performance (avoid function call overhead)
+        $cleaned = str_replace([' ', '-', '+', 'C-', 'c-'], '', $name);
+        
+        // Optimize: For phone search (most common case ~90%), check first
+        if (is_numeric($cleaned)) {
+            // Clean phone number inline (remove leading 0 and country code 92)
+            $phone = ltrim($cleaned, '0');
+            if (substr($phone, 0, 2) === '92') {
+                $phone = substr($phone, 2);
+            }
+            
+            // Database stores phones in multiple formats (with/without leading 0)
+            // Search for both: original cleaned input AND cleaned phone
+            $phoneVariations = array_unique([$cleaned, $phone, '0' . $phone]);
+            
+            // Try exact match first (fastest - uses composite index)
+            // Search all leads regardless of status (including booked)
+            $exact_match = self::select('name', 'id', 'phone')
+                ->where('account_id', $account_id)
+                ->whereIn('phone', $phoneVariations)
+                ->limit(10)
+                ->get();
+            
+            if (!$exact_match->isEmpty()) {
+                return $exact_match;
+            }
+            
+            // Prefix search with GROUP BY at DB level (uses index efficiently)
+            // Search all possible phone variations
+            return self::select('name', 'id', 'phone')
+                ->where('account_id', $account_id)
+                ->where(function($query) use ($phoneVariations) {
+                    foreach ($phoneVariations as $variation) {
+                        $query->orWhere('phone', 'LIKE', $variation . '%');
+                    }
+                })
+                ->groupBy('phone', 'name', 'id')
+                ->orderBy('id', 'desc')
+                ->limit(10)
+                ->get();
         }
-        if ($leads->count() > 0) {
-            return $leads;
+        
+        // ID search (less common ~5%)
+        if (is_numeric($name) && strlen($name) <= 10) {
+            return self::select('name', 'id', 'phone')
+                ->where('account_id', $account_id)
+                ->where('id', $name)
+                ->limit(10)
+                ->get();
         }
 
-        $name = GeneralFunctions::patientSearch($name);
-        $phone_numeric = GeneralFunctions::clearnString($name);
-
-        $condition = [];
-        if (is_numeric($phone_numeric)) {
-            $phone = GeneralFunctions::cleanNumber($name);
-            $condition[] = ['phone', 'LIKE', "%{$phone}%"];
-        } else {
-            $condition[] = ['name', 'LIKE', "%{$name}%"];
-        }
-
-        $lead_result = Leads::where(['active' => '1', 'account_id' => $account_id])
-            ->where($condition)
-            ->select('name', 'id', 'phone')->orderBy('id', 'desc')->get()->unique('phone');
-
-        return $lead_result;
+        // Name search (least common ~5%) - use prefix for index optimization
+        return self::select('name', 'id', 'phone')
+            ->where('account_id', $account_id)
+            ->where('name', 'LIKE', $name . '%')
+            ->groupBy('phone', 'name', 'id')
+            ->orderBy('id', 'desc')
+            ->limit(10)
+            ->get();
     }
 
     /**
@@ -352,343 +380,12 @@ class Leads extends BaseModal
                 $leads_data['gender_id'],
             ];
         }
-        if (isset($leads_data['region_id']) && $leads_data['region_id']) {
-            $where[] = [
-                'leads.region_id',
-                '=',
-                $leads_data['region_id'],
-            ];
-        }
-        if (isset($leads_data['city_id']) && $leads_data['city_id']) {
-            $where[] = [
-                'leads.city_id',
-                '=',
-                $leads_data['city_id'],
-            ];
-        }
-        if (isset($leads_data['lead_status_id']) && $leads_data['lead_status_id']) {
-            $where[] = [
-                'leads.lead_status_id',
-                '=',
-                $leads_data['lead_status_id'],
-            ];
-        }
-        if (isset($leads_data['service_id']) && $leads_data['service_id']) {
-            $where[] = [
-                'leads.service_id',
-                '=',
-                $leads_data['service_id'],
-            ];
-        }
-        if (isset($leads_data['phone']) && $leads_data['phone']) {
-            $where[] = [
-                'users.phone',
-                'like',
-                '%'.GeneralFunctions::cleanNumber($leads_data['phone']).'%',
-            ];
-        }
-        if (isset($leads_data['user_id']) && $leads_data['user_id']) {
-            $where[] = [
-                'leads.created_by',
-                '=',
-                $leads_data['user_id'],
-            ];
-        }
-        if (isset($leads_data['town_id']) && $leads_data['town_id']) {
-            $where[] = [
-                'leads.town_id',
-                '=',
-                $leads_data['town_id'],
-            ];
-        }
-        if (isset($leads_data['age_group_range']) && $leads_data['age_group_range']) {
-            $age_range = explode(':', $leads_data['age_group_range']);
-            $from = Carbon::now()->subYears((int) $age_range[1])->toDateString();
-            $to = Carbon::now()->subYears((int) $age_range[0])->toDateString();
-        }
-        $resultQuery = self::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
-            ->where(function ($query) {
-                $query->whereIn('leads.city_id', ACL::getUserCities());
-                $query->orWhereNull('leads.city_id');
-            })
-            ->whereDate('leads.created_at', '>=', $start_date)
-            ->whereDate('leads.created_at', '<=', $end_date);
 
-        if (count($where)) {
-            $resultQuery->where($where);
-        }
-        if (isset($leads_data['age_group_range']) && $leads_data['age_group_range']) {
-            $resultQuery->whereBetween('users.dob', [$from, $to]);
-        }
-
-        if (isset($leads_data['telecomprovider_id']) && $leads_data['telecomprovider_id']) {
-            $telecomprovider = Telecomprovidernumber::whereIn('id', $leads_data['telecomprovider_id'])->get();
-
-            $newPrefix = [];
-            foreach ($telecomprovider as $provider) {
-                $newPrefix[] = ltrim($provider['pre_fix'], '0');
-            }
-            $y = 0;
-            foreach ($newPrefix as $prefix) {
-                $y++;
-                if ($y == 1) {
-                    $resultQuery->where('users.phone', 'like', $prefix.'%');
-                } else {
-                    $resultQuery->orWhere('users.phone', 'like', $prefix.'%');
-                }
-            }
-        }
-
-        return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')->get();
+        return $query->select('name', 'id', 'phone')
+            ->orderBy('id', 'desc')
+            ->limit(100)
+            ->get()
+            ->unique('phone');
     }
 
-    /*
-     * Marketing Report
-     * @param $request
-     * @return mixed
-     */
-    public static function getMarketingReport($leads_data)
-    {
-
-        $where = [];
-
-        if (isset($leads_data['date_range']) && $leads_data['date_range']) {
-            $date_range = explode(' - ', $leads_data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        if (isset($leads_data['cnic']) && $leads_data['cnic']) {
-            $where[] = [
-                'users.cnic',
-                '=',
-                $leads_data['cnic'],
-            ];
-        }
-        if (isset($leads_data['patient_id']) && $leads_data['patient_id']) {
-            $where[] = [
-                'users.id',
-                '=',
-                $leads_data['patient_id'],
-            ];
-        }
-        if (isset($leads_data['email']) && $leads_data['email']) {
-            $where[] = [
-                'users.email',
-                'like',
-                '%'.$leads_data['email'].'%',
-            ];
-        }
-        if (isset($leads_data['gender_id']) && $leads_data['gender_id']) {
-            $where[] = [
-                'users.gender',
-                '=',
-                $leads_data['gender_id'],
-            ];
-        }
-        if (isset($leads_data['region_id']) && $leads_data['region_id']) {
-            $where[] = [
-                'leads.region_id',
-                '=',
-                $leads_data['region_id'],
-            ];
-        }
-        if (isset($leads_data['city_id']) && $leads_data['city_id']) {
-            $where[] = [
-                'leads.city_id',
-                '=',
-                $leads_data['city_id'],
-            ];
-        }
-        if (isset($leads_data['lead_status_id']) && $leads_data['lead_status_id']) {
-            $where[] = [
-                'leads.lead_status_id',
-                '=',
-                $leads_data['lead_status_id'],
-            ];
-        }
-        if (isset($leads_data['phone']) && $leads_data['phone']) {
-            $where[] = [
-                'users.phone',
-                'like',
-                '%'.GeneralFunctions::cleanNumber($leads_data['phone']).'%',
-            ];
-        }
-        if (isset($leads_data['user_id']) && $leads_data['user_id']) {
-            $where[] = [
-                'leads.created_by',
-                '=',
-                $leads_data['user_id'],
-            ];
-        }
-        if (isset($leads_data['referred_id']) && $leads_data['referred_id']) {
-            $where[] = [
-                'users.referred_by',
-                '=',
-                $leads_data['referred_id'],
-            ];
-        }
-
-        // Process Lead Status
-        $DefaultJunkLeadStatus = LeadStatuses::where([
-            'account_id' => Auth::User()->account_id,
-            'is_junk' => 1,
-        ])->first();
-
-        if ($DefaultJunkLeadStatus) {
-            $default_junk_lead_status_id = $DefaultJunkLeadStatus->id;
-        } else {
-            $default_junk_lead_status_id = Config::get('constants.lead_status_junk');
-        }
-
-        $resultQuery = self::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
-            ->where(function ($query) {
-                $query->whereIn('leads.city_id', ACL::getUserCities());
-                $query->orWhereNull('leads.city_id');
-            })
-            ->whereDate('users.created_at', '>=', $start_date)
-            ->whereDate('users.created_at', '<=', $end_date)
-            ->whereNotIn('leads.lead_status_id', [$default_junk_lead_status_id]);
-
-        if (count($where)) {
-            $resultQuery->where($where);
-        }
-
-        return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')->get();
-    }
-
-    /*
-    * calculate data for lead report
-    *
-    * @param $request
-    *
-    * @return mixed
-    * */
-    public static function getLeadSummaryReport($leads_data)
-    {
-
-        $where = [];
-
-        if (isset($leads_data['date_range']) && $leads_data['date_range']) {
-            $date_range = explode(' - ', $leads_data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        if (isset($leads_data['region_id']) && $leads_data['region_id']) {
-            $where[] = [
-                'leads.region_id',
-                '=',
-                $leads_data['region_id'],
-            ];
-        }
-        if (isset($leads_data['city_id']) && $leads_data['city_id']) {
-            $where[] = [
-                'leads.city_id',
-                '=',
-                $leads_data['city_id'],
-            ];
-        }
-        $resultQuery = self::join('users', 'users.id', '=', 'leads.patient_id')
-            ->where('users.user_type_id', '=', Config::get('constants.patient_id'))
-            ->where(function ($query) {
-                $query->whereIn('leads.city_id', ACL::getUserCities());
-                $query->orWhereNull('leads.city_id');
-            })
-            ->whereDate('leads.created_at', '>=', $start_date)
-            ->whereDate('leads.created_at', '<=', $end_date);
-
-        if (count($where)) {
-            $resultQuery->where($where);
-        }
-
-        return $resultQuery->select('*', 'leads.created_by as lead_created_by', 'leads.id as lead_id', 'leads.created_at as lead_created_at', 'users.id as PatientId')->get();
-    }
-
-    /**
-     * Conversation Rate a notion wide Centers
-     *
-     * @param  (mixed)  $request
-     * @return (mixed)
-     */
-    public static function conversionrateatnationwideCenters($leads_data, $account_id)
-    {
-        /*In future We discuss it*/
-    }
-
-    /*
-     * calculate data for lead report
-     *
-     * @param $request
-     *
-     * @return mixed
-     * */
-    public static function getNowReport($leads_data, $account_id)
-    {
-        $where = [];
-        if (isset($leads_data['date_range']) && $leads_data['date_range']) {
-            $date_range = explode(' - ', $leads_data['date_range']);
-            $start_date = date('Y-m-d', strtotime($date_range[0]));
-            $end_date = date('Y-m-d', strtotime($date_range[1]));
-        } else {
-            $start_date = null;
-            $end_date = null;
-        }
-        $junk_status = LeadStatuses::where('is_junk', '=', '1')->first();
-        /*$appointment_info = DB::Select(DB::raw("SELECT A.*,MAX(A.created_at) created_at
-        FROM leads AS L JOIN appointments AS A ON L.id = A.lead_id
-        WHERE A.base_appointment_status_id = '3'
-        AND L.lead_status_id != '5'
-        AND A.created_at >= '$start_date'
-        AND A.created_at <= '$end_date'
-        GROUP BY A.patient_id,A.service_id
-        ORDER BY A.created_at DESC"));*/
-        $appointment_info = DB::table('leads')->join('appointments', 'leads.id', '=', 'appointments.lead_id')->where([
-            ['leads.lead_status_id', '!=', $junk_status->id],
-            ['appointments.base_appointment_status_id', '=', Config::get('constants.appointment_status_not_show')],
-        ])
-            ->whereDate('appointments.created_at', '>=', $start_date)
-            ->whereDate('appointments.created_at', '<=', $end_date)
-            ->select('appointments.*', DB::raw('max(appointments.created_at) created_at'))
-            ->groupby('appointments.patient_id', 'appointments.service_id')
-            ->orderby('appointments.created_at', 'DESC')
-            ->get();
-
-        $searchServices = Services::where([
-            'account_id' => $account_id,
-        ])->select('id', 'parent_id', 'slug', 'end_node')->get()->keyBy('id');
-
-        $arrived = AppointmentStatuses::where('is_arrived', '=', '1')->first();
-        $pending = AppointmentStatuses::where('is_default', '=', '1')->first();
-
-        foreach ($appointment_info as $key => $infor) {
-            $rootService = LocationsWidget::findRoot($infor->service_id, $searchServices);
-            $next_appointment_info = DB::table('leads')->join('appointments', 'leads.id', '=', 'appointments.lead_id')
-                ->where([
-                    ['leads.lead_status_id', '!=', $junk_status->id],
-                    ['appointments.patient_id', '=', $infor->patient_id],
-                ])
-                ->whereIn('appointments.base_appointment_status_id', [$arrived->id, $pending->id])
-                ->whereDate('appointments.created_at', '>', $end_date)
-                ->select('appointments.*')
-                ->get();
-            if (count($next_appointment_info) > 0) {
-                foreach ($next_appointment_info as $next) {
-                    $rootService_next = LocationsWidget::findRoot($next->service_id, $searchServices);
-                    if ($rootService_next == $rootService) {
-                        unset($appointment_info[$key]);
-                        break;
-                    }
-                }
-            }
-        }
-
-        return $appointment_info;
-    }
 }

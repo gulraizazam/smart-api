@@ -135,12 +135,6 @@ jQuery(document).ready(function() {
         $('#cment')[0].reset();
     });
 
-    patientSearch('appointment_patient_id');
-
-    $(document).on("click", ".croxcli", function () {
-        $('.search_field').val('').change();
-        $('.appointment_patient_id').val(null).trigger('change');
-    });
 
     // Handle treatment form submission with AJAX
     $(document).on('submit', '#modal_create_treatment_form', function(e) {

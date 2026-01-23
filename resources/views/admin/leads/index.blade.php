@@ -46,45 +46,27 @@
                                 </div>&nbsp;&nbsp;&nbsp;
                             @endif
 
-                            @if(Gate::allows('leads_import'))
-                                <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_leads" class="btn btn-primary pull-right margin-r-5">
-                                    <i class="fa fa-upload"></i>
-                                    <span class="hidden-xs"> Import </span>
-                                </a>
-                            @endif
-                            &nbsp;&nbsp;
-                            @if(Gate::allows('leads_export'))
-                                <div class="btn-group">
-                                    <a class="btn  btn-primary" href="javascript:void(0);" data-toggle="dropdown">
+                            @if(request('type') != 'junk')
+                                @if(Gate::allows('leads_import'))
+                                    <a href="javascript:void(0);" data-toggle="modal" data-target="#modal_import_leads" class="btn btn-primary pull-right margin-r-5">
+                                        <i class="fa fa-upload"></i>
+                                        <span class="hidden-xs"> Import </span>
+                                    </a>
+                                @endif
+                                &nbsp;&nbsp;
+                                @if(Gate::allows('leads_export'))
+                                    <a href="#" id="export-leads" data-href="{{route('admin.leads.export.excel')}}" class="btn btn-primary">
                                         <i class="fa fa-download"></i>
                                         <span class="hidden-xs"> Export </span>
-                                        <i class="fa fa-angle-down"></i>
                                     </a>
-                                    <ul class="dropdown-menu pull-right export_leads" id="datatable_ajax_tools">
-                                        <li>
-                                            <a href="#" title="Max pdf export limit is 100 records" id="export-pdf-leads" data-href="{{route('admin.leads.export.pdf')}}" data-action="0" class="tool-action"><i class="la la-file-pdf"></i>
-                                                PDF
-                                                <!-- <span class="export-pdf-limit">(1 to {{config('constants.export-lead-pdf-limit')}})</span></a> -->
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" title="Max export limit is 1000 records" id="export-leads" data-href="{{route('admin.leads.export.excel')}}" data-action="1" class="tool-action"><i class="la la-file-excel"></i>
-                                                Excel
-                                                <!-- <span class="export-excel-limit">(1 to {{config('constants.export-lead-excel-limit')}})</span> -->
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="#" data-href="{{route('admin.leads.export.excel')}}" id="csv-leads" data-action="2" class="tool-action"><i class="la la-file-csv"></i> CSV</a>
-                                        </li>
-                                    </ul>
-                                </div>
-                            @endif
-                            &nbsp;&nbsp;
-                            @if(Gate::allows('leads_create'))
-                                <a href="javascript:void(0);" id="create_lead" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
-                                    <i class="la la-plus"></i>
-                                    Add New
-                                </a>
+                                @endif
+                                &nbsp;&nbsp;
+                                @if(Gate::allows('leads_create'))
+                                    <a href="javascript:void(0);" id="create_lead" onclick="createLead('{{ route('admin.leads.create') }}');" class="btn btn-primary" data-toggle="modal" data-target="#modal_add_leads">
+                                        <i class="la la-plus"></i>
+                                        Add New
+                                    </a>
+                                @endif
                             @endif
 
                         <!--end::Button-->
@@ -384,6 +366,73 @@
                     }
                 });
             }
+
+            // Lead Search for Filter
+            let leadSearchDebounceTimer;
+            $('.lead_search_filter').on('keyup', function() {
+                let searchValue = $(this).val();
+                
+                // Clear previous timer and hide suggestions
+                clearTimeout(leadSearchDebounceTimer);
+                $('.suggesstion-box-leads').hide();
+                
+                if (searchValue.length < 1) {
+                    return false;
+                }
+                
+                // Show searching indicator
+                setTimeout(function() {
+                    if ($('.lead_search_filter').val() === searchValue) {
+                        $('.suggestion-list-leads').html('<li style="padding: 10px;">Searching...</li>');
+                        $('.suggesstion-box-leads').show();
+                    }
+                }, 200);
+                
+                leadSearchDebounceTimer = setTimeout(function() {
+                    if ($('.lead_search_filter').val() === searchValue) {
+                        $.ajax({
+                            type: 'GET',
+                            url: route('admin.leads.getlead.id'),
+                            dataType: 'json',
+                            data: { search: searchValue },
+                            success: function(response) {
+                                if ($('.lead_search_filter').val() !== searchValue) {
+                                    return;
+                                }
+                                
+                                let html = '';
+                                let leads = response.data.leads;
+                                
+                                if (leads.length) {
+                                    leads.forEach(function(lead) {
+                                        html += '<li onclick="selectLeadFilter(\'' + lead.id + '\', \'' + lead.name + '\', \'' + lead.phone + '\');" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;">' + lead.name + ' - ' + lead.phone + '</li>';
+                                    });
+                                    $('.suggestion-list-leads').html(html);
+                                    $('.suggesstion-box-leads').show();
+                                } else {
+                                    $('.suggesstion-box-leads').hide();
+                                }
+                            }
+                        });
+                    }
+                }, 400);
+            });
+
+            // Select lead from suggestions
+            function selectLeadFilter(id, name, phone) {
+                $('#search_id').val(id);
+                $('#search_full_name').val(name);
+                $('#search_phone').val(phone);
+                $('.lead_search_filter').val(name + ' - ' + phone);
+                $('.suggesstion-box-leads').hide();
+            }
+
+            // Clear search on click outside
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.lead_search_filter, .suggesstion-box-leads').length) {
+                    $('.suggesstion-box-leads').hide();
+                }
+            });
         </script>
     @endpush
 

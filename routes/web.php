@@ -183,12 +183,12 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::get('updateleads', [LeadsController::class, 'leadupdate']);
         Route::get('updatestatusleads', [LeadsController::class, 'leadstatusupdate']);
         Route::prefix('invoices')->name('invoices.')->group(function () {
-        // Calculate amounts and get JSON response
-        Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
-        
-        // Export exempt invoices to Excel
-        Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
-    });
+            // Calculate amounts and get JSON response
+            Route::post('/calculate-amounts', [InvoiceGenerationController::class, 'calculateAmounts'])->name('calculate-amounts');
+            
+            // Export exempt invoices to Excel
+            Route::post('/export-exempt', [InvoiceGenerationController::class, 'exportExemptInvoices'])->name('export-exempt');
+        });
         Route::get('change_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'showChangePasswordForm'])->name('change_password');
         Route::post('update_password', [App\Http\Controllers\Auth\ChangePasswordController::class, 'changePassword'])->name('update_password');
         Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
@@ -366,52 +366,14 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         // Custom User Form Routes
         Route::resource('custom_forms', CustomFormsController::class);
 
-        // Leads
-        Route::get('leadstatus_popup_checks', [LeadsController::class, 'LeadStatusespopcheck'])->name('leads.leadstatus_popup_checks');
-
-        Route::get('leadstatuschild_popup_checks', [LeadsController::class, 'LeadStatusChildpopcheck'])->name('leads.leadstatuschild_popup_checks');
-
-        Route::post('leads/loadlead', [LeadsController::class, 'loadLeadData'])->name('leads.load_lead');
-
+        // Leads - View routes only (all API operations handled in api.php)
+        Route::get('leads', [LeadsController::class, 'index'])->name('leads.index');
         Route::get('leads/junk', [LeadsController::class, 'junk'])->name('leads.junk');
-
-        Route::post('leads/load_child_services', [LeadsController::class, 'LoadChildServices'])->name('leads.load_child_services');
-        Route::patch('leads/send_sms/{id}', [LeadsController::class, 'send_sms'])->name('leads.send_sms');
-
-        Route::post('leads/status', [LeadsController::class, 'status'])->name('leads.status');
-
-        Route::get('LeadCommentStore', [LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
-
-        Route::get('LeadCommentStore', [LeadsController::class, 'LeadStoreComment'])->name('leads.storecomment');
-        Route::get('LeadEditDetail', [LeadsController::class, 'LeadEditDetailAjax'])->name('leads.LeadEditDetail');
-
-        //Lead Import
         Route::get('leads/import', [LeadsController::class, 'importLeads'])->name('leads.import');
-        Route::post('leads/upload', [LeadsController::class, 'uploadLeads'])->name('leads.upload');
+        
+        // Memberships
         Route::post('memberships/upload', [MembershipsController::class, 'uploadMemberships'])->name('memberships.upload');
-        Route::resource('leads', LeadsController::class)->only('index');
-
-        Route::post('leads/comment_store', [LeadsController::class, 'comment_store'])->name('leads.comment_store');
-        // Load and Save Lead Statuses
-        Route::get('leads_lead_statuses', [LeadsController::class, 'loadLeadStatuses'])->name('leads.lead_statuses');
-
-        Route::put('leads_save_status', [LeadsController::class, 'saveLeadStatus'])->name('leads.save_status');
-        // Load and Save Treatments
-        Route::get('leads_treatments', [LeadsController::class, 'loadTreatments'])->name('leads.treatments');
-
-        Route::put('leads_save_treatment', [LeadsController::class, 'saveTreatment'])->name('leads.save_treatment');
-        // Load and Save Lead Sources
-
-        Route::get('leads_lead_sources', [LeadsController::class, 'loadLeadSources'])->name('leads.lead_sources');
-
-        Route::put('leads_save_source', [LeadsController::class, 'saveLeadSource'])->name('leads.save_source');
-        // Load and Save Cities
-        Route::get('leads_cities', [LeadsController::class, 'loadCities'])->name('leads.cities');
-
-        Route::put('leads_save_city', [LeadsController::class, 'saveCity'])->name('leads.save_city');
-        Route::get('leads/export/pdf', [LeadsController::class, 'exportPdf'])->name('leads.export.pdf');
         Route::get('memberships/export/pdf', [MembershipsController::class, 'exportPdf'])->name('memberships.export.pdf');
-        Route::get('leads/export/excel', [LeadsController::class, 'exportDocs'])->name('leads.export.excel');
         Route::get('memberships/export/excel', [MembershipsController::class, 'exportDocs'])->name('membership.export.excel');
         // Patients - using API controller for CRUD operations, keeping view routes
         Route::get('patients', [PatientsController::class, 'index'])->name('patients.index')->middleware('permission:patients_manage');
@@ -486,7 +448,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
 
         /*Route::resource('appointments', AppointmentsController::class)->only('index');*/
         Route::resource('consultancy', AppointmentsController::class)->only('index')->middleware('permission:appointments_manage');
-        Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:appointments_services');
+        Route::get('treatment', [AppointmentsController::class, 'treatment'])->name('treatment.index')->middleware('permission:treatments_manage');
 
         /*service routes*/
 
@@ -579,7 +541,8 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('appointments/load_child_services', [AppointmentsController::class, 'LoadChildServices'])->name('appointments.load_child_services');
         Route::get('appointments/load-non-scheduled-appointments', [AppointmentsController::class, 'getNonScheduledAppointments'])->name('appointments.load_nonscheduled_appointments');
         Route::post('appointments/check-phone-exist', [AppointmentsController::class, 'checkPhoneExist'])->name('appointments.check_phone_exist');
-        Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
+        // Migrated to API route - using API controller with Service layer
+        // Route::post('appointments/check-and-save-appointment', [AppointmentsController::class, 'checkAndSaveAppointments'])->name('appointments.check_and_save_appointment');
         Route::get('appointments/export/{limit}/{offset}', [AppointmentsController::class, 'export'])->name('appointments.export');
         Route::get('download-today-consultancies', [AppointmentsController::class, 'todayexport']);
         Route::get('download-today-treatments', [AppointmentsController::class, 'todaytreatments']);
@@ -644,7 +607,7 @@ Route::group(['middleware' => ['auth.common', 'checkAccount'], 'prefix' => 'admi
         Route::post('reports/load_membership_report', [MembershipReportsController::class, 'loadMembershipReport'])->name('reports.load_membership_report');
         Route::get('memberships/export', [MembershipReportsController::class, 'Export'])->name('memberships.export.excel');
         Route::get('/admin/doctor/consultant/breakdown/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('doctor.consultant.breakdown');
-Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('consultant.seller.detail');
+        Route::get('/admin/consultant/seller/detail/{consultantId}/{sellerId}', [UpsellingReportController::class, 'doctorConsultantBreakdown'])->name('consultant.seller.detail');
         Route::get('reports/conversion', [ConversionReportController::class, 'index'])->name('reports.conversion')->middleware('permission:conversion_report_manage');
         Route::get('reports/activity_logs', [ActivitylogsReportController::class, 'index'])->name('reports.activity_logs');
         Route::post('reports/activity_logs', [ActivitylogsReportController::class, 'fetchActivityReport'])->name('reports.load_activity_report');
