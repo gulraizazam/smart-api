@@ -29,23 +29,14 @@ class StoreAppointmentRequest extends FormRequest
                     $this->merge(['appointment_type_id' => $appointmentType->id]);
                     
                     if (!$this->has('appointment_status_id')) {
+                        // Get default status for this account (not filtered by appointment_type_id)
                         $defaultStatus = \App\Models\AppointmentStatuses::where([
                             'account_id' => Auth::user()->account_id,
-                            'appointment_type_id' => $appointmentType->id,
                             'is_default' => 1
                         ])->first();
                         
                         if ($defaultStatus) {
                             $this->merge(['appointment_status_id' => $defaultStatus->id]);
-                        } else {
-                            $anyStatus = \App\Models\AppointmentStatuses::where([
-                                'account_id' => Auth::user()->account_id,
-                                'appointment_type_id' => $appointmentType->id
-                            ])->first();
-                            
-                            if ($anyStatus) {
-                                $this->merge(['appointment_status_id' => $anyStatus->id]);
-                            }
                         }
                     }
                 }
