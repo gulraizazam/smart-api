@@ -277,6 +277,13 @@ class AppointmentHelper
             $appointmentData['resource_id'] = $data['resourceId'];
         }
 
-        return array_merge($appointmentData, $data);
+        $mergedData = array_merge($appointmentData, $data);
+        
+        // Ensure base_appointment_status_id is set when appointment_status_id exists
+        if (isset($mergedData['appointment_status_id']) && !isset($mergedData['base_appointment_status_id'])) {
+            $mergedData['base_appointment_status_id'] = $mergedData['appointment_status_id'];
+        }
+
+        return $mergedData;
     }
 }

@@ -173,15 +173,19 @@ order:4;
             $('#mess_new_pati').show();
             $('#name').attr("readonly",false);
             $('#phone').attr("readonly",false);
-            $('#gender').attr("readonly",false);
+            $('#gender').attr("disabled",false);
             $('#name').val("");
+            $('#phone').val("");
             $('#gender').val("");
+            // Clear lead_id and patient_id when creating new patient
+            $('#lead_id').val("");
+            $('#patient_id').val("");
         } else {
             $('#new_patient').val('0');
             $('#mess_new_pati').hide();
             $('#name').attr("readonly",true);
             $('#phone').attr("readonly",true);
-            $('#gender').attr("readonly",true);
+            $('#gender').attr("disabled",true);
         }
     });
 </script>
