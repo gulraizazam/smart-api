@@ -97,16 +97,30 @@ class ConsultancyUpdateService
      */
     protected function validateArrivedConsultationUpdate($appointment, $requestData, $permissions)
     {
-        // Check if service is changing (prioritize treatment_id for consultation form)
-        $newServiceId = $requestData['treatment_id'] ?? $requestData['service_id'] ?? $requestData['treatment_service_id'] ?? null;
+        $appointmentTypeId = $requestData['appointment_type_id'] ?? $appointment->appointment_type_id;
+        $isConsultancy = ($appointmentTypeId == 1);
+        $locationId = $requestData['location_id'] ?? $appointment->location_id;
+        
+        // Determine service ID based on appointment type
+        if ($isConsultancy) {
+            $newServiceId = $requestData['treatment_id'] ?? $requestData['service_id'] ?? null;
+        } else {
+            $newServiceId = $requestData['treatment_service_id'] ?? null;
+            $serviceIdForValidation = isset($requestData['service_id']) ? (int)$requestData['service_id'] : null;
+        }
+        
+        // Check if service is changing
         if ($newServiceId && $appointment->service_id != $newServiceId) {
             if (!$permissions['service']) {
                 throw AppointmentException::unauthorized('You do not have permission to change the service.');
             }
             
             // Validate current doctor has new service
-            $locationId = $requestData['location_id'] ?? $appointment->location_id;
-            $this->validateDoctorHasService($appointment->doctor_id, $newServiceId, $locationId);
+            if ($isConsultancy) {
+                $this->validateDoctorHasServiceForConsultancy($appointment->doctor_id, $newServiceId, $locationId);
+            } else {
+                $this->validateDoctorHasServiceForTreatment($appointment->doctor_id, $locationId, $serviceIdForValidation);
+            }
         }
 
         // Check if doctor is changing
@@ -117,8 +131,12 @@ class ConsultancyUpdateService
             }
             
             // Validate new doctor has current service
-            $locationId = $requestData['location_id'] ?? $appointment->location_id;
-            $this->validateDoctorHasService($newDoctorId, $appointment->service_id, $locationId);
+            if ($isConsultancy) {
+                $this->validateDoctorHasServiceForConsultancy($newDoctorId, $appointment->service_id, $locationId);
+            } else {
+                $serviceIdForValidation = isset($requestData['service_id']) ? (int)$requestData['service_id'] : $appointment->base_service_id;
+                $this->validateDoctorHasServiceForTreatment($newDoctorId, $locationId, $serviceIdForValidation);
+            }
             
             // Validate new doctor has rota availability
             $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
@@ -159,10 +177,27 @@ class ConsultancyUpdateService
 
         // Validate doctor has service
         $doctorId = $requestData['doctor_id'] ?? $appointment->doctor_id;
-        $serviceId = $requestData['treatment_service_id'] ?? $requestData['service_id'] ?? $requestData['treatment_id'] ?? $appointment->service_id;
         $locationId = $requestData['location_id'] ?? $appointment->location_id;
+        $appointmentTypeId = $requestData['appointment_type_id'] ?? $appointment->appointment_type_id;
+        $isConsultancy = ($appointmentTypeId == 1);
         
-        $this->validateDoctorHasService($doctorId, $serviceId, $locationId);
+        \Log::info('validateNormalConsultationUpdate: Starting validation', [
+            'appointment_type_id' => $appointmentTypeId,
+            'is_consultancy' => $isConsultancy,
+            'treatment_service_id' => $requestData['treatment_service_id'] ?? null,
+            'treatment_id' => $requestData['treatment_id'] ?? null,
+            'service_id' => $requestData['service_id'] ?? null,
+        ]);
+        
+        if ($isConsultancy) {
+            // CONSULTANCY: check treatment_id in doctor_has_locations
+            $serviceId = $requestData['treatment_id'] ?? $requestData['service_id'] ?? $appointment->service_id;
+            $this->validateDoctorHasServiceForConsultancy($doctorId, $serviceId, $locationId);
+        } else {
+            // TREATMENT: check service_id (parent category) in doctor_has_locations
+            $serviceId = isset($requestData['service_id']) ? (int)$requestData['service_id'] : $appointment->service_id;
+            $this->validateDoctorHasServiceForTreatment($doctorId, $locationId, $serviceId);
+        }
         
         // Validate doctor has rota availability
         $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
@@ -209,18 +244,93 @@ class ConsultancyUpdateService
     }
 
     /**
-     * Validate doctor has service allocated at location
+     * Validate doctor has service allocated at location - FOR CONSULTANCY ONLY
+     * @param int $doctorId
+     * @param int $serviceId - The service being booked
+     * @param int $locationId
      */
-    protected function validateDoctorHasService($doctorId, $serviceId, $locationId)
+    protected function validateDoctorHasServiceForConsultancy($doctorId, $serviceId, $locationId)
     {
         $service = Services::find($serviceId);
         if (!$service) {
             throw AppointmentException::invalidData('Service not found.');
         }
 
-        $parentServiceId = $service->parent_id == 0 ? $service->id : $service->parent_id;
+        \Log::info('validateDoctorHasServiceForConsultancy: Checking allocation', [
+            'doctor_id' => $doctorId,
+            'service_id' => $serviceId,
+            'service_parent_id' => $service->parent_id,
+            'location_id' => $locationId,
+        ]);
 
-        \Log::info('validateDoctorHasService: Checking allocation', [
+        // Check if doctor has "all services" assigned at this location
+        $hasAllServices = \DB::table('doctor_has_locations')
+            ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
+            ->where('doctor_has_locations.user_id', $doctorId)
+            ->where('doctor_has_locations.location_id', $locationId)
+            ->where('services.slug', 'all')
+            ->where('doctor_has_locations.is_allocated', 1)
+            ->exists();
+
+        if ($hasAllServices) {
+            \Log::info('validateDoctorHasServiceForConsultancy: Doctor has all services assigned');
+            return;
+        }
+
+        // Check if exact service is assigned
+        $hasService = \DB::table('doctor_has_locations')
+            ->where('user_id', $doctorId)
+            ->where('location_id', $locationId)
+            ->where('service_id', $serviceId)
+            ->where('is_allocated', 1)
+            ->exists();
+
+        if ($hasService) {
+            \Log::info('validateDoctorHasServiceForConsultancy: Doctor has exact service assigned');
+            return;
+        }
+
+        // Check if service's parent is assigned (only if service has a parent)
+        if ($service->parent_id && $service->parent_id != 0) {
+            $hasParentService = \DB::table('doctor_has_locations')
+                ->where('user_id', $doctorId)
+                ->where('location_id', $locationId)
+                ->where('service_id', $service->parent_id)
+                ->where('is_allocated', 1)
+                ->exists();
+            
+            \Log::info('validateDoctorHasServiceForConsultancy: Checking parent service', [
+                'parent_service_id' => $service->parent_id,
+                'has_parent_service' => $hasParentService,
+            ]);
+            
+            if ($hasParentService) {
+                return;
+            }
+        }
+
+        throw AppointmentException::invalidData('This doctor does not have the selected service or its parent service allocated at this location.');
+    }
+
+    /**
+     * Validate doctor has service allocated at location - FOR TREATMENT ONLY
+     * For treatment: check if the PARENT of service_id is assigned to doctor
+     * @param int $doctorId
+     * @param int $locationId
+     * @param int $serviceId - The service_id from request (we need to check its parent)
+     */
+    protected function validateDoctorHasServiceForTreatment($doctorId, $locationId, $serviceId)
+    {
+        // Get the service to find its parent
+        $service = Services::find($serviceId);
+        if (!$service) {
+            throw AppointmentException::invalidData('Service not found.');
+        }
+        
+        // Get parent_id of the service_id (if service_id=16, parent is 14)
+        $parentServiceId = ($service->parent_id && $service->parent_id != 0) ? $service->parent_id : $serviceId;
+        
+        \Log::info('validateDoctorHasServiceForTreatment: Checking allocation', [
             'doctor_id' => $doctorId,
             'service_id' => $serviceId,
             'parent_service_id' => $parentServiceId,
@@ -237,51 +347,25 @@ class ConsultancyUpdateService
             ->exists();
 
         if ($hasAllServices) {
-            \Log::info('validateDoctorHasService: Doctor has all services assigned', [
-                'doctor_id' => $doctorId,
-                'location_id' => $locationId,
-            ]);
-            return; // Skip validation if doctor has all services
+            \Log::info('validateDoctorHasServiceForTreatment: Doctor has all services assigned');
+            return;
         }
 
-        // Check if service exists in doctor_has_locations for this doctor at this location
-        $hasService = \DB::table('doctor_has_locations')
+        // For treatment: check if parent of service_id is assigned
+        $hasParentService = \DB::table('doctor_has_locations')
             ->where('user_id', $doctorId)
             ->where('location_id', $locationId)
-            ->where('service_id', $serviceId)
+            ->where('service_id', (int)$parentServiceId)
             ->where('is_allocated', 1)
             ->exists();
-
-        if (!$hasService) {
-            // Check if the service is a child and its parent is assigned to the doctor
-            if ($service->parent_id) {
-                $hasParentService = \DB::table('doctor_has_locations')
-                    ->where('user_id', $doctorId)
-                    ->where('location_id', $locationId)
-                    ->where('service_id', $service->parent_id)
-                    ->where('is_allocated', 1)
-                    ->exists();
-                
-                \Log::info('validateDoctorHasService: Checking parent service', [
-                    'parent_service_id' => $service->parent_id,
-                    'has_parent_service' => $hasParentService,
-                ]);
-                
-                if (!$hasParentService) {
-                    throw AppointmentException::invalidData('This doctor does not have the selected service or its parent service allocated at this location.');
-                }
-            } else {
-                \Log::info('validateDoctorHasService: Result', [
-                    'has_service' => $hasService,
-                    'will_throw_error' => true,
-                ]);
-                throw AppointmentException::invalidData('This doctor does not have the selected service allocated at this location.');
-            }
-        } else {
-            \Log::info('validateDoctorHasService: Result', [
-                'has_service' => $hasService,
-                'will_throw_error' => false,
-            ]);
+        
+        \Log::info('validateDoctorHasServiceForTreatment: Parent service check result', [
+            'parent_service_id' => $parentServiceId,
+            'has_parent_service' => $hasParentService,
+        ]);
+        
+        if (!$hasParentService) {
+            throw AppointmentException::invalidData('This doctor does not have the selected service category allocated at this location.');
         }
     }
 
