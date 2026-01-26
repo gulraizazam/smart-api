@@ -847,7 +847,7 @@ function calculateInvoice(id, type = '') {
             'package_id_create': package_id_create
         },
         success: function (resposne) {
-            if (resposne.status == '1') {
+            if (resposne.status === true || resposne.status == '1') {
 
                 $('#amount_create').text(resposne.amount);
                 $('.amount_create').val(resposne.amount);

@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Edit</h2>
+        <h2 class="fw-bolder">Edit <span id="edit_treatment_patient_name_display" class="text-primary"></span>'s Treatment</h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,7 +22,7 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y ">
         <!--begin::Form-->
-        <form id="modal_edit_treatment_form" method="post" action="{{route('admin.appointments.store_service')}}">
+        <form id="modal_edit_treatment_form" method="post" action="">
 
             @method('put')
 
@@ -64,17 +64,7 @@
 
                         <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Treatment <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_service_id" disabled readonly class="form-control select2" name="service_id"></select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">City <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_city_id" onchange="loadEditTreatmentLocations($(this).val());" class="form-control select2" name="city_id"></select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_location_id" onchange="loadEditTreatmentDoctors($(this).val());" class="form-control select2" name="location_id"></select>
+                            <select id="edit_treatment_service_id" class="form-control select2" name="service_id"></select>
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -83,16 +73,9 @@
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Machine <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_machine_id" onchange="machineListener($(this).val());" class="form-control select2" name="machine_id"> </select>
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
                             <label class="fw-bold fs-6 mb-2 pl-0">Scheduled Date <span class="text text-danger">*</span> </label>
                             <input readonly id="edit_treatment_scheduled_date" class="form-control current-datepicker" name="scheduled_date">
-
                             <input type="hidden" id="edit_treatment_scheduled_date_old">
-
                         </div>
 
                         <div class="fv-row col-md-6 mt-5">
@@ -101,21 +84,14 @@
                             <input type="hidden" id="scheduled_treatment_time_old">
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Phone <span class="text text-danger">*</span> </label>
-                            <input readonly id="edit_treatment_patient_phone" class="form-control" name="phone" oninput="phoneField(this);">
-                            <input id="edit_old_treatment_patient_phone" name="old_phone" type="hidden">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input readonly id="edit_treatment_patient_name" class="form-control" name="name">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span> </label>
-                            <select id="edit_treatment_patient_gender" class="form-control select2" name="gender"></select>
-                        </div>
+                        {{-- Hidden fields to preserve data --}}
+                        <input type="hidden" id="edit_treatment_city_id" name="city_id">
+                        <input type="hidden" id="edit_treatment_location_id" name="location_id">
+                        <input type="hidden" id="edit_treatment_machine_id" name="machine_id">
+                        <input type="hidden" id="edit_treatment_patient_phone" name="phone">
+                        <input type="hidden" id="edit_old_treatment_patient_phone" name="old_phone">
+                        <input type="hidden" id="edit_treatment_patient_name" name="name">
+                        <input type="hidden" id="edit_treatment_patient_gender" name="gender">
 
                     </div>
                 </div>

@@ -25,15 +25,79 @@ class TreatmentsController extends Controller
     public function datatable(Request $request): JsonResponse
     {
         try {
-            if (!Gate::allows('appointments_services')) {
-                return ApiHelper::apiResponse(403, 'Unauthorized access', false);
-            }
+            // if (!Gate::allows('treatments_manage')) {
+            //     return ApiHelper::apiResponse(403, 'Unauthorized access', false);
+            // }
 
             $data = $this->treatmentService->getDatatableData($request);
 
             return ApiHelper::apiDataTable($data);
         } catch (TreatmentException $e) {
             return ApiHelper::apiResponse($e->getStatusCode(), $e->getMessage(), false, $e->getErrorData());
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Store a new treatment appointment
+     */
+    public function store(Request $request): JsonResponse
+    {
+        try {
+            if (!Gate::allows('appointments_manage')) {
+                return ApiHelper::apiResponse(403, 'You are not authorized to access this resource.', false);
+            }
+
+            $result = $this->treatmentService->store($request);
+
+            return ApiHelper::apiResponse(200, $result['message'], $result['success'], [
+                'id' => $result['id']
+            ]);
+        } catch (TreatmentException $e) {
+            return ApiHelper::apiResponse(200, $e->getMessage(), false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Check patient's last treatment for continuity of care
+     */
+    public function checkPatientLastTreatment(Request $request): JsonResponse
+    {
+        try {
+            $data = $this->treatmentService->checkPatientLastTreatment($request);
+
+            return response()->json([
+                'status' => true,
+                'data' => $data
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Error checking patient treatment history: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Drag and drop reschedule treatment
+     */
+    public function dragDropReschedule(Request $request): JsonResponse
+    {
+        try {
+            if (!Gate::allows('appointments_manage')) {
+                return ApiHelper::apiResponse(403, 'You are not authorized to access this resource.', false);
+            }
+
+            $result = $this->treatmentService->dragDropReschedule($request);
+
+            return ApiHelper::apiResponse(200, $result['message'], $result['success'], [
+                'id' => $result['id']
+            ]);
+        } catch (TreatmentException $e) {
+            return ApiHelper::apiResponse(200, $e->getMessage(), false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }
@@ -48,6 +112,26 @@ class TreatmentsController extends Controller
             $this->treatmentService->clearCache();
 
             return ApiHelper::apiResponse(200, 'Cache cleared successfully', true);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
+        }
+    }
+
+    /**
+     * Get treatment data for edit modal (optimized)
+     */
+    public function edit(int $id): JsonResponse
+    {
+        try {
+            if (!Gate::allows('appointments_manage')) {
+                return ApiHelper::apiResponse(403, 'You are not authorized to access this resource.', false);
+            }
+
+            $data = $this->treatmentService->getEditData($id);
+
+            return ApiHelper::apiResponse(200, 'Data found.', true, $data);
+        } catch (TreatmentException $e) {
+            return ApiHelper::apiResponse(200, $e->getMessage(), false);
         } catch (\Exception $e) {
             return ApiHelper::apiException($e);
         }

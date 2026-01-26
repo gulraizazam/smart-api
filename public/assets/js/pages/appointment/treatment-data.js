@@ -394,7 +394,7 @@ function checkPatientLastTreatment(patientId) {
 
     $.ajax({
         type: 'GET',
-        url: route('admin.appointments.check_patient_last_treatment'),
+        url: route('admin.treatments.check_patient_last_treatment'),
         data: {
             patient_id: patientId,
             service_id: currentServiceId,
@@ -531,9 +531,13 @@ jQuery(document).ready(function () {
         // If selected doctor is chosen, the doctor_id is already set in the field, no change needed
     });
 
-    // Re-check when service changes
-    $(document).on('change', '#create_treatment_service', function() {
+    // Re-check when service changes (using select2:select for better compatibility)
+    $(document).on('change select2:select', '#create_treatment_service', function() {
         var patientId = $('#treatment_patient_id').val();
+        // Also check the select2 patient dropdown value as fallback
+        if (!patientId || patientId == '0') {
+            patientId = $('#create_treatment_patient_id').val();
+        }
         if (patientId && patientId != '0') {
             checkPatientLastTreatment(patientId);
         }

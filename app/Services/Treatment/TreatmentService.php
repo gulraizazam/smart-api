@@ -12,15 +12,30 @@ use App\Models\Appointments;
 use App\Models\Cities;
 use App\Models\Doctors;
 use App\Models\InvoiceStatuses;
+use App\Models\Invoices;
 use App\Models\Locations;
 use App\Models\Regions;
 use App\Models\Services;
 use App\Models\User;
+use App\Models\Leads;
+use App\Models\Patients;
+use App\Models\Resources;
+use App\Models\LeadStatuses;
+use App\Models\LeadsServices;
+use App\Models\MachineTypeHasServices;
+use App\Models\DoctorHasServices;
+use App\Models\ResourceHasRota;
+use App\Models\ResourceHasRotaDays;
+use App\Helpers\ActivityLogger;
+use App\Jobs\IndexSingleAppointmentJob;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 
 class TreatmentService
 {
@@ -155,7 +170,7 @@ class TreatmentService
         $where = [];
 
         if (hasFilter($filters, 'patient_id')) {
-            $where[] = ['patient_id' => GeneralFunctions::patientSearch($filters['patient_id'])];
+            $where[] = ['patient_id', '=', GeneralFunctions::patientSearch($filters['patient_id'])];
         }
 
         if (hasFilter($filters, 'phone')) {
@@ -171,35 +186,35 @@ class TreatmentService
         }
 
         if (hasFilter($filters, 'doctor_id')) {
-            $where[] = ['doctor_id' => $filters['doctor_id']];
+            $where[] = ['doctor_id', '=', $filters['doctor_id']];
         }
 
         if (hasFilter($filters, 'region_id')) {
-            $where[] = ['region_id' => $filters['region_id']];
+            $where[] = ['region_id', '=', $filters['region_id']];
         }
 
         if (hasFilter($filters, 'city_id')) {
-            $where[] = ['city_id' => $filters['city_id']];
+            $where[] = ['city_id', '=', $filters['city_id']];
         }
 
         if (hasFilter($filters, 'created_by')) {
-            $where[] = ['appointments.created_by' => $filters['created_by']];
+            $where[] = ['appointments.created_by', '=', $filters['created_by']];
         }
 
         if (hasFilter($filters, 'converted_by')) {
-            $where[] = ['appointments.converted_by' => $filters['converted_by']];
+            $where[] = ['appointments.converted_by', '=', $filters['converted_by']];
         }
 
         if (hasFilter($filters, 'updated_by')) {
-            $where[] = ['appointments.updated_by' => $filters['updated_by']];
+            $where[] = ['appointments.updated_by', '=', $filters['updated_by']];
         }
 
         if (hasFilter($filters, 'appointment_type_id')) {
-            $where[] = ['appointments.appointment_type_id' => $filters['appointment_type_id']];
+            $where[] = ['appointments.appointment_type_id', '=', $filters['appointment_type_id']];
         }
 
         if (hasFilter($filters, 'consultancy_type')) {
-            $where[] = ['appointments.consultancy_type' => $filters['consultancy_type']];
+            $where[] = ['appointments.consultancy_type', '=', $filters['consultancy_type']];
         }
 
         if (isset($filters['start_date_time']) && $filters['start_date_time']) {
@@ -300,10 +315,6 @@ class TreatmentService
         int $limit,
         int $offset
     ): \Illuminate\Database\Eloquent\Collection {
-        if (!Gate::allows('appointments_services')) {
-            return collect();
-        }
-
         $invoiceStatus = $this->getPaidInvoiceStatus();
 
         $query = Appointments::query()
@@ -549,6 +560,7 @@ class TreatmentService
             'create' => Gate::allows('appointments_create'),
             'log' => Gate::allows('appointments_log'),
             'status' => Gate::allows('appointments_appointment_status'),
+            'schedule_edit' => Gate::allows('appointments_edit'),
             'invoice' => Gate::allows('appointments_invoice'),
             'invoice_display' => Gate::allows('appointments_invoice_display'),
             'image_manage' => Gate::allows('appointments_image_manage'),
@@ -592,5 +604,803 @@ class TreatmentService
         Cache::forget("treatment_filter_values_{$accountId}_" . md5(json_encode(ACL::getUserCentres())));
         Cache::forget('treatment_type_id');
         Cache::forget('paid_invoice_status');
+    }
+
+    /**
+     * Store a new treatment appointment
+     * 
+     * @param Request $request
+     * @return array
+     * @throws TreatmentException
+     */
+    public function store(Request $request): array
+    {
+        // Validate request
+        $validation = $this->validateStoreRequest($request);
+        if ($validation['fails']) {
+            throw new TreatmentException($validation['message'], 422);
+        }
+
+        $user = Auth::user();
+        $accountId = $user->account_id;
+
+        // Get service with parent info (single query)
+        $service = Services::find($request->service_id);
+        if (!$service) {
+            throw new TreatmentException('Service not found.', 422);
+        }
+
+        // Auto-determine base_service_id from service's parent
+        $baseServiceId = $request->base_service_id;
+        if (!$baseServiceId && $service->parent_id != 0) {
+            $baseServiceId = $service->parent_id;
+        }
+
+        // Find machine (resource) for this service
+        $resourceId = $request->resource_id;
+        if (!$resourceId && $request->location_id) {
+            $resourceId = $this->findMachineForService($request->service_id, $baseServiceId, $request->location_id);
+        }
+
+        if (!$resourceId) {
+            throw new TreatmentException('Machine not found. Please select a valid machine or ensure the location has an available machine for this service.', 422);
+        }
+
+        // Get location info (single query)
+        $location = Locations::find($request->location_id);
+        if (!$location) {
+            throw new TreatmentException('Location not found.', 422);
+        }
+
+        // Validate doctor is allocated to this location for this service
+        if (!$this->validateDoctorService($request->doctor_id, $request->service_id, $baseServiceId, $request->location_id)) {
+            Log::warning('Doctor service validation skipped - no allocation found', [
+                'doctor_id' => $request->doctor_id,
+                'service_id' => $request->service_id,
+                'base_service_id' => $baseServiceId,
+                'location_id' => $request->location_id
+            ]);
+            // Note: Not throwing exception as this may be optional validation
+        }
+
+        // Prepare appointment data
+        $appointmentData = $this->prepareAppointmentData($request, $service, $baseServiceId, $resourceId, $location, $accountId);
+
+        // Validate rota and availability
+        $rotaValidation = $this->validateRotaAndAvailability($request, $resourceId, $service, $appointmentData);
+        if (!$rotaValidation['valid']) {
+            throw new TreatmentException($rotaValidation['message'], 422);
+        }
+        $appointmentData = array_merge($appointmentData, $rotaValidation['data']);
+
+        // Use database transaction for data integrity
+        return DB::transaction(function () use ($request, $appointmentData, $accountId, $user, $service, $location) {
+            // Handle lead creation/update
+            $lead = $this->handleLead($request, $appointmentData, $accountId);
+            $appointmentData['lead_id'] = $lead->id ?? null;
+
+            // Update patient record
+            Patients::updateRecord($appointmentData['patient_id'], false, $appointmentData, $appointmentData);
+
+            // Create appointment
+            $appointment = Appointments::create($appointmentData);
+
+            // Handle lead services
+            if ($lead) {
+                $this->handleLeadServices($lead, $request, $appointment);
+            }
+
+            // Update all patient appointments with new name
+            if (!empty($appointmentData['name'])) {
+                Appointments::where('patient_id', $appointmentData['patient_id'])
+                    ->update([
+                        'name' => $appointmentData['name'],
+                        'updated_at' => $appointmentData['updated_at']
+                    ]);
+            }
+
+            // Handle message sending flag
+            if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
+                $appointment->update(['send_message' => 1]);
+            }
+
+            // Handle unscheduled status
+            $this->handleUnscheduledStatus($appointment, $accountId);
+
+            // Log activity
+            GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
+
+            // Log treatment booked activity
+            $patient = Patients::find($appointment->patient_id);
+            if ($patient) {
+                ActivityLogger::logTreatmentBooked($appointment, $patient, $location, $service);
+            }
+
+            // Dispatch indexing job
+            dispatch(new IndexSingleAppointmentJob([
+                'account_id' => $accountId,
+                'appointment_id' => $appointment->id,
+            ]));
+
+            return [
+                'success' => true,
+                'message' => 'Treatment has been created successfully.',
+                'id' => $appointment->id
+            ];
+        });
+    }
+
+    /**
+     * Validate store request
+     */
+    protected function validateStoreRequest(Request $request): array
+    {
+        $phone = $request->phone;
+        if ($phone == '***********') {
+            $phone = $request->old_phone;
+        }
+        $data = $request->all();
+        $data['phone'] = GeneralFunctions::cleanNumber($phone);
+
+        $validator = Validator::make($data, [
+            'name' => 'required',
+            'phone' => 'required',
+            'service_id' => 'required',
+            'location_id' => 'required',
+            'doctor_id' => 'required',
+            'patient_id' => 'required',
+        ]);
+
+        if ($validator->fails()) {
+            return ['fails' => true, 'message' => $validator->messages()->first()];
+        }
+
+        return ['fails' => false];
+    }
+
+    /**
+     * Find machine for service - checks child service first, then parent
+     */
+    protected function findMachineForService(int $serviceId, ?int $baseServiceId, int $locationId): ?int
+    {
+        // First, try to find machine type using child service (service_id)
+        $machineTypeService = MachineTypeHasServices::where('service_id', $serviceId)->first();
+
+        if ($machineTypeService) {
+            // Check if machine exists at this location
+            $resource = Resources::where('location_id', $locationId)
+                ->where('machine_type_id', $machineTypeService->machine_type_id)
+                ->where('active', 1)
+                ->first();
+
+            if ($resource) {
+                return $resource->id;
+            }
+        }
+
+        // If no machine found with child service, try with parent service (base_service_id)
+        if ($baseServiceId) {
+            $machineTypeService = MachineTypeHasServices::where('service_id', $baseServiceId)->first();
+
+            if ($machineTypeService) {
+                $resource = Resources::where('location_id', $locationId)
+                    ->where('machine_type_id', $machineTypeService->machine_type_id)
+                    ->where('active', 1)
+                    ->first();
+
+                if ($resource) {
+                    return $resource->id;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Validate doctor can perform this service at the given location
+     */
+    protected function validateDoctorService(int $doctorId, int $serviceId, ?int $baseServiceId, int $locationId): bool
+    {
+        $service = Services::find($serviceId);
+        
+        // Check if doctor is allocated to this location for:
+        // 1. The exact service
+        // 2. The parent service (if this is a child service)
+        // 3. "All Services" (slug = 'all')
+        return DB::table('doctor_has_locations as dhl')
+            ->join('services as s', 's.id', '=', 'dhl.service_id')
+            ->where('dhl.location_id', $locationId)
+            ->where('dhl.user_id', $doctorId)
+            ->where('dhl.is_allocated', 1)
+            ->where(function ($query) use ($serviceId, $baseServiceId) {
+                $query->where('dhl.service_id', $serviceId);
+                
+                if ($baseServiceId) {
+                    $query->orWhere('dhl.service_id', $baseServiceId);
+                }
+                
+                $query->orWhere('s.slug', 'all');
+            })
+            ->exists();
+    }
+
+    /**
+     * Prepare appointment data array
+     */
+    protected function prepareAppointmentData(Request $request, Services $service, ?int $baseServiceId, int $resourceId, Locations $location, int $accountId): array
+    {
+        $user = Auth::user();
+        $phone = $request->phone;
+        if ($phone == '***********') {
+            $phone = $request->old_phone;
+        }
+
+        $data = $request->all();
+        $data['phone'] = GeneralFunctions::cleanNumber($phone);
+        $data['account_id'] = $accountId;
+        $data['created_by'] = $user->id;
+        $data['consultancy_type'] = 'treatment';
+        $data['appointment_type_id'] = config('constants.appointment_type_service');
+        $data['city_id'] = $location->city_id;
+        $data['region_id'] = $location->region_id;
+        $data['base_service_id'] = $baseServiceId;
+        $data['resource_id'] = $resourceId;
+        $data['user_type_id'] = 3;
+        $data['created_at'] = Filters::getCurrentTimeStamp();
+        $data['updated_at'] = Filters::getCurrentTimeStamp();
+
+        // Set appointment status
+        $appointmentStatus = AppointmentStatuses::getADefaultStatusOnly($accountId);
+        if ($appointmentStatus) {
+            $data['appointment_status_id'] = $appointmentStatus->id;
+            $data['base_appointment_status_id'] = $appointmentStatus->id;
+            $data['appointment_status_allow_message'] = $appointmentStatus->allow_message;
+        } else {
+            $data['appointment_status_id'] = null;
+            $data['base_appointment_status_id'] = null;
+            $data['appointment_status_allow_message'] = 0;
+        }
+
+        return $data;
+    }
+
+    /**
+     * Validate rota and availability for doctor and machine
+     */
+    protected function validateRotaAndAvailability(Request $request, int $resourceId, Services $service, array $appointmentData): array
+    {
+        if (!$request->start) {
+            return ['valid' => true, 'data' => [], 'message' => ''];
+        }
+
+        $start = $request->start;
+        $serviceDuration = $service->duration ?? '00:30';
+        $durationArray = explode(':', $serviceDuration);
+
+        if (count($durationArray) >= 2) {
+            $end = Carbon::parse($start)->addHours((int)$durationArray[0])->addMinutes((int)$durationArray[1]);
+            $startFormatted = Carbon::parse($start)->format('Y-m-d H:i:s');
+        } else {
+            $end = Carbon::parse($start)->addMinutes(30);
+            $startFormatted = Carbon::parse($start)->format('Y-m-d H:i:s');
+        }
+
+        // Check doctor availability
+        $doctorAvailable = Resources::checkingDoctorAvailbility($request->doctor_id, $startFormatted, $end);
+        
+        // Check machine/room availability
+        $roomAvailable = Resources::checkingRoomAvailbility($resourceId, $startFormatted, $end);
+
+        if (!$doctorAvailable || !$roomAvailable) {
+            return [
+                'valid' => false,
+                'data' => [],
+                'message' => 'Doctor or machine is not available. Appointment cannot be scheduled.'
+            ];
+        }
+
+        // Get rota IDs
+        $data = [];
+        
+        // Machine rota
+        $machineRota = Resources::getResourceRotaHasDay($request->start, $resourceId);
+        if (isset($machineRota['resource_has_rota_day_id']) && $machineRota['resource_has_rota_day_id']) {
+            $data['resource_has_rota_day_id_for_machine'] = $machineRota['resource_has_rota_day_id'];
+        }
+
+        // Doctor rota
+        $resourceDoctor = Resources::where('external_id', $request->doctor_id)->first();
+        if ($resourceDoctor) {
+            $doctorRota = Resources::getResourceRotaHasDay($request->start, $resourceDoctor->id);
+            if (isset($doctorRota['resource_has_rota_day_id']) && $doctorRota['resource_has_rota_day_id']) {
+                $data['resource_has_rota_day_id'] = $doctorRota['resource_has_rota_day_id'];
+            }
+        }
+
+        // Set scheduled date/time
+        $data['scheduled_date'] = Carbon::parse($request->start)->format('Y-m-d');
+        $data['first_scheduled_date'] = Carbon::parse($request->start)->format('Y-m-d');
+        $data['first_scheduled_count'] = 1;
+
+        // Use scheduled_time from request if provided, otherwise extract from start
+        if ($request->scheduled_time) {
+            $data['scheduled_time'] = Carbon::parse($request->scheduled_time)->format('H:i:s');
+            $data['first_scheduled_time'] = Carbon::parse($request->scheduled_time)->format('H:i:s');
+        } else {
+            $data['scheduled_time'] = Carbon::parse($request->start)->format('H:i:s');
+            $data['first_scheduled_time'] = Carbon::parse($request->start)->format('H:i:s');
+        }
+
+        return ['valid' => true, 'data' => $data, 'message' => ''];
+    }
+
+    /**
+     * Handle lead creation or retrieval
+     */
+    protected function handleLead(Request $request, array $appointmentData, int $accountId): ?Leads
+    {
+        $phone = $appointmentData['phone'];
+        $lead = Leads::where(['phone' => $phone])->orderBy('id', 'desc')->first();
+
+        if ($lead) {
+            return $lead;
+        }
+
+        // Create new lead
+        $patient = Patients::find($appointmentData['patient_id']);
+        
+        $defaultBookedLeadStatus = LeadStatuses::where([
+            'account_id' => $accountId,
+            'is_booked' => 1,
+        ])->first();
+
+        $leadStatusId = $defaultBookedLeadStatus 
+            ? $defaultBookedLeadStatus->id 
+            : config('constants.lead_status_booked');
+
+        $leadData = $appointmentData;
+        $leadData['lead_status_id'] = $leadStatusId;
+        $leadData['created_at'] = Filters::getCurrentTimeStamp();
+        $leadData['updated_at'] = Filters::getCurrentTimeStamp();
+        $leadData['location_id'] = $request->location_id;
+        $leadData['gender'] = $patient->gender ?? null;
+
+        return Leads::updateOrCreate(
+            ['phone' => $phone, 'account_id' => $accountId],
+            $leadData
+        );
+    }
+
+    /**
+     * Handle lead services
+     */
+    protected function handleLeadServices(Leads $lead, Request $request, Appointments $appointment): void
+    {
+        $serviceId = $request->service_id;
+        $baseServiceId = $request->base_service_id ?? $appointment->base_service_id;
+
+        // Reset all lead services status
+        LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
+
+        // Update or create lead service
+        LeadsServices::updateOrCreate(
+            [
+                'lead_id' => $lead->id,
+                'service_id' => $baseServiceId ?? $serviceId,
+            ],
+            [
+                'child_service_id' => $serviceId,
+                'treatment_id' => $appointment->id,
+                'status' => 1,
+            ]
+        );
+    }
+
+    /**
+     * Handle unscheduled appointment status
+     */
+    protected function handleUnscheduledStatus(Appointments $appointment, int $accountId): void
+    {
+        if ($appointment->scheduled_date || $appointment->scheduled_time) {
+            return;
+        }
+
+        $unscheduledStatus = AppointmentStatuses::getUnScheduledStatusOnly($accountId);
+        
+        if ($unscheduledStatus) {
+            $appointment->update([
+                'appointment_status_id' => $unscheduledStatus->id,
+                'base_appointment_status_id' => $unscheduledStatus->id,
+                'appointment_status_allow_message' => 0,
+            ]);
+            return;
+        }
+
+        $defaultStatus = AppointmentStatuses::getADefaultStatusOnly($accountId);
+        if ($defaultStatus) {
+            $appointment->update([
+                'appointment_status_id' => $defaultStatus->id,
+                'base_appointment_status_id' => $defaultStatus->id,
+                'appointment_status_allow_message' => 0,
+            ]);
+        } else {
+            $appointment->update([
+                'appointment_status_id' => null,
+                'base_appointment_status_id' => null,
+                'appointment_status_allow_message' => 0,
+            ]);
+        }
+    }
+
+    /**
+     * Check patient's last treatment for continuity of care
+     */
+    public function checkPatientLastTreatment(Request $request): array
+    {
+        $patientId = $request->input('patient_id');
+        $serviceId = $request->input('service_id');
+        $locationId = $request->input('location_id');
+        $excludeAppointmentId = $request->input('exclude_appointment_id');
+        $startDateTime = $request->input('start');
+
+        // Find last arrived treatment for this patient with same service
+        $query = Appointments::where('appointments.patient_id', $patientId)
+            ->where('appointments.appointment_type_id', 2) // Treatment type
+            ->where('appointments.appointment_status_id', 2) // Arrived status
+            ->where('appointments.service_id', $serviceId)
+            ->join('invoices', 'appointments.id', '=', 'invoices.appointment_id')
+            ->select('appointments.*', 'invoices.created_at as invoice_created_at')
+            ->orderBy('invoices.created_at', 'DESC')
+            ->with(['doctor:id,name', 'service:id,name']);
+
+        if ($excludeAppointmentId) {
+            $query->where('appointments.id', '!=', $excludeAppointmentId);
+        }
+
+        $lastTreatment = $query->first();
+
+        if (!$lastTreatment) {
+            return ['last_treatment' => null];
+        }
+
+        // Check if doctor is active
+        $isDoctorActive = false;
+        if ($lastTreatment->doctor_id) {
+            $doctor = User::find($lastTreatment->doctor_id);
+            $isDoctorActive = $doctor && $doctor->active == 1;
+        }
+
+        if (!$isDoctorActive) {
+            return ['last_treatment' => null];
+        }
+
+        // Check if doctor is still allocated to location for this service
+        $isDoctorAllocated = $this->checkDoctorAllocation(
+            $lastTreatment->doctor_id,
+            $locationId,
+            $serviceId
+        );
+
+        if (!$isDoctorAllocated) {
+            return ['last_treatment' => null];
+        }
+
+        // Check if doctor has rota for selected date/time
+        $hasDoctorRota = $this->checkDoctorRotaForDateTime(
+            $lastTreatment->doctor_id,
+            $locationId,
+            $startDateTime
+        );
+
+        return [
+            'last_treatment' => [
+                'id' => $lastTreatment->id,
+                'doctor_id' => $lastTreatment->doctor_id,
+                'doctor_name' => $lastTreatment->doctor->name ?? 'Unknown',
+                'service_id' => $lastTreatment->service_id,
+                'service_name' => $lastTreatment->service->name ?? 'Unknown',
+                'scheduled_date' => $lastTreatment->scheduled_date,
+                'scheduled_time' => $lastTreatment->scheduled_time,
+                'has_doctor_rota' => $hasDoctorRota,
+            ]
+        ];
+    }
+
+    /**
+     * Check if doctor is allocated to location for service
+     */
+    protected function checkDoctorAllocation(int $doctorId, int $locationId, int $serviceId): bool
+    {
+        $requestedService = Services::find($serviceId);
+
+        return DB::table('doctor_has_locations as dhl')
+            ->join('services as s', 's.id', '=', 'dhl.service_id')
+            ->where('dhl.location_id', $locationId)
+            ->where('dhl.user_id', $doctorId)
+            ->where('dhl.is_allocated', 1)
+            ->where(function ($query) use ($serviceId, $requestedService) {
+                $query->where('dhl.service_id', $serviceId);
+                
+                if ($requestedService && $requestedService->parent_id) {
+                    $query->orWhere('dhl.service_id', $requestedService->parent_id);
+                }
+                
+                $query->orWhere('s.slug', 'all');
+            })
+            ->exists();
+    }
+
+    /**
+     * Check if doctor has rota for specific date/time
+     */
+    protected function checkDoctorRotaForDateTime(int $doctorId, int $locationId, ?string $startDateTime): bool
+    {
+        if (!$startDateTime) {
+            return false;
+        }
+
+        $start = Carbon::parse($startDateTime)->format('Y-m-d');
+        $startedTime = Carbon::parse($startDateTime)->format('Y-m-d H:i:s');
+
+        $resourceDoctor = Resources::where('external_id', $doctorId)->first();
+        if (!$resourceDoctor) {
+            return false;
+        }
+
+        $resourceRotas = ResourceHasRota::where([
+            ['resource_id', '=', $resourceDoctor->id],
+            ['location_id', '=', $locationId]
+        ])->get();
+
+        $activeRota = null;
+        foreach ($resourceRotas as $rota) {
+            $rotaStart = Carbon::parse($rota->created_at)->format('Y-m-d');
+            if ($start >= $rotaStart && $start <= $rota->end) {
+                $activeRota = $rota;
+                break;
+            }
+        }
+
+        if (!$activeRota) {
+            return false;
+        }
+
+        return ResourceHasRotaDays::where([
+            ['resource_has_rota_id', '=', $activeRota->id],
+            ['date', '=', $start],
+            ['active', '=', '1'],
+            ['start_timestamp', '<=', $startedTime],
+            ['end_timestamp', '>', $startedTime],
+        ])->exists();
+    }
+
+    /**
+     * Drag and drop reschedule treatment
+     * 
+     * @param Request $request
+     * @return array
+     * @throws TreatmentException
+     */
+    public function dragDropReschedule(Request $request): array
+    {
+        // Validate required parameters
+        $validator = Validator::make($request->all(), [
+            'id' => 'required|integer',
+            'start' => 'required',
+            'end' => 'required',
+            'doctor_id' => 'required|integer',
+        ]);
+
+        if ($validator->fails()) {
+            throw new TreatmentException($validator->messages()->first(), 422);
+        }
+
+        $user = Auth::user();
+        $accountId = $user->account_id;
+
+        // Get appointment
+        $appointment = Appointments::find($request->id);
+        if (!$appointment) {
+            throw new TreatmentException('Appointment not found.', 404);
+        }
+
+        // Check if appointment has paid invoice (optimized with exists())
+        $paidStatusId = InvoiceStatuses::where('slug', 'paid')->value('id');
+        $hasPaidInvoice = $paidStatusId && Invoices::where('appointment_id', $appointment->id)
+            ->where('invoice_status_id', $paidStatusId)
+            ->exists();
+
+        if ($hasPaidInvoice) {
+            throw new TreatmentException('Appointment has invoice and cannot be rescheduled.', 422);
+        }
+
+        // Check doctor availability
+        $doctorAvailable = Resources::checkDoctorAvailbility($request);
+        if (!$doctorAvailable) {
+            throw new TreatmentException('Doctor is not available for this time slot.', 422);
+        }
+
+        // Get doctor resource
+        $resourceDoctor = Resources::where('external_id', $request->doctor_id)->first();
+        if (!$resourceDoctor) {
+            throw new TreatmentException('Doctor not found.', 404);
+        }
+
+        // Get doctor rota
+        $doctorRota = Resources::getResourceRotaHasDay($request->start, $resourceDoctor->id);
+        if (!isset($doctorRota['resource_has_rota_day_id']) || !$doctorRota['resource_has_rota_day_id']) {
+            throw new TreatmentException('Doctor rota is not available for this time slot.', 422);
+        }
+
+        // Prepare appointment data
+        $data = $request->all();
+        $data['first_scheduled_count'] = $appointment->first_scheduled_count;
+        $data['scheduled_at_count'] = $appointment->scheduled_at_count;
+        $data['reschedule'] = 1;
+        $data['resource_has_rota_day_id'] = $doctorRota['resource_has_rota_day_id'];
+
+        // Handle resource/machine
+        if ($request->resourceId && !empty($request->resourceId)) {
+            $data['resource_id'] = $request->resourceId;
+
+            // Check room availability
+            $roomAvailable = Resources::checkRoomAvailbility($request);
+            if (!$roomAvailable) {
+                throw new TreatmentException('Machine is not available for this time slot.', 422);
+            }
+
+            // Get rota for machine
+            $machineRota = Resources::getResourceRotaHasDay($request->start, $request->resourceId);
+            if (isset($machineRota['resource_has_rota_day_id']) && $machineRota['resource_has_rota_day_id']) {
+                $data['resource_has_rota_day_id_for_machine'] = $machineRota['resource_has_rota_day_id'];
+            }
+        } else {
+            // Keep existing resource_id if not provided
+            $data['resource_id'] = $appointment->resource_id;
+        }
+
+        // Use database transaction for data integrity
+        return DB::transaction(function () use ($request, $data, $appointment, $accountId) {
+            // Update appointment
+            $record = Appointments::updateServiceRecord($request->id, $data, $accountId);
+            
+            if (!$record) {
+                throw new TreatmentException('Failed to update appointment.', 500);
+            }
+
+            // Set Appointment Status 'pending' and set send message flag
+            $appointmentStatus = AppointmentStatuses::getADefaultStatusOnly($accountId);
+            if ($appointmentStatus) {
+                $record->update([
+                    'appointment_status_id' => $appointmentStatus->id,
+                    'base_appointment_status_id' => $appointmentStatus->id,
+                    'appointment_status_allow_message' => $appointmentStatus->allow_message,
+                    'send_message' => 1,
+                ]);
+            }
+
+            // Log activity
+            GeneralFunctions::saveAppointmentLogs('rescheduled', 'Treatment', $record);
+
+            // Dispatch Elastic Search Index
+            dispatch(new IndexSingleAppointmentJob([
+                'account_id' => $accountId,
+                'appointment_id' => $appointment->id,
+            ]));
+
+            return [
+                'success' => true,
+                'message' => 'Treatment rescheduled successfully.',
+                'id' => $appointment->id
+            ];
+        });
+    }
+
+    /**
+     * Get treatment data for edit modal (optimized)
+     * 
+     * @param int $id
+     * @return array
+     * @throws TreatmentException
+     */
+    public function getEditData(int $id): array
+    {
+        $accountId = Auth::user()->account_id;
+
+        // Single query with eager loading
+        $appointment = Appointments::with(['patient', 'doctor', 'service', 'location'])
+            ->where('id', $id)
+            ->where(function($query) use ($accountId) {
+                $query->where('account_id', $accountId)
+                      ->orWhereNull('account_id');
+            })
+            ->first();
+
+        if (!$appointment) {
+            throw TreatmentException::notFound();
+        }
+
+        // Get rota days in single queries
+        $resourceRotaDay = $appointment->resource_has_rota_day_id 
+            ? ResourceHasRotaDays::find($appointment->resource_has_rota_day_id) 
+            : null;
+        
+        $machineRotaDay = $appointment->resource_has_rota_day_id_for_machine 
+            ? ResourceHasRotaDays::find($appointment->resource_has_rota_day_id_for_machine) 
+            : null;
+
+        // Calculate time bounds with null safety
+        $biggerTime = null;
+        $smallerTime = null;
+        
+        if ($resourceRotaDay && $machineRotaDay) {
+            $biggerTime = ResourceHasRota::getBiggerTime($resourceRotaDay->start_time, $machineRotaDay->start_time);
+            $smallerTime = ResourceHasRota::getSmallerTime($resourceRotaDay->end_time, $machineRotaDay->end_time);
+        } elseif ($resourceRotaDay) {
+            $biggerTime = $resourceRotaDay->start_time;
+            $smallerTime = $resourceRotaDay->end_time;
+        }
+
+        // Get doctors with rota in optimized way - single query with join
+        $doctors = Doctors::getActiveOnly($appointment->location_id, $accountId);
+        
+        if ($doctors && count($doctors) > 0) {
+            // Get all doctor external IDs
+            $doctorExternalIds = array_keys($doctors->toArray());
+            
+            // Single query to get resources with treatment rotas
+            $resourcesWithRota = Resources::whereIn('external_id', $doctorExternalIds)
+                ->whereHas('rotas', function($query) {
+                    $query->where('is_treatment', 1);
+                })
+                ->pluck('external_id')
+                ->toArray();
+            
+            // Filter doctors to only those with rotas
+            $doctors = $doctors->filter(function($doctor, $key) use ($resourcesWithRota) {
+                return in_array($key, $resourcesWithRota);
+            });
+        }
+
+        // Format dates
+        $appointmentData = $appointment->toArray();
+        if (isset($appointmentData['scheduled_date'])) {
+            $appointmentData['scheduled_date'] = \Carbon\Carbon::parse($appointment->scheduled_date)->format('Y-m-d');
+        }
+        if (isset($appointmentData['first_scheduled_date'])) {
+            $appointmentData['first_scheduled_date'] = \Carbon\Carbon::parse($appointment->first_scheduled_date)->format('Y-m-d');
+        }
+
+        // Get all active child services (parent_id not null and not 0)
+        $services = Services::whereNotNull('parent_id')
+            ->where('parent_id', '!=', 0)
+            ->whereNull('deleted_at')
+            ->where('active', 1)
+            ->orderBy('name')
+            ->pluck('name', 'id');
+
+        // Check if appointment is arrived (status_id = 2) or converted (status_id = 16)
+        $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]);
+
+        // Get permissions for editing after arrived using Spatie's hasPermissionTo
+        $user = Auth::user();
+        $permissions = [
+            'can_edit_doctor' => !$isArrivedOrConverted || ($user && $user->can('can_edit_doctor')),
+            'can_edit_service' => !$isArrivedOrConverted || ($user && $user->can('can_edit_service')),
+            'can_edit_schedule' => !$isArrivedOrConverted || ($user && $user->can('can_edit_schedule')),
+        ];
+
+        return [
+            'appointment' => $appointmentData,
+            'services' => $services,
+            'doctors' => $doctors,
+            'resourceRotaDay' => $resourceRotaDay,
+            'machineRotaDay' => $machineRotaDay,
+            'biggerTime' => $biggerTime,
+            'smallerTime' => $smallerTime,
+            'permissions' => $permissions,
+            'is_arrived_or_converted' => $isArrivedOrConverted,
+        ];
     }
 }

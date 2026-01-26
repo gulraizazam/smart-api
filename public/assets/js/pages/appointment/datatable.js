@@ -219,33 +219,7 @@ function setStatusData(response, id) {
     }
 }
 
-function editSchedule(id, doc_id, loc_id) {
-
-    $("#modal_change_appointment_schedule").modal("show");
-    $("#schedule_appointment_id").val(id)
-    $("#schedule_doctor_id").val(doc_id)
-    $("#schedule_location_id").val(loc_id)
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.appointments.get_schedule'),
-        type: "GET",
-        data: { id: id },
-        cache: false,
-        success: function (response) {
-            if (response) {
-                $("#schedule_date").val(response.scheduled_date);
-                $("#schedule_time").val(response.scheduled_time);
-            }
-        },
-        error: function (xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-        }
-    });
-
-}
+// editSchedule function moved to common.js
 
 const extraValidate = {
     validators: {
@@ -382,7 +356,7 @@ function actions(data) {
     let id = data.id;
 
     let edit_url = route('admin.appointments.edit', { id: id });
-    let edit_service_url = route('admin.appointments.edit_service', { id: id });
+    let edit_service_url = route('admin.treatments.edit', { id: id });
     let detail_url = route('admin.appointments.detail', { id: id });
     let sms_logs_url = route('admin.appointments.sms_logs', { id: id });
 

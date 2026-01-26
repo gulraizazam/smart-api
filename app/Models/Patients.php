@@ -238,7 +238,7 @@ class Patients extends BaseModal
                 }
                 
                 // Single query with OR conditions - much faster than multiple queries
-                $sql = "SELECT DISTINCT name, id, phone 
+                $sql = "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address 
                         FROM users 
                         WHERE user_type_id = 3 
                         AND active = 1 
@@ -268,7 +268,7 @@ class Patients extends BaseModal
             }
             
             // Name search - single optimized query
-            $sql = "SELECT DISTINCT name, id, phone 
+            $sql = "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address 
                     FROM users 
                     WHERE user_type_id = 3 
                     AND active = 1 
