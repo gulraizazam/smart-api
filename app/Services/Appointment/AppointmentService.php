@@ -525,6 +525,53 @@ class AppointmentService
                 $appointmentData['converted_by'] = $this->getUserId();
             }
 
+            // Validate doctor has service allocated at location (when doctor or service is being changed)
+            $doctorId = $appointmentData['doctor_id'] ?? $appointment->doctor_id;
+            $serviceId = $appointmentData['service_id'] ?? $appointment->service_id;
+            $locationId = $appointmentData['location_id'] ?? $appointment->location_id;
+
+            if ($doctorId && $serviceId && $locationId) {
+                // Check if doctor has "all services" assigned at this location
+                $hasAllServices = \DB::table('doctor_has_locations')
+                    ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
+                    ->where('doctor_has_locations.user_id', $doctorId)
+                    ->where('doctor_has_locations.location_id', $locationId)
+                    ->where('services.slug', 'all')
+                    ->where('doctor_has_locations.is_allocated', 1)
+                    ->exists();
+
+                if (!$hasAllServices) {
+                    // If not all services, check for specific service
+                    $hasService = \DB::table('doctor_has_locations')
+                        ->where('user_id', $doctorId)
+                        ->where('location_id', $locationId)
+                        ->where('service_id', $serviceId)
+                        ->where('is_allocated', 1)
+                        ->exists();
+
+                    if (!$hasService) {
+                        // Check if the service is a child and its parent is assigned to the doctor
+                        $service = \App\Models\Services::find($serviceId);
+                        
+                        if ($service && $service->parent_id) {
+                            // Service has a parent, check if parent is assigned to doctor
+                            $hasParentService = \DB::table('doctor_has_locations')
+                                ->where('user_id', $doctorId)
+                                ->where('location_id', $locationId)
+                                ->where('service_id', $service->parent_id)
+                                ->where('is_allocated', 1)
+                                ->exists();
+                            
+                            if (!$hasParentService) {
+                                throw AppointmentException::invalidData('This doctor does not have the required service or its parent service allocated for this location.');
+                            }
+                        } else {
+                            throw AppointmentException::invalidData('This doctor does not have the required service allocated for this location.');
+                        }
+                    }
+                }
+            }
+
             // Schedule conflict check disabled to allow multiple bookings on the same slot
             // if (isset($appointmentData['scheduled_date']) && isset($appointmentData['scheduled_time'])) {
             //     $hasConflict = AppointmentHelper::validateScheduleConflict(
