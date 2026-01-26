@@ -59,6 +59,24 @@ class TreatmentService extends AppointmentService
             }
         }
 
+        if (!isset($data['appointment_status_id'])) {
+            // Get default status for this account
+            $defaultStatus = \App\Models\AppointmentStatuses::where([
+                'account_id' => $this->account_id,
+                'is_default' => 1
+            ])->first();
+            
+            if ($defaultStatus) {
+                $data['appointment_status_id'] = $defaultStatus->id;
+                $data['base_appointment_status_id'] = $defaultStatus->id;
+            }
+        }
+        
+        // Always ensure base_appointment_status_id is set when appointment_status_id exists
+        if (isset($data['appointment_status_id']) && !isset($data['base_appointment_status_id'])) {
+            $data['base_appointment_status_id'] = $data['appointment_status_id'];
+        }
+
         return $this->createAppointment($data);
     }
 

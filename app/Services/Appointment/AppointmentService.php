@@ -156,8 +156,41 @@ class AppointmentService
             
             $this->validateAppointmentData($data);
 
-            // If creating new patient, create patient/user first, then lead
-            if (isset($data['new_patient']) && $data['new_patient'] == 1 && !isset($data['lead_id'])) {
+            // Clean up empty lead_id and patient_id (sent as empty strings from form)
+            if (isset($data['lead_id']) && (empty($data['lead_id']) || $data['lead_id'] === '' || $data['lead_id'] === '0')) {
+                unset($data['lead_id']);
+            }
+            if (isset($data['patient_id']) && (empty($data['patient_id']) || $data['patient_id'] === '' || $data['patient_id'] === '0')) {
+                unset($data['patient_id']);
+            }
+
+            // CRITICAL: Validate that lead_id/patient_id matches the phone number being submitted
+            // This prevents linking a consultation to the wrong patient when user enters a new phone
+            if (isset($data['lead_id']) && isset($data['phone'])) {
+                $lead = Leads::find($data['lead_id']);
+                if ($lead) {
+                    $submittedPhone = \App\Helpers\GeneralFunctions::cleanNumber($data['phone']);
+                    $leadPhone = \App\Helpers\GeneralFunctions::cleanNumber($lead->phone ?? '');
+                    
+                    // If phone numbers don't match, this is a new patient - clear lead_id and patient_id
+                    if ($submittedPhone !== $leadPhone) {
+                        \Log::info('Phone mismatch detected - treating as new patient', [
+                            'submitted_phone' => $submittedPhone,
+                            'lead_phone' => $leadPhone,
+                            'lead_id' => $data['lead_id'],
+                        ]);
+                        unset($data['lead_id']);
+                        unset($data['patient_id']);
+                    }
+                }
+            }
+
+            // If creating new patient (either explicitly via checkbox OR when no lead_id exists but phone is provided)
+            // This handles the case where user enters a new phone number without selecting an existing lead
+            $shouldCreateNewPatient = (isset($data['new_patient']) && $data['new_patient'] == 1 && !isset($data['lead_id'])) 
+                || (!isset($data['lead_id']) && isset($data['phone']) && !empty($data['phone']));
+            
+            if ($shouldCreateNewPatient) {
                 // Step 1: Create patient/user record
                 $patientData = [
                     'name' => $data['name'] ?? null,

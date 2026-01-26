@@ -56,9 +56,9 @@ class ConsultancyService extends AppointmentService
         unset($data['resource_has_rota_day_id_for_machine']);
         
         if (!isset($data['appointment_status_id'])) {
+            // Get default status for this account (not filtered by appointment_type_id)
             $defaultStatus = \App\Models\AppointmentStatuses::where([
                 'account_id' => $this->account_id,
-                'appointment_type_id' => $this->consultancyTypeId,
                 'is_default' => 1
             ])->first();
             
@@ -66,11 +66,11 @@ class ConsultancyService extends AppointmentService
                 $data['appointment_status_id'] = $defaultStatus->id;
                 $data['base_appointment_status_id'] = $defaultStatus->id;
             }
-        } else {
-            // If appointment_status_id is provided, also set base_appointment_status_id
-            if (!isset($data['base_appointment_status_id'])) {
-                $data['base_appointment_status_id'] = $data['appointment_status_id'];
-            }
+        }
+        
+        // Always ensure base_appointment_status_id is set when appointment_status_id exists
+        if (isset($data['appointment_status_id']) && !isset($data['base_appointment_status_id'])) {
+            $data['base_appointment_status_id'] = $data['appointment_status_id'];
         }
 
         return $this->createAppointment($data);
