@@ -218,33 +218,7 @@ function setStatusData(response, id) {
     }
 }
 
-function editSchedule(id,doc_id,loc_id) {
-    $("#modal_change_appointment_schedule").modal("show");
-    $("#schedule_appointment_id").val(id)
-    $("#schedule_doctor_id").val(doc_id)
-    $("#schedule_location_id").val(loc_id)
-
-    $.ajax({
-        headers: {
-            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-        },
-        url: route('admin.appointments.get_schedule'),
-        type: "GET",
-        data: {id: id},
-        cache: false,
-        success: function(response) {
-            if (response.status) {
-                let appointment = response.data.appointment;
-                $("#schedule_date").val(appointment?.scheduled_date);
-                $("#schedule_time").val(appointment?.scheduled_time);
-            }
-        },
-        error: function(xhr, ajaxOptions, thrownError) {
-            errorMessage(xhr);
-        }
-    });
-
-}
+// editSchedule function moved to common.js
 
 const extraValidate = {
     validators: {
@@ -381,7 +355,7 @@ function actions(data) {
     let id = data.id;
 
     let edit_url = route('admin.appointments.edit', {id: id});
-    let edit_service_url = route('admin.appointments.edit_service', {id: id});
+    let edit_service_url = route('admin.treatments.edit', {id: id});
     let detail_url = route('admin.appointments.detail', {id: id});
     let feedback_url = route('admin.appointments.feedback.index', {id: id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: id});
@@ -526,21 +500,11 @@ function actions(data) {
         }
         if(data.appointment_type==2) {
             if (permissions.image_manage) {
-                // actions += '<li class="navi-item">\
-                //         <a href="'+image_url+'" target="_blank" class="navi-link">\
-                //             <span class="navi-icon"><i class="la la-image"></i></span>\
-                //             <span class="navi-text">Images</span>\
-                //         </a>\
-                //     </li>';
+               
             }
 
             if (permissions.measurement_manage) {
-                // actions += '<li class="navi-item">\
-                //         <a href="'+measurements_url+'" target="_blank" class="navi-link">\
-                //             <span class="navi-icon"><i class="la la-ruler-horizontal"></i></span>\
-                //             <span class="navi-text">Measurements</span>\
-                //         </a>\
-                //     </li>';
+               
             }
         }
 
@@ -876,54 +840,43 @@ function setTreatmentEditData(response) {
     try {
 
         let appointment = response.data.appointment;
-        let back_date_config = response.data.back_date_config;
-        let cities = response.data.cities;
         let doctors = response.data.doctors;
-        let locations = response.data.locations;
-        let machines = response.data.machines;
-        let resourceHadRotaDay = response.data.resourceHadRotaDay;
-        let machineHadRotaDay = response.data.machineHadRotaDay;
         let services = response.data.services;
-        let setting = response.data.setting;
-        let genders = response.data.genders;
+        let resourceHadRotaDay = response.data.resourceRotaDay;
+        let machineHadRotaDay = response.data.machineRotaDay;
+        let editPermissions = response.data.permissions || {};
 
+        // Build service options from all active child services
+        let service_option = '<option value="">Select a Treatment</option>';
+        if (services) {
+            Object.entries(services).forEach(function (service) {
+                service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
+            });
+        }
 
-        let service_option = '<option value="">Select a Service</option>';
-        Object.entries(services).forEach(function (service) {
-            service_option += '<option value="' + service[0] + '">' + service[1] + '</option>';
-        });
-
-        let city_option = '<option value="">Select a City</option>';
-        Object.entries(cities).forEach(function (city) {
-            city_option += '<option value="' + city[0] + '">' + city[1] + '</option>';
-        });
-
-        let location_option = '<option value="">Select a Location</option>';
-        Object.entries(locations).forEach(function (location) {
-            location_option  += '<option value="' + location[0] + '">' + location[1] + '</option>';
-        });
-
+        // Build doctor options
         let doctor_option = '<option value="">Select a Doctor</option>';
-        Object.entries(doctors).forEach(function (doctor) {
-            doctor_option  += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
-        });
+        if (doctors) {
+            Object.entries(doctors).forEach(function (doctor) {
+                doctor_option += '<option value="' + doctor[0] + '">' + doctor[1] + '</option>';
+            });
+        }
 
-        let gender_option = '<option value="">Select a Gender</option>';
-        Object.entries(genders).forEach(function (gender) {
-            gender_option  += '<option value="' + gender[0] + '">' + gender[1] + '</option>';
-        });
-
-        let machine_option = '<option value="">Select a Machine</option>';
-        Object.entries(machines).forEach(function (machine) {
-            machine_option  += '<option value="' + machine[0] + '">' + machine[1] + '</option>';
-        });
         $("#treatment_service_id").html(service_option).val(appointment.service_id);
         $("#edit_treatment_service_id").html(service_option).val(appointment.service_id);
-        $("#edit_treatment_machine_id").html(machine_option).val(appointment.resource_id);
-        $("#edit_treatment_city_id").html(city_option).val(appointment.city_id);
-        $("#edit_treatment_location_id").html(location_option).val(appointment.location_id);
         $("#edit_treatment_doctor_id").html(doctor_option).val(appointment?.doctor_id);
-        $("#edit_treatment_patient_gender").html(gender_option).val(appointment?.patient?.gender);
+
+        // Set hidden fields for preserved data
+        $("#edit_treatment_city_id").val(appointment.city_id);
+        $("#edit_treatment_location_id").val(appointment.location_id);
+        $("#edit_treatment_machine_id").val(appointment.resource_id);
+        $("#edit_treatment_patient_name").val(appointment?.patient?.name);
+        $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
+        $("#edit_old_treatment_patient_phone").val(appointment?.patient?.phone);
+        $("#edit_treatment_patient_gender").val(appointment?.patient?.gender);
+
+        // Set patient name in modal heading
+        $("#edit_treatment_patient_name_display").text(appointment?.patient?.name || '');
 
         // Store the original doctor ID and hide warning
         $("#edit_treatment_original_doctor_id").val(appointment?.doctor_id);
@@ -953,18 +906,8 @@ function setTreatmentEditData(response) {
         $("#edit_treatment_scheduled_time").val(test);
         $("#scheduled_treatment_time_old").val(test);
 
-        $("#edit_treatment_patient_name").val(appointment?.patient?.name);
-
-        if (permissions.contact) {
-            $("#edit_treatment_patient_phone").val(appointment?.patient?.phone);
-        } else {
-            $("#edit_treatment_patient_phone").val("***********").attr("readonly", true);
-        }
-
-        $("#edit_old_treatment_patient_phone").val(appointment?.lead?.patient?.phone);
-
         $("#treatment_leadId").val(appointment?.lead_id);
-        $("#treatment_patientId").val(appointment?.patient_id); // Store patient_id for doctor check
+        $("#treatment_patientId").val(appointment?.patient_id);
         $("#treatment_appointment_id").val(appointment?.id);
         $("#treatment_resourceRotaDayID").val(resourceHadRotaDay?.id);
         $("#treatment_machineRotaDayID").val(machineHadRotaDay?.id);
@@ -972,6 +915,34 @@ function setTreatmentEditData(response) {
         $("#treatment_end_time").val(resourceHadRotaDay?.end_time);
 
         $("#treatment_appointment_type").val(appointment?.appointment_type_id);
+
+        // Apply permission-based field restrictions
+        // Service field
+        if (editPermissions.can_edit_service === false) {
+            $("#edit_treatment_service_id").prop('disabled', true);
+        } else {
+            $("#edit_treatment_service_id").prop('disabled', false);
+        }
+
+        // Doctor field
+        if (editPermissions.can_edit_doctor === false) {
+            $("#edit_treatment_doctor_id").prop('disabled', true);
+        } else {
+            $("#edit_treatment_doctor_id").prop('disabled', false);
+        }
+
+        // Schedule fields (date and time)
+        if (editPermissions.can_edit_schedule === false) {
+            $("#edit_treatment_scheduled_date").prop('disabled', true);
+            $("#edit_treatment_scheduled_time").prop('disabled', true);
+        } else {
+            $("#edit_treatment_scheduled_date").prop('disabled', false);
+            $("#edit_treatment_scheduled_time").prop('disabled', false);
+        }
+
+        // Initialize select2 on dropdowns
+        reInitSelect2("#edit_treatment_service_id", "#modal_treatment_edit");
+        reInitSelect2("#edit_treatment_doctor_id", "#modal_treatment_edit");
 
         // Check if doctor change warning should be shown after modal data is loaded
         setTimeout(function() {
@@ -1475,8 +1446,9 @@ function checkEditTreatmentDoctorChange() {
     }
 
     var selectedDoctorId = $("#edit_treatment_doctor_id").val();
-    var patientId = $("#treatment_patientId").val(); // Use patient_id instead of lead_id
-    var serviceId = $("#treatment_service_id").val();
+    var originalDoctorId = $("#edit_treatment_original_doctor_id").val();
+    var patientId = $("#treatment_patientId").val();
+    var serviceId = $("#edit_treatment_service_id").val();
     var locationId = $("#edit_treatment_location_id").val();
     var currentAppointmentId = $("#treatment_appointment_id").val();
 
@@ -1490,17 +1462,36 @@ function checkEditTreatmentDoctorChange() {
     // Get the scheduled date and time for rota check
     var scheduledDate = $("#edit_treatment_scheduled_date").val();
     var scheduledTime = $("#edit_treatment_scheduled_time").val();
-    var startDateTime = scheduledDate && scheduledTime ? scheduledDate + 'T' + scheduledTime : null;
+    
+    // Convert time to 24-hour format for API (e.g., "1:00 PM" -> "13:00:00")
+    var startDateTime = null;
+    if (scheduledDate && scheduledTime) {
+        var timeParts = scheduledTime.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (timeParts) {
+            var hours = parseInt(timeParts[1]);
+            var minutes = timeParts[2];
+            var period = timeParts[3].toUpperCase();
+            
+            if (period === 'PM' && hours !== 12) {
+                hours += 12;
+            } else if (period === 'AM' && hours === 12) {
+                hours = 0;
+            }
+            
+            var formattedTime = String(hours).padStart(2, '0') + ':' + minutes + ':00';
+            startDateTime = scheduledDate + 'T' + formattedTime;
+        }
+    }
 
     // Call backend to check if patient has past arrived treatments of the same service
     $.ajax({
         type: 'GET',
-        url: route('admin.appointments.check_patient_last_treatment'),
+        url: route('admin.treatments.check_patient_last_treatment'),
         data: {
             patient_id: patientId,
             service_id: serviceId,
             location_id: locationId,
-            exclude_appointment_id: currentAppointmentId, // Exclude current appointment
+            exclude_appointment_id: currentAppointmentId,
             start: startDateTime
         },
         success: function(response) {
@@ -1516,7 +1507,7 @@ function checkEditTreatmentDoctorChange() {
                     // Service matches, now check if doctor is different
                     if (lastDoctorId != selectedDoctorId) {
                         // Show warning message
-                        $('#edit_warning_message').html(' The last session for this treatment was performed by ' + lastDoctorName + '');
+                        $('#edit_warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + '.');
                         
                         if (hasDoctorRota) {
                             // Doctor has rota, enable option 1 and auto-select it
@@ -1555,12 +1546,14 @@ function checkEditTreatmentDoctorChange() {
                         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
                     }
                 } else {
-                    // Service doesn't match, no warning needed
+                    // Service changed - check if there are other treatments with this new service
+                    // If no other treatments found, allow the change
                     $('#edit_treatment_doctor_warning').addClass('d-none');
                     $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
                 }
             } else {
-                // No past arrived treatment found, no warning needed
+                // No past arrived treatment found for this service
+                // This is the first/only treatment - allow any doctor selection
                 $('#edit_treatment_doctor_warning').addClass('d-none');
                 $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
             }
@@ -1600,6 +1593,11 @@ $(document).on('change', '#edit_use_selected_doctor', function() {
 
 // Attach the check function to doctor dropdown change event
 $(document).on('change', '#edit_treatment_doctor_id', function() {
+    checkEditTreatmentDoctorChange();
+});
+
+// Attach the check function to service dropdown change event
+$(document).on('change', '#edit_treatment_service_id', function() {
     checkEditTreatmentDoctorChange();
 });
 

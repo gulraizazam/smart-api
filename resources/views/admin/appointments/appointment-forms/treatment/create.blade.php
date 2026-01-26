@@ -3,7 +3,7 @@
     <!--begin::Modal header-->
     <div class="modal-header" id="kt_modal_password_header">
         <!--begin::Modal title-->
-        <h2 class="fw-bolder">Create</h2>
+        <h2 class="fw-bolder">New Treatment with <span id="treatment_modal_doctor_name" style="color: #3699FF;"></span> - <span id="treatment_modal_date"></span></h2>
         <!--end::Modal title-->
         <!--begin::Close-->
         <div class="btn btn-icon btn-sm btn-active-icon-primary popup-close" data-kt-users-modal-action="close">
@@ -22,10 +22,10 @@
     <!--begin::Modal body-->
     <div class="modal-body scroll-y ">
         <!--begin::Form-->
-        <form id="modal_create_treatment_form" method="post" action="{{route('admin.appointments.store_service')}}">
+        <form id="modal_create_treatment_form" method="post" action="{{route('admin.treatments.store')}}">
 
             <input type="hidden" id="treatment_lead_id" name="lead_id">
-            {{--<input type="hidden" id="treatment_patient_id" name="patient_id" value="0">--}}
+            <input type="hidden" id="treatment_patient_id" value="0">
             <input type="hidden" id="treatment_city_id" name="city_id">
             <input type="hidden" id="treatment_location_id" name="location_id">
             <input type="hidden" id="treatment_doctor_id" name="doctor_id">
@@ -67,41 +67,26 @@
                         <input type="hidden" id="create_treatment_base_service" name="base_service_id">
 
                         <div class="fv-row col-md-12 mt-5">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
+                            <select class="form-control select2-patient-search-treatment" id="create_treatment_patient_id" name="patient_id" onchange="getTreatmentPatientDetailFromSelect(this)">
+                            </select>
+                        </div>
+
+                        <div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Service <span class="text text-danger">*</span> </label>
                             <select id="create_treatment_service" class="form-control select2" name="service_id"></select>
                         </div>
 
-                        <div class="fv-row col-md-12 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search </label>
-                            <input  class="form-control treatment_patient_search_id" placeholder="Patients Search">
-
-                            <input type="hidden" id="create_treatment_patient_search" onchange="getTreatmentPatientDetail($(this))"  name="patient_id" class="filter-field search_field">
-                            <span onclick="addUsers()" class="croxcli" style="position:absolute; padding-left: 0% !important; top:37px; right:20px;"><i class="fa fa-times" aria-hidden="true"></i></span>
-                            <div class="suggesstion-box" style="display: none;">
-                                <ul class="suggestion-list"></ul>
-                            </div>
-                        </div>
-
                         <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Phone <span class="text text-danger">*</span> </label>
-                            <input readonly  id="create_treatment_phone" class="form-control" name="phone" oninput="phoneField(this);">
-                            <input type="hidden" id="create_old_treatment_phone" class="form-control" name="old_phone">
+                            <label class="required fw-bold fs-6 mb-2 pl-0">Scheduled Time <span class="text text-danger">*</span> </label>
+                            <input type="text" id="create_treatment_scheduled_time" name="scheduled_time" class="form-control treatment-timepicker">
                         </div>
 
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Patient Name <span class="text text-danger">*</span> </label>
-                            <input readonly  id="create_treatment_patient_name" class="form-control" name="name">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Customer ID <span class="text text-danger">*</span> </label>
-                            <input readonly  id="create_treatment_c_id" class="form-control" name="client_id">
-                        </div>
-
-                        <div class="fv-row col-md-6 mt-5">
-                            <label class="required fw-bold fs-6 mb-2 pl-0">Gender <span class="text text-danger">*</span></label>
-                            <select id="create_treatment_gender" class="form-control select2" name="gender" disabled></select>
-                        </div>
+                        <input type="hidden" id="create_treatment_phone" name="phone">
+                        <input type="hidden" id="create_old_treatment_phone" name="old_phone">
+                        <input type="hidden" id="create_treatment_patient_name" name="name">
+                        <input type="hidden" id="create_treatment_gender" name="gender">
+                        <input type="hidden" id="create_treatment_c_id" name="client_id">
 
                         {{--<div class="fv-row col-md-6 mt-5">
                             <label class="required fw-bold fs-6 mb-2 pl-0">Lead Source</label>

@@ -55,16 +55,7 @@
 @endif
 {{-- Treatment-specific permissions --}}
 @if($appointment['appointment_type_id'] == 2)
-    @if(Gate::allows('treatments_image_manage'))
-        <a class="btn btn-xs btn-info"
-           href="{{ route('admin.appointmentsimage.imageindex',[$appointment['_id']]) }}" target="_blank"><i
-                    class="fa fa-file-image-o" title="Images"></i></a>
-    @endif
-    @if(Gate::allows('treatments_measurement_manage'))
-        <a class="btn btn-xs btn-info"
-           href="{{ route('admin.appointmentsmeasurement.measurements',[$appointment['_id']]) }}" target="_blank"><i
-                    class="fa fa-stethoscope" title="Measurement"></i></a>
-    @endif
+    
 @endif
 
 {{-- Delete permission based on appointment type --}}

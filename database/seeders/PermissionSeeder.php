@@ -368,6 +368,9 @@ class PermissionSeeder extends Seeder
             ['name' => 'new test patient', 'title' => 'Test', 'main_group' => 0, 'parent_id' => 295],
             ['name' => 'leads_destroy', 'title' => 'Delete', 'main_group' => 0, 'parent_id' => 92],
             ['name' => 'contact', 'title' => 'Contact', 'main_group' => 1, 'parent_id' => 0],
+            ['name' => 'edit_doctor_after_arrived_treatment', 'title' => 'Edit Doctor After Arrived Treatment', 'main_group' => 0, 'parent_id' => 65],
+            ['name' => 'edit_service_after_arrived_treatment', 'title' => 'Edit Service After Arrived Treatment', 'main_group' => 0, 'parent_id' => 65],
+            ['name' => 'edit_schedule_after_arrived_treatment', 'title' => 'Edit Schedule After Arrived Treatment', 'main_group' => 0, 'parent_id' => 65],
             ['name' => 'gfhfg', 'title' => 'gfhfh', 'main_group' => 0, 'parent_id' => 209],
             ['name' => 'fsdf', 'title' => 'df', 'main_group' => 0, 'parent_id' => 39],
         ];

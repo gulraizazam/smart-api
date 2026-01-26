@@ -3139,44 +3139,64 @@ class AppointmentsController extends Controller
      */
     public function getplansinformation(Request $request)
     {
-        $appointmentinfo = Appointments::find($request->appointment_id_create);
-        $bundleinfo = Bundles::join('bundle_has_services', 'bundles.id', '=', 'bundle_has_services.bundle_id')
-            ->where([
-                ['bundle_has_services.service_id', '=', $appointmentinfo->service_id],
-            ])
-            ->select('bundles.id')
-            ->get();
+        // Validate input parameters
+        $appointmentId = $request->appointment_id_create;
+        $packageId = $request->package_id_create;
 
-        foreach ($bundleinfo as $bundleinfo) {
-            $bundleid[] = $bundleinfo->id;
-        }
-        $package = Packages::find($request->package_id_create);
-
-        if ($package == null) {
+        if (!$appointmentId || !$packageId) {
             return response()->json([
                 'status' => true,
                 'packagebundles' => [],
                 'packageservices' => [],
             ]);
         }
-        $packagebundles = PackageBundles::leftJoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
-            ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
 
-            ->where('package_bundles.package_id', '=', $package->id)
-            ->whereIn('package_bundles.bundle_id', $bundleid)
-            ->select('package_bundles.*', 'discounts.name as discountname', 'bundles.name as bundlename')
+        // Get only the service_id we need from appointment
+        $appointmentinfo = Appointments::select('service_id')->find($appointmentId);
 
-            ->get();
+        if (!$appointmentinfo) {
+            return response()->json([
+                'status' => true,
+                'packagebundles' => [],
+                'packageservices' => [],
+            ]);
+        }
 
+        $serviceId = $appointmentinfo->service_id;
 
+        // Get bundle IDs using pluck instead of loop
+        $bundleIds = Bundles::join('bundle_has_services', 'bundles.id', '=', 'bundle_has_services.bundle_id')
+            ->where('bundle_has_services.service_id', '=', $serviceId)
+            ->pluck('bundles.id')
+            ->toArray();
+
+        // Check if package exists
+        $package = Packages::select('id')->find($packageId);
+
+        if (!$package) {
+            return response()->json([
+                'status' => true,
+                'packagebundles' => [],
+                'packageservices' => [],
+            ]);
+        }
+
+        // Get package bundles - only if we have bundle IDs
+        $packagebundles = [];
+        if (!empty($bundleIds)) {
+            $packagebundles = PackageBundles::leftJoin('discounts', 'package_bundles.discount_id', '=', 'discounts.id')
+                ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
+                ->where('package_bundles.package_id', '=', $package->id)
+                ->whereIn('package_bundles.bundle_id', $bundleIds)
+                ->select('package_bundles.*', 'discounts.name as discountname', 'bundles.name as bundlename')
+                ->get();
+        }
+
+        // Get package services
         $packageservices = PackageService::join('services', 'package_services.service_id', '=', 'services.id')
-            ->where([
-                ['package_services.package_id', '=', $package->id],
-                ['package_services.service_id', '=', $appointmentinfo->service_id],
-
-            ])
+            ->where('package_services.package_id', '=', $package->id)
+            ->where('package_services.service_id', '=', $serviceId)
             ->select('package_services.*', 'services.name as servicename')
-
             ->get();
 
         return response()->json([
@@ -3195,44 +3215,85 @@ class AppointmentsController extends Controller
 
      public function getpackageprice(Request $request)
      {
-         $appointmentinfo = Appointments::where('id', '=', $request->appointment_id_create)->first();
-         $balance_patient_in = PackageAdvances::where([
-             ['patient_id', '=', $appointmentinfo->patient_id],
-             ['package_id', '=', $request->package_id_create],
-             ['cash_flow', '=', 'in'],
-         ])->sum('cash_amount');
-         $balance_patient_out = PackageAdvances::where([
-             ['patient_id', '=', $appointmentinfo->patient_id],
-             ['package_id', '=', $request->package_id_create],
-             ['cash_flow', '=', 'out'],
-         ])->sum('cash_amount');
-         $balance = $balance_patient_in - $balance_patient_out;
-         $balance = ceil($balance);
-         $package_service = PackageService::find($request->package_service_id);
-         $package = Packages::find($request->package_id_create);
+         // Validate input parameters
+         $appointmentId = $request->appointment_id_create;
+         $packageId = $request->package_id_create;
+         $packageServiceId = $request->package_service_id;
+
+         if (!$appointmentId || !$packageId || !$packageServiceId) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'Missing required parameters',
+             ]);
+         }
+
+         // Get only patient_id from appointment
+         $appointmentinfo = Appointments::select('patient_id')->find($appointmentId);
+
+         if (!$appointmentinfo) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'Appointment not found',
+             ]);
+         }
+
+         $patientId = $appointmentinfo->patient_id;
+
+         // Calculate balance using single query with conditional sum
+         $balanceData = PackageAdvances::where('patient_id', '=', $patientId)
+             ->where('package_id', '=', $packageId)
+             ->selectRaw("
+                 SUM(CASE WHEN cash_flow = 'in' THEN cash_amount ELSE 0 END) as total_in,
+                 SUM(CASE WHEN cash_flow = 'out' THEN cash_amount ELSE 0 END) as total_out
+             ")
+             ->first();
+
+         $balance = ceil(($balanceData->total_in ?? 0) - ($balanceData->total_out ?? 0));
+
+         // Get package service
+         $package_service = PackageService::find($packageServiceId);
+
+         if (!$package_service) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'Package service not found',
+             ]);
+         }
+
+         // Get package bundle
          $package_bundle = PackageBundles::find($package_service->package_bundle_id);
 
-         $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)->where('type', '=', 'multiple')->first();
-        
+         if (!$package_bundle) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'Package bundle not found',
+             ]);
+         }
+
+         // Get bundle (only if type is 'multiple')
+         $bundle = Bundles::where('id', '=', $package_bundle->bundle_id)
+             ->where('type', '=', 'multiple')
+             ->first();
+
+         // Get service
          $service = Services::find($package_service->service_id);
+
+         if (!$service) {
+             return response()->json([
+                 'status' => false,
+                 'message' => 'Service not found',
+             ]);
+         }
+
+         // Determine package access
+         $package_access = 1;
          if ($bundle) {
-             if ($balance >= $bundle->price) {
-                
-                 $package_access = 1;
-             } elseif ($balance >= $service->price) {
-               
-                 $package_access = 1;
-             } else {
-                 
+             if ($balance < $bundle->price && $balance < $service->price) {
                  $package_access = 0;
              }
-         } else {
-           
-             $package_access = 1;
          }
 
          // Calculate total package cost and remaining amount to pay for bundle logic
-         // Only consider the specific bundle for this service, not all bundles in the package
          $total_package_cost = $package_bundle->tax_including_price;
 
          // Calculate how much has been consumed from this specific bundle
@@ -3244,64 +3305,39 @@ class AppointmentsController extends Controller
          $remaining_to_pay = max(0, $total_package_cost - $consumed_from_bundle - $balance);
 
          $cash = 0;
-         if ($package_access == 1) {
 
-             $price = $package_service->tax_including_price;
-
-             // For bundles: check if balance >= service price to determine outstanding
+         // Helper function to calculate outstanding
+         $calculateOutstanding = function ($bundle, $service, $balance, $cash, $remaining_to_pay, $fallbackAmount = 0) {
              if ($bundle) {
                  if ($balance >= $service->price) {
-                     $outstanding = 0;
-                 } else {
-                     // Outstanding is the minimum of service price requirement and remaining bundle amount
-                     $naive_outstanding = intval($service->price) - intval($balance) - $cash;
-                     $outstanding = min($naive_outstanding, max(0, $remaining_to_pay));
+                     return 0;
                  }
-             } else {
-                 $outstanding = intval($package_service->tax_including_price) - $cash - intval($balance);
+                 $naive_outstanding = intval($service->price) - intval($balance) - $cash;
+                 return min($naive_outstanding, max(0, $remaining_to_pay));
              }
+             return intval($fallbackAmount) - $cash - intval($balance);
+         };
 
+         if ($package_access == 1) {
+             $price = $package_service->tax_including_price;
+             $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay, $package_service->tax_including_price);
              $remaining = 0;
-             $settleamount_1 = $price - $cash;
-             $settleamount = min($settleamount_1, $balance);
+             $settleamount = min($price - $cash, $balance);
          } else {
-
-             if ( $package_service->price > ($package_bundle->net_amount - $balance)) {
-
+             if ($package_service->price > ($package_bundle->net_amount - $balance)) {
                  $price = $package_service->price;
-
-                 // For bundles: check if balance >= service price to determine outstanding
-                 if ($balance >= $service->price) {
-                     $outstanding = 0;
-                 } else {
-                     // Outstanding is the minimum of service price requirement and remaining bundle amount
-                     $naive_outstanding = intval($service->price - $balance) - $cash;
-                     $outstanding = min($naive_outstanding, max(0, $remaining_to_pay));
-                 }
-
-                 $settleamount_1 = intval($package_bundle->net_amount - $balance) - $cash;
-                 $settleamount = min($settleamount_1, $balance);
+                 $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay);
+                 $settleamount = min(intval($package_bundle->net_amount - $balance) - $cash, $balance);
              } else {
-
                  $price = $package_service->price;
-
-                 // For bundles: check if balance >= service price to determine outstanding
-                 if ($balance >= $service->price) {
-                     $outstanding = 0;
-                 } else {
-                     // Outstanding is the minimum of service price requirement and remaining bundle amount
-                     $naive_outstanding = intval($service->price) - intval($balance) - $cash;
-                     $outstanding = min($naive_outstanding, max(0, $remaining_to_pay));
-                 }
-
-                 $settleamount_1 = $price - $cash;
-                 $settleamount = min($settleamount_1, $balance);
+                 $outstanding = $calculateOutstanding($bundle, $service, $balance, $cash, $remaining_to_pay);
+                 $settleamount = min($price - $cash, $balance);
              }
              $remaining = $package_service->tax_including_price;
          }
-         if ($outstanding < 0) {
-             $outstanding = 0;
-         }
+
+         // Ensure outstanding is not negative
+         $outstanding = max(0, $outstanding);
 
          return response()->json([
              'status' => true,
@@ -3817,287 +3853,6 @@ class AppointmentsController extends Controller
         return response()->json(['status' => 1, 'data' => Resources::getRoomsWithRotas()->toArray()], 200);
     }
 
-    /**
-     * Store a newly created Appointment in storage.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function storeService(Request $request)
-    {
-        $messages = [];
-        if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-        }
-        $validator = $this->verifyServiceFields($request, $request->patient_id);
-        if ($validator->fails()) {
-            return ApiHelper::apiResponse($this->success, $validator->messages()->first(), false);
-        }
-        // Store form data in a variable
-        $appointment_data = $request->all();
-
-        // Auto-determine base_service_id from service_id's parent if not provided
-        if (!$request->base_service_id && $request->service_id) {
-            $service = Services::find($request->service_id);
-            if ($service && $service->parent_id != 0) {
-                $request->merge(['base_service_id' => $service->parent_id]);
-                $appointment_data['base_service_id'] = $service->parent_id;
-            }
-        }
-
-        // Auto-determine resource_id if not provided
-        if (!$request->resource_id && $request->location_id) {
-            $machine_type_service = null;
-
-            // First, try to find machine type using base_service_id (parent service)
-            if ($request->base_service_id) {
-                $machine_type_service = \App\Models\MachineTypeHasServices::where('service_id', $request->base_service_id)->first();
-            }
-
-            // If not found with base_service_id, try with service_id (child service)
-            if (!$machine_type_service && $request->service_id) {
-                $machine_type_service = \App\Models\MachineTypeHasServices::where('service_id', $request->service_id)->first();
-            }
-
-            if ($machine_type_service) {
-                // Get resource from location with this machine_type_id
-                $resource = \App\Models\Resources::where('location_id', $request->location_id)
-                    ->where('machine_type_id', $machine_type_service->machine_type_id)
-                    ->where('active', 1)
-                    ->first();
-                if ($resource) {
-                    // Override the resource_id in request and appointment_data
-                    $request->merge(['resource_id' => $resource->id]);
-                    $appointment_data['resource_id'] = $resource->id;
-                }
-            }
-        }
-
-        // Validate that resource_id is present after auto-determination
-        if (!$request->resource_id) {
-            return ApiHelper::apiResponse($this->success, 'Machine not found. Please select a valid machine or ensure the location has an available machine for this service.', false);
-        }
-
-        $phone = $appointment_data['phone'];
-        if ($appointment_data['phone'] == '***********') {
-            $phone = $appointment_data['old_phone'];
-        }
-        $appointment_data['phone'] = GeneralFunctions::cleanNumber($phone);
-        $appointment_data['account_id'] = Auth::User()->account_id;
-        $appointment_data['created_by'] = Auth::user()->id;
-        $appointment_data['consultancy_type'] = 'treatment';
-        if (GeneralFunctions::AppointmentType($request->appointment_type) == config('constants.appointment_type_service')) {
-            $response = Resources::getResourceRotaHasDay($request->start, $request->resource_id);
-            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                $appointment_data['resource_has_rota_day_id_for_machine'] = $response['resource_has_rota_day_id'];
-            }
-            $resource_doctor = Resources::where('external_id', '=', $request->doctor_id)->first();
-            $response = Resources::getResourceRotaHasDay($request->start, $resource_doctor->id);
-            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                $appointment_data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
-            }
-        } else {
-            return ApiHelper::apiResponse($this->success, 'Appointment types is not set', false);
-        }
-        // Set Appointment Status
-        $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
-        if ($appointment_status) {
-            $appointment_data['appointment_status_id'] = $appointment_status->id;
-            $appointment_data['base_appointment_status_id'] = $appointment_status->id;
-            $appointment_data['appointment_status_allow_message'] = $appointment_status->allow_message;
-        } else {
-            $appointment_data['appointment_status_id'] = null;
-            $appointment_data['base_appointment_status_id'] = null;
-            $appointment_data['appointment_status_allow_message'] = 0;
-        }
-        // Set Appointment Type
-        $appointment_data['appointment_type_id'] = config('constants.appointment_type_service');
-        $location = Locations::findOrFail($appointment_data['location_id']);
-        $appointment_data['city_id'] = $location->city_id;
-        $appointment_data['region_id'] = $location->region_id;
-        $appointment_data['account_id'] = Auth::User()->account_id;
-        if ($request->start) {
-            $start = $request->start;
-            $service_duration = Services::find($request->service_id)->value('duration');
-            $duraton_array = explode(':', $service_duration);
-            if (count($duraton_array) == 2) {
-                $end = Carbon::parse($start)->addHour($service_duration[0])->addMinute($duraton_array[1]);
-                $start = Carbon::parse($start)->format('Y-m-d H:i:s');
-            }
-            $doctor_checking = Resources::checkingDoctorAvailbility($request->doctor_id, $start, $end);
-            // $room_check_availability = Resources::checkingRoomAvailbility($request->resource_id, $start, $end);
-            $room_check_availability = $request->resource_id ? Resources::checkingRoomAvailbility($request->resource_id, $start, $end) : true;
-            if ($doctor_checking && $room_check_availability) {
-                $appointment_data['scheduled_date'] = Carbon::parse($request->start)->format('Y-m-d');
-                $appointment_data['scheduled_time'] = Carbon::parse($request->start)->format('H:i:s ');
-                $appointment_data['first_scheduled_date'] = Carbon::parse($request->start)->format('Y-m-d');
-                $appointment_data['first_scheduled_time'] = Carbon::parse($request->start)->format('H:i:s');
-                $appointment_data['first_scheduled_count'] = 1;
-                if ($request->appointment_type == 'treatment') {
-                    $appointment_data['resource_id'] = $request->resource_id;
-                }
-            } else {
-                return ApiHelper::apiResponse($this->success, 'Doctor or machine is not available and Appointment is not scheduled.', false);
-            }
-        }
-        $lead = Leads::where(['phone' => $request->phone])->orderBy('id', 'desc')->first();
-        if (!$lead) {
-            $lead_obj = $appointment_data;
-           $patient = Patients::whereId($lead_obj['patient_id'])->first();
-            // Set Lead status to Booked when consultation is created
-            $DefaultBookedLeadStatus = LeadStatuses::where([
-                'account_id' => Auth::User()->account_id,
-                'is_booked' => 1,
-            ])->first();
-            if ($DefaultBookedLeadStatus) {
-                $default_booked_lead_status_id = $DefaultBookedLeadStatus->id;
-            } else {
-                $default_booked_lead_status_id = Config::get('constants.lead_status_booked');
-            }
-            $lead_obj['lead_status_id'] = $default_booked_lead_status_id;
-            $lead_obj['created_at'] = Filters::getCurrentTimeStamp();
-            $lead_obj['updated_at'] = Filters::getCurrentTimeStamp();
-            $lead_obj['location_id'] = $request->location_id;
-            $lead_obj['gender'] = $patient->gender;
-
-                $appointment_data['user_type_id'] = 3;
-                $checkLeadExistance = Leads::updateOrCreate([
-                    'phone' => $appointment_data['phone'],
-                    'account_id' => Auth::User()->account_id,
-                ], $lead_obj);
-                $lead = $checkLeadExistance;
-                LeadsServices::updateOrCreate([
-                    'lead_id' => $lead->id,
-                    'service_id' => $appointment_data['service_id'],
-                ], [
-                    'lead_id' => $lead->id,
-                    'service_id' => $appointment_data['service_id'],
-                ]);
-                LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
-                $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $appointment_data['service_id']])->first();
-                $lead_service->update(['status' => 1]);
-
-        }
-
-        $patientData = $appointment_data;
-        Patients::updateRecord($appointment_data['patient_id'], false, $appointment_data, $patientData);
-        $appointment_data['lead_id'] = $lead->id ?? null;
-        $appointment_data['created_at'] = Filters::getCurrentTimeStamp();
-        $appointment_data['updated_at'] = Filters::getCurrentTimeStamp();
-
-        $appointment = Appointments::create($appointment_data);
-        $find_cons = Appointments::latest()->first();
-        if($lead){
-            if ($find_cons) {
-                $lead_service = LeadsServices::where(['lead_id' => $lead->id, 'service_id' => $request->base_service_id])->first();
-                if ($lead_service) {
-                    $lead_service->update([
-                        'child_service_id' => $request->service_id,
-                        'treatment_id' => $find_cons->id,
-                    ]);
-                } else {
-                    $lead_service_latest = LeadsServices::where(['lead_id' => $lead->id])->orderBy('id', 'desc')->first();
-                    $lead_service_latest->update([
-                        'service_id' => $request->base_service_id,
-                        'child_service_id' => $request->service_id,
-                        'treatment_id' => $find_cons->id,
-                    ]);
-                }
-                LeadsServices::where(['lead_id' => $lead->id])->update(['status' => 0]);
-                $lead_service = LeadsServices::updateOrCreate([
-                    'lead_id' => $lead->id,
-                    'service_id' => $request->base_service_id,
-                    'child_service_id' => $request->service_id,
-                ], [
-                    'status' => 1,
-                ]);
-            }
-        }
-
-
-        Appointments::where(['patient_id' => $appointment_data['patient_id']])->update(['name' => $appointment_data['name'], 'updated_at' => $appointment_data['updated_at']]);
-        if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
-            $appointment->update([
-                'send_message' => 1,
-            ]);
-        }
-        /*
-         * Set Appointment Status if appointment scheduled date & time are not defined
-         * case 1: If Scheduled Date is not set then status is 'un-scheduled'
-         * case 2: If 'un-scheduled' is not set then set defautl status i.e. 'pending'
-         */
-        if (! $appointment->scheduled_date && ! $appointment->scheduled_time) {
-            $appointment_status = AppointmentStatuses::getUnScheduledStatusOnly(Auth::User()->account_id);
-            if ($appointment_status) {
-                $appointment->update([
-                    'appointment_status_id' => $appointment_status->id,
-                    'base_appointment_status_id' => $appointment_status->id,
-                    'appointment_status_allow_message' => 0,
-                ]);
-            } else {
-                $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
-                if ($appointment_status) {
-                    $appointment->update([
-                        'appointment_status_id' => $appointment_status->id,
-                        'base_appointment_status_id' => $appointment_status->id,
-                        'appointment_status_allow_message' => 0,
-                    ]);
-                } else {
-                    $appointment->update([
-                        'appointment_status_id' => null,
-                        'base_appointment_status_id' => null,
-                        'appointment_status_allow_message' => 0,
-                    ]);
-                }
-            }
-        }
-        $message = 'Record has been created successfully.';
-        // Send Promotion SMS - Removed to prevent duplicate SMS (cron job handles this)
-        // $this->sendPromotionSMS($appointment->id, $appointment_data['phone']);
-        GeneralFunctions::saveAppointmentLogs('booked', 'Treatment', $appointment);
-        
-        // Log treatment booked activity
-        $patient = Patients::find($appointment->patient_id);
-        $location = Locations::with('city')->find($appointment->location_id);
-        $service = Services::find($appointment->service_id);
-        if ($patient) {
-            ActivityLogger::logTreatmentBooked($appointment, $patient, $location, $service);
-        }
-        
-        $this->dispatch(
-            new IndexSingleAppointmentJob([
-                'account_id' => Auth::User()->account_id,
-                'appointment_id' => $appointment->id,
-            ])
-        );
-
-        return ApiHelper::apiResponse($this->success, $message, true, [
-            'log' => $messages,
-            'id' => $appointment->id,
-        ]);
-    }
-
-    /**
-     * Validate form fields
-     *
-     * @return \Illuminate\Contracts\Validation\Validator
-     */
-    protected function verifyServiceFields(Request $request, $id = null)
-    {
-        $data = $request->all();
-        $phone = $data['phone'];
-        if ($data['phone'] == '***********') {
-            $phone = $data['old_phone'];
-        }
-        $data['phone'] = GeneralFunctions::cleanNumber($phone);
-
-        return Validator::make($data, [
-            'name' => 'required',
-            'phone' => 'required',
-            'service_id' => 'required',
-            'location_id' => 'required',
-            'doctor_id' => 'required',
-        ]);
-    }
     /*
      * Save Appointment Data
      *
@@ -4184,9 +3939,9 @@ class AppointmentsController extends Controller
                     $data[$appointment->id] = [
                         'id' => $appointment->id,
                         'service' => $appointment->service->name,
-                        'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                        'patient' => ($appointment->name) ? $appointment->name : ($appointment->patient->name ?? ''),
                         'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-                        'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                        'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone ?? ''),
                         'duration' => $appointment->service->duration,
                         'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
                         'overlap' => false,
@@ -4202,9 +3957,9 @@ class AppointmentsController extends Controller
                     $data[$appointment->id] = [
                         'id' => $appointment->id,
                         'service' => $appointment->service->name,
-                        'patient' => ($appointment->name) ? $appointment->name : $appointment->patient->name,
+                        'patient' => ($appointment->name) ? $appointment->name : ($appointment->patient->name ?? ''),
                         'created_by' => ($appointment->created_by) ? $appointment->user->name : '',
-                        'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone),
+                        'phone' => GeneralFunctions::prepareNumber4Call($appointment->patient->phone ?? ''),
                         'duration' => $appointment->service->duration,
                         'editable' => ($request->doctor_id == $appointment->doctor_id) ? true : false,
                         'overlap' => false,
@@ -4342,106 +4097,6 @@ class AppointmentsController extends Controller
         }
 
         return ApiHelper::apiResponse($this->success, $appointment_checkes['message'], false);
-    }
-
-    /**
-     * Drag and drop treatment reschedule (without resourceId requirement)
-     * Simplified version for drag and drop that only checks doctor availability
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function dragDropTreatmentReschedule(Request $request)
-    {
-        // Validate required parameters
-        if (!$request->id || !$request->start || !$request->end || !$request->doctor_id) {
-            return ApiHelper::apiResponse($this->success, 'Required parameters (id, start, end, doctor_id) not provided.', false);
-        }
-
-        // Get appointment
-        $appointment = Appointments::findOrFail($request->id);
-
-        // Check if appointment has paid invoice
-        $invoicestatus = InvoiceStatuses::where('slug', '=', 'paid')->first();
-        $invoice = Invoices::where([
-            ['appointment_id', '=', $appointment->id],
-            ['invoice_status_id', '=', $invoicestatus->id],
-        ])->get();
-        if (count($invoice) > 0) {
-            return ApiHelper::apiResponse($this->success, 'Appointment has invoice and cannot be rescheduled.', false);
-        }
-
-        // Check doctor availability
-        $doctor_check_availability = Resources::checkDoctorAvailbility($request);
-        if (!$doctor_check_availability) {
-            return ApiHelper::apiResponse($this->success, 'Doctor is not available for this time slot.', false);
-        }
-
-        // Prepare appointment data
-        $data = $request->all();
-        $data['first_scheduled_count'] = $appointment->first_scheduled_count;
-        $data['scheduled_at_count'] = $appointment->scheduled_at_count;
-        $data['reschedule'] = 1;
-
-        // If resourceId is provided, validate machine and use it
-        if ($request->resourceId && !empty($request->resourceId)) {
-            $data['resource_id'] = $request->resourceId;
-
-            // Check room availability
-            $room_check_availability = Resources::checkRoomAvailbility($request);
-            if (!$room_check_availability) {
-                return ApiHelper::apiResponse($this->success, 'Machine is not available for this time slot.', false);
-            }
-
-            // Get rota for machine
-            $response = Resources::getResourceRotaHasDay($data['start'], $request->resourceId);
-            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                $data['resource_has_rota_day_id_for_machine'] = $response['resource_has_rota_day_id'];
-            }
-        } else {
-            // Keep existing resource_id if not provided
-            $data['resource_id'] = $appointment->resource_id;
-        }
-
-        // Get doctor rota
-        $resource_doctor = Resources::where('external_id', '=', $data['doctor_id'])->first();
-        if ($resource_doctor) {
-            $response = Resources::getResourceRotaHasDay($data['start'], $resource_doctor->id);
-            if (isset($response['resource_has_rota_day_id']) && $response['resource_has_rota_day_id']) {
-                $data['resource_has_rota_day_id'] = $response['resource_has_rota_day_id'];
-            } else {
-                return ApiHelper::apiResponse($this->success, 'Doctor rota is not available for this time slot.', false);
-            }
-        } else {
-            return ApiHelper::apiResponse($this->success, 'Doctor not found.', false);
-        }
-
-        // Update appointment
-        $record = Appointments::updateServiceRecord($request->id, $data, Auth::User()->account_id);
-        if ($record) {
-            // Set Appointment Status 'pending' and set send message flag
-            $appointment_status = AppointmentStatuses::getADefaultStatusOnly(Auth::User()->account_id);
-            if ($appointment_status) {
-                $record->update([
-                    'appointment_status_id' => $appointment_status->id,
-                    'base_appointment_status_id' => $appointment_status->id,
-                    'appointment_status_allow_message' => $appointment_status->allow_message,
-                    'send_message' => 1, // Set flag 1 to send message on cron job
-                ]);
-            }
-
-            // Dispatch Elastic Search Index
-            $this->dispatch(
-                new IndexSingleAppointmentJob([
-                    'account_id' => Auth::User()->account_id,
-                    'appointment_id' => $appointment->id,
-                ])
-            );
-
-            return ApiHelper::apiResponse($this->success, 'Treatment rescheduled successfully.');
-        }
-
-        return ApiHelper::apiResponse($this->success, 'Failed to update appointment.', false);
     }
 
     /**
@@ -5418,186 +5073,6 @@ class AppointmentsController extends Controller
         SMSLogs::create($SMSLog);
         // SEND SMS for Appointment Booked End
         return $response;
-    }
-
-    /**
-     * Check patient's last treatment to compare doctor and service
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function checkPatientLastTreatment(Request $request)
-    {
-        try {
-            $patientId = $request->input('patient_id');
-            $serviceId = $request->input('service_id');
-            $locationId = $request->input('location_id'); // Current location
-            $excludeAppointmentId = $request->input('exclude_appointment_id'); // For edit mode
-            $startDateTime = $request->input('start'); // The selected date/time for the new treatment
-
-            // Build query for the last arrived treatment for this patient with the same service
-            // Join with invoices table to get the latest treatment based on invoice creation date
-            $query = Appointments::where('appointments.patient_id', $patientId)
-                ->where('appointments.appointment_type_id', 2) // Treatment type
-                ->where('appointments.appointment_status_id', 2) // Arrived status
-                ->where('appointments.service_id', $serviceId) // Same service
-                ->join('invoices', 'appointments.id', '=', 'invoices.appointment_id')
-                ->select('appointments.*', 'invoices.created_at as invoice_created_at')
-                ->orderBy('invoices.created_at', 'DESC')
-                ->with(['doctor:id,name', 'service:id,name']);
-
-            // Exclude current appointment if editing
-            if ($excludeAppointmentId) {
-                $query->where('appointments.id', '!=', $excludeAppointmentId);
-            }
-
-            $lastTreatment = $query->first();
-
-            // Debug logging
-            \Log::info('checkPatientLastTreatment Debug', [
-                'patient_id' => $patientId,
-                'service_id' => $serviceId,
-                'location_id' => $locationId,
-                'last_treatment_found' => $lastTreatment ? true : false,
-                'last_treatment_id' => $lastTreatment ? $lastTreatment->id : null,
-                'last_treatment_doctor_id' => $lastTreatment ? $lastTreatment->doctor_id : null,
-                'invoice_created_at' => $lastTreatment ? $lastTreatment->invoice_created_at : null,
-            ]);
-
-            if ($lastTreatment) {
-                // Check if the doctor is active
-                $isDoctorActive = false;
-                if ($lastTreatment->doctor_id) {
-                    $doctor = \App\Models\User::find($lastTreatment->doctor_id);
-                    $isDoctorActive = $doctor && $doctor->active == 1;
-                }
-                
-                // Check if the doctor is still allocated to the current location for this service
-                $isDoctorAllocated = false;
-                
-                if ($locationId && $lastTreatment->doctor_id && $isDoctorActive) {
-                    // Get the requested service to check parent_id
-                    $requestedService = \App\Models\Services::find($serviceId);
-                    
-                    // Check if doctor is allocated to:
-                    // 1. The exact service
-                    // 2. The parent service (if this is a child service)
-                    // 3. "All Services" (slug = 'all')
-                    $isDoctorAllocated = DB::table('doctor_has_locations as dhl')
-                        ->join('services as s', 's.id', '=', 'dhl.service_id')
-                        ->where('dhl.location_id', $locationId)
-                        ->where('dhl.user_id', $lastTreatment->doctor_id)
-                        ->where('dhl.is_allocated', 1)
-                        ->where(function($query) use ($serviceId, $requestedService) {
-                            // Exact service match
-                            $query->where('dhl.service_id', $serviceId);
-                            
-                            // OR parent service match (if this service has a parent)
-                            if ($requestedService && $requestedService->parent_id) {
-                                $query->orWhere('dhl.service_id', $requestedService->parent_id);
-                            }
-                            
-                            // OR "All Services" match
-                            $query->orWhere('s.slug', 'all');
-                        })
-                        ->exists();
-                    
-                    \Log::info('Doctor allocation check', [
-                        'doctor_id' => $lastTreatment->doctor_id,
-                        'location_id' => $locationId,
-                        'service_id' => $serviceId,
-                        'service_parent_id' => $requestedService ? $requestedService->parent_id : null,
-                        'is_doctor_active' => $isDoctorActive,
-                        'is_allocated' => $isDoctorAllocated
-                    ]);
-                }
-
-                // Only return the last treatment if the doctor is active and still allocated to the location
-                if ($isDoctorActive && $isDoctorAllocated) {
-                    // Check if the previous doctor has a rota for the selected date/time
-                    $hasDoctorRota = false;
-                    if ($startDateTime && $lastTreatment->doctor_id) {
-                        $start = \Carbon\Carbon::parse($startDateTime)->format('Y-m-d');
-                        $startedTime = \Carbon\Carbon::parse($startDateTime)->format('Y-m-d H:i:s');
-                        
-                        // Get doctor's resource
-                        $resourceIdDoctor = \App\Models\Resources::where('external_id', '=', $lastTreatment->doctor_id)->first();
-                        
-                        if ($resourceIdDoctor) {
-                            // Check if doctor has an active rota for this date at this location
-                            $resourceRotaDoctor = \App\Models\ResourceHasRota::where([
-                                ['resource_id', '=', $resourceIdDoctor->id],
-                                ['location_id', '=', $locationId]
-                            ])->get();
-                            
-                            $continueRotaDoctor = [];
-                            foreach ($resourceRotaDoctor as $resourceroata) {
-                                if (($start >= \Carbon\Carbon::parse($resourceroata->created_at)->format('Y-m-d')) && ($start <= $resourceroata->end)) {
-                                    $continueRotaDoctor[0] = $resourceroata;
-                                }
-                            }
-                            
-                            if (count($continueRotaDoctor) > 0) {
-                                // Check if doctor has rota for this specific day and time
-                                $resourceHasRotaDaysDoctor = \App\Models\ResourceHasRotaDays::where([
-                                    ['resource_has_rota_id', '=', $continueRotaDoctor[0]->id],
-                                    ['date', '=', $start],
-                                    ['active', '=', '1'],
-                                    ['resource_has_rota_days.start_timestamp', '<=', $startedTime],
-                                    ['resource_has_rota_days.end_timestamp', '>', $startedTime],
-                                ])->first();
-                                
-                                $hasDoctorRota = $resourceHasRotaDaysDoctor ? true : false;
-                            }
-                        }
-                        
-                        \Log::info('Doctor rota check for previous doctor', [
-                            'doctor_id' => $lastTreatment->doctor_id,
-                            'location_id' => $locationId,
-                            'start_date' => $start,
-                            'start_time' => $startedTime,
-                            'has_rota' => $hasDoctorRota
-                        ]);
-                    }
-                    
-                    return response()->json([
-                        'status' => true,
-                        'data' => [
-                            'last_treatment' => [
-                                'id' => $lastTreatment->id,
-                                'doctor_id' => $lastTreatment->doctor_id,
-                                'doctor_name' => $lastTreatment->doctor->name ?? 'Unknown',
-                                'service_id' => $lastTreatment->service_id,
-                                'service_name' => $lastTreatment->service->name ?? 'Unknown',
-                                'scheduled_date' => $lastTreatment->scheduled_date,
-                                'scheduled_time' => $lastTreatment->scheduled_time,
-                                'has_doctor_rota' => $hasDoctorRota,
-                            ]
-                        ]
-                    ]);
-                } else {
-                    // Doctor is no longer allocated to this location, don't show warning
-                    return response()->json([
-                        'status' => true,
-                        'data' => [
-                            'last_treatment' => null
-                        ]
-                    ]);
-                }
-            } else {
-                return response()->json([
-                    'status' => true,
-                    'data' => [
-                        'last_treatment' => null
-                    ]
-                ]);
-            }
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => false,
-                'message' => 'Error checking patient treatment history: ' . $e->getMessage()
-            ], 500);
-        }
     }
 
     /**

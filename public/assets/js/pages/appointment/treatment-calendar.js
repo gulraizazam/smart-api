@@ -31,6 +31,7 @@ var TreatmentCalendar = function() {
                 aspectRatio: 3,
                 minTime: "09:00:00",
                 maxTime: "23:00:00",
+                displayEventTime: true,
                 nowIndicator: true,
                 now: TODAY,
                 views: {
@@ -44,11 +45,6 @@ var TreatmentCalendar = function() {
                 droppable: true,
                 eventLimit: true, // allow "more" link when too many events
                 navLinks: true,
-                groupByResource: true,
-                businessHours: true,
-                refetchResourcesOnNavigate: true,
-                resources: function (callback, start, end, timezone) {
-                },
                 events: function(event, callback) {
                     $('.appointment-loader-base').show();
                     start_treatment_date = event.start;
@@ -91,12 +87,17 @@ var TreatmentCalendar = function() {
                 eventConstraint: { /*restrict event drop on back dates*/
                     start: moment().format('YYYY-MM-DD'),
                 },
-                eventDrop: async function (info) { /*event drag drop*/
-                    await TreatmentCalendar.checkAndUpdateTreatment(info);
-                    setTimeout( function () {
-                        reInitCalendar(start_treatment_date, treatment_calendar, TreatmentCalendar);
-                    },200);
-
+                eventDrop: function (info) { /*event drag drop*/
+                    // Store the original event data before making API call
+                    var originalStart = info.oldEvent ? info.oldEvent.start : null;
+                    var originalEnd = info.oldEvent ? info.oldEvent.end : null;
+                    
+                    TreatmentCalendar.checkAndUpdateTreatment(info, function(success) {
+                        if (!success) {
+                            // Revert the event if API call failed
+                            info.revert();
+                        }
+                    });
                 },
                 eventClick:  function(info, jsEvent, view) { /*Click event to edit existing one*/
                     isEventClicked = true; // Set flag when event is clicked
@@ -277,36 +278,44 @@ var TreatmentCalendar = function() {
             rotaTimeTitle();
         },
 
-        async checkAndUpdateTreatment(info) {
+        checkAndUpdateTreatment: function(info, callback) {
 
             let event = info.event;
 
-            $.ajax({
-                headers: {
-                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                },
-                url: route('admin.appointments.drag_drop_reschedule_treatment'),
-                type: 'POST',
-                data: {
-                    id: event.id,
-                    start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
-                    end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
-                    doctor_id: $("#treatment_doctor_filter").val(),
-                    location_id: $("#treatment_location_filter").val(),
-                    resourceId: $("#treatment_resource_filter").val() || null,
-                },
-                cache: false,
-                success: function(response) {
-                    if (response.status) {
-                       toastr.success(response.message);
-                    } else {
-                        toastr.error(response.message);
+            if ($("#treatment_doctor_filter").val() != "") {
+                $.ajax({
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    url: route('admin.treatments.drag_drop_reschedule'),
+                    type: 'POST',
+                    data: {
+                        id: event.id,
+                        start: formatDate(event.start, 'YYYY-MM-DDTHH:mm:ss'),
+                        end: formatDate(event.end, 'YYYY-MM-DDTHH:mm:ss'),
+                        doctor_id: $("#treatment_doctor_filter").val(),
+                        location_id: $("#treatment_location_filter").val(),
+                        resourceId: $("#treatment_resource_filter").val() || null,
+                    },
+                    cache: false,
+                    success: function(response) {
+                        if (response.status) {
+                           toastr.success(response.message);
+                           if (callback) callback(true);
+                        } else {
+                            toastr.error(response.message);
+                            if (callback) callback(false);
+                        }
+                    },
+                    error: function(xhr, ajaxOptions, thrownError) {
+                        toastr.error("Unable to process the request, please try again.");
+                        if (callback) callback(false);
                     }
-                },
-                error: function(xhr, ajaxOptions, thrownError) {
-                    toastr.error("Unable to process the request, please try again.")
-                }
-            });
+                });
+            } else {
+                toastr.error("Please select doctor first");
+                if (callback) callback(false);
+            }
         },
 
         getResources(event, callback) {
@@ -578,11 +587,36 @@ function setTreatmentDetailData(response) {
 function setCreateTreatment(response, start) {
     try {
 
-        patientSearch('treatment_patient_search_id');
+        // Initialize select2 patient search for create treatment modal
+        initTreatmentPatientSearch();
 
         $("#modal_create_treatment").modal("show");
 
+        // Set modal date heading
+        if (start) {
+            let dateObj = new Date(start);
+            let options = { weekday: 'long', month: 'short', day: 'numeric' };
+            $("#treatment_modal_date").text(dateObj.toLocaleDateString('en-US', options));
+        }
+
+        // Set doctor name in modal heading
+        let doctor_id_for_heading = response.data.doctor_id;
+        let location_id_for_heading = response.data.location_id;
+        let doctors_for_heading = response.data.doctors;
+        let doctorNameForHeading = '';
+        if (doctors_for_heading && doctor_id_for_heading && location_id_for_heading) {
+            if (doctors_for_heading[location_id_for_heading] && doctors_for_heading[location_id_for_heading][doctor_id_for_heading]) {
+                doctorNameForHeading = doctors_for_heading[location_id_for_heading][doctor_id_for_heading].name || '';
+            }
+        }
+        $("#treatment_modal_doctor_name").text(doctorNameForHeading);
+
         $("#modal_create_treatment_form")[0].reset();
+        
+        // Clear the patient search select2
+        if ($('#create_treatment_patient_id').hasClass('select2-hidden-accessible')) {
+            $('#create_treatment_patient_id').val(null).trigger('change');
+        }
 
         // Hide warning div and reset checkboxes
         $('#treatment_doctor_warning').addClass('d-none');
@@ -623,6 +657,40 @@ function setCreateTreatment(response, start) {
         $("#treatment_doctor_id").val(doctor_id);
         $("#treatment_start").val(start);
         $("#treatment_resource_id").val($("#treatment_resource_filter").val());
+        
+        // Initialize timepicker and set scheduled time
+        if (start) {
+            let dateObj = new Date(start);
+            let hours = dateObj.getHours();
+            let minutes = dateObj.getMinutes();
+            let ampm = hours >= 12 ? 'PM' : 'AM';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            let minutesStr = minutes < 10 ? '0' + minutes : minutes;
+            let timeStr = hours + ':' + minutesStr + ' ' + ampm;
+            
+            // Set the value first
+            $("#create_treatment_scheduled_time").val(timeStr);
+            
+            // Destroy existing timepicker if any
+            try {
+                $('#create_treatment_scheduled_time').timepicker('destroy');
+            } catch(e) {}
+            
+            // Initialize timepicker with the time from field
+            $('#create_treatment_scheduled_time').timepicker({
+                timeFormat: 'h:mm p',
+                interval: 5,
+                minTime: '09:00am',
+                maxTime: '11:00pm',
+                dynamic: false,
+                dropdown: true,
+                scrollbar: true
+            });
+            
+            // Set time on the timepicker
+            $('#create_treatment_scheduled_time').timepicker('setTime', timeStr);
+        }
         /*$("#treatment_cnic").val();
         $("#treatment_email").val();
         $("#treatment_dob").val();
@@ -1267,19 +1335,16 @@ var TreatmentResourceCalendar = function() {
             $(document).on('dragend', '.resource-appointment', function(e) {
                 $('.resource-doctor-slot').removeClass('drag-over');
                 
-                // Show the element again
-                if (draggedElement) {
-                    draggedElement.css('visibility', 'visible');
-                }
-
-                // Reset isDragging flag after a short delay to prevent click event
+                // Only show the element again if it wasn't dropped on a valid slot
+                // The drop handler will manage visibility for successful drops
                 setTimeout(function() {
+                    if (draggedElement && draggedElement.css('visibility') === 'hidden') {
+                        // Element is still hidden, meaning drop didn't happen or failed
+                        draggedElement.css('visibility', 'visible');
+                    }
                     isDragging = false;
                     hasMoved = false;
-                    if (draggedElement) {
-                        draggedElement.removeClass('dragging');
-                    }
-                }, 150);
+                }, 200);
             });
 
             // Handle drag over
@@ -1373,7 +1438,7 @@ var TreatmentResourceCalendar = function() {
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
                 },
-                url: route('admin.appointments.drag_drop_reschedule_treatment'),
+                url: route('admin.treatments.drag_drop_reschedule'),
                 type: 'POST',
                 data: {
                     id: appointmentId,
@@ -1406,16 +1471,20 @@ var TreatmentResourceCalendar = function() {
                         appointmentEl.attr('data-start-time', dropSlot.data('time'));
                         appointmentEl.attr('data-original-slot', newDoctorId + '-' + dropSlot.data('time'));
 
+                        // Make visible and remove dragging class
+                        appointmentEl.css('visibility', 'visible');
                         appointmentEl.removeClass('dragging');
                     } else {
                         toastr.error(response.message || 'Failed to reschedule treatment');
-                        // Move appointment back to original slot
+                        // Make visible again at original position
+                        appointmentEl.css('visibility', 'visible');
                         appointmentEl.removeClass('dragging');
                     }
                 },
                 error: function(xhr, ajaxOptions, thrownError) {
                     toastr.error('Unable to reschedule treatment. Please try again.');
-                    // Move appointment back to original slot
+                    // Make visible again at original position
+                    appointmentEl.css('visibility', 'visible');
                     appointmentEl.removeClass('dragging');
                 }
             });
@@ -1434,4 +1503,89 @@ var TreatmentResourceCalendar = function() {
         }
     };
 }();
+
+// Initialize select2 patient search for create treatment modal
+function initTreatmentPatientSearch() {
+    // Destroy existing select2 if already initialized
+    if ($('#create_treatment_patient_id').hasClass('select2-hidden-accessible')) {
+        $('#create_treatment_patient_id').select2('destroy');
+    }
+    
+    $('#create_treatment_patient_id').select2({
+        width: '100%',
+        placeholder: 'Search Patient by Name or Phone',
+        allowClear: true,
+        dropdownParent: $('#modal_create_treatment'),
+        ajax: {
+            url: route('admin.users.getpatient.optimized'),
+            dataType: 'json',
+            delay: 150,
+            data: function (params) {
+                return {
+                    search: params.term
+                };
+            },
+            processResults: function (response, params) {
+                let patients = response.data.patients || [];
+                return {
+                    results: $.map(patients, function (patient) {
+                        return {
+                            text: patient.name + ' - ' + patient.phone,
+                            id: patient.id,
+                            patient: patient
+                        }
+                    }),
+                };
+            },
+            cache: true
+        },
+        minimumInputLength: 1
+    });
+}
+
+// Handle patient selection from select2 in create treatment modal
+function getTreatmentPatientDetailFromSelect(selectElement) {
+    var patientId = $(selectElement).val();
+    
+    if (!patientId) {
+        // Clear fields if no patient selected
+        $('#create_treatment_phone').val('');
+        $('#create_old_treatment_phone').val('');
+        $('#create_treatment_patient_name').val('');
+        $('#create_treatment_c_id').val('');
+        $('#create_treatment_gender').val('').trigger('change');
+        $('#treatment_patient_id').val('0');
+        return;
+    }
+    
+    // Get patient details via AJAX
+    $.ajax({
+        url: route('admin.users.getpatient.optimized'),
+        type: 'GET',
+        data: { search: patientId, id: patientId },
+        success: function(response) {
+            if (response.data && response.data.patients && response.data.patients.length > 0) {
+                var patient = response.data.patients.find(p => p.id == patientId);
+                if (patient) {
+                    $('#create_treatment_phone').val(patient.phone || '');
+                    $('#create_old_treatment_phone').val(patient.phone || '');
+                    $('#create_treatment_patient_name').val(patient.name || '');
+                    $('#create_treatment_c_id').val(patient.client_id || '');
+                    $('#create_treatment_gender').val(patient.gender).trigger('change');
+                    $('#treatment_patient_id').val(patient.id);
+                    $('#treatment_cnic').val(patient.cnic || '');
+                    $('#treatment_email').val(patient.email || '');
+                    $('#treatment_dob').val(patient.dob || '');
+                    $('#treatment_address').val(patient.address || '');
+                    $('#treatment_town_id').val(patient.town_id || '');
+                    
+                    // Check if patient has previous treatment with different doctor
+                    if (typeof checkPatientLastTreatment === 'function') {
+                        checkPatientLastTreatment(patient.id);
+                    }
+                }
+            }
+        }
+    });
+}
 

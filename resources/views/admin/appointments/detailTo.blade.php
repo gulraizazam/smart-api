@@ -59,18 +59,7 @@
                                         title="Invoice Display"></i></a>
                         @endif
                     @endif
-                    @if($appointment->appointment_type_id==2)
-                        @if(Gate::allows('appointments_image_manage'))
-                            <a class="btn btn-xs btn-info" target="_blank"
-                               href="{{ route('admin.appointmentsimage.imageindex',[$appointment->id]) }}"><i
-                                        class="fa fa-file-image-o" title="Images"></i></a>
-                        @endif
-                        @if(Gate::allows('appointments_measurement_manage'))
-                            <a class="btn btn-xs btn-info" target="_blank"
-                               href="{{ route('admin.appointmentsmeasurement.measurements',[$appointment->id]) }}"><i
-                                        class="fa fa-stethoscope" title="Measurement "></i></a>
-                        @endif
-                    @endif
+                    
                     @if(Gate::allows('appointments_patient_card'))
                         <a class="btn btn-xs btn-info" target="_blank"
                            href="{{ route('admin.patients.preview',[$appointment->patient_id]) }}"><i class="icon-users"

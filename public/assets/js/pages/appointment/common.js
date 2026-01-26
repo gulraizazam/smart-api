@@ -666,7 +666,7 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
     let id = appointment.id;
 
     let edit_url = route('admin.appointments.edit', {id: appointment.id});
-    let edit_service_url = route('admin.appointments.edit_service', {id: appointment.id});
+    let edit_service_url = route('admin.treatments.edit', {id: appointment.id});
     let detail_url = route('admin.appointments.detail', {id: appointment.id});
     let sms_logs_url = route('admin.appointments.sms_logs', {id: appointment.id});
     let patient_url = route('admin.patients.preview', {id: appointment.patient_id});
@@ -721,15 +721,11 @@ function detailActions(appointment, invoice, invoiceid, permissions, $class = 'd
 
     if (appointment.appointment_type_id == 2) {
         if (permissions.image_manage) {
-            buttons += '<li><a class="text text-primary" href="'+image_url+'" target="_blank">\
-        <i class="la la-image" title="Images"></i> Images\
-        </a></li>';
+            
         }
 
         if (permissions.measurement_manage) {
-            buttons += '<li><a class="text text-primary" href="'+measurement_url+'"  target="_blank">\
-        <i class="la la-ruler-horizontal" title="Measurement"></i> Measurement\
-        </a></li>';
+            
         }
     }
 
@@ -1036,6 +1032,41 @@ $(document).ready(function() {
     $("#treatment_search_service,#treatment_search_centre,#treatment_search_status,#appoint_search_service,#appoint_search_centre,#appoint_search_status").select2({dropdownCssClass : 'bigdrop'});
     loadLocations(cityId='');
 });
+
+/**
+ * Edit Schedule - shared function for consultations and treatments datatable
+ */
+function editSchedule(id, doc_id, loc_id) {
+
+    $("#modal_change_appointment_schedule").modal("show");
+    $("#schedule_appointment_id").val(id)
+    $("#schedule_doctor_id").val(doc_id)
+    $("#schedule_location_id").val(loc_id)
+
+    $.ajax({
+        headers: {
+            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        },
+        url: route('admin.appointments.get_schedule'),
+        type: "GET",
+        data: { id: id },
+        cache: false,
+        success: function (response) {
+            if (response) {
+                $("#schedule_date").val(response.scheduled_date);
+                // Update datepicker to show the correct month
+                if (response.scheduled_date) {
+                    $("#schedule_date").datepicker('update', response.scheduled_date);
+                }
+                $("#schedule_time").val(response.scheduled_time);
+            }
+        },
+        error: function (xhr, ajaxOptions, thrownError) {
+            errorMessage(xhr);
+        }
+    });
+
+}
 
 
 
