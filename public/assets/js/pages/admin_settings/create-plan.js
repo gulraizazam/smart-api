@@ -422,21 +422,6 @@ function actions(data) {
                     </a>\
                 </li>';
 
-                actions += '<li class="navi-item">\
-                <a href="' + details_url + '" class="navi-link">\
-                    <span class="navi-icon"><i class="fa fa-info" aria-hidden="true"></i></span>\
-                    <span class="navi-text">Details</span>\
-                </a>\
-            </li>';
-            }
-
-            if (permissions.log) {
-                actions += '<li class="navi-item">\
-                        <a href="'+ log_url + '" class="navi-link">\
-                        <span class="navi-icon"><i class="la la-file"></i></span>\
-                        <span class="navi-text">Log</span>\
-                        </a>\
-                     </li>';
             }
 
             if (permissions.sms_log) {
