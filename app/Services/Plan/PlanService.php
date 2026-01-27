@@ -10,12 +10,32 @@ use App\Models\User;
 use App\Models\PaymentModes;
 use App\Models\Settings;
 use App\Models\Discounts;
+use App\Models\Bundles;
+use App\Models\BundleHasServices;
+use App\Models\Services;
+use App\Models\UserVouchers;
+use App\Models\PackageVouchers;
+use App\Models\PackageBundles;
+use App\Models\Appointments;
+use App\Models\AppointmentStatuses;
+use App\Models\PlanInvoice;
+use App\Models\Activity;
+use App\Models\Leads;
+use App\Models\Patients;
+use App\Models\Membership;
+use App\Models\UserHasLocations;
+use App\Models\ServiceHasLocations;
+use App\Models\DoctorHasLocations;
 use App\Helpers\ACL;
 use App\Helpers\Filters;
+use App\Helpers\ActivityLogger;
+use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Exceptions\PlanException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Config;
 use Carbon\Carbon;
 
 class PlanService
@@ -585,6 +605,163 @@ class PlanService
     }
 
     /**
+     * Get appointment information for plan creation (optimized)
+     * 
+     * @param int $patientId
+     * @param int $locationId
+     * @return array
+     */
+    public function getAppointmentInfo(int $patientId, int $locationId): array
+    {
+        try {
+            // Get appointment statuses (arrived and converted)
+            $arrivedStatus = DB::table('appointment_statuses')
+                ->where('is_arrived', 1)
+                ->first();
+            
+            $convertedStatus = DB::table('appointment_statuses')
+                ->where('is_converted', 1)
+                ->first();
+            
+            $validStatusIds = array_filter([
+                $arrivedStatus->id ?? null,
+                $convertedStatus->id ?? null
+            ]);
+
+            // Get consultancy appointment type
+            $appointmentType = DB::table('appointment_types')
+                ->where('slug', 'consultancy')
+                ->first();
+
+            // Get only the latest appointment with optimized query
+            $appointment = DB::table('appointments')
+                ->join('services', 'appointments.service_id', '=', 'services.id')
+                ->join('users', 'appointments.doctor_id', '=', 'users.id')
+                ->where('appointments.patient_id', $patientId)
+                ->where('appointments.appointment_type_id', $appointmentType->id ?? null)
+                ->where('appointments.location_id', $locationId)
+                ->whereIn('appointments.appointment_status_id', $validStatusIds)
+                ->whereNull('appointments.deleted_at')
+                ->orderBy('appointments.scheduled_date', 'desc')
+                ->orderBy('appointments.scheduled_time', 'desc')
+                ->select(
+                    'appointments.id',
+                    'appointments.scheduled_date',
+                    'appointments.scheduled_time',
+                    'appointments.doctor_id',
+                    'services.name as service_name',
+                    'users.name as doctor_name'
+                )
+                ->first(); // Get only the latest one
+
+            // Format appointments array
+            $appointmentArray = [];
+            if ($appointment) {
+                $appointmentDateTime = $appointment->scheduled_date . ' ' . $appointment->scheduled_time;
+                $appointmentArray[$appointment->id] = [
+                    'id' => $appointment->id . '.A',
+                    'name' => $appointment->service_name . ' - ' . 
+                             Carbon::parse($appointmentDateTime)->format('F j,Y h:i A') . ' - ' . 
+                             $appointment->doctor_name,
+                    'doctor_id' => $appointment->doctor_id
+                ];
+            }
+
+            // Get membership information with eager loading
+            $membership = DB::table('memberships')
+                ->join('membership_types', 'memberships.membership_type_id', '=', 'membership_types.id')
+                ->where('memberships.patient_id', $patientId)
+                ->select(
+                    'memberships.end_date',
+                    'memberships.active',
+                    'membership_types.name as type_name'
+                )
+                ->first();
+
+            $membershipTypeName = 'No membership';
+            if ($membership) {
+                $isExpired = $membership->end_date < now()->format('Y-m-d');
+                $status = $isExpired ? ' - Expired' : ($membership->active == 1 ? ' - Active' : ' - Inactive');
+                $typeName = str_replace(' Membership', '', $membership->type_name);
+                $membershipTypeName = "{$typeName}{$status}";
+            }
+
+            // Get allocated doctors for the location
+            $doctorIds = DB::table('doctor_has_locations')
+                ->where('is_allocated', 1)
+                ->where('location_id', $locationId)
+                ->pluck('user_id')
+                ->toArray();
+
+            // Fetch active doctors
+            $allDoctors = DB::table('users')
+                ->whereIn('id', $doctorIds)
+                ->pluck('name', 'id')
+                ->toArray();
+
+            // Determine selected doctor from appointments
+            $selectedUserId = null;
+            if (!empty($appointmentArray)) {
+                $firstAppointment = reset($appointmentArray);
+                $firstDoctorId = $firstAppointment['doctor_id'];
+                if (array_key_exists($firstDoctorId, $allDoctors)) {
+                    $selectedUserId = $firstDoctorId;
+                }
+            }
+
+            // Check for recent treatments (last 30 days)
+            $thirtyDaysAgo = now()->subDays(30)->format('Y-m-d');
+            
+            $recentTreatmentDoctorIds = DB::table('appointments')
+                ->where('patient_id', $patientId)
+                ->where('location_id', $locationId)
+                ->where('appointment_status_id', 2)
+                ->where('appointment_type_id', 2)
+                ->where('scheduled_date', '>=', $thirtyDaysAgo)
+                ->pluck('doctor_id')
+                ->unique()
+                ->toArray();
+
+            // Determine which doctors to show
+            $userIdsToShow = [];
+            if (!empty($recentTreatmentDoctorIds)) {
+                // Show selected doctor + recent treatment doctors
+                $userIdsToShow = array_unique(array_merge(
+                    $selectedUserId ? [$selectedUserId] : [],
+                    $recentTreatmentDoctorIds
+                ));
+            } else {
+                // Show only selected doctor
+                $userIdsToShow = $selectedUserId ? [$selectedUserId] : [];
+            }
+
+            // Filter doctors to only those that should be shown
+            $usersToShow = [];
+            foreach ($userIdsToShow as $userId) {
+                if (array_key_exists($userId, $allDoctors)) {
+                    $usersToShow[$userId] = $allDoctors[$userId];
+                }
+            }
+
+            return [
+                'appointments' => $appointmentArray,
+                'membership' => $membershipTypeName,
+                'users' => $usersToShow,
+                'selected_doctor_id' => $selectedUserId
+            ];
+
+        } catch (\Exception $e) {
+            \Log::error('Get Appointment Info Error: ' . $e->getMessage());
+            return [
+                'appointments' => [],
+                'membership' => 'No membership',
+                'users' => [],
+                'selected_doctor_id' => null
+            ];
+        }
+    }
+
+    /**
      * Get services/bundles available for a specific location (optimized)
      * 
      * @param int $locationId
@@ -610,9 +787,9 @@ class PlanService
             if ($serviceHasLocations->contains(13)) {
                 \Log::info("Location {$locationId} has all services access (service_id=13)");
                 
-                // Return all active services where parent_id is not null (all child services)
+                // Return all active child services (parent_id > 0, excluding parent services where parent_id = 0)
                 $services = DB::table('services')
-                    ->whereNotNull('parent_id')
+                    ->where('parent_id', '>', 0)
                     ->where('active', 1)
                     ->where('account_id', $accountId)
                     ->select('id', 'name', 'parent_id', 'active')
@@ -632,9 +809,9 @@ class PlanService
             $resultServices = collect();
 
             foreach ($assignedServices as $service) {
-                // Scenario 2: If service is a parent (parent_id is null), get all its children
-                if ($service->parent_id === null) {
-                    \Log::info("Service {$service->id} is a parent, fetching children");
+                // Scenario 2: If service is a parent (parent_id = 0), get all its children
+                if ($service->parent_id == 0) {
+                    \Log::info("Service {$service->id} is a parent (parent_id=0), fetching children");
                     
                     $children = DB::table('services')
                         ->where('parent_id', $service->id)
@@ -643,18 +820,24 @@ class PlanService
                         ->select('id', 'name', 'parent_id', 'active')
                         ->get();
                     
+                    \Log::info("Found {$children->count()} children for parent service {$service->id}");
                     $resultServices = $resultServices->merge($children);
                 } else {
-                    // Scenario 3: If service is a child (has parent_id), return only this child
-                    \Log::info("Service {$service->id} is a child, adding to results");
+                    // Scenario 3: If service is a child (parent_id > 0), return only this child
+                    \Log::info("Service {$service->id} is a child (parent_id={$service->parent_id}), adding to results");
                     $resultServices->push($service);
                 }
             }
 
-            // Remove duplicates by id
-            $resultServices = $resultServices->unique('id')->values();
+            // Remove duplicates by id and filter out any parent services (parent_id must be > 0)
+            $resultServices = $resultServices
+                ->filter(function($service) {
+                    return $service->parent_id > 0;
+                })
+                ->unique('id')
+                ->values();
             
-            \Log::info("Total services found for location {$locationId}: " . $resultServices->count());
+            \Log::info("Total child services found for location {$locationId}: " . $resultServices->count());
             
             return $resultServices->toArray();
 
@@ -693,5 +876,1013 @@ class PlanService
     {
         return DB::table('invoice_details')->where('package_id', $packageId)->exists()
             || DB::table('package_advances')->where('package_id', $packageId)->exists();
+    }
+
+    /**
+     * Add service/bundle to package (optimized)
+     * 
+     * @param array $data
+     * @return array
+     * @throws PlanException
+     */
+    public function addServiceToPackage(array $data): array
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Validate and fetch required data with single queries
+            $bundle = Bundles::find($data['bundle_id']);
+            if (!$bundle) {
+                throw new PlanException('Bundle not found', 404);
+            }
+
+            $location = Locations::find($data['location_id']);
+            if (!$location) {
+                throw new PlanException('Location not found', 404);
+            }
+
+            $discount = null;
+            if (!empty($data['discount_id'])) {
+                $discount = Discounts::find($data['discount_id']);
+            }
+
+            // Get sold by user info
+            $soldBy = $data['sold_by'] ?? null;
+            $soldByName = '-';
+            if ($soldBy) {
+                $soldByUser = User::find($soldBy);
+                $soldByName = $soldByUser ? $soldByUser->name : '-';
+            }
+
+            // Fetch bundle services with eager loading (fixes N+1 query)
+            $allBundleServices = BundleHasServices::with('service')
+                ->where('bundle_id', $bundle->id)
+                ->get();
+
+            // Build package bundle data
+            $packageBundleData = $this->buildPackageBundleData(
+                $bundle,
+                $discount,
+                $location,
+                $data
+            );
+
+            // Handle voucher consumption if discount is a voucher
+            if ($discount && $discount->discount_type == 'voucher') {
+                $this->handleVoucherConsumption(
+                    $discount,
+                    $data['user_id'],
+                    $data['random_id'],
+                    $bundle,
+                    $data['discount_price'] ?? 0,
+                    $packageBundleData['id']
+                );
+            }
+
+            // Build bundle services data
+            $bundleServicesData = $this->buildBundleServicesData(
+                $allBundleServices,
+                $packageBundleData
+            );
+
+            // Calculate service prices
+            $calculatedServicePrices = Bundles::calculatePrices(
+                $bundleServicesData,
+                $packageBundleData['service_price'],
+                $packageBundleData['net_amount']
+            );
+
+            // Build all service data with tax calculations
+            $allDataServices = $this->buildServiceDataWithTax(
+                $calculatedServicePrices,
+                $bundle,
+                $location,
+                $data
+            );
+
+            // Calculate total
+            $previousServicesTotal = PackageService::where('random_id', $data['random_id'])
+                ->sum('tax_including_price');
+            
+            $total = $previousServicesTotal > 0 
+                ? $previousServicesTotal 
+                : number_format((float) $packageBundleData['tax_including_price'], 2, '.', '');
+
+            // Get existing package data
+            $packageServices = PackageService::where('random_id', $data['random_id'])->get();
+            $packageBundle = PackageBundles::where('random_id', $data['random_id'])->get();
+
+            // Prepare discount data
+            $discountData = $this->prepareDiscountData($discount, $packageBundleData, $data);
+
+            DB::commit();
+
+            return [
+                'bundlesData' => $packageBundleData,
+                'packageServicesData' => $allDataServices,
+                'packageServices' => $packageServices,
+                'packageBundle' => $packageBundle,
+                'random_id' => $data['random_id'],
+                'service_name' => $packageBundleData['service_name'],
+                'service_price' => $packageBundleData['service_price'],
+                'discount_name' => $discountData['discount_name'],
+                'discount_type' => $discountData['discount_type'],
+                'discount_price' => $discountData['discount_price'],
+                'net_amount' => $packageBundleData['net_amount'],
+                'total' => $total,
+                'sold_by' => $soldBy,
+                'sold_by_name' => $soldByName,
+            ];
+
+        } catch (PlanException $e) {
+            DB::rollBack();
+            throw $e;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Add Service To Package Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new PlanException('Failed to add service to package: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Build package bundle data with tax calculations
+     */
+    protected function buildPackageBundleData(Bundles $bundle, ?Discounts $discount, Locations $location, array $data): array
+    {
+        $packageBundleData = [
+            'qty' => '1',
+            'bundle_id' => $bundle->id,
+            'service_price' => $bundle->price,
+            'service_name' => $bundle->name,
+            'net_amount' => $data['net_amount'],
+        ];
+
+        // Add discount data if applicable
+        if ($discount) {
+            $discountPrice = $data['discount_price'] ?? 0;
+            if ($discountPrice > $bundle->price) {
+                $discountPrice = $bundle->price;
+            }
+            
+            $packageBundleData['discount_name'] = $discount->name;
+            $packageBundleData['discount_price'] = $discountPrice;
+            $packageBundleData['discount_type'] = $data['discount_type'] ?? null;
+            $packageBundleData['discount_id'] = $discount->id;
+        }
+
+        // Calculate tax
+        $taxTreatmentType = $bundle->tax_treatment_type_id;
+        $taxPercentage = $location->tax_percentage;
+        $isExclusive = ($data['is_exclusive'] ?? '0') == '1';
+        $netAmount = $data['net_amount'];
+
+        $packageBundleData['is_exclusive'] = $isExclusive;
+        $packageBundleData['tax_percenatage'] = $taxPercentage;
+
+        $taxData = $this->calculateTax($taxTreatmentType, $netAmount, $taxPercentage, $isExclusive);
+        $packageBundleData = array_merge($packageBundleData, $taxData);
+
+        // Generate random ID for this service
+        $randomNumber = rand(1000, 9999);
+        $packageBundleData['id'] = str_pad($randomNumber, 4, '0', STR_PAD_LEFT);
+
+        return $packageBundleData;
+    }
+
+    /**
+     * Calculate tax based on treatment type
+     */
+    protected function calculateTax(int $taxTreatmentType, float $netAmount, float $taxPercentage, bool $isExclusive): array
+    {
+        $taxData = [];
+
+        switch ($taxTreatmentType) {
+            case Config::get('constants.tax_both'):
+                if ($isExclusive) {
+                    $taxData['tax_exclusive_net_amount'] = $netAmount;
+                    $taxData['tax_price'] = ceil($netAmount * ($taxPercentage / 100));
+                    $taxData['tax_including_price'] = ceil($netAmount + ($netAmount * $taxPercentage / 100));
+                } else {
+                    $taxData['tax_including_price'] = $netAmount;
+                    $taxData['tax_exclusive_net_amount'] = ceil((100 * $netAmount) / ($taxPercentage + 100));
+                    $taxData['tax_price'] = ceil($netAmount - $taxData['tax_exclusive_net_amount']);
+                }
+                break;
+
+            case Config::get('constants.tax_is_exclusive'):
+                $taxData['tax_exclusive_net_amount'] = $netAmount;
+                $taxData['tax_price'] = ceil($netAmount * ($taxPercentage / 100));
+                $taxData['tax_including_price'] = ceil($netAmount + ($netAmount * $taxPercentage / 100));
+                break;
+
+            default:
+                $taxData['tax_including_price'] = $netAmount;
+                $taxData['tax_exclusive_net_amount'] = ceil((100 * $netAmount) / ($taxPercentage + 100));
+                $taxData['tax_price'] = ceil($netAmount - $taxData['tax_exclusive_net_amount']);
+                break;
+        }
+
+        return $taxData;
+    }
+
+    /**
+     * Handle voucher consumption with proper locking
+     */
+    protected function handleVoucherConsumption(Discounts $discount, int $userId, string $randomId, Bundles $bundle, float $discountPrice, string $serviceId): void
+    {
+        $userVoucher = UserVouchers::where('voucher_id', $discount->id)
+            ->where('user_id', $userId)
+            ->lockForUpdate()
+            ->first();
+
+        if ($userVoucher) {
+            $originalVoucherAmount = $userVoucher->amount;
+            $amountLeft = $userVoucher->amount - $bundle->price;
+            
+            if ($amountLeft < 0) {
+                $amountLeft = 0;
+            }
+
+            $actualConsumedAmount = $originalVoucherAmount - $amountLeft;
+
+            $userVoucher->amount = $amountLeft;
+            $userVoucher->save();
+
+            $amountForVoucher = ($amountLeft <= 0) ? $discountPrice : $bundle->price;
+
+            PackageVouchers::create([
+                'package_random_id' => $randomId,
+                'voucher_id' => $discount->id,
+                'user_id' => $userId,
+                'amount' => $amountForVoucher,
+                'service_id' => $serviceId,
+                'main_service_id' => $bundle->id
+            ]);
+
+            if ($actualConsumedAmount > 0) {
+                $patient = User::find($userId);
+                ActivityLogger::logVoucherConsumed($actualConsumedAmount, $patient, $discount, $amountLeft);
+            }
+        }
+    }
+
+    /**
+     * Build bundle services data (fixes N+1 query)
+     */
+    protected function buildBundleServicesData($allBundleServices, array $packageBundleData): array
+    {
+        $bundleServices = [];
+        
+        foreach ($allBundleServices as $bundleService) {
+            $bundleServices[] = [
+                'service_price' => $bundleService->calculated_price,
+                'calculated_price' => $bundleService->calculated_price,
+                'service_id' => $bundleService->service_id,
+                'name' => $bundleService->service->name, // Already loaded via eager loading
+                'is_consumed' => 0,
+                'tax_exclusive_price' => ceil((100 * $packageBundleData['net_amount']) / ($packageBundleData['tax_percenatage'] + 100)),
+                'tax_price' => $packageBundleData['tax_price'],
+                'tax_including_price' => $packageBundleData['tax_including_price']
+            ];
+        }
+
+        return $bundleServices;
+    }
+
+    /**
+     * Build service data with tax calculations
+     */
+    protected function buildServiceDataWithTax(array $calculatedServicePrices, Bundles $bundle, Locations $location, array $data): array
+    {
+        $allDataServices = [];
+        
+        foreach ($calculatedServicePrices as $detail) {
+            $dataService = [
+                'random_id' => $data['random_id'],
+                'service_id' => $detail['service_id'],
+                'name' => $detail['name'],
+                'price' => $detail['calculated_price'],
+                'orignal_price' => $detail['service_price'],
+                'created_at' => Filters::getCurrentTimeStamp(),
+                'updated_at' => Filters::getCurrentTimeStamp(),
+                'is_consumed' => 0,
+            ];
+
+            $isExclusive = ($data['is_exclusive'] ?? '0') == '1';
+            $taxData = $this->calculateServiceTax(
+                $bundle->tax_treatment_type_id,
+                $detail['calculated_price'],
+                $location->tax_percentage,
+                $isExclusive
+            );
+
+            $allDataServices[] = array_merge($dataService, $taxData);
+        }
+
+        return $allDataServices;
+    }
+
+    /**
+     * Calculate tax for individual service
+     */
+    protected function calculateServiceTax(int $taxTreatmentType, float $price, float $taxPercentage, bool $isExclusive): array
+    {
+        $taxData = ['tax_percenatage' => $taxPercentage];
+
+        if ($taxTreatmentType == Config::get('constants.tax_both')) {
+            if ($isExclusive) {
+                $taxData['tax_exclusive_price'] = $price;
+                $taxData['tax_price'] = ceil($price * ($taxPercentage / 100));
+                $taxData['tax_including_price'] = ceil($price + ($price * $taxPercentage / 100));
+                $taxData['is_exclusive'] = 1;
+            } else {
+                $taxData['tax_including_price'] = $price;
+                $taxData['tax_exclusive_price'] = ceil((100 * $price) / ($taxPercentage + 100));
+                $taxData['tax_price'] = ceil($price - $taxData['tax_exclusive_price']);
+                $taxData['is_exclusive'] = 0;
+            }
+        } elseif ($taxTreatmentType == Config::get('constants.tax_is_exclusive')) {
+            $taxData['tax_exclusive_price'] = $price;
+            $taxData['tax_price'] = ceil($price * ($taxPercentage / 100));
+            $taxData['tax_including_price'] = ceil($price + ($price * $taxPercentage / 100));
+            $taxData['is_exclusive'] = 1;
+        } else {
+            $taxData['tax_including_price'] = $price;
+            $taxData['tax_exclusive_price'] = ceil((100 * $price) / ($taxPercentage + 100));
+            $taxData['tax_price'] = ceil($price - $taxData['tax_exclusive_price']);
+            $taxData['is_exclusive'] = 0;
+        }
+
+        return $taxData;
+    }
+
+    /**
+     * Prepare discount data for response
+     */
+    protected function prepareDiscountData(?Discounts $discount, array $packageBundleData, array $data): array
+    {
+        if (empty($data['discount_id']) || $data['discount_id'] == '0') {
+            return [
+                'discount_name' => '-',
+                'discount_type' => '-',
+                'discount_price' => '0.00'
+            ];
+        }
+
+        return [
+            'discount_name' => $packageBundleData['discount_name'] ?? '-',
+            'discount_type' => $packageBundleData['discount_type'] ?? '-',
+            'discount_price' => $packageBundleData['discount_price'] ?? '0.00'
+        ];
+    }
+
+    /**
+     * Save complete plan package (optimized)
+     * 
+     * @param array $data
+     * @return array
+     * @throws PlanException
+     */
+    public function savePlanPackage(array $data): array
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Handle appointment creation/retrieval
+            $appointmentId = $this->handleAppointment($data);
+            
+            if (!$appointmentId) {
+                throw new PlanException('Appointment ID is required', 400);
+            }
+
+            // Create package record
+            $package = $this->createPackageRecord($data, $appointmentId);
+
+            // Store package bundles and services (optimized with bulk operations)
+            $this->storePackageBundlesOptimized($package, $data);
+
+            // Handle payment if cash amount provided
+            if (!empty($data['cash_amount']) && $data['cash_amount'] != '0') {
+                $this->handlePackagePayment($package, $data, $appointmentId);
+            }
+
+            DB::commit();
+
+            return [
+                'status' => true,
+                'package_id' => $package->id
+            ];
+
+        } catch (PlanException $e) {
+            DB::rollBack();
+            throw $e;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Save Plan Package Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new PlanException('Failed to save package: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Handle appointment creation or retrieval
+     */
+    protected function handleAppointment(array $data): ?int
+    {
+        if (!isset($data['appointment_id'])) {
+            return null;
+        }
+
+        $tagAppoint = explode('.', $data['appointment_id']);
+        
+        if ($tagAppoint[1] == 'A') {
+            return (int) $tagAppoint[0];
+        } else {
+            $planAppointmentCalculation = new PlanAppointmentCalculation();
+            $appointmentId = $planAppointmentCalculation->storeAppointment(
+                $data['patient_id'],
+                $data['location_id'],
+                (object) $data,
+                $tagAppoint[0],
+                false
+            );
+            $planAppointmentCalculation->saveinvoice($appointmentId);
+            return $appointmentId;
+        }
+    }
+
+    /**
+     * Create package record
+     */
+    protected function createPackageRecord(array $data, int $appointmentId): Packages
+    {
+        // Remove commas from total but preserve decimal point
+        $totalPrice = str_replace(',', '', $data['total']);
+        
+        $packageData = [
+            'random_id' => $data['random_id'],
+            'patient_id' => $data['patient_id'],
+            'location_id' => $data['location_id'],
+            'total_price' => $totalPrice,
+            'sessioncount' => '1',
+            'account_id' => Auth::user()->account_id,
+            'is_exclusive' => $data['is_exclusive'] ?? 0,
+            'appointment_id' => $appointmentId,
+            'created_at' => Filters::getCurrentTimeStamp(),
+            'updated_at' => Filters::getCurrentTimeStamp(),
+        ];
+
+        $package = Packages::create($packageData);
+        $package->update(['name' => sprintf('%05d', $package->id)]);
+
+        return $package;
+    }
+
+    /**
+     * Store package bundles and services with optimized queries (fixes N+1)
+     */
+    protected function storePackageBundlesOptimized(Packages $package, array $data): void
+    {
+        if (empty($data['package_bundles'])) {
+            return;
+        }
+
+        // Fetch location ONCE (instead of per bundle)
+        $locationInfo = Locations::find($data['location_id']);
+        
+        // Extract all bundle IDs
+        $bundleIds = array_column($data['package_bundles'], 'bundleId');
+        
+        // Fetch all bundles at once (instead of per bundle)
+        $bundlesData = Bundles::whereIn('id', $bundleIds)->get()->keyBy('id');
+        
+        // Fetch all bundle services at once with eager loading (fixes N+1)
+        $allBundleServices = BundleHasServices::with('service')
+            ->whereIn('bundle_id', $bundleIds)
+            ->get()
+            ->groupBy('bundle_id');
+
+        $allPackageServices = [];
+
+        foreach ($data['package_bundles'] as $packageBundle) {
+            $bundleId = $packageBundle['bundleId'];
+            $serviceData = $bundlesData->get($bundleId);
+            
+            if (!$serviceData) {
+                continue;
+            }
+
+            // Create package bundle record
+            $packageBundleData = [
+                'random_id' => $package->random_id,
+                'is_allocate' => 1,
+                'qty' => 1,
+                'discount_name' => $packageBundle['DiscountName'],
+                'discount_type' => $packageBundle['Type'],
+                'discount_price' => $packageBundle['DiscountValue'],
+                'service_price' => str_replace(',', '', $packageBundle['RegularPrice']),
+                'net_amount' => str_replace(',', '', $packageBundle['RegularPrice']),
+                'discount_id' => 1,
+                'bundle_id' => $bundleId,
+                'package_id' => $package->id,
+                'tax_exclusive_net_amount' => str_replace(',', '', $packageBundle['Amount']),
+                'tax_percentage' => 1,
+                'tax_price' => $packageBundle['Tax'],
+                'tax_including_price' => $packageBundle['Total'],
+                'location_id' => $data['location_id'],
+            ];
+
+            $packageBundleRecord = PackageBundles::create($packageBundleData);
+
+            // Get bundle services for this bundle (already loaded)
+            $bundleServices = $allBundleServices->get($bundleId, collect());
+            
+            $calculableServices = [];
+            foreach ($bundleServices as $bundleService) {
+                $calculableServices[] = [
+                    'service_price' => $bundleService->calculated_price,
+                    'calculated_price' => $bundleService->calculated_price,
+                    'service_id' => $bundleService->service_id,
+                ];
+            }
+
+            $calculatedServicesPrices = Bundles::calculatePrices(
+                $calculableServices,
+                str_replace(',', '', $packageBundle['RegularPrice']),
+                $packageBundle['Total']
+            );
+
+            // Prepare all services for bulk insert
+            foreach ($calculatedServicesPrices as $calculatedServicePrice) {
+                $dataService = [
+                    'random_id' => $data['random_id'],
+                    'package_bundle_id' => $packageBundleRecord->id,
+                    'service_id' => $calculatedServicePrice['service_id'],
+                    'price' => $calculatedServicePrice['calculated_price'],
+                    'orignal_price' => $calculatedServicePrice['service_price'],
+                    'created_at' => Filters::getCurrentTimeStamp(),
+                    'updated_at' => Filters::getCurrentTimeStamp(),
+                    'sold_by' => $packageBundle['sold_by'] ?? null,
+                ];
+
+                // Calculate tax for this service
+                $taxData = $this->calculateServiceTaxForPackage(
+                    $serviceData->tax_treatment_type_id,
+                    $calculatedServicePrice['calculated_price'],
+                    $locationInfo->tax_percentage,
+                    ($data['is_exclusive'] ?? '0') == '1'
+                );
+
+                $allPackageServices[] = array_merge($dataService, $taxData);
+            }
+        }
+
+        // Bulk insert all package services (instead of individual inserts)
+        if (!empty($allPackageServices)) {
+            PackageService::insert($allPackageServices);
+        }
+    }
+
+    /**
+     * Calculate tax for package service
+     */
+    protected function calculateServiceTaxForPackage(int $taxTreatmentType, float $price, float $taxPercentage, bool $isExclusive): array
+    {
+        $taxData = ['tax_percenatage' => $taxPercentage];
+
+        if ($taxTreatmentType == Config::get('constants.tax_both')) {
+            if ($isExclusive) {
+                $taxData['tax_exclusive_price'] = $price;
+                $taxData['tax_price'] = ceil($price * ($taxPercentage / 100));
+                $taxData['tax_including_price'] = ceil($price + ($price * $taxPercentage / 100));
+                $taxData['is_exclusive'] = 1;
+            } else {
+                $taxData['tax_including_price'] = $price;
+                $taxData['tax_exclusive_price'] = ceil((100 * $price) / ($taxPercentage + 100));
+                $taxData['tax_price'] = ceil($price - $taxData['tax_exclusive_price']);
+                $taxData['is_exclusive'] = 0;
+            }
+        } elseif ($taxTreatmentType == Config::get('constants.tax_is_exclusive')) {
+            $taxData['tax_exclusive_price'] = $price;
+            $taxData['tax_price'] = ceil($price * ($taxPercentage / 100));
+            $taxData['tax_including_price'] = ceil($price + ($price * $taxPercentage / 100));
+            $taxData['is_exclusive'] = 1;
+        } else {
+            $taxData['tax_including_price'] = $price;
+            $taxData['tax_exclusive_price'] = ceil((100 * $price) / ($taxPercentage + 100));
+            $taxData['tax_price'] = ceil($price - $taxData['tax_exclusive_price']);
+            $taxData['is_exclusive'] = 0;
+        }
+
+        return $taxData;
+    }
+
+    /**
+     * Handle package payment and related activities
+     */
+    protected function handlePackagePayment(Packages $package, array $data, int $appointmentId): void
+    {
+        // Create package advance record
+        $packageAdvanceData = [
+            'cash_flow' => 'in',
+            'cash_amount' => $data['cash_amount'],
+            'account_id' => Auth::user()->account_id,
+            'patient_id' => $data['patient_id'],
+            'payment_mode_id' => $data['payment_mode_id'],
+            'created_by' => Auth::user()->id,
+            'updated_by' => Auth::user()->id,
+            'package_id' => $package->id,
+            'location_id' => $data['location_id'],
+            'created_at' => Filters::getCurrentTimeStamp(),
+            'updated_at' => Filters::getCurrentTimeStamp(),
+        ];
+
+        $packageAdvance = PackageAdvances::createRecord($packageAdvanceData, $package);
+
+        // Create plan invoice
+        $invoiceNumber = PlanInvoice::generateInvoiceNumber($data['patient_id'], $package->id);
+        $planInvoiceData = [
+            'invoice_number' => $invoiceNumber,
+            'total_price' => $data['cash_amount'],
+            'account_id' => Auth::user()->account_id,
+            'patient_id' => $data['patient_id'],
+            'created_by' => Auth::user()->id,
+            'location_id' => $data['location_id'],
+            'payment_mode_id' => $data['payment_mode_id'],
+            'active' => 1,
+            'package_id' => $package->id,
+            'invoice_type' => 'exempt',
+        ];
+        PlanInvoice::create($planInvoiceData);
+
+        // Log activity (fetch location with city in single query)
+        $patient = User::find($data['patient_id']);
+        $locationWithCity = Locations::with('city')->find($data['location_id']);
+        $locationName = $locationWithCity 
+            ? (($locationWithCity->city->name ?? '') . '-' . $locationWithCity->name) 
+            : '';
+        
+        $creatorName = Auth::user()->name ?? 'System';
+        $description = '<span class="highlight">' . $creatorName . '</span> received payment Rs. <span class="highlight-green">' . number_format($data['cash_amount']) . '</span> from <span class="highlight-orange">' . $patient->name . '</span> for <span class="highlight-purple">Plan Id: ' . $package->id . '</span> in <span class="highlight">' . $locationName . '</span> ';
+
+        Activity::create([
+            'action' => 'received',
+            'activity_type' => 'payment_received',
+            'description' => $description,
+            'patient' => $patient->name,
+            'patient_id' => $patient->id,
+            'appointment_type' => 'Plan',
+            'created_by' => Auth::user()->id,
+            'account_id' => Auth::user()->account_id,
+            'planId' => $package->id,
+            'amount' => $data['cash_amount'],
+            'location' => $locationName,
+            'centre_id' => $data['location_id'],
+            'created_at' => Filters::getCurrentTimeStamp(),
+            'updated_at' => Filters::getCurrentTimeStamp(),
+        ]);
+
+        // Send SMS
+        Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdvance);
+
+        // Mark appointment as converted
+        $this->markAppointmentAsConvertedOptimized($appointmentId, $package->id, $data['cash_amount']);
+    }
+
+    /**
+     * Mark appointment as converted (optimized with reduced queries)
+     */
+    protected function markAppointmentAsConvertedOptimized(int $appointmentId, int $packageId, float $paymentAmount): void
+    {
+        try {
+            // Fetch appointment and package in single queries
+            $appointment = Appointments::find($appointmentId);
+            if (!$appointment) {
+                return;
+            }
+
+            $package = Packages::find($packageId);
+            if (!$package) {
+                return;
+            }
+
+            $accountId = $appointment->account_id;
+
+            // Cache appointment statuses (reduces repeated queries)
+            $cacheKey = "appointment_statuses_{$accountId}";
+            $statuses = Cache::remember($cacheKey, 3600, function() use ($accountId) {
+                return [
+                    'arrived' => AppointmentStatuses::where(['account_id' => $accountId, 'is_arrived' => 1])->first(),
+                    'converted' => AppointmentStatuses::where(['account_id' => $accountId, 'is_converted' => 1])->first(),
+                ];
+            });
+
+            if (!$statuses['arrived'] || !$statuses['converted']) {
+                return;
+            }
+
+            // Find latest arrived consultation
+            $latestArrivedConsultation = Appointments::where([
+                    'patient_id' => $package->patient_id,
+                    'appointment_type_id' => 1,
+                    'base_appointment_status_id' => $statuses['arrived']->id
+                ])
+                ->whereNull('deleted_at')
+                ->orderBy('scheduled_date', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if (!$latestArrivedConsultation) {
+                return;
+            }
+
+            // Get consultation invoice
+            $consultationInvoice = DB::table('invoices')
+                ->where('appointment_id', $latestArrivedConsultation->id)
+                ->whereNull('deleted_at')
+                ->orderBy('created_at', 'asc')
+                ->first();
+
+            if (!$consultationInvoice) {
+                return;
+            }
+
+            $invoiceDate = Carbon::parse($consultationInvoice->created_at)->format('Y-m-d');
+
+            // Optimized query: Use JOIN instead of multiple whereIn queries
+            $serviceAfterInvoice = DB::table('package_services')
+                ->join('package_bundles', 'package_services.package_bundle_id', '=', 'package_bundles.id')
+                ->join('packages', 'package_bundles.package_id', '=', 'packages.id')
+                ->where('packages.patient_id', $package->patient_id)
+                ->whereNull('packages.deleted_at')
+                ->whereDate('package_services.created_at', '>=', $invoiceDate)
+                ->exists();
+
+            if (!$serviceAfterInvoice) {
+                return;
+            }
+
+            // Check if this is the first payment
+            $existingPaymentsCount = DB::table('package_advances')
+                ->join('packages', 'package_advances.package_id', '=', 'packages.id')
+                ->where('packages.patient_id', $package->patient_id)
+                ->where('package_advances.cash_flow', 'in')
+                ->where('package_advances.cash_amount', '>', 0)
+                ->whereNull('package_advances.deleted_at')
+                ->whereDate('package_advances.created_at', '>=', $invoiceDate)
+                ->count();
+
+            if ($existingPaymentsCount > 1) {
+                return;
+            }
+
+            // Mark as converted
+            $latestArrivedConsultation->update([
+                'base_appointment_status_id' => $statuses['converted']->id,
+                'appointment_status_id' => $statuses['converted']->id,
+                'converted_at' => now()
+            ]);
+
+            // Fetch related data for logging (with eager loading)
+            $patient = Patients::find($package->patient_id);
+            $location = Locations::with('city')->find($latestArrivedConsultation->location_id);
+            $service = Services::find($latestArrivedConsultation->service_id);
+
+            // Log activities
+            ActivityLogger::logAppointmentConverted($latestArrivedConsultation, $patient, $location, $service, $paymentAmount, $packageId);
+
+            // Update lead status if exists
+            if ($latestArrivedConsultation->lead_id) {
+                $this->updateLeadStatusToConverted($latestArrivedConsultation, $accountId, $location, $service, $paymentAmount);
+            }
+
+            // Send Meta event
+            $this->sendMetaConvertedEventOptimized($latestArrivedConsultation, $packageId, $paymentAmount);
+
+        } catch (\Exception $e) {
+            \Log::error('Mark Appointment As Converted Error: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Update lead status to converted
+     */
+    protected function updateLeadStatusToConverted($appointment, int $accountId, $location, $service, float $paymentAmount): void
+    {
+        $lead = Leads::find($appointment->lead_id);
+        if (!$lead) {
+            return;
+        }
+
+        $convertedLeadStatus = Cache::remember("converted_lead_status_{$accountId}", 3600, function() use ($accountId) {
+            return DB::table('lead_statuses')
+                ->where(['account_id' => $accountId, 'is_converted' => 1])
+                ->first();
+        });
+
+        if ($convertedLeadStatus) {
+            $lead->update(['lead_status_id' => $convertedLeadStatus->id]);
+            ActivityLogger::logLeadConverted($lead, $appointment, $location, $service, $paymentAmount);
+        }
+    }
+
+    /**
+     * Send Meta converted event (optimized)
+     */
+    protected function sendMetaConvertedEventOptimized($appointment, int $packageId, float $paymentAmount): void
+    {
+        if (!$appointment || !$appointment->lead_id) {
+            return;
+        }
+
+        $lead = Leads::find($appointment->lead_id);
+        if (!$lead) {
+            return;
+        }
+
+        // Check if already sent
+        $alreadySent = DB::table('appointments')
+            ->where('lead_id', $lead->id)
+            ->where('meta_purchase_sent', 1)
+            ->exists();
+
+        if ($alreadySent) {
+            return;
+        }
+
+        try {
+            $metaService = new \App\Services\MetaConversionApiService();
+            $eventLeadId = $lead->meta_lead_id ?? 'apt_' . $appointment->id;
+            
+            $metaService->sendLeadStatus(
+                $lead->phone,
+                'converted',
+                $eventLeadId,
+                $lead->email,
+                'PKR',
+                $paymentAmount ?? 0
+            );
+
+            $appointment->update(['meta_purchase_sent' => 1]);
+
+        } catch (\Exception $e) {
+            \Log::error('Meta CAPI converted event failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get edit form data for package (optimized)
+     * 
+     * @param int $packageId
+     * @return array
+     * @throws PlanException
+     */
+    public function getEditFormData(int $packageId): array
+    {
+        try {
+            // Fetch package with relationships
+            $package = Packages::with('user', 'location')->find($packageId);
+            
+            if (!$package) {
+                throw new PlanException('Package not found', 404);
+            }
+
+            // Calculate total price from bundles
+            $totalPrice = PackageBundles::where('package_id', $packageId)->sum('tax_including_price');
+
+            // Fetch package bundles with relationships (eager loading)
+            $packageBundles = PackageBundles::with(['bundle', 'packageservice.soldBy'])
+                ->where('package_id', $packageId)
+                ->get();
+
+            // Fetch package services with relationships
+            $packageServices = PackageService::with('service', 'soldBy')
+                ->where('package_id', $packageId)
+                ->get();
+
+            // Fetch package advances with payment mode
+            $packageAdvances = PackageAdvances::with('paymentmode')
+                ->where([
+                    ['package_id', '=', $packageId],
+                    ['is_cancel', '=', '0'],
+                    ['is_adjustment', '=', '0'],
+                ])
+                ->get();
+
+            // Consolidated package advances summary (1 query instead of 4)
+            $advancesSummary = DB::table('package_advances')
+                ->where('package_id', $packageId)
+                ->selectRaw("
+                    SUM(CASE WHEN cash_flow = 'in' AND is_cancel = 0 AND is_setteled = 0 THEN cash_amount ELSE 0 END) as cash_in,
+                    SUM(CASE WHEN cash_flow = 'out' THEN cash_amount ELSE 0 END) as cash_out,
+                    SUM(CASE WHEN cash_flow = 'out' AND is_refund = 1 THEN cash_amount ELSE 0 END) as refunded,
+                    SUM(CASE WHEN cash_flow = 'out' AND is_setteled = 1 THEN cash_amount ELSE 0 END) as setteled
+                ")
+                ->first();
+
+            // Calculate grand total
+            $grandTotal = $totalPrice - $advancesSummary->cash_in;
+            $remainingAmount = number_format($grandTotal + $advancesSummary->refunded + $advancesSummary->setteled);
+
+            // Get user locations (optimized - single query with join)
+            $userLocations = Locations::whereIn('id', function($query) {
+                    $query->select('location_id')
+                          ->from('user_has_locations')
+                          ->where('user_id', Auth::user()->id);
+                })
+                ->where('account_id', Auth::user()->account_id)
+                ->where('slug', 'custom')
+                ->get();
+
+            // Get payment modes
+            $paymentModes = PaymentModes::where('type', 'application')->pluck('name', 'id');
+
+            // Get custom discount range (cached)
+            $customDiscountRange = Cache::remember('sys_discounts', 3600, function() {
+                return Settings::where('slug', 'sys-discounts')->first();
+            });
+            $range = $customDiscountRange ? explode(':', $customDiscountRange->data) : [];
+
+            // Get services for location (reuse optimized method)
+            $locationHasService = $this->getServicesByLocation($package->location_id, Auth::user()->account_id);
+
+            // Get finance editing days (cached)
+            $financeEditingDays = Cache::remember('sys_financeediting', 3600, function() {
+                return Settings::where('slug', 'sys-financeediting')->first();
+            });
+            $endPreviousDate = Carbon::now()->subDays($financeEditingDays->data ?? 0)->toDateString();
+
+            // Get appointment info (reuse optimized method)
+            $appointmentInfo = $this->getAppointmentInfo($package->patient_id, $package->location_id);
+
+            // Get membership info
+            $membershipDisplay = $this->getMembershipDisplay($package->patient_id);
+
+            // Get active discounts
+            $discounts = Discounts::where('active', 1)->get(['id', 'name']);
+
+            // Determine selected appointment ID for pre-selection
+            $selectedAppointmentId = null;
+            if ($package->appointment_id) {
+                $selectedAppointmentId = $package->appointment_id . '.A';
+            }
+
+            return [
+                'package' => $package,
+                'locations' => $userLocations,
+                'packagebundles' => $packageBundles,
+                'packageservices' => $packageServices,
+                'users' => $appointmentInfo['users'],
+                'selectedUserId' => $appointmentInfo['selected_doctor_id'],
+                'selectedAppointmentId' => $selectedAppointmentId,
+                'packageadvances' => $packageAdvances,
+                'paymentmodes' => $paymentModes,
+                'grand_total' => $remainingAmount,
+                'range' => $range,
+                'locationhasservice' => $locationHasService,
+                'total_price' => $totalPrice,
+                'end_previous_date' => $endPreviousDate,
+                'appointmentArray' => $appointmentInfo['appointments'],
+                'discount_type' => config('constants.amount_types'),
+                'discounts' => $discounts,
+                'membership' => $membershipDisplay,
+            ];
+
+        } catch (PlanException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Get Edit Form Data Error: ' . $e->getMessage());
+            throw new PlanException('Failed to load edit form data: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Get membership display string
+     */
+    protected function getMembershipDisplay(int $patientId): string
+    {
+        $membership = Membership::with('membershiptype')->where('patient_id', $patientId)->first();
+        
+        if (!$membership) {
+            return 'No Membership';
+        }
+
+        $status = $membership->end_date < now()->format('Y-m-d') ? 'Expired' :
+            ($membership->active == 1 ? 'Active' : 'Inactive');
+
+        $expiryDateFormatted = $membership->end_date ? date('M d, Y', strtotime($membership->end_date)) : '';
+
+        if ($membership->is_referral == 1) {
+            return "Ref: ({$membership->code})-{$status}" . ($expiryDateFormatted ? " (Exp: {$expiryDateFormatted})" : "");
+        }
+
+        $membershipTypeName = $membership->membershipType 
+            ? str_replace(' Membership', '', $membership->membershipType->name) 
+            : 'Gold';
+        
+        return "{$membershipTypeName} - {$membership->code} - {$status}" . ($expiryDateFormatted ? " (Exp: {$expiryDateFormatted})" : "");
     }
 }
