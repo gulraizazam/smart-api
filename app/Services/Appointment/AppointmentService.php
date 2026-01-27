@@ -477,6 +477,31 @@ class AppointmentService
                         }
                     }
                     
+                    // Send Meta CAPI event for booked status
+                    \Log::info('Sending Meta CAPI booked event', [
+                        'lead_id' => $lead->id,
+                        'phone' => $lead->phone,
+                        'meta_lead_id' => $lead->meta_lead_id,
+                        'email' => $lead->email,
+                    ]);
+                    try {
+                        $metaService = new \App\Services\MetaConversionApiService();
+                        $metaService->sendLeadStatus(
+                            $lead->phone,
+                            'booked',
+                            $lead->meta_lead_id,
+                            $lead->email
+                        );
+                        \Log::info('Meta CAPI booked event sent successfully', [
+                            'lead_id' => $lead->id,
+                        ]);
+                    } catch (\Exception $e) {
+                        \Log::error('Meta CAPI booked event failed: ' . $e->getMessage(), [
+                            'lead_id' => $lead->id,
+                            'exception' => $e->getTraceAsString(),
+                        ]);
+                    }
+                    
                     // Get related data for activity logging
                     $location = \App\Models\Locations::with('city')->find($appointment->location_id);
                     $service = \App\Models\Services::find($appointment->service_id);
