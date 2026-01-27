@@ -700,9 +700,9 @@ class TreatmentService
             }
 
             // Handle message sending flag
-            if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
+            //if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
                 $appointment->update(['send_message' => 1]);
-            }
+            //}
 
             // Handle unscheduled status
             $this->handleUnscheduledStatus($appointment, $accountId);
