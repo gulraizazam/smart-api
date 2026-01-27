@@ -699,8 +699,10 @@ class TreatmentService
                     ]);
             }
 
-            // Always set send_message to 1 for new appointments to trigger SMS via cron job
-            $appointment->update(['send_message' => 1]);
+            // Handle message sending flag
+            //if ($appointment->appointment_status_allow_message && $appointment->scheduled_date) {
+                $appointment->update(['send_message' => 1]);
+            //}
 
             // Handle unscheduled status
             $this->handleUnscheduledStatus($appointment, $accountId);

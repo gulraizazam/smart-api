@@ -207,6 +207,7 @@
     </div>
 
     @push('js')
+        <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}"></script>
         <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
 
