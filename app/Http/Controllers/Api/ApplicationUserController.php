@@ -356,13 +356,20 @@ class ApplicationUserController extends Controller
      */
     public function getUserCenters()
     {
-        $centers = \App\Helpers\ACL::getUserCentres();
-        if (count($centers) == 1) {
-            return ApiHelper::apiResponse($this->success, 'Center found', true, [
-                'center' => $centers[0],
-            ]);
-        }
+        try {
+            $planService = app(\App\Services\Plan\PlanService::class);
+            $result = $planService->getUserDefaultCenter();
 
-        return ApiHelper::apiResponse($this->success, 'Center not found', false);
+            if ($result['status']) {
+                return ApiHelper::apiResponse($this->success, 'Center found', true, [
+                    'center' => $result['center'],
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Center not found', false);
+        } catch (\Exception $e) {
+            \Log::error('Get User Centers Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to get user centers.', false);
+        }
     }
 }

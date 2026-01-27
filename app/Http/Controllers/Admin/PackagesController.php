@@ -62,6 +62,7 @@ use App\Models\Membership;
 use App\Models\RoleHasUsers;
 use App\Models\Leads;
 use App\Services\MetaConversionApiService;
+use App\Services\Plan\PlanService;
 use Illuminate\Support\Facades\Log;
 
 
@@ -73,8 +74,11 @@ class PackagesController extends Controller
 
     public $unauthorized;
 
-    public function __construct()
+    protected $planService;
+
+    public function __construct(PlanService $planService)
     {
+        $this->planService = $planService;
         $this->success = config('constants.api_status.success');
         $this->error = config('constants.api_status.error');
         $this->unauthorized = config('constants.api_status.unauthorized');
@@ -105,23 +109,13 @@ class PackagesController extends Controller
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.', false);
         }
 
-        $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
-
-        $random_id = md5(time() . rand(0001, 9999) . rand(78599, 99999));
-
-        $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
-
-        $customdiscountrange = Settings::where('slug', '=', 'sys-discounts')->first();
-        $range = explode(':', $customdiscountrange->data);
-
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'locations' => $locations,
-            'random_id' => $random_id,
-            'paymentmodes' => $paymentmodes,
-            'range' => $range,
-            'discount_type' => config('constants.amount_types'),
-            'discounts' => Discounts::where('active', 1)->get(['id', 'name']),
-        ]);
+        try {
+            $data = $this->planService->getCreateFormData(ACL::getUserCentres());
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Plans Create Form Data Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to load form data.', false);
+        }
     }
 
     /**
@@ -131,20 +125,27 @@ class PackagesController extends Controller
      */
     public function getservices(Request $request)
     {
+        try {
+            if (!$request->has('location_id') || !$request->location_id) {
+                return ApiHelper::apiResponse($this->error, 'Location ID is required.', false);
+            }
 
-        $service_has_location = ServiceHasLocations::where('location_id', '=', $request->location_id)->get();
-        if ($service_has_location) {
+            $services = $this->planService->getServicesByLocation(
+                (int) $request->location_id,
+                Auth::user()->account_id
+            );
 
-            $locationhasservice = ServiceWidget::generateServicelcoationArray($service_has_location, Auth::User()->account_id);
+            if (!empty($services)) {
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'service' => $services,
+                ]);
+            }
 
-
-            return ApiHelper::apiResponse($this->success, 'Recode found', true, [
-                'service' => $locationhasservice,
-
-            ]);
+            return ApiHelper::apiResponse($this->success, 'Record not found', false);
+        } catch (\Exception $e) {
+            \Log::error('Get Services Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to load services.', false);
         }
-
-        return ApiHelper::apiResponse($this->success, 'Recode not found', false);
     }
 
     /**
@@ -1766,204 +1767,6 @@ class PackagesController extends Controller
      * @param \Illuminate\Http\Request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function datatable(Request $request, $id = false)
-    {
-
-        $filename = 'packages';
-        $filters = getFilters($request->all());
-        $apply_filter = checkFilters($filters, $filename);
-        $records = [];
-        $records['data'] = [];
-        if (hasFilter($filters, 'delete')) {
-            $ids = explode(',', $filters['delete']);
-            $packages = Packages::getBulkData($ids);
-            $any_deleted = false;
-            if ($packages) {
-                foreach ($packages as $package) {
-                    // Check if child records exists or not, If exist then disallow to delete it.
-                    if (!Packages::isChildExists($package->id, Auth::User()->account_id)) {
-                        $any_deleted = true;
-                        $package->delete();
-                    }
-                }
-            }
-
-            if ($any_deleted) {
-                $records['status'] = true; // pass custom message(useful for getting status of group actions)
-                $records['message'] = 'One or more record has been deleted successfully!'; // pass custom message(useful for getting status of group actions)
-            } else {
-                $records['status'] = false; // pass custom message(useful for getting status of group actions)
-                $records['message'] = 'Child records exist, unable to delete plan!'; // pass custom message(useful for getting status of group actions)
-            }
-        }
-
-        // Get Total Records
-        $iTotalRecords = Packages::getTotalRecords($request, Auth::User()->account_id, $id, $apply_filter, $filename);
-
-        [$orderBy, $order] = getSortBy($request, 'updated_at', 'DESC');
-
-        [$iDisplayLength, $iDisplayStart, $pages, $page] = getPaginationElement($request, $iTotalRecords);
-
-        $packages = Packages::getRecords($request, $iDisplayStart, $iDisplayLength, Auth::User()->account_id, $id, $apply_filter, $filename);
-
-        $records = $this->getFiltersData($records);
-        if ($packages) {
-            foreach ($packages as $package) {
-                // $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
-                $packageservices_price = PackageBundles::where('package_id', '=', $package->id)->sum('tax_including_price');
-                $session_count = count(PackageService::where('package_id', '=', $package->id)->get());
-                /*We discuss in future what happen next*/
-                $cash_receive = PackageAdvances::where([
-                    ['package_id', '=', $package->id],
-                    ['cash_flow', '=', 'in'],
-                    ['is_cancel', '=', '0'],
-
-                ])->sum('cash_amount');
-                $package_is_refunded_amount = PackageAdvances::where([
-                    'package_id' => $package->id,
-                    'cash_flow' => 'out',
-                    'is_refund' => '1',
-                    'is_tax' => '0',
-                ])->sum('cash_amount');
-
-                $settle_amount = PackageAdvances::where([
-                    ['package_id', '=', $package->id],
-                    ['cash_flow', '=', 'out'],
-                    ['is_cancel', '=', '0'],
-                    ['is_tax', '=', '0'],
-                    ['is_adjustment', '=', '0'],
-                    ['is_refund', '=', '0'],
-                    ['is_setteled', '=', '0'],
-                ])->sum('cash_amount');
-                $settle_tax_amount = PackageAdvances::where([
-                    ['package_id', '=', $package->id],
-                    ['cash_flow', '=', 'out'],
-                    ['is_cancel', '=', '0'],
-                    ['is_tax', '=', '1'],
-                    ['is_adjustment', '=', '0'],
-                    ['is_refund', '=', '0'],
-                    ['is_setteled', '=', '0'],
-                ])->sum('cash_amount');
-                $refund_settle_amount = PackageAdvances::where([
-                    ['package_id', '=', $package->id],
-                    ['cash_flow', '=', 'out'],
-                    ['is_cancel', '=', '0'],
-                    ['is_refund', '=', '0'],
-                    ['is_setteled', '=', 1],
-                ])->sum('cash_amount');
-                $settle_amount_with_tax = $settle_amount + $settle_tax_amount + $refund_settle_amount;
-                if ($package->is_refund == '0') {
-                    $refund_status = 'No';
-                } else {
-                    $refund_status = 'Yes';
-                }
-                $records['data'][] = [
-                    'id' => $package->id,
-                    'patient_id' => GeneralFunctions::patientSearchStringAdd($package->user?->id),
-                    'name' => $package->user?->name ?? '',
-                    'package_id' => $package?->name ?? '',
-                    'location_id' => $package->location->city->name . '-' . $package->location->name,
-                    'session_count' => $session_count,
-                    'total' => number_format($packageservices_price),
-                    'cash_receive' => number_format($cash_receive),
-                    'refunded' => number_format($package_is_refunded_amount),
-                    'settle_amount' => number_format($settle_amount_with_tax),
-                    'refund' => $refund_status,
-                    'created_at' => Carbon::parse($package->created_at)->format('F j,Y h:i A'),
-                    'active' => $package->active,
-                ];
-            }
-
-            $records['meta'] = [
-                'field' => $orderBy,
-                'page' => $page,
-                'pages' => $pages,
-                'perpage' => $iDisplayLength,
-                'total' => $iTotalRecords,
-                'sort' => $order,
-            ];
-        }
-
-        $records['permissions'] = [
-            'edit' => Gate::allows('plans_edit'),
-            'delete' => Gate::allows('plans_destroy'),
-            'active' => Gate::allows('plans_active'),
-            'inactive' => Gate::allows('plans_inactive'),
-            'create' => Gate::allows('plans_create'),
-            'log' => Gate::allows('plans_log'),
-            'sms_log' => Gate::allows('plans_sms_log'),
-            'plans_cash_edit' => Gate::allows('plans_cash_edit'),
-            'plans_cash_delete' => Gate::allows('plans_cash_delete'),
-            'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
-            'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
-            'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
-            'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
-            'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
-            'plans_edit_sold_by'=> Gate::allows('plans_edit_sold_by'),
-        ];
-
-        if ($id) {
-            $records['permissions'] = [
-                'edit' => Gate::allows('patients_plan_edit'),
-                'manage' => Gate::allows('patients_plan_manage'),
-                'delete' => Gate::allows('patients_plan_destroy'),
-                'active' => Gate::allows('patients_plan_active'),
-                'inactive' => Gate::allows('patients_plan_inactive'),
-                'create' => Gate::allows('patients_plan_create'),
-                'log' => Gate::allows('patients_plan_log'),
-                'sms_log' => Gate::allows('patients_plan_sms_log'),
-                'plans_cash_edit' => Gate::allows('plans_cash_edit'),
-                'plans_cash_delete' => Gate::allows('plans_cash_delete'),
-                'plans_cash_edit_payment_mode' => Gate::allows('plans_cash_edit_payment_mode'),
-                'plans_cash_edit_amount' => Gate::allows('plans_cash_edit_amount'),
-                'plans_cash_edit_date' => Gate::allows('plans_cash_edit_date'),
-                'patients_plan_cash_edit' => Gate::allows('patients_plan_cash_edit'),
-                'patients_plan_cash_delete' => Gate::allows('patients_plan_cash_delete'),
-                'plans_edit_sold_by'=> Gate::allows('plans_edit_sold_by'),
-            ];
-        }
-
-        return ApiHelper::apiDataTable($records);
-    }
-
-    private function getFiltersData($records)
-    {
-
-        $filters = Filters::all(Auth::User()->id, 'packages');
-
-        if ($user_id = Filters::get(Auth::User()->id, 'packages', 'patient_id')) {
-            $patient = User::where([
-                'id' => $user_id,
-            ])->first();
-            if ($patient) {
-                $patient = $patient->toArray();
-            } else {
-                $patient = [];
-            }
-        } else {
-            $patient = [];
-        }
-
-        $locations = Locations::getActiveSorted(ACL::getUserCentres(), 'full_address');
-
-        $records['filter_values'] = [
-            'package' => [],
-            'locations' => $locations,
-            'patient' => $patient,
-            'status' => config('constants.status'),
-        ];
-
-        if (isset($filters['created_from'])) {
-            $filters['created_from'] = date('Y-m-d', strtotime($filters['created_from']));
-        }
-        if (isset($filters['created_to'])) {
-            $filters['created_to'] = date('Y-m-d', strtotime($filters['created_to']));
-        }
-
-        $records['active_filters'] = $filters;
-
-        return $records;
-    }
 
     /**
      * Inactive Record from storage.

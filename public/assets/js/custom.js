@@ -219,9 +219,16 @@ $(document).ready(function () {
             'This Year': [moment().startOf('year'), moment().endOf('year')],
             'Last Year': [moment().subtract(1, 'year').startOf('year'), moment().subtract(1, 'year').endOf('year')],
         },
-        startDate: moment().startOf('month'),
-        endDate: moment().endOf('month')
-    }).val();
+        autoUpdateInput: false
+    });
+    
+    $('#date_range').on('apply.daterangepicker', function(ev, picker) {
+        $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+    });
+    
+    $('#date_range').on('cancel.daterangepicker', function(ev, picker) {
+        $(this).val('');
+    });
 
     /*for percentage amount*/
 

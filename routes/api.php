@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\LogsController;
 use App\Http\Controllers\Admin\TownController;
 use App\Http\Controllers\Admin\LeadsController as AdminLeadsController;
 use App\Http\Controllers\Api\LeadsController;
+use App\Http\Controllers\Api\PlansController as ApiPlansController;
 use App\Http\Controllers\Admin\BrandsController;
 use App\Http\Controllers\Admin\CitiesController;
 use App\Http\Controllers\Admin\OrdersController;
@@ -401,7 +402,6 @@ Route::middleware('auth.common')->name('admin.')->group(function () {
 
     /*packages*/
     Route::post('plans/planDatatable/{id}', [PackagesController::class, 'planDatatable'])->name('packages.planDatatable');
-    Route::post('packages/datatable', [PackagesController::class, 'datatable'])->name('packages.datatable');
 
     Route::post('packages/status', [PackagesController::class, 'status'])->name('packages.status');
 
@@ -604,7 +604,20 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
 
     Route::post('appointmentsmeasurement/datatable/{id}', [AppointmentMeasurementController::class, 'datatable'])->name('appointmentsmeasurement.datatable');
 
-    /*Route start for patient pakcage*/
+    /*Route start for patient package - NEW OPTIMIZED ROUTES*/
+    Route::prefix('plans-optimized')->group(function () {
+        // Patient-specific plans (patient card)
+        Route::post('datatable/{patient_id}', [ApiPlansController::class, 'datatable'])->name('plans.optimized.datatable');
+        Route::get('lookup-data/{patient_id}', [ApiPlansController::class, 'getLookupData'])->name('plans.optimized.lookup');
+        Route::get('statistics/{patient_id}', [ApiPlansController::class, 'getStatistics'])->name('plans.optimized.statistics');
+        
+        // Global plans (admin packages page)
+        Route::post('global/datatable', [ApiPlansController::class, 'globalDatatable'])->name('plans.optimized.global.datatable');
+        Route::get('global/lookup-data', [ApiPlansController::class, 'getGlobalLookupData'])->name('plans.optimized.global.lookup');
+    });
+    /*Route end for patient package - NEW OPTIMIZED ROUTES*/
+
+    /*Route start for patient pakcage - OLD ROUTES (TO BE DEPRECATED)*/
     Route::post('plans/datatable/{id?}', [PackagesController::class, 'datatable'])->name('plans.datatable');
 
     Route::get('plans/getserviceinfo', [PackagesController::class, 'getserviceinfo'])->name('plans.getserviceinfo');
