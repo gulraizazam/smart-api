@@ -559,7 +559,7 @@ class TreatmentService
             'inactive' => Gate::allows('appointments_inactive'),
             'create' => Gate::allows('appointments_create'),
             'log' => Gate::allows('appointments_log'),
-            'status' => Gate::allows('appointments_appointment_status'),
+            'status' => Gate::allows('treatments_appointment_status'),
             'schedule_edit' => Gate::allows('appointments_edit'),
             'invoice' => Gate::allows('appointments_invoice'),
             'invoice_display' => Gate::allows('appointments_invoice_display'),
