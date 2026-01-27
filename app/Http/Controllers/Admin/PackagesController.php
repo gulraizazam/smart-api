@@ -57,6 +57,7 @@ use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use App\Helpers\Invoice_Plan_Refund_Sms_Functions;
 use App\Helpers\Widgets\PlanAppointmentCalculation;
+use App\Exceptions\PlanException;
 use App\Models\DoctorHasLocations;
 use App\Models\Membership;
 use App\Models\RoleHasUsers;
@@ -1598,9 +1599,11 @@ class PackagesController extends Controller
      * @param $request
      * @return mixed
      * */
+    /**
+     * Update plan package (optimized)
+     */
     public function updatepackages(Request $request)
     {
-
         $request->validate([
             'appointment_id' => ['required', 'exists:appointments,id']
         ], [
@@ -1608,140 +1611,22 @@ class PackagesController extends Controller
             'appointment_id.exists' => 'Appointment not found',
         ]);
 
-        $find_package = Packages::where('random_id', $request->random_id)->first();
-        $check_is_setteled = PackageAdvances::where([
-            ['cash_flow', '=', 'out'],
-            ['cash_amount', '>', 0],
-            ['is_setteled', '=', '1'],
-            ['package_id', '=', $find_package->id],
-        ])->first();
-        if ($check_is_setteled) {
-            return ApiHelper::apiResponse($this->success, 'Plan is already settled. you can not add further treatment in this plan.', false, ['setteled' => 1]);
-        }
-        DB::beginTransaction();
         try {
-            if (isset($request->appointment_id)) {
-                $tag_appoint = explode('.', $request->appointment_id);
-                if ($tag_appoint[1] == 'A') {
-                    $appointment_id = $tag_appoint[0];
-                } else {
-                    $PlanAppointmentCalculation = new PlanAppointmentCalculation();
-                    $package_info_tag = Packages::where('random_id', '=', $request->random_id)->first();
-                    $appointment_decision = Appointments::find($package_info_tag->appointment_id);
-                    if (isset($appointment_decision)) {
-                        $appointment_id = $PlanAppointmentCalculation->updateAppointment($request->patient_id, $request->location_id, $request, $tag_appoint[0], $package_info_tag);
-                    } else {
-                        $appointment_id = $PlanAppointmentCalculation->storeAppointment($request->patient_id, $request->location_id, $request, $tag_appoint[0], false);
-                        $PlanAppointmentCalculation->saveinvoice($appointment_id);
-                    }
-                }
-            } else {
-                return ApiHelper::apiResponse($this->success, 'Appointment not found', false);
+            $result = $this->planService->updatePlanPackage($request->all());
+            
+            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+        } catch (PlanException $e) {
+            \Log::error('Update Packages Error: ' . $e->getMessage());
+            
+            // Check if it's a settled package error
+            if ($e->getCode() == 400 && strpos($e->getMessage(), 'settled') !== false) {
+                return ApiHelper::apiResponse($this->success, $e->getMessage(), false, ['setteled' => 1]);
             }
-            /*save Package information and also update random id in package service table*/
-
-            $random_id = $request->random_id;
-            $package = Packages::where('random_id', '=', $random_id)->first();
-            $id = $package->id;
-
-            // Check if new services are being added or payment is being made
-            $hasNewServices = isset($request['package_bundles']) && !empty($request['package_bundles']);
-            $hasPayment = $request->cash_amount != null && $request->cash_amount != '0';
-
-            // Only update package if new services added or payment made
-            if ($hasNewServices || $hasPayment) {
-                $data_package = $request->all();
-                $data_package['total_price'] = str_replace(',', '', $request->total); //filter_var($request->total, FILTER_SANITIZE_NUMBER_INT);
-                $data_package['sessioncount'] = '1';
-                $data_package['account_id'] = Auth::User()->account_id;
-                $data_package['appointment_id'] = $appointment_id;
-                $data_package['updated_at'] = Filters::getCurrentTimeStamp();
-                $package->update($data_package);
-            }
-
-            $packageBundle = self::storeRecord($package, $request);
-
-            /*End*/
-            if ($request->cash_amount == null || $request->cash_amount == '0') {
-
-                // Commit Transaction
-                DB::commit();
-
-                return ApiHelper::apiResponse($this->success, 'updated successfully');
-            } else {
-                /*Save data in package advances*/
-                $data_packageAdvances['cash_flow'] = 'in';
-                $data_packageAdvances['cash_amount'] = $request->cash_amount;
-                $data_packageAdvances['account_id'] = Auth::User()->account_id;
-                $data_packageAdvances['patient_id'] = $request->patient_id;
-                $data_packageAdvances['payment_mode_id'] = $request->payment_mode_id;
-                $data_packageAdvances['created_by'] = Auth::User()->id;
-                $data_packageAdvances['updated_by'] = Auth::User()->id;
-                $data_packageAdvances['package_id'] = $package->id;
-                $data_packageAdvances['location_id'] = $request->location_id;
-                $data_packageAdvances['updated_at'] = Filters::getCurrentTimeStamp();
-                /*End*/
-
-                $packageAdavances = PackageAdvances::updateRecord($data_packageAdvances, $package);
-
-                /*Save data in plan_invoices*/
-                $invoiceNumber = PlanInvoice::generateInvoiceNumber($request->patient_id, $package->id);
-                $data_planInvoice = [
-                    'invoice_number' => $invoiceNumber,
-                    'total_price' => $request->cash_amount,
-                    'account_id' => Auth::User()->account_id,
-                    'patient_id' => $request->patient_id,
-                    'created_by' => Auth::User()->id,
-                    'location_id' => $request->location_id,
-                    'payment_mode_id' => $request->payment_mode_id,
-                    'active' => 1,
-                    'package_id' => $package->id,
-                    'invoice_type' => 'exempt',
-                ];
-                PlanInvoice::create($data_planInvoice);
-                /*End*/
-
-                $patient = User::whereId($request->patient_id)->first();
-                $location = Locations::with('city')->whereId($request->location_id)->first();
-                $locationName = ($location->city->name ?? '') . '-' . ($location->name ?? '');
-                $creatorName = Auth::user()->name ?? 'System';
-                $patientName = $patient->name ?? 'Unknown';
-                
-                // Format description with highlights (no date - timestamp shows when it happened)
-                $description = '<span class="highlight">' . $creatorName . '</span> received payment <span class="highlight-green">Rs. ' . number_format($request->cash_amount) . '</span> from <span class="highlight-orange">' . $patientName . '</span> for <span class="highlight-orange">Plan Id: ' . $package->id . '</span>' . ($locationName ? ' in <span class="highlight">' . $locationName . '</span>' : '');
-                
-                $activity = new Activity();
-                $activity->action = 'received';
-                $activity->activity_type = 'payment_received';
-                $activity->description = $description;
-                $activity->patient = $patient->name;
-                $activity->patient_id = $patient->id;
-                $activity->appointment_type = 'Plan';
-                $activity->created_by = Auth::user()->id;
-                $activity->account_id = Auth::user()->account_id;
-                $activity->planId = $package->id;
-                $activity->amount = $request->cash_amount;
-                $activity->location = $locationName;
-                $activity->centre_id = $request->location_id;
-                $activity->created_at = Filters::getCurrentTimeStamp();
-                $activity->updated_at = Filters::getCurrentTimeStamp();
-                $activity->save();
-                /*Now sent message to user about cash received*/
-                Invoice_Plan_Refund_Sms_Functions::PlanCashReceived_SMS($package->id, $packageAdavances);
-
-                // Mark appointment as converted when payment is received
-                self::markAppointmentAsConverted($appointment_id, $package->id, $request->cash_amount);
-
-                // Commit Transaction
-                DB::commit();
-
-                return ApiHelper::apiResponse($this->success, 'updated successfully');
-            }
+            
+            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         } catch (\Exception $e) {
-            // Rollback Transaction
-            DB::rollback();
-
-            return ApiHelper::apiResponse($this->success, $e->getMessage() . ' - ' . $e->getFile() . ' - ' . $e->getLine(), false);
+            \Log::error('Update Packages Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
         }
     }
     protected function verifyRefundsFields(Request $request)
@@ -1760,15 +1645,26 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
+    /**
+     * Delete plan package (optimized)
+     */
     public function destroy($id)
     {
         if (!Gate::allows('plans_destroy')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        $response = Packages::deleteRecord($id);
-
-        return ApiHelper::apiResponse($this->success, $response['message'], $response['status']);
+        try {
+            $result = $this->planService->deletePlan($id);
+            
+            return ApiHelper::apiResponse($this->success, $result['message'], $result['status']);
+        } catch (PlanException $e) {
+            // Return clean error message without file path
+            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+        } catch (\Exception $e) {
+            \Log::error('Delete Package Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'An error occurred while deleting the package.', false);
+        }
     }
 
     /**
@@ -1777,71 +1673,24 @@ class PackagesController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\JsonResponse
      */
+    /**
+     * Display package details (optimized)
+     */
     public function display($id)
     {
         if (!Gate::allows('plans_manage')) {
             return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
         }
 
-        $package = Packages::with('user', 'location')->find($id);
-
-        $packagebundles = PackageBundles::with(['bundle', 'packageservice.soldBy'])->where('package_id', '=', $package->id)->get();
-
-        $packageservices = PackageService::with('service', 'soldBy')->where('package_id', '=', $package->id)->get();
-        $packageservices_price = PackageService::with('service')->where('package_id', '=', $package->id)->sum('package_services.price');
-        $packageadvances = PackageAdvances::with('paymentmode')->where([
-            ['package_id', '=', $package->id],
-            ['is_cancel', '=', '0'],
-            //['is_tax', '=', '0'],
-            ['is_adjustment', '=', '0'],
-            //['is_refund', '=', '0']
-        ])->get();
-
-        $packageadvances = $this->appointmentPackage($packageadvances);
-
-        $cash_amount_in = PackageAdvances::where([
-            ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'in'],
-        ])->sum('cash_amount');
-
-        $cash_amount_out = PackageAdvances::where([
-            ['package_id', '=', $package->id],
-            ['cash_flow', '=', 'out'],
-        ])->sum('cash_amount');
-
-        $cash_amount = $cash_amount_in - $cash_amount_out;
-
-        /*We discuss it in future what happen next*/
-
-        //$grand_total = number_format($package->total_price - $cash_amount_in);
-        $grand_total = round($packageservices_price, 2);
-        $services = Services::getServices();
-        $discount = Discounts::getDiscount(Auth::User()->account_id);
-        $paymentmodes = PaymentModes::get()->pluck('name', 'id');
-        $checkMembership = Membership::with('membershiptype')->where('patient_id', $package->patient_id)->first();
-        if ($checkMembership) {
-            if ($checkMembership->end_date < now()->format('Y-m-d')) {
-                $checkMembership->is_expired = ' - Expired';
-                $checkMembership->is_active = '';
-            } else {
-                $checkMembership->is_expired = '';
-                $checkMembership->is_active = $checkMembership->active == 1 ? ' - Active' : ' - Inactive';
-            }
+        try {
+            $data = $this->planService->getDisplayData($id);
+            
+            return ApiHelper::apiResponse($this->success, 'Record found.', true, $data);
+        } catch (PlanException $e) {
+            return ApiHelper::apiResponse($this->error, $e->getMessage(), false);
+        } catch (\Exception $e) {
+            return ApiHelper::apiException($e);
         }
-
-
-
-        return ApiHelper::apiResponse($this->success, 'Record found.', true, [
-            'package' => $package,
-            'packagebundles' => $packagebundles,
-            'packageservices' => $packageservices,
-            'packageadvances' => $packageadvances,
-            'services' => $services,
-            'discount' => $discount,
-            'paymentmodes' => $paymentmodes,
-            'grand_total' => $grand_total,
-            'membership' => $checkMembership ? "{$checkMembership->membershipType->name}{$checkMembership->is_active}{$checkMembership->is_expired}" : 'No membership',
-        ]);
     }
 
     private function appointmentPackage($packageadvances)

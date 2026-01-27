@@ -1158,6 +1158,9 @@ class PlanService
     {
         $allDataServices = [];
         
+        // Debug: Log sold_by value
+        \Log::info('Building service data with sold_by', ['sold_by' => $data['sold_by'] ?? 'NOT SET']);
+        
         foreach ($calculatedServicePrices as $detail) {
             $dataService = [
                 'random_id' => $data['random_id'],
@@ -1168,6 +1171,7 @@ class PlanService
                 'created_at' => Filters::getCurrentTimeStamp(),
                 'updated_at' => Filters::getCurrentTimeStamp(),
                 'is_consumed' => 0,
+                'sold_by' => $data['sold_by'] ?? null,
             ];
 
             $isExclusive = ($data['is_exclusive'] ?? '0') == '1';
@@ -1419,6 +1423,7 @@ class PlanService
             foreach ($calculatedServicesPrices as $calculatedServicePrice) {
                 $dataService = [
                     'random_id' => $data['random_id'],
+                    'package_id' => $package->id,
                     'package_bundle_id' => $packageBundleRecord->id,
                     'service_id' => $calculatedServicePrice['service_id'],
                     'price' => $calculatedServicePrice['calculated_price'],
@@ -1442,7 +1447,23 @@ class PlanService
 
         // Bulk insert all package services (instead of individual inserts)
         if (!empty($allPackageServices)) {
-            PackageService::insert($allPackageServices);
+            \Log::info('Inserting package services', [
+                'count' => count($allPackageServices),
+                'package_id' => $package->id,
+                'first_service' => $allPackageServices[0] ?? null
+            ]);
+            
+            $inserted = PackageService::insert($allPackageServices);
+            
+            \Log::info('Package services insertion result', [
+                'success' => $inserted,
+                'count' => count($allPackageServices)
+            ]);
+        } else {
+            \Log::warning('No package services to insert', [
+                'package_id' => $package->id,
+                'bundle_count' => count($data['package_bundles'] ?? [])
+            ]);
         }
     }
 
@@ -1884,5 +1905,349 @@ class PlanService
             : 'Gold';
         
         return "{$membershipTypeName} - {$membership->code} - {$status}" . ($expiryDateFormatted ? " (Exp: {$expiryDateFormatted})" : "");
+    }
+
+    /**
+     * Update existing plan package (optimized)
+     * 
+     * @param array $data
+     * @return array
+     * @throws PlanException
+     */
+    public function updatePlanPackage(array $data): array
+    {
+        DB::beginTransaction();
+        
+        try {
+            // Fetch package once and reuse (instead of 3 separate queries)
+            $package = Packages::where('random_id', $data['random_id'])->first();
+            
+            if (!$package) {
+                throw new PlanException('Package not found', 404);
+            }
+
+            // Check if package is settled
+            $isSettled = PackageAdvances::where([
+                ['cash_flow', '=', 'out'],
+                ['cash_amount', '>', 0],
+                ['is_setteled', '=', '1'],
+                ['package_id', '=', $package->id],
+            ])->exists();
+
+            if ($isSettled) {
+                throw new PlanException('Plan is already settled. You cannot add further treatment in this plan.', 400);
+            }
+
+            // Handle appointment creation/update
+            $appointmentId = $this->handleAppointmentForUpdate($data, $package);
+            
+            if (!$appointmentId) {
+                throw new PlanException('Appointment ID is required', 400);
+            }
+
+            // Check if new services or payment
+            $hasNewServices = isset($data['package_bundles']) && !empty($data['package_bundles']);
+            $hasPayment = !empty($data['cash_amount']) && $data['cash_amount'] != '0';
+
+            // Update package if needed
+            if ($hasNewServices || $hasPayment) {
+                $totalPrice = str_replace(',', '', $data['total']);
+                
+                $package->update([
+                    'total_price' => $totalPrice,
+                    'sessioncount' => '1',
+                    'account_id' => Auth::user()->account_id,
+                    'appointment_id' => $appointmentId,
+                    'updated_at' => Filters::getCurrentTimeStamp(),
+                ]);
+            }
+
+            // Store package bundles and services (optimized)
+            if ($hasNewServices) {
+                $this->storePackageBundlesOptimized($package, $data);
+            }
+
+            // Handle payment if provided
+            if ($hasPayment) {
+                $this->handlePackagePayment($package, $data, $appointmentId);
+            }
+
+            DB::commit();
+
+            return [
+                'status' => true,
+                'message' => 'updated successfully',
+                'package_id' => $package->id
+            ];
+
+        } catch (PlanException $e) {
+            DB::rollBack();
+            throw $e;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Update Plan Package Error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            throw new PlanException('Failed to update package: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Handle appointment for update (create or retrieve)
+     */
+    protected function handleAppointmentForUpdate(array $data, Packages $package): ?int
+    {
+        if (!isset($data['appointment_id'])) {
+            return null;
+        }
+
+        $tagAppoint = explode('.', $data['appointment_id']);
+        
+        if ($tagAppoint[1] == 'A') {
+            return (int) $tagAppoint[0];
+        } else {
+            $planAppointmentCalculation = new PlanAppointmentCalculation();
+            
+            // Check if appointment exists
+            $appointmentDecision = Appointments::find($package->appointment_id);
+            
+            if ($appointmentDecision) {
+                $appointmentId = $planAppointmentCalculation->updateAppointment(
+                    $data['patient_id'],
+                    $data['location_id'],
+                    (object) $data,
+                    $tagAppoint[0],
+                    $package
+                );
+            } else {
+                $appointmentId = $planAppointmentCalculation->storeAppointment(
+                    $data['patient_id'],
+                    $data['location_id'],
+                    (object) $data,
+                    $tagAppoint[0],
+                    false
+                );
+                $planAppointmentCalculation->saveinvoice($appointmentId);
+            }
+            
+            return $appointmentId;
+        }
+    }
+
+    /**
+     * Get display data for package (optimized)
+     * 
+     * @param int $packageId
+     * @return array
+     * @throws PlanException
+     */
+    public function getDisplayData(int $packageId): array
+    {
+        try {
+            // Fetch package with relationships
+            $package = Packages::with('user', 'location')->find($packageId);
+            
+            if (!$package) {
+                throw new PlanException('Package not found', 404);
+            }
+
+            // Fetch package bundles with relationships (eager loading)
+            $packageBundles = PackageBundles::with(['bundle', 'packageservice.soldBy'])
+                ->where('package_id', $packageId)
+                ->get();
+
+            // Fetch package services with relationships
+            $packageServices = PackageService::with('service', 'soldBy')
+                ->where('package_id', $packageId)
+                ->get();
+
+            // Calculate services price
+            $packageServicesPrice = PackageService::where('package_id', $packageId)
+                ->sum('price');
+
+            // Fetch package advances with payment mode
+            $packageAdvances = PackageAdvances::with('paymentmode')
+                ->where([
+                    ['package_id', '=', $packageId],
+                    ['is_cancel', '=', '0'],
+                    ['is_adjustment', '=', '0'],
+                ])
+                ->get();
+
+            // Process package advances
+            $packageAdvances = $this->processPackageAdvances($packageAdvances);
+
+            // Calculate cash amounts (consolidated query)
+            $cashSummary = PackageAdvances::where('package_id', $packageId)
+                ->selectRaw("
+                    SUM(CASE WHEN cash_flow = 'in' THEN cash_amount ELSE 0 END) as cash_in,
+                    SUM(CASE WHEN cash_flow = 'out' THEN cash_amount ELSE 0 END) as cash_out
+                ")
+                ->first();
+
+            $cashAmount = $cashSummary->cash_in - $cashSummary->cash_out;
+            $grandTotal = round($packageServicesPrice, 2);
+
+            // Get services and discounts (cached)
+            $services = Cache::remember('all_services', 3600, function() {
+                return Services::getServices();
+            });
+
+            $discounts = Cache::remember('discounts_' . Auth::user()->account_id, 3600, function() {
+                return Discounts::getDiscount(Auth::user()->account_id);
+            });
+
+            // Get payment modes
+            $paymentModes = PaymentModes::pluck('name', 'id');
+
+            // Get membership info
+            $membershipDisplay = $this->getMembershipDisplayForPackage($package->patient_id);
+
+            return [
+                'package' => $package,
+                'packagebundles' => $packageBundles,
+                'packageservices' => $packageServices,
+                'packageadvances' => $packageAdvances,
+                'services' => $services,
+                'discount' => $discounts,
+                'paymentmodes' => $paymentModes,
+                'grand_total' => $grandTotal,
+                'membership' => $membershipDisplay,
+            ];
+
+        } catch (PlanException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Get Display Data Error: ' . $e->getMessage());
+            throw new PlanException('Failed to load display data: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
+     * Process package advances with appointment package calculations
+     */
+    protected function processPackageAdvances($packageAdvances): array
+    {
+        if ($packageAdvances->count() === 0) {
+            return [];
+        }
+
+        $processedAdvances = [];
+        
+        foreach ($packageAdvances as $packageAdvance) {
+            if ($packageAdvance->cash_flow == 'out' && $packageAdvance->is_tax == 0) {
+                if (!is_null($packageAdvance->refund_note)) {
+                    $packageAdvance->package_refund_price = number_format(
+                        PackageAdvances::getAppointmentPackage(
+                            $packageAdvance->appointment_id, 
+                            $packageAdvance->patient_id, 
+                            $packageAdvance->id
+                        )
+                    );
+                } else {
+                    $packageAdvance->package_refund_price = number_format(
+                        PackageAdvances::getAppointmentPackage(
+                            $packageAdvance->appointment_id, 
+                            $packageAdvance->patient_id
+                        )
+                    );
+                }
+            } elseif ($packageAdvance->is_tax == 0) {
+                $packageAdvance->package_refund_price = number_format($packageAdvance->cash_amount);
+            } else {
+                $packageAdvance->package_refund_price = '00.00';
+            }
+            
+            $packageAdvance->created_at_formated = Carbon::parse($packageAdvance->created_at)
+                ->format('F j,Y H:i A');
+
+            $processedAdvances[] = $packageAdvance;
+        }
+
+        return $processedAdvances;
+    }
+
+    /**
+     * Get membership display for package
+     */
+    protected function getMembershipDisplayForPackage(int $patientId): string
+    {
+        $checkMembership = Membership::with('membershiptype')
+            ->where('patient_id', $patientId)
+            ->first();
+
+        if (!$checkMembership) {
+            return 'No membership';
+        }
+
+        $isExpired = $checkMembership->end_date < now()->format('Y-m-d');
+        $status = $isExpired ? ' - Expired' : ($checkMembership->active == 1 ? ' - Active' : ' - Inactive');
+
+        return "{$checkMembership->membershipType->name}{$status}";
+    }
+
+    /**
+     * Delete plan package (optimized)
+     * 
+     * @param int $packageId
+     * @return array
+     * @throws PlanException
+     */
+    public function deletePlan(int $packageId): array
+    {
+        try {
+            // Fetch package
+            $package = Packages::find($packageId);
+
+            if (!$package) {
+                throw new PlanException('Package not found', 404);
+            }
+
+            // Check if child records exist (optimized with exists() instead of count())
+            $hasInvoiceDetails = DB::table('invoice_details')
+                ->where('package_id', $packageId)
+                ->exists();
+
+            $hasPackageAdvances = DB::table('package_advances')
+                ->where('package_id', $packageId)
+                ->exists();
+
+            if ($hasInvoiceDetails || $hasPackageAdvances) {
+                // Build detailed error message
+                $childRecords = [];
+                if ($hasInvoiceDetails) {
+                    $childRecords[] = 'Invoice Details';
+                }
+                if ($hasPackageAdvances) {
+                    $childRecords[] = 'Package Advances (Payments)';
+                }
+                
+                $message = 'Unable to delete package. Child records exist in: ' . implode(', ', $childRecords);
+                
+                throw new PlanException($message, 409);
+            }
+
+            // Delete the package (no child records)
+            $package->delete();
+
+            // Log audit trail
+            \App\Models\AuditTrails::deleteEventLogger(
+                'packages',
+                'delete',
+                ['name', 'sessioncount', 'total_price', 'is_exclusive', 'patient_id', 'active', 'location_id', 'appointment_id', 'is_refund', 'created_at', 'updated_at', 'deleted_at'],
+                $packageId
+            );
+
+            return [
+                'status' => true,
+                'message' => 'Record has been deleted successfully.',
+            ];
+
+        } catch (PlanException $e) {
+            throw $e;
+        } catch (\Exception $e) {
+            \Log::error('Delete Plan Error: ' . $e->getMessage());
+            throw new PlanException('Failed to delete package: ' . $e->getMessage(), 500);
+        }
     }
 }
