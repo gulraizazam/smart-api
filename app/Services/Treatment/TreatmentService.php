@@ -570,6 +570,7 @@ class TreatmentService
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
             'add_feedback' => Gate::allows('feedbacks_create'),
+            'can_edit_doctor' => Gate::allows('can_edit_doctor'),
         ];
     }
 
@@ -1103,7 +1104,8 @@ class TreatmentService
                 'scheduled_date' => $lastTreatment->scheduled_date,
                 'scheduled_time' => $lastTreatment->scheduled_time,
                 'has_doctor_rota' => $hasDoctorRota,
-            ]
+            ],
+            'can_edit_doctor' => Gate::allows('can_edit_doctor'),
         ];
     }
 
