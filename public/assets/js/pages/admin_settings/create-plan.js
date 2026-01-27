@@ -746,10 +746,12 @@ function setEditData(response) {
             });
         }
 
+        let selectedAppointmentId = response.data.selectedAppointmentId;
         let appointment_options = '<option value="">Select Appointment</option>';
-        if (appointmentArray.length) {
+        if (appointmentArray && Object.keys(appointmentArray).length > 0) {
             Object.values(appointmentArray).forEach(function (appointment) {
-                appointment_options += '<option value="' + appointment.id + '">' + appointment.name + '</option>';
+                let selected = (appointment.id === selectedAppointmentId) ? 'selected' : '';
+                appointment_options += '<option value="' + appointment.id + '" ' + selected + '>' + appointment.name + '</option>';
             });
         }
 
@@ -1288,7 +1290,7 @@ function createPlan(url, id) {
     $('#add_service_id').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     setTimeout(function () {
         $("#add_discount_id").html('<option value="">Select Discount</option>');
-        $("#add_patients_id").val('');
+        $("#add_patient_id").val(null).trigger('change');
         $(".search_patient").val('');
         $("#net_amount_1").val('');
         $("#package_total_1").val('');
@@ -1343,7 +1345,10 @@ function setPlanData(response) {
 
     if (locations) {
         Object.entries(locations).forEach(function (location) {
-            location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            // Skip "All Cities-All Centres" option
+            if (location[1] !== 'All Cities-All Centres') {
+                location_options += '<option value="' + location[0] + '">' + location[1] + '</option>';
+            }
         });
     }
 
@@ -1415,7 +1420,7 @@ function getServices() {
 
 function setServices(response) {
 
-    getAppointments($("#add_patients_id").val());
+    getAppointments($("#add_patient_id").val());
 
     try {
         // Check if response has data and service array
@@ -1494,18 +1499,27 @@ function setAppointments(response) {
     try {
 
         let appointments = response.data.appointments;
-        let appointment_options = '';
+        let appointment_options = '<option value="">Select Appointment</option>';
         let membership = response.data.membership;
+        let appointmentKeys = [];
 
-        if (appointments.length) {
+        // Check if appointments object has any keys
+        if (appointments && Object.keys(appointments).length > 0) {
 
             Object.values(appointments).forEach(function (value) {
                 appointment_options += '<option value="' + value.id + '"> ' + value.name + ' </option>';
+                appointmentKeys.push(value.id);
             });
 
-            $("#add_appointment_id").html(appointment_options);
-
         }
+        
+        $("#add_appointment_id").html(appointment_options);
+        
+        // Auto-select if only one appointment exists
+        if (appointmentKeys.length === 1) {
+            $("#add_appointment_id").val(appointmentKeys[0]).trigger('change');
+        }
+        
         $("#patient_membership").val(membership);
         $("#patient_membership").attr('disabled', true);
     } catch (error) {
@@ -1517,7 +1531,7 @@ function setAppointments(response) {
 function getServiceDiscount($this, type = '') {
     hideMessages();
     var service_id = $this.val();
-    var patient_id = $('#add_patients_id').val();
+    var patient_id = $('#add_patient_id').val();
     var location_id = $('#add_plan_location_id').val();
     //$("#"+type+"add_discount_id").val('0').trigger('change');
     if (service_id == "") {
@@ -1594,7 +1608,7 @@ function getDiscountInfo($this) {
     $("#add_discount_type_error").hide()
     var service_id = $('#add_service_id').val(); //Basicailly it is bundle id
     var discount_id = $this.val();
-    var patient_id = $('#add_patients_id').val();
+    var patient_id = $('#add_patient_id').val();
     setTimeout(function () {
         $('#add_discount_type').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
     }, 500)
@@ -1823,7 +1837,7 @@ function changeDiscount($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_value = $('#discount_value_1').val();
     var discount_type = $this.val();
-    var patient_id = $('#add_patients_id').val();
+    var patient_id = $('#add_patient_id').val();
     $("#edit_discount_value_1").val(0);
     if (discount_type == 'Percentage') {
         if (discount_value > 100) {
@@ -2111,7 +2125,7 @@ function getDiscountValue($this) {
     var discount_id = $('#add_discount_id').val();
     var discount_type = $('#add_discount_type').val();
     var discount_value = $this.val();
-    var patient_id = $('#add_patients_id').val();
+    var patient_id = $('#add_patient_id').val();
     if (discount_value.includes('.')) {
         var parts = discount_value.split('.');
         if (parts.length > 1 && parts[1].length > 2) {
@@ -2207,7 +2221,7 @@ function changeDiscount($this, type) {
         var discount_value = $('#discount_value_1').val();
         var service_id = $('#add_service_id').val();//Basicailly it is bundle id
         var discount_id = $('#add_discount_id').val();
-        var patient_id = $('#add_patients_id').val();
+        var patient_id = $('#add_patient_id').val();
     }
 
 
@@ -2554,7 +2568,7 @@ jQuery(document).ready(function () {
             return false;
         }
 
-        if (!$('#add_patients_id').val()) {
+        if (!$('#add_patient_id').val()) {
             $('#add_patient_id_error').html('Please select patient');
             return false;
         }
@@ -2596,7 +2610,7 @@ jQuery(document).ready(function () {
         var sold_by = $('#add_sold_by').val();
         var is_exclusive = $('#is_exclusive').val();
         var location_id = $('#add_plan_location_id').val();
-        var user_id = $('#add_patients_id').val();
+        var user_id = $('#add_patient_id').val();
         if (service_id && net_amount && location_id) {
 
             showSpinner("-add");
@@ -2636,7 +2650,10 @@ jQuery(document).ready(function () {
             });
 
             $.ajax({
-                type: 'get',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'post',
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
@@ -2737,7 +2754,7 @@ jQuery(document).ready(function () {
         hideMessages();
 
         var random_id = $('#random_id_1').val();
-        var patient_id = $('#add_patients_id').val();
+        var patient_id = $('#add_patient_id').val();
         var total = $('#package_total_1').val();
         var payment_mode_id = $('#payment_mode_id_1').val();
         var cash_amount = $('#cash_amount_1').val();
@@ -2950,7 +2967,10 @@ jQuery(document).ready(function () {
                 formData['package_bundles[]'].push($(this).val());
             });
             $.ajax({
-                type: 'get',
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                type: 'post',
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
@@ -3160,15 +3180,27 @@ jQuery(document).ready(function () {
     });
     /*End*/
 
-    $('.plan_search_patient').keyup(function () {
-        $('.plan_search_patient').val() ? $('.plan_search_patient_croxcli').show() : $('.plan_search_patient_croxcli').hide();
-    })
+    // Handle patient selection from Select2 dropdown
+    $('#add_patient_id').on('select2:select', function (e) {
+        var patientId = $(this).val();
+        if (patientId) {
+            // Clear appointment dropdown
+            $("#add_appointment_id").empty();
+            $('#add_appointment_id').append('<option value="">Select Appointment</option>');
+            $('#add_appointment_id').val(null).trigger('change');
+            
+            // Load appointments for selected patient
+            getAppointments(patientId);
+        }
+    });
 
-    $('.plan_search_patient_croxcli').on('click', function () {
-        $('.plan_search_patient').val('');
-        $('.suggesstion-box').hide();
-        $('.plan_search_patient_croxcli').hide();
-    })
+    // Clear appointments when patient is cleared
+    $('#add_patient_id').on('select2:clear', function (e) {
+        $("#add_appointment_id").empty();
+        $('#add_appointment_id').append('<option value="">Select Appointment</option>');
+        $('#add_appointment_id').val(null).trigger('change');
+        $('#patient_membership').val('No data');
+    });
 
     $('.index_search_patient').keyup(function () {
         $('.index_search_patient').val() ? $('.index_search_patient_croxcli').show() : $('.index_search_patient_croxcli').hide();

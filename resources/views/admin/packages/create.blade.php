@@ -54,20 +54,17 @@
             <div class="form-group">
                 <div class="row">
                     <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Centers <span class="text text-danger">*</span></label>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Location <span class="text text-danger">*</span></label>
                         <select onchange="getServices('add');" id="add_plan_location_id" class="form-control form-control-solid mb-3 mb-lg-0 select2" name="location_id_1">
                             <option value="">Select Centre</option>
                         </select>
                         <small class="text-danger ml-1 mt-1"><b id="add_plan_location_id_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-3 mt-5">
-                        <label class="required fw-bold fs-6 mb-2 pl-0">Patients <span class="text text-danger">*</span></label>
-                        <input onchange="getAppointments($('#add_patient_id').val());" class="form-control filter-field search_patient_refund plan_search_patient" placeholder="Patient Search">
-                        <input type="hidden" class="filter-field search_field" id="add_patients_id">
-                        <span class="plan_search_patient_croxcli" style="display: none; padding-left: 0% !important; top:36px; right:22px; position: absolute;"><i class="fa fa-times" aria-hidden="true"></i></span>
-                        <div class="suggesstion-box-plan" style="display: none;">
-                            <ul class="suggestion-list"></ul>
-                        </div>
+                        <label class="required fw-bold fs-6 mb-2 pl-0">Patient Search <span class="text text-danger">*</span></label>
+                        <select id="add_patient_id" class="form-control form-control-solid mb-3 mb-lg-0 select2-patient-search" name="patient_id_1">
+                            <option value="">Search Patient by Name or Phone</option>
+                        </select>
                         <small class="text-danger ml-1 mt-1"><b id="add_patient_id_error" class="create-plan-error"></b></small>
                     </div>
                     <div class="fv-row col-md-2 mt-5">
