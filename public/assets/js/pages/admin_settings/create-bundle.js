@@ -3,6 +3,13 @@ function createBundle(url, id) {
     edit_amountArray = [];
     ExistingTotal = 0;
     $('#add_service_id_bundle').parents(".modal").find(".select2-selection").removeClass("select2-is-invalid");
+    
+    // Re-enable all fields that might have been disabled
+    $("#add_bundle_location_id").prop("disabled", false);
+    $("#add_service_id_bundle").prop("disabled", false);
+    $("#add_sold_by_bundle").prop("disabled", false);
+    $("#AddPackageBundle").prop("disabled", false);
+    
     setTimeout(function () {
         $("#add_discount_id_bundle").html('<option value="">Select Discount</option>');
         $("#add_patient_id_bundle").val(null).trigger('change');

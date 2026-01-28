@@ -149,26 +149,7 @@
                                 <td>1</td>
                                 <td>{{$service->name}} </td>
                                 <td>
-                                    @if($Invoiceinfo->is_exclusive == '0' && $bundle->type == 'single')
-                                        @if($Invoiceinfo->service_price == '0')
-                                            {{number_format($Invoiceinfo->tax_including_price)}}
-                                        @else
-                                            {{number_format(($Invoiceinfo->service_price)-($Invoiceinfo->tax_price))}}
-                                        @endif
-                                    @elseif($Invoiceinfo->is_exclusive == '0' && $bundle->type == 'multiple')
-                                        @if($Invoiceinfo->service_price == '0')
-                                            {{number_format($Invoiceinfo->tax_including_price)}}
-                                        @else
-                                            {{number_format($Invoiceinfo->service_price)}}
-                                        @endif
-                                    @elseif($Invoiceinfo->is_exclusive == '1')
-                                        @if($Invoiceinfo->service_price == '0')
-                                            {{number_format($Invoiceinfo->tax_including_price)}}
-                                        @else
-                                            {{number_format($Invoiceinfo->service_price)}}
-                                        @endif
-                                    @endif
-
+                                    {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
                                 </td>
                                 <td>
                                     @if($discount != null)
@@ -192,15 +173,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if($Invoiceinfo->is_exclusive == '0')
-                                        @if($Invoiceinfo->discount_price == null && $bundle->type == 'single')
-                                            {{number_format(($Invoiceinfo->service_price)-($Invoiceinfo->tax_price))}}
-                                        @else
-                                            {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
-                                        @endif
-                                    @elseif($Invoiceinfo->is_exclusive == '1')
-                                        {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
-                                    @endif
+                                    {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
                                 </td>
                                 <td>
                                     {{$Invoiceinfo->tax_percenatage}}
