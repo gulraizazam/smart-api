@@ -781,6 +781,9 @@ $(document).ready(function() {
                         $('#add_service_id_bundle').val('').trigger('change');
                         $('#net_amount_bundle').val('');
                         $('#add_sold_by_bundle').val('').trigger('change');
+                        
+                        // Hide service required validation alert
+                        $('#add_service_id_bundle_error').html('').hide();
 
                         // Disable location and Add button after service added (only 1 service allowed)
                         $("#add_bundle_location_id").prop("disabled", true);

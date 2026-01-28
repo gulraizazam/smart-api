@@ -3088,8 +3088,21 @@ class AppointmentsController extends Controller
             $location_id = 0;
             $checked_treatment = 0;
             $appointmentArray = [];
+            $service_in_plan = false;
             if ($appointment_type->name == Config::get('constants.Service')) {
                 /*Check if service has */
+                // Check if service exists in any plan (consumed or not)
+                $serviceInAnyPlan = DB::table('packages')
+                    ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
+                    ->where([
+                        'packages.active' => '1',
+                        'packages.patient_id' =>  $appointment->patient_id,
+                        'package_services.service_id' => $appointment->service_id,
+                        'packages.location_id' => $appointment->location_id,
+                    ])->exists();
+                
+                $service_in_plan = $serviceInAnyPlan;
+                
                 $packages = DB::table('packages')
                     ->leftjoin('package_services', 'packages.id', '=', 'package_services.package_id')
                     ->where([
@@ -3150,7 +3163,7 @@ class AppointmentsController extends Controller
         $paymentmodes = PaymentModes::where('type', '=', 'application')->pluck('name', 'id');
         $paymentmodes->prepend('Select', '0');
 
-        return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive'));
+        return view('admin.appointments.invoice_create', compact('price', 'packages', 'appointment_type', 'status', 'id', 'service', 'balance', 'settleamount', 'outstanding', 'invoice_status', 'paymentmodes', 'tax_create', 'amount_create', 'location_id', 'checked_treatment', 'appointmentArray', 'amount_create_is_inclusive', 'service_in_plan'));
     }
 
     /*

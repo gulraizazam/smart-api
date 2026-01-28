@@ -125,6 +125,10 @@ class PlanService
         $query = Packages::query()
             ->select([
                 'packages.*',
+                // Calculate total as sum of tax_including_price of all services
+                DB::raw('(SELECT COALESCE(SUM(tax_including_price), 0) 
+                         FROM package_services 
+                         WHERE package_services.package_id = packages.id) as total_price'),
                 // Aggregate cash_receive in single query
                 DB::raw('(SELECT COALESCE(SUM(cash_amount), 0) 
                          FROM package_advances 
