@@ -158,9 +158,7 @@ class PackagesController extends Controller
     public function savebundle_service(Request $request)
     {
         try {
-            if (!Gate::allows('packages_create')) {
-                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-            }
+            
 
             $bundleId = $request->bundle_id;
             $bundle = Bundles::find($bundleId);
