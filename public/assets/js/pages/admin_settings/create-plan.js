@@ -3160,9 +3160,8 @@ jQuery(document).ready(function () {
                 data: formData,
                 success: function (resposne) {
                     if (resposne.status) {
-                        $('#successMessage').show();
-                        toastr.success(resposne.message)
-                        closePopup('update_plane_form');
+                        toastr.success(resposne.message || 'Plan updated successfully');
+                        $("#modal_edit_plan").modal("hide");
                         current_url = window.location.href;
                         if (!window.location.href.includes("view-package")) {
                             reInitTable();
