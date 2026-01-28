@@ -1483,7 +1483,6 @@ class AppointmentsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        
         try {
             $updateService = new \App\Services\Appointment\ConsultancyUpdateService();
             $appointment = $updateService->updateConsultation($id, $request->all());
@@ -1500,6 +1499,33 @@ class AppointmentsController extends Controller
                 'trace' => $e->getTraceAsString()
             ]);
             return ApiHelper::apiResponse($this->success, 'An error occurred while updating the consultation.', false);
+        }
+    }
+
+    /**
+     * Update Treatment in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateTreatment(Request $request, $id)
+    {
+        try {
+            $updateService = new \App\Services\Appointment\TreatmentUpdateService();
+            $appointment = $updateService->updateTreatment($id, $request->all());
+            
+            return ApiHelper::apiResponse($this->success, 'Treatment has been updated successfully.', true, [
+                'appointment' => $appointment
+            ]);
+        } catch (\App\Exceptions\AppointmentException $e) {
+            return ApiHelper::apiResponse($this->success, $e->getMessage(), false);
+        } catch (\Exception $e) {
+            \Log::error('Treatment update error', [
+                'appointment_id' => $id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return ApiHelper::apiResponse($this->success, 'An error occurred while updating the treatment.', false);
         }
     }
 

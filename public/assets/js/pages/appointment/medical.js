@@ -84,7 +84,7 @@ function editRow(url, id, $class = 'detail-actions') {
         $("#modal_edit_appointment_form").attr("action", route('admin.appointments.update', {id: id}));
     } else {
         $("#modal_treatment_edit").modal("show");
-        $("#modal_edit_treatment_form").attr("action", route('admin.appointments.update', {id: id}));
+        $("#modal_edit_treatment_form").attr("action", route('admin.treatment.update', {id: id}));
     }
 
     $.ajax({

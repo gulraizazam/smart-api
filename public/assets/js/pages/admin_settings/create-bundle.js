@@ -472,7 +472,9 @@ $(document).ready(function() {
         } else {
             $('#cash_amount_bundle').val('');
             $('#cash_amount_bundle').prop('disabled', true);
-            keyfunction_grandtotal_bundle();
+            // Set grand_total to package_total when no payment
+            var packageTotal = $('#package_total_bundle').val() || '0';
+            $("#grand_total_bundle").val(packageTotal);
         }
     });
 
@@ -518,8 +520,24 @@ $(document).ready(function() {
         var payment_mode_id = $('#payment_mode_id_bundle').val();
         var cash_amount = $('#cash_amount_bundle').val();
         var grand_total = $('#grand_total_bundle').val();
+        // If grand_total is empty, use package_total (for cases with no payment)
+        if (!grand_total || grand_total === '') {
+            grand_total = total;
+            $('#grand_total_bundle').val(grand_total);
+        }
         var location_id = $('#add_bundle_location_id').val();
         var appointment_id = $('#add_appointment_id_bundle').val();
+        
+        console.log('Validation Debug:', {
+            random_id: random_id,
+            patient_id: patient_id,
+            total: total,
+            payment_mode_id: payment_mode_id,
+            cash_amount: cash_amount,
+            grand_total: grand_total,
+            location_id: location_id,
+            appointment_id: appointment_id
+        });
 
         var formData = {
             'random_id': random_id,
@@ -580,7 +598,21 @@ $(document).ready(function() {
         }
 
         // Validate required fields
-        if (random_id && (patient_id > 0) && total && (status == 1 ? payment_mode_id : true) && cash_amount >= 0 && grand_total && location_id) {
+        // cash_amount can be empty string, 0, or a positive number - all are valid
+        var cashAmountValid = cash_amount === '' || cash_amount === '0' || parseFloat(cash_amount) >= 0;
+        
+        console.log('Validation Checks:', {
+            'random_id': !!random_id,
+            'patient_id > 0': patient_id > 0,
+            'total': !!total,
+            'status': status,
+            'payment_mode_id (if status=1)': status == 1 ? !!payment_mode_id : 'not required',
+            'cashAmountValid': cashAmountValid,
+            'grand_total': !!grand_total,
+            'location_id': !!location_id
+        });
+        
+        if (random_id && (patient_id > 0) && total && (status == 1 ? payment_mode_id : true) && cashAmountValid && grand_total && location_id) {
             showSpinner("-save");
 
             $.ajax({
@@ -589,7 +621,6 @@ $(document).ready(function() {
                 data: formData,
                 success: function (response) {
                     if (response.status) {
-                        $('#successMessageBundle').show();
                         toastr.success("Bundle plan successfully created");
                         
                         // Close modal and refresh table
@@ -602,7 +633,6 @@ $(document).ready(function() {
                             }
                         }, 1500);
                     } else {
-                        $('#wrongMessageBundle').show();
                         toastr.error(response.message || 'Failed to create bundle plan');
                     }
 
@@ -760,7 +790,7 @@ $(document).ready(function() {
                         $("#add_service_id_bundle").prop("disabled", true);
                         $("#add_sold_by_bundle").prop("disabled", true);
 
-                        toastr.success('Bundle added successfully.');
+                        //toastr.success('Bundle added successfully.');
                     } else {
                         toastr.error(response.message || 'Failed to add bundle');
                         $("#AddPackageBundle").attr("disabled", false);
