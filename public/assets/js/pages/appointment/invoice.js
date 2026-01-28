@@ -677,12 +677,24 @@ function keyfunction_custom(type = '') {
                                 $('#settleamount_cash').val(response.settleamount);
                                 $('#outstanding_cash').val(response.outstanding);
 
+                                // Check if service is in any plan
+                                var serviceInPlan = $('#service_in_plan').val() === '1' || $('#service_in_plan').val() === 'true';
+
                                 if (response.outstanding == '0') {
                                     $("#" + type + "addinvoice").show();
                                     $("#outstandingMessage").hide();
+                                    $("#outstandingMessagePayment").hide();
                                 } else {
                                     $("#" + type + "addinvoice").hide();
-                                    $("#outstandingMessage").show();
+                                    
+                                    // Only show error if service is not in any plan
+                                    if (!serviceInPlan) {
+                                        $("#outstandingMessage").show();
+                                        $("#outstandingMessagePayment").hide();
+                                    } else {
+                                        $("#outstandingMessage").hide();
+                                        $("#outstandingMessagePayment").hide();
+                                    }
                                 }
 
                             } else {
@@ -814,15 +826,9 @@ function keyfunction(type = '') {
                     $(".settle_create").val(resposne.settleamount);
                     $("#outstand_create").text(resposne.outstdanding);
                     $(".outstand_create").val(resposne.outstdanding);
-                    if (resposne.outstdanding == '0') {
-                        $("#" + type + "addinvoice").show();
-                        $("#outstandingMessage").hide();
-                    } else {
-                        $("#" + type + "addinvoice").hide();
-                        $("#outstandingMessage").show();
-                    }
-
+                    
                     // Check outstanding and show/hide pay section
+                    // This function will handle showing/hiding the appropriate messages
                     checkOutstandingAmount();
                 }
             },
@@ -868,9 +874,12 @@ function calculateInvoice(id, type = '') {
                 if (resposne.outstanding == '0') {
                     $("#" + type + "addinvoice").show();
                     $("#outstandingMessage").hide();
+                    $("#outstandingMessagePayment").hide();
                 } else {
                     $("#" + type + "addinvoice").hide();
-                    $("#outstandingMessage").show();
+                    // Show payment error message when outstanding > 0
+                    $("#outstandingMessage").hide();
+                    $("#outstandingMessagePayment").show();
                 }
 
                 // Check outstanding and show/hide pay section
@@ -910,20 +919,30 @@ function showHideDiscount($this) {
 // Function to check outstanding amount and show/hide pay section
 function checkOutstandingAmount() {
     var outstanding = parseFloat($('.outstand_create').val()) || parseFloat($('.outstand').val()) || 0;
+    var serviceInPlan = $('#service_in_plan').val() === '1' || $('#service_in_plan').val() === 'true';
 
     if (outstanding > 0) {
         // Hide pay input and payment mode
         $('#pay_section').hide();
         $('#paymentmode').hide();
-        // Show red message
-        $('#outstandingMessage').show();
+        
+        // Show appropriate error message based on whether service is in plan
+        if (!serviceInPlan) {
+            $('#outstandingMessage').show();
+            $('#outstandingMessagePayment').hide();
+        } else {
+            $('#outstandingMessage').hide();
+            $('#outstandingMessagePayment').show();
+        }
+        
         // Hide invoice buttons
         $('#treatment_addinvoice').hide();
         $('#addinvoice').hide();
     } else {
         // Show pay input
         $('#pay_section').show();
-        // Hide the message
+        // Hide both messages
         $('#outstandingMessage').hide();
+        $('#outstandingMessagePayment').hide();
     }
 }

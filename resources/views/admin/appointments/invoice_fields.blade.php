@@ -30,7 +30,11 @@
     </div>
     <div id="outstandingMessage" class="alert alert-danger display-hide" style="display: none;">
         <button class="close" data-close="alert"></button>
-        Please add this service OR related payment in plan to consume
+        Add this service to the plan to consume it.
+    </div>
+    <div id="outstandingMessagePayment" class="alert alert-danger display-hide" style="display: none;">
+        <button class="close" data-close="alert"></button>
+       Add the related payment to the plan to proceed.
     </div>
     {{--End--}}
 
@@ -41,6 +45,7 @@
     <input type="hidden" id="package_service_id" name="package_service_id">
     <input type="hidden" value="{{$checked_treatment}}" id="checked_treatment" name="checked_treatment">
     <input type="hidden" value="0" id="checked_bundle_id" name="checked_bundle_id">
+    <input type="hidden" value="{{$service_in_plan ?? false}}" id="service_in_plan" name="service_in_plan">
 
     {{--End--}}
 
