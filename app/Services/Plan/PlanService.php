@@ -402,6 +402,7 @@ class PlanService
                 'created_at' => $package->created_at->format('F j, Y h:i A'),
                 'patient_name' => $package->user->name ?? 'N/A',
                 'membership_info' => $this->formatMembershipInfo($package->user),
+                'plan_type' => $package->plan_type ?? 'plan',
             ];
         }
 
@@ -890,11 +891,33 @@ class PlanService
         DB::beginTransaction();
         
         try {
-            // Validate and fetch required data with single queries
-            $bundle = Bundles::find($data['bundle_id']);
+            // Find the bundle that contains this service
+            // The dropdown sends service_id, but we need to find the corresponding bundle
+            $bundleHasService = BundleHasServices::where('service_id', $data['bundle_id'])
+                ->where('end_node', 1) // Only get bundles where this is an end node service
+                ->first();
+            
+            if (!$bundleHasService) {
+                // If not found as end_node, try without end_node filter
+                $bundleHasService = BundleHasServices::where('service_id', $data['bundle_id'])->first();
+            }
+            
+            if (!$bundleHasService) {
+                throw new PlanException('No bundle found for this service', 404);
+            }
+            
+            // Now get the actual bundle
+            $bundle = Bundles::find($bundleHasService->bundle_id);
             if (!$bundle) {
                 throw new PlanException('Bundle not found', 404);
             }
+            
+            \Log::info('Adding service to package', [
+                'service_id_received' => $data['bundle_id'],
+                'bundle_found_id' => $bundle->id,
+                'bundle_name' => $bundle->name,
+                'bundle_price' => $bundle->price
+            ]);
 
             $location = Locations::find($data['location_id']);
             if (!$location) {
@@ -976,6 +999,12 @@ class PlanService
             $discountData = $this->prepareDiscountData($discount, $packageBundleData, $data);
 
             DB::commit();
+            
+            \Log::info('Returning service data', [
+                'service_name' => $packageBundleData['service_name'],
+                'bundle_id' => $packageBundleData['bundle_id'],
+                'service_price' => $packageBundleData['service_price']
+            ]);
 
             return [
                 'bundlesData' => $packageBundleData,
@@ -1334,6 +1363,7 @@ class PlanService
             'sessioncount' => '1',
             'account_id' => Auth::user()->account_id,
             'is_exclusive' => $data['is_exclusive'] ?? 0,
+            'plan_type' => $data['plan_type'] ?? 'plan',
             'appointment_id' => $appointmentId,
             'created_at' => Filters::getCurrentTimeStamp(),
             'updated_at' => Filters::getCurrentTimeStamp(),

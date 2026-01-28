@@ -399,7 +399,9 @@ function actions(data) {
         if (permissions.create || permissions.log || permissions.sms_log || permissions.edit) {
             let actions = '<div class="dropdown dropdown-inline action-dots">';
             if (permissions.edit) {
-                actions += '<a href="javascript:void(0);" onclick="editRow(`' + edit_url + '`);" class="btn btn-icon btn-primary btn-sm">\
+                // Check plan_type to determine which edit function to call
+                let editFunction = data.plan_type === 'bundle' ? 'editBundle' : 'editRow';
+                actions += '<a href="javascript:void(0);" onclick="' + editFunction + '(`' + edit_url + '`, ' + id + ');" class="btn btn-icon btn-primary btn-sm">\
                         <span class="navi-icon"><i class="la la-pencil"></i></span>\
                     </a>';
             }
