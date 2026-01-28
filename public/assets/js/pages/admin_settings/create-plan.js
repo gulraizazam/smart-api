@@ -2725,6 +2725,14 @@ jQuery(document).ready(function () {
 
                             
                         }
+                        
+                        // Reset form fields after successful addition
+                        $('#add_service_id').val('').trigger('change');
+                        $('#add_discount_id').val('').trigger('change');
+                        $('#add_discount_type').val('').trigger('change');
+                        $('#discount_value_1').val('');
+                        $('#net_amount_1').val('');
+                        $('#add_sold_by').val('').trigger('change');
                     } else {
                         $('#AlreadyExitMessage').show();
                     }
@@ -2980,10 +2988,6 @@ jQuery(document).ready(function () {
                 url: route('admin.packages.savepackages_service'),
                 data: formData,
                 success: function (resposne) {
-                  $("#edit_discount_id").val('').change();
-                  $("#edit_discount_type").val('').change();
-                  $("#edit_discount_value_1").val('');
-
                     let consume = 'No';
 
                     if (resposne.data.servicesData.packageBundle.length && !$('.modal.show #edit_plan_services tr[id="table_1"]').length) {
@@ -3057,6 +3061,11 @@ jQuery(document).ready(function () {
                         });
 
                         edit_keyfunction_grandtotal();
+                        
+                        // Reset form fields after successful addition
+                        $('#edit_service_id').val('').trigger('change');
+                        $('#edit_net_amount_1').val('');
+                        $('#edit_sold_by').val('').trigger('change');
                     } else {
                         if (resposne.data.setteled == 1) {
                             $('#casesetteled').show();
