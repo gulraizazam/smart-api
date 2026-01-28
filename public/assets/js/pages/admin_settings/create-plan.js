@@ -2440,7 +2440,15 @@ function deletePlan(id, type) {
                 } else {
                     $("#" + type + "package_total_1").val(0);
                 }
-                if (type == 'edit_') {
+                
+                // Check which modal is open and call appropriate grand total function
+                if ($('#modal_edit_bundle').hasClass('show')) {
+                    // Update bundle modal totals
+                    $("#edit_bundle_package_total_1").val(totalWithoutCommas > 1 ? totalWithoutCommas : 0);
+                    if (typeof edit_bundle_keyfunction_grandtotal === 'function') {
+                        edit_bundle_keyfunction_grandtotal();
+                    }
+                } else if (type == 'edit_') {
                     edit_keyfunction_grandtotal();
                 } else {
                     keyfunction_grandtotal();
@@ -2451,6 +2459,17 @@ function deletePlan(id, type) {
                 if (rows <= 1) {
                     $("#add_plan_location_id").prop("disabled", false);
                     $("#edit_plan_location_id").prop("disabled", false);
+                }
+
+                // Check if edit bundle modal and re-enable service fields if no bundles remain
+                if ($('#modal_edit_bundle').hasClass('show')) {
+                    var bundleRows = $('#edit_bundle_plan_services tbody tr[class*="HR_"]').length;
+                    if (bundleRows === 0) {
+                        $('#edit_bundle_service_id').prop('disabled', false);
+                        $('#edit_bundle_net_amount_1').prop('disabled', false);
+                        $('#edit_bundle_sold_by').prop('disabled', false);
+                        $('#EditBundlePackage').prop('disabled', false);
+                    }
                 }
 
             } else {

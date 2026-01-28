@@ -77,9 +77,10 @@ class TreatmentController extends Controller
                 throw AppointmentException::unauthorized();
             }
 
-            $treatment = $this->treatmentService->updateTreatment($id, $request->validated());
+            $updateService = new \App\Services\Appointment\TreatmentUpdateService();
+            $treatment = $updateService->updateTreatment($id, $request->validated());
 
-            return ApiHelper::apiResponse(200, 'Treatment updated successfully.', $treatment);
+            return ApiHelper::apiResponse(200, 'Treatment updated successfully.', true, $treatment);
         } catch (AppointmentException $e) {
             return ApiHelper::apiResponse($e->getCode(), $e->getMessage());
         } catch (\Exception $e) {
