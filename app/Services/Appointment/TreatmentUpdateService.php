@@ -7,12 +7,8 @@ use App\Helpers\ActivityLogger;
 use App\Helpers\Filters;
 use App\Helpers\GeneralFunctions;
 use App\Models\Appointments;
-use App\Models\AppointmentStatuses;
-use App\Models\DoctorHasLocations;
 use App\Models\Invoices;
-use App\Models\InvoiceStatuses;
 use App\Models\Leads;
-use App\Models\LeadStatuses;
 use App\Models\Locations;
 use App\Models\Resources;
 use App\Models\ResourceHasRotaDays;
@@ -23,12 +19,12 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Gate;
 
-class ConsultancyUpdateService
+class TreatmentUpdateService
 {
     /**
-     * Update consultation with permission-based field handling
+     * Update treatment with permission-based field handling
      */
-    public function updateConsultation(int $appointmentId, array $requestData)
+    public function updateTreatment(int $appointmentId, array $requestData)
     {
         // Find appointment
         $appointment = Appointments::find($appointmentId);
@@ -44,24 +40,23 @@ class ConsultancyUpdateService
             'scheduled_time' => $appointment->scheduled_time,
             'location_id' => $appointment->location_id,
             'city_id' => $appointment->city_id,
-            'consultancy_type' => $appointment->consultancy_type,
         ];
 
         // Check if arrived/converted
         $isArrivedOrConverted = in_array($appointment->appointment_status_id, [2, 16]);
         
-        // Get permissions for consultations
+        // Get permissions for treatments
         $permissions = [
-            'service' => Gate::allows('update_consultation_service'),
-            'doctor' => Gate::allows('update_consultation_doctor'),
-            'schedule' => Gate::allows('update_consultation_schedule'),
+            'service' => Gate::allows('update_treatment_service') || Gate::allows('treatments_edit_after_arrived') || Gate::allows('treatments_edit'),
+            'doctor' => Gate::allows('update_treatment_doctor') || Gate::allows('treatments_edit_after_arrived') || Gate::allows('treatments_edit'),
+            'schedule' => Gate::allows('update_treatment_schedule') || Gate::allows('treatments_edit_after_arrived') || Gate::allows('treatments_edit'),
         ];
 
         // Validate permissions for arrived/converted
         if ($isArrivedOrConverted) {
-            $this->validateArrivedConsultationUpdate($appointment, $requestData, $permissions);
+            $this->validateArrivedTreatmentUpdate($appointment, $requestData, $permissions);
         } else {
-            $this->validateNormalConsultationUpdate($appointment, $requestData);
+            $this->validateNormalTreatmentUpdate($appointment, $requestData);
         }
 
         // Prepare update data
@@ -81,14 +76,15 @@ class ConsultancyUpdateService
     }
 
     /**
-     * Validate update for arrived/converted consultation
+     * Validate update for arrived/converted treatment
      */
-    protected function validateArrivedConsultationUpdate($appointment, $requestData, $permissions)
+    protected function validateArrivedTreatmentUpdate($appointment, $requestData, $permissions)
     {
         $locationId = $requestData['location_id'] ?? $appointment->location_id;
         
-        // Determine service ID for consultation
-        $newServiceId = $requestData['treatment_id'] ?? $requestData['service_id'] ?? null;
+        // Determine service ID for treatment
+        $newServiceId = $requestData['treatment_service_id'] ?? null;
+        $serviceIdForValidation = isset($requestData['service_id']) ? (int)$requestData['service_id'] : $appointment->service_id;
         
         // Check if service is changing
         if ($newServiceId && $appointment->service_id != $newServiceId) {
@@ -97,7 +93,7 @@ class ConsultancyUpdateService
             }
             
             // Validate current doctor has new service
-            $this->validateDoctorHasServiceForConsultancy($appointment->doctor_id, $newServiceId, $locationId);
+            $this->validateDoctorHasServiceForTreatment($appointment->doctor_id, $locationId, $serviceIdForValidation);
         }
 
         // Check if doctor is changing
@@ -108,7 +104,8 @@ class ConsultancyUpdateService
             }
             
             // Validate new doctor has current service
-            $this->validateDoctorHasServiceForConsultancy($newDoctorId, $appointment->service_id, $locationId);
+            $serviceIdForValidation = isset($requestData['service_id']) ? (int)$requestData['service_id'] : $appointment->service_id;
+            $this->validateDoctorHasServiceForTreatment($newDoctorId, $locationId, $serviceIdForValidation);
             
             // Validate new doctor has rota availability
             $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
@@ -135,15 +132,15 @@ class ConsultancyUpdateService
     }
 
     /**
-     * Validate update for normal consultation
+     * Validate update for normal treatment
      */
-    protected function validateNormalConsultationUpdate($appointment, $requestData)
+    protected function validateNormalTreatmentUpdate($appointment, $requestData)
     {
         // Check invoice
-        if (!Gate::allows('edit_after_arrived')) {
+        if (!Gate::allows('treatments_edit_after_arrived')) {
             $invoice = Invoices::where('appointment_id', $appointment->id)->first();
             if ($invoice) {
-                throw AppointmentException::invalidData('Invoice already generated. Appointment cannot be rescheduled.');
+                throw AppointmentException::invalidData('Invoice already generated. Treatment cannot be rescheduled.');
             }
         }
 
@@ -151,9 +148,9 @@ class ConsultancyUpdateService
         $doctorId = $requestData['doctor_id'] ?? $appointment->doctor_id;
         $locationId = $requestData['location_id'] ?? $appointment->location_id;
         
-        // CONSULTANCY: check treatment_id in doctor_has_locations
-        $serviceId = $requestData['treatment_id'] ?? $requestData['service_id'] ?? $appointment->service_id;
-        $this->validateDoctorHasServiceForConsultancy($doctorId, $serviceId, $locationId);
+        // TREATMENT: check service_id (parent category) in doctor_has_locations
+        $serviceId = isset($requestData['service_id']) ? (int)$requestData['service_id'] : $appointment->service_id;
+        $this->validateDoctorHasServiceForTreatment($doctorId, $locationId, $serviceId);
         
         // Validate doctor has rota availability
         $scheduledDate = $requestData['scheduled_date'] ?? $appointment->scheduled_date;
@@ -200,18 +197,23 @@ class ConsultancyUpdateService
     }
 
     /**
-     * Validate doctor has service allocated at location - FOR CONSULTANCY ONLY
+     * Validate doctor has service allocated at location - FOR TREATMENT ONLY
+     * For treatment: check if the PARENT of service_id is assigned to doctor
      * @param int $doctorId
-     * @param int $serviceId - The service being booked
      * @param int $locationId
+     * @param int $serviceId - The service_id from request (we need to check its parent)
      */
-    protected function validateDoctorHasServiceForConsultancy($doctorId, $serviceId, $locationId)
+    protected function validateDoctorHasServiceForTreatment($doctorId, $locationId, $serviceId)
     {
+        // Get the service to find its parent
         $service = Services::find($serviceId);
         if (!$service) {
             throw AppointmentException::invalidData('Service not found.');
         }
-
+        
+        // Get parent_id of the service_id (if service_id=16, parent is 14)
+        $parentServiceId = ($service->parent_id && $service->parent_id != 0) ? $service->parent_id : $serviceId;
+        
         // Check if doctor has "all services" assigned at this location
         $hasAllServices = \DB::table('doctor_has_locations')
             ->join('services', 'services.id', '=', 'doctor_has_locations.service_id')
@@ -225,35 +227,18 @@ class ConsultancyUpdateService
             return;
         }
 
-        // Check if exact service is assigned
-        $hasService = \DB::table('doctor_has_locations')
+        // For treatment: check if parent of service_id is assigned
+        $hasParentService = \DB::table('doctor_has_locations')
             ->where('user_id', $doctorId)
             ->where('location_id', $locationId)
-            ->where('service_id', $serviceId)
+            ->where('service_id', (int)$parentServiceId)
             ->where('is_allocated', 1)
             ->exists();
-
-        if ($hasService) {
-            return;
+        
+        if (!$hasParentService) {
+            throw AppointmentException::invalidData('This doctor does not have the selected service category allocated at this location.');
         }
-
-        // Check if service's parent is assigned (only if service has a parent)
-        if ($service->parent_id && $service->parent_id != 0) {
-            $hasParentService = \DB::table('doctor_has_locations')
-                ->where('user_id', $doctorId)
-                ->where('location_id', $locationId)
-                ->where('service_id', $service->parent_id)
-                ->where('is_allocated', 1)
-                ->exists();
-            
-            if ($hasParentService) {
-                return;
-            }
-        }
-
-        throw AppointmentException::invalidData('This doctor does not have the selected service or its parent service allocated at this location.');
     }
-
 
     /**
      * Prepare update data from request
@@ -289,16 +274,9 @@ class ConsultancyUpdateService
             $data['doctor_id'] = $appointment->doctor_id;
         }
 
-        // Service - for consultations, use treatment_id or service_id
-        if (isset($requestData['treatment_id']) && $requestData['treatment_id']) {
-            $data['service_id'] = $requestData['treatment_id'];
-        } elseif (isset($requestData['service_id']) && $requestData['service_id']) {
-            $data['service_id'] = $requestData['service_id'];
-        }
-
-        // Consultancy type
-        if (isset($requestData['consultancy_type'])) {
-            $data['consultancy_type'] = $requestData['consultancy_type'];
+        // Service - for treatments, use treatment_service_id
+        if (isset($requestData['treatment_service_id']) && $requestData['treatment_service_id']) {
+            $data['service_id'] = $requestData['treatment_service_id'];
         }
 
         // City and region from location
@@ -350,7 +328,7 @@ class ConsultancyUpdateService
             $data['converted_by'] = Auth::id();
         }
         
-        // If consultation is rescheduled (date or time changed) and status is pending, set send_message to 1 for SMS
+        // If treatment is rescheduled (date or time changed) and status is pending, set send_message to 1 for SMS
         if ($dateChanged || $timeChanged) {
             $pendingStatusId = config('constants.appointment_status_pending', 1);
             
@@ -482,14 +460,6 @@ class ConsultancyUpdateService
             ];
         }
 
-        // Track consultancy type change
-        if (isset($requestData['consultancy_type']) && $oldValues['consultancy_type'] != $appointment->consultancy_type) {
-            $fieldChanges['Consultancy Type'] = [
-                'old' => ucfirst(str_replace('_', ' ', $oldValues['consultancy_type'])),
-                'new' => ucfirst(str_replace('_', ' ', $appointment->consultancy_type))
-            ];
-        }
-
         // Track patient info changes
         if (isset($requestData['name']) || isset($requestData['phone']) || isset($requestData['gender'])) {
             if (isset($requestData['name'])) {
@@ -533,6 +503,6 @@ class ConsultancyUpdateService
         }
 
         // General appointment log
-        GeneralFunctions::saveAppointmentLogs('updated', 'Consultancy', $appointment);
+        GeneralFunctions::saveAppointmentLogs('updated', 'Treatment', $appointment);
     }
 }
