@@ -883,6 +883,7 @@ function setTreatmentEditData(response) {
         $('#edit_treatment_doctor_warning').addClass('d-none');
         $('#edit_use_previous_doctor').prop('checked', false);
         $('#edit_use_selected_doctor').prop('checked', false);
+        $('#edit_use_selected_doctor_container').addClass('d-none');
         // Enable submit button by default (will be disabled if doctor change detected)
         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
 
@@ -1501,6 +1502,7 @@ function checkEditTreatmentDoctorChange() {
                 var lastDoctorName = lastTreatment.doctor_name;
                 var lastServiceId = lastTreatment.service_id;
                 var hasDoctorRota = lastTreatment.has_doctor_rota;
+                var canEditDoctor = response.data.can_edit_doctor || false;
 
                 // Check if the last treatment's service matches current service
                 if (lastServiceId == serviceId) {
@@ -1509,29 +1511,64 @@ function checkEditTreatmentDoctorChange() {
                         // Show warning message
                         $('#edit_warning_message').html('The last session for this treatment was performed by ' + lastDoctorName + '.');
                         
+                        // Get selected doctor name for second option
+                        var selectedDoctorName = $('#edit_treatment_doctor_id option:selected').text();
+                        
+                        // Store the selected doctor ID before any changes
+                        $('#edit_treatment_doctor_warning').data('selected-doctor-id', selectedDoctorId);
+                        $('#edit_treatment_doctor_warning').data('selected-doctor-name', selectedDoctorName);
+                        
                         if (hasDoctorRota) {
                             // Doctor has rota, enable option 1 and auto-select it
                             $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong>');
                             $('#edit_use_previous_doctor').prop('disabled', false);
                             $('#edit_use_previous_doctor').prop('checked', true);
                             
-                            // Update doctor to previous doctor
-                            isResettingDoctor = true;
-                            $('#edit_treatment_doctor_id').val(lastDoctorId).trigger('change.select2');
-                            setTimeout(function() {
-                                isResettingDoctor = false;
-                            }, 100);
-                            
-                            // Enable submit button
-                            $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                            // Check if user has permission to edit doctor
+                            if (canEditDoctor) {
+                                // Show second radio option for users with permission
+                                $('#edit_selected_doctor_option').html('<strong>Proceed with ' + selectedDoctorName + '</strong>');
+                                $('#edit_use_selected_doctor_container').removeClass('d-none');
+                                $('#edit_use_selected_doctor').prop('disabled', false);
+                                
+                                // Don't auto-change the doctor, let user choose
+                                // Enable submit button
+                                $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                            } else {
+                                // Hide second option for users without permission
+                                $('#edit_use_selected_doctor_container').addClass('d-none');
+                                
+                                // Update doctor to previous doctor
+                                isResettingDoctor = true;
+                                $('#edit_treatment_doctor_id').val(lastDoctorId).trigger('change.select2');
+                                setTimeout(function() {
+                                    isResettingDoctor = false;
+                                }, 100);
+                                
+                                // Enable submit button
+                                $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                            }
                         } else {
-                            // Doctor doesn't have rota, disable option 1 with message
+                            // Doctor doesn't have rota
                             $('#edit_previous_doctor_option').html('<strong>Schedule the treatment with ' + lastDoctorName + '</strong> <span class="text-danger">(Doctor is not available in this time slot)</span>');
                             $('#edit_use_previous_doctor').prop('disabled', true);
                             $('#edit_use_previous_doctor').prop('checked', false);
                             
-                            // Keep submit disabled - user cannot proceed
-                            $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
+                            // Check if user has permission to edit doctor
+                            if (canEditDoctor) {
+                                // Show second option and auto-select it
+                                $('#edit_selected_doctor_option').html('<strong>Proceed with ' + selectedDoctorName + '</strong>');
+                                $('#edit_use_selected_doctor_container').removeClass('d-none');
+                                $('#edit_use_selected_doctor').prop('disabled', false);
+                                $('#edit_use_selected_doctor').prop('checked', true);
+                                
+                                // Enable submit button - user can proceed with selected doctor
+                                $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+                            } else {
+                                // Hide second option and keep submit disabled
+                                $('#edit_use_selected_doctor_container').addClass('d-none');
+                                $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', true);
+                            }
                         }
 
                         // Show the warning div
@@ -1540,6 +1577,7 @@ function checkEditTreatmentDoctorChange() {
                         // Store the last doctor ID for the radio button handler
                         $('#edit_treatment_doctor_warning').data('last-doctor-id', lastDoctorId);
                         $('#edit_treatment_doctor_warning').data('has-doctor-rota', hasDoctorRota);
+                        $('#edit_treatment_doctor_warning').data('can-edit-doctor', canEditDoctor);
                     } else {
                         // Last treatment was with the same doctor, no warning needed
                         $('#edit_treatment_doctor_warning').addClass('d-none');
@@ -1585,9 +1623,17 @@ $(document).on('change', '#edit_use_previous_doctor', function() {
 
 $(document).on('change', '#edit_use_selected_doctor', function() {
     if ($(this).is(':checked')) {
-        // Keep the newly selected doctor
+        isResettingDoctor = true;
+        // Restore the originally selected doctor
+        var selectedDoctorId = $('#edit_treatment_doctor_warning').data('selected-doctor-id');
+        $('#edit_treatment_doctor_id').val(selectedDoctorId).trigger('change.select2');
+        
         // Enable submit button
         $('#modal_edit_treatment_form button[type="submit"]').prop('disabled', false);
+        
+        setTimeout(function() {
+            isResettingDoctor = false;
+        }, 100);
     }
 });
 

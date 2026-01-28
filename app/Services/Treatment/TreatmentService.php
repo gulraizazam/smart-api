@@ -560,7 +560,7 @@ class TreatmentService
             'create' => Gate::allows('appointments_create'),
             'log' => Gate::allows('appointments_log'),
             'status' => Gate::allows('treatments_appointment_status'),
-            'schedule_edit' => Gate::allows('can_edit_schedule'),
+            'schedule_edit' => Gate::allows('update_treatment_schedule'),
             'invoice' => Gate::allows('appointments_invoice'),
             'invoice_display' => Gate::allows('appointments_invoice_display'),
             'image_manage' => Gate::allows('appointments_image_manage'),
@@ -570,6 +570,7 @@ class TreatmentService
             'patient_card' => Gate::allows('appointments_patient_card'),
             'contact' => Gate::allows('contact'),
             'add_feedback' => Gate::allows('feedbacks_create'),
+            'can_edit_doctor' => Gate::allows('can_edit_doctor'),
         ];
     }
 
@@ -1103,7 +1104,8 @@ class TreatmentService
                 'scheduled_date' => $lastTreatment->scheduled_date,
                 'scheduled_time' => $lastTreatment->scheduled_time,
                 'has_doctor_rota' => $hasDoctorRota,
-            ]
+            ],
+            'can_edit_doctor' => Gate::allows('can_edit_doctor'),
         ];
     }
 
