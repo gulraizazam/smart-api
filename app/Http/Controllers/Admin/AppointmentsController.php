@@ -1483,10 +1483,7 @@ class AppointmentsController extends Controller
      */
     public function update(Request $request, $id)
     {
-        if (! Gate::allows('appointments_manage')) {
-            return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
-        }
-
+        
         try {
             $updateService = new \App\Services\Appointment\ConsultancyUpdateService();
             $appointment = $updateService->updateConsultation($id, $request->all());

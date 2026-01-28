@@ -77,6 +77,12 @@
                                     <i class="la la-plus"></i>
                                     Add New
                                 </a>
+                                &nbsp;
+                                <a href="javascript:void(0);" onclick="createBundle('{{ route('admin.packages.create') }}');" class="btn btn-primary" data-toggle="modal"
+                                    data-target="#modal_add_bundle">
+                                    <i class="la la-plus"></i>
+                                    Add Bundle
+                                </a>
                             @endif
 
                             <!--end::Button-->
@@ -128,6 +134,32 @@
 
             @include('admin.packages.create')
 
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_add_bundle" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="bundles_add">
+
+            @include('admin.packages.create-bundle')
+
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_create_bundle" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="bundles_add">
+            @include('admin.packages.create-bundle')
+        </div>
+        <!--end::Modal dialog-->
+    </div>
+
+    <div class="modal fade" id="modal_edit_bundle" tabindex="-1" aria-hidden="true">
+        <!--begin::Modal dialog-->
+        <div class="modal-dialog modal-dialog-centered very-big-modal" id="bundles_edit">
+            @include('admin.packages.edit-bundle')
         </div>
         <!--end::Modal dialog-->
     </div>
@@ -209,6 +241,8 @@
     @push('js')
         <script src="{{ asset('assets/js/pages/appointments/referred-by-patient-search.js') }}"></script>
         <script src="{{ asset('assets/js/pages/admin_settings/create-plan.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/create-bundle.js') }}"></script>
+        <script src="{{ asset('assets/js/pages/admin_settings/edit-bundle.js') }}"></script>
         <script src="{{ asset('assets/js/pages/crud/forms/validation/admin_settings/refunds.js') }}"></script>
 
         <script>

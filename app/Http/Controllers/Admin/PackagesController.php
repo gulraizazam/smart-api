@@ -150,6 +150,127 @@ class PackagesController extends Controller
     }
 
     /**
+     * Save bundle service for bundle plan creation
+     * Uses the same logic as plan creation but for bundles
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function savebundle_service(Request $request)
+    {
+        try {
+            if (!Gate::allows('packages_create')) {
+                return ApiHelper::apiResponse($this->unauthorized, 'You are not authorized to access this resource.');
+            }
+
+            $bundleId = $request->bundle_id;
+            $bundle = Bundles::find($bundleId);
+            
+            if (!$bundle) {
+                return ApiHelper::apiResponse($this->error, 'Bundle not found', false);
+            }
+
+            $locationInfo = Locations::find($request->location_id);
+            
+            // Build bundle data structure
+            $bundleData = [
+                'qty' => '1',
+                'bundle_id' => $bundle->id,
+                'service_price' => $bundle->price,
+                'service_name' => $bundle->name,
+                'net_amount' => $request->net_amount,
+                'discount_name' => '-',
+                'discount_type' => '-',
+                'discount_price' => '0',
+                'tax_percenatage' => $locationInfo->tax_percentage ?? 0,
+            ];
+
+            // Calculate tax based on bundle's tax treatment type
+            if ($bundle->tax_treatment_type_id == Config::get('constants.tax_both')) {
+                $bundleData['tax_exclusive_net_amount'] = $request->net_amount;
+                $bundleData['tax_price'] = ceil($request->net_amount * ($locationInfo->tax_percentage / 100));
+                $bundleData['tax_including_price'] = ceil($request->net_amount + $bundleData['tax_price']);
+            } else {
+                $bundleData['tax_including_price'] = $request->net_amount;
+                $bundleData['tax_exclusive_net_amount'] = ceil((100 * $bundleData['tax_including_price']) / ($bundleData['tax_percenatage'] + 100));
+                $bundleData['tax_price'] = ceil($bundleData['tax_including_price'] - $bundleData['tax_exclusive_net_amount']);
+            }
+
+            // Get bundle services for display
+            $bundleServices = BundleHasServices::with('service')
+                ->where('bundle_id', $bundle->id)
+                ->get();
+
+            $packageServicesData = [];
+            foreach ($bundleServices as $bundleService) {
+                $packageServicesData[] = [
+                    'name' => $bundleService->service->name ?? 'Unknown',
+                    'service_id' => $bundleService->service_id,
+                    'tax_exclusive_price' => 0,
+                    'tax_price' => 0,
+                    'tax_including_price' => 0,
+                    'is_consumed' => 0,
+                ];
+            }
+
+            return ApiHelper::apiResponse($this->success, 'Bundle service added successfully', true, [
+                'servicesData' => [
+                    'service_name' => $bundle->name,
+                    'service_price' => $bundle->price,
+                    'discount_name' => '-',
+                    'discount_type' => '-',
+                    'discount_price' => '0',
+                    'sold_by' => $request->sold_by ?? null,
+                    'bundlesData' => array_merge($bundleData, [
+                        'id' => $bundle->id, // Return original bundle ID
+                    ]),
+                    'packageServicesData' => $packageServicesData,
+                ]
+            ]);
+            
+        } catch (\Exception $e) {
+            \Log::error('Save Bundle Service Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to add bundle service: ' . $e->getMessage(), false);
+        }
+    }
+
+    /**
+     * Get bundles by location for bundle creation
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getbundles(Request $request)
+    {
+        try {
+            if (!$request->has('location_id') || !$request->location_id) {
+                return ApiHelper::apiResponse($this->error, 'Location ID is required.', false);
+            }
+
+            $location_id = (int) $request->location_id;
+            $account_id = Auth::user()->account_id;
+
+            // Get active bundles for the account
+            $bundles = Bundles::where('account_id', $account_id)
+                ->where('active', 1)
+                ->whereDate('start', '<=', now())
+                ->whereDate('end', '>=', now())
+                ->select('id', 'name', 'price')
+                ->orderBy('name', 'asc')
+                ->get();
+
+            if ($bundles->isNotEmpty()) {
+                return ApiHelper::apiResponse($this->success, 'Record found', true, [
+                    'bundles' => $bundles,
+                ]);
+            }
+
+            return ApiHelper::apiResponse($this->success, 'No bundles found', false);
+        } catch (\Exception $e) {
+            \Log::error('Get Bundles Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to load bundles.', false);
+        }
+    }
+
+    /**
      * get discount information.
      *
      * @return \Illuminate\Http\JsonResponse
@@ -1599,6 +1720,46 @@ class PackagesController extends Controller
      * @param $request
      * @return mixed
      * */
+    /**
+     * Update bundle plan
+     */
+    public function updatebundle(Request $request)
+    {
+        try {
+            $request->validate([
+                'package_id' => 'required|exists:packages,id',
+                'appointment_id' => 'required|exists:appointments,id',
+                'payment_mode_id' => 'nullable|exists:payment_modes,id',
+                'cash_amount' => 'nullable|numeric|min:0',
+                'grand_total' => 'nullable|numeric'
+            ]);
+
+            $package = Packages::findOrFail($request->package_id);
+            
+            // Update appointment
+            $package->appointment_id = $request->appointment_id;
+            $package->save();
+            
+            // Handle payment if provided
+            if ($request->payment_mode_id && $request->cash_amount > 0) {
+                $packageAdvance = new PackageAdvances();
+                $packageAdvance->package_id = $package->id;
+                $packageAdvance->payment_mode_id = $request->payment_mode_id;
+                $packageAdvance->cash_amount = $request->cash_amount;
+                $packageAdvance->cash_flow = 'in';
+                $packageAdvance->account_id = Auth::user()->account_id;
+                $packageAdvance->created_by = Auth::id();
+                $packageAdvance->save();
+            }
+            
+            return ApiHelper::apiResponse($this->success, 'Bundle plan updated successfully', true);
+            
+        } catch (\Exception $e) {
+            \Log::error('Update Bundle Error: ' . $e->getMessage());
+            return ApiHelper::apiResponse($this->error, 'Failed to update bundle plan: ' . $e->getMessage(), false);
+        }
+    }
+
     /**
      * Update plan package (optimized)
      */

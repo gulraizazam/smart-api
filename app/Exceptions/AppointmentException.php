@@ -57,9 +57,9 @@ class AppointmentException extends Exception
         return new self('Lead not found.', 404);
     }
 
-    public static function unauthorized()
+    public static function unauthorized($message = 'You are not authorized to perform this action.')
     {
-        return new self('You are not authorized to perform this action.', 403);
+        return new self($message, 403);
     }
 
     public static function invalidData($message = 'Invalid data provided.')

@@ -428,6 +428,9 @@ Route::get('packages/deleteplanrowtem', [PackagesController::class, 'deleteplanr
     Route::get('packages/display/{id}', [PackagesController::class, 'display'])->name('packages.display');
 
     Route::get('packages/getservice', [PackagesController::class, 'getservices'])->name('packages.getservice');
+    Route::get('packages/getbundles', [PackagesController::class, 'getbundles'])->name('packages.getbundles');
+    Route::post('packages/savebundle_service', [PackagesController::class, 'savebundle_service'])->name('packages.savebundle_service');
+    Route::post('packages/updatebundle', [PackagesController::class, 'updatebundle'])->name('packages.updatebundle');
 
     Route::get('packages/pdf/{id}', [PackagesController::class, 'package_pdf'])->name('packages.package_pdf');
 
