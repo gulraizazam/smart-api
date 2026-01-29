@@ -413,7 +413,7 @@ $(document).ready(function () {
                             }
                             // Calculate tax amount as difference between Amount and Discount Price
                             var taxAmount = packagebundles.tax_including_price - parseInt(packagebundles.tax_exclusive_net_amount);
-                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + discountname + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + packagebundles.tax_including_price.toLocaleString() + "</td><td>" + Math.ceil(taxAmount).toLocaleString() + "</td></tr>");
+                            $('#table_1').append("<tr class='HR_" + packagebundles.id + "'><td><a href='javascript:void(0)' onClick='toggle(" + packagebundles.id + ")'>" + packagebundles.bundlename + "</a></td><td>" + parseInt(packagebundles.service_price).toLocaleString() + "</td><td>" + parseInt(packagebundles.tax_exclusive_net_amount).toLocaleString() + "</td><td>" + Math.ceil(taxAmount).toLocaleString() + "</td><td>" + packagebundles.tax_including_price.toLocaleString() + "</td></tr>");
 
                             jQuery.each(resposne.packageservices, function (i, packageservices) {
 
@@ -422,11 +422,11 @@ $(document).ready(function () {
                                     if (packageservices.is_consumed == '0') {
                                         var consume = 'NO';
                                         var serviceTaxAmt = packageservices.tax_including_price - packageservices.tax_exclusive_price;
-                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td><input type='checkbox' class='invoicecheckbox' value=" + packageservices.id + "></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax Amt. : " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
+                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td><input type='checkbox' class='invoicecheckbox' value=" + packageservices.id + "></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
                                     } else {
                                         var consume = 'YES';
                                         var serviceTaxAmt = packageservices.tax_including_price - packageservices.tax_exclusive_price;
-                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax Amt. : " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
+                                        $('#table_1').append("<tr class='HR_" + packagebundles.id + " " + packagebundles.id + "'><td></td><td>" + packageservices.servicename + "</td><td>Amount : " + packageservices.tax_exclusive_price.toLocaleString() + "</td><td>Tax: " + Math.ceil(serviceTaxAmt).toLocaleString() + "</td><td colspan='3'>Is Consume : " + consume + "</td></tr>");
                                     }
                                 }
                             });
@@ -537,7 +537,8 @@ $(document).ready(function () {
                                         reInitTable('treatment');
                                         closeAllPopup('.modal-dialog')
                                         $("#treatment-invoice-create").remove();
-                                        window.location.href = route('admin.invoices.invoice_pdf', [invoice_id, 'download']);
+                                        // Open print view in new tab
+                                        window.open(route('admin.invoices.invoice_pdf', [invoice_id, 'print']), '_blank');
                                     } else {
                                         if (resposne.data.setteled == 1) {
 

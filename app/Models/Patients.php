@@ -231,13 +231,14 @@ class Patients extends BaseModal
             
             // Numeric input - single optimized query for phone/ID
             if (ctype_digit($cleaned)) {
-                // Clean phone number
+                // Clean phone number - remove leading 0 for matching
                 $phone = $cleaned[0] === '0' ? substr($cleaned, 1) : $cleaned;
                 if (isset($phone[1]) && $phone[0] === '9' && $phone[1] === '2') {
                     $phone = substr($phone, 2);
                 }
                 
                 // Single query with OR conditions - much faster than multiple queries
+                // Also search with original input to match phones stored with leading 0
                 $sql = "SELECT DISTINCT name, id, phone, gender, cnic, email, dob, address 
                         FROM users 
                         WHERE user_type_id = 3 
@@ -246,13 +247,16 @@ class Patients extends BaseModal
                         AND (
                             phone = ? 
                             OR phone LIKE ? 
+                            OR phone = ?
+                            OR phone LIKE ?
                             OR id = ?
                         )
                         ORDER BY 
                             CASE 
                                 WHEN phone = ? THEN 1
-                                WHEN id = ? THEN 2
-                                ELSE 3
+                                WHEN phone = ? THEN 2
+                                WHEN id = ? THEN 3
+                                ELSE 4
                             END,
                             id DESC
                         LIMIT 10";
@@ -262,7 +266,10 @@ class Patients extends BaseModal
                     $phone,
                     $phone . '%',
                     $cleaned,
+                    $cleaned . '%',
+                    $cleaned,
                     $phone,
+                    $cleaned,
                     $cleaned
                 ]);
             }

@@ -419,6 +419,12 @@ class InvoicesController extends Controller
         $patient = User::find($Invoiceinfo->patient_id);
         $account = Accounts::find($Invoiceinfo->account_id);
         $company_phone_number = Settings::where('slug', '=', 'sys-headoffice')->first();
+        
+        // Get service price for treatment invoice: actual_price from package_services, fallback to services.price
+        $service_price_display = $service->price ?? 0;
+        if ($package_service && $package_service->actual_price !== null) {
+            $service_price_display = $package_service->actual_price;
+        }
 
         if ($appointment_info?->appointment_type_id == 1 && $flag == 0) {
 
@@ -452,7 +458,7 @@ class InvoicesController extends Controller
             }
         } else {
 
-            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'))->render();
+            $content = view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download', 'service_price_display'))->render();
             $pdf = App::make('dompdf.wrapper');
             $pdf->loadHTML($content);
             if ($download) {
@@ -463,7 +469,7 @@ class InvoicesController extends Controller
                 return $pdf->download('treatment-invoice-C-'.$Invoiceinfo->patient_id.'.pdf');
             }
 
-            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download'));
+            return view('admin.invoices.invoice_pdf', compact('Invoiceinfo', 'patient', 'account', 'service', 'discount', 'invoicestatus', 'company_phone_number', 'location_info', 'appointment_info', 'bundle', 'download', 'service_price_display'));
         }
     }
 

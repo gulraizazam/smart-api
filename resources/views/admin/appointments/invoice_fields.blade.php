@@ -103,11 +103,10 @@
                     <?php $constant = 555;?>
                     <tr>
                         <th> Name</th>
-                        <th> Price</th>
-                        <th> Discount Name</th>
-                        <th> Discount Price</th>
-                        <th> Amount</th>
-                        <th> Tax Amt.</th>
+                        <th> Service Price</th>
+                        <th> Sub Total</th>
+                        <th> Tax</th>
+                        <th> Total</th>
                     </tr>
                     </thead>
                     
@@ -271,7 +270,7 @@
                 <div class="col-md-10 mt-5 mb-10">
                     <div id="treatment_addinvoice" style="display: none;">
                         <button class="btn btn-primary spinner-button" name="savepackageinformation" id="treatment_savepackageinformation"
-                                style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Save & Print Invoice
+                                style="float: right;margin-top:20px;"><i class="la la-paper-plane-o"></i> Consume & Print Invoice
                         </button>
                     </div>
                 </div>

@@ -400,7 +400,7 @@ class PlanService
                 'settle_amount' => number_format($package->settle_amount ?? 0, 0),
                 'settle_amount_raw' => $package->settle_amount ?? 0,
                 'refunded' => number_format($package->refund_amount_calculated ?? 0, 0),
-                'balance' => number_format(($package->total_price ?? 0) - ($package->cash_receive ?? 0), 0),
+                'balance' => number_format(($package->cash_receive ?? 0) - ($package->settle_amount ?? 0) - ($package->refund_amount_calculated ?? 0), 0),
                 'active' => $package->active,
                 'status' => $package->active == 1 ? 'Active' : 'Inactive',
                 'date' => $package->created_at->format('Y-m-d'),
@@ -1418,16 +1418,21 @@ class PlanService
             }
 
             // Create package bundle record
+            $discountId = $packageBundle['DiscountId'] ?? null;
+            if ($discountId == '0' || $discountId == '') {
+                $discountId = null;
+            }
+            
             $packageBundleData = [
                 'random_id' => $package->random_id,
                 'is_allocate' => 1,
                 'qty' => 1,
-                'discount_name' => $packageBundle['DiscountName'],
-                'discount_type' => $packageBundle['Type'],
-                'discount_price' => $packageBundle['DiscountValue'],
+                'discount_name' => $packageBundle['DiscountName'] ?? null,
+                'discount_type' => $packageBundle['Type'] ?? null,
+                'discount_price' => $packageBundle['DiscountValue'] ?? null,
                 'service_price' => str_replace(',', '', $packageBundle['RegularPrice']),
                 'net_amount' => str_replace(',', '', $packageBundle['RegularPrice']),
-                'discount_id' => 1,
+                'discount_id' => $discountId,
                 'bundle_id' => $bundleId,
                 'package_id' => $package->id,
                 'tax_exclusive_net_amount' => str_replace(',', '', $packageBundle['Amount']),
@@ -1555,9 +1560,13 @@ class PlanService
      * Generate and update plan_name from first two bundles
      * If one bundle: plan_name = bundle name
      * If two or more bundles: plan_name = first two bundle names comma separated
+     * For plan type (not bundle): add '...' if more than 2 services
      */
     protected function updatePlanName(Packages $package): void
     {
+        // Get total count of bundles for this package
+        $totalBundleCount = PackageBundles::where('package_id', $package->id)->count();
+        
         // Get the first two bundles for this package with their names
         $packageBundles = PackageBundles::where('package_bundles.package_id', $package->id)
             ->join('bundles', 'package_bundles.bundle_id', '=', 'bundles.id')
@@ -1572,6 +1581,11 @@ class PlanService
 
         // Generate plan_name: single bundle name or two bundle names comma separated
         $planName = implode(', ', $packageBundles);
+        
+        // For plan type (not bundle): add '...' if more than 2 services
+        if ($package->plan_type === 'plan' && $totalBundleCount > 2) {
+            $planName .= '...';
+        }
 
         // Update only plan_name without touching updated_at (use query builder to bypass timestamps)
         Packages::where('id', $package->id)->update(['plan_name' => $planName]);

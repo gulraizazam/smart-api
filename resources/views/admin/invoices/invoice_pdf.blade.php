@@ -353,7 +353,10 @@
             <td> 1</td>
             <td>{{$service->name}} </td>
             <td>
-                @if($Invoiceinfo->is_exclusive == '0' && isset($bundle) && $bundle?->type == 'single')
+                @if($appointment_info?->appointment_type_id == 2 && isset($service_price_display))
+                    {{-- Treatment invoice: show actual_price from package_services or services.price --}}
+                    {{number_format($service_price_display)}}
+                @elseif($Invoiceinfo->is_exclusive == '0' && isset($bundle) && $bundle?->type == 'single')
                     {{number_format(($Invoiceinfo->service_price)-($Invoiceinfo->tax_price))}}
                 @elseif($Invoiceinfo->is_exclusive == '0' && isset($bundle) && $bundle?->type == 'multiple')
                     {{number_format($Invoiceinfo->service_price)}}
@@ -377,12 +380,14 @@
             </td>
             <td>
                 @if($Invoiceinfo->is_exclusive == '0')
-                    @if($Invoiceinfo->discount_price == null && $bundle->type == 'single')
+                    @if($Invoiceinfo->discount_price == null && isset($bundle) && $bundle?->type == 'single')
                         {{number_format(($Invoiceinfo->service_price)-($Invoiceinfo->tax_price))}}
                     @else
                         {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
                     @endif
                 @elseif($Invoiceinfo->is_exclusive == '1')
+                    {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
+                @else
                     {{number_format($Invoiceinfo->tax_exclusive_serviceprice)}}
                 @endif
             </td>
